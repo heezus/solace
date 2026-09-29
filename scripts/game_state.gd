@@ -17,6 +17,10 @@ var camp_pos := Vector2i.ZERO
 var shard_pos := Vector2i(-1, -1)
 var food_credit := 5.0
 var won := false
+var starving := false
+var food_use := 0.0  # food eaten per second right now
+var seen: Dictionary = {}  # items the player has ever held, so the top bar keeps showing them
+var goals_done: Dictionary = {}
 var events: Array = []  # messages for the UI to show and clear
 
 
@@ -24,6 +28,8 @@ func _init() -> void:
 	for id in Data.ITEM_ORDER:
 		inv[id] = 0
 	inv["berries"] = 10
+	for id in ["wood", "stone", "flint", "berries"]:
+		seen[id] = true
 
 
 # --- Map ---------------------------------------------------------------------
@@ -120,6 +126,17 @@ func pay(cost: Dictionary) -> void:
 
 func add(id: String, amount: int) -> void:
 	inv[id] = inv.get(id, 0) + amount
+	seen[id] = true
+
+
+## "need 10 Clay, 3 Rope" for whatever the stockpile is short of, or "" if affordable.
+func shortfall_text(cost: Dictionary) -> String:
+	var parts: Array = []
+	for id in cost:
+		var short: int = cost[id] - inv.get(id, 0)
+		if short > 0:
+			parts.append("%d %s" % [short, Data.ITEMS[id]["name"]])
+	return "" if parts.is_empty() else "need " + ", ".join(parts)
 
 
 func hand_yield() -> int:
@@ -230,16 +247,24 @@ func _place_building(type: String, p: Vector2i) -> void:
 		"gather_index": 0,
 	}
 	if Data.BUILDINGS[type]["kind"] == "gatherer":
-		var r: int = Data.BUILDINGS[type]["radius"]
-		for dy in range(-r, r + 1):
-			for dx in range(-r, r + 1):
-				var t := tile_at(p + Vector2i(dx, dy))
-				if t != "" and Data.TILES[t]["yields"] != "" and t != "grass":
-					b["gather_items"].append(Data.TILES[t]["yields"])
+		for t in gather_tiles(p):
+			b["gather_items"].append(Data.TILES[tile_at(t)]["yields"])
 		if b["gather_items"].is_empty():
 			b["gather_items"].append("fiber")  # nothing else nearby: it cuts grass
 	building_at[p] = buildings.size()
 	buildings.append(b)
+
+
+## Resource tiles a Gatherer's Hut at p would work (grass only if there is nothing else).
+func gather_tiles(p: Vector2i) -> Array:
+	var r: int = Data.BUILDINGS["gatherers_hut"]["radius"]
+	var found: Array = []
+	for dy in range(-r, r + 1):
+		for dx in range(-r, r + 1):
+			var t := tile_at(p + Vector2i(dx, dy))
+			if t != "" and t != "grass" and Data.TILES[t]["yields"] != "":
+				found.append(p + Vector2i(dx, dy))
+	return found
 
 
 func touches_river(p: Vector2i) -> bool:
@@ -302,7 +327,13 @@ func tick(delta: float) -> void:
 	for b in buildings:
 		if _wants_to_work(b):
 			active += 1
-	var fed := _eat(active * Data.FOOD_PER_BUILDING_PER_SEC * delta)
+	food_use = active * Data.FOOD_PER_BUILDING_PER_SEC
+	var fed := _eat(food_use * delta)
+	starving = not fed
+
+	for g in Data.GOALS:
+		if not goals_done.has(g["id"]) and goal_met(g["id"]):
+			goals_done[g["id"]] = true
 
 	for b in buildings:
 		_tick_building(b, delta, fed)
@@ -313,13 +344,77 @@ func _eat(need: float) -> bool:
 		if inv.get("berries", 0) > 0:
 			inv["berries"] -= 1
 			food_credit += Data.FOOD_VALUE["berries"]
-		elif inv.get("flour", 0) > 0:
+		elif inv.get("flour", 0) > flour_reserve():
 			inv["flour"] -= 1
 			food_credit += Data.FOOD_VALUE["flour"]
 		else:
 			return false
 	food_credit -= need
 	return true
+
+
+## Flour kept back for research, so buildings don't eat the Bronze Dawn cost.
+func flour_reserve() -> int:
+	var keep := 0
+	for tech in Data.TECHS:
+		if not researched.has(tech):
+			keep += Data.TECHS[tech]["cost"].get("flour", 0)
+	return keep
+
+
+# --- Goals -------------------------------------------------------------------
+
+
+func has_building(type: String) -> bool:
+	for b in buildings:
+		if b["type"] == type:
+			return true
+	return false
+
+
+func goal_met(id: String) -> bool:
+	match id:
+		"gather":
+			return inv["wood"] >= 10 and inv["stone"] >= 10 and inv["flint"] >= 5 or researched.has("knapping")
+		"knapping":
+			return researched.has("knapping")
+		"tools":
+			return inv.get("flint_tools", 0) > 0
+		"hut_tech":
+			return researched.has("gatherers_hut")
+		"hut":
+			return has_building("gatherers_hut")
+		"berries":
+			for b in buildings:
+				if "berries" in b["gather_items"]:
+					return true
+			return false
+		"charcoal":
+			return has_building("charcoal_pit")
+		"twine":
+			return has_building("twine_post")
+		"haulers":
+			return researched.has("haulers")
+		"kiln":
+			return has_building("kiln")
+		"wheel":
+			return has_building("water_wheel")
+		"grind":
+			for b in buildings:
+				if b["type"] == "grindstone" and is_powered(b["pos"]):
+					return true
+			return false
+		"bronze":
+			return won
+	return false
+
+
+## Index into Data.GOALS of the first goal not yet done, or GOALS.size() when all are.
+func current_goal() -> int:
+	for i in Data.GOALS.size():
+		if not goals_done.has(Data.GOALS[i]["id"]):
+			return i
+	return Data.GOALS.size()
 
 
 func _wants_to_work(b: Dictionary) -> bool:

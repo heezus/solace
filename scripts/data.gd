@@ -66,6 +66,8 @@ const SHARD_TEXT := (
 const TECHS := {
 	"fire":
 	{
+		"abbr": "Fi",
+		"color": Color("e85d04"),
 		"name": "Fire",
 		"requires": [],
 		"cost": {"wood": 10, "stone": 5},
@@ -73,6 +75,8 @@ const TECHS := {
 	},
 	"knapping":
 	{
+		"abbr": "Kn",
+		"color": Color("6c757d"),
 		"name": "Knapping",
 		"requires": [],
 		"cost": {"flint": 5, "stone": 10},
@@ -80,6 +84,8 @@ const TECHS := {
 	},
 	"cordage":
 	{
+		"abbr": "Co",
+		"color": Color("bc8a5f"),
 		"name": "Cordage",
 		"requires": [],
 		"cost": {"fiber": 15},
@@ -87,6 +93,8 @@ const TECHS := {
 	},
 	"gatherers_hut":
 	{
+		"abbr": "GH",
+		"color": Color("f4a261"),
 		"name": "Gatherer's Hut",
 		"requires": ["knapping"],
 		"cost": {"wood": 20, "stone": 10},
@@ -94,6 +102,8 @@ const TECHS := {
 	},
 	"haulers":
 	{
+		"abbr": "PH",
+		"color": Color("b388eb"),
 		"name": "Paths & Haulers",
 		"requires": ["cordage", "gatherers_hut"],
 		"cost": {"rope": 10, "wood": 30},
@@ -101,6 +111,8 @@ const TECHS := {
 	},
 	"pottery":
 	{
+		"abbr": "Po",
+		"color": Color("c8553d"),
 		"name": "Pottery",
 		"requires": ["fire"],
 		"cost": {"clay": 20, "charcoal": 10},
@@ -108,6 +120,8 @@ const TECHS := {
 	},
 	"water_wheel":
 	{
+		"abbr": "WW",
+		"color": Color("2a9d8f"),
 		"name": "Water Wheel",
 		"requires": ["cordage", "knapping"],
 		"cost": {"rope": 10, "wood": 40, "stone": 20},
@@ -115,6 +129,8 @@ const TECHS := {
 	},
 	"grindstone":
 	{
+		"abbr": "Gr",
+		"color": Color("adb5bd"),
 		"name": "Grindstone",
 		"requires": ["water_wheel", "pottery"],
 		"cost": {"stone": 30, "brick": 10},
@@ -122,6 +138,8 @@ const TECHS := {
 	},
 	"bronze_dawn":
 	{
+		"abbr": "BD",
+		"color": Color("cd7f32"),
 		"name": "Bronze Dawn",
 		"requires": ["pottery", "grindstone", "haulers"],
 		"cost": {"brick": 40, "flour": 30, "rope": 40, "stone": 100},
@@ -241,3 +259,22 @@ const BUILD_ORDER := ["charcoal_pit", "twine_post", "gatherers_hut", "kiln", "wa
 
 ## Output a building holds before it stops, when nobody hauls it away.
 const BUFFER_CAP := 10
+
+# --- Goals -------------------------------------------------------------------
+## The opening checklist. GameState.goal_met() knows how to check each id.
+
+const GOALS := [
+	{"id": "gather", "text": "Click trees, rocks and gravel: get 10 Wood, 10 Stone, 5 Flint"},
+	{"id": "knapping", "text": "Press T and research Knapping"},
+	{"id": "tools", "text": "Craft Flint Tools (doubles hand gathering)"},
+	{"id": "hut_tech", "text": "Research Gatherer's Hut"},
+	{"id": "hut", "text": "Place a Gatherer's Hut next to trees or rocks"},
+	{"id": "berries", "text": "Place a hut near Berry Bushes. Running buildings eat food"},
+	{"id": "charcoal", "text": "Research Fire, then build a Charcoal Pit"},
+	{"id": "twine", "text": "Research Cordage, then build a Twine Post"},
+	{"id": "haulers", "text": "Research Paths & Haulers so buildings run themselves"},
+	{"id": "kiln", "text": "Research Pottery, then build a Kiln"},
+	{"id": "wheel", "text": "Research Water Wheel and build one on the river"},
+	{"id": "grind", "text": "Build a Grindstone within 3 tiles of the wheel"},
+	{"id": "bronze", "text": "Research Bronze Dawn"},
+]

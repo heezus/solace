@@ -18,6 +18,10 @@ func _init() -> void:
 	test_grindstone_needs_power()
 	test_hungry_buildings_stop()
 	test_bronze_dawn_wins()
+	test_flour_is_kept_for_research()
+	test_goals_advance_in_order()
+	test_hut_gather_preview_matches_placement()
+	test_shortfall_text()
 	print("FAILED: %d" % failures if failures > 0 else "ALL TESTS PASSED")
 	quit(1 if failures > 0 else 0)
 
@@ -166,3 +170,54 @@ func test_bronze_dawn_wins() -> void:
 		s.researched[t] = true
 	check(s.research("bronze_dawn"), "research bronze dawn")
 	check(s.won, "game is won")
+
+
+func test_flour_is_kept_for_research() -> void:
+	var s := fresh()
+	s.inv["berries"] = 0
+	s.inv["flour"] = 30
+	s.food_credit = 0.0
+	check(s.flour_reserve() == 30, "bronze dawn's flour is reserved")
+	check(not s._eat(1.0), "reserved flour is not eaten")
+	check(s.inv["flour"] == 30, "flour untouched")
+	s.inv["flour"] = 31
+	check(s._eat(1.0), "flour above the reserve is eaten")
+	check(s.inv["flour"] == 30, "only the spare flour was eaten")
+	s.researched["bronze_dawn"] = true
+	check(s.flour_reserve() == 0, "no reserve once researched")
+
+
+func test_goals_advance_in_order() -> void:
+	var s := fresh()
+	check(s.current_goal() == 0, "first goal is gathering")
+	s.inv["wood"] = 10
+	s.inv["stone"] = 10
+	s.inv["flint"] = 5
+	s.tick(0.1)
+	check(s.current_goal() == 1, "gathering done, next is knapping")
+	s.research("knapping")
+	s.tick(0.1)
+	check(s.current_goal() == 2, "knapping done, next is flint tools")
+	check(s.goals_done.has("gather"), "earlier goals stay done after spending")
+
+
+func test_hut_gather_preview_matches_placement() -> void:
+	var s := fresh()
+	give(s, 100)
+	s.researched["gatherers_hut"] = true
+	var p := s.camp_pos + Vector2i(-2, 0)
+	var preview := s.gather_tiles(p)
+	check(preview.size() > 0, "preview finds the forest next to camp")
+	s.place("gatherers_hut", p)
+	var b: Dictionary = s.buildings[s.building_at[p]]
+	check(b["gather_items"].size() == preview.size(), "hut works exactly the previewed tiles")
+
+
+func test_shortfall_text() -> void:
+	var s := fresh()
+	s.inv["stone"] = 4
+	s.inv["clay"] = 0
+	check(s.shortfall_text({"stone": 10, "clay": 10}) == "need 6 Stone, 10 Clay", "shortfall lists what's missing")
+	s.inv["stone"] = 10
+	s.inv["clay"] = 10
+	check(s.shortfall_text({"stone": 10, "clay": 10}) == "", "no shortfall when affordable")
