@@ -23,6 +23,7 @@ var popups: Array = []  # {pos: Vector2, text: String, t: float}
 var item_boxes := {}
 var item_labels := {}
 var food_label: Label
+var kith_label: Label
 var build_buttons := {}
 var craft_buttons := {}
 var tech_cards := {}
@@ -86,7 +87,11 @@ func _layout() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed:
+	if event is InputEventMouseMotion and placing == "road" and event.button_mask & MOUSE_BUTTON_MASK_LEFT:
+		var p := _tile_under()
+		if state.placement_error("road", p) == "":
+			state.place("road", p)
+	elif event is InputEventMouseButton and event.pressed:
 		var p := _tile_under()
 		if event.button_index == MOUSE_BUTTON_RIGHT:
 			placing = ""
@@ -143,9 +148,12 @@ func _build_ui() -> void:
 	var items := HFlowContainer.new()
 	items.add_theme_constant_override("h_separation", 14)
 	top_bar.add_child(items)
+	kith_label = _label("", 15)
+	kith_label.mouse_filter = Control.MOUSE_FILTER_PASS
+	items.add_child(kith_label)
 	food_label = _label("", 15)
 	food_label.mouse_filter = Control.MOUSE_FILTER_PASS
-	food_label.tooltip_text = "Every running building eats food: Berries are worth 1, Flour 3."
+	food_label.tooltip_text = "Every Kith eats food: Berries are worth 1, Flour 3."
 	items.add_child(food_label)
 	items.add_child(VSeparator.new())
 	for id in Data.ITEM_ORDER:
@@ -327,8 +335,18 @@ func _refresh_ui() -> void:
 		item_labels[id].text = "%s %d" % [Data.ITEMS[id]["name"], n]
 		var zero_color := BAD if Data.FOOD_VALUE.has(id) else Color(1, 1, 1, 0.45)
 		item_labels[id].add_theme_color_override("font_color", zero_color if n == 0 else Color.WHITE)
+	var note := state.growth_note()
+	var idle := state.idle_kith()
+	kith_label.text = "Kith %d/%d%s%s" % [
+		state.kith.size(),
+		state.housing(),
+		(", %d %s" % [idle, "hauling" if state.has_haulers() else "idle"]) if idle > 0 else "",
+		"  (" + note + ")" if note != "" else "  (growing)",
+	]
+	kith_label.tooltip_text = "Kith work buildings and haul goods. Each building needs one. They grow with spare food and room."
+	kith_label.add_theme_color_override("font_color", GOAL_COLOR if note != "" else GOOD)
 	if state.starving and state.food_use > 0.0:
-		food_label.text = "Food: none! Buildings have stopped"
+		food_label.text = "Food: none! The Kith have stopped working"
 		food_label.add_theme_color_override("font_color", BAD)
 	else:
 		var s := "Food %d" % int(state.food_total())
@@ -405,6 +423,8 @@ func _refresh_ui() -> void:
 func _hover_text() -> String:
 	if placing != "":
 		var s := "Placing %s. Left-click open grassland, right-click to stop." % Data.BUILDINGS[placing]["name"]
+		if placing == "road":
+			s = "Laying Road: click or drag across grassland, or across the river to bridge it. Right-click to stop."
 		if state.in_bounds(hover):
 			var err := state.placement_error(placing, hover)
 			if err != "":
@@ -418,12 +438,16 @@ func _hover_text() -> String:
 		var b: Dictionary = state.buildings[state.building_at[hover]]
 		var def: Dictionary = Data.BUILDINGS[b["type"]]
 		var s: String = def["name"] + "\n" + def["desc"] + "\n\nStatus: " + b["status"]
+		if state.needs_worker(b):
+			s += "\nWorker: " + ("yes" if b["worker"] >= 0 else "none, grow more Kith")
 		if state.buffered(b["out"]) > 0:
 			s += "\nHolding " + _cost_text(b["out"])
 		if def["kind"] == "gatherer":
 			s += "\n\n" + _gather_text(state.gather_tiles(hover))
 		return s
 	var t: Dictionary = Data.TILES[state.tile_at(hover)]
+	if state.roads.has(hover):
+		return "Road on %s. Kith walk twice as fast here." % t["name"]
 	if t["yields"] != "":
 		var s := "%s\nClick to gather %s." % [t["name"], Data.ITEMS[t["yields"]]["name"]]
 		if Data.FOOD_VALUE.has(t["yields"]):
@@ -578,6 +602,7 @@ func _draw() -> void:
 			draw_rect(_tile_rect(p), base)
 	var map_rect := Rect2(MAP_ORIGIN, Vector2(GameState.WIDTH, GameState.HEIGHT) * TILE)
 	draw_rect(map_rect, OUTLINE, false, 4.0)
+	_draw_roads()
 
 	# Features.
 	for y in GameState.HEIGHT:
@@ -597,11 +622,9 @@ func _draw() -> void:
 		for b in state.buildings:
 			if b["type"] == "water_wheel":
 				draw_circle(_tile_center(b["pos"]), Data.BUILDINGS["water_wheel"]["radius"] * TILE, Color(0.16, 0.62, 0.56, 0.18))
-	if state.has_haulers():
-		_draw_haulers()
-
 	for b in state.buildings:
 		_draw_building(b)
+	_draw_kith()
 
 	# Placement ghost.
 	if placing != "" and state.in_bounds(hover):
@@ -710,6 +733,19 @@ func _draw_building(b: Dictionary) -> void:
 		"kiln":
 			_outlined_circle(c + Vector2(0, 2), 10.0, Color("9c3d2e"))
 			draw_circle(c + Vector2(0, 5), 4.0, Color("ffb703") if working else OUTLINE)
+		"dwelling":
+			draw_rect(Rect2(c + Vector2(-9, -1), Vector2(18, 10)), Color("d4a373"))
+			draw_rect(Rect2(c + Vector2(-9, -1), Vector2(18, 10)), OUTLINE, false, 2.0)
+			_outlined_poly(
+				PackedVector2Array([c + Vector2(-12, 0), c + Vector2(0, -10), c + Vector2(12, 0)]), Color("a8dadc")
+			)
+			draw_rect(Rect2(c + Vector2(-2, 3), Vector2(4, 6)), OUTLINE)
+		"storehouse":
+			var box := Rect2(c + Vector2(-10, -8), Vector2(20, 17))
+			draw_rect(box, Color("8d6e63"))
+			draw_rect(box, OUTLINE, false, 2.0)
+			draw_line(box.position, box.end, OUTLINE, 1.5)
+			draw_line(box.position + Vector2(box.size.x, 0), box.position + Vector2(0, box.size.y), OUTLINE, 1.5)
 		"water_wheel", "grindstone":
 			var col := Color("2a9d8f") if b["type"] == "water_wheel" else Color("adb5bd")
 			var spinning: bool = b["type"] == "water_wheel" or working
@@ -743,17 +779,41 @@ func _draw_building(b: Dictionary) -> void:
 		)
 
 
-func _draw_haulers() -> void:
-	var home := _tile_center(state.camp_pos)
-	for i in state.buildings.size():
-		var b: Dictionary = state.buildings[i]
-		if b["type"] == "camp" or Data.BUILDINGS[b["type"]]["kind"] == "power":
+## Each Kith is a small figure; haulers and hut workers show what they carry.
+func _draw_kith() -> void:
+	for i in state.kith.size():
+		var k: Dictionary = state.kith[i]
+		var c: Vector2 = MAP_ORIGIN + (k["pos"] + Vector2(0.5, 0.5)) * TILE
+		if k["path"].is_empty():
+			c += Vector2.from_angle(i * 2.4) * 9.0  # spread out anyone standing around
+		if k["job"] == "work" and k["phase"] != "to_site" and k["path"].is_empty() and k["phase"] != "harvest":
+			continue  # inside their building
+		var bob := sin(time * 12.0 + c.x) * 1.5 if not k["path"].is_empty() else 0.0
+		c += Vector2(0, bob)
+		_outlined_circle(c, 5.0, KITH.lightened(0.25) if k["job"] == "haul" else KITH)
+		for id in k["carry"]:
+			draw_rect(Rect2(c + Vector2(-4, -13), Vector2(8, 7)), Data.ITEMS[id]["color"])
+			draw_rect(Rect2(c + Vector2(-4, -13), Vector2(8, 7)), OUTLINE, false, 1.5)
+
+
+func _draw_roads() -> void:
+	var dirt := Data.BUILDINGS["road"]["color"]
+	for p in state.roads:
+		var c := _tile_center(p)
+		if state.tile_at(p) == "river":
+			draw_rect(_tile_rect(p).grow_individual(0, -5, 0, -5), Color("8d6e63"))
+			for i in 4:
+				var x := _tile_rect(p).position.x + 4 + i * 8
+				draw_line(Vector2(x, c.y - 11), Vector2(x, c.y + 11), OUTLINE, 1.5)
 			continue
-		var to := _tile_center(b["pos"])
-		draw_line(home, to, Color(0.95, 0.85, 0.6, 0.18), 1.5)
-		var t := fmod(time * 0.35 + i * 0.37, 1.0)
-		var k := 1.0 - absf(t * 2.0 - 1.0)  # out and back
-		_outlined_circle(home.lerp(to, k), 3.5, KITH.lightened(0.3))
+		draw_circle(c, 8.0, dirt)
+		for n in GameState.NEIGHBORS:
+			if state.roads.has(p + n) or state.building_at.has(p + n):
+				var half := Vector2(n) * TILE * 0.5
+				var w := Vector2(absf(n.y), absf(n.x)) * 8.0
+				draw_colored_polygon(
+					PackedVector2Array([c - w, c + w, c + half + w, c + half - w]), dirt
+				)
 
 
 func _outlined_circle(c: Vector2, radius: float, color: Color) -> void:

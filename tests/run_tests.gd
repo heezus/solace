@@ -22,6 +22,11 @@ func _init() -> void:
 	test_goals_advance_in_order()
 	test_hut_gather_preview_matches_placement()
 	test_shortfall_text()
+	test_kith_staff_buildings_in_order()
+	test_population_grows_with_food_and_room()
+	test_starving_kith_leave()
+	test_distance_slows_haulers()
+	test_roads_bridge_the_river()
 	print("FAILED: %d" % failures if failures > 0 else "ALL TESTS PASSED")
 	quit(1 if failures > 0 else 0)
 
@@ -221,3 +226,91 @@ func test_shortfall_text() -> void:
 	s.inv["stone"] = 10
 	s.inv["clay"] = 10
 	check(s.shortfall_text({"stone": 10, "clay": 10}) == "", "no shortfall when affordable")
+
+
+func place_free(s: GameState, type: String, p: Vector2i) -> bool:
+	s.add("wood", 100)
+	s.add("stone", 100)
+	s.add("fiber", 100)
+	s.researched[Data.BUILDINGS[type]["tech"]] = true
+	return s.place(type, p)
+
+
+func test_kith_staff_buildings_in_order() -> void:
+	var s := fresh()
+	s.inv["berries"] = 100
+	check(s.kith.size() == Data.KITH_START, "start with the starting Kith")
+	for i in 4:
+		place_free(s, "gatherers_hut", s.camp_pos + Vector2i(-2, i - 2))
+	s.tick(0.1)
+	var staffed := 0
+	for b in s.buildings:
+		if b["worker"] >= 0:
+			staffed += 1
+	check(staffed == Data.KITH_START, "one worker per building, as many as there are Kith")
+	var last: Dictionary = s.buildings[s.buildings.size() - 1]
+	check(last["worker"] == -1 and last["status"].begins_with("No worker"), "the newest building waits for a worker")
+
+
+func test_population_grows_with_food_and_room() -> void:
+	var s := fresh()
+	s.inv["berries"] = 200
+	for i in int(Data.GROW_TIME * 2 + 2):
+		s.tick(1.0)
+	check(s.kith.size() == s.housing(), "grows until the Camp is full")
+	check(s.growth_note().begins_with("No room"), "says it needs room")
+	place_free(s, "dwelling", s.camp_pos + Vector2i(0, 2))
+	for i in int(Data.GROW_TIME + 2):
+		s.tick(1.0)
+	check(s.kith.size() == s.housing() - 2, "a Dwelling makes room for more")
+
+
+func test_starving_kith_leave() -> void:
+	var s := fresh()
+	s.inv["berries"] = 0
+	s.food_credit = 0.0
+	for i in int(Data.STARVE_TIME + 1):
+		s.tick(1.0)
+	check(s.kith.size() == Data.KITH_START - 1, "a Kith leaves after starving")
+
+
+## Two identical charcoal pits, one next to the Camp and one far away: the near one delivers more.
+func haul_rate(dist_x: int) -> int:
+	var s := GameState.new()
+	s.tiles.resize(GameState.WIDTH * GameState.HEIGHT)
+	s.tiles.fill("grass")
+	s.camp_pos = Vector2i(1, 10)
+	s._place_building("camp", s.camp_pos)
+	s._build_walk_grid()
+	for i in Data.KITH_START:
+		s._add_kith()
+	s.inv["berries"] = 500
+	s.inv["wood"] = 500
+	s.researched["haulers"] = true
+	place_free(s, "charcoal_pit", s.camp_pos + Vector2i(dist_x, 0))
+	s.inv["charcoal"] = 0
+	for i in 600:
+		s.tick(0.25)
+	return s.inv["charcoal"]
+
+
+func test_distance_slows_haulers() -> void:
+	var near := haul_rate(2)
+	var far := haul_rate(30)
+	check(near > 0 and far > 0, "both pits deliver charcoal (near %d, far %d)" % [near, far])
+	check(near > far, "distance matters: near pit delivers more (near %d, far %d)" % [near, far])
+
+
+func test_roads_bridge_the_river() -> void:
+	var s := fresh()
+	var river := find_tile(s, "river")
+	var bank := river + Vector2i(-1, 0)
+	var far_bank := river + Vector2i(2, 0)
+	check(s.walk_cost(bank) >= 1.0, "no road: normal speed")
+	check(s.astar.is_point_solid(river), "the river blocks walking")
+	check(place_free(s, "road", river), "a road can cross the river")
+	check(place_free(s, "road", river + Vector2i(1, 0)), "both river tiles")
+	check(not s.astar.is_point_solid(river), "bridged river is walkable")
+	check(s.walk_cost(river) < 1.0, "roads are fast")
+	var path := s.astar.get_id_path(bank, far_bank)
+	check(river in path, "the path uses the bridge")

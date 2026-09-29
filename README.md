@@ -14,16 +14,21 @@ This is the **first playable**: the stone age loop with a lite tech tree, ending
 |---|---|
 | Gather from a tile | Left-click it |
 | Collect from / load a building (before haulers) | Left-click the building |
+| Lay roads | Pick Road, then click or drag |
 | Place a building | Pick it in the bottom bar, then left-click open grassland |
 | Stop placing | Right-click or Esc |
 | Tech tree | T, or the button in the bottom bar |
 | Craft | Craft buttons in the bottom bar |
 
 ## How the loop works
+- Follow the **Goals** panel on the right. The **Info** panel explains whatever you point at.
 - Click resources by hand at first. Knapping lets you craft Flint Tools, which doubles hand gathering.
-- A **Gatherer's Hut** is your first self-running building. It gathers from resource tiles within 2 tiles, and fills up until you click to collect.
-- **Paths & Haulers** makes every building feed and empty itself automatically. That's when the machine runs on its own.
-- Running buildings eat food (berries, or flour at 3x value). No food means they stop.
+- The **Kith** are your people, and each one is on the map. Every building needs one Kith to work it.
+  They eat food (berries, or flour at 3x value). They grow when there is spare food and room: the Camp houses 4, each **Dwelling** 3. If the food runs out, they stop working, and after a while one leaves.
+- A **Gatherer's Hut** sends its worker out to the resource tiles within 2 tiles and back, so a hut surrounded by resources is faster.
+- **Paths & Haulers** turns idle Kith into haulers. They walk goods between buildings and the nearest Camp or **Storehouse**, so distance matters.
+- **Roads** double walking speed, and a road across the river is a bridge. Click or drag to lay them.
+- Flour that research still needs is never eaten.
 - The **Water Wheel** must touch the river and powers machines within 3 tiles. The **Grindstone** needs power.
 - Research **Bronze Dawn** to end the stone age.
 - Somewhere on the map is a strange, glowing stone.

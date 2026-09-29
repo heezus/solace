@@ -35,11 +35,25 @@ const ITEM_ORDER := [
 	"flint_tools",
 ]
 
-## Food value of each edible item. Automated buildings eat from the stockpile.
+## Food value of each edible item. The Kith eat from the stockpile.
 const FOOD_VALUE := {"berries": 1.0, "flour": 3.0}
 
-## Food each running building eats per second.
-const FOOD_PER_BUILDING_PER_SEC := 0.05
+# --- The Kith (population) ---------------------------------------------------
+
+## Food each Kith eats per second.
+const FOOD_PER_KITH_PER_SEC := 0.02
+const KITH_START := 3
+## A new Kith is born every GROW_TIME seconds while there is room and food to spare. Birth costs BIRTH_FOOD.
+const GROW_TIME := 12.0
+const BIRTH_FOOD := 5.0
+## After this long with no food, one Kith leaves.
+const STARVE_TIME := 20.0
+## Tiles per second on open ground. Roads double it; forest and rocks halve it.
+const KITH_SPEED := 2.0
+## Items a hauler carries per trip.
+const CARRY := 5
+## Path cost of each tile kind. Rivers are impassable without a road (bridge).
+const WALK_COST := {"tree": 2.0, "rock": 2.0, "road": 0.5}
 
 # --- Map tiles ---------------------------------------------------------------
 
@@ -107,7 +121,7 @@ const TECHS := {
 		"name": "Paths & Haulers",
 		"requires": ["cordage", "gatherers_hut"],
 		"cost": {"rope": 10, "wood": 30},
-		"desc": "Haulers move goods between buildings and the Camp. Chains run hands-free.",
+		"desc": "Idle Kith carry goods between buildings and the stockpile. Unlocks Roads and Storehouses.",
 	},
 	"pottery":
 	{
@@ -179,8 +193,37 @@ const BUILDINGS := {
 		"kind": "camp",
 		"tech": "",
 		"cost": {},
+		"housing": 4,
 		"color": Color("e76f51"),
-		"desc": "The Kith's home and stockpile.",
+		"desc": "The Kith's home and stockpile. Houses 4.",
+	},
+	"dwelling":
+	{
+		"name": "Dwelling",
+		"kind": "house",
+		"tech": "",
+		"cost": {"wood": 12, "fiber": 6},
+		"housing": 3,
+		"color": Color("e9c46a"),
+		"desc": "Room for 3 more Kith. They grow when there is spare food.",
+	},
+	"road":
+	{
+		"name": "Road",
+		"kind": "road",
+		"tech": "haulers",
+		"cost": {"stone": 1},
+		"color": Color("c9a66b"),
+		"desc": "Kith walk twice as fast on roads. Lay one across the river to bridge it. Drag to paint.",
+	},
+	"storehouse":
+	{
+		"name": "Storehouse",
+		"kind": "depot",
+		"tech": "haulers",
+		"cost": {"wood": 20, "stone": 10},
+		"color": Color("8d6e63"),
+		"desc": "A second stockpile. Haulers drop off and pick up at the nearest one.",
 	},
 	"charcoal_pit":
 	{
@@ -255,7 +298,7 @@ const BUILDINGS := {
 	},
 }
 
-const BUILD_ORDER := ["charcoal_pit", "twine_post", "gatherers_hut", "kiln", "water_wheel", "grindstone"]
+const BUILD_ORDER := ["dwelling", "road", "storehouse", "charcoal_pit", "twine_post", "gatherers_hut", "kiln", "water_wheel", "grindstone"]
 
 ## Output a building holds before it stops, when nobody hauls it away.
 const BUFFER_CAP := 10
@@ -269,10 +312,12 @@ const GOALS := [
 	{"id": "tools", "text": "Craft Flint Tools (doubles hand gathering)"},
 	{"id": "hut_tech", "text": "Research Gatherer's Hut"},
 	{"id": "hut", "text": "Place a Gatherer's Hut next to trees or rocks"},
-	{"id": "berries", "text": "Place a hut near Berry Bushes. Running buildings eat food"},
+	{"id": "berries", "text": "Place a hut near Berry Bushes. The Kith eat food"},
+	{"id": "dwelling", "text": "Build a Dwelling. Kith grow when there's room and spare food"},
 	{"id": "charcoal", "text": "Research Fire, then build a Charcoal Pit"},
 	{"id": "twine", "text": "Research Cordage, then build a Twine Post"},
-	{"id": "haulers", "text": "Research Paths & Haulers so buildings run themselves"},
+	{"id": "haulers", "text": "Research Paths & Haulers: idle Kith carry goods for you"},
+	{"id": "road", "text": "Lay Roads out to far buildings. Kith walk twice as fast"},
 	{"id": "kiln", "text": "Research Pottery, then build a Kiln"},
 	{"id": "wheel", "text": "Research Water Wheel and build one on the river"},
 	{"id": "grind", "text": "Build a Grindstone within 3 tiles of the wheel"},
