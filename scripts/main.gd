@@ -203,7 +203,7 @@ func _build_tech_panel(layer: CanvasLayer) -> void:
 		var t: Dictionary = Data.TECHS[tech]
 		var card := PanelContainer.new()
 		card.custom_minimum_size = Vector2(290, 120)
-		card.add_theme_stylebox_override("panel", _panel_style(Color("457b9d"), 8))
+		card.add_theme_stylebox_override("panel", _panel_style(Color("32607f"), 8))
 		var cv := VBoxContainer.new()
 		card.add_child(cv)
 		var title := _label(t["name"], 17)
