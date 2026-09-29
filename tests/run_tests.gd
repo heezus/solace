@@ -27,6 +27,8 @@ func _init() -> void:
 	test_starving_kith_leave()
 	test_distance_slows_haulers()
 	test_roads_bridge_the_river()
+	test_tech_tree_is_a_web()
+	test_tech_effects()
 	print("FAILED: %d" % failures if failures > 0 else "ALL TESTS PASSED")
 	quit(1 if failures > 0 else 0)
 
@@ -171,7 +173,7 @@ func test_hungry_buildings_stop() -> void:
 func test_bronze_dawn_wins() -> void:
 	var s := fresh()
 	give(s, 999)
-	for t in ["pottery", "grindstone", "haulers"]:
+	for t in Data.TECHS["bronze_dawn"]["requires"]:
 		s.researched[t] = true
 	check(s.research("bronze_dawn"), "research bronze dawn")
 	check(s.won, "game is won")
@@ -180,15 +182,19 @@ func test_bronze_dawn_wins() -> void:
 func test_flour_is_kept_for_research() -> void:
 	var s := fresh()
 	s.inv["berries"] = 0
-	s.inv["flour"] = 30
+	var keep := 0
+	for tech in Data.TECHS:
+		keep += Data.TECHS[tech]["cost"].get("flour", 0)
+	s.inv["flour"] = keep
 	s.food_credit = 0.0
-	check(s.flour_reserve() == 30, "bronze dawn's flour is reserved")
+	check(keep > 0 and s.flour_reserve() == keep, "flour that research needs is reserved")
 	check(not s._eat(1.0), "reserved flour is not eaten")
-	check(s.inv["flour"] == 30, "flour untouched")
-	s.inv["flour"] = 31
+	check(s.inv["flour"] == keep, "flour untouched")
+	s.inv["flour"] = keep + 1
 	check(s._eat(1.0), "flour above the reserve is eaten")
-	check(s.inv["flour"] == 30, "only the spare flour was eaten")
-	s.researched["bronze_dawn"] = true
+	check(s.inv["flour"] == keep, "only the spare flour was eaten")
+	for tech in Data.TECHS:
+		s.researched[tech] = true
 	check(s.flour_reserve() == 0, "no reserve once researched")
 
 
@@ -232,6 +238,7 @@ func place_free(s: GameState, type: String, p: Vector2i) -> bool:
 	s.add("wood", 100)
 	s.add("stone", 100)
 	s.add("fiber", 100)
+	s.add("grain", 100)
 	s.researched[Data.BUILDINGS[type]["tech"]] = true
 	return s.place(type, p)
 
@@ -314,3 +321,52 @@ func test_roads_bridge_the_river() -> void:
 	check(s.walk_cost(river) < 1.0, "roads are fast")
 	var path := s.astar.get_id_path(bank, far_bank)
 	check(river in path, "the path uses the bridge")
+
+
+func test_tech_tree_is_a_web() -> void:
+	var roots := 0
+	var multi := 0
+	var positions := {}
+	for tech in Data.TECHS:
+		var t: Dictionary = Data.TECHS[tech]
+		roots += 1 if t["requires"].is_empty() else 0
+		multi += 1 if t["requires"].size() >= 2 else 0
+		for r in t["requires"]:
+			check(Data.TECHS.has(r), tech + " requires a real tech")
+			check(t["pos"].x > Data.TECHS[r]["pos"].x, tech + " sits right of " + r + " so arrows point forward")
+		check(not positions.has(t["pos"]), tech + " has its own spot in the tree")
+		positions[t["pos"]] = true
+		check(tech in Data.TECH_ORDER, tech + " is listed in TECH_ORDER")
+	check(roots >= 3, "several starting techs")
+	check(multi >= 6, "many techs join two branches")
+
+
+func test_tech_effects() -> void:
+	var s := fresh()
+	var r := s.hut_radius()
+	s.researched["scouting"] = true
+	check(s.hut_radius() == r + 1, "scouting widens hut reach")
+	var berry := find_tile(s, "berry")
+	s.inv["berries"] = 0
+	s.researched["foraging"] = true
+	s.gather_by_hand(berry)
+	check(s.inv["berries"] == 2, "foraging doubles berries")
+	check(s.carry_cap() == Data.CARRY, "normal carry")
+	s.researched["carrying_poles"] = true
+	check(s.carry_cap() == Data.CARRY * 2, "carrying poles double carry")
+	s.researched["baking"] = true
+	check(s.food_value("flour") == 5.0, "baking makes flour worth 5")
+	var h := s.housing()
+	place_free(s, "dwelling", s.camp_pos + Vector2i(0, 2))
+	s.researched["shelter"] = true
+	check(s.housing() == h + 5, "thatched dwellings house 5")
+	var road := s.camp_pos + Vector2i(1, 1)
+	place_free(s, "road", road)
+	var slow := s.walk_cost(road)
+	s.research("paved_roads")
+	s.researched["paved_roads"] = true
+	s._update_walk_cell(road)
+	check(s.walk_cost(road) < slow, "paved roads are faster")
+	var grass := find_grass(s, false)
+	check(place_free(s, "field", grass), "sow a field")
+	check(s.tile_at(grass) == "grain", "field grows grain")

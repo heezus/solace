@@ -155,6 +155,25 @@ func hand_yield() -> int:
 	return 2 if inv.get("flint_tools", 0) > 0 else 1
 
 
+## Foraging doubles berries, whoever gathers them.
+func _gather_mult(item: String) -> int:
+	return 2 if item == "berries" and researched.has("foraging") else 1
+
+
+func hut_radius() -> int:
+	return Data.BUILDINGS["gatherers_hut"]["radius"] + (1 if researched.has("scouting") else 0)
+
+
+func carry_cap() -> int:
+	return Data.CARRY * (2 if researched.has("carrying_poles") else 1)
+
+
+func food_value(id: String) -> float:
+	if id == "flour" and researched.has("baking"):
+		return 5.0
+	return Data.FOOD_VALUE[id]
+
+
 func gather_by_hand(p: Vector2i) -> String:
 	var tile := tile_at(p)
 	if tile == "shard":
@@ -164,7 +183,7 @@ func gather_by_hand(p: Vector2i) -> String:
 	var item: String = Data.TILES[tile]["yields"]
 	if item == "":
 		return ""
-	var n := hand_yield()
+	var n := hand_yield() * _gather_mult(item)
 	add(item, n)
 	return "+%d %s" % [n, Data.ITEMS[item]["name"]]
 
@@ -188,6 +207,9 @@ func research(tech: String) -> bool:
 		return false
 	pay(Data.TECHS[tech]["cost"])
 	researched[tech] = true
+	if tech == "paved_roads":
+		for p in roads:
+			_update_walk_cell(p)
 	events.append("Discovered %s" % Data.TECHS[tech]["name"])
 	if tech == "bronze_dawn":
 		won = true
@@ -234,6 +256,10 @@ func placement_error(type: String, p: Vector2i) -> String:
 		if tile_at(p) != "grass" and tile_at(p) != "river":
 			return "Roads go on grassland or across the river"
 		return "" if can_afford(def["cost"]) else "Not enough materials"
+	if def["kind"] == "field":
+		if tile_at(p) != "grass":
+			return "Fields go on open grassland"
+		return "" if can_afford(def["cost"]) else "Not enough materials"
 	if not Data.TILES[tile_at(p)]["buildable"]:
 		return "Build on open grassland"
 	if def.get("needs_river", false) and not touches_river(p):
@@ -249,6 +275,9 @@ func place(type: String, p: Vector2i) -> bool:
 	pay(Data.BUILDINGS[type]["cost"])
 	if Data.BUILDINGS[type]["kind"] == "road":
 		roads[p] = true
+		_update_walk_cell(p)
+	elif Data.BUILDINGS[type]["kind"] == "field":
+		_set_tile(p, "grain")
 		_update_walk_cell(p)
 	else:
 		_place_building(type, p)
@@ -281,7 +310,7 @@ func _place_building(type: String, p: Vector2i) -> void:
 
 ## Resource tiles a Gatherer's Hut at p would work (grass only if there is nothing else).
 func gather_tiles(p: Vector2i) -> Array:
-	var r: int = Data.BUILDINGS["gatherers_hut"]["radius"]
+	var r := hut_radius()
 	var found: Array = []
 	for dy in range(-r, r + 1):
 		for dx in range(-r, r + 1):
@@ -333,7 +362,7 @@ func haul(index: int) -> void:
 func food_total() -> float:
 	var total := 0.0
 	for id in Data.FOOD_VALUE:
-		total += inv.get(id, 0) * Data.FOOD_VALUE[id]
+		total += inv.get(id, 0) * food_value(id)
 	return total
 
 
@@ -359,7 +388,7 @@ func _update_walk_cell(p: Vector2i) -> void:
 ## Relative time to cross a tile: roads are fast, forest and rocks are slow.
 func walk_cost(p: Vector2i) -> float:
 	if roads.has(p):
-		return Data.WALK_COST["road"]
+		return Data.WALK_COST["road"] / (2.0 if researched.has("paved_roads") else 1.0)
 	return Data.WALK_COST.get(tile_at(p), 1.0)
 
 
@@ -424,6 +453,8 @@ func housing() -> int:
 	var total := 0
 	for b in buildings:
 		total += Data.BUILDINGS[b["type"]].get("housing", 0)
+		if b["type"] == "dwelling" and researched.has("shelter"):
+			total += 2
 	return total
 
 
@@ -539,7 +570,7 @@ func tick(delta: float) -> void:
 	if won:
 		return
 	_assign_jobs()
-	food_use = kith.size() * Data.FOOD_PER_KITH_PER_SEC
+	food_use = kith.size() * Data.FOOD_PER_KITH_PER_SEC * (0.75 if researched.has("preservation") else 1.0)
 	var fed := _eat(food_use * delta)
 	starving = not fed
 	_grow(delta, fed)
@@ -566,10 +597,10 @@ func _eat(need: float) -> bool:
 	while food_credit < need:
 		if inv.get("berries", 0) > 0:
 			inv["berries"] -= 1
-			food_credit += Data.FOOD_VALUE["berries"]
+			food_credit += food_value("berries")
 		elif inv.get("flour", 0) > flour_reserve():
 			inv["flour"] -= 1
-			food_credit += Data.FOOD_VALUE["flour"]
+			food_credit += food_value("flour")
 		else:
 			return false
 	food_credit -= need
@@ -607,7 +638,7 @@ func _tick_worker(k: Dictionary, delta: float) -> void:
 				b["progress"] = 0.0
 				var tile: Vector2i = k["task"].get("tile", b["pos"])
 				var item: String = Data.TILES[tile_at(tile)]["yields"] if tile != b["pos"] else "fiber"
-				k["carry"] = {item: 1}
+				k["carry"] = {item: _gather_mult(item)}
 				k["task"] = {}
 				_walk_to(k, b["pos"])
 				k["phase"] = "to_home"
@@ -642,7 +673,7 @@ func _tick_hauler(k: Dictionary, delta: float) -> void:
 	var b: Dictionary = buildings[t["building"]]
 	match k["phase"]:
 		"to_pickup":
-			var left := Data.CARRY
+			var left := carry_cap()
 			for id in b["out"].keys():
 				var n: int = mini(b["out"][id], left)
 				if n > 0:
@@ -700,7 +731,7 @@ func _find_haul_task(k: Dictionary) -> bool:
 		var def: Dictionary = Data.BUILDINGS[b["type"]]
 		for id in def.get("in", {}):
 			var want: int = def["in"][id] * 2 - b["inbuf"].get(id, 0) - b["incoming"].get(id, 0)
-			var n := mini(mini(want, inv.get(id, 0)), Data.CARRY)
+			var n := mini(mini(want, inv.get(id, 0)), carry_cap())
 			if n > 0:
 				best = {"kind": "deliver", "building": i, "item": id, "amount": n}
 				best_d = d
