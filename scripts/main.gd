@@ -5,7 +5,10 @@ const Data = preload("res://scripts/data.gd")
 const GameState = preload("res://scripts/game_state.gd")
 
 const TILE := 32.0
-const MAP_ORIGIN := Vector2(64, 48)
+const MAP_ORIGIN := Vector2.ZERO  # the node itself is moved and scaled to fit the window
+const GOAL_W := 300.0
+const READY := Color("ffd166")
+const SHORT := Color("ffb3c1")
 const OUTLINE := Color("1b1b1f")
 const OUTLINE_W := 2.5
 const KITH := Color("e76f51")
@@ -17,6 +20,13 @@ var time := 0.0
 var popups: Array = []  # {pos: Vector2, text: String, t: float}
 
 var item_labels := {}
+var kith_label: Label
+var food_label: Label
+var top_bar: PanelContainer
+var bottom_bar: PanelContainer
+var goal_step: Label
+var goal_text: Label
+var goal_hint: Label
 var build_buttons := {}
 var craft_buttons := {}
 var tech_cards := {}
@@ -37,6 +47,8 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	time += delta
+	_fit_map()
+	hover = _tile_under(get_local_mouse_position())
 	state.tick(delta)
 	for e in state.events:
 		_toast(e, 3.0)
@@ -59,10 +71,8 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventMouseMotion:
-		hover = _tile_under(event.position)
-	elif event is InputEventMouseButton and event.pressed:
-		var p := _tile_under(event.position)
+	if event is InputEventMouseButton and event.pressed:
+		var p := _tile_under(to_local(event.position))
 		if event.button_index == MOUSE_BUTTON_RIGHT:
 			placing = ""
 		elif event.button_index == MOUSE_BUTTON_LEFT and state.in_bounds(p):
@@ -76,9 +86,22 @@ func _unhandled_input(event: InputEvent) -> void:
 				tech_panel.visible = false
 
 
-func _tile_under(screen_pos: Vector2) -> Vector2i:
-	var local := (screen_pos - MAP_ORIGIN) / TILE
-	return Vector2i(floori(local.x), floori(local.y))
+## `local` is in this node's coordinates (see _fit_map).
+func _tile_under(local: Vector2) -> Vector2i:
+	var t := (local - MAP_ORIGIN) / TILE
+	return Vector2i(floori(t.x), floori(t.y))
+
+
+## Scale and center the map in the space between the bars, left of the goal panel.
+func _fit_map() -> void:
+	var vp := get_viewport_rect().size
+	var top_h := top_bar.size.y + 12.0
+	var bottom_h := bottom_bar.size.y + 36.0  # room for the hover line
+	var avail := Rect2(Vector2(16, top_h), Vector2(vp.x - GOAL_W - 40.0, vp.y - top_h - bottom_h))
+	var map_px := Vector2(GameState.WIDTH, GameState.HEIGHT) * TILE
+	var sc := maxf(minf(avail.size.x / map_px.x, avail.size.y / map_px.y), 0.1)
+	scale = Vector2(sc, sc)
+	position = (avail.position + (avail.size - map_px * sc) / 2.0).round()
 
 
 func _click_tile(p: Vector2i) -> void:
@@ -111,49 +134,77 @@ func _build_ui() -> void:
 	add_child(layer)
 
 	# Top bar: the stockpile.
-	var top := PanelContainer.new()
-	top.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	top.add_theme_stylebox_override("panel", _panel_style(Color("264653")))
-	layer.add_child(top)
-	var items := HBoxContainer.new()
-	items.add_theme_constant_override("separation", 14)
-	top.add_child(items)
+	top_bar = PanelContainer.new()
+	top_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	top_bar.add_theme_stylebox_override("panel", _panel_style(Color("264653")))
+	layer.add_child(top_bar)
+	var items := HFlowContainer.new()
+	items.add_theme_constant_override("h_separation", 14)
+	top_bar.add_child(items)
+	kith_label = _label("", 15)
+	kith_label.mouse_filter = Control.MOUSE_FILTER_PASS
+	kith_label.tooltip_text = (
+		(
+			"Your people. Every hut and workshop needs one Kith to run.\n"
+			+ "Keep %d food stored per Kith and a new one joins every %d seconds.\n"
+			+ "With no food, Kith leave."
+		)
+		% [int(Data.GROWTH_FOOD_PER_KITH), int(Data.GROWTH_SECONDS)]
+	)
+	items.add_child(kith_label)
+	food_label = _label("", 15)
+	food_label.mouse_filter = Control.MOUSE_FILTER_PASS
+	food_label.tooltip_text = (
+		(
+			"Berries are worth 1 food and Flour 3. Each Kith eats 1 food every %d seconds.\n"
+			+ "Flour needed for research is kept back and never eaten."
+		)
+		% roundi(1.0 / Data.FOOD_PER_KITH_PER_SEC)
+	)
+	items.add_child(food_label)
+	items.add_child(VSeparator.new())
 	for id in Data.ITEM_ORDER:
-		var swatch := ColorRect.new()
-		swatch.color = Data.ITEMS[id]["color"]
-		swatch.custom_minimum_size = Vector2(12, 12)
-		swatch.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		items.add_child(swatch)
+		var box := HBoxContainer.new()
+		box.add_theme_constant_override("separation", 5)
+		box.tooltip_text = _item_tooltip(id)
+		items.add_child(box)
+		box.add_child(_swatch(Data.ITEMS[id]["color"], 12))
 		var l := _label("", 15)
-		l.tooltip_text = Data.ITEMS[id]["name"]
 		l.mouse_filter = Control.MOUSE_FILTER_PASS
-		items.add_child(l)
+		box.add_child(l)
 		item_labels[id] = l
 
 	# Bottom bar: build, craft, tech.
-	var bottom := PanelContainer.new()
-	bottom.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	bottom.add_theme_stylebox_override("panel", _panel_style(Color("264653")))
-	layer.add_child(bottom)
+	bottom_bar = PanelContainer.new()
+	bottom_bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	bottom_bar.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	bottom_bar.add_theme_stylebox_override("panel", _panel_style(Color("264653")))
+	layer.add_child(bottom_bar)
 	var bar := HBoxContainer.new()
 	bar.add_theme_constant_override("separation", 8)
-	bottom.add_child(bar)
+	bottom_bar.add_child(bar)
+	var flow := HFlowContainer.new()
+	flow.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	flow.add_theme_constant_override("h_separation", 8)
+	flow.add_theme_constant_override("v_separation", 6)
+	bar.add_child(flow)
+	flow.add_child(_label("Build:", 14))
 	for type in Data.BUILD_ORDER:
 		var b := _button(Data.BUILDINGS[type]["name"])
+		b.icon = _swatch_tex(Data.TECHS[Data.BUILDINGS[type]["tech"]]["color"])
 		b.pressed.connect(func(): placing = "" if placing == type else type)
-		bar.add_child(b)
+		flow.add_child(b)
 		build_buttons[type] = b
-	bar.add_child(VSeparator.new())
+	flow.add_child(VSeparator.new())
+	flow.add_child(_label("Craft by hand:", 14))
 	for r in Data.RECIPES:
 		var b := _button("Craft " + Data.RECIPES[r]["name"])
+		b.icon = _swatch_tex(Data.TECHS[Data.RECIPES[r]["tech"]]["color"])
 		b.pressed.connect(func(): state.craft(r))
-		bar.add_child(b)
+		flow.add_child(b)
 		craft_buttons[r] = b
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	bar.add_child(spacer)
 	var tech_btn := _button("Tech Tree (T)")
+	tech_btn.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	tech_btn.pressed.connect(func(): tech_panel.visible = not tech_panel.visible)
 	bar.add_child(tech_btn)
 
@@ -166,6 +217,11 @@ func _build_ui() -> void:
 	info_label.add_theme_color_override("font_outline_color", OUTLINE)
 	info_label.add_theme_constant_override("outline_size", 6)
 	layer.add_child(info_label)
+	bottom_bar.resized.connect(
+		func():
+			info_label.offset_bottom = -bottom_bar.size.y - 4.0
+			info_label.offset_top = info_label.offset_bottom - 24.0
+	)
 
 	# Toasts, centered under the top bar.
 	toast_label = _label("", 17)
@@ -180,8 +236,37 @@ func _build_ui() -> void:
 	toast_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(toast_label)
 
+	_build_goal_panel(layer)
 	_build_tech_panel(layer)
 	_build_win_overlay(layer)
+
+
+func _build_goal_panel(layer: CanvasLayer) -> void:
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", _panel_style(Color("1d3557"), 12))
+	panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	panel.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	panel.offset_left = -GOAL_W - 12.0
+	panel.offset_right = -12
+	panel.offset_top = 64
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(panel)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 6)
+	panel.add_child(v)
+	goal_step = _label("", 12)
+	goal_step.add_theme_color_override("font_color", READY)
+	v.add_child(goal_step)
+	goal_text = _label("", 18)
+	goal_text.autowrap_mode = TextServer.AUTOWRAP_WORD
+	goal_text.custom_minimum_size = Vector2(GOAL_W - 24.0, 0)
+	v.add_child(goal_text)
+	goal_hint = _label("", 13)
+	goal_hint.autowrap_mode = TextServer.AUTOWRAP_WORD
+	goal_hint.custom_minimum_size = Vector2(GOAL_W - 24.0, 0)
+	v.add_child(goal_hint)
+	# Keep it under the top bar, which wraps to two rows on narrow windows.
+	top_bar.resized.connect(func(): panel.offset_top = top_bar.size.y + 12.0)
 
 
 func _build_tech_panel(layer: CanvasLayer) -> void:
@@ -194,6 +279,8 @@ func _build_tech_panel(layer: CanvasLayer) -> void:
 	v.add_theme_constant_override("separation", 10)
 	tech_panel.add_child(v)
 	v.add_child(_label("Stone Age: Tech Tree", 22))
+	var key := _label("Each tech has a color. Its chips under Needs and Leads to show how the tree connects.", 12)
+	v.add_child(key)
 	var grid := GridContainer.new()
 	grid.columns = 3
 	grid.add_theme_constant_override("h_separation", 10)
@@ -203,22 +290,29 @@ func _build_tech_panel(layer: CanvasLayer) -> void:
 		var t: Dictionary = Data.TECHS[tech]
 		var card := PanelContainer.new()
 		card.custom_minimum_size = Vector2(290, 120)
-		card.add_theme_stylebox_override("panel", _panel_style(Color("32607f"), 8))
+		var style := _panel_style(Color("32607f"), 8)
+		card.add_theme_stylebox_override("panel", style)
 		var cv := VBoxContainer.new()
+		cv.add_theme_constant_override("separation", 4)
 		card.add_child(cv)
-		var title := _label(t["name"], 17)
-		cv.add_child(title)
+		var head := HBoxContainer.new()
+		head.add_theme_constant_override("separation", 8)
+		head.add_child(_swatch(t["color"], 16))
+		head.add_child(_label(t["name"], 17))
+		cv.add_child(head)
 		var desc := _label(t["desc"], 12)
 		desc.autowrap_mode = TextServer.AUTOWRAP_WORD
 		desc.custom_minimum_size = Vector2(270, 0)
 		cv.add_child(desc)
-		var needs := _label("", 12)
-		cv.add_child(needs)
+		var chips := {}
+		cv.add_child(_chip_row("Needs:", t["requires"], chips))
+		var leads: Array = Data.TECH_ORDER.filter(func(o): return tech in Data.TECHS[o]["requires"])
+		cv.add_child(_chip_row("Leads to:", leads, {}))
 		var btn := _button("Research: " + _cost_text(t["cost"]))
 		btn.pressed.connect(func(): state.research(tech))
 		cv.add_child(btn)
 		grid.add_child(card)
-		tech_cards[tech] = {"card": card, "needs": needs, "button": btn}
+		tech_cards[tech] = {"card": card, "style": style, "chips": chips, "button": btn}
 	var close := _button("Close")
 	close.pressed.connect(func(): tech_panel.visible = false)
 	v.add_child(close)
@@ -251,42 +345,88 @@ func _build_win_overlay(layer: CanvasLayer) -> void:
 
 func _refresh_ui() -> void:
 	for id in item_labels:
-		item_labels[id].text = "%s %d" % [Data.ITEMS[id]["name"], state.inv.get(id, 0)]
-		item_labels[id].visible = state.inv.get(id, 0) > 0 or id in ["wood", "stone", "berries"]
+		var n: int = state.inv.get(id, 0)
+		var l: Label = item_labels[id]
+		var kept := state.research_reserve(id) if Data.FOOD_VALUE.has(id) else 0
+		l.text = "%s %d" % [Data.ITEMS[id]["name"], n] + (" (%d kept)" % mini(n, kept) if kept > 0 and n > 0 else "")
+		l.add_theme_color_override("font_color", SHORT if n == 0 else Color.WHITE)
+	var jobs := state.workers_needed()
+	kith_label.text = "Kith %d  (jobs %d/%d)" % [state.population, mini(jobs, state.population), jobs]
+	kith_label.add_theme_color_override("font_color", SHORT if jobs > state.population else READY)
+	var food := state.food_total()
+	food_label.text = "Food %d  (-%.2f/s)" % [floori(food), state.food_per_sec()]
+	if not state.fed:
+		food_label.text = "Food 0: HUNGRY"
+	food_label.add_theme_color_override("font_color", SHORT if not state.fed or food < 5.0 else READY)
 	for type in build_buttons:
 		var b: Button = build_buttons[type]
 		var def: Dictionary = Data.BUILDINGS[type]
-		b.visible = state.building_unlocked(type)
-		b.text = ("> " if placing == type else "") + def["name"] + " (" + _cost_text(def["cost"]) + ")"
-		b.disabled = not state.can_afford(def["cost"]) and placing != type
-		b.tooltip_text = def["desc"]
+		b.disabled = not state.building_unlocked(type) or (not state.can_afford(def["cost"]) and placing != type)
+		if not state.building_unlocked(type):
+			b.text = "%s: needs %s" % [def["name"], Data.TECHS[def["tech"]]["name"]]
+		elif placing == type:
+			b.text = "> Placing %s (right-click to stop)" % def["name"]
+		elif not state.can_afford(def["cost"]):
+			b.text = "%s: short %s" % [def["name"], _short_text(def["cost"])]
+		else:
+			b.text = "%s (%s)" % [def["name"], _cost_text(def["cost"])]
+		b.tooltip_text = "%s\nCost: %s" % [def["desc"], _cost_text(def["cost"])]
 	for r in craft_buttons:
 		var b: Button = craft_buttons[r]
 		var rec: Dictionary = Data.RECIPES[r]
-		b.visible = state.recipe_unlocked(r)
-		b.text = "Craft %s (%s)" % [rec["name"], _cost_text(rec["in"])]
-		b.disabled = not state.can_afford(rec["in"])
+		b.disabled = not state.recipe_unlocked(r) or not state.can_afford(rec["in"])
+		if not state.recipe_unlocked(r):
+			b.text = "Craft %s: needs %s" % [rec["name"], Data.TECHS[rec["tech"]]["name"]]
+		elif not state.can_afford(rec["in"]):
+			b.text = "Craft %s: short %s" % [rec["name"], _short_text(rec["in"])]
+		else:
+			b.text = "Craft %s (%s)" % [rec["name"], _cost_text(rec["in"])]
 	for tech in tech_cards:
 		var c: Dictionary = tech_cards[tech]
 		var done: bool = state.researched.has(tech)
-		var req: Array = Data.TECHS[tech]["requires"]
-		var names: Array = req.map(func(r): return Data.TECHS[r]["name"])
-		c["needs"].text = "Needs: " + (", ".join(names) if not names.is_empty() else "nothing")
+		for req in c["chips"]:
+			c["chips"][req].modulate = Color.WHITE if state.researched.has(req) else Color(1, 1, 1, 0.5)
 		c["button"].disabled = not state.can_research(tech)
-		c["button"].text = "Discovered" if done else "Research: " + _cost_text(Data.TECHS[tech]["cost"])
-		c["card"].modulate = Color(1, 1, 1, 1) if done or state.requirements_met(tech) else Color(1, 1, 1, 0.45)
+		if done:
+			c["button"].text = "Discovered"
+		elif not state.requirements_met(tech):
+			c["button"].text = "Locked: research its Needs first"
+		elif not state.can_afford(Data.TECHS[tech]["cost"]):
+			c["button"].text = "Short " + _short_text(Data.TECHS[tech]["cost"])
+		else:
+			c["button"].text = "Research: " + _cost_text(Data.TECHS[tech]["cost"])
+		var style: StyleBoxFlat = c["style"]
+		style.border_color = READY if state.can_research(tech) else OUTLINE
+		style.bg_color = Color("24475e") if done else Color("32607f")
+		c["card"].modulate = Color(1, 1, 1, 1) if done or state.requirements_met(tech) else Color(1, 1, 1, 0.55)
+	var goal := state.current_goal()
+	if goal.is_empty():
+		goal_step.text = "ALL GOALS DONE"
+		goal_text.text = "The stone age is yours."
+		goal_hint.text = ""
+	else:
+		goal_step.text = "GOAL %d OF %d" % [state.goal_index + 1, Data.GOALS.size()]
+		goal_text.text = goal["text"]
+		goal_hint.text = goal["hint"]
 	info_label.text = _hover_text()
 
 
 func _hover_text() -> String:
 	if placing != "":
 		var err := state.placement_error(placing, hover) if state.in_bounds(hover) else ""
-		return "Placing %s. %s Right-click to stop." % [Data.BUILDINGS[placing]["name"], err + "." if err != "" else ""]
+		var s := "Placing %s. " % Data.BUILDINGS[placing]["name"]
+		if err != "":
+			s += err + ". "
+		if Data.BUILDINGS[placing]["kind"] == "gatherer" and state.in_bounds(hover):
+			s += "Will gather: %s. " % state.gather_summary(placing, hover)
+		return s + "Right-click to stop."
 	if not state.in_bounds(hover):
 		return ""
 	if state.building_at.has(hover):
 		var b: Dictionary = state.buildings[state.building_at[hover]]
 		var s: String = Data.BUILDINGS[b["type"]]["name"] + ": " + b["status"]
+		if Data.BUILDINGS[b["type"]]["kind"] == "gatherer":
+			s += "  |  Gathers " + state.gather_summary(b["type"], hover)
 		if state.buffered(b["out"]) > 0:
 			s += "  |  Holding " + _cost_text(b["out"])
 		return s
@@ -306,6 +446,72 @@ func _cost_text(cost: Dictionary) -> String:
 	for id in cost:
 		parts.append("%d %s" % [cost[id], Data.ITEMS[id]["name"]])
 	return ", ".join(parts)
+
+
+## What still needs gathering: "10 Clay, 2 Wood".
+func _short_text(cost: Dictionary) -> String:
+	var parts: Array = []
+	for id in cost:
+		var short: int = cost[id] - state.inv.get(id, 0)
+		if short > 0:
+			parts.append("%d %s" % [short, Data.ITEMS[id]["name"]])
+	return ", ".join(parts)
+
+
+## Explains an item: whether it's food, and everything that uses it.
+func _item_tooltip(id: String) -> String:
+	var lines: Array = [Data.ITEMS[id]["name"]]
+	if Data.FOOD_VALUE.has(id):
+		lines.append("Food: worth %d. The Kith eat it to stay and to grow." % int(Data.FOOD_VALUE[id]))
+	var uses: Array = []
+	for tech in Data.TECH_ORDER:
+		if Data.TECHS[tech]["cost"].has(id):
+			uses.append(Data.TECHS[tech]["name"] + " (research)")
+	for type in Data.BUILD_ORDER:
+		var def: Dictionary = Data.BUILDINGS[type]
+		if def["cost"].has(id) or def.get("in", {}).has(id):
+			uses.append(def["name"])
+	for r in Data.RECIPES:
+		if Data.RECIPES[r]["in"].has(id):
+			uses.append("Craft " + Data.RECIPES[r]["name"])
+	if id == "flint_tools":
+		lines.append("Held tools double what you gather by hand.")
+	if not uses.is_empty():
+		lines.append("Used for: " + ", ".join(uses))
+	return "\n".join(lines)
+
+
+## "Needs:" or "Leads to:" followed by a color chip per tech. Fills `out` with tech -> chip.
+func _chip_row(title: String, techs: Array, out: Dictionary) -> Control:
+	var row := HFlowContainer.new()
+	row.add_theme_constant_override("h_separation", 10)
+	row.add_child(_label(title, 12))
+	if techs.is_empty():
+		row.add_child(_label("nothing", 12))
+	for tech in techs:
+		var chip := HBoxContainer.new()
+		chip.add_theme_constant_override("separation", 4)
+		chip.add_child(_swatch(Data.TECHS[tech]["color"], 11))
+		chip.add_child(_label(Data.TECHS[tech]["name"], 12))
+		row.add_child(chip)
+		out[tech] = chip
+	return row
+
+
+func _swatch_tex(color: Color, size: int = 14) -> ImageTexture:
+	var img := Image.create_empty(size, size, false, Image.FORMAT_RGBA8)
+	img.fill(OUTLINE)
+	img.fill_rect(Rect2i(2, 2, size - 4, size - 4), color)
+	return ImageTexture.create_from_image(img)
+
+
+func _swatch(color: Color, size: int) -> TextureRect:
+	var r := TextureRect.new()
+	r.texture = _swatch_tex(color, size)
+	r.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	r.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	r.mouse_filter = Control.MOUSE_FILTER_PASS
+	return r
 
 
 func _label(text: String, size: int) -> Label:
@@ -370,6 +576,7 @@ func _draw() -> void:
 	# Power range while placing power, and haul paths.
 	if placing == "water_wheel" and state.in_bounds(hover):
 		draw_circle(_tile_center(hover), Data.BUILDINGS["water_wheel"]["radius"] * TILE, Color(0.16, 0.62, 0.56, 0.18))
+	_draw_gather_range()
 	if state.has_haulers():
 		_draw_haulers()
 
@@ -505,6 +712,28 @@ func _draw_building(b: Dictionary) -> void:
 		)
 
 
+## While placing a Gatherer's Hut or hovering one: its range, and the tiles it will work.
+func _draw_gather_range() -> void:
+	var center := Vector2i(-1, -1)
+	var type := ""
+	if placing != "" and Data.BUILDINGS[placing]["kind"] == "gatherer" and state.in_bounds(hover):
+		center = hover
+		type = placing
+	elif placing == "" and state.building_at.has(hover):
+		var b: Dictionary = state.buildings[state.building_at[hover]]
+		if Data.BUILDINGS[b["type"]]["kind"] == "gatherer":
+			center = hover
+			type = b["type"]
+	if type == "":
+		return
+	var r: int = Data.BUILDINGS[type]["radius"]
+	var area := Rect2(_tile_rect(center - Vector2i(r, r)).position, Vector2.ONE * TILE * (r * 2 + 1))
+	draw_rect(area, Color(1, 0.85, 0.4, 0.14))
+	draw_rect(area, READY, false, 2.0)
+	for spot in state.gather_spots(type, center):
+		draw_rect(_tile_rect(spot).grow(-3), READY, false, 3.0)
+
+
 func _draw_haulers() -> void:
 	var home := _tile_center(state.camp_pos)
 	for i in state.buildings.size():
@@ -512,7 +741,8 @@ func _draw_haulers() -> void:
 		if b["type"] == "camp" or Data.BUILDINGS[b["type"]]["kind"] == "power":
 			continue
 		var to := _tile_center(b["pos"])
-		draw_line(home, to, Color(0.95, 0.85, 0.6, 0.35), 3.0)
+		if b["pos"] == hover:
+			draw_line(home, to, Color(0.95, 0.85, 0.6, 0.6), 2.0)
 		var t := fmod(time * 0.35 + i * 0.37, 1.0)
 		var k := 1.0 - absf(t * 2.0 - 1.0)  # out and back
 		_outlined_circle(home.lerp(to, k), 3.5, KITH.lightened(0.3))

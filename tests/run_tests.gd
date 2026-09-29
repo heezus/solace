@@ -18,6 +18,10 @@ func _init() -> void:
 	test_grindstone_needs_power()
 	test_hungry_buildings_stop()
 	test_bronze_dawn_wins()
+	test_food_grows_population()
+	test_extra_buildings_need_kith()
+	test_flour_is_kept_for_research()
+	test_gather_summary_and_goals()
 	print("FAILED: %d" % failures if failures > 0 else "ALL TESTS PASSED")
 	quit(1 if failures > 0 else 0)
 
@@ -166,3 +170,59 @@ func test_bronze_dawn_wins() -> void:
 		s.researched[t] = true
 	check(s.research("bronze_dawn"), "research bronze dawn")
 	check(s.won, "game is won")
+
+
+func test_food_grows_population() -> void:
+	var s := fresh()
+	s.inv["berries"] = 100
+	for i in 40:
+		s.tick(1.0)
+	check(s.population > Data.START_POPULATION, "spare food grows the population")
+	s.inv["berries"] = 0
+	s.food_credit = 0.0
+	var before := s.population
+	for i in 30:
+		s.tick(1.0)
+	check(s.population < before, "no food shrinks the population")
+	check(s.population >= 1, "never below one Kith")
+
+
+func test_extra_buildings_need_kith() -> void:
+	var s := fresh()
+	give(s, 500)
+	s.researched["fire"] = true
+	var placed := 0
+	for y in GameState.HEIGHT:
+		for x in GameState.WIDTH:
+			if placed < Data.START_POPULATION + 1 and s.place("charcoal_pit", Vector2i(x, y)):
+				placed += 1
+	for b in s.buildings:
+		b["inbuf"]["wood"] = 10  # loaded, so each one wants to work
+	s.tick(0.1)
+	var unstaffed := 0
+	for b in s.buildings:
+		if b["status"].begins_with("No worker"):
+			unstaffed += 1
+	check(unstaffed == 1, "one building more than the Kith has no worker")
+
+
+func test_flour_is_kept_for_research() -> void:
+	var s := fresh()
+	s.inv["berries"] = 0
+	s.inv["flour"] = 35
+	check(s.edible("flour") == 5, "flour beyond the Bronze Dawn cost is edible")
+	for i in 400:
+		s.tick(1.0)
+	check(s.inv["flour"] == 30, "the Kith never eat the flour research needs")
+	s.researched["bronze_dawn"] = true
+	check(s.edible("flour") == 30, "flour is all food once research is done")
+
+
+func test_gather_summary_and_goals() -> void:
+	var s := fresh()
+	var p := s.camp_pos + Vector2i(-2, 0)
+	check(s.gather_summary("gatherers_hut", p).contains("Wood"), "hut by the forest will gather wood")
+	check(s.current_goal()["kind"] == "items", "first goal is gathering")
+	s.inv["wood"] = 10
+	s.inv["stone"] = 5
+	check(s.current_goal()["id"] == "fire", "goals advance when done")

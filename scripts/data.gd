@@ -35,11 +35,21 @@ const ITEM_ORDER := [
 	"flint_tools",
 ]
 
-## Food value of each edible item. Automated buildings eat from the stockpile.
+## Food value of each edible item. The Kith eat from the stockpile.
 const FOOD_VALUE := {"berries": 1.0, "flour": 3.0}
 
 ## Food each running building eats per second.
-const FOOD_PER_BUILDING_PER_SEC := 0.05
+# --- Population --------------------------------------------------------------
+## The Kith eat food. Spare food grows the population; every working building
+## needs one Kith, so food sets how many buildings can run.
+
+const START_POPULATION := 3
+const FOOD_PER_KITH_PER_SEC := 0.05
+## A new Kith joins every GROWTH_SECONDS while stored food covers this much per Kith.
+const GROWTH_SECONDS := 15.0
+const GROWTH_FOOD_PER_KITH := 3.0
+## With no food, one Kith is lost every STARVE_SECONDS (never the last one).
+const STARVE_SECONDS := 10.0
 
 # --- Map tiles ---------------------------------------------------------------
 
@@ -67,6 +77,7 @@ const TECHS := {
 	"fire":
 	{
 		"name": "Fire",
+		"color": Color("ff7b39"),
 		"requires": [],
 		"cost": {"wood": 10, "stone": 5},
 		"desc": "Tame flame. Unlocks the Charcoal Pit.",
@@ -74,6 +85,7 @@ const TECHS := {
 	"knapping":
 	{
 		"name": "Knapping",
+		"color": Color("d9d9d9"),
 		"requires": [],
 		"cost": {"flint": 5, "stone": 10},
 		"desc": "Shape flint. Craft Flint Tools to gather twice as much by hand.",
@@ -81,6 +93,7 @@ const TECHS := {
 	"cordage":
 	{
 		"name": "Cordage",
+		"color": Color("e9c46a"),
 		"requires": [],
 		"cost": {"fiber": 15},
 		"desc": "Twist fiber into rope. Unlocks hand-made Rope and the Twine Post.",
@@ -88,6 +101,7 @@ const TECHS := {
 	"gatherers_hut":
 	{
 		"name": "Gatherer's Hut",
+		"color": Color("90be6d"),
 		"requires": ["knapping"],
 		"cost": {"wood": 20, "stone": 10},
 		"desc": "Your first self-running building. A worker gathers from nearby tiles.",
@@ -95,6 +109,7 @@ const TECHS := {
 	"haulers":
 	{
 		"name": "Paths & Haulers",
+		"color": Color("f28482"),
 		"requires": ["cordage", "gatherers_hut"],
 		"cost": {"rope": 10, "wood": 30},
 		"desc": "Haulers move goods between buildings and the Camp. Chains run hands-free.",
@@ -102,6 +117,7 @@ const TECHS := {
 	"pottery":
 	{
 		"name": "Pottery",
+		"color": Color("ffb4a2"),
 		"requires": ["fire"],
 		"cost": {"clay": 20, "charcoal": 10},
 		"desc": "Fire clay. Unlocks the Kiln (clay + charcoal into brick).",
@@ -109,6 +125,7 @@ const TECHS := {
 	"water_wheel":
 	{
 		"name": "Water Wheel",
+		"color": Color("4cc9f0"),
 		"requires": ["cordage", "knapping"],
 		"cost": {"rope": 10, "wood": 40, "stone": 20},
 		"desc": "Harness the river. Powers machines within 3 tiles.",
@@ -116,6 +133,7 @@ const TECHS := {
 	"grindstone":
 	{
 		"name": "Grindstone",
+		"color": Color("b8b8ff"),
 		"requires": ["water_wheel", "pottery"],
 		"cost": {"stone": 30, "brick": 10},
 		"desc": "A powered millstone. Grinds grain into flour, the best food.",
@@ -123,6 +141,7 @@ const TECHS := {
 	"bronze_dawn":
 	{
 		"name": "Bronze Dawn",
+		"color": Color("e3a857"),
 		"requires": ["pottery", "grindstone", "haulers"],
 		"cost": {"brick": 40, "flour": 30, "rope": 40, "stone": 100},
 		"desc": "The stone age ends. The next era begins.",
@@ -238,6 +257,56 @@ const BUILDINGS := {
 }
 
 const BUILD_ORDER := ["charcoal_pit", "twine_post", "gatherers_hut", "kiln", "water_wheel", "grindstone"]
+
+# --- Goals -------------------------------------------------------------------
+## The on-screen goal list that walks a new player through the stone age.
+## kind: "items" (have `need` in the stockpile), "tech", "build" (own one), "population".
+
+const GOALS := [
+	{
+		"text": "Gather 10 Wood and 5 Stone",
+		"hint": "Click the forests and rocks around the Camp.",
+		"kind": "items",
+		"need": {"wood": 10, "stone": 5},
+	},
+	{"text": "Research Fire", "hint": "Press T to open the tech tree.", "kind": "tech", "id": "fire"},
+	{
+		"text": "Research Knapping",
+		"hint": "Flint comes from the riverbed gravel to the east. Click it.",
+		"kind": "tech",
+		"id": "knapping",
+	},
+	{
+		"text": "Research Gatherer's Hut",
+		"hint": "Your first building that works on its own.",
+		"kind": "tech",
+		"id": "gatherers_hut",
+	},
+	{
+		"text": "Build a Gatherer's Hut",
+		"hint": "Pick it in the Build bar. The highlight shows what it will gather. Near berries feeds the Kith.",
+		"kind": "build",
+		"id": "gatherers_hut",
+	},
+	{
+		"text": "Grow to 5 Kith",
+		"hint": "Every building needs a Kith. Keep 3 food per Kith stored and more join.",
+		"kind": "population",
+		"n": 5,
+	},
+	{
+		"text": "Research Paths & Haulers",
+		"hint": "Needs Cordage too. After this, buildings load and empty themselves.",
+		"kind": "tech",
+		"id": "haulers",
+	},
+	{
+		"text": "Research Bronze Dawn",
+		"hint": "Needs Pottery, Grindstone and Haulers. This ends the stone age.",
+		"kind": "tech",
+		"id": "bronze_dawn",
+	},
+]
 
 ## Output a building holds before it stops, when nobody hauls it away.
 const BUFFER_CAP := 10

@@ -16,6 +16,11 @@ var building_at: Dictionary = {}  # Vector2i -> index into buildings
 var camp_pos := Vector2i.ZERO
 var shard_pos := Vector2i(-1, -1)
 var food_credit := 5.0
+var population: int = Data.START_POPULATION
+var growth_timer := 0.0
+var starve_timer := 0.0
+var fed := true
+var goal_index := 0
 var won := false
 var events: Array = []  # messages for the UI to show and clear
 
@@ -23,7 +28,7 @@ var events: Array = []  # messages for the UI to show and clear
 func _init() -> void:
 	for id in Data.ITEM_ORDER:
 		inv[id] = 0
-	inv["berries"] = 10
+	inv["berries"] = 20
 
 
 # --- Map ---------------------------------------------------------------------
@@ -230,16 +235,39 @@ func _place_building(type: String, p: Vector2i) -> void:
 		"gather_index": 0,
 	}
 	if Data.BUILDINGS[type]["kind"] == "gatherer":
-		var r: int = Data.BUILDINGS[type]["radius"]
-		for dy in range(-r, r + 1):
-			for dx in range(-r, r + 1):
-				var t := tile_at(p + Vector2i(dx, dy))
-				if t != "" and Data.TILES[t]["yields"] != "" and t != "grass":
-					b["gather_items"].append(Data.TILES[t]["yields"])
+		for spot in gather_spots(type, p):
+			b["gather_items"].append(Data.TILES[tile_at(spot)]["yields"])
 		if b["gather_items"].is_empty():
 			b["gather_items"].append("fiber")  # nothing else nearby: it cuts grass
 	building_at[p] = buildings.size()
 	buildings.append(b)
+
+
+## Resource tiles a gatherer at `p` would work (grass only counts when nothing else is in range).
+func gather_spots(type: String, p: Vector2i) -> Array:
+	var spots: Array = []
+	var r: int = Data.BUILDINGS[type]["radius"]
+	for dy in range(-r, r + 1):
+		for dx in range(-r, r + 1):
+			var q := p + Vector2i(dx, dy)
+			var t := tile_at(q)
+			if q != p and t != "" and t != "grass" and Data.TILES[t]["yields"] != "":
+				spots.append(q)
+	return spots
+
+
+## "3 Wood, 1 Stone" for the tiles a gatherer at `p` would work.
+func gather_summary(type: String, p: Vector2i) -> String:
+	var counts := {}
+	for spot in gather_spots(type, p):
+		var item: String = Data.TILES[tile_at(spot)]["yields"]
+		counts[item] = counts.get(item, 0) + 1
+	if counts.is_empty():
+		return "only Fiber (no other resources in range)"
+	var parts: Array = []
+	for item in counts:
+		parts.append("%d %s" % [counts[item], Data.ITEMS[item]["name"]])
+	return ", ".join(parts)
 
 
 func touches_river(p: Vector2i) -> bool:
@@ -281,10 +309,25 @@ func haul(index: int) -> void:
 				b["inbuf"][id] = b["inbuf"].get(id, 0) + take
 
 
+## How much of an item is held back for research the Kith haven't done yet.
+## Flour is food, but Bronze Dawn needs it, so the Kith never eat into that.
+func research_reserve(id: String) -> int:
+	var most := 0
+	for tech in Data.TECHS:
+		if not researched.has(tech):
+			most = maxi(most, Data.TECHS[tech]["cost"].get(id, 0))
+	return most
+
+
+## Units of a food item the Kith may eat.
+func edible(id: String) -> int:
+	return maxi(inv.get(id, 0) - research_reserve(id), 0)
+
+
 func food_total() -> float:
 	var total := 0.0
 	for id in Data.FOOD_VALUE:
-		total += inv.get(id, 0) * Data.FOOD_VALUE[id]
+		total += edible(id) * Data.FOOD_VALUE[id]
 	return total
 
 
@@ -298,25 +341,90 @@ func tick(delta: float) -> void:
 		for i in buildings.size():
 			haul(i)
 
-	var active := 0
-	for b in buildings:
-		if _wants_to_work(b):
-			active += 1
-	var fed := _eat(active * Data.FOOD_PER_BUILDING_PER_SEC * delta)
+	fed = _eat(population * Data.FOOD_PER_KITH_PER_SEC * delta)
+	_update_population(delta)
 
+	var workers := population
 	for b in buildings:
-		_tick_building(b, delta, fed)
+		b["staffed"] = false
+		if needs_worker(b) and workers > 0:
+			b["staffed"] = true
+			workers -= 1
+	for b in buildings:
+		_tick_building(b, delta)
+
+
+func goal_done(goal: Dictionary) -> bool:
+	match goal["kind"]:
+		"items":
+			return can_afford(goal["need"])
+		"tech":
+			return researched.has(goal["id"])
+		"build":
+			for b in buildings:
+				if b["type"] == goal["id"]:
+					return true
+			return false
+		"population":
+			return population >= goal["n"]
+	return false
+
+
+## The current goal, or {} once all are done. Finished goals are skipped.
+func current_goal() -> Dictionary:
+	while goal_index < Data.GOALS.size() and goal_done(Data.GOALS[goal_index]):
+		events.append("Goal complete: " + Data.GOALS[goal_index]["text"])
+		goal_index += 1
+	if goal_index >= Data.GOALS.size():
+		return {}
+	return Data.GOALS[goal_index]
+
+
+func needs_worker(b: Dictionary) -> bool:
+	return Data.BUILDINGS[b["type"]]["kind"] in ["gatherer", "processor"]
+
+
+func workers_needed() -> int:
+	var n := 0
+	for b in buildings:
+		if needs_worker(b):
+			n += 1
+	return n
+
+
+func food_per_sec() -> float:
+	return population * Data.FOOD_PER_KITH_PER_SEC
+
+
+func _update_population(delta: float) -> void:
+	if fed:
+		starve_timer = 0.0
+		growth_timer += delta
+		if growth_timer >= Data.GROWTH_SECONDS:
+			growth_timer = 0.0
+			if food_total() >= (population + 1) * Data.GROWTH_FOOD_PER_KITH:
+				population += 1
+				events.append("A new Kith joins the camp. Population %d." % population)
+	else:
+		growth_timer = 0.0
+		starve_timer += delta
+		if starve_timer >= Data.STARVE_SECONDS:
+			starve_timer = 0.0
+			if population > 1:
+				population -= 1
+				events.append("No food. A Kith leaves the camp. Population %d." % population)
 
 
 func _eat(need: float) -> bool:
 	while food_credit < need:
-		if inv.get("berries", 0) > 0:
-			inv["berries"] -= 1
-			food_credit += Data.FOOD_VALUE["berries"]
-		elif inv.get("flour", 0) > 0:
-			inv["flour"] -= 1
-			food_credit += Data.FOOD_VALUE["flour"]
-		else:
+		var ate := false
+		for id in ["berries", "flour"]:
+			if edible(id) > 0:
+				inv[id] -= 1
+				food_credit += Data.FOOD_VALUE[id]
+				ate = true
+				break
+		if not ate:
 			return false
 	food_credit -= need
 	return true
@@ -337,7 +445,7 @@ func _wants_to_work(b: Dictionary) -> bool:
 	return false
 
 
-func _tick_building(b: Dictionary, delta: float, fed: bool) -> void:
+func _tick_building(b: Dictionary, delta: float) -> void:
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
 	if def["kind"] == "camp" or def["kind"] == "power":
 		b["status"] = def["desc"]
@@ -346,7 +454,10 @@ func _tick_building(b: Dictionary, delta: float, fed: bool) -> void:
 		b["status"] = _idle_reason(b, def)
 		return
 	if not fed:
-		b["status"] = "Hungry: bring berries or flour"
+		b["status"] = "Hungry: the Kith need food (build a Gatherer's Hut by berries)"
+		return
+	if not b.get("staffed", false):
+		b["status"] = "No worker: more food grows the population"
 		return
 	b["status"] = "Working"
 	b["progress"] += delta
