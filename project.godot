@@ -1,0 +1,23 @@
+; Engine configuration file.
+; Solace: a factory game that climbs from the stone age.
+
+config_version=5
+
+[application]
+
+config/name="Solace"
+config/description="Guide the Kith from stone tools to super-advanced industry on the planet Solace."
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.7")
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=800
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[rendering]
+
+anti_aliasing/quality/msaa_2d=2
+environment/defaults/default_clear_color=Color(0.16, 0.2, 0.14, 1)
