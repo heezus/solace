@@ -71,12 +71,12 @@ func test_hand_gathering_and_tools() -> void:
 	check(s.inv["wood"] == 1, "hand gather gives 1 wood")
 	s.researched["knapping"] = true
 	s.inv["flint"] = 2
+	s.inv["wood"] = 2
 	check(s.craft("flint_tools"), "can craft flint tools")
-	s.gather_by_hand(tree)
-	check(s.inv["wood"] == 1, "crafting spent the wood")
+	check(s.inv["wood"] == 0, "crafting spent the wood")
 	check(s.inv["flint_tools"] == 1, "have flint tools")
 	s.gather_by_hand(tree)
-	check(s.inv["wood"] == 3, "flint tools double hand gathering")
+	check(s.inv["wood"] == 2, "flint tools double hand gathering")
 	check(s.gather_by_hand(s.shard_pos) == Data.SHARD_TEXT, "shard shows flavor text")
 
 
