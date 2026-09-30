@@ -7,11 +7,12 @@ extends RefCounted
 const Data = preload("res://scripts/data.gd")
 const Kith = preload("res://scripts/kith.gd")
 const Roads = preload("res://scripts/roads.gd")
+const Buildings = preload("res://scripts/buildings.gd")
 
 
 ## Items a hauler carries per trip: Carrying Poles double it.
 static func carry_cap(s) -> int:
-	return Data.CARRY * (2 if s.researched.has("carrying_poles") else 1)
+	return Data.CARRY * (2 if s.tech_tree.researched.has("carrying_poles") else 1)
 
 
 static func tick(s, k: Dictionary, delta: float) -> void:
@@ -28,7 +29,7 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 	if not s.people.step(k, delta):
 		return
 	var t: Dictionary = k["task"]
-	var b: Dictionary = s.buildings[t["building"]]
+	var b: Dictionary = s.town.buildings[t["building"]]
 	match k["phase"]:
 		"to_pickup":
 			var left: int = carry_cap(s)
@@ -48,17 +49,17 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 			k["phase"] = "to_depot"
 		"to_depot":
 			for id in k["carry"]:
-				s.add(id, k["carry"][id])
+				s.economy.add(id, k["carry"][id])
 			k["carry"] = {}
 			k["task"] = {}
 		"to_stock":
-			var n: int = mini(t["amount"], s.inv.get(t["item"], 0))
+			var n: int = mini(t["amount"], s.economy.inv.get(t["item"], 0))
 			b["incoming"][t["item"]] -= t["amount"] - n
 			t["amount"] = n
 			if n == 0:
 				k["task"] = {}
 				return
-			s.inv[t["item"]] -= n
+			s.economy.inv[t["item"]] -= n
 			k["carry"] = {t["item"]: n}
 			if not Roads.walk(s, k, b["pos"]):
 				b["unreachable"] = 2.0
@@ -75,7 +76,7 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 
 ## Where an idle hauler waits: the nearest depot a road network touches, or the Hearth when none does.
 static func _home_depot(s, here: Vector2i) -> Vector2i:
-	var best: Vector2i = s.camp_pos
+	var best: Vector2i = s.world.camp_pos
 	var best_d := INF
 	for depot in Roads.depots(s):
 		if Roads.depot_nets(s, depot).is_empty():
@@ -98,17 +99,19 @@ static func _find_task(s, k: Dictionary) -> bool:
 		return false
 	var best := {}
 	var best_d := INF
-	for i in s.buildings.size():
-		var cand: Dictionary = s.buildings[i]
-		if not s.needs_worker(cand) or cand["unreachable"] > 0.0 or not Roads.net_of(s, cand) in nets:
+	for i in s.town.buildings.size():
+		var cand: Dictionary = s.town.buildings[i]
+		if not Buildings.needs_worker(cand) or cand["unreachable"] > 0.0 or not Roads.net_of(s, cand) in nets:
 			continue
 		var d := Vector2(here).distance_to(Vector2(cand["pos"]))
-		var starved: bool = not Data.BUILDINGS[cand["type"]].get("in", {}).is_empty() and s.buffered(cand["inbuf"]) == 0
-		if starved or s.buffered(cand["out"]) >= Data.BUFFER_CAP:
+		var starved: bool = (
+			not Data.BUILDINGS[cand["type"]].get("in", {}).is_empty() and Buildings.buffered(cand["inbuf"]) == 0
+		)
+		if starved or Buildings.buffered(cand["out"]) >= Data.BUFFER_CAP:
 			d /= 3.0
 		if d >= best_d:
 			continue
-		if s.buffered(cand["out"]) > 0 and not cand["claimed"]:
+		if Buildings.buffered(cand["out"]) > 0 and not cand["claimed"]:
 			best = {"kind": "pickup", "building": i}
 			best_d = d
 			continue
@@ -116,14 +119,14 @@ static func _find_task(s, k: Dictionary) -> bool:
 		var inputs: Dictionary = {} if cand["paused"] else def.get("in", {})
 		for id in inputs:
 			var want: int = def["in"][id] * 2 - cand["inbuf"].get(id, 0) - cand["incoming"].get(id, 0)
-			var n := mini(mini(want, s.inv.get(id, 0)), carry_cap(s))
+			var n := mini(mini(want, s.economy.inv.get(id, 0)), carry_cap(s))
 			if n > 0:
 				best = {"kind": "deliver", "building": i, "item": id, "amount": n}
 				best_d = d
 				break
 	if best.is_empty():
 		return false
-	var b: Dictionary = s.buildings[best["building"]]
+	var b: Dictionary = s.town.buildings[best["building"]]
 	best["depot"] = here
 	if best["kind"] == "pickup" and not Roads.walk(s, k, b["pos"]):
 		b["unreachable"] = 2.0

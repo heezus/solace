@@ -144,9 +144,10 @@ func test_a_new_game_round_trips() -> void:
 func test_a_played_game_round_trips() -> void:
 	var a := _played()
 	t.check(
-		a.buildings.size() > 1 and not a.inv.is_empty() and a.fog.count() > 30, "set up: a game with something in it"
+		a.town.buildings.size() > 1 and not a.economy.inv.is_empty() and a.fog.count() > 30,
+		"set up: a game with something in it"
 	)
-	t.check(not a.hand_counts.is_empty() and a.flows.hist.size() > 10, "and hand counts and flows")
+	t.check(not a.hand_counts.is_empty() and a.economy.flows.hist.size() > 10, "and hand counts and flows")
 	var d := RunSave.dump(a)
 	var b := Sim.new()
 	t.check(RunSave.restore(b, d), "restore from the dump itself")
@@ -156,14 +157,21 @@ func test_a_played_game_round_trips() -> void:
 	t.check(text(RunSave.dump(c)) == text(d), "and writes the same dump")
 	var golden := GoldenTests.new()
 	t.check(golden.canonical(c) == golden.canonical(a), "with the state the golden test hashes")
-	t.check(c.kith == a.kith and c.buildings == a.buildings, "people and buildings are equal, field for field")
 	t.check(
-		c.inv == a.inv and c.roads.keys() == a.roads.keys() and c.fields.keys() == a.fields.keys(),
+		c.people.kith == a.people.kith and c.town.buildings == a.town.buildings,
+		"people and buildings are equal, field for field"
+	)
+	t.check(
+		(
+			c.economy.inv == a.economy.inv
+			and c.world.roads.keys() == a.world.roads.keys()
+			and c.world.fields.keys() == a.world.fields.keys()
+		),
 		"as are the stock and the roads"
 	)
-	t.check(c.building_at == a.building_at and c.tiles == a.tiles, "and the index and the map")
-	a.inv["wood"] += 5
-	a.buildings[0]["progress"] = 9.0
+	t.check(c.town.building_at == a.town.building_at and c.world.tiles == a.world.tiles, "and the index and the map")
+	a.economy.inv["wood"] += 5
+	a.town.buildings[0]["progress"] = 9.0
 	t.check(text(RunSave.dump(c)) == text(d), "a dump is a copy: later play doesn't change it")
 
 
@@ -173,7 +181,7 @@ func test_restore_replaces_what_was_there() -> void:
 	var b := _played(11, 20)  # another map, another run
 	t.check(RunSave.restore(b, via_json(d)), "a game already under way takes a dump")
 	t.check(text(RunSave.dump(b)) == text(d), "and becomes exactly that game")
-	var held := b.researched
+	var held := b.tech_tree.researched
 	t.check(RunSave.restore(b, d) and is_same(held, b.tech_tree.researched), "the shared researched set stays one set")
 
 
@@ -225,23 +233,26 @@ func test_derived_state_is_rebuilt() -> void:
 	var a := _played(7, 400)
 	var b := Sim.new()
 	t.check(RunSave.restore(b, via_json(RunSave.dump(a))), "set up: a loaded game")
-	t.check(b.road_net.is_empty() and b.road_rev == a.road_rev, "the road cache starts empty, at the same revision")
+	t.check(
+		b.town.road_net.is_empty() and b.town.road_rev == a.town.road_rev,
+		"the road cache starts empty, at the same revision"
+	)
 	var same_grid := true
 	for y in b.world.height:
 		for x in b.world.width:
 			var p := Vector2i(x, y)
 			if (
-				b.astar.is_point_solid(p) != a.astar.is_point_solid(p)
-				or b.astar.get_point_weight_scale(p) != a.astar.get_point_weight_scale(p)
+				b.pathing.astar.is_point_solid(p) != a.pathing.astar.is_point_solid(p)
+				or b.pathing.astar.get_point_weight_scale(p) != a.pathing.astar.get_point_weight_scale(p)
 			):
 				same_grid = false
 	t.check(same_grid, "the walking grid is rebuilt to match the original")
-	t.check(b.building_at == a.building_at, "and so is the building index")
-	var from := b.camp_pos
+	t.check(b.town.building_at == a.town.building_at, "and so is the building index")
+	var from := b.world.camp_pos
 	var to := Vector2i(clampi(from.x + 6, 0, 35), from.y)
 	t.check(b.pathing.path(from, to) == a.pathing.path(from, to), "and paths come out the same")
-	var ra := a.buildings.map(func(x): return Roads.linked(a, x))
-	var rb := b.buildings.map(func(x): return Roads.linked(b, x))
+	var ra := a.town.buildings.map(func(x): return Roads.linked(a, x))
+	var rb := b.town.buildings.map(func(x): return Roads.linked(b, x))
 	t.check(ra == rb, "as do the road links, which Roads rebuilds when asked")
 
 
@@ -429,10 +440,11 @@ func test_a_loaded_game_carries_on_the_same() -> void:
 	var original := _bot_at(2, 600.0)
 	var s := original.s
 	t.check(
-		not s.won and s.has_haulers(), "set up: map 2 at %d s, haulers researched, not won yet" % roundi(original.clock)
+		not s.won and s.tech_tree.researched.has("haulers"),
+		"set up: map 2 at %d s, haulers researched, not won yet" % roundi(original.clock)
 	)
 	t.check(
-		s.kith.any(func(k): return not k["task"].is_empty()) and not s.roads.is_empty(),
+		s.people.kith.any(func(k): return not k["task"].is_empty()) and not s.world.roads.is_empty(),
 		"with haulers on a task and roads laid"
 	)
 	var loaded_game := Sim.new()
@@ -456,8 +468,8 @@ func test_a_loaded_game_carries_on_the_same() -> void:
 			break
 	t.check(same, "90 s on, the original and the loaded copy have the same hash and the same full dump")
 	t.check(
-		original.s.buildings.size() > 10 and original.clock > 690.0,
-		"(and the game did move: %d buildings)" % original.s.buildings.size()
+		original.s.town.buildings.size() > 10 and original.clock > 690.0,
+		"(and the game did move: %d buildings)" % original.s.town.buildings.size()
 	)
 
 

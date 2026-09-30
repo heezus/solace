@@ -23,7 +23,7 @@ func run(runner) -> void:
 	test_goals_stay_done()
 	test_story_needs_no_other_block()
 	test_to_dict_and_from_dict()
-	test_sim_passes_through()
+	test_sim_owns_a_live_story()
 	test_researching_haulers_records_once()
 	test_bronze_dawn_is_recorded_and_wins()
 	test_learning_by_watching_records_a_lesson()
@@ -95,17 +95,17 @@ func test_current_goal_follows_goals_done() -> void:
 func test_goals_stay_done() -> void:
 	var s: Sim = t.fresh()
 	s.story.update(s)
-	t.check(not s.goals_done.has("knapping"), "Knapping is not done at the start")
-	s.researched["knapping"] = true
+	t.check(not s.story.goals_done.has("knapping"), "Knapping is not done at the start")
+	s.tech_tree.researched["knapping"] = true
 	s.story.update(s)
-	t.check(s.goals_done.has("knapping"), "researching Knapping meets its goal")
-	s.researched.erase("knapping")
+	t.check(s.story.goals_done.has("knapping"), "researching Knapping meets its goal")
+	s.tech_tree.researched.erase("knapping")
 	s.story.update(s)
-	t.check(s.goals_done.has("knapping"), "and it stays done")
+	t.check(s.story.goals_done.has("knapping"), "and it stays done")
 	t.check(not s.story.goal_met(s, {"id": "knapping", "tech": "knapping"}), "even though it is no longer met")
-	var before: int = s.goals_done.size()
+	var before: int = s.story.goals_done.size()
 	s.story.update(s)
-	t.check(s.goals_done.size() == before, "updating again adds nothing")
+	t.check(s.story.goals_done.size() == before, "updating again adds nothing")
 
 
 ## The story ids (in order) and the goals met survive a dict and a JSON round trip, without a signal.
@@ -137,12 +137,10 @@ func test_story_needs_no_other_block() -> void:
 	t.check(story.current_goal() == 0 and story.events == ["first_lesson"], "records and reads goals on its own")
 
 
-func test_sim_passes_through() -> void:
+func test_sim_owns_a_live_story() -> void:
 	var s: Sim = t.fresh()
-	t.check(is_same(s.story_events, s.story.events), "Sim.story_events is Story's list")
-	t.check(is_same(s.goals_done, s.story.goals_done), "Sim.goals_done is Story's dictionary")
 	s.story.record("shard_found")
-	t.check(s.story_events == ["shard_found"], "and it is live")
+	t.check(s.story.events == ["shard_found"], "the Sim's Story block is live")
 
 
 func test_researching_haulers_records_once() -> void:
@@ -152,7 +150,7 @@ func test_researching_haulers_records_once() -> void:
 	var story := Monitor.new()
 	research.watch(s.tech_tree, "tech_researched")
 	story.watch(s.story, "recorded")
-	for tech in Rules.route_to("haulers", s.researched, Rules.visible_techs(true)):
+	for tech in Rules.route_to("haulers", s.tech_tree.researched, Rules.visible_techs(true)):
 		t.check(s.research(tech), "research " + tech)
 	t.check(
 		research.count("tech_researched") == Rules.route_to("haulers", {}, Rules.visible_techs(true)).size(),
@@ -171,11 +169,11 @@ func test_bronze_dawn_is_recorded_and_wins() -> void:
 	t.give(s, 99999)
 	var story := Monitor.new()
 	story.watch(s.story, "recorded")
-	for tech in Rules.route_to("bronze_dawn", s.researched, Rules.visible_techs(true)):
+	for tech in Rules.route_to("bronze_dawn", s.tech_tree.researched, Rules.visible_techs(true)):
 		s.research(tech)
 	t.check(s.won, "Bronze Dawn wins the game (the owner still does this)")
 	t.check(story.args_of("recorded").has(["bronze_dawn"]) and story.count("recorded") == 2, "Haulers and Bronze Dawn")
-	t.check(s.story_events == ["haulers", "bronze_dawn"], "in the order they were researched")
+	t.check(s.story.events == ["haulers", "bronze_dawn"], "in the order they were researched")
 
 
 func test_learning_by_watching_records_a_lesson() -> void:
@@ -185,36 +183,36 @@ func test_learning_by_watching_records_a_lesson() -> void:
 	var tree: Vector2i = t.find_tile(s, "tree")
 	for i in Data.LEARN_CLICKS - 1:
 		s.gather_by_hand(tree)
-	t.check(people.count() == 0 and s.story_events.is_empty(), "nothing learned before the last click")
+	t.check(people.count() == 0 and s.story.events.is_empty(), "nothing learned before the last click")
 	s.gather_by_hand(tree)
 	t.check(people.args_of("learned") == [["wood", Data.PEOPLE_NAMES[0]]], "learned(item, name) fires once")
-	t.check(s.story_events == ["first_lesson"], "and Story records the first lesson")
+	t.check(s.story.events == ["first_lesson"], "and Story records the first lesson")
 	for i in Data.LEARN_CLICKS:
 		s.gather_by_hand(tree)
 	t.check(people.count("learned") == 1, "more clicks on the same thing teach nothing new")
 	var stone: Vector2i = t.find_tile(s, "rock")
 	for i in Data.LEARN_CLICKS:
 		s.gather_by_hand(stone)
-	t.check(people.count("learned") == 2 and s.story_events == ["first_lesson"], "a second lesson is no new story")
+	t.check(people.count("learned") == 2 and s.story.events == ["first_lesson"], "a second lesson is no new story")
 
 
 func test_the_first_trip_is_a_signal() -> void:
 	var s: Sim = t.fresh()
 	var people := Monitor.new()
 	people.watch(s.people, "trip_started")
-	s.inv["berries"] = 200
-	var p: Vector2i = s.camp_pos + Vector2i(-2, 0)
+	s.economy.inv["berries"] = 200
+	var p: Vector2i = s.world.camp_pos + Vector2i(-2, 0)
 	t.place_free(s, "gatherers_hut", p)
 	s.tick(0.1)
-	s.learned["wood"] = "Aro"
-	t.check(s.story_events.is_empty(), "no trip yet")
-	s.buildings[s.building_at[p]]["trips"] = 1
+	s.people.learned_by["wood"] = "Aro"
+	t.check(s.story.events.is_empty(), "no trip yet")
+	s.town.buildings[s.town.building_at[p]]["trips"] = 1
 	for i in 100:
 		s.tick(0.1)
 		if people.count("trip_started") > 0:
 			break
 	t.check(people.count("trip_started") == 1, "the worker setting out on a clicked trip is one signal")
-	t.check(s.story_events == ["first_trip"], "and Story records the first trip")
+	t.check(s.story.events == ["first_trip"], "and Story records the first trip")
 
 
 func test_the_strange_stone_is_a_signal() -> void:
@@ -222,25 +220,25 @@ func test_the_strange_stone_is_a_signal() -> void:
 	var m := Monitor.new()
 	m.watch(s, "shard_found")
 	m.watch(s.story, "recorded")
-	s.gather_by_hand(s.shard_pos)
-	s.gather_by_hand(s.shard_pos)
+	s.gather_by_hand(s.world.shard_pos)
+	s.gather_by_hand(s.world.shard_pos)
 	t.check(m.count("shard_found") == 2, "each click on the Strange Stone signals")
-	t.check(m.count("recorded") == 1 and s.story_events == ["shard_found"], "but the story is recorded once")
+	t.check(m.count("recorded") == 1 and s.story.events == ["shard_found"], "but the story is recorded once")
 	t.check(s.shard_seen, "and the stone is seen")
 
 
 func test_story_order_matches_the_moments() -> void:
 	var s: Sim = t.fresh()
-	s.gather_by_hand(s.shard_pos)
+	s.gather_by_hand(s.world.shard_pos)
 	var tree: Vector2i = t.find_tile(s, "tree")
 	for i in Data.LEARN_CLICKS:
 		s.gather_by_hand(tree)
 	t.give(s, 99999)
-	for tech in Rules.route_to("bronze_dawn", s.researched, Rules.visible_techs(true)):
+	for tech in Rules.route_to("bronze_dawn", s.tech_tree.researched, Rules.visible_techs(true)):
 		s.research(tech)
-	t.check(s.story_events == ["shard_found", "first_lesson", "haulers", "bronze_dawn"], "%s" % [s.story_events])
+	t.check(s.story.events == ["shard_found", "first_lesson", "haulers", "bronze_dawn"], "%s" % [s.story.events])
 	var seen := {}
-	for id in s.story_events:
+	for id in s.story.events:
 		t.check(not seen.has(id), id + " appears once")
 		seen[id] = true
 
@@ -250,20 +248,20 @@ func test_kith_messages_reach_the_player() -> void:
 	var m := Monitor.new()
 	m.watch(s.people, "announce")
 	m.watch(s.people, "born")
-	s.inv["berries"] = 500
+	s.economy.inv["berries"] = 500
 	s.events.clear()
 	for i in int(Data.GROW_TIME * 10.0) + 20:
 		s.tick(0.1)
 		if m.count("born") > 0:
 			break
 	t.check(m.count("born") == 1, "a birth is one born signal")
-	t.check(m.args_of("born")[0] == [s.kith[s.kith.size() - 1]["name"]], "carrying the newborn's name")
+	t.check(m.args_of("born")[0] == [s.people.kith[s.people.kith.size() - 1]["name"]], "carrying the newborn's name")
 	var told := Data.BORN_EVENT % Data.PEOPLE["one"]
 	t.check(m.args_of("announce") == [[told]] and told in s.events, "and Sim shows the announcement")
 
 
 func test_a_hidden_tech_waits_for_the_stone() -> void:
 	var s: Sim = t.fresh()
-	t.check(not s.tech_visible("star_lore"), "hidden before the Strange Stone")
-	s.gather_by_hand(s.shard_pos)
-	t.check(s.tech_visible("star_lore"), "visible after: the signal did not replace the flag")
+	t.check(not s.tech_tree.tech_visible("star_lore"), "hidden before the Strange Stone")
+	s.gather_by_hand(s.world.shard_pos)
+	t.check(s.tech_tree.tech_visible("star_lore"), "visible after: the signal did not replace the flag")

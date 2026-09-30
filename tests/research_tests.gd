@@ -1,7 +1,7 @@
 extends RefCounted
 ## Unit testbench for the Research block (scripts/research.gd): requirements, hidden techs, paying for a
 ## tech, the goal and the queue. Research is built alone, on an Economy with a hand-set stockpile; no map,
-## no Kith and no Sim. The last tests check Sim's pass-throughs and the effects it runs when
+## no Kith and no Sim. The last tests check that the Sim shares its techs with the other blocks and the effects it runs when
 ## Research reports a tech completed. Run from tests/run_tests.gd, which owns check() and the helpers.
 
 const Data = preload("res://scripts/data.gd")
@@ -37,7 +37,7 @@ func run(runner) -> void:
 	test_tick_signals_each_tech_in_order()
 	test_research_stands_alone()
 	test_to_dict_and_from_dict()
-	test_sim_passes_through()
+	test_sim_shares_the_techs_with_the_blocks()
 	test_sim_runs_the_effects()
 	test_sim_queue_ticks()
 
@@ -325,30 +325,33 @@ func test_research_stands_alone() -> void:
 	t.check(e.food_value("flour") == Data.BAKED_FLOUR_FOOD, "an Economy sees the block's set through its view")
 
 
-func test_sim_passes_through() -> void:
+func test_sim_shares_the_techs_with_the_blocks() -> void:
 	var s: Sim = t.fresh()
-	t.check(s.researched == s.tech_tree.researched and s.research_queue == s.tech_tree.queue, "the set and queue")
-	s.researched["knapping"] = true
-	t.check(s.tech_tree.researched.has("knapping"), "a write to Sim.researched lands in the block")
+	t.check(is_same(s.tech_tree.researched, s.tech_set), "the block's set is the one the Sim built first")
 	t.check(
-		s.economy.food_value("berries") == 1.0 and not s.researched.has("smoking"), "and the Economy's view is shared"
+		s.economy.food_value("berries") == 1.0 and not s.tech_tree.researched.has("smoking"),
+		"and the Economy's view is shared"
 	)
-	s.researched["smoking"] = true
-	t.check(s.economy.food_value("berries") == Data.SMOKED_BERRY_FOOD, "so it sees techs set on Sim")
+	s.tech_tree.researched["smoking"] = true
+	s.tech_tree.researched["knapping"] = true
+	t.check(s.economy.food_value("berries") == Data.SMOKED_BERRY_FOOD, "so it sees techs set on the block")
 	s.tech_tree.set_goal("gatherers_hut")
 	t.check(
-		s.research_goal == "gatherers_hut" and s.research_queue == ["foraging", "gatherers_hut"], "goal and queue read"
+		s.tech_tree.goal == "gatherers_hut" and s.tech_tree.queue == ["foraging", "gatherers_hut"],
+		"goal and queue read"
 	)
-	t.check(s.missing_requirements("gatherers_hut") == 1 and not s.requirements_met("gatherers_hut"), "requirements")
-	t.check(not s.tech_visible("star_lore"), "hidden until the shard is seen")
+	t.check(
+		s.tech_tree.missing_requirements("gatherers_hut") == 1 and not s.tech_tree.requirements_met("gatherers_hut"),
+		"requirements"
+	)
+	t.check(not s.tech_tree.tech_visible("star_lore"), "hidden until the shard is seen")
 	s.shard_seen = true
-	t.check(s.tech_visible("star_lore"), "Sim.shard_seen is what the block reads")
-	t.check(not s.can_research("cordage"), "cordage is unaffordable with nothing in the stockpile")
-	s.inv["fiber"] = 15
-	t.check(s.can_research("cordage"), "and affordable with the fiber")
-	t.check(s.research("cordage") and s.inv["fiber"] == 0, "Sim.research pays through the Economy")
+	t.check(s.tech_tree.tech_visible("star_lore"), "Sim.shard_seen is what the block reads")
+	t.check(not s.tech_tree.can_research("cordage"), "cordage is unaffordable with nothing in the stockpile")
+	s.economy.inv["fiber"] = 15
+	t.check(s.tech_tree.can_research("cordage"), "and affordable with the fiber")
+	t.check(s.research("cordage") and s.economy.inv["fiber"] == 0, "Sim.research pays through the Economy")
 	t.check(not s.research("cordage"), "a repeat is refused")
-	t.check(s.researched.has("cordage") and s.tech_tree.researched.has("cordage"), "in the block's set")
 
 
 func test_sim_runs_the_effects() -> void:
@@ -356,20 +359,20 @@ func test_sim_runs_the_effects() -> void:
 	t.give(s, 999)
 	t.check(s.research("cordage"), "research Cordage")
 	t.check("Discovered Cordage" in s.events, "completing a tech announces it")
-	t.check(not s.won and s.story_events.is_empty(), "with no other effect")
+	t.check(not s.won and s.story.events.is_empty(), "with no other effect")
 	for tech in ["knapping", "foraging", "gatherers_hut"]:
 		t.check(s.research(tech), "research " + tech)
-	var hut: Vector2i = s.camp_pos + Vector2i(0, 2)
+	var hut: Vector2i = s.world.camp_pos + Vector2i(0, 2)
 	t.check(s.place("gatherers_hut", hut), "a hut to test the Haulers effect on")
-	s.buildings[s.building_at[hut]]["trips"] = 3
+	s.town.buildings[s.town.building_at[hut]]["trips"] = 3
 	t.check(s.research("haulers"), "research Paths & Haulers")
-	t.check(s.buildings[s.building_at[hut]]["trips"] == 0, "Haulers resets the queued trips")
-	t.check("haulers" in s.story_events, "and records the story event")
-	t.check(s.has_haulers(), "and has_haulers reads the block's set")
+	t.check(s.town.buildings[s.town.building_at[hut]]["trips"] == 0, "Haulers resets the queued trips")
+	t.check("haulers" in s.story.events, "and records the story event")
+	t.check(s.tech_tree.researched.has("haulers"), "and Roads and Story read haulers from the block's set")
 	for tech in Data.TECHS["bronze_dawn"]["requires"]:
-		s.researched[tech] = true
+		s.tech_tree.researched[tech] = true
 	t.check(s.research("bronze_dawn"), "research Bronze Dawn")
-	t.check(s.won and "bronze_dawn" in s.story_events, "it wins the game and records the story")
+	t.check(s.won and "bronze_dawn" in s.story.events, "it wins the game and records the story")
 	t.check("Discovered %s" % Data.TECHS["bronze_dawn"]["name"] in s.events, "and announces it")
 
 
@@ -377,9 +380,9 @@ func test_sim_queue_ticks() -> void:
 	var s: Sim = t.fresh()
 	s.tech_tree.set_goal("cordage")
 	s.tick(0.1)
-	t.check(not s.researched.has("cordage"), "a tick with an empty stockpile researches nothing")
-	s.inv["fiber"] = 15
+	t.check(not s.tech_tree.researched.has("cordage"), "a tick with an empty stockpile researches nothing")
+	s.economy.inv["fiber"] = 15
 	s.tick(0.1)
-	t.check(s.researched.has("cordage"), "the queue researches a tech once it is affordable")
+	t.check(s.tech_tree.researched.has("cordage"), "the queue researches a tech once it is affordable")
 	t.check("Discovered Cordage" in s.events, "with the same announcement")
-	t.check(s.research_goal == "" and s.research_queue.is_empty(), "and the goal is dropped once reached")
+	t.check(s.tech_tree.goal == "" and s.tech_tree.queue.is_empty(), "and the goal is dropped once reached")

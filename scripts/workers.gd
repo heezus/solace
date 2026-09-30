@@ -2,16 +2,19 @@ extends RefCounted
 ## Building workers (design-system/14-hands-to-haulers.md). A worker walks to their building. A hut's
 ## worker walks out to a resource tile the Kith know and brings back a bundle: to the stockpile, one
 ## trip per click, before Paths & Haulers; into the hut, over and over, after it. Clicking a building
-## sends a trip, or rushes it. Static, and works on the Sim passed in.
+## sends a trip, or rushes it. Each building also takes its own turn here every tick (tick_building), with
+## the timing and yield in scripts/work.gd. Static, and works on the Sim passed in.
 
 const Data = preload("res://scripts/data.gd")
 const Kith = preload("res://scripts/kith.gd")
 const Roads = preload("res://scripts/roads.gd")
+const Buildings = preload("res://scripts/buildings.gd")
+const Work = preload("res://scripts/work.gd")
 
 
 ## One step of a worker's day at their building.
 static func tick(s, k: Dictionary, delta: float) -> void:
-	var b: Dictionary = s.buildings[k["building"]]
+	var b: Dictionary = s.town.buildings[k["building"]]
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
 	match k["phase"]:
 		"to_site":
@@ -21,7 +24,7 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 			if s.people.step(k, delta):
 				k["phase"] = "home"
 		"home":
-			if def["kind"] != "gatherer" or s.buffered(b["out"]) >= Data.BUFFER_CAP:
+			if def["kind"] != "gatherer" or Buildings.buffered(b["out"]) >= Data.BUFFER_CAP:
 				return
 			if not Roads.automated(s, b) and b["trips"] <= 0:
 				return  # waits for a click
@@ -40,7 +43,7 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 		"harvest":
 			var tile: Vector2i = k["task"].get("tile", b["pos"])
 			k["timer"] += delta
-			if k["timer"] >= s._harvest_time(b, tile):
+			if k["timer"] >= Work.harvest_time(s, b, tile):
 				_finish_harvest(s, k, b, tile)
 		"to_home":
 			if s.people.step(k, delta):
@@ -62,7 +65,7 @@ static func _finish_harvest(s, k: Dictionary, b: Dictionary, tile: Vector2i) -> 
 		s.people.walk_to(k, b["pos"])
 		k["phase"] = "to_home"
 		return
-	k["carry"] = {item: s._harvest_amount(b, tile, item)}
+	k["carry"] = {item: Work.harvest_amount(s, b, tile, item)}
 	s.people.wear(b)
 	k["task"] = {}
 	if k["trip"] and s.people.walk_to(k, s.people.nearest_depot(b["pos"])):
@@ -75,17 +78,17 @@ static func _finish_harvest(s, k: Dictionary, b: Dictionary, tile: Vector2i) -> 
 
 ## What a hut gathers at `tile`.
 static func tile_item(s, _b: Dictionary, tile: Vector2i) -> String:
-	return Data.TILES[s.tile_at(tile)]["yields"]
+	return Data.TILES[s.world.tile_at(tile)]["yields"]
 
 
 ## Put down what a hut worker carries: into the stockpile at the end of a trip, else into the hut.
 static func _deliver(s, k: Dictionary, b: Dictionary) -> void:
 	for id in k["carry"]:
 		if k["trip"]:
-			s.add(id, k["carry"][id])
+			s.economy.add(id, k["carry"][id])
 		else:
 			b["out"][id] = b["out"].get(id, 0) + k["carry"][id]
-		s.flows.add(id, k["carry"][id], b["type"])
+		s.economy.flows.add(id, k["carry"][id], b["type"])
 	k["carry"] = {}
 	if k["trip"]:
 		b["trips"] = maxi(b["trips"] - 1, 0)
@@ -95,8 +98,8 @@ static func _deliver(s, k: Dictionary, b: Dictionary) -> void:
 ## The next tile in the hut's rotation that the Kith know how to gather and can reach, or
 ## Vector2i(-1, -1) when there's nothing (bare grass gives nothing: Fiber comes from flax).
 static func next_gather_tile(s, k: Dictionary, b: Dictionary) -> Vector2i:
-	var tiles: Array = s.gather_tiles(b["pos"]).filter(
-		func(t): return s.people.knows(Data.TILES[s.tile_at(t)]["yields"])
+	var tiles: Array = s.town.gather_tiles(b["pos"]).filter(
+		func(t): return s.people.knows(Data.TILES[s.world.tile_at(t)]["yields"])
 	)
 	for _attempt in tiles.size():
 		var t: Vector2i = tiles[b["gather_index"] % tiles.size()]
@@ -112,13 +115,13 @@ static func next_gather_tile(s, k: Dictionary, b: Dictionary) -> Vector2i:
 ## A click on building i. Before Paths & Haulers a hut sends out a trip and a workshop is loaded and
 ## emptied by hand; a working building is also rushed. Returns a short note for the map, or "".
 static func click(s, i: int) -> String:
-	var b: Dictionary = s.buildings[i]
+	var b: Dictionary = s.town.buildings[i]
 	var kind: String = Data.BUILDINGS[b["type"]]["kind"]
-	if not s.needs_worker(b):
+	if not Buildings.needs_worker(b):
 		return ""
 	if not Roads.automated(s, b):
-		var held: int = s.buffered(b["out"])
-		s.haul(i)
+		var held: int = Buildings.buffered(b["out"])
+		s.town.haul(i)
 		if kind == "gatherer":
 			var note := dispatch(s, i)
 			return note if held == 0 else "+%d · %s" % [held, note]
@@ -131,7 +134,7 @@ static func click(s, i: int) -> String:
 
 ## Queue one trip at hut i (up to Data.TRIP_QUEUE). Returns what happened, for the map.
 static func dispatch(s, i: int) -> String:
-	var b: Dictionary = s.buildings[i]
+	var b: Dictionary = s.town.buildings[i]
 	if not s.people.knows_any(b["pos"]):
 		return "Nothing learned yet: gather by hand %dx" % Data.LEARN_CLICKS
 	if b["trips"] >= Data.TRIP_QUEUE:
@@ -146,7 +149,7 @@ static func can_rush(s, b: Dictionary) -> bool:
 		return false
 	match Data.BUILDINGS[b["type"]]["kind"]:
 		"gatherer":
-			return s.kith[b["worker"]]["phase"] in ["to_tile", "harvest", "to_home", "to_depot"]
+			return s.people.kith[b["worker"]]["phase"] in ["to_tile", "harvest", "to_home", "to_depot"]
 		"processor":
 			return b["status"] == "Working"
 	return false
@@ -155,20 +158,20 @@ static func can_rush(s, b: Dictionary) -> bool:
 ## Finish building i's current cycle now: a workshop makes its goods, a hut worker is back home with
 ## the bundle put away. Then it can't be rushed for Data.RUSH_COOLDOWN seconds.
 static func rush(s, i: int) -> bool:
-	var b: Dictionary = s.buildings[i]
+	var b: Dictionary = s.town.buildings[i]
 	if not can_rush(s, b):
 		return false
 	b["rush_cd"] = Data.RUSH_COOLDOWN
 	s.rushes += 1
 	if Data.BUILDINGS[b["type"]]["kind"] == "processor":
-		s._finish_cycle(b)
+		Work.finish_cycle(s, b)
 		return true
-	var k: Dictionary = s.kith[b["worker"]]
+	var k: Dictionary = s.people.kith[b["worker"]]
 	if k["phase"] in ["to_tile", "harvest"]:
 		var tile: Vector2i = k["task"].get("tile", b["pos"])
 		var item := tile_item(s, b, tile)
 		if item != "":  # "" when a road felled or cut the tile away under them: nothing to bring
-			k["carry"] = {item: s._harvest_amount(b, tile, item)}
+			k["carry"] = {item: Work.harvest_amount(s, b, tile, item)}
 			s.people.wear(b)
 	_deliver(s, k, b)
 	k["task"] = {}
@@ -179,13 +182,80 @@ static func rush(s, i: int) -> bool:
 	return true
 
 
+# --- A building's own turn ---------------------------------------------------------
+
+
+## One tick at building b: what it is doing (its status text) and, for a workshop, its cycle. A building
+## with no worker, or a hungry, cut-off or unpowered one, only reports why it stands still.
+static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
+	var def: Dictionary = Data.BUILDINGS[b["type"]]
+	b["alert"] = ""
+	if not Buildings.needs_worker(b):
+		b["status"] = def.get("status", def["desc"])
+		return
+	if b["paused"]:
+		s.town.set_status(b, "Paused: its %s is free for other jobs" % s.people.building_job(b), "Paused")
+		return
+	if b["worker"] < 0:
+		s.town.set_status(
+			b,
+			(
+				"No %s yet: more %s needed (they grow with food and Dwellings)"
+				% [s.people.building_job(b), Data.PEOPLE["many"]]
+			),
+			"Idle: no free %s" % Data.PEOPLE["one"]
+		)
+		return
+	if not fed:
+		s.town.set_status(b, "Hungry: bring food (berries, fish or flour)", "Hungry: no food")
+		return
+	if b["unreachable"] > 0.0:
+		s.town.set_status(b, "Cut off by water: build a Wooden Bridge (Paths & Haulers)", "Cut off: needs a bridge")
+		return
+	if def.get("needs_power", false) and not s.town.is_powered(b["pos"]):
+		s.town.set_status(b, "No power: build a Water Wheel nearby", "No power")
+		return
+	if not s.people.worker_home(b):
+		b["status"] = "%s walking here" % s.people.title_of(s.people.kith[b["worker"]])
+		return
+	if not s.town.wants_to_work(b):
+		idle_reason(s, b, def)
+		return
+	if def["kind"] == "gatherer":
+		var k: Dictionary = s.people.kith[b["worker"]]
+		match k["phase"]:
+			"to_tile":
+				b["status"] = "Walking out to gather"
+			"to_home" when k["carry"].is_empty():
+				b["status"] = "Walking home"
+			"to_home":
+				b["status"] = "Carrying %s home" % Data.ITEMS[k["carry"].keys()[0]]["name"]
+			"to_depot":
+				b["status"] = "Carrying %s to the stockpile" % Data.ITEMS[k["carry"].keys()[0]]["name"]
+			"home":
+				if not s.people.knows_any(b["pos"]):
+					b["status"] = "Knows nothing here yet: gather by hand %dx to teach it" % Data.LEARN_CLICKS
+				elif not Roads.automated(s, b) and b["trips"] <= 0:
+					b["status"] = "Waiting: click to send a trip" + road_note(s, b)
+				else:
+					b["status"] = "Working"
+			_:
+				b["status"] = "Working"
+		return
+	b["status"] = "Working"
+	b["progress"] += delta
+	if b["progress"] < Work.time(s, b):
+		return
+	Work.finish_cycle(s, b)
+
+
 # --- Status ----------------------------------------------------------------------
 
 
 ## Why a staffed building is standing still: full, or short of an input.
 static func idle_reason(s, b: Dictionary, def: Dictionary) -> void:
 	var auto := Roads.automated(s, b)
-	if s.buffered(b["out"]) >= Data.BUFFER_CAP:
+	if Buildings.buffered(b["out"]) >= Data.BUFFER_CAP:
 		if auto:
 			s.town.set_status(b, "Full: waiting for a hauler", "Full: waiting for a hauler")
 		else:
@@ -201,14 +271,14 @@ static func idle_reason(s, b: Dictionary, def: Dictionary) -> void:
 	var how := "waiting for a hauler" if auto else "click to load" + road_note(s, b)
 	if auto:
 		for id in def["in"]:
-			if b["inbuf"].get(id, 0) + b["incoming"].get(id, 0) < def["in"][id] and s.inv.get(id, 0) == 0:
+			if b["inbuf"].get(id, 0) + b["incoming"].get(id, 0) < def["in"][id] and s.economy.inv.get(id, 0) == 0:
 				how = "stockpile is out"
 	s.town.set_status(b, "Needs %s (%s)" % [", ".join(missing), how], "Needs " + ", ".join(missing))
 
 
 ## After Paths & Haulers, what a building with no road link needs: "" once it's linked (or before).
 static func road_note(s, b: Dictionary) -> String:
-	if not s.has_haulers() or Roads.linked(s, b):
+	if not s.tech_tree.researched.has("haulers") or Roads.linked(s, b):
 		return ""
 	return ". Needs road: " + road_hint(s, b["pos"])
 
@@ -218,7 +288,7 @@ static func road_hint(s, p: Vector2i) -> String:
 	var g := Roads.gap(s, p)
 	if g["to"].x < 0:
 		return "linked by road"
-	var what := "the road to the Hearth" if s.roads.has(g["to"]) else "the Hearth"
-	if s.building_at.has(g["to"]) and g["to"] != s.camp_pos:
+	var what := "the road to the Hearth" if s.world.roads.has(g["to"]) else "the Hearth"
+	if s.town.building_at.has(g["to"]) and g["to"] != s.world.camp_pos:
 		what = "the Storehouse"
 	return "lay Road from here to %s (about %d tiles) so haulers carry for it" % [what, g["tiles"]]

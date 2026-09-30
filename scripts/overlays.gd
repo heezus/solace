@@ -26,7 +26,7 @@ static func center(p: Vector2i) -> Vector2:
 
 ## The pill a demolish click would answer: what comes back and who goes idle.
 static func demolish_text(s, p: Vector2i) -> String:
-	var type: String = s.built_type(p)
+	var type: String = s.town.built_type(p)
 	if type == "":
 		return ""
 	var def: Dictionary = Data.BUILDINGS[type]
@@ -37,16 +37,16 @@ static func demolish_text(s, p: Vector2i) -> String:
 		"Demolish %s · %s"
 		% [def["name"], ("get back " + Ui.cost_text(refund)) if not refund.is_empty() else "nothing back"]
 	)
-	if s.building_at.has(p) and s.buildings[s.building_at[p]]["worker"] >= 0:
-		var b: Dictionary = s.buildings[s.building_at[p]]
-		text += " · %s goes idle" % s.people.title_of(s.kith[b["worker"]])
+	if s.town.building_at.has(p) and s.town.buildings[s.town.building_at[p]]["worker"] >= 0:
+		var b: Dictionary = s.town.buildings[s.town.building_at[p]]
+		text += " · %s goes idle" % s.people.title_of(s.people.kith[b["worker"]])
 	return text
 
 
 ## Demolish mode: a red frame and wash with a white X over whatever is there, and the pill above it.
 static func demolish_hover(ci: CanvasItem, s, p: Vector2i) -> void:
 	var r := rect(p)
-	var type: String = s.built_type(p)
+	var type: String = s.town.built_type(p)
 	if type == "" or Data.BUILDINGS[type]["kind"] == "camp":
 		ci.draw_rect(r.grow(-2), Color(1, 1, 1, 0.5), false, 2.0)
 		if type != "":
@@ -136,7 +136,7 @@ static func flow_arrows(ci: CanvasItem, s, b: Dictionary, time: float) -> void:
 
 ## Blocked buildings get an alert pill under their tile, with a small pointer up to it.
 static func status_pills(ci: CanvasItem, s) -> void:
-	for b in s.buildings:
+	for b in s.town.buildings:
 		if b["alert"] == "":
 			continue
 		var r := rect(b["pos"])
@@ -150,7 +150,7 @@ static func status_pills(ci: CanvasItem, s) -> void:
 ## The settlement: a dashed Kith-colored ring 6 tiles around the Hearth. Faint while playing,
 ## strong and labeled while placing a Dwelling, with the good empty spots inside dashed in white.
 static func settlement_ring(ci: CanvasItem, s, strong: bool) -> void:
-	var c := center(s.camp_pos)
+	var c := center(s.world.camp_pos)
 	var radius: float = (Data.HEARTH_RADIUS + 0.5) * TILE
 	ci.draw_circle(c, radius, Color(KITH, 0.14 if strong else 0.05))
 	Art.dashed_circle(ci, c, radius, Color(KITH, 1.0 if strong else 0.7), 4.0 if strong else 2.5, 10.0, 7.0)
@@ -158,8 +158,8 @@ static func settlement_ring(ci: CanvasItem, s, strong: bool) -> void:
 		return
 	for y in range(-int(Data.HEARTH_RADIUS), int(Data.HEARTH_RADIUS) + 1):
 		for x in range(-int(Data.HEARTH_RADIUS), int(Data.HEARTH_RADIUS) + 1):
-			var p: Vector2i = s.camp_pos + Vector2i(x, y)
-			if s.in_bounds(p) and s.placement_error("dwelling", p) == "":
+			var p: Vector2i = s.world.camp_pos + Vector2i(x, y)
+			if s.world.in_bounds(p) and s.town.placement_error("dwelling", p) == "":
 				Art.dashed_rect(ci, rect(p).grow(-4), Color(1, 1, 1, 0.8), 1.5, 4.0, 3.0)
 	var label := "Settlement · %d tiles around the Hearth" % int(Data.HEARTH_RADIUS)
 	Art.pill(ci, c - Vector2(0, radius + 12), label, KITH, Color.WHITE, 12)
@@ -175,7 +175,7 @@ static func ghost_text(type: String, err: String) -> String:
 ## The ghost of the building being placed: its sprite over a green or alert tint, and a pill
 ## saying why when the spot won't do.
 static func placement_ghost(ci: CanvasItem, s, type: String, p: Vector2i, note: String) -> void:
-	var err: String = s.placement_error(type, p)
+	var err: String = s.town.placement_error(type, p)
 	var r := rect(p)
 	ci.draw_rect(r.grow(-2), Color(0.3, 1, 0.4, 0.4) if err == "" else Color(ALERT, 0.45))
 	var tex := Art.building_sprite(type)
@@ -193,10 +193,10 @@ static func line_text(s, type: String, tiles: Array) -> String:
 	var total := {}
 	var n := 0
 	for p in tiles:
-		if s.placement_error(type, p) != "":
+		if s.town.placement_error(type, p) != "":
 			continue
 		n += 1
-		var cost := Rules.cost_at(type, s.tile_at(p))
+		var cost := Rules.cost_at(type, s.world.tile_at(p))
 		for id in cost:
 			total[id] = total.get(id, 0) + cost[id]
 	var name: String = Data.BUILDINGS[type]["name"]
@@ -205,7 +205,7 @@ static func line_text(s, type: String, tiles: Array) -> String:
 	var text := (
 		"%s: %d tile%s · %s" % [name, n, "" if n == 1 else "s", Ui.cost_text(total) if not total.is_empty() else "free"]
 	)
-	if not s.can_afford(total):
+	if not s.economy.can_afford(total):
 		return text + " · you have enough for part of it"
 	return text + " · release to lay"
 
@@ -215,7 +215,7 @@ static func line_text(s, type: String, tiles: Array) -> String:
 static func line_ghost(ci: CanvasItem, s, type: String, tiles: Array) -> void:
 	for p in tiles:
 		var r := rect(p)
-		if s.placement_error(type, p) == "":
+		if s.town.placement_error(type, p) == "":
 			ci.draw_rect(r.grow(-3), Color(OUTLINE, 0.35))
 			ci.draw_rect(r.grow(-7), Color(1, 1, 1, 0.55))
 		else:
@@ -229,9 +229,9 @@ static func line_ghost(ci: CanvasItem, s, type: String, tiles: Array) -> void:
 
 ## Hovering a tile nothing can be built on yet says how to get past it.
 static func blocked_hint(s, p: Vector2i) -> String:
-	match s.tile_at(p):
+	match s.world.tile_at(p):
 		"river":
-			if s.roads.has(p):
+			if s.world.roads.has(p):
 				return ""
 			return "Cross with a Wooden Bridge (Paths & Haulers)"
 		"rock":

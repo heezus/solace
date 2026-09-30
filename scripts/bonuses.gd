@@ -15,7 +15,7 @@ static func active(s, b: Dictionary, item: String) -> Array:
 	var kind: String = Data.BUILDINGS[b["type"]]["kind"]
 	for id in Data.BONUSES:
 		var bonus: Dictionary = Data.BONUSES[id]
-		if bonus.has("tech") and not s.researched.has(bonus["tech"]):
+		if bonus.has("tech") and not s.tech_tree.researched.has(bonus["tech"]):
 			continue
 		if bonus.has("kinds") and kind not in bonus["kinds"]:
 			continue
@@ -41,7 +41,7 @@ static func active(s, b: Dictionary, item: String) -> Array:
 static func _applies(s, b: Dictionary, id: String) -> bool:
 	match id:
 		"tools":
-			return b["worker"] >= 0 and s.kith[b["worker"]].get("tool", 0) > 0
+			return b["worker"] >= 0 and s.people.kith[b["worker"]].get("tool", 0) > 0
 		"standing_stone":
 			return s.town.in_range_of("aura", b["pos"])
 	return true
@@ -96,13 +96,6 @@ static func text(s, b: Dictionary) -> String:
 		line += " x Speed %s (%s) = %s %s" % [_num(sp), ", ".join(names), _num(base * sp), unit]
 	if def["kind"] == "gatherer":
 		line += ", plus walking"
-		var seen := {}
-		for item in b["gather_items"]:
-			if seen.has(item) or not s.people.knows(item):
-				continue
-			seen[item] = true
-			var n: int = s._bundle_size(b, item)
-			line += "\nBundle: %d %s (%d x a click)" % [n, Data.ITEMS[item]["name"], Data.BUNDLE]
 	return line
 
 

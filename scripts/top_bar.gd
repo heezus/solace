@@ -10,6 +10,7 @@ const Sim = preload("res://scripts/sim.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Hands = preload("res://scripts/hands.gd")
+const Buildings = preload("res://scripts/buildings.gd")
 
 const RAW := ["wood", "stone", "flint", "fiber", "clay", "berries", "grain", "fish"]
 const LOSS := Color("ff9aa9")
@@ -176,52 +177,57 @@ static func rate_color(per_sec: float) -> Color:
 func food_rate() -> float:
 	var total := 0.0
 	for id in Data.FOOD_VALUE:
-		total += state.flows.rate(id) * state.food_value(id)
+		total += state.economy.flows.rate(id) * state.economy.food_value(id)
 	return total
 
 
 func refresh(paused: bool, speed: int) -> void:
 	var idle := Ui.idle_kith(state)
-	var workers := state.kith.size() - idle
+	var workers := state.people.kith.size() - idle
 	var jobs := 0
-	for b in state.buildings:
-		jobs += 1 if state.needs_worker(b) and not b["paused"] else 0
-	kith_label.text = "%s %d / %d" % [Data.PEOPLE["many"], state.kith.size(), state.housing()]
+	for b in state.town.buildings:
+		jobs += 1 if Buildings.needs_worker(b) and not b["paused"] else 0
+	kith_label.text = "%s %d / %d" % [Data.PEOPLE["many"], state.people.kith.size(), state.town.housing()]
 	kith_label.get_parent().tooltip_text = (
 		"%s\n%s work buildings and haul goods. Each building needs one. They grow with spare food and room."
 		% [state.people.job_counts(), Data.PEOPLE["many"]]
 	)
 	var note := Ui.growth_note(state)
 	kith_label.add_theme_color_override("font_color", Ui.HIGHLIGHT if note != "" else Ui.GOOD)
-	jobs_label.text = "Jobs %d / %d  ·  %d %s" % [workers, jobs, idle, "hauling" if state.has_haulers() else "idle"]
+	jobs_label.text = (
+		"Jobs %d / %d  ·  %d %s"
+		% [workers, jobs, idle, "hauling" if state.tech_tree.researched.has("haulers") else "idle"]
+	)
 	if note != "":
 		jobs_label.text += "  ·  " + note
-	var food := state.food_total()
+	var food := state.economy.food_total()
 	var fr := food_rate()
 	var s := "Food %d  ·  %s/s" % [int(food), rate_text(fr)]
 	if fr < -0.005:
 		var left := food / -fr
 		s += "  ·  " + (("%d min left" % int(left / 60.0)) if left >= 60.0 else ("%d s left" % int(left)))
-	if state.starving:
+	if state.economy.starving:
 		s = Data.STARVING_TEXT % Data.PEOPLE["many"]
 	food_label.text = s
-	food_label.add_theme_color_override("font_color", Ui.BAD if fr < -0.005 or state.starving else Color.WHITE)
-	food_bar.max_value = maxf(state.kith.size() * 2.0 + Data.BIRTH_FOOD, 1.0)
+	food_label.add_theme_color_override("font_color", Ui.BAD if fr < -0.005 or state.economy.starving else Color.WHITE)
+	food_bar.max_value = maxf(state.people.kith.size() * 2.0 + Data.BIRTH_FOOD, 1.0)
 	food_bar.value = minf(food, food_bar.max_value)
 	food_bar.modulate = Ui.BAD if fr < -0.005 else Ui.HIGHLIGHT
-	tools_label.modulate.a = 1.0 if state.seen.has("flint_tools") else 0.0  # keeps its place: see _fix_width()
+	tools_label.modulate.a = 1.0 if state.economy.seen.has("flint_tools") else 0.0  # keeps its place: see _fix_width()
 	var held := Hands.tools_held(state)
-	tools_label.text = Data.TOOLS_LABEL % [held, state.kith.size(), Data.PEOPLE["many"]]
-	tools_label.tooltip_text = Data.TOOLS_TIP % [Data.PEOPLE["many"], Data.TOOL_JOBS, state.inv.get("flint_tools", 0)]
+	tools_label.text = Data.TOOLS_LABEL % [held, state.people.kith.size(), Data.PEOPLE["many"]]
+	tools_label.tooltip_text = (
+		Data.TOOLS_TIP % [Data.PEOPLE["many"], Data.TOOL_JOBS, state.economy.inv.get("flint_tools", 0)]
+	)
 	tools_label.mouse_filter = Control.MOUSE_FILTER_STOP
-	tools_label.add_theme_color_override("font_color", Ui.GOOD if held >= state.kith.size() else Color.WHITE)
+	tools_label.add_theme_color_override("font_color", Ui.GOOD if held >= state.people.kith.size() else Color.WHITE)
 	for id in chips:
 		var c: Dictionary = chips[id]
-		var n: int = state.inv.get(id, 0)
-		var r := state.flows.rate(id)
+		var n: int = state.economy.inv.get(id, 0)
+		var r := state.economy.flows.rate(id)
 		# An unseen good keeps its place in the bar (hidden, not removed), so the goods never re-wrap.
-		c["box"].modulate.a = 1.0 if state.seen.has(id) else 0.0
-		c["box"].mouse_filter = Control.MOUSE_FILTER_PASS if state.seen.has(id) else Control.MOUSE_FILTER_IGNORE
+		c["box"].modulate.a = 1.0 if state.economy.seen.has(id) else 0.0
+		c["box"].mouse_filter = Control.MOUSE_FILTER_PASS if state.economy.seen.has(id) else Control.MOUSE_FILTER_IGNORE
 		c["count"].text = str(n)
 		c["count"].modulate = Color(1, 1, 1, 0.4 if n == 0 and absf(r) < 0.005 else 1.0)
 		c["rate"].text = rate_text(r)
@@ -272,11 +278,11 @@ func _fill_flow(id: String) -> void:
 	for c in flow_box.get_children():
 		flow_box.remove_child(c)
 		c.queue_free()
-	var net := state.flows.rate(id)
-	var head := Ui.label("%s  %d   %s/s" % [Data.ITEMS[id]["name"], state.inv.get(id, 0), rate_text(net)], 14)
+	var net := state.economy.flows.rate(id)
+	var head := Ui.label("%s  %d   %s/s" % [Data.ITEMS[id]["name"], state.economy.inv.get(id, 0), rate_text(net)], 14)
 	head.add_theme_color_override("font_color", rate_color(net) if absf(net) >= 0.005 else Color.WHITE)
 	flow_box.add_child(head)
-	var parts := state.flows.parts(id)
+	var parts := state.economy.flows.parts(id)
 	var ins: Array = []
 	var outs: Array = []
 	for source in parts:
@@ -297,9 +303,9 @@ func _fill_flow(id: String) -> void:
 	for source in outs:
 		_flow_row(_user_name(source, id), parts[source])
 	if Data.FOOD_VALUE.has(id):
-		_flow_note(Data.FOOD_NOTE % [str(state.food_value(id)), Data.PEOPLE["many"]], Color(1, 1, 1, 0.7))
+		_flow_note(Data.FOOD_NOTE % [str(state.economy.food_value(id)), Data.PEOPLE["many"]], Color(1, 1, 1, 0.7))
 	if net < -0.005 and not outs.is_empty():
-		var have: int = state.inv.get(id, 0)
+		var have: int = state.economy.inv.get(id, 0)
 		var left := have / -net
 		var then := (
 			Data.HUNGRY_THEN % Data.PEOPLE["many"] if outs[0] == "kith" else "the %s stops" % _type_name(outs[0])
@@ -351,7 +357,7 @@ func _maker_name(source: String, id: String) -> String:
 		"craft":
 			return "Crafted by hand"
 	var n := 0
-	for b in state.buildings:
+	for b in state.town.buildings:
 		if b["type"] == source and (id in b["gather_items"] or Data.BUILDINGS[source].get("out", {}).has(id)):
 			n += 1
 	var title := _type_name(source)

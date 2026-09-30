@@ -10,7 +10,7 @@ const Data = preload("res://scripts/data.gd")
 
 ## 0 before the tech is researched, 1 once it is, then 2 or 3 as ranks are bought on its card.
 static func rank(s, tech: String) -> int:
-	if not s.researched.has(tech):
+	if not s.tech_tree.researched.has(tech):
 		return 0
 	return s.ranks.get(tech, 1)
 
@@ -38,13 +38,13 @@ static func next_cost(s, tech: String) -> Dictionary:
 
 static func can_buy(s, tech: String) -> bool:
 	var c := next_cost(s, tech)
-	return not c.is_empty() and s.can_afford(c)
+	return not c.is_empty() and s.economy.can_afford(c)
 
 
 static func buy(s, tech: String) -> bool:
 	if not can_buy(s, tech):
 		return false
-	s._pay(next_cost(s, tech))
+	s.economy.pay(next_cost(s, tech))
 	s.ranks[tech] = rank(s, tech) + 1
 	s.events.append("%s rank %s" % [Data.TECHS[tech]["name"], Data.RANK_NAMES[s.ranks[tech]]])
 	return true

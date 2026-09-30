@@ -163,8 +163,8 @@ func refresh(placing: String, ready_count: int) -> void:
 		var def: Dictionary = Data.BUILDINGS[type]
 		var sub: Label = parts["sub"]
 		var title: Label = parts["title"]
-		var unlocked := state.building_unlocked(type)
-		var afford := state.can_afford(def["cost"])
+		var unlocked := state.town.unlocked(type)
+		var afford := state.economy.can_afford(def["cost"])
 		var style := Ui.panel_style(Ui.CARD if unlocked else LOCKED_BG, 4)
 		if placing == type:
 			style.bg_color = Ui.HIGHLIGHT
@@ -192,7 +192,7 @@ func refresh(placing: String, ready_count: int) -> void:
 	for r in craft_buttons:
 		var b: Button = craft_buttons[r]
 		var rec: Dictionary = Data.RECIPES[r]
-		b.disabled = not Hands.recipe_unlocked(state, r) or not state.can_afford(rec["in"])
+		b.disabled = not Hands.recipe_unlocked(state, r) or not state.economy.can_afford(rec["in"])
 		b.tooltip_text = "%s: %s into %s" % [rec["name"], Ui.cost_text(rec["in"]), Ui.cost_text(rec["out"])]
 		if not Hands.recipe_unlocked(state, r):
 			b.tooltip_text += "\nResearch %s first." % Data.TECHS[rec["tech"]]["name"]
@@ -211,9 +211,9 @@ func _tooltip(type: String) -> String:
 	var def: Dictionary = Data.BUILDINGS[type]
 	var s: String = def["name"] + "\n" + def["desc"]
 	if not def["cost"].is_empty():
-		s += "\nCost: " + Ui.progress_text(state.inv, def["cost"], 99)
+		s += "\nCost: " + Ui.progress_text(state.economy.inv, def["cost"], 99)
 	if def["tech"] == "":
 		s += "\nAlways available: no research needed."
-	elif not state.building_unlocked(type):
+	elif not state.town.unlocked(type):
 		s += "\nResearch %s to unlock it." % Data.TECHS[def["tech"]]["name"]
 	return s

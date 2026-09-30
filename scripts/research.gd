@@ -5,7 +5,7 @@ extends RefCounted
 ## handed in at construction, and whether hidden techs are on show comes in as a read-only callable.
 ## What happens in the world when a tech completes (a new road speed, the fog, a win) is not decided
 ## here: research() and tick() only report which techs were completed, and their owner reacts.
-## Sim owns one and passes its old tech methods through to it.
+## Sim owns one, reached as `sim.tech_tree`.
 ## Signal: tech_researched(id) fires once for each tech as it completes (Story and the owner listen).
 
 signal tech_researched(id: String)

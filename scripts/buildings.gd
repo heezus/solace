@@ -9,8 +9,8 @@ extends RefCounted
 ## It never reaches into another block. What a placement or a demolition sets off elsewhere (the fog lifting,
 ## a walking cell refreshing, a worker freed, a Kith's task dropped) is not done here: place() and demolish()
 ## report what they did, and their owner does the rest. A building's work cycle needs the Kith, the haulers
-## and the Bonuses, so that stays with the owner too.
-## Sim owns one and passes its old building methods and variables through to it.
+## and the Bonuses, so it is in scripts/work.gd and scripts/workers.gd, which take the Sim.
+## Sim owns one, reached as `sim.town`.
 ## Signals: built(type, pos) when place() puts a building, road, bridge or field down, and demolished(type, pos)
 ## when demolish() takes one away (the Hearth goes down through add_building and is not announced).
 

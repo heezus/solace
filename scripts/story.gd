@@ -5,7 +5,7 @@ extends RefCounted
 ## Story and Story never calls a block. record(id) notes a moment once. A goal is met when its `tech` is
 ## researched or its `building` stands, and the rest are checked by id against the Sim handed to
 ## goal_met() and update() (it is only read, never kept). Faction words are in Data, not spelled here.
-## Sim owns one (`story`) and passes `story_events` and `goals_done` through to it.
+## Sim owns one, reached as `sim.story`.
 ## Signal: recorded(id) fires the first time each story id is recorded.
 
 signal recorded(id: String)
@@ -13,6 +13,7 @@ signal recorded(id: String)
 const Codec = preload("res://scripts/save_codec.gd")
 const Data = preload("res://scripts/data.gd")
 const Roads = preload("res://scripts/roads.gd")
+const Buildings = preload("res://scripts/buildings.gd")
 
 var events: Array = []  # story ids, in the order they happened
 var goals_done: Dictionary = {}  # goal id -> true; goals stay done once met, even after the items are spent
@@ -64,7 +65,7 @@ func update(s) -> void:
 ## A goal is met when its `tech` is researched or its `building` stands; the rest are checked by id.
 func goal_met(s, g: Dictionary) -> bool:
 	if g.has("tech"):
-		return s.researched.has(g["tech"])
+		return s.tech_tree.researched.has(g["tech"])
 	if g.has("building"):
 		return _has_building(s, g["building"])
 	match g["id"]:
@@ -75,22 +76,22 @@ func goal_met(s, g: Dictionary) -> bool:
 		"flax":
 			return s.hand_counts.get("fiber", 0) > 0 or s.people.knows("fiber")
 		"trip":
-			return "first_trip" in events or s.has_haulers()
+			return "first_trip" in events or s.tech_tree.researched.has("haulers")
 		"rush":
 			return s.rushes > 0
 		"tools":
 			return s.hand_tools
 		"berries":
-			for b in s.buildings:
+			for b in s.town.buildings:
 				if "berries" in b["gather_items"]:
 					return true
 		"road":
-			for b in s.buildings:
-				if s.needs_worker(b) and Roads.linked(s, b):
+			for b in s.town.buildings:
+				if Buildings.needs_worker(b) and Roads.linked(s, b):
 					return true
 		"grind":
-			for b in s.buildings:
-				if b["type"] == "grindstone" and s.is_powered(b["pos"]):
+			for b in s.town.buildings:
+				if b["type"] == "grindstone" and s.town.is_powered(b["pos"]):
 					return true
 	return false
 
@@ -104,7 +105,7 @@ func current_goal() -> int:
 
 
 func _has_building(s, type: String) -> bool:
-	for b in s.buildings:
+	for b in s.town.buildings:
 		if b["type"] == type:
 			return true
 	return false

@@ -4,7 +4,7 @@ extends RefCounted
 ## titles and the walk to a depot. The block is built alone: a hand-made World, the Pathing grid over it, an
 ## Economy with a hand-set stockpile, a hand-set set of researched techs and a Buildings block, with a
 ## test method standing in for the player's message list. No fog block and no Sim. The last tests
-## check Sim's pass-throughs and that the tick still calls the block in the same order.
+## check the Sim's people and that its tick still calls the block in the same order.
 ## Run from tests/run_tests.gd, which owns check() and the helpers.
 
 const Buildings = preload("res://scripts/buildings.gd")
@@ -60,7 +60,7 @@ func run(runner) -> void:
 	test_signals_for_births_and_leavers()
 	test_signals_for_lessons_and_trips()
 	test_to_dict_and_from_dict()
-	test_sim_passes_through()
+	test_sim_starts_with_the_first_people()
 	test_sim_ticks_through_the_block()
 
 
@@ -710,37 +710,35 @@ func test_to_dict_and_from_dict() -> void:
 	t.check(c.kith.is_empty() and c.learned_by.is_empty() and c.births == 0, "an empty dict clears it")
 
 
-func test_sim_passes_through() -> void:
+func test_sim_starts_with_the_first_people() -> void:
 	var s: Sim = t.fresh()
-	t.check(is_same(s.kith, s.people.kith), "Sim.kith is the block's list")
-	t.check(s.born == s.people.births and s.born == Data.KITH_START, "and born its count")
-	t.check(is_same(s.learned, s.people.learned_by), "and learned its dictionary")
-	s.learned["wood"] = "Aro"
-	t.check(s.people.knows("wood"), "a write through the pass-through reaches the block")
-	t.check(s.kith.size() == Data.KITH_START, "the camp starts with the first people")
-	t.check(Kith.tile_of(s.kith[0]) == s.camp_pos, "at the Hearth")
+	t.check(s.people.births == Data.KITH_START, "the count of names given out starts at the first people")
+	s.people.learned_by["wood"] = "Aro"
+	t.check(s.people.knows("wood"), "a write to the block's learned list is what knows() reads")
+	t.check(s.people.kith.size() == Data.KITH_START, "the camp starts with the first people")
+	t.check(Kith.tile_of(s.people.kith[0]) == s.world.camp_pos, "at the Hearth")
 	s.people.add_kith()
 	t.check(
-		s.kith.size() == Data.KITH_START + 1 and s.kith[-1]["name"] == Data.PEOPLE_NAMES[Data.KITH_START],
+		s.people.kith.size() == Data.KITH_START + 1 and s.people.kith[-1]["name"] == Data.PEOPLE_NAMES[Data.KITH_START],
 		"one more, named next"
 	)
-	t.check(s.people.trip_info(s.camp_pos)["ok"], "trip_info is the block's")
+	t.check(s.people.trip_info(s.world.camp_pos)["ok"], "trip_info is the block's")
 
 
 func test_sim_ticks_through_the_block() -> void:
 	var s: Sim = t.fresh()
-	s.inv["berries"] = 300
-	s.researched["haulers"] = true
+	s.economy.inv["berries"] = 300
+	s.tech_tree.researched["haulers"] = true
 	s.tick(0.1)
-	t.check(s.kith[0]["job"] == "haul", "the first tick hands out jobs")
+	t.check(s.people.kith[0]["job"] == "haul", "the first tick hands out jobs")
 	for i in int(Data.GROW_TIME) + 1:
 		s.tick(1.0)
-	t.check(s.kith.size() == Data.KITH_START + 1, "and grows the camp")
+	t.check(s.people.kith.size() == Data.KITH_START + 1, "and grows the camp")
 	t.check(s.events.has(Data.BORN_EVENT % Data.PEOPLE["one"]), "the block's message reaches Sim.events")
-	var here := Kith.tile_of(s.kith[0])
+	var here := Kith.tile_of(s.people.kith[0])
 	t.check(s.fog.is_revealed(here), "and the Kith lift the fog where they stand")
-	s.inv["berries"] = 0
-	s.food_credit = 0.0
+	s.economy.inv["berries"] = 0
+	s.economy.food_credit = 0.0
 	for i in int(Data.STARVE_TIME) + 1:
 		s.tick(1.0)
 	t.check(s.events.has(Data.LEFT_EVENT % Data.PEOPLE["one"]), "hunger sends someone away, and the player is told")

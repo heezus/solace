@@ -75,31 +75,31 @@ func state_hash(s: Sim) -> String:
 func canonical(s: Sim) -> String:
 	var lines: Array = []
 	lines.append("won %s" % s.won)
-	lines.append("inv %s" % _counts(s.inv))
-	lines.append("researched %s" % ",".join(_sorted_keys(s.researched)))
+	lines.append("inv %s" % _counts(s.economy.inv))
+	lines.append("researched %s" % ",".join(_sorted_keys(s.tech_tree.researched)))
 	lines.append("ranks %s" % _counts(s.ranks))
-	lines.append("goals_done %s" % ",".join(_sorted_keys(s.goals_done)))
-	lines.append("story %s" % ",".join(s.story_events))
-	lines.append("seen %s" % ",".join(_sorted_keys(s.seen)))
+	lines.append("goals_done %s" % ",".join(_sorted_keys(s.story.goals_done)))
+	lines.append("story %s" % ",".join(s.story.events))
+	lines.append("seen %s" % ",".join(_sorted_keys(s.economy.seen)))
 	lines.append("hand_counts %s" % _counts(s.hand_counts))
-	lines.append("learned %s" % _pairs(s.learned))
-	lines.append("flags %s %s %s %d %d" % [s.hand_tools, s.shard_seen, s.starving, s.rushes, s.born])
-	lines.append("food_credit %d" % roundi(s.food_credit * 1000.0))
-	lines.append("camp %s shard %s" % [_pos(s.camp_pos), _pos(s.shard_pos)])
-	lines.append("tiles %s" % ",".join(s.tiles))
+	lines.append("learned %s" % _pairs(s.people.learned_by))
+	lines.append("flags %s %s %s %d %d" % [s.hand_tools, s.shard_seen, s.economy.starving, s.rushes, s.people.births])
+	lines.append("food_credit %d" % roundi(s.economy.food_credit * 1000.0))
+	lines.append("camp %s shard %s" % [_pos(s.world.camp_pos), _pos(s.world.shard_pos)])
+	lines.append("tiles %s" % ",".join(s.world.tiles))
 	lines.append("fog %d" % s.fog.count())
-	lines.append("roads %s" % " ".join(_sorted_positions(s.roads)))
-	lines.append("fields %s" % " ".join(_sorted_positions(s.fields)))
-	lines.append("buildings %d" % s.buildings.size())
-	for b in s.buildings:  # in the order they were built: that order decides who works where
+	lines.append("roads %s" % " ".join(_sorted_positions(s.world.roads)))
+	lines.append("fields %s" % " ".join(_sorted_positions(s.world.fields)))
+	lines.append("buildings %d" % s.town.buildings.size())
+	for b in s.town.buildings:  # in the order they were built: that order decides who works where
 		lines.append(
 			(
 				"b %s %s paused=%s in=%s out=%s"
 				% [b["type"], _pos(b["pos"]), b["paused"], _counts(b["inbuf"]), _counts(b["out"])]
 			)
 		)
-	lines.append("kith %d" % s.kith.size())
-	for k in s.kith:
+	lines.append("kith %d" % s.people.kith.size())
+	for k in s.people.kith:
 		lines.append("k %s job=%s tool=%d" % [k["name"], k["job"], k["tool"]])
 	return "\n".join(lines)
 

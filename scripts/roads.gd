@@ -7,13 +7,14 @@ extends RefCounted
 ## and works on the Sim passed in: it reads the map and the roads from its World and walk costs
 ## from its Pathing. It is not part of either block, because the networks also depend on the buildings.
 ##
-## The networks are cached in s.road_net and rebuilt when s.road_rev changes (place and demolish bump
+## The networks are cached in s.town.road_net and rebuilt when s.town.road_rev changes (place and demolish bump
 ## it): {"rev", "depots", "net": road tile -> network id, "depot_nets": depot pos -> [ids] (each depot's
 ## own doorstep id first), "link": building pos -> [network id, depot pos], "grid": an AStarGrid2D where
 ## only road tiles are open}.
 
 const Data = preload("res://scripts/data.gd")
 const Kith = preload("res://scripts/kith.gd")
+const Buildings = preload("res://scripts/buildings.gd")
 
 const SIDES := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
@@ -25,7 +26,7 @@ static func linked(s, b: Dictionary) -> bool:
 
 ## True while b runs on its own with haulers: Paths & Haulers is in and a road links it.
 static func automated(s, b: Dictionary) -> bool:
-	return s.has_haulers() and linked(s, b)
+	return s.tech_tree.researched.has("haulers") and linked(s, b)
 
 
 ## The depot a road links b to (the nearest one on its network), or (-1, -1).
@@ -52,7 +53,7 @@ static func depots(s) -> Array:
 
 static func _find_depots(s) -> Array:
 	var out: Array = [s.world.camp_pos]
-	for b in s.buildings:
+	for b in s.town.buildings:
 		if Data.BUILDINGS[b["type"]]["kind"] == "depot":
 			out.append(b["pos"])
 	return out
@@ -110,11 +111,11 @@ static func _net_has_depot(c: Dictionary, id: int) -> bool:
 
 
 static func _cache(s) -> Dictionary:
-	var c: Dictionary = s.road_net
-	if c.get("rev", -1) == s.road_rev and c.get("paved", false) == s.researched.has("paved_roads"):
+	var c: Dictionary = s.town.road_net
+	if c.get("rev", -1) == s.town.road_rev and c.get("paved", false) == s.tech_tree.researched.has("paved_roads"):
 		return c
 	c = _build(s)
-	s.road_net = c
+	s.town.road_net = c
 	return c
 
 
@@ -143,8 +144,8 @@ static func _build(s) -> Dictionary:
 				ids.append(net[depot + n])
 		at_depot[depot] = ids
 	var link := {}
-	for b in s.buildings:
-		if not s.needs_worker(b):
+	for b in s.town.buildings:
+		if not Buildings.needs_worker(b):
 			continue
 		var best: Array = []
 		var best_d := INF
@@ -174,9 +175,9 @@ static func _build(s) -> Dictionary:
 		grid.set_point_solid(p, false)
 		grid.set_point_weight_scale(p, s.pathing.walk_cost(p))
 	return {
-		"rev": s.road_rev,
+		"rev": s.town.road_rev,
 		"depots": all_depots,
-		"paved": s.researched.has("paved_roads"),
+		"paved": s.tech_tree.researched.has("paved_roads"),
 		"net": net,
 		"depot_nets": at_depot,
 		"link": link,
