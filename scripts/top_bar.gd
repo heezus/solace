@@ -415,6 +415,8 @@ func _maker_name(source: String, id: String) -> String:
 			return "Gathered by hand"
 		"craft":
 			return "Crafted by hand"
+		Data.FLOW_FORAGE_SOURCE:
+			return Data.FORAGE_MAKER % Data.PEOPLE["many"]
 	var n := 0
 	for b in state.town.buildings:
 		if b["type"] == source and (id == b["focus"] or Data.BUILDINGS[source].get("out", {}).has(id)):
