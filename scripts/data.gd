@@ -38,18 +38,22 @@ const ITEM_ORDER := [
 ## Food value of each edible item. The Kith eat from the stockpile.
 const FOOD_VALUE := {"berries": 1.0, "flour": 3.0}
 
-## Food each running building eats per second.
-# --- Population --------------------------------------------------------------
-## The Kith eat food. Spare food grows the population; every working building
-## needs one Kith, so food sets how many buildings can run.
+# --- The Kith (population) ---------------------------------------------------
 
-const START_POPULATION := 3
-const FOOD_PER_KITH_PER_SEC := 0.05
-## A new Kith joins every GROWTH_SECONDS while stored food covers this much per Kith.
-const GROWTH_SECONDS := 15.0
-const GROWTH_FOOD_PER_KITH := 3.0
-## With no food, one Kith is lost every STARVE_SECONDS (never the last one).
-const STARVE_SECONDS := 10.0
+## Food each Kith eats per second.
+const FOOD_PER_KITH_PER_SEC := 0.02
+const KITH_START := 3
+## A new Kith is born every GROW_TIME seconds while there is room and food to spare. Birth costs BIRTH_FOOD.
+const GROW_TIME := 12.0
+const BIRTH_FOOD := 5.0
+## After this long with no food, one Kith leaves.
+const STARVE_TIME := 20.0
+## Tiles per second on open ground. Roads double it; forest and rocks halve it.
+const KITH_SPEED := 2.0
+## Items a hauler carries per trip.
+const CARRY := 5
+## Path cost of each tile kind. Rivers are impassable without a road (bridge).
+const WALK_COST := {"tree": 2.0, "rock": 2.0, "road": 0.5}
 
 # --- Map tiles ---------------------------------------------------------------
 
@@ -72,92 +76,217 @@ const SHARD_TEXT := (
 
 # --- Tech tree ---------------------------------------------------------------
 ## A web, not a line: every node past the roots needs another node.
+## `pos` is the node's place in the tech tree view: x = column (tier), y = row.
+## `effect` names a bonus GameState checks with has_effect().
 
 const TECHS := {
-	"fire":
+	"foraging":
 	{
-		"name": "Fire",
-		"color": Color("ff7b39"),
+		"abbr": "Fo",
+		"color": Color("d62246"),
+		"name": "Foraging",
+		"pos": Vector2(0, 0),
 		"requires": [],
-		"cost": {"wood": 10, "stone": 5},
-		"desc": "Tame flame. Unlocks the Charcoal Pit.",
+		"cost": {"berries": 5, "fiber": 10},
+		"desc": "Know the good bushes. Berries gather twice as fast, by hand and by hut.",
 	},
 	"knapping":
 	{
+		"abbr": "Kn",
+		"color": Color("6c757d"),
 		"name": "Knapping",
-		"color": Color("d9d9d9"),
+		"pos": Vector2(0, 1.5),
 		"requires": [],
 		"cost": {"flint": 5, "stone": 10},
 		"desc": "Shape flint. Craft Flint Tools to gather twice as much by hand.",
 	},
 	"cordage":
 	{
+		"abbr": "Co",
+		"color": Color("bc8a5f"),
 		"name": "Cordage",
-		"color": Color("e9c46a"),
+		"pos": Vector2(0, 3),
 		"requires": [],
 		"cost": {"fiber": 15},
-		"desc": "Twist fiber into rope. Unlocks hand-made Rope and the Twine Post.",
+		"desc": "Twist fiber into rope, by hand or at a Twine Post.",
+	},
+	"fire":
+	{
+		"abbr": "Fi",
+		"color": Color("e85d04"),
+		"name": "Fire",
+		"pos": Vector2(0, 4.5),
+		"requires": [],
+		"cost": {"wood": 10, "stone": 5},
+		"desc": "Tame flame. Smoulder wood into charcoal in a Charcoal Pit.",
 	},
 	"gatherers_hut":
 	{
+		"abbr": "GH",
+		"color": Color("f4a261"),
 		"name": "Gatherer's Hut",
-		"color": Color("90be6d"),
+		"pos": Vector2(1, 0.5),
 		"requires": ["knapping"],
 		"cost": {"wood": 20, "stone": 10},
-		"desc": "Your first self-running building. A worker gathers from nearby tiles.",
-	},
-	"haulers":
-	{
-		"name": "Paths & Haulers",
-		"color": Color("f28482"),
-		"requires": ["cordage", "gatherers_hut"],
-		"cost": {"rope": 10, "wood": 30},
-		"desc": "Haulers move goods between buildings and the Camp. Chains run hands-free.",
-	},
-	"pottery":
-	{
-		"name": "Pottery",
-		"color": Color("ffb4a2"),
-		"requires": ["fire"],
-		"cost": {"clay": 20, "charcoal": 10},
-		"desc": "Fire clay. Unlocks the Kiln (clay + charcoal into brick).",
+		"desc": "Your first self-running building. Its worker walks out to nearby resources.",
 	},
 	"water_wheel":
 	{
+		"abbr": "WW",
+		"color": Color("2a9d8f"),
 		"name": "Water Wheel",
-		"color": Color("4cc9f0"),
+		"pos": Vector2(1, 2),
 		"requires": ["cordage", "knapping"],
 		"cost": {"rope": 10, "wood": 40, "stone": 20},
 		"desc": "Harness the river. Powers machines within 3 tiles.",
 	},
+	"masonry":
+	{
+		"abbr": "Ma",
+		"color": Color("9aa0a6"),
+		"name": "Masonry",
+		"pos": Vector2(1, 3),
+		"requires": ["knapping", "fire"],
+		"cost": {"stone": 40, "charcoal": 5},
+		"desc": "Dress and fit stone. Needed for millstones and paved roads.",
+	},
+	"shelter":
+	{
+		"abbr": "Sh",
+		"color": Color("a3b18a"),
+		"name": "Thatched Roofs",
+		"pos": Vector2(1, 4),
+		"requires": ["cordage", "fire"],
+		"cost": {"fiber": 30, "rope": 5, "wood": 20},
+		"effect": "shelter",
+		"desc": "Warm, dry homes. Each Dwelling houses 5 Kith instead of 3.",
+	},
+	"pottery":
+	{
+		"abbr": "Po",
+		"color": Color("c8553d"),
+		"name": "Pottery",
+		"pos": Vector2(1, 5),
+		"requires": ["fire"],
+		"cost": {"clay": 20, "charcoal": 10},
+		"desc": "Fire clay. Unlocks the Kiln (clay + charcoal into brick).",
+	},
+	"scouting":
+	{
+		"abbr": "Sc",
+		"color": Color("90be6d"),
+		"name": "Scouting",
+		"pos": Vector2(2, 0),
+		"requires": ["gatherers_hut", "foraging"],
+		"cost": {"berries": 20, "wood": 20},
+		"effect": "scouting",
+		"desc": "Know the land. Gatherer's Huts reach 3 tiles instead of 2.",
+	},
+	"farming":
+	{
+		"abbr": "Fa",
+		"color": Color("e9d8a6"),
+		"name": "Farming",
+		"pos": Vector2(2, 1),
+		"requires": ["foraging", "gatherers_hut"],
+		"cost": {"grain": 20, "wood": 20},
+		"desc": "Sow wild grain. Plant Fields of grain on open grassland.",
+	},
+	"haulers":
+	{
+		"abbr": "PH",
+		"color": Color("b388eb"),
+		"name": "Paths & Haulers",
+		"pos": Vector2(2, 2),
+		"requires": ["cordage", "gatherers_hut"],
+		"cost": {"rope": 10, "wood": 30},
+		"desc": "Idle Kith carry goods between buildings and the stockpile. Unlocks Roads and Storehouses.",
+	},
 	"grindstone":
 	{
+		"abbr": "Gr",
+		"color": Color("adb5bd"),
 		"name": "Grindstone",
-		"color": Color("b8b8ff"),
-		"requires": ["water_wheel", "pottery"],
+		"pos": Vector2(2, 3.5),
+		"requires": ["water_wheel", "masonry", "pottery"],
 		"cost": {"stone": 30, "brick": 10},
 		"desc": "A powered millstone. Grinds grain into flour, the best food.",
 	},
+	"preservation":
+	{
+		"abbr": "Pr",
+		"color": Color("f28482"),
+		"name": "Preservation",
+		"pos": Vector2(3, 0.5),
+		"requires": ["farming", "pottery"],
+		"cost": {"clay": 20, "berries": 20},
+		"effect": "preservation",
+		"desc": "Sealed pots keep food. The Kith eat 25% less.",
+	},
+	"carrying_poles":
+	{
+		"abbr": "CP",
+		"color": Color("cdb4db"),
+		"name": "Carrying Poles",
+		"pos": Vector2(3, 1.75),
+		"requires": ["haulers"],
+		"cost": {"rope": 15, "wood": 20},
+		"effect": "carrying_poles",
+		"desc": "Haulers carry 10 at a time instead of 5.",
+	},
+	"paved_roads":
+	{
+		"abbr": "PR",
+		"color": Color("8d99ae"),
+		"name": "Paved Roads",
+		"pos": Vector2(3, 2.75),
+		"requires": ["haulers", "masonry"],
+		"cost": {"stone": 60, "rope": 10},
+		"effect": "paved_roads",
+		"desc": "Roads are 4x faster than open ground, up from 2x.",
+	},
+	"baking":
+	{
+		"abbr": "Ba",
+		"color": Color("f1e3c8"),
+		"name": "Baking",
+		"pos": Vector2(3, 4),
+		"requires": ["grindstone", "fire"],
+		"cost": {"flour": 10, "charcoal": 20},
+		"effect": "baking",
+		"desc": "Bake flour into bread. Flour is worth 5 food, up from 3.",
+	},
 	"bronze_dawn":
 	{
+		"abbr": "BD",
+		"color": Color("cd7f32"),
 		"name": "Bronze Dawn",
-		"color": Color("e3a857"),
-		"requires": ["pottery", "grindstone", "haulers"],
+		"pos": Vector2(4, 2.25),
+		"requires": ["preservation", "paved_roads", "baking"],
 		"cost": {"brick": 40, "flour": 30, "rope": 40, "stone": 100},
 		"desc": "The stone age ends. The next era begins.",
 	},
 }
 
-## Display order and layout column for the tech panel.
+## Order for lists and tests (roots first).
 const TECH_ORDER := [
-	"fire",
+	"foraging",
 	"knapping",
 	"cordage",
+	"fire",
 	"gatherers_hut",
-	"pottery",
 	"water_wheel",
+	"masonry",
+	"shelter",
+	"pottery",
+	"scouting",
+	"farming",
 	"haulers",
 	"grindstone",
+	"preservation",
+	"carrying_poles",
+	"paved_roads",
+	"baking",
 	"bronze_dawn",
 ]
 
@@ -180,8 +309,46 @@ const BUILDINGS := {
 		"kind": "camp",
 		"tech": "",
 		"cost": {},
+		"housing": 4,
 		"color": Color("e76f51"),
-		"desc": "The Kith's home and stockpile.",
+		"desc": "The Kith's home and stockpile. Houses 4.",
+	},
+	"dwelling":
+	{
+		"name": "Dwelling",
+		"kind": "house",
+		"tech": "",
+		"cost": {"wood": 12, "fiber": 6},
+		"housing": 3,
+		"color": Color("e9c46a"),
+		"desc": "Room for 3 more Kith. They grow when there is spare food.",
+	},
+	"road":
+	{
+		"name": "Road",
+		"kind": "road",
+		"tech": "haulers",
+		"cost": {"stone": 1},
+		"color": Color("c9a66b"),
+		"desc": "Kith walk twice as fast on roads. Lay one across the river to bridge it. Drag to paint.",
+	},
+	"field":
+	{
+		"name": "Field",
+		"kind": "field",
+		"tech": "farming",
+		"cost": {"fiber": 3, "grain": 1},
+		"color": Color("d4b44a"),
+		"desc": "Plant wild grain on open grassland, for huts to gather. Drag to sow.",
+	},
+	"storehouse":
+	{
+		"name": "Storehouse",
+		"kind": "depot",
+		"tech": "haulers",
+		"cost": {"wood": 20, "stone": 10},
+		"color": Color("8d6e63"),
+		"desc": "A second stockpile. Haulers drop off and pick up at the nearest one.",
 	},
 	"charcoal_pit":
 	{
@@ -256,57 +423,39 @@ const BUILDINGS := {
 	},
 }
 
-const BUILD_ORDER := ["charcoal_pit", "twine_post", "gatherers_hut", "kiln", "water_wheel", "grindstone"]
-
-# --- Goals -------------------------------------------------------------------
-## The on-screen goal list that walks a new player through the stone age.
-## kind: "items" (have `need` in the stockpile), "tech", "build" (own one), "population".
-
-const GOALS := [
-	{
-		"text": "Gather 10 Wood and 5 Stone",
-		"hint": "Click the forests and rocks around the Camp.",
-		"kind": "items",
-		"need": {"wood": 10, "stone": 5},
-	},
-	{"text": "Research Fire", "hint": "Press T to open the tech tree.", "kind": "tech", "id": "fire"},
-	{
-		"text": "Research Knapping",
-		"hint": "Flint comes from the riverbed gravel to the east. Click it.",
-		"kind": "tech",
-		"id": "knapping",
-	},
-	{
-		"text": "Research Gatherer's Hut",
-		"hint": "Your first building that works on its own.",
-		"kind": "tech",
-		"id": "gatherers_hut",
-	},
-	{
-		"text": "Build a Gatherer's Hut",
-		"hint": "Pick it in the Build bar. The highlight shows what it will gather. Near berries feeds the Kith.",
-		"kind": "build",
-		"id": "gatherers_hut",
-	},
-	{
-		"text": "Grow to 5 Kith",
-		"hint": "Every building needs a Kith. Keep 3 food per Kith stored and more join.",
-		"kind": "population",
-		"n": 5,
-	},
-	{
-		"text": "Research Paths & Haulers",
-		"hint": "Needs Cordage too. After this, buildings load and empty themselves.",
-		"kind": "tech",
-		"id": "haulers",
-	},
-	{
-		"text": "Research Bronze Dawn",
-		"hint": "Needs Pottery, Grindstone and Haulers. This ends the stone age.",
-		"kind": "tech",
-		"id": "bronze_dawn",
-	},
+const BUILD_ORDER := [
+	"dwelling",
+	"road",
+	"field",
+	"storehouse",
+	"charcoal_pit",
+	"twine_post",
+	"gatherers_hut",
+	"kiln",
+	"water_wheel",
+	"grindstone"
 ]
 
 ## Output a building holds before it stops, when nobody hauls it away.
 const BUFFER_CAP := 10
+
+# --- Goals -------------------------------------------------------------------
+## The opening checklist. GameState.goal_met() knows how to check each id.
+
+const GOALS := [
+	{"id": "gather", "text": "Click trees, rocks and gravel: get 10 Wood, 10 Stone, 5 Flint"},
+	{"id": "knapping", "text": "Press T and research Knapping"},
+	{"id": "tools", "text": "Craft Flint Tools (doubles hand gathering)"},
+	{"id": "hut_tech", "text": "Research Gatherer's Hut"},
+	{"id": "hut", "text": "Place a Gatherer's Hut next to trees or rocks"},
+	{"id": "berries", "text": "Place a hut near Berry Bushes. The Kith eat food"},
+	{"id": "dwelling", "text": "Build a Dwelling. Kith grow when there's room and spare food"},
+	{"id": "charcoal", "text": "Research Fire, then build a Charcoal Pit"},
+	{"id": "twine", "text": "Research Cordage, then build a Twine Post"},
+	{"id": "haulers", "text": "Research Paths & Haulers: idle Kith carry goods for you"},
+	{"id": "road", "text": "Lay Roads out to far buildings. Kith walk twice as fast"},
+	{"id": "kiln", "text": "Research Pottery, then build a Kiln"},
+	{"id": "wheel", "text": "Research Water Wheel and build one on the river"},
+	{"id": "grind", "text": "Build a Grindstone within 3 tiles of the wheel"},
+	{"id": "bronze", "text": "Research Bronze Dawn"},
+]
