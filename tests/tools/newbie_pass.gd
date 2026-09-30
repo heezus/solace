@@ -375,9 +375,7 @@ func _run() -> void:
 			var need2: int = hut_cost[item]
 			await _gather_until(item, func(): return s.economy.inv.get(item, 0) >= need2, 120.0)
 		await _place_near("gatherers_hut", "tree", "hut1")
-		for i in 3:
-			_click(_screen_of(_last_spot))
-			await _wait(0.3)
+		_click(_screen_of(_last_spot))  # a clumsy newcomer clicks the hut once
 		await _wait(6.0)
 		await _shot("hut1_trip_running")
 		main.building_panel.select(Vector2i(-1, -1))  # close the hut popup: it covers the bushes
