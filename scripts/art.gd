@@ -171,7 +171,7 @@ static func draw_curve(ci: CanvasItem, pts: PackedVector2Array, col: Color, w: f
 
 
 ## Cuts a polyline into dashes `dash` long, with gaps just as long.
-func dashes(pts: PackedVector2Array, dash: float) -> Array:
+static func dashes(pts: PackedVector2Array, dash: float) -> Array:
 	var out: Array = []
 	var cur := PackedVector2Array([pts[0]])
 	var on := true
