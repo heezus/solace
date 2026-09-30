@@ -1,0 +1,35 @@
+name: Playtest
+
+# Not part of CI. A first-time-player pass under a virtual display, with screenshots and the full log kept
+# as artifacts. Run it from the Actions tab (or push to the playtest-newbie branch).
+on:
+  workflow_dispatch:
+  push:
+    branches: [playtest-newbie]
+
+jobs:
+  newbie:
+    runs-on: ubuntu-latest
+    env:
+      GODOT_VERSION: 4.7.2
+      NEWBIE_OUT: ${{ github.workspace }}/newbie-out
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Godot
+        run: |
+          curl -sSL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip
+          mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
+      - name: Import project
+        run: ./godot --headless --path . --import
+      - name: Newcomer pass
+        run: |
+          sudo apt-get update -q && sudo apt-get install -yq xvfb
+          mkdir -p "$NEWBIE_OUT"
+          xvfb-run -a -s "-screen 0 1280x800x24" \
+            ./godot --rendering-driver opengl3 --audio-driver Dummy --path . -s tests/tools/newbie_pass.gd 2>&1 | tee "$NEWBIE_OUT/godot-output.txt"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: newbie-pass
+          path: newbie-out
