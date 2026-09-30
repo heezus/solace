@@ -5,6 +5,7 @@ extends PanelContainer
 ## from and where it goes. No line in the bar is ever cut short: long ones wrap onto a second line.
 
 signal speed_picked(value: int)  # 0 toggles pause
+signal log_pressed  # the Messages button
 
 const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
@@ -17,7 +18,8 @@ const RAW := ["wood", "stone", "flint", "fiber", "clay", "berries", "grain", "fi
 const LOSS := Color("ff9aa9")
 const FLAT := Color("9fb4bf")
 const MINUS := "−"
-const CHIP_W := 62.0
+const CHIP_W := 74.0
+const ICON := 24.0  # a good's sprite, with nothing behind it
 const ROW_H := 40.0  # a row of chips keeps this height whether or not its goods have appeared yet
 const CAPTION_W := 40.0
 const FOOD_W := 190.0
@@ -31,7 +33,7 @@ var food_label: Label
 var food_sub: Label
 var food_bar: ProgressBar
 var tools_label: Label
-var click_label: Label
+var log_button: Button
 var pulse := 0.0
 var chips := {}  # item -> {"box", "title", "count", "rate"}
 var flow_panel: PanelContainer
@@ -112,7 +114,7 @@ func setup(game: Sim) -> void:
 		goods.add_child(row)
 	h.add_child(VSeparator.new())
 
-	# Speed buttons, with what a click on the tile under the mouse gives below them.
+	# Speed buttons, with the Messages button below them.
 	var right := VBoxContainer.new()
 	right.add_theme_constant_override("separation", 4)
 	h.add_child(right)
@@ -128,11 +130,11 @@ func setup(game: Sim) -> void:
 		b.pressed.connect(func(): speed_picked.emit(v))
 		speeds.add_child(b)
 		speed_buttons[v] = b
-	click_label = Ui.label("", 12)
-	click_label.add_theme_color_override("font_color", Ui.HIGHLIGHT)
-	click_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_fix_width(click_label, [click_label], 170)
-	right.add_child(click_label)
+	log_button = Ui.button(Data.LOG_BUTTON + "  (L)")
+	log_button.custom_minimum_size = Vector2(160, 24)
+	log_button.tooltip_text = Data.LOG_TIP
+	log_button.pressed.connect(func(): log_pressed.emit())
+	right.add_child(log_button)
 
 	flow_panel = PanelContainer.new()
 	flow_panel.top_level = true
@@ -146,7 +148,7 @@ func setup(game: Sim) -> void:
 	flow_panel.add_child(flow_box)
 
 
-## A fixed-width chip: the item's color square, its name, the count and the net rate under it.
+## A fixed-width chip: the item's sprite, its name, the count and the net rate under it.
 func _chip(id: String, width: float) -> PanelContainer:
 	var box := PanelContainer.new()
 	box.custom_minimum_size = Vector2(width, 0)
@@ -155,7 +157,8 @@ func _chip(id: String, width: float) -> PanelContainer:
 	var h := HBoxContainer.new()
 	h.add_theme_constant_override("separation", 3)
 	box.add_child(h)
-	h.add_child(Ui.item_swatch(id, 12.0))
+	var icon := Ui.item_icon(id, ICON)
+	h.add_child(icon)
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", -3)
 	var item: Dictionary = Data.ITEMS[id]
@@ -173,7 +176,7 @@ func _chip(id: String, width: float) -> PanelContainer:
 	box.mouse_entered.connect(_show_flow.bind(id))
 	box.mouse_exited.connect(_hide_flow.bind(id))
 	_fix_width(box, [title, count, rate], width)
-	chips[id] = {"box": box, "title": title, "count": count, "rate": rate}
+	chips[id] = {"box": box, "title": title, "count": count, "rate": rate, "icon": icon}
 	return box
 
 
@@ -316,11 +319,6 @@ func _process(delta: float) -> void:
 		return
 	pulse += delta
 	food_box.modulate.a = 0.65 + 0.35 * sin(pulse * 7.0)
-
-
-## What a click on the hovered resource tile gives, e.g. "Click: +4 Wood"; "" when not over one.
-func set_click_hint(text: String) -> void:
-	click_label.text = text
 
 
 func _show_flow(id: String) -> void:

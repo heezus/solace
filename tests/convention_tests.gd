@@ -439,7 +439,10 @@ func test_building_panel_texts() -> void:
 	t.check(BuildingPanel.trip_text(s, s.world.camp_pos) == "", "the Hearth has no trip line")
 	t.check(BuildingPanel.recipe_text(s, hut).begins_with("Gathers from"), "a hut lists what it gathers")
 	var worker := BuildingPanel.worker_text(s, hut)
-	t.check(worker.begins_with("Worker: %s the " % Data.PEOPLE_NAMES[0]), "and its worker, by name and job: " + worker)
+	t.check(
+		worker.begins_with("%s the " % Data.PEOPLE_NAMES[0]) and worker.contains("works here"),
+		"and its worker, by name and job, in a sentence: " + worker
+	)
 	var q := s.world.camp_pos + Vector2i(2, 0)
 	t.place_free(s, "twine_post", q)
 	var post: Dictionary = s.town.buildings[s.town.building_at[q]]

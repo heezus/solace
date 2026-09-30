@@ -10,7 +10,7 @@ extends RefCounted
 const Data = preload("res://scripts/data.gd")
 
 const CARD_W := 212.0
-const CARD_H := 62.0
+const CARD_H := 94.0
 const CARD := Vector2(CARD_W, CARD_H)
 const GATE_W := 132.0
 const LEFT := 10.0
@@ -18,7 +18,7 @@ const GUTTER := 56.0
 const PITCH := CARD_W + GUTTER
 const HEADER := 24.0  # the tier names
 const CHANNEL := 30.0  # between lanes, on top of the gap under the last row
-const ROW := 70.0  # card height plus the gap between rows
+const ROW := 102.0  # card height plus the gap between rows
 const GAP := ROW - CARD_H
 const STEP := 7.0  # track spacing for lines and ports
 

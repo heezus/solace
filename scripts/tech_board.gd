@@ -20,6 +20,7 @@ const DONE_BG := Color("24475e")
 const READY_BG := Color("32607f")
 const LOCKED_BG := Color("1f3b53")
 const LOCKED_TEXT := Color("b9c6d0")
+const PIP := 20.0  # a cost item's sprite
 const HIDDEN_EDGE := Color("8fb3c9")
 const GATE := Color("e3a857")
 const GATE_BG := Color("3a2f1f")
@@ -204,7 +205,7 @@ func _draw_card(tech: String) -> void:
 	box.set_border_width_all(3 if is_ready or not t.get("side", false) else 2)
 	box.set_corner_radius_all(6)
 	draw_style_box(box, r)
-	var icon := Rect2(r.position + Vector2(9, 9), Vector2(44, 44))
+	var icon := Rect2(r.position + Vector2(8, 8), Vector2(36, 36))
 	draw_rect(icon, Color(0.1, 0.16, 0.24, a))
 	Art.tech_icon(self, t["icon"], icon, 0.0)
 	if not open and not done:
@@ -213,18 +214,19 @@ func _draw_card(tech: String) -> void:
 		draw_rect(icon, Color(0.09, 0.17, 0.29, 0.75))
 	draw_rect(icon, Color(Art.OUTLINE, a), false, 2.0)
 	var text := Color(1, 1, 1, a) if open or done else Color(LOCKED_TEXT, a)
-	var x := r.position.x + 62.0
-	draw_string(bold, Vector2(x, r.position.y + 21), t["name"], HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 70.0, 13, text)
+	var x := r.position.x + 52.0  # the text beside the icon
+	var x0 := r.position.x + 8.0  # the cost rows run the whole width under it
+	draw_string(bold, Vector2(x, r.position.y + 22), t["name"], HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 78.0, 14, text)
 	var builds := Rules.buildings_of(tech)
 	var shows_build := not done and not builds.is_empty()  # a second cost row: what the building costs after
 	var unlock: String = t["unlock"] + ("  ·  side branch" if t.get("side", false) else "")
 	var sub := Color(text, text.a * 0.8)
 	draw_string(
 		ThemeDB.fallback_font,
-		Vector2(x, r.position.y + (32 if shows_build else 37)),
+		Vector2(x, r.position.y + 37),
 		unlock,
 		HORIZONTAL_ALIGNMENT_LEFT,
-		r.size.x - 70.0,
+		r.size.x - (100.0 if Ranks.has_ranks(tech) else 62.0),
 		10,
 		sub
 	)
@@ -233,15 +235,17 @@ func _draw_card(tech: String) -> void:
 		# The next rank's cost, bought by clicking the card.
 		var label := "Rank %s:" % Data.RANK_NAMES[Ranks.rank(state, tech) + 1]
 		var col := Color(GOLD, a) if Ranks.can_buy(state, tech) else Color(1, 1, 1, 0.7 * a)
-		draw_string(ThemeDB.fallback_font, Vector2(x, r.position.y + 54), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, col)
+		draw_string(
+			ThemeDB.fallback_font, Vector2(x0, r.position.y + 62), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, col
+		)
 		var w := ThemeDB.fallback_font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x
-		_draw_cost(next_rank, Vector2(x + w + 5.0, r.position.y + 45), a)
+		_draw_cost(next_rank, Vector2(x0 + w + 5.0, r.position.y + 48), a)
 		_draw_check(r.position + Vector2(r.size.x - 16, 13), a)
 	elif done:
 		draw_string(
 			ThemeDB.fallback_font,
-			Vector2(x, r.position.y + 53),
-			"Researched",
+			Vector2(x0, r.position.y + 62),
+			Data.TECH_DONE,
 			HORIZONTAL_ALIGNMENT_LEFT,
 			-1,
 			10,
@@ -249,9 +253,9 @@ func _draw_card(tech: String) -> void:
 		)
 		_draw_check(r.position + Vector2(r.size.x - 16, 13), a)
 	else:
-		_draw_cost(t["cost"], Vector2(x, r.position.y + (36 if shows_build else 45)), a)
+		_draw_cost(t["cost"], Vector2(x0, r.position.y + 48), a)
 		if shows_build:
-			_draw_build_cost(tech, builds[0], Vector2(x, r.position.y + 46), a)
+			_draw_build_cost(tech, builds[0], Vector2(x0, r.position.y + 70), a)
 	if is_ready:
 		draw_circle(r.position + Vector2(r.size.x - 12, 12), 4.0, Color(GOLD, a))
 	elif not open and not done:
@@ -272,19 +276,19 @@ func _draw_card(tech: String) -> void:
 		)
 
 
-## Cost as colored squares with have/need counts: red where the stockpile is short.
+## Cost as item sprites with have/need counts, the count red where the stockpile is short.
 func _draw_cost(cost: Dictionary, at: Vector2, a: float, stock: Dictionary = {}) -> void:
 	var x := at.x
 	var held: Dictionary = stock if not stock.is_empty() else state.economy.inv
+	var font := ThemeDB.fallback_font
 	for id in cost:
 		var have: int = held.get(id, 0)
 		var need: int = cost[id]
-		draw_rect(Rect2(x, at.y + 1, 8, 8), Color(Data.ITEMS[id]["color"], a))
-		draw_rect(Rect2(x, at.y + 1, 8, 8), Color(Art.OUTLINE, a), false, 1.0)
-		var s := "%d" % need if have >= need else "%d/%d" % [have, need]
-		var col := Color(1, 1, 1, 0.85 * a) if have >= need else Color(Color("ff9aa9"), a)
-		draw_string(ThemeDB.fallback_font, Vector2(x + 11, at.y + 9), s, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, col)
-		x += 15.0 + ThemeDB.fallback_font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x + 6.0
+		Art.item_icon(self, id, Rect2(x, at.y, PIP, PIP), a)
+		var s := "%d/%d" % [mini(have, need), need]
+		var col := Color(1, 1, 1, 0.9 * a) if have >= need else Color(Ui.SHORT, a)
+		draw_string(font, Vector2(x + PIP + 1, at.y + 15), s, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, col)
+		x += PIP + 1.0 + font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x + 8.0
 
 
 ## "Builds:" and what the tech's first building costs, in the same colored squares. A count is red where paying
@@ -292,18 +296,24 @@ func _draw_cost(cost: Dictionary, at: Vector2, a: float, stock: Dictionary = {})
 func _draw_build_cost(tech: String, type: String, at: Vector2, a: float) -> void:
 	var label := "builds:"
 	draw_string(
-		ThemeDB.fallback_font, Vector2(at.x, at.y + 9), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(1, 1, 1, 0.6 * a)
+		ThemeDB.fallback_font,
+		Vector2(at.x, at.y + 14),
+		label,
+		HORIZONTAL_ALIGNMENT_LEFT,
+		-1,
+		9,
+		Color(1, 1, 1, 0.6 * a)
 	)
 	var w := ThemeDB.fallback_font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 9).x
 	var left := Rules.left_after(state.economy.inv, Data.TECHS[tech]["cost"])
 	_draw_cost(Data.BUILDINGS[type]["cost"], Vector2(at.x + w + 5.0, at.y), a, left)
 
 
-## Ranks I to III as three small diamonds under the icon, gold for each rank held.
+## Ranks I to III as three small diamonds at the end of the summary line, gold for each rank held.
 func _draw_rank_pips(tech: String, r: Rect2, a: float) -> void:
 	var held := Ranks.rank(state, tech)
 	for i in Data.MAX_RANK:
-		var c := r.position + Vector2(20 + i * 11, 57.5)
+		var c := r.position + Vector2(r.size.x - 44 + i * 11, 32.0)
 		var pts := PackedVector2Array(
 			[c + Vector2(0, -3.5), c + Vector2(3.5, 0), c + Vector2(0, 3.5), c + Vector2(-3.5, 0)]
 		)
@@ -378,14 +388,15 @@ func _draw_gate(tech: String, r: Rect2, a: float) -> void:
 		y += 16
 		var have: int = state.economy.inv.get(id, 0)
 		var need: int = t["cost"][id]
-		var col := Color(1, 1, 1, a) if have >= need else Color(Color("ff9aa9"), a)
-		var line := "%s %d/%d" % [Data.ITEMS[id]["name"], mini(have, need), need]
+		var col := Color(1, 1, 1, a) if have >= need else Color(Ui.SHORT, a)
+		var line := "%d/%d" % [mini(have, need), need]
+		Art.item_icon(self, id, Rect2(r.position.x + 10, y - 13, 16, 16), a)
 		draw_string(
 			ThemeDB.fallback_font,
-			Vector2(r.position.x + 12, y),
+			Vector2(r.position.x + 30, y),
 			line,
 			HORIZONTAL_ALIGNMENT_LEFT,
-			r.size.x - 20,
+			r.size.x - 40,
 			11,
 			col
 		)
