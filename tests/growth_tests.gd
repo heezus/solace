@@ -1,7 +1,7 @@
 extends RefCounted
 ## Growth needs steady food (found by the newcomer playtest of 2026-09-30: the Kith grew to the housing cap on the
 ## starting berries and then starved back down). A birth needs the stockpile to cover its cost and the food coming
-## in over the last RATE_WINDOW seconds, from huts, haulers, fields and the player's hands while they gather, to
+## in over the last RATE_WINDOW seconds, from huts, haulers, fields and workshops (not the player's hands), to
 ## cover what everyone eats. A big stockpile alone never grows anyone. Run from tests/run_tests.gd.
 
 const Data = preload("res://scripts/data.gd")
@@ -16,7 +16,7 @@ func run(runner) -> void:
 	t = runner
 	test_food_supply_counts_what_comes_in()
 	test_a_young_window_counts_as_little()
-	test_hands_count_only_while_they_gather()
+	test_hand_gathering_is_not_steady_income()
 	test_steady_means_income_covers_eating()
 	test_a_birth_needs_steady_income()
 	test_a_big_stockpile_with_no_income_does_not_grow()
@@ -82,14 +82,32 @@ func test_a_young_window_counts_as_little() -> void:
 	)
 
 
-func test_hands_count_only_while_they_gather() -> void:
+## Playtest 3: "Food 18, +0.43/s" from the last hand harvests, no hut output, and a fourth Kith was born; then the
+## rate went away and the four starved. Hand-gathering is a spike, not income.
+func test_hand_gathering_is_not_steady_income() -> void:
 	var s := _camp(3, 10)
 	_income(s, 0.4, "hand")
 	s.economy.food_use = _eating(s)
-	t.check(s.economy.food_is_steady(), "a player gathering berries feeds growth while they do")
-	for _n in Data.RATE_WINDOW:
-		s.economy.advance(1.0)  # thirty quiet seconds: the window forgets
-	t.check(s.economy.food_supply() == 0.0 and not s.economy.food_is_steady(), "and once they stop it fades away")
+	t.check(s.economy.food_supply() == 0.0 and not s.economy.food_is_steady(), "hand harvests are no income")
+	_income(s, 0.4, "hand")
+	s.economy.flows.hist[0]["berries|gatherers_hut"] = 31.0 * _eating(s)
+	t.check(s.economy.food_is_steady(), "but a hut's berries beside them are")
+	var game: Sim = t.fresh()
+	var bush: Vector2i = t.find_tile(game, "berry")
+	game.economy.inv["berries"] = 18
+	game.economy.food_credit = 0.0
+	var harvests := 0
+	for n in 1200:  # two minutes: one berry every 2.3 s, +0.43/s, no hut
+		if n % 23 == 0:
+			game.gather_by_hand(bush)
+			harvests += 1
+		game.tick(0.1)
+		t.check(game.people.kith.size() == Data.KITH_START, "no birth on a hand-gathering burst (at %d)" % n)
+		if game.people.kith.size() != Data.KITH_START:
+			break
+	t.check(harvests > 50 and game.economy.food_supply() == 0.0, "the window saw +0 of income, %d harvests" % harvests)
+	t.check(game.economy.flows.rate("berries") > 0.0, "although the top bar rate showed the harvests")
+	t.check(Ui.growth_note(game) == Data.GROW_NOTE_FOOD, "and the note says it needs steady food")
 
 
 func test_steady_means_income_covers_eating() -> void:

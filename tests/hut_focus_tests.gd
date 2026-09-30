@@ -17,7 +17,8 @@ var t  # the runner, tests/run_tests.gd
 func run(runner) -> void:
 	t = runner
 	test_a_new_hut_works_the_nearest_resource()
-	test_ties_go_to_the_larger_group_then_the_fixed_order()
+	test_ties_go_to_food_when_it_is_short_else_the_fixed_order()
+	test_a_hut_beside_a_few_bushes_beats_many_trees()
 	test_a_hut_with_nothing_near_has_no_focus()
 	test_cycling_and_setting_the_focus()
 	test_a_hut_gathers_only_its_focus()
@@ -68,20 +69,54 @@ func test_a_new_hut_works_the_nearest_resource() -> void:
 	t.check(s.town.default_focus(p) == "stone", "and a Rock beside it wins again")
 
 
-func test_ties_go_to_the_larger_group_then_the_fixed_order() -> void:
+func test_ties_go_to_food_when_it_is_short_else_the_fixed_order() -> void:
 	var a := _arena()
 	var s: Sim = a[0]
 	var p: Vector2i = a[1]
 	_put(s, p + Vector2i(1, 0), "berry")
 	_put(s, p + Vector2i(-1, 0), "tree")
-	t.check(s.town.default_focus(p) == "wood", "one of each at the same distance: the first in item order, Wood")
-	_put(s, p + Vector2i(0, 1), "berry")
-	t.check(s.town.default_focus(p) == "berries", "but two Berry Bushes at that distance beat one tree")
+	_put(s, p + Vector2i(0, -1), "tree")
+	t.check(
+		s.town.default_focus(p) == "wood", "food in stock, one bush and two trees alike near: the first in item order"
+	)
+	for food in Data.FOOD_VALUE:
+		s.economy.inv[food] = 0
+	t.check(s.town.default_focus(p) == "berries", "with the food short the tie goes to the berries")
+	s.economy.inv["berries"] = 100
+	s.economy.low = true
+	t.check(s.town.default_focus(p) == "berries", "and so it does while the food warning is up")
+	_put(s, p + Vector2i(-1, 0), "grass")
+	_put(s, p + Vector2i(0, -1), "grass")
+	_put(s, p + Vector2i(0, 2), "tree")
+	t.check(
+		s.town.default_focus(p) == "berries", "a nearer bush still wins with food in stock: " + s.town.default_focus(p)
+	)
+	s.economy.low = false
 	var again := _arena()
 	var s2: Sim = again[0]
 	_put(s2, again[1] + Vector2i(1, 0), "berry")
 	_put(s2, again[1] + Vector2i(-1, 0), "tree")
 	t.check(s2.town.default_focus(again[1]) == "wood", "the same layout always gives the same focus")
+
+
+## Playtest 3: a hut put right beside three bushes, with 13 trees in reach, started on Wood.
+func test_a_hut_beside_a_few_bushes_beats_many_trees() -> void:
+	var a := _arena()
+	var s: Sim = a[0]
+	var p: Vector2i = a[1]
+	for off in [Vector2i(1, 1), Vector2i(-2, 0), Vector2i(0, -2)]:
+		_put(s, p + off, "berry")  # bushes one to two tiles away
+	var trees := 0
+	for dy in range(-2, 3):
+		for dx in range(-2, 3):
+			var off := Vector2i(dx, dy)
+			if maxi(absi(dx), absi(dy)) == 2 and trees < 13 and s.world.tile_at(p + off) == "grass":
+				_put(s, p + off, "tree")
+				trees += 1
+	t.check(trees == 13 and s.town.gather_tiles(p).size() >= 14, "set up: 13 trees and the bushes in reach")
+	t.check(s.town.default_focus(p) == "berries", "the hut starts on the berries it was put beside")
+	t.check(s.place("gatherers_hut", p), "placed")
+	t.check(s.town.buildings[s.town.building_at[p]]["focus"] == "berries", "and its focus is Berries")
 
 
 func test_a_hut_with_nothing_near_has_no_focus() -> void:
