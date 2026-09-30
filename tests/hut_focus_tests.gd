@@ -17,13 +17,15 @@ var t  # the runner, tests/run_tests.gd
 func run(runner) -> void:
 	t = runner
 	test_a_new_hut_works_the_nearest_resource()
-	test_ties_go_to_the_larger_group_then_the_fixed_order()
+	test_ties_go_to_food_when_it_is_short_else_the_fixed_order()
+	test_a_hut_beside_a_few_bushes_beats_many_trees()
 	test_a_hut_with_nothing_near_has_no_focus()
 	test_cycling_and_setting_the_focus()
 	test_a_hut_gathers_only_its_focus()
 	test_the_berries_goal_needs_a_hut_on_berries()
 	test_job_and_bundle_follow_the_focus()
 	test_the_panel_line_and_the_range_text()
+	test_an_unlinked_hut_waiting_for_a_click_says_so()
 	test_the_focus_survives_a_save()
 	test_an_old_save_gets_a_default_focus()
 
@@ -68,20 +70,54 @@ func test_a_new_hut_works_the_nearest_resource() -> void:
 	t.check(s.town.default_focus(p) == "stone", "and a Rock beside it wins again")
 
 
-func test_ties_go_to_the_larger_group_then_the_fixed_order() -> void:
+func test_ties_go_to_food_when_it_is_short_else_the_fixed_order() -> void:
 	var a := _arena()
 	var s: Sim = a[0]
 	var p: Vector2i = a[1]
 	_put(s, p + Vector2i(1, 0), "berry")
 	_put(s, p + Vector2i(-1, 0), "tree")
-	t.check(s.town.default_focus(p) == "wood", "one of each at the same distance: the first in item order, Wood")
-	_put(s, p + Vector2i(0, 1), "berry")
-	t.check(s.town.default_focus(p) == "berries", "but two Berry Bushes at that distance beat one tree")
+	_put(s, p + Vector2i(0, -1), "tree")
+	t.check(
+		s.town.default_focus(p) == "wood", "food in stock, one bush and two trees alike near: the first in item order"
+	)
+	for food in Data.FOOD_VALUE:
+		s.economy.inv[food] = 0
+	t.check(s.town.default_focus(p) == "berries", "with the food short the tie goes to the berries")
+	s.economy.inv["berries"] = 100
+	s.economy.low = true
+	t.check(s.town.default_focus(p) == "berries", "and so it does while the food warning is up")
+	_put(s, p + Vector2i(-1, 0), "grass")
+	_put(s, p + Vector2i(0, -1), "grass")
+	_put(s, p + Vector2i(0, 2), "tree")
+	t.check(
+		s.town.default_focus(p) == "berries", "a nearer bush still wins with food in stock: " + s.town.default_focus(p)
+	)
+	s.economy.low = false
 	var again := _arena()
 	var s2: Sim = again[0]
 	_put(s2, again[1] + Vector2i(1, 0), "berry")
 	_put(s2, again[1] + Vector2i(-1, 0), "tree")
 	t.check(s2.town.default_focus(again[1]) == "wood", "the same layout always gives the same focus")
+
+
+## Playtest 3: a hut put right beside three bushes, with 13 trees in reach, started on Wood.
+func test_a_hut_beside_a_few_bushes_beats_many_trees() -> void:
+	var a := _arena()
+	var s: Sim = a[0]
+	var p: Vector2i = a[1]
+	for off in [Vector2i(1, 1), Vector2i(-2, 0), Vector2i(0, -2)]:
+		_put(s, p + off, "berry")  # bushes one to two tiles away
+	var trees := 0
+	for dy in range(-2, 3):
+		for dx in range(-2, 3):
+			var off := Vector2i(dx, dy)
+			if maxi(absi(dx), absi(dy)) == 2 and trees < 13 and s.world.tile_at(p + off) == "grass":
+				_put(s, p + off, "tree")
+				trees += 1
+	t.check(trees == 13 and s.town.gather_tiles(p).size() >= 14, "set up: 13 trees and the bushes in reach")
+	t.check(s.town.default_focus(p) == "berries", "the hut starts on the berries it was put beside")
+	t.check(s.place("gatherers_hut", p), "placed")
+	t.check(s.town.buildings[s.town.building_at[p]]["focus"] == "berries", "and its focus is Berries")
 
 
 func test_a_hut_with_nothing_near_has_no_focus() -> void:
@@ -183,8 +219,8 @@ func test_the_berries_goal_needs_a_hut_on_berries() -> void:
 	s.town.set_focus(s.town.building_at[p], "berries")
 	t.check(s.story.goal_met(s, goal), "set on the berries it does")
 	t.check(
-		String(goal["text"]).contains("Berry Bushes") and String(goal["text"]).contains("one resource"),
-		"and the goal says a hut works one resource, and how to switch it"
+		String(goal["text"]).contains("Berry Bushes") and String(goal["text"]).contains("only works when you click it"),
+		"and the goal says a hut works only when you click it"
 	)
 
 
@@ -203,7 +239,14 @@ func test_job_and_bundle_follow_the_focus() -> void:
 	s.town.set_focus(s.town.building_at[p], "berries")
 	t.check(s.people.building_job(b) == Data.HUT_JOBS["berries"]["title"], "on Berries a Forager, though two are near")
 	var line := BuildingPanel.recipe_text(s, b)
-	t.check(line.contains("It works only Berries"), "the hut's range line names what it works: " + line)
+	t.check(
+		line.contains("Berries x2") and not line.contains("Wood"), "the range line names only what it works: " + line
+	)
+	t.check(
+		BuildingPanel.pace_text(s, b).contains("brings back 3 Berries."),
+		"and so does the trip line: " + BuildingPanel.pace_text(s, b)
+	)
+	t.check(not BuildingPanel.pace_text(s, b).contains("Wood"), "with no word of Wood")
 
 
 func test_the_panel_line_and_the_range_text() -> void:
@@ -235,10 +278,51 @@ func test_the_panel_line_and_the_range_text() -> void:
 	hearth.show_for(s.town.buildings[0])
 	t.check(not hearth.visible, "the Hearth has no focus line")
 	hearth.free()
+	s.town.set_focus(s.town.building_at[p], "berries")
+	var tiles := s.town.tiles_of(p, "berries")
+	t.check(BuildingPanel.gather_text(s, tiles).contains("Berries x1"), "the hover text lists the focus tiles only")
+	t.check(s.town.tiles_of(p, s.town.focus_at(p)) == tiles, "and the map highlights those same tiles")
 	t.check(
-		BuildingPanel.gather_text(s, s.town.gather_tiles(p), "berries").ends_with("It works only Berries."),
-		"the hover text says what the hut works"
+		s.town.focus_at(p + Vector2i(1, 1)) == s.town.default_focus(p + Vector2i(1, 1)),
+		"a spot with no hut shows the default"
 	)
+
+
+## Found by playtest 3: a newcomer clicked hut 1 and never hut 2, because nothing said an unlinked hut only works
+## when clicked. A hut that waits for a click shows a badge, and the goals, hut card and food warning say so.
+func test_an_unlinked_hut_waiting_for_a_click_says_so() -> void:
+	var a := _arena()
+	var s: Sim = a[0]
+	var p: Vector2i = a[1]
+	_put(s, p + Vector2i(0, 1), "berry")
+	s.people.learned_by["berries"] = "Aro"
+	s.place("gatherers_hut", p)
+	s.tick(0.1)
+	var i: int = s.town.building_at[p]
+	var b: Dictionary = s.town.buildings[i]
+	t.check(b["worker"] >= 0 and b["trips"] == 0, "a new hut has its Kith and no trip waiting")
+	t.check(HutFocus.wants_click(s, b), "so it asks for a click")
+	t.check(not HutFocus.wants_click(s, s.town.buildings[0]), "and the Hearth does not")
+	b["trips"] = 2
+	t.check(not HutFocus.wants_click(s, b), "a hut with trips queued does not")
+	b["trips"] = 0
+	b["paused"] = true
+	t.check(not HutFocus.wants_click(s, b), "nor does a paused hut")
+	b["paused"] = false
+	b["out"] = {"berries": Data.BUFFER_CAP}
+	t.check(not HutFocus.wants_click(s, b), "nor a hut whose output is full")
+	b["out"] = {}
+	s.people.learned_by.erase("berries")
+	t.check(not HutFocus.wants_click(s, b), "nor one whose focus its Kith have not learned")
+	var goal_text := ""
+	for g in Data.GOALS:
+		if g["id"] in ["hut", "trip", "berries"]:
+			t.check(String(g["text"]).to_lower().contains("click"), "the %s goal says to click the hut" % g["id"])
+			goal_text += String(g["text"])
+	t.check(not goal_text.contains("keeps coming"), "and none of them promises it keeps working")
+	t.check(Data.FOOD_LOW_EVENT.contains("Click your berry hut to send a trip"), "the food warning names the click")
+	t.check(Data.TRIPS_HINT.contains("only when you click it"), "the hut card says it works only when clicked")
+	t.check(Data.BUILDINGS["gatherers_hut"]["desc"].contains("only when you click it"), "as does its description")
 
 
 func test_the_focus_survives_a_save() -> void:
