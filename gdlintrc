@@ -1,0 +1,3 @@
+max-line-length: 140
+max-public-methods: 40
+max-returns: 20

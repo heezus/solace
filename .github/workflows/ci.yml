@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GODOT_VERSION: 4.7.2
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint GDScript
+        run: |
+          pip install "gdtoolkit==4.*"
+          gdlint scripts tests
+
+      - name: Install Godot
+        run: |
+          curl -sSL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip
+          mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
+          ./godot --version
+
+      - name: Import project
+        run: ./godot --headless --path . --import || true
+
+      - name: Check the main scene loads
+        run: ./godot --headless --path . --quit-after 120 2>&1 | tee run.log; ! grep -E "SCRIPT ERROR|Parse Error|ERROR:" run.log
+
+      - name: Run logic tests
+        run: ./godot --headless --path . -s tests/run_tests.gd
