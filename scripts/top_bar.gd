@@ -20,7 +20,7 @@ const FLAT := Color("9fb4bf")
 const MINUS := "−"
 const CHIP_W := 74.0
 const ICON := 24.0  # a good's sprite, with nothing behind it
-const ROW_H := 40.0  # a row of chips keeps this height whether or not its goods have appeared yet
+const ROW_H := 45.0  # a row of chips keeps this height whether or not its goods have appeared yet
 const CAPTION_W := 40.0
 const FOOD_W := 190.0
 
