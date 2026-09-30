@@ -154,6 +154,14 @@ func _hud_checks() -> void:
 			_check_fit("with a wall of text in the Info panel")
 			main.ui_refresh = 0.0
 			frozen = false
+		54:
+			frozen = true
+			_show_hut_panel_with_a_wall_of_text()
+		55:
+			_check_card_buttons("a hut's card with a wall of text")
+			main.building_panel.select(Vector2i(-1, -1))
+			main.ui_refresh = 0.0
+			frozen = false
 		56:
 			frozen = true
 			main.msg_log.visible = false
@@ -211,6 +219,47 @@ func _check_stable(what: String) -> void:
 	if not is_equal_approx(chip_x, base["chip_x"]):
 		problems.append("%s: the chips moved sideways (%.0f -> %.0f)" % [what, base["chip_x"], chip_x])
 	_check_top_bar_text(what)
+
+
+## A hut (placed by hand) selected, with far more text in its card than the panel has room for.
+func _show_hut_panel_with_a_wall_of_text() -> void:
+	var s = main.state
+	for id in s.economy.inv:
+		s.economy.inv[id] = maxi(s.economy.inv[id], 40)
+	s.research("gatherers_hut")
+	var at := Vector2i(-1, -1)
+	for r in range(1, 6):
+		for dy in range(-r, r + 1):
+			for dx in range(-r, r + 1):
+				var p: Vector2i = s.world.camp_pos + Vector2i(dx, dy)
+				if at.x < 0 and s.town.placement_error("gatherers_hut", p) == "":
+					at = p
+	if at.x < 0 or not s.place("gatherers_hut", at):
+		problems.append("couldn't place a hut for the card check")
+		return
+	main.building_panel.select(at)
+	main.ui_refresh = 999.0
+	main.building_panel.parts["desc"].text = WALL.repeat(4)
+
+
+## Collect, Pause and Demolish stay on the side panel and above the bottom bar, however tall the card is.
+func _check_card_buttons(what: String) -> void:
+	hud_checks += 1
+	var side: Rect2 = main.side_panel.get_global_rect()
+	var bottom: Rect2 = main.bottom_bar.get_global_rect()
+	var seen := 0
+	for key in ["collect", "pause", "demolish"]:
+		var b: Button = main.building_panel.parts[key]
+		if not b.is_visible_in_tree():
+			continue
+		seen += 1
+		var r: Rect2 = b.get_global_rect()
+		if r.size.x < 20.0 or r.size.y < 20.0 or not side.encloses(r) or r.end.y > bottom.position.y + 1.0:
+			problems.append(
+				"%s: the %s button (%s) isn't reachable (side panel %s, bottom bar %s)" % [what, key, r, side, bottom]
+			)
+	if seen < 2:
+		problems.append("%s: only %d card buttons showed (want Pause and Demolish)" % [what, seen])
 
 
 func _show_hearth_panel() -> void:
