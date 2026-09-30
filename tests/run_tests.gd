@@ -403,7 +403,7 @@ func test_roads_bridge_the_river() -> void:
 
 ## Every parent sits left of its child, no two cards overlap, and most techs join two branches.
 func test_tech_tree_is_a_web() -> void:
-	check(Data.TECHS.size() == 28, "the stone age has 28 techs")
+	check(Data.TECHS.size() == 29, "the stone age has 29 techs")
 	check(Data.TECH_ORDER.size() == Data.TECHS.size(), "TECH_ORDER lists every tech once")
 	var roots := 0
 	var multi := 0
@@ -435,7 +435,7 @@ func test_tech_tree_is_a_web() -> void:
 
 ## Tech tree v4 (mockups/tech-tree-v4.md): each link reads "you need X to invent Y".
 func test_tech_tree_v4() -> void:
-	check(TechLayout.links().size() == 48, "v4 has 48 links (%d)" % TechLayout.links().size())
+	check(TechLayout.links().size() == 51, "v4 plus the Storehouse has 51 links (%d)" % TechLayout.links().size())
 	check(Data.LANE_ORDER == ["fiber", "stone", "land", "hearth", "lore"], "lanes run Fiber, Stone, Land, Hearth, Lore")
 	check(Data.TECHS["bronze_dawn"]["tier"] == 5, "the gate sits after Tier V")
 	check(Data.TIER_NAMES.size() == 6, "every column has a caption")
@@ -463,7 +463,7 @@ func test_tech_tree_v4() -> void:
 		check(Data.TECHS[tech]["slot"] <= 1, tech + ": each lane has two rows")
 	# Side branches are exactly the techs Bronze Dawn can do without.
 	var route := Rules.route_to("bronze_dawn", {}, Rules.visible_techs(true))
-	check(route.size() == 18, "Bronze Dawn needs 18 techs (%d)" % route.size())
+	check(route.size() == 19, "Bronze Dawn needs 19 techs (%d)" % route.size())
 	for tech in Data.TECHS:
 		check(
 			Data.TECHS[tech].get("side", false) == (tech not in route), tech + " is a side branch only if off the route"

@@ -202,6 +202,8 @@ func _sub_text(type: String) -> String:
 	match Data.BUILDINGS[type]["kind"]:
 		"road", "field", "bridge":
 			return "Ready · drag to lay"
+	if Data.BUILDINGS[type]["tech"] == "":
+		return "Always available"
 	return "Ready"
 
 
@@ -210,6 +212,8 @@ func _tooltip(type: String) -> String:
 	var s: String = def["name"] + "\n" + def["desc"]
 	if not def["cost"].is_empty():
 		s += "\nCost: " + Ui.progress_text(state.inv, def["cost"], 99)
-	if not state.building_unlocked(type):
+	if def["tech"] == "":
+		s += "\nAlways available: no research needed."
+	elif not state.building_unlocked(type):
 		s += "\nResearch %s to unlock it." % Data.TECHS[def["tech"]]["name"]
 	return s

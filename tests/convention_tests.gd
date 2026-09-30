@@ -10,6 +10,7 @@ const TechLayout = preload("res://scripts/tech_layout.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
 const Overlays = preload("res://scripts/overlays.gd")
+const Hands = preload("res://scripts/hands.gd")
 
 var t  # the runner, tests/run_tests.gd
 
@@ -29,6 +30,7 @@ func run(runner) -> void:
 	test_side_branches_are_marked()
 	test_build_tabs_cover_every_building()
 	test_building_panel_texts()
+	test_tree_gates_every_building()
 
 
 func test_demolish_refunds_half() -> void:
@@ -342,3 +344,54 @@ func test_building_panel_texts() -> void:
 	t.check(Overlays.demolish_text(s, p).contains("get back"), "demolish hover names the refund")
 	t.check(Overlays.demolish_text(s, p).contains("goes idle"), "and that its Kith goes idle")
 	t.check(Overlays.demolish_text(s, s.camp_pos).begins_with("The Hearth stays"), "the Hearth can't be demolished")
+
+
+## The research board and the build bar agree (Jon: the tree "isn't following and unlocking items like
+## a warehouse"): every building and recipe names a real tech (or none, like the Dwelling), can't be
+## placed or crafted before it, and that tech's card names it.
+func test_tree_gates_every_building() -> void:
+	var always := []
+	for type in Data.BUILDINGS:
+		var def: Dictionary = Data.BUILDINGS[type]
+		var tech: String = def["tech"]
+		if tech == "":
+			always.append(type)
+			continue
+		t.check(Data.TECHS.has(tech), "%s is gated by a real tech (%s)" % [type, tech])
+		if not Data.TECHS.has(tech):
+			continue
+		var unlock: String = Data.TECHS[tech]["unlock"]
+		t.check(unlock.contains(def["name"]), "%s's card names the %s it unlocks: %s" % [tech, def["name"], unlock])
+		var s: GameState = t.fresh()
+		t.give(s, 999)
+		s.shard_seen = true
+		for other in Data.TECHS:
+			if other != tech:
+				s.researched[other] = true
+		var ok := 0
+		for y in GameState.HEIGHT:
+			for x in GameState.WIDTH:
+				if s.placement_error(type, Vector2i(x, y)) == "":
+					ok += 1
+		t.check(ok == 0, "%s can't be placed anywhere before %s (%d tiles)" % [type, tech, ok])
+		s.researched[tech] = true
+		for y in GameState.HEIGHT:
+			for x in GameState.WIDTH:
+				if s.placement_error(type, Vector2i(x, y)) == "":
+					ok += 1
+		t.check(ok > 0 or def["kind"] == "camp", "%s can be placed once %s is researched" % [type, tech])
+	t.check(always == ["camp", "dwelling"], "only the Hearth and the Dwelling need no research: %s" % [always])
+	for r in Data.RECIPES:
+		var rec: Dictionary = Data.RECIPES[r]
+		t.check(Data.TECHS.has(rec["tech"]), "the %s recipe is gated by a real tech" % r)
+		t.check(
+			Data.TECHS[rec["tech"]]["unlock"].contains(rec["name"]), "%s's card names %s" % [rec["tech"], rec["name"]]
+		)
+		var s: GameState = t.fresh()
+		t.give(s, 99)
+		t.check(not Hands.craft(s, r), "can't craft %s before %s" % [r, rec["tech"]])
+	# Every card's summary fits on it.
+	var font := ThemeDB.fallback_font
+	for tech in Data.TECHS:
+		var w := font.get_string_size(Data.TECHS[tech]["unlock"], HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x
+		t.check(w <= TechLayout.CARD_W - 70.0, "%s's summary fits its card (%d px)" % [tech, w])

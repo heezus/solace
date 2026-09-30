@@ -299,7 +299,7 @@ func _decide() -> void:
 	if _house_wanted() and s.food_total() >= s.kith.size() * 2.0 + Data.BIRTH_FOOD:
 		if _place_near_hearth("dwelling"):
 			return
-	if s.has_haulers() and _place_storehouse():
+	if s.building_unlocked("storehouse") and _place_storehouse():
 		return
 	if _explore(short):
 		return
