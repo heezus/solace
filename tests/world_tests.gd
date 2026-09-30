@@ -162,8 +162,10 @@ func test_generated_map_has_a_camp_and_a_shard() -> void:
 	for map_seed in [1, 2, 3, 7, 42]:
 		var w := World.new()
 		w.generate(map_seed)
+		# The Hearth's spot comes from the terrain (dry lowland by the river), so it differs by seed.
 		t.check(
-			w.camp_pos == Vector2i(int(World.WIDTH / 3.0), int(World.HEIGHT / 2.0)), "seed %d: camp spot" % map_seed
+			w.camp_pos.x >= 5 and w.camp_pos.y >= 5 and w.in_bounds(w.camp_pos + Vector2i(5, 5)),
+			"seed %d: camp spot" % map_seed
 		)
 		t.check(w.tile_at(w.camp_pos) == "grass", "seed %d: the camp stands on grass" % map_seed)
 		t.check(w.tile_at(w.shard_pos) == "shard", "seed %d: the shard is on the map" % map_seed)
