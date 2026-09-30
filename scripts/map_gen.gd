@@ -131,7 +131,7 @@ static func _pick_camp(s, land: Dictionary, rng: RandomNumberGenerator) -> Vecto
 				continue
 			if Terrain.wet_of(land, p) > CAMP_WET_MAX or not _footprint_dry(land, p):
 				continue
-			var score := absi(d - 6) * 35 + Terrain.height_of(land, p) / 25 + rng.randi_range(0, 100)
+			var score := absi(d - 6) * 35 + Terrain.div(Terrain.height_of(land, p), 25) + rng.randi_range(0, 100)
 			if score < best_score:
 				best_score = score
 				best = p
@@ -206,7 +206,8 @@ static func _lay_ridge(s, land: Dictionary, rng: RandomNumberGenerator) -> void:
 			and (from.x < 0 or absi(Terrain.height_of(land, p) - level) < absi(Terrain.height_of(land, from) - level))
 		):
 			from = p
-	var cost := func(_a: Vector2i, b: Vector2i) -> int: return 10 + absi(Terrain.height_of(land, b) - level) / 5
+	var cost := func(_a: Vector2i, b: Vector2i) -> int:
+		return 10 + Terrain.div(absi(Terrain.height_of(land, b) - level), 5)
 	var path := Terrain.route(land, from, func(p): return goal.has(p), cost)
 	var gaps := _gaps(path.size(), rng)
 	for i in path.size():
@@ -224,7 +225,7 @@ static func _gaps(n: int, rng: RandomNumberGenerator) -> Dictionary:
 	if n < 12:
 		return gaps
 	for k in rng.randi_range(1, 2):
-		var start := rng.randi_range(n * 15 / 100, n * 85 / 100)
+		var start := rng.randi_range(Terrain.div(n * 15, 100), Terrain.div(n * 85, 100))
 		for i in range(start, mini(start + 3, n)):
 			gaps[i] = true
 	return gaps
@@ -246,7 +247,7 @@ static func _lay_boulders(s, land: Dictionary) -> void:
 			var p := Vector2i(x, y)
 			if _free(s, land, p) and _cheb(p, land["camp"]) > 6 and Terrain.height_of(land, p) >= floor_h:
 				cells.append(p)
-	var score := func(p: Vector2i) -> int: return Terrain.height_of(land, p) / 2 + rock[p.y * s.width + p.x]
+	var score := func(p: Vector2i) -> int: return Terrain.div(Terrain.height_of(land, p), 2) + rock[p.y * s.width + p.x]
 	for p in _top(cells, score, s.width * s.height * 5 / 100):
 		s.set_tile(p, "rock")
 
@@ -267,7 +268,8 @@ static func _lay_forest(s, land: Dictionary) -> void:
 				continue
 			if Terrain.dist_of(land, p) > 1 or noise[y * s.width + x] > BANK_FOREST:
 				cells.append(p)
-	var score := func(p: Vector2i) -> int: return Terrain.wet_of(land, p) * 8 / 10 + noise[p.y * s.width + p.x] * 4 / 10
+	var score := func(p: Vector2i) -> int:
+		return Terrain.div(Terrain.wet_of(land, p) * 8, 10) + Terrain.div(noise[p.y * s.width + p.x] * 4, 10)
 	for p in _top(cells, score, s.width * s.height * 20 / 100):
 		s.set_tile(p, "tree")
 
@@ -286,7 +288,7 @@ static func _lay_meadows(s, land: Dictionary) -> void:
 			if wet >= 200 and wet <= 750 and Terrain.height_of(land, p) <= cap and _count_near(s, p, "tree", 1) == 0:
 				cells.append(p)
 	var score := func(p: Vector2i) -> int:
-		return 1000 - absi(Terrain.wet_of(land, p) - 480) + noise[p.y * s.width + p.x] / 2
+		return 1000 - absi(Terrain.wet_of(land, p) - 480) + Terrain.div(noise[p.y * s.width + p.x], 2)
 	for p in _top(cells, score, s.width * s.height * 8 / 100):
 		s.set_tile(p, "grain")
 

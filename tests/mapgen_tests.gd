@@ -175,13 +175,14 @@ func test_the_reroll_sequence_is_fixed() -> void:
 		seen[a] = true
 	t.check(seen.size() == MapGen.ATTEMPTS, "each attempt has its own seed")
 	t.check(MapGen.attempt_seed(5, 0) != MapGen.attempt_seed(6, 0), "and so does each map")
-	var a: Dictionary = _map(4)["report"]
+	var first: Dictionary = _map(4)["report"]
 	var again := {}
 	MapGen.build(World.new(), 4, again)
 	t.check(
-		again["attempts"] == a["attempts"] and again["patched"] == a["patched"], "the same number of tries every time"
+		again["attempts"] == first["attempts"] and again["patched"] == first["patched"],
+		"the same number of tries every time"
 	)
-	t.check(a["attempts"] >= 1 and a["attempts"] <= MapGen.ATTEMPTS, "between 1 and %d tries" % MapGen.ATTEMPTS)
+	t.check(first["attempts"] >= 1 and first["attempts"] <= MapGen.ATTEMPTS, "between 1 and %d tries" % MapGen.ATTEMPTS)
 
 
 func test_every_map_is_fair() -> void:
@@ -268,7 +269,7 @@ func test_the_river_runs_from_high_to_low() -> void:
 			Terrain.height_of(land, first) > Terrain.height_of(land, last),
 			"seed %d: it starts higher than it ends" % map_seed
 		)
-		var third := path.size() / 3
+		var third := Terrain.div(path.size(), 3)
 		var upper := mean(path.slice(0, third).map(func(p): return Terrain.height_of(land, p)))
 		var lower := mean(path.slice(path.size() - third).map(func(p): return Terrain.height_of(land, p)))
 		t.check(upper > lower, "seed %d: the top third is higher than the bottom third" % map_seed)
@@ -304,7 +305,10 @@ func test_there_is_a_river_to_bridge() -> void:
 				% [map_seed, reach.size(), land_tiles]
 			)
 		)
-		t.check(reach.size() > land_tiles / 3, "seed %d: and the Hearth's side is a real place to live" % map_seed)
+		t.check(
+			reach.size() > Terrain.div(land_tiles, 3),
+			"seed %d: and the Hearth's side is a real place to live" % map_seed
+		)
 		# A bridge fixes it: with every river tile walkable, all the land is one piece.
 		var open := World.new(w.width, w.height)
 		open.tiles = w.tiles.duplicate()
@@ -503,7 +507,7 @@ func test_the_strange_stone_is_a_lone_high_point() -> void:
 		high += 1 if Terrain.height_of(land, w.shard_pos) > Terrain.height_at_percent(land, 50) else 0
 		above_hearth += 1 if Terrain.height_of(land, w.shard_pos) > Terrain.height_of(land, w.camp_pos) else 0
 		alone += 1 if w.touches(w.shard_pos, "grass") and not w.touches_river(w.shard_pos) else 0
-	t.check(high >= SEEDS * 9 / 10, "the Strange Stone stands on high ground (%d of %d)" % [high, SEEDS])
+	t.check(high >= Terrain.div(SEEDS * 9, 10), "the Strange Stone stands on high ground (%d of %d)" % [high, SEEDS])
 	t.check(above_hearth == SEEDS, "always above the Hearth")
 	t.check(alone == SEEDS, "and has open ground beside it")
 
@@ -524,7 +528,9 @@ func test_the_ridge_has_a_gap() -> void:
 		t.check(
 			thin >= 10, "seed %d: the ridge is thin in places, a pass is 3 Stone (%d thin tiles)" % [map_seed, thin]
 		)
-	t.check(long_ridge >= SEEDS * 8 / 10, "most maps have a long ridge of rock (%d of %d)" % [long_ridge, SEEDS])
+	t.check(
+		long_ridge >= Terrain.div(SEEDS * 8, 10), "most maps have a long ridge of rock (%d of %d)" % [long_ridge, SEEDS]
+	)
 
 
 func test_maps_differ() -> void:
@@ -545,13 +551,16 @@ func test_maps_differ() -> void:
 	t.check(ups.size() >= 5, "the high side varies (%d of 8 directions)" % ups.size())
 	t.check(starts.size() >= 3, "the river starts on different sides (%d)" % starts.size())
 	t.check(mouths.size() >= 3, "and ends on different sides (%d)" % mouths.size())
-	t.check(lengths.size() >= SEEDS / 2, "it takes different shapes (%d lengths)" % lengths.size())
-	t.check(camps.size() >= SEEDS * 2 / 3, "the Hearth is in different places (%d)" % camps.size())
+	t.check(lengths.size() >= Terrain.div(SEEDS, 2), "it takes different shapes (%d lengths)" % lengths.size())
+	t.check(camps.size() >= Terrain.div(SEEDS * 2, 3), "the Hearth is in different places (%d)" % camps.size())
 	var vertical := 0
 	for map_seed in range(1, SEEDS + 1):
 		var path: Array = _land(map_seed)["paths"][0]
 		vertical += 1 if absi(path[0].x - path[path.size() - 1].x) < 5 else 0
-	t.check(vertical < SEEDS * 2 / 3, "it isn't always a strip down the same side (%d run straight down)" % vertical)
+	t.check(
+		vertical < Terrain.div(SEEDS * 2, 3),
+		"it isn't always a strip down the same side (%d run straight down)" % vertical
+	)
 
 
 ## 0 for the west edge, 1 the east, 2 the north, 3 the south, 4 a corner tile counts as the side it is nearest.

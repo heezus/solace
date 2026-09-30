@@ -50,6 +50,11 @@ static func make(w: int, h: int, land_seed: int) -> Dictionary:
 	return t
 
 
+## Whole-number division, rounded toward zero (the integer / would warn).
+static func div(a: int, b: int) -> int:
+	return int(a / float(b))
+
+
 static func noise(noise_seed: int, freq: float, octaves: int) -> FastNoiseLite:
 	var n := FastNoiseLite.new()
 	n.seed = noise_seed
@@ -110,7 +115,7 @@ static func _main_river(t: Dictionary, rng: RandomNumberGenerator) -> Array:
 	var edge := border_by_height(t)
 	var from: Vector2i = edge[rng.randi_range(0, mini(4, edge.size() - 1))]  # one of the five highest edge tiles
 	var low := _low_edge(edge)
-	var far := maxi(mini(t["w"], t["h"]) * 3 / 4, 3)
+	var far := maxi(div(mini(t["w"], t["h"]) * 3, 4), 3)
 	return route(t, from, func(p): return low.has(p) and _steps(p, from) >= far, _flow_cost.bind(t, {}))
 
 
@@ -122,14 +127,14 @@ static func _tributary(t: Dictionary, main: Array, rng: RandomNumberGenerator) -
 		return []
 	var from: Vector2i = edge[rng.randi_range(0, mini(3, edge.size() - 1))]
 	var joins := {}
-	for i in range(main.size() / 4, main.size()):
+	for i in range(div(main.size(), 4), main.size()):
 		joins[main[i]] = true
 	return route(t, from, func(p): return joins.has(p), _flow_cost.bind(t, {}))
 
 
 ## A branch that leaves the river part way down and reaches the edge somewhere else.
 static func _fork(t: Dictionary, main: Array, rng: RandomNumberGenerator) -> Array:
-	var i := rng.randi_range(main.size() * 35 / 100, main.size() * 60 / 100)
+	var i := rng.randi_range(div(main.size() * 35, 100), div(main.size() * 60, 100))
 	var from: Vector2i = main[i]
 	var banned := {}
 	for p in main:
@@ -148,7 +153,7 @@ static func _flow_cost(a: Vector2i, b: Vector2i, t: Dictionary, banned: Dictiona
 	var w: int = t["w"]
 	var height: PackedInt32Array = t["height"]
 	var climb := maxi(0, height[b.y * w + b.x] - height[a.y * w + a.x])
-	var cost: int = 4 + climb / UPHILL_DIV + t["meander"][b.y * w + b.x]
+	var cost: int = 4 + div(climb, UPHILL_DIV) + t["meander"][b.y * w + b.x]
 	if b.x == 0 or b.y == 0 or b.x == w - 1 or b.y == t["h"] - 1:
 		cost += 60
 	elif b.x == 1 or b.y == 1 or b.x == w - 2 or b.y == t["h"] - 2:
@@ -189,7 +194,7 @@ static func border_by_height(t: Dictionary) -> Array:
 ## The lowest quarter of the edge, as a set.
 static func _low_edge(edge_high_first: Array) -> Dictionary:
 	var low := {}
-	for i in range(edge_high_first.size() * 3 / 4, edge_high_first.size()):
+	for i in range(div(edge_high_first.size() * 3, 4), edge_high_first.size()):
 		low[edge_high_first[i]] = true
 	return low
 
@@ -215,7 +220,7 @@ static func route(t: Dictionary, from: Vector2i, is_goal: Callable, step_cost: C
 		var here: int = open[at]
 		open[at] = open[open.size() - 1]
 		open.pop_back()
-		var p := Vector2i(here % w, here / w)
+		var p := Vector2i(here % w, div(here, w))
 		if p != from and is_goal.call(p):
 			return _walk_back(came, here, w)
 		for n in NEIGHBORS:
@@ -236,7 +241,7 @@ static func _walk_back(came: PackedInt32Array, end: int, w: int) -> Array:
 	var path: Array = []
 	var at := end
 	while at >= 0:
-		path.append(Vector2i(at % w, at / w))
+		path.append(Vector2i(at % w, div(at, w)))
 		at = came[at]
 	path.reverse()
 	return path
@@ -251,7 +256,7 @@ static func water_tiles(paths: Array, w: int, h: int) -> Dictionary:
 		for i in path.size():
 			var p: Vector2i = path[i]
 			water[p] = Vector2i(n, i)
-			if n == 0 and i >= path.size() * RIVER_START / 10:
+			if n == 0 and i >= div(path.size() * RIVER_START, 10):
 				var q := p + _widen(path, i)
 				if q.x >= 0 and q.y >= 0 and q.x < w and q.y < h and not water.has(q):
 					water[q] = Vector2i(n, i)
@@ -300,7 +305,7 @@ static func _wetness(t: Dictionary, land_seed: int) -> PackedInt32Array:
 	out.resize(w * h)
 	for i in w * h:
 		var near := maxi(0, 1000 - dist[i] * WET_FALL)
-		out[i] = clampi(near * 7 / 10 + mix[i] * 3 / 10, 0, 1000)
+		out[i] = clampi(div(near * 7, 10) + div(mix[i] * 3, 10), 0, 1000)
 	return out
 
 
@@ -311,7 +316,7 @@ static func _wetness(t: Dictionary, land_seed: int) -> PackedInt32Array:
 static func height_at_percent(t: Dictionary, share_pct: int) -> int:
 	var sorted: PackedInt32Array = t["height"].duplicate()
 	sorted.sort()
-	return sorted[clampi(sorted.size() * share_pct / 100, 0, sorted.size() - 1)]
+	return sorted[clampi(div(sorted.size() * share_pct, 100), 0, sorted.size() - 1)]
 
 
 static func height_of(t: Dictionary, p: Vector2i) -> int:
