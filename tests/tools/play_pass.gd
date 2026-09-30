@@ -8,6 +8,7 @@ extends SceneTree
 
 const Data = preload("res://scripts/data.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
+const Ranks = preload("res://scripts/ranks.gd")
 
 const BOT_STEPS_PER_FRAME := 40
 const MAX_FRAMES := 4000
@@ -272,6 +273,10 @@ func _script() -> void:
 			_click_control(main.tech_panel.strip["button"]),
 		2
 	)
+	# Buy Knapping's rank II from its card, then from the strip's button once it's affordable again.
+	_then(func(): _show_rank("knapping"), 2)
+	_then(func(): _click_card("knapping"), 2)
+	_then(func(): _expect(Ranks.rank(main.state, "knapping") == 2, "clicking Knapping didn't buy rank II"))
 	_then(func(): _key(KEY_T))
 	# Demolish with X, then Esc.
 	_then(func(): _key(KEY_X))
@@ -313,6 +318,15 @@ func _tech_board() -> void:
 		var at: Vector2 = board.get_global_transform() * r.get_center()
 		_move(at)
 	panel.scroll.scroll_horizontal = int(board.card_rect("calendar").position.x - 200.0)
+
+
+func _show_rank(tech: String) -> void:
+	var s = main.state
+	for item in Ranks.next_cost(s, tech):
+		s.inv[item] = s.inv.get(item, 0) + int(Ranks.next_cost(s, tech)[item])
+	var board = main.tech_panel.board
+	main.tech_panel.scroll.scroll_horizontal = int(board.card_rect(tech).position.x - 200.0)
+	main.tech_panel.scroll.scroll_vertical = int(board.card_rect(tech).position.y - 100.0)
 
 
 func _click_card(tech: String) -> void:

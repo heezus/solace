@@ -338,7 +338,10 @@ func test_kith_staff_buildings_in_order() -> void:
 			staffed += 1
 	check(staffed == Data.KITH_START, "one worker per building, as many as there are Kith")
 	var last: Dictionary = s.buildings[s.buildings.size() - 1]
-	check(last["worker"] == -1 and last["status"].begins_with("No Woodcutter yet"), "the newest building waits for a worker")
+	check(
+		last["worker"] == -1 and last["status"].begins_with("No Woodcutter yet"),
+		"the newest building waits for a worker"
+	)
 
 
 func test_population_grows_with_food_and_room() -> void:

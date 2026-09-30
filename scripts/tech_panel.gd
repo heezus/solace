@@ -10,6 +10,7 @@ const Ui = preload("res://scripts/ui.gd")
 const Rules = preload("res://scripts/rules.gd")
 const Research = preload("res://scripts/research.gd")
 const TechBoard = preload("res://scripts/tech_board.gd")
+const Ranks = preload("res://scripts/ranks.gd")
 
 const BG := Color("172c4a")
 
@@ -117,6 +118,8 @@ func _on_card(tech: String) -> void:
 	if state.can_research(tech):
 		state.research(tech)
 		Research.refill(state)
+	elif state.researched.has(tech):
+		Ranks.buy(state, tech)  # a researched card with ranks buys the next one, when affordable
 	else:
 		Research.set_goal(state, tech)
 	refresh()
@@ -229,6 +232,14 @@ func _show_tech(tech: String) -> void:
 	strip["title"].add_theme_color_override("font_color", Color.WHITE)
 	strip["desc"].text = t["desc"]
 	strip["cost"].text = "Cost: " + Ui.progress_text(state.inv, t["cost"], 99)
+	if Ranks.has_ranks(tech):
+		var r := Ranks.rank(state, tech)
+		strip["cost"].text += (
+			"     RANK %s of III · ranks II and III: %s each, optional"
+			% [Data.RANK_NAMES[maxi(r, 1)] if r > 0 else "-", Ranks.effect_text(tech)]
+		)
+		if not Ranks.next_cost(state, tech).is_empty():
+			strip["cost"].text += (" · next: " + Ui.progress_text(state.inv, Ranks.next_cost(state, tech), 99))
 	strip["links"].text = "NEEDS: %s     LEADS TO: %s" % [_needs_text(tech), _leads_text(tech)]
 	var route := Rules.route_to(tech, state.researched, Rules.visible_techs(state.shard_seen))
 	if route.is_empty():
@@ -240,10 +251,14 @@ func _show_tech(tech: String) -> void:
 			"YOUR ROUTE: " + " › ".join(names) + ("     Ready now: " + ", ".join(now) if not now.is_empty() else "")
 		)
 	var b: Button = strip["button"]
-	b.visible = not state.researched.has(tech)
+	b.visible = not state.researched.has(tech) or not Ranks.next_cost(state, tech).is_empty()
+	b.disabled = false
 	b.text = "Research " + t["name"] if state.can_research(tech) else "Queue the way there"
 	if state.research_goal == tech:
 		b.text = "Queued"
+	if state.researched.has(tech) and b.visible:
+		b.text = "Buy rank %s" % Data.RANK_NAMES[Ranks.rank(state, tech) + 1]
+		b.disabled = not Ranks.can_buy(state, tech)
 
 
 func _needs_text(tech: String) -> String:

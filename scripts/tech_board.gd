@@ -10,6 +10,7 @@ const GameState = preload("res://scripts/game_state.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const TechLayout = preload("res://scripts/tech_layout.gd")
+const Ranks = preload("res://scripts/ranks.gd")
 
 const MET := Color("d3e2ef")
 const NEEDED := Color("5f7d9c")
@@ -224,7 +225,16 @@ func _draw_card(tech: String) -> void:
 		10,
 		sub
 	)
-	if done:
+	var next_rank := Ranks.next_cost(state, tech)
+	if done and not next_rank.is_empty():
+		# The next rank's cost, bought by clicking the card.
+		var label := "Rank %s:" % Data.RANK_NAMES[Ranks.rank(state, tech) + 1]
+		var col := Color(GOLD, a) if Ranks.can_buy(state, tech) else Color(1, 1, 1, 0.7 * a)
+		draw_string(ThemeDB.fallback_font, Vector2(x, r.position.y + 54), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, col)
+		var w := ThemeDB.fallback_font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x
+		_draw_cost(next_rank, Vector2(x + w + 5.0, r.position.y + 45), a)
+		_draw_check(r.position + Vector2(r.size.x - 16, 13), a)
+	elif done:
 		draw_string(
 			ThemeDB.fallback_font,
 			Vector2(x, r.position.y + 53),
@@ -241,6 +251,8 @@ func _draw_card(tech: String) -> void:
 		draw_circle(r.position + Vector2(r.size.x - 12, 12), 4.0, Color(GOLD, a))
 	elif not open and not done:
 		_draw_lock(r.position + Vector2(r.size.x - 16, 8), a * 0.7)
+	if Ranks.has_ranks(tech):
+		_draw_rank_pips(tech, r, a)
 	var q := state.research_queue.find(tech)
 	if q >= 0 and not is_ready:
 		Art.outlined_circle(self, r.position + Vector2(r.size.x - 14, r.size.y - 13), 8.0, Color(GOLD, a))
@@ -267,6 +279,19 @@ func _draw_cost(cost: Dictionary, at: Vector2, a: float) -> void:
 		var col := Color(1, 1, 1, 0.85 * a) if have >= need else Color(Color("ff9aa9"), a)
 		draw_string(ThemeDB.fallback_font, Vector2(x + 11, at.y + 9), s, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, col)
 		x += 15.0 + ThemeDB.fallback_font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x + 6.0
+
+
+## Ranks I to III as three small diamonds under the icon, gold for each rank held.
+func _draw_rank_pips(tech: String, r: Rect2, a: float) -> void:
+	var held := Ranks.rank(state, tech)
+	for i in Data.MAX_RANK:
+		var c := r.position + Vector2(20 + i * 11, 57.5)
+		var pts := PackedVector2Array(
+			[c + Vector2(0, -3.5), c + Vector2(3.5, 0), c + Vector2(0, 3.5), c + Vector2(-3.5, 0)]
+		)
+		draw_colored_polygon(pts, Color(GOLD, a) if i < held else Color(1, 1, 1, 0.12 * a))
+		pts.append(pts[0])
+		draw_polyline(pts, Color(Art.OUTLINE, a), 1.5, true)
 
 
 func _draw_check(c: Vector2, a: float) -> void:
