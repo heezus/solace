@@ -1,12 +1,12 @@
 extends RefCounted
 ## Unit testbench for the Economy block (scripts/economy.gd): stockpile, food and eating, item flows.
 ## Economy is built alone, with a hand-set stockpile and a hand-set set of researched techs; no map,
-## no Kith and no GameState. The last test checks GameState's pass-throughs still reach the same block.
+## no Kith and no Sim. The last test checks that the Sim's blocks share its techs.
 ## Run from tests/run_tests.gd, which owns check() and the helpers.
 
 const Data = preload("res://scripts/data.gd")
 const Economy = preload("res://scripts/economy.gd")
-const GameState = preload("res://scripts/game_state.gd")
+const Sim = preload("res://scripts/sim.gd")
 const RunSave = preload("res://scripts/run_save.gd")
 
 var t  # the runner, tests/run_tests.gd
@@ -32,7 +32,7 @@ func run(runner) -> void:
 	test_flow_window_forgets()
 	test_economy_stands_alone()
 	test_to_dict_and_from_dict()
-	test_game_state_passes_through()
+	test_sim_shares_the_techs_with_the_economy()
 
 
 ## An Economy with every count zeroed, so a test sets exactly the stock it needs.
@@ -366,28 +366,26 @@ func test_economy_stands_alone() -> void:
 	)
 
 
-func test_game_state_passes_through() -> void:
-	var s := GameState.new()
-	t.check(s.inv == s.economy.inv, "GameState.inv is the Economy's stockpile")
-	s.inv["wood"] = 9
-	t.check(s.economy.inv["wood"] == 9 and s.can_afford({"wood": 9}), "a write through it lands there")
-	s.add("clay", 2)
-	t.check(s.economy.inv["clay"] == 2 and s.seen.has("clay") and s.economy.seen.has("clay"), "add reaches the block")
-	s._pay({"wood": 4})
+func test_sim_shares_the_techs_with_the_economy() -> void:
+	var s := Sim.new()
+	s.economy.inv["wood"] = 9
+	t.check(s.economy.can_afford({"wood": 9}), "a write to the stockpile is what can_afford reads")
+	s.economy.add("clay", 2)
+	t.check(s.economy.inv["clay"] == 2 and s.economy.seen.has("clay"), "add reaches the stockpile")
+	s.economy.pay({"wood": 4})
 	t.check(s.economy.inv["wood"] == 5, "so does paying")
-	s.food_credit = 1.25
-	t.check(is_equal_approx(s.economy.food_credit, 1.25), "food_credit reads and writes through")
-	s.starving = true
-	t.check(s.economy.starving, "so does starving")
-	s.inv["berries"] = 0
-	s.inv["fish"] = 0
-	s.inv["flour"] = 0
-	s.food_credit = 0.0
-	t.check(not s.economy.eat(1.0) and s.starving, "eating with no food fails, and the flag stays as set")
-	s.inv["berries"] = 3
-	t.check(is_equal_approx(s.food_total(), 3.0) and s.food_value("berries") == 1.0, "food queries agree")
-	s.researched["smoking"] = true
-	t.check(s.economy.food_value("berries") == Data.SMOKED_BERRY_FOOD, "the block sees GameState's researched techs")
+	s.economy.starving = true
+	s.economy.inv["berries"] = 0
+	s.economy.inv["fish"] = 0
+	s.economy.inv["flour"] = 0
+	s.economy.food_credit = 0.0
+	t.check(not s.economy.eat(1.0) and s.economy.starving, "eating with no food fails, and the flag stays as set")
+	s.economy.inv["berries"] = 3
+	t.check(
+		is_equal_approx(s.economy.food_total(), 3.0) and s.economy.food_value("berries") == 1.0, "food queries agree"
+	)
+	s.tech_tree.researched["smoking"] = true
+	t.check(s.economy.food_value("berries") == Data.SMOKED_BERRY_FOOD, "the block sees the researched techs")
 	s.economy.note("wood", 2, "hand")
-	s.flows.advance(1.0)
-	t.check(is_equal_approx(s.flows.rate("wood"), 2.0) and s.flows == s.economy.flows, "flows are the block's flows")
+	s.economy.flows.advance(1.0)
+	t.check(is_equal_approx(s.economy.flows.rate("wood"), 2.0), "flows are the block's flows")

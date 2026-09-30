@@ -2,7 +2,7 @@ extends RefCounted
 ## The Economy block: the stockpile, food and eating, and the item flows behind the top bar's rates.
 ## It stands alone: it never reaches into another block. What it needs from outside comes in at
 ## construction (the researched techs, a read-only view) or as an argument (how many mouths to feed).
-## GameState owns one and passes its old stockpile methods through to it.
+## Sim owns one, reached as `sim.economy`.
 
 const Data = preload("res://scripts/data.gd")
 const Codec = preload("res://scripts/save_codec.gd")

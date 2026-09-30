@@ -51,7 +51,7 @@ const FLOW_EAT_SOURCE := "kith"
 ## The flow source a worker taking a Flint Tool from the stockpile is noted under.
 const FLOW_TOOL_SOURCE := "kith"
 
-## Tech bonuses GameState applies.
+## Tech bonuses Sim applies.
 const STORYTELLING_GROW := 0.75  # grow time multiplier
 
 ## Work multipliers (scripts/bonuses.gd). "speed" shortens work cycles, "yield" multiplies each harvest.

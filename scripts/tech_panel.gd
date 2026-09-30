@@ -5,7 +5,7 @@ extends PanelContainer
 ## are queued and researched as soon as each is affordable.
 
 const Data = preload("res://scripts/data.gd")
-const GameState = preload("res://scripts/game_state.gd")
+const Sim = preload("res://scripts/sim.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Rules = preload("res://scripts/rules.gd")
 const TechBoard = preload("res://scripts/tech_board.gd")
@@ -13,7 +13,7 @@ const Ranks = preload("res://scripts/ranks.gd")
 
 const BG := Color("172c4a")
 
-var state: GameState
+var state: Sim
 var board: TechBoard
 var scroll: ScrollContainer
 var counter: Label
@@ -25,7 +25,7 @@ var rows_key := ""  # what the queue and ready rows show, so they're only rebuil
 var selected := ""
 
 
-func setup(game: GameState) -> void:
+func setup(game: Sim) -> void:
 	state = game
 	add_theme_stylebox_override("panel", Ui.panel_style(BG, 12))
 	set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -114,10 +114,10 @@ func setup(game: GameState) -> void:
 ## Research a ready tech; any other becomes the goal, with its missing chain queued.
 func _on_card(tech: String) -> void:
 	selected = tech
-	if state.can_research(tech):
+	if state.tech_tree.can_research(tech):
 		state.research(tech)
 		state.tech_tree.refill()
-	elif state.researched.has(tech):
+	elif state.tech_tree.researched.has(tech):
 		Ranks.buy(state, tech)  # a researched card with ranks buys the next one, when affordable
 	else:
 		state.tech_tree.set_goal(tech)
@@ -150,20 +150,20 @@ func _on_open() -> void:
 func refresh() -> void:
 	if not visible:
 		return
-	var done := state.researched.size()
+	var done := state.tech_tree.researched.size()
 	var ready_now := state.tech_tree.ready_list()
 	var hidden_n := Data.TECHS.size() - Rules.visible_techs(state.shard_seen).size()
 	counter.text = (
 		"%d of %d researched  ·  %d ready%s"
 		% [done, Data.TECHS.size(), ready_now.size(), ("  ·  %d hidden" % hidden_n) if hidden_n > 0 else ""]
 	)
-	var key := "%s|%s|%s" % [state.research_queue, ready_now, state.research_goal]
+	var key := "%s|%s|%s" % [state.tech_tree.queue, ready_now, state.tech_tree.goal]
 	if key != rows_key:
 		rows_key = key
-		_fill_row(queue_row, "QUEUE", state.research_queue, "Click a far tech to queue its chain")
+		_fill_row(queue_row, "QUEUE", state.tech_tree.queue, "Click a far tech to queue its chain")
 		_fill_row(ready_row, "READY TO RESEARCH", ready_now, "Nothing yet: gather more")
 	shown = board.hovered if board.hovered != "" else selected
-	if shown != "" and not state.tech_visible(shown):
+	if shown != "" and not state.tech_tree.tech_visible(shown):
 		shown = ""
 	if shown == "":
 		_show_frontier(ready_now)
@@ -189,12 +189,12 @@ func _fill_row(row: HBoxContainer, caption: String, techs: Array, empty: String)
 		var b := Ui.button(Data.TECHS[tech]["name"])
 		b.custom_minimum_size = Vector2(0, 24)
 		var style := Ui.panel_style(Ui.CARD, 4)
-		style.border_color = TechBoard.GOLD if state.can_research(tech) else Ui.OUTLINE
+		style.border_color = TechBoard.GOLD if state.tech_tree.can_research(tech) else Ui.OUTLINE
 		style.set_border_width_all(2)
 		b.add_theme_stylebox_override("normal", style)
 		b.pressed.connect(_on_card.bind(tech))
 		row.add_child(b)
-	if caption == "QUEUE" and state.research_goal != "":
+	if caption == "QUEUE" and state.tech_tree.goal != "":
 		var clear := Ui.button("Clear")
 		clear.pressed.connect(
 			func():
@@ -219,10 +219,10 @@ func _show_tech(tech: String) -> void:
 	var t: Dictionary = Data.TECHS[tech]
 	var lane: String = Data.LANES[t["lane"]]["name"] if Data.LANES.has(t["lane"]) else "Gate"
 	var state_text := "researched"
-	if not state.researched.has(tech):
-		if state.can_research(tech):
+	if not state.tech_tree.researched.has(tech):
+		if state.tech_tree.can_research(tech):
 			state_text = "ready"
-		elif state.requirements_met(tech):
+		elif state.tech_tree.requirements_met(tech):
 			state_text = "gather more"
 		else:
 			state_text = "locked"
@@ -230,7 +230,7 @@ func _show_tech(tech: String) -> void:
 	strip["title"].text = "%s  ·  %s  ·  %s%s" % [t["name"], lane, state_text, side]
 	strip["title"].add_theme_color_override("font_color", Color.WHITE)
 	strip["desc"].text = t["desc"]
-	strip["cost"].text = "Cost: " + Ui.progress_text(state.inv, t["cost"], 99)
+	strip["cost"].text = "Cost: " + Ui.progress_text(state.economy.inv, t["cost"], 99)
 	if Ranks.has_ranks(tech):
 		var r := Ranks.rank(state, tech)
 		strip["cost"].text += (
@@ -238,24 +238,26 @@ func _show_tech(tech: String) -> void:
 			% [Data.RANK_NAMES[maxi(r, 1)] if r > 0 else "-", Ranks.effect_text(tech)]
 		)
 		if not Ranks.next_cost(state, tech).is_empty():
-			strip["cost"].text += (" · next: " + Ui.progress_text(state.inv, Ranks.next_cost(state, tech), 99))
+			strip["cost"].text += (" · next: " + Ui.progress_text(state.economy.inv, Ranks.next_cost(state, tech), 99))
 	strip["links"].text = "NEEDS: %s     LEADS TO: %s" % [_needs_text(tech), _leads_text(tech)]
-	var route := Rules.route_to(tech, state.researched, Rules.visible_techs(state.shard_seen))
+	var route := Rules.route_to(tech, state.tech_tree.researched, Rules.visible_techs(state.shard_seen))
 	if route.is_empty():
 		strip["route"].text = ""
 	else:
 		var names: Array = route.map(func(r): return Data.TECHS[r]["name"])
-		var now: Array = route.filter(func(r): return state.can_research(r)).map(func(r): return Data.TECHS[r]["name"])
+		var now: Array = (
+			route.filter(func(r): return state.tech_tree.can_research(r)).map(func(r): return Data.TECHS[r]["name"])
+		)
 		strip["route"].text = (
 			"YOUR ROUTE: " + " › ".join(names) + ("     Ready now: " + ", ".join(now) if not now.is_empty() else "")
 		)
 	var b: Button = strip["button"]
-	b.visible = not state.researched.has(tech) or not Ranks.next_cost(state, tech).is_empty()
+	b.visible = not state.tech_tree.researched.has(tech) or not Ranks.next_cost(state, tech).is_empty()
 	b.disabled = false
-	b.text = "Research " + t["name"] if state.can_research(tech) else "Queue the way there"
-	if state.research_goal == tech:
+	b.text = "Research " + t["name"] if state.tech_tree.can_research(tech) else "Queue the way there"
+	if state.tech_tree.goal == tech:
 		b.text = "Queued"
-	if state.researched.has(tech) and b.visible:
+	if state.tech_tree.researched.has(tech) and b.visible:
 		b.text = "Buy rank %s" % Data.RANK_NAMES[Ranks.rank(state, tech) + 1]
 		b.disabled = not Ranks.can_buy(state, tech)
 
@@ -263,7 +265,7 @@ func _show_tech(tech: String) -> void:
 func _needs_text(tech: String) -> String:
 	var parts: Array = Data.TECHS[tech]["requires"].map(_need_name)
 	var any: Array = (
-		Data.TECHS[tech].get("requires_any", []).filter(func(r): return state.tech_visible(r)).map(_need_name)
+		Data.TECHS[tech].get("requires_any", []).filter(func(r): return state.tech_tree.tech_visible(r)).map(_need_name)
 	)
 	if any.size() == 1:
 		parts.append(any[0])
@@ -273,13 +275,13 @@ func _needs_text(tech: String) -> String:
 
 
 func _need_name(r: String) -> String:
-	return Data.TECHS[r]["name"] + (" (done)" if state.researched.has(r) else "")
+	return Data.TECHS[r]["name"] + (" (done)" if state.tech_tree.researched.has(r) else "")
 
 
 func _leads_text(tech: String) -> String:
 	var next: Array = []
 	for t in Data.TECH_ORDER:
 		var d: Dictionary = Data.TECHS[t]
-		if state.tech_visible(t) and (tech in d["requires"] or tech in d.get("requires_any", [])):
+		if state.tech_tree.tech_visible(t) and (tech in d["requires"] or tech in d.get("requires_any", [])):
 			next.append(d["name"])
 	return ", ".join(next) if not next.is_empty() else "the next era"

@@ -1,7 +1,7 @@
 extends RefCounted
 ## Working by hand (design-system/14-hands-to-haulers.md): what a hold-to-harvest gives and how long it
 ## takes, teach by doing (a Kith who watches you harvest a resource Data.LEARN_CLICKS times learns to
-## gather it), and crafting. Static, and works on the GameState passed in.
+## gather it), and crafting. Static, and works on the Sim passed in.
 
 const Data = preload("res://scripts/data.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
@@ -13,7 +13,7 @@ const Ranks = preload("res://scripts/ranks.gd")
 ## item's Yield bonuses that aren't tied to a kind of building (Foraging on Berries).
 static func harvest_yield(s, item: String) -> int:
 	var parts: Array = []
-	for bonus in Bonuses.active(s, {"type": "camp", "pos": s.camp_pos, "worker": -1}, item):
+	for bonus in Bonuses.active(s, {"type": "camp", "pos": s.world.camp_pos, "worker": -1}, item):
 		if bonus["group"] == "yield" and not Data.BONUSES[bonus["id"]].has("kinds"):
 			parts.append(bonus)
 	var mult := 1
@@ -39,7 +39,7 @@ static func _tools(s, item: String) -> Array:
 			continue
 		if t.get("crafted", false) and not s.hand_tools:
 			continue
-		if t.has("tech") and not s.researched.has(t["tech"]):
+		if t.has("tech") and not s.tech_tree.researched.has(t["tech"]):
 			continue
 		out.append(t)
 	return out
@@ -47,15 +47,15 @@ static func _tools(s, item: String) -> Array:
 
 ## What holding on `p` would harvest: its item, or "" (fog, a building or road on it, nothing to gather).
 static func item_at(s, p: Vector2i) -> String:
-	if not s.fog.is_revealed(p) or s.building_at.has(p) or s.roads.has(p) or s.tile_at(p) == "":
+	if not s.fog.is_revealed(p) or s.town.building_at.has(p) or s.world.roads.has(p) or s.world.tile_at(p) == "":
 		return ""
-	return Data.TILES[s.tile_at(p)]["yields"]
+	return Data.TILES[s.world.tile_at(p)]["yields"]
 
 
 ## How many Kith hold a Flint Tool.
 static func tools_held(s) -> int:
 	var n := 0
-	for k in s.kith:
+	for k in s.people.kith:
 		if k["tool"] > 0:
 			n += 1
 	return n
@@ -67,8 +67,8 @@ static func teach(s, item: String) -> void:
 	if s.people.knows(item) or s.hand_counts[item] < Data.LEARN_CLICKS:
 		return
 	var who: String = (
-		s.kith[s.learned.size() % s.kith.size()]["name"]
-		if not s.kith.is_empty()
+		s.people.kith[s.people.learned_by.size() % s.people.kith.size()]["name"]
+		if not s.people.kith.is_empty()
 		else Data.NAMELESS % Data.PEOPLE["one"]
 	)
 	s.people.learn(item, who)
@@ -80,19 +80,19 @@ static func teach(s, item: String) -> void:
 
 
 static func recipe_unlocked(s, recipe: String) -> bool:
-	return s.researched.has(Data.RECIPES[recipe]["tech"])
+	return s.tech_tree.researched.has(Data.RECIPES[recipe]["tech"])
 
 
 static func craft(s, recipe: String) -> bool:
 	var r: Dictionary = Data.RECIPES[recipe]
-	if not recipe_unlocked(s, recipe) or not s.can_afford(r["in"]):
+	if not recipe_unlocked(s, recipe) or not s.economy.can_afford(r["in"]):
 		return false
-	s._pay(r["in"])
+	s.economy.pay(r["in"])
 	for id in r["in"]:
-		s.flows.add(id, -r["in"][id], "craft")
+		s.economy.flows.add(id, -r["in"][id], "craft")
 	for id in r["out"]:
-		s.add(id, r["out"][id])
-		s.flows.add(id, r["out"][id], "craft")
+		s.economy.add(id, r["out"][id])
+		s.economy.flows.add(id, r["out"][id], "craft")
 	if r["out"].has("flint_tools"):
 		s.hand_tools = true
 	return true

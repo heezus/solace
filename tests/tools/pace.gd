@@ -22,10 +22,10 @@ func _init() -> void:
 		if not quiet:
 			for line in r["log"]:
 				print("   ", line)
-			print("   inv ", bot.s.inv)
-			print("   ranks ", bot.s.ranks, " kith %d" % bot.s.kith.size())
+			print("   inv ", bot.s.economy.inv)
+			print("   ranks ", bot.s.ranks, " kith %d" % bot.s.people.kith.size())
 			var counts := {}
-			for b in bot.s.buildings:
+			for b in bot.s.town.buildings:
 				var key: String = (
 					b["type"] + ("/" + "+".join(b["gather_items"]) if b["type"] == "gatherers_hut" else "")
 				)

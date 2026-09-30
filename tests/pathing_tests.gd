@@ -1,12 +1,12 @@
 extends RefCounted
 ## Unit testbench for the Pathing block (scripts/pathing.gd): what each tile costs to walk, which tiles
 ## are solid, and A* over the grid. Pathing is built alone, on a hand-made World and a hand-set set of
-## researched techs; no Kith, no buildings and no GameState. The last tests check GameState's
-## pass-throughs and that placing a road updates the grid. Run from tests/run_tests.gd, which owns check().
+## researched techs; no Kith, no buildings and no Sim. The last tests check that the
+## Sim builds the grid and that placing a road updates it. Run from tests/run_tests.gd, which owns check().
 
 const Data = preload("res://scripts/data.gd")
 const Kith = preload("res://scripts/kith.gd")
-const GameState = preload("res://scripts/game_state.gd")
+const Sim = preload("res://scripts/sim.gd")
 const Pathing = preload("res://scripts/pathing.gd")
 const World = preload("res://scripts/world.gd")
 
@@ -33,7 +33,7 @@ func run(runner) -> void:
 	test_the_start_counts_as_open()
 	test_path_prefers_roads_to_forest()
 	test_pathing_does_not_write_the_world()
-	test_game_state_passes_through()
+	test_sim_builds_the_walking_grid()
 	test_placing_a_road_updates_the_grid()
 	test_paved_roads_refresh_the_grid()
 	test_kith_walk_around_water()
@@ -267,56 +267,54 @@ func test_pathing_does_not_write_the_world() -> void:
 	t.check(not ("tiles" in p) and not ("roads" in p) and not ("researched" in p), "it keeps none of that itself")
 
 
-func test_game_state_passes_through() -> void:
-	var s := GameState.new()
+func test_sim_builds_the_walking_grid() -> void:
+	var s := Sim.new()
 	s.generate(42)
-	t.check(s.astar == s.pathing.astar, "astar is Pathing's grid")
 	var river: Vector2i = t.find_tile(s, "river")
-	t.check(s.walk_cost(river) == s.pathing.walk_cost(river), "walk_cost asks Pathing")
-	t.check(s.astar.is_point_solid(river), "the river blocks walking")
-	t.check(s.astar.region == Rect2i(0, 0, GameState.WIDTH, GameState.HEIGHT), "the grid is the map's size")
-	s.researched["rafts"] = true
+	t.check(s.pathing.astar.is_point_solid(river), "the river blocks walking")
+	t.check(s.pathing.astar.region == Rect2i(0, 0, World.WIDTH, World.HEIGHT), "the grid is the map's size")
+	s.tech_tree.researched["rafts"] = true
 	s.pathing.refresh()
-	t.check(not s.astar.is_point_solid(river), "Pathing reads GameState's researched techs")
+	t.check(not s.pathing.astar.is_point_solid(river), "Pathing reads the researched techs")
 	t.check(s._has_tech("rafts") and not s._has_tech("paved_roads"), "through a read-only view")
 
 
 func test_placing_a_road_updates_the_grid() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	var river: Vector2i = t.find_tile(s, "river")
-	s.researched["haulers"] = true
-	t.check(s.astar.is_point_solid(river), "water before the bridge")
+	s.tech_tree.researched["haulers"] = true
+	t.check(s.pathing.astar.is_point_solid(river), "water before the bridge")
 	t.check(t.place_free(s, "bridge", river), "a bridge goes on the river")
-	t.check(not s.astar.is_point_solid(river), "placing it updates the walking grid")
-	t.check(is_equal_approx(s.astar.get_point_weight_scale(river), Data.WALK_COST["road"]), "to road speed")
-	t.check(s.roads.has(river) and s.world.roads.has(river), "and the road is in the World")
+	t.check(not s.pathing.astar.is_point_solid(river), "placing it updates the walking grid")
+	t.check(is_equal_approx(s.pathing.astar.get_point_weight_scale(river), Data.WALK_COST["road"]), "to road speed")
+	t.check(s.world.roads.has(river) and s.world.roads.has(river), "and the road is in the World")
 	s.demolish(river)
-	t.check(s.astar.is_point_solid(river), "demolishing it makes it water again")
-	var grass: Vector2i = s.camp_pos + Vector2i(0, 2)
+	t.check(s.pathing.astar.is_point_solid(river), "demolishing it makes it water again")
+	var grass: Vector2i = s.world.camp_pos + Vector2i(0, 2)
 	t.check(t.place_free(s, "road", grass), "a road on grass")
-	t.check(is_equal_approx(s.walk_cost(grass), Data.WALK_COST["road"]), "is fast")
+	t.check(is_equal_approx(s.pathing.walk_cost(grass), Data.WALK_COST["road"]), "is fast")
 	s.demolish(grass)
-	t.check(is_equal_approx(s.walk_cost(grass), 1.0), "and gone again")
+	t.check(is_equal_approx(s.pathing.walk_cost(grass), 1.0), "and gone again")
 	t.check(t.place_free(s, "field", grass), "a field goes on grass")
-	t.check(s.fields.has(grass) and s.tile_at(grass) == "grain", "it is sown")
+	t.check(s.world.fields.has(grass) and s.world.tile_at(grass) == "grain", "it is sown")
 	s.demolish(grass)
-	t.check(s.tile_at(grass) == "grass" and not s.fields.has(grass), "and clearing it restores the grass")
+	t.check(s.world.tile_at(grass) == "grass" and not s.world.fields.has(grass), "and clearing it restores the grass")
 
 
 func test_paved_roads_refresh_the_grid() -> void:
-	var s: GameState = t.fresh()
-	s.researched["haulers"] = true
-	var p: Vector2i = s.camp_pos + Vector2i(0, 2)
+	var s: Sim = t.fresh()
+	s.tech_tree.researched["haulers"] = true
+	var p: Vector2i = s.world.camp_pos + Vector2i(0, 2)
 	t.check(t.place_free(s, "road", p), "a road on grass")
-	var slow := s.astar.get_point_weight_scale(p)
-	s.researched["paved_roads"] = true
+	var slow := s.pathing.astar.get_point_weight_scale(p)
+	s.tech_tree.researched["paved_roads"] = true
 	s._tech_done("paved_roads")
-	t.check(s.astar.get_point_weight_scale(p) < slow, "finishing Paved Roads refreshes the grid at once")
+	t.check(s.pathing.astar.get_point_weight_scale(p) < slow, "finishing Paved Roads refreshes the grid at once")
 
 
 func test_kith_walk_around_water() -> void:
-	var s: GameState = t.fresh()
-	var k: Dictionary = s.kith[0]
+	var s: Sim = t.fresh()
+	var k: Dictionary = s.people.kith[0]
 	var river: Vector2i = t.find_tile(s, "river")
 	t.check(not s.people.walk_to(k, river), "a Kith can't walk into the river")
 	var bank := river + Vector2i(-1, 0)

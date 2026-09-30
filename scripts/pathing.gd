@@ -1,8 +1,8 @@
 extends RefCounted
 ## The Pathing block: the walking grid, A* over it, and what each tile costs to cross. It reads the World
 ## (tiles and roads) and never writes it. The two facts it needs from research, paved roads and rafts, come
-## in as a read-only callable: has_tech.call(tech_id) -> bool. GameState owns one and passes the old
-## walking methods through to it. Moving Kith along a path is the Kith block's job, not this one's.
+## in as a read-only callable: has_tech.call(tech_id) -> bool. Sim owns one, reached as
+## `sim.pathing`. Moving Kith along a path is the Kith block's job, not this one's.
 
 const Data = preload("res://scripts/data.gd")
 const World = preload("res://scripts/world.gd")

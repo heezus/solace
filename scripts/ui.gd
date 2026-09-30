@@ -131,7 +131,7 @@ static func shortfall_text(inv: Dictionary, cost: Dictionary) -> String:
 ## Kith not staffing a building: they haul once Paths & Haulers is known, or wait at the Hearth.
 static func idle_kith(s) -> int:
 	var n := 0
-	for k in s.kith:
+	for k in s.people.kith:
 		if k["job"] != "work":
 			n += 1
 	return n
@@ -139,12 +139,12 @@ static func idle_kith(s) -> int:
 
 ## Why the population isn't growing, or "" when it is.
 static func growth_note(s) -> String:
-	var n: int = s.kith.size()
-	if s.starving:
+	var n: int = s.people.kith.size()
+	if s.economy.starving:
 		return "Starving: no food"
-	if n >= s.housing():
+	if n >= s.town.housing():
 		return "No room: build a Dwelling"
-	if s.food_total() < n * 2 + Data.BIRTH_FOOD:
+	if s.economy.food_total() < n * 2 + Data.BIRTH_FOOD:
 		return "Needs %d spare food to grow" % int(n * 2 + Data.BIRTH_FOOD)
 	return ""
 

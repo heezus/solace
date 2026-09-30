@@ -2,15 +2,15 @@ extends RefCounted
 ## Unit testbench for the Buildings block (scripts/buildings.gd): the placement rules, placing and tearing
 ## down, the refund, pausing, power and aura range, housing and the work rules that live in the block.
 ## Buildings is built alone, on a hand-made World, an Economy with a hand-set stockpile and a hand-set set
-## of researched techs; no Kith, no fog block and no GameState. The last tests check GameState's
-## pass-throughs and the effects it runs around a placement or a demolition (fog, walking grid, workers).
+## of researched techs; no Kith, no fog block and no Sim. The last tests check the Sim's
+## wiring and the effects it runs around a placement or a demolition (fog, walking grid, workers).
 ## Run from tests/run_tests.gd, which owns check() and the helpers.
 
 const Buildings = preload("res://scripts/buildings.gd")
 const Data = preload("res://scripts/data.gd")
 const Economy = preload("res://scripts/economy.gd")
 const Fog = preload("res://scripts/fog.gd")
-const GameState = preload("res://scripts/game_state.gd")
+const Sim = preload("res://scripts/sim.gd")
 const Monitor = preload("res://tests/monitor.gd")
 const Research = preload("res://scripts/research.gd")
 const RunSave = preload("res://scripts/run_save.gd")
@@ -58,10 +58,10 @@ func run(runner) -> void:
 	test_static_helpers()
 	test_buildings_stand_alone()
 	test_to_dict_and_from_dict()
-	test_game_state_passes_through()
-	test_game_state_place_runs_the_effects()
-	test_game_state_demolish_frees_the_worker()
-	test_game_state_pause_frees_the_worker()
+	test_sim_starts_with_the_hearth()
+	test_sim_place_runs_the_effects()
+	test_sim_demolish_frees_the_worker()
+	test_sim_pause_frees_the_worker()
 
 
 func _seen(p: Vector2i) -> bool:
@@ -553,107 +553,112 @@ func test_buildings_stand_alone() -> void:
 	t.check(_techs.size() == 1, "placing never writes the techs")
 
 
-func test_game_state_passes_through() -> void:
-	var s: GameState = t.fresh()
-	t.check(is_same(s.buildings, s.town.buildings), "buildings is the block's list")
-	t.check(is_same(s.building_at, s.town.building_at), "so is building_at")
-	s.road_rev += 1
-	t.check(s.road_rev == s.town.road_rev, "road_rev is the block's")
-	s.road_net = {"rev": 7}
-	t.check(s.town.road_net["rev"] == 7, "and so is road_net")
+func test_sim_starts_with_the_hearth() -> void:
+	var s: Sim = t.fresh()
 	t.check(
-		s.building_at.has(s.camp_pos) and s.buildings[s.building_at[s.camp_pos]]["type"] == "camp",
+		(
+			s.town.building_at.has(s.world.camp_pos)
+			and s.town.buildings[s.town.building_at[s.world.camp_pos]]["type"] == "camp"
+		),
 		"the Hearth is booked"
 	)
-	t.check(s.built_type(s.camp_pos) == "camp" and s.building_unlocked("dwelling"), "queries ask the block")
-	t.check(not s.building_unlocked("charcoal_pit"), "locked buildings are locked")
-	t.check(s.hut_radius() == 2 and s.housing() == 4, "so do hut_radius and housing")
-	t.check(s.is_powered(s.camp_pos) == s.town.is_powered(s.camp_pos), "and is_powered")
-	t.check(s.buffered({"a": 2}) == 2 and s.needs_worker({"type": "kiln"}), "and the small helpers")
-	t.check(s.placement_error("dwelling", s.camp_pos) == "Something is already there", "placement_error too")
+	t.check(s.town.built_type(s.world.camp_pos) == "camp" and s.town.unlocked("dwelling"), "queries ask the block")
+	t.check(not s.town.unlocked("charcoal_pit"), "locked buildings are locked")
+	t.check(s.town.hut_radius() == 2 and s.town.housing() == 4, "so do hut_radius and housing")
+	t.check(Buildings.buffered({"a": 2}) == 2 and Buildings.needs_worker({"type": "kiln"}), "and the small helpers")
+	t.check(s.town.placement_error("dwelling", s.world.camp_pos) == "Something is already there", "placement_error too")
 
 
-func test_game_state_place_runs_the_effects() -> void:
-	var s: GameState = t.fresh()
+func test_sim_place_runs_the_effects() -> void:
+	var s: Sim = t.fresh()
 	t.give(s, 100)
-	s.researched["haulers"] = true
-	s.researched["scouting"] = true
-	s.researched["farming"] = true
+	s.tech_tree.researched["haulers"] = true
+	s.tech_tree.researched["scouting"] = true
+	s.tech_tree.researched["farming"] = true
 	var events_before := s.events.size()
 	var river: Vector2i = t.find_tile(s, "river")
 	t.check(s.place("bridge", river), "a bridge goes down")
-	t.check(not s.astar.is_point_solid(river), "the walking grid is refreshed")
-	t.check(is_equal_approx(s.walk_cost(river), Data.WALK_COST["road"]), "the bridge is a road for walking")
-	var grass: Vector2i = s.camp_pos + Vector2i(0, 2)
+	t.check(not s.pathing.astar.is_point_solid(river), "the walking grid is refreshed")
+	t.check(is_equal_approx(s.pathing.walk_cost(river), Data.WALK_COST["road"]), "the bridge is a road for walking")
+	var grass: Vector2i = s.world.camp_pos + Vector2i(0, 2)
 	s.world.set_tile(grass, "grass")
 	s.fog.cells.fill(0)
 	s.fog.reveal(grass, 0)
 	t.check(s.place("dwelling", grass), "a Dwelling")
 	var want := Fog.new()
-	want.setup(GameState.WIDTH, GameState.HEIGHT)
+	want.setup(World.WIDTH, World.HEIGHT)
 	want.reveal(grass, Data.SIGHT_BUILDING + Data.SCOUTING_SIGHT)
 	t.check(
 		s.fog.count() == want.count() and s.fog.is_revealed(grass), "the fog lifts around it, by its sight and Scouting"
 	)
 	s.fog.reveal_all()
-	var wood: Vector2i = s.camp_pos + Vector2i(2, -3)
+	var wood: Vector2i = s.world.camp_pos + Vector2i(2, -3)
 	s.world.set_tile(wood, "tree")
-	t.check(s.place("road", wood) and s.tile_at(wood) == "grass", "a road through Forest")
+	t.check(s.place("road", wood) and s.world.tile_at(wood) == "grass", "a road through Forest")
 	t.check(
 		s.events.size() == events_before + 1 and s.events[-1] == "Felled the trees for a road", "the player is told"
 	)
-	var rock: Vector2i = s.camp_pos + Vector2i(3, -3)
+	var rock: Vector2i = s.world.camp_pos + Vector2i(3, -3)
 	s.world.set_tile(rock, "rock")
 	t.check(s.place("road", rock), "a road through Rocks")
 	t.check(s.events[-1] == "Cut a pass through the rocks", "the player is told")
-	var side: Array = [s.camp_pos + Vector2i(-1, 2), s.camp_pos + Vector2i(-2, 2), grass]
+	var side: Array = [s.world.camp_pos + Vector2i(-1, 2), s.world.camp_pos + Vector2i(-2, 2), grass]
 	t.check(s.place_line("road", side) == 2, "place_line counts the ones that went (the Dwelling blocks one)")
-	var field: Vector2i = s.camp_pos + Vector2i(-3, 3)
+	var field: Vector2i = s.world.camp_pos + Vector2i(-3, 3)
 	s.world.set_tile(field, "grass")
-	t.check(s.place("field", field) and s.fields.has(field), "and a field")
-	t.check(is_equal_approx(s.walk_cost(field), 1.0) and not s.astar.is_point_solid(field), "the grid takes the field")
+	t.check(s.place("field", field) and s.world.fields.has(field), "and a field")
+	t.check(
+		is_equal_approx(s.pathing.walk_cost(field), 1.0) and not s.pathing.astar.is_point_solid(field),
+		"the grid takes the field"
+	)
 	var n := s.events.size()
-	s.inv["wood"] = 0
-	t.check(not s.place("road", s.camp_pos + Vector2i(-4, 2)) and s.events.size() == n, "a refused place says nothing")
+	s.economy.inv["wood"] = 0
+	t.check(
+		not s.place("road", s.world.camp_pos + Vector2i(-4, 2)) and s.events.size() == n, "a refused place says nothing"
+	)
 
 
-func test_game_state_demolish_frees_the_worker() -> void:
-	var s: GameState = t.fresh()
+func test_sim_demolish_frees_the_worker() -> void:
+	var s: Sim = t.fresh()
 	t.give(s, 100)
-	s.researched["gatherers_hut"] = true
-	var first := s.camp_pos + Vector2i(0, 2)
-	var second := s.camp_pos + Vector2i(2, 2)
+	s.tech_tree.researched["gatherers_hut"] = true
+	var first := s.world.camp_pos + Vector2i(0, 2)
+	var second := s.world.camp_pos + Vector2i(2, 2)
 	s.world.set_tile(first, "grass")
 	s.world.set_tile(second, "grass")
 	t.check(s.place("gatherers_hut", first) and s.place("gatherers_hut", second), "two huts")
 	s.tick(0.1)
-	var w2: int = s.buildings[s.building_at[second]]["worker"]
-	t.check(s.buildings[s.building_at[first]]["worker"] >= 0 and w2 >= 0, "both are staffed")
+	var w2: int = s.town.buildings[s.town.building_at[second]]["worker"]
+	t.check(s.town.buildings[s.town.building_at[first]]["worker"] >= 0 and w2 >= 0, "both are staffed")
 	var refund := s.demolish(first)
 	t.check(refund == Rules.refund_of("gatherers_hut"), "the refund comes back")
-	t.check(not s.building_at.has(first) and s.building_at[second] == 1, "the other hut moves up the list")
-	t.check(s.kith[w2]["building"] == 1 and s.buildings[1]["worker"] == w2, "and its worker follows it")
+	t.check(not s.town.building_at.has(first) and s.town.building_at[second] == 1, "the other hut moves up the list")
+	t.check(s.people.kith[w2]["building"] == 1 and s.town.buildings[1]["worker"] == w2, "and its worker follows it")
 	t.check(s.events[-1] == "Tore down the Gatherer's Hut", "the player is told")
 	t.check(
-		s.demolish(first).is_empty() and s.demolish(s.camp_pos).is_empty(),
+		s.demolish(first).is_empty() and s.demolish(s.world.camp_pos).is_empty(),
 		"nothing to tear down twice, and the Hearth stays"
 	)
 
 
-func test_game_state_pause_frees_the_worker() -> void:
-	var s: GameState = t.fresh()
+func test_sim_pause_frees_the_worker() -> void:
+	var s: Sim = t.fresh()
 	t.give(s, 100)
-	s.researched["gatherers_hut"] = true
-	var p := s.camp_pos + Vector2i(0, 2)
+	s.tech_tree.researched["gatherers_hut"] = true
+	var p := s.world.camp_pos + Vector2i(0, 2)
 	s.world.set_tile(p, "grass")
 	s.place("gatherers_hut", p)
 	s.tick(0.1)
-	var i: int = s.building_at[p]
-	var w: int = s.buildings[i]["worker"]
+	var i: int = s.town.building_at[p]
+	var w: int = s.town.buildings[i]["worker"]
 	t.check(w >= 0, "staffed")
 	s.set_paused(i, true)
 	t.check(
-		s.buildings[i]["paused"] and s.buildings[i]["worker"] < 0 and s.kith[w]["job"] == "", "pausing frees the worker"
+		s.town.buildings[i]["paused"] and s.town.buildings[i]["worker"] < 0 and s.people.kith[w]["job"] == "",
+		"pausing frees the worker"
 	)
 	s.set_paused(i, false)
-	t.check(not s.buildings[i]["paused"] and s.buildings[i]["worker"] < 0, "resuming leaves it to the next assignment")
+	t.check(
+		not s.town.buildings[i]["paused"] and s.town.buildings[i]["worker"] < 0,
+		"resuming leaves it to the next assignment"
+	)
