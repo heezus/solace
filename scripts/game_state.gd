@@ -9,6 +9,7 @@ const MapGen = preload("res://scripts/map_gen.gd")
 const Haulers = preload("res://scripts/haulers.gd")
 const Goals = preload("res://scripts/goals.gd")
 const Rules = preload("res://scripts/rules.gd")
+const Research = preload("res://scripts/research.gd")
 
 const WIDTH := 36
 const HEIGHT := 22
@@ -40,6 +41,8 @@ var astar := AStarGrid2D.new()
 var events: Array = []  # messages for the UI to show and clear
 var fog := Fog.new()
 var flows := Flows.new()  # what made and used each item lately, for the top bar rates
+var research_goal := ""  # the tech the research queue is working toward, "" for none
+var research_queue: Array = []  # the next techs on the way there, researched as soon as affordable
 
 
 func _init() -> void:
@@ -703,6 +706,7 @@ func tick(delta: float) -> void:
 	if won:
 		return
 	flows.advance(delta)
+	Research.tick(self)
 	_assign_jobs()
 	food_use = kith.size() * Data.FOOD_PER_KITH_PER_SEC * (0.75 if researched.has("preservation") else 1.0)
 	var fed := _eat(food_use * delta)

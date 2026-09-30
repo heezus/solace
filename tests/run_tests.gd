@@ -5,7 +5,7 @@ extends SceneTree
 const Data = preload("res://scripts/data.gd")
 const GameState = preload("res://scripts/game_state.gd")
 const Main = preload("res://scripts/main.gd")
-const TechPanel = preload("res://scripts/tech_panel.gd")
+const TechLayout = preload("res://scripts/tech_layout.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Goals = preload("res://scripts/goals.gd")
 const ConventionTests = preload("res://tests/convention_tests.gd")
@@ -367,9 +367,13 @@ func test_tech_tree_is_a_web() -> void:
 		check(any.size() != 1, tech + ": an either-or list needs at least two techs")
 		for r in t["requires"] + any:
 			check(Data.TECHS.has(r), tech + " requires a real tech")
-			check(t["pos"].x > Data.TECHS[r]["pos"].x, tech + " sits right of " + r + " so arrows point forward")
+			check(t["tier"] > Data.TECHS[r]["tier"], tech + " sits right of " + r + " so arrows point forward")
 		check(tech in Data.TECH_ORDER, tech + " is listed in TECH_ORDER")
 		check(t.has("color") and t.has("abbr") and t.has("desc"), tech + " has a color, badge and text")
+		check(
+			t.has("unlock") and t.has("icon") and (Data.LANES.has(t["lane"]) or t["lane"] == "gate"),
+			tech + " has a card"
+		)
 	check(roots == 5, "five starting techs, one per lane")
 	check(multi >= 15, "most techs join two branches")
 	check_cards_dont_overlap()
@@ -382,9 +386,8 @@ func test_tech_tree_is_a_web() -> void:
 
 
 func check_cards_dont_overlap() -> void:
-	var rects := {}
-	for tech in Data.TECHS:
-		rects[tech] = Rect2(TechPanel.card_pos(tech), TechPanel.CARD)
+	var lay := TechLayout.build()
+	var rects: Dictionary = lay["rects"]
 	for a in rects:
 		for b in rects:
 			if a < b:

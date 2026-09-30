@@ -5,6 +5,8 @@ extends RefCounted
 const Data = preload("res://scripts/data.gd")
 const GameState = preload("res://scripts/game_state.gd")
 const Rules = preload("res://scripts/rules.gd")
+const Research = preload("res://scripts/research.gd")
+const TechLayout = preload("res://scripts/tech_layout.gd")
 
 var t  # the runner, tests/run_tests.gd
 
@@ -17,6 +19,9 @@ func run(runner) -> void:
 	test_roads_dont_cross_rivers()
 	test_fog_lifts_around_buildings_and_kith()
 	test_rates_count_making_and_using()
+	test_research_board_lines_stay_in_channels()
+	test_research_queue()
+	test_side_branches_are_marked()
 
 
 func test_demolish_refunds_half() -> void:
@@ -164,3 +169,87 @@ func test_rates_count_making_and_using() -> void:
 	t.check(s2.flows.rate("wood") > 0.0, "a working hut makes wood (%.2f/s)" % s2.flows.rate("wood"))
 	t.check(s2.flows.rate("berries") < 0.0, "the Kith eat berries (%.2f/s)" % s2.flows.rate("berries"))
 	t.check(s2.flows.parts("berries").has("kith"), "eating shows up as its own source")
+
+
+## Every line runs in the gutters and channels: none passes under a card, none shares a track with another,
+## and the board fits the 1280 px window across (it scrolls down).
+func test_research_board_lines_stay_in_channels() -> void:
+	var lay := TechLayout.build()
+	t.check(lay["overflow"] == 0, "every line found a free track (%d did not)" % lay["overflow"])
+	t.check(lay["size"].x <= 1230.0, "the board fits across a 1280 px window (%d)" % int(lay["size"].x))
+	t.check(lay["edges"].size() == TechLayout.links().size(), "one line per requirement")
+	var segs: Array = []
+	for e in lay["edges"]:
+		var pts: PackedVector2Array = e["pts"]
+		t.check(pts[0].x == lay["rects"][e["from"]].end.x, e["from"] + " line leaves from the card's right edge")
+		t.check(pts[pts.size() - 1].x == lay["rects"][e["to"]].position.x, e["to"] + " line enters on the left edge")
+		for i in range(1, pts.size()):
+			var a := pts[i - 1]
+			var b := pts[i]
+			t.check(a.x == b.x or a.y == b.y, "lines are orthogonal")
+			segs.append([e, a, b])
+			var box := Rect2(Vector2(minf(a.x, b.x), minf(a.y, b.y)), Vector2(absf(a.x - b.x), absf(a.y - b.y)))
+			for tech in lay["rects"]:
+				var card: Rect2 = lay["rects"][tech].grow(-1.0)
+				var hit := box.end.x >= card.position.x and box.position.x <= card.end.x
+				hit = hit and box.end.y >= card.position.y and box.position.y <= card.end.y
+				t.check(not hit, "%s > %s passes under %s" % [e["from"], e["to"], tech])
+	var shared := 0
+	for i in segs.size():
+		for j in range(i + 1, segs.size()):
+			if _runs_overlap(segs[i], segs[j]):
+				shared += 1
+	t.check(shared == 0, "no two lines share a stretch of track (%d do)" % shared)
+
+
+## Two segments of different lines lying on top of each other. Lines into the same card may merge.
+func _runs_overlap(s1: Array, s2: Array) -> bool:
+	var e1: Dictionary = s1[0]
+	var e2: Dictionary = s2[0]
+	if e1["from"] == e2["from"] or e1["to"] == e2["to"]:
+		return false
+	var a1: Vector2 = s1[1]
+	var b1: Vector2 = s1[2]
+	var a2: Vector2 = s2[1]
+	var b2: Vector2 = s2[2]
+	if a1.x == b1.x and a2.x == b2.x and absf(a1.x - a2.x) < 1.0:
+		return minf(maxf(a1.y, b1.y), maxf(a2.y, b2.y)) - maxf(minf(a1.y, b1.y), minf(a2.y, b2.y)) > 0.5
+	if a1.y == b1.y and a2.y == b2.y and absf(a1.y - a2.y) < 2.5:
+		return minf(maxf(a1.x, b1.x), maxf(a2.x, b2.x)) - maxf(minf(a1.x, b1.x), minf(a2.x, b2.x)) > 0.5
+	return false
+
+
+## Clicking a far tech makes it the goal: its missing chain is queued (a few at a time)
+## and researched as each becomes affordable.
+func test_research_queue() -> void:
+	var s: GameState = t.fresh()
+	Research.set_goal(s, "grindstone")
+	t.check(s.research_goal == "grindstone", "the goal is set")
+	t.check(s.research_queue.size() <= Data.QUEUE_SLOTS and s.research_queue.size() >= 3, "a few techs are queued")
+	t.check(s.research_queue[0] in ["cordage", "knapping", "fire"], "roots come first")
+	t.check("grindstone" not in s.research_queue, "the goal waits until its parents are queued")
+	s.tick(0.1)
+	t.check(s.researched.is_empty(), "nothing is researched while it's unaffordable")
+	t.give(s, 999)
+	for i in 4:
+		s.tick(0.1)
+	t.check(s.researched.has("grindstone"), "the queue researches its way to the goal")
+	for r in ["water_wheel", "masonry", "pottery"]:
+		t.check(s.researched.has(r), "including " + r)
+	t.check(s.research_queue.is_empty() and s.research_goal == "", "and empties once it's there")
+	t.check(not s.researched.has("farming"), "nothing off the route is researched")
+	var s2: GameState = t.fresh()
+	var route := Rules.route_to("calendar", s2.researched, Rules.visible_techs(false))
+	t.check(route[route.size() - 1] == "calendar", "a route ends at its goal")
+	t.check("storytelling" in route and "megaliths" not in route, "an either-or takes the shorter branch")
+	t.check(Research.ready_list(s2).is_empty(), "nothing is ready with an empty stockpile")
+
+
+## Side branches are exactly the techs Bronze Dawn doesn't need.
+func test_side_branches_are_marked() -> void:
+	var needed := Rules.route_to("bronze_dawn", {}, Rules.visible_techs(false))
+	for tech in Data.TECHS:
+		if tech != "bronze_dawn":
+			t.check(
+				Data.TECHS[tech].get("side", false) == (tech not in needed), tech + " is marked side only if optional"
+			)
