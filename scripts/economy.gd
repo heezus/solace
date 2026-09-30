@@ -1,0 +1,138 @@
+extends RefCounted
+## The Economy block: the stockpile, food and eating, and the item flows behind the top bar's rates.
+## It stands alone: it never reaches into another block. What it needs from outside comes in at
+## construction (the researched techs, a read-only view) or as an argument (how many mouths to feed).
+## GameState owns one and passes its old stockpile methods through to it.
+
+const Data = preload("res://scripts/data.gd")
+const Flows = preload("res://scripts/flows.gd")
+
+var inv: Dictionary = {}  # item id -> count
+var seen: Dictionary = {}  # items ever held, so the top bar keeps showing them
+var food_credit := 5.0  # food already eaten but not yet used up: eating takes whole items
+var starving := false  # the last feed found no food to eat
+var food_use := 0.0  # food eaten per second right now
+var flows := Flows.new()  # what made and used each item lately
+var _techs: Dictionary  # researched tech ids (a view of the Research block's set, never written here)
+
+
+func _init(researched: Dictionary = {}) -> void:
+	_techs = researched
+	for id in Data.ITEM_ORDER:
+		inv[id] = 0
+	inv["berries"] = 10
+	for id in ["wood", "stone", "flint", "berries"]:
+		seen[id] = true
+
+
+# --- Stockpile ---------------------------------------------------------------
+
+
+func can_afford(cost: Dictionary) -> bool:
+	for id in cost:
+		if inv.get(id, 0) < cost[id]:
+			return false
+	return true
+
+
+## Take `cost` out of the stockpile. Callers check can_afford first: this doesn't (see try_pay).
+func pay(cost: Dictionary) -> void:
+	for id in cost:
+		inv[id] -= cost[id]
+
+
+## Pay only if the whole cost is covered. Returns false, and takes nothing, when it isn't.
+func try_pay(cost: Dictionary) -> bool:
+	if not can_afford(cost):
+		return false
+	pay(cost)
+	return true
+
+
+func add(id: String, amount: int) -> void:
+	inv[id] = inv.get(id, 0) + amount
+	seen[id] = true
+
+
+# --- Food --------------------------------------------------------------------
+
+
+## What one item of `id` is worth as food. Baking and Smoking make flour and berries worth more.
+func food_value(id: String) -> float:
+	if id == "flour" and _techs.has("baking"):
+		return Data.BAKED_FLOUR_FOOD
+	if id == "berries" and _techs.has("smoking"):
+		return Data.SMOKED_BERRY_FOOD
+	return Data.FOOD_VALUE[id]
+
+
+## All the food in the stockpile, in food units.
+func food_total() -> float:
+	var total := 0.0
+	for id in Data.FOOD_VALUE:
+		total += inv.get(id, 0) * food_value(id)
+	return total
+
+
+## Feed `mouths` for `delta` seconds: sets food_use (Preservation cuts it) and the starving flag.
+## Returns true when everyone ate.
+func feed(mouths: int, delta: float) -> bool:
+	food_use = mouths * Data.FOOD_PER_KITH_PER_SEC * (0.75 if _techs.has("preservation") else 1.0)
+	var fed := eat(food_use * delta)
+	starving = not fed
+	return fed
+
+
+## Eat `need` food units, taking whole items in eating order as the credit runs out.
+## Returns false when the stockpile can't cover it.
+func eat(need: float) -> bool:
+	while food_credit < need:
+		var id := _next_food()
+		if id == "":
+			return false
+		inv[id] -= 1
+		flows.add(id, -1, Data.FLOW_EAT_SOURCE)
+		food_credit += food_value(id)
+	food_credit -= need
+	return true
+
+
+## The first food in eating order the stockpile can spare, or "" if none.
+func _next_food() -> String:
+	for id in Data.EAT_ORDER:
+		var keep := flour_reserve() if id == "flour" else 0
+		if inv.get(id, 0) > keep:
+			return id
+	return ""
+
+
+## Flour kept back for research, so eating doesn't take the Bronze Dawn cost.
+func flour_reserve() -> int:
+	var keep := 0
+	for tech in Data.TECHS:
+		if not _techs.has(tech):
+			keep += Data.TECHS[tech]["cost"].get("flour", 0)
+	return keep
+
+
+# --- Flows -------------------------------------------------------------------
+
+
+## Note `amount` of `item` made (positive) or used up (negative) by `source`.
+func note(item: String, amount: float, source: String) -> void:
+	flows.add(item, amount, source)
+
+
+## Move the flow window on by `delta` seconds.
+func advance(delta: float) -> void:
+	flows.advance(delta)
+
+
+## Net change of `item` per second over the window.
+func rate(item: String) -> float:
+	return flows.rate(item)
+
+
+## Per-second rate of `item` by source.
+func parts(item: String) -> Dictionary:
+	return flows.parts(item)
