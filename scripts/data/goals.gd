@@ -22,14 +22,21 @@ const STORY_TECHS := {
 
 const GOALS := [
 	{"id": "learn_wood", "text": "Hold the mouse on trees to gather Wood, until a Kith learns it (10 harvests)"},
+	{
+		"id": "learn_berries",
+		"text": "Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock"
+	},
 	{"id": "learn_stone", "text": "Gather Stone and Flint by hand until they're learned too"},
-	{"id": "flax", "text": "Find Wild Flax (little blue flowers) and gather it: all Fiber comes from flax"},
+	{
+		"id": "flax",
+		"text": "Find Wild Flax (tall stalks with tiny blue-violet flowers) and gather it: all Fiber comes from flax"
+	},
 	{"id": "knapping", "text": "Press T and research Knapping", "tech": "knapping"},
 	{"id": "tools", "text": "Craft Flint Tools: each harvest takes 0.7s instead of 1s"},
 	{"id": "hut_tech", "text": "Research Gatherer's Hut", "tech": "gatherers_hut"},
 	{"id": "hut", "text": "Place a Gatherer's Hut next to trees or rocks", "building": "gatherers_hut"},
 	{"id": "trip", "text": "Click your hut to send a trip: its Kith brings back a bundle (3 harvests' worth)"},
-	{"id": "berries", "text": "Place a hut near Berry Bushes. The Kith eat food"},
+	{"id": "berries", "text": "Place a hut near Berry Bushes so the food keeps coming: the Kith eat every day"},
 	{"id": "dwelling", "text": "Build a Dwelling. Kith grow when there's room and spare food", "building": "dwelling"},
 	{"id": "charcoal", "text": "Research Fire, then build a Charcoal Pit", "building": "charcoal_pit"},
 	{"id": "twine", "text": "Research Cordage, then build a Twine Post", "building": "twine_post"},

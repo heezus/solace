@@ -9,6 +9,8 @@ const Economy = preload("res://scripts/economy.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Monitor = preload("res://tests/monitor.gd")
 const Research = preload("res://scripts/research.gd")
+const Rules = preload("res://scripts/rules.gd")
+const Ui = preload("res://scripts/ui.gd")
 const RunSave = preload("res://scripts/run_save.gd")
 
 var t  # the runner, tests/run_tests.gd
@@ -40,6 +42,7 @@ func run(runner) -> void:
 	test_sim_shares_the_techs_with_the_blocks()
 	test_sim_runs_the_effects()
 	test_sim_queue_ticks()
+	test_a_tech_says_what_its_building_costs()
 
 
 func _shard_seen() -> bool:
@@ -386,3 +389,42 @@ func test_sim_queue_ticks() -> void:
 	t.check(s.tech_tree.researched.has("cordage"), "the queue researches a tech once it is affordable")
 	t.check("Discovered Cordage" in s.events, "with the same announcement")
 	t.check(s.tech_tree.goal == "" and s.tech_tree.queue.is_empty(), "and the goal is dropped once reached")
+
+
+## A tech that unlocks a building says what the building will cost, and warns when paying for the tech
+## would leave too little to build it (the Gatherer's Hut costs 20 Wood, 10 Stone, then 10 Wood, 5 Stone more).
+func test_a_tech_says_what_its_building_costs() -> void:
+	t.check(Rules.buildings_of("gatherers_hut") == ["gatherers_hut"], "the Gatherer's Hut tech unlocks the hut")
+	t.check(Rules.buildings_of("haulers") == ["road", "bridge"], "Paths & Haulers unlocks the Road and the Bridge")
+	t.check(Rules.buildings_of("knapping").is_empty(), "Knapping unlocks no building")
+	for type in Data.BUILD_ORDER:
+		var tech: String = Data.BUILDINGS[type]["tech"]
+		t.check(tech == "" or type in Rules.buildings_of(tech), "%s is listed under its tech" % type)
+	var hut_cost: Dictionary = Data.BUILDINGS["gatherers_hut"]["cost"]
+	t.check(
+		Ui.then_builds_text("gatherers_hut") == "Then builds for: " + Ui.cost_text(hut_cost),
+		"the card says the hut builds for %s" % Ui.cost_text(hut_cost)
+	)
+	t.check(
+		(
+			Ui.then_builds_text("haulers").contains("Road for")
+			and Ui.then_builds_text("haulers").contains("Wooden Bridge for")
+		),
+		"two buildings, both named"
+	)
+	t.check(Ui.then_builds_text("knapping") == "", "and nothing for a tech with no building")
+	var tech_cost: Dictionary = Data.TECHS["gatherers_hut"]["cost"]
+	var inv := tech_cost.duplicate()
+	t.check(
+		Ui.build_warning(inv, "gatherers_hut").contains("Gatherer's Hut"), "exactly the tech's cost in hand: a warning"
+	)
+	for id in hut_cost:
+		inv[id] = inv.get(id, 0) + hut_cost[id]
+	t.check(Ui.build_warning(inv, "gatherers_hut") == "", "enough for both: no warning")
+	inv["wood"] -= 1
+	t.check(Ui.build_warning(inv, "gatherers_hut").contains("1 Wood"), "one Wood short of the building: it says so")
+	t.check(Ui.build_warning({}, "knapping") == "", "no building, no warning")
+	t.check(
+		Rules.left_after({"wood": 5}, {"wood": 9, "stone": 2}) == {"wood": 0, "stone": 0},
+		"what is left never goes below zero"
+	)

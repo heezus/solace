@@ -72,3 +72,19 @@ static func cost_at(type: String, tile: String) -> Dictionary:
 	if Data.BUILDINGS[type]["kind"] == "road" and tile == "rock":
 		return Data.PASS_COST
 	return Data.BUILDINGS[type]["cost"]
+
+
+## The buildings a tech unlocks, in build order (Paths & Haulers gives the Road and the Wooden Bridge).
+static func buildings_of(tech: String) -> Array:
+	return Data.BUILD_ORDER.filter(func(type): return Data.BUILDINGS[type]["tech"] == tech)
+
+
+## What is left of the stockpile `inv` after paying `cost`, for every item either holds (never below zero).
+static func left_after(inv: Dictionary, cost: Dictionary) -> Dictionary:
+	var out := {}
+	for id in inv:
+		out[id] = maxi(inv[id] - cost.get(id, 0), 0)
+	for id in cost:
+		if not out.has(id):
+			out[id] = 0
+	return out

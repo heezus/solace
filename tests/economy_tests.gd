@@ -27,6 +27,7 @@ func run(runner) -> void:
 	test_flour_reserve()
 	test_feed_sets_use_and_starving()
 	test_preservation_cuts_food_use()
+	test_the_food_warning_comes_before_the_food_is_gone()
 	test_flows_and_rates()
 	test_eating_shows_up_as_a_flow()
 	test_flow_window_forgets()
@@ -58,7 +59,9 @@ func test_a_new_stockpile() -> void:
 	var e := Economy.new()
 	for id in Data.ITEM_ORDER:
 		t.check(e.inv.has(id), "every item has a slot: " + id)
-	t.check(e.inv["berries"] == 10, "the camp starts with 10 berries")
+	t.check(
+		e.inv["berries"] == Data.START_BERRIES and Data.START_BERRIES >= 10, "the camp starts with 10 berries or more"
+	)
 	t.check(e.inv["wood"] == 0 and e.inv["stone"] == 0, "and nothing else")
 	t.check(
 		e.seen.has("berries") and e.seen.has("wood") and e.seen.has("stone") and e.seen.has("flint"),
@@ -252,6 +255,54 @@ func test_feed_sets_use_and_starving() -> void:
 	e.inv["berries"] = 5
 	t.check(e.feed(3, 1.0), "food comes back")
 	t.check(not e.starving, "and the flag goes down")
+
+
+## The early warning: food_low fires once when the stockpile would run out within Data.FOOD_WARN_SECONDS,
+## well before anyone starves, and the `low` flag comes down only when the food would last much longer.
+func test_the_food_warning_comes_before_the_food_is_gone() -> void:
+	var e := _empty()
+	var fired := [0]
+	e.food_low.connect(func(): fired[0] += 1)
+	var mouths := 3
+	var per_sec := mouths * Data.FOOD_PER_KITH_PER_SEC
+	e.inv["berries"] = ceili(per_sec * Data.FOOD_WARN_SECONDS) + 5
+	e.food_credit = 0.0
+	t.check(e.seconds_of_food() == INF, "before anyone has eaten, the food lasts for ever")
+	e.feed(mouths, 0.1)
+	t.check(fired[0] == 0 and not e.low, "plenty of food: no warning")
+	t.check(e.seconds_of_food() > Data.FOOD_WARN_SECONDS, "it lasts longer than the warning time")
+	var seconds := 0.0
+	while not e.low and not e.starving and seconds < 1000.0:
+		e.feed(mouths, 1.0)
+		seconds += 1.0
+	t.check(e.low and fired[0] == 1, "the warning goes up, once")
+	t.check(not e.starving and e.inv["berries"] > 0, "while there is still food to eat")
+	t.check(e.seconds_of_food() < Data.FOOD_WARN_SECONDS, "about a minute before it is gone")
+	for i in 5:
+		e.feed(mouths, 1.0)
+	t.check(fired[0] == 1, "it does not fire again while it stays low")
+	e.inv["berries"] += ceili(per_sec * Data.FOOD_CLEAR_SECONDS)
+	e.feed(mouths, 0.1)
+	t.check(not e.low, "it comes down once the food would last well past the warning time")
+	e.inv["berries"] = 0
+	e.food_credit = 0.0
+	e.feed(mouths, 1.0)
+	t.check(e.low and fired[0] == 2, "and it goes up again the next time food runs short")
+	t.check(e.feed(0, 1.0) and e.seconds_of_food() == INF, "with nobody to feed there is never a shortage")
+	# Food a building brings in counts against the drain; the player's own gathering (an answer to the warning) doesn't.
+	e.inv["berries"] = 2
+	e.food_credit = 0.0
+	e.feed(mouths, 1.0)
+	t.check(e.low, "two berries for three mouths is a shortage")
+	e.flows.add("berries", 40.0, "hand")
+	e.advance(1.0)
+	e.feed(mouths, 0.1)
+	t.check(e.low and e.food_income() == 0.0, "gathering by hand doesn't end the warning by itself")
+	e.flows.add("berries", 40.0, "gatherers_hut")
+	e.advance(1.0)
+	e.feed(mouths, 0.1)
+	t.check(e.food_income() > per_sec and not e.low, "but a hut bringing in more than they eat does")
+	t.check(e.seconds_of_food() == INF, "then the food isn't running out")
 
 
 func test_preservation_cuts_food_use() -> void:

@@ -32,6 +32,7 @@ const GOAL_COLOR := Color("ffd166")
 const FOG := Color("2c3834")
 const LINE_TYPES := ["road", "bridge", "field"]  # laid by dragging
 const AURA_FILL := Color(0.55, 0.45, 0.6, 0.2)
+const NUDGE_TIME := 2.0  # seconds the "hold it down" hint stays after a click that let go too soon
 
 var fit_vp := Vector2.ZERO  # the window size the map was last fit to
 var fit_bars := Vector2.ZERO  # the top and bottom bar heights the fit uses
@@ -59,6 +60,10 @@ var ui_refresh := 0.0
 var paused := false
 var speed := 1  # simulation steps per frame: 1x, 2x or 3x
 var holding := false  # the left button is down on a resource tile: hold to harvest
+var press_tile := Vector2i(-1, -1)  # the resource tile the current hold started on
+var press_harvested := false  # a harvest completed during this press
+## A click that let go before the ring filled: {tile, frac (how far it got), t}. Shown for NUDGE_TIME.
+var nudge := {}
 
 
 func _ready() -> void:
@@ -80,6 +85,8 @@ func _process(delta: float) -> void:
 				{"pos": at, "text": Data.BORN_POPUP % Data.PEOPLE["one"], "t": 0.0, "col": KITH.lightened(0.3)}
 			)
 			_toast(Data.BORN_TOAST % Data.PEOPLE["many"], 2.5)
+		elif e == Data.FOOD_LOW_EVENT % Data.PEOPLE["many"]:
+			_toast(e, 8.0)  # the early warning stays up long enough to read and act on
 		else:
 			_toast(e, 3.0)
 	state.events.clear()
@@ -88,6 +95,10 @@ func _process(delta: float) -> void:
 	for p in popups:
 		p["t"] += delta
 	popups = popups.filter(func(p): return p["t"] < 1.2)
+	if not nudge.is_empty():
+		nudge["t"] += delta
+		if nudge["t"] >= NUDGE_TIME:
+			nudge = {}
 	for r in rubble:
 		r["t"] += delta
 	rubble = rubble.filter(func(r): return r["t"] < Overlays.RUBBLE_TIME)
@@ -119,6 +130,9 @@ func _layout() -> void:
 		fit_bars = fit_bars.max(Vector2(top_bar.size.y, bottom_bar.size.y))
 	var top := fit_bars.x
 	var bottom := fit_bars.y
+	toast_label.custom_minimum_size.x = maxf(vp.x - SIDE_W - 40.0, 100.0)
+	toast_label.size.x = toast_label.custom_minimum_size.x
+	toast_label.position = Vector2(16, top + 14)
 	side_panel.position = Vector2(vp.x - SIDE_W - 8, top + 8)
 	side_panel.size = Vector2(SIDE_W, maxf(vp.y - top - bottom - 16, 100))
 	var area := Rect2(8, top + 8, vp.x - SIDE_W - 24, vp.y - top - bottom - 16)
@@ -232,6 +246,8 @@ func _click_tile(p: Vector2i) -> void:
 	# Everything else is gathered by holding: _process fills the ring while the button stays down.
 	state.release_harvest()
 	holding = true
+	press_tile = p
+	press_harvested = false
 
 
 ## Hold to harvest, each frame the button is down: over a Control (a bar, a panel) it doesn't count.
@@ -246,11 +262,17 @@ func _hold(delta: float) -> void:
 		return
 	var msg := state.hold_harvest(hover, delta)
 	if msg != "":
+		press_harvested = true
 		popups.append({"pos": _tile_center(hover), "text": msg, "t": 0.0})
 
 
+## Let go. A press on a resource that ended before its ring filled shows the hold hint (see _draw_nudge).
 func _stop_holding() -> void:
+	if holding and not press_harvested and Hands.item_at(state, press_tile) != "":
+		var frac := state.harvest_frac if state.harvest_tile == press_tile else 0.0
+		nudge = {"tile": press_tile, "frac": frac, "t": 0.0}
 	holding = false
+	press_harvested = false
 	state.release_harvest()
 
 
@@ -301,12 +323,8 @@ func _build_ui() -> void:
 	building_panel.demolish_pressed.connect(_demolish)
 	building_panel.closed.connect(func(): building_panel.select(Vector2i(-1, -1)))
 
-	# Toasts, centered under the top bar.
+	# Toasts: centered over the map, just under the top bar (placed in _layout, so they never cover its chips).
 	toast_label = Ui.label("", 17)
-	toast_label.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	toast_label.offset_left = -500
-	toast_label.offset_right = 500
-	toast_label.offset_top = 56
 	toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	toast_label.autowrap_mode = TextServer.AUTOWRAP_WORD
 	toast_label.add_theme_color_override("font_outline_color", OUTLINE)
@@ -338,10 +356,16 @@ func _build_side_panel(layer: CanvasLayer) -> void:
 		goal_labels.append(g)
 	v.add_child(HSeparator.new())
 	v.add_child(Ui.label("Info", 18))
+	# The text under the mouse is clipped to the panel, never past its bottom edge (no scroll bar: it changes as the mouse moves).
+	var info_scroll := ScrollContainer.new()
+	info_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	info_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	info_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	v.add_child(info_scroll)
 	info_label = Ui.label("", 14)
 	info_label.autowrap_mode = TextServer.AUTOWRAP_WORD
-	info_label.custom_minimum_size = Vector2(SIDE_W - 30, 0)
-	v.add_child(info_label)
+	info_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info_scroll.add_child(info_label)
 
 
 func _build_win_overlay(layer: CanvasLayer) -> void:
@@ -443,7 +467,14 @@ func _tile_text() -> String:
 	if state.town.building_at.has(hover):
 		var b: Dictionary = state.town.buildings[state.town.building_at[hover]]
 		var def: Dictionary = Data.BUILDINGS[b["type"]]
-		var s: String = def["name"] + "\n" + def["desc"] + "\n\nStatus: " + b["status"]
+		var status: String = "" if b["status"] == def["desc"] else "\n\nStatus: " + b["status"]  # a blurb shows once
+		if building_panel.visible and building_panel.pos == hover:
+			return (
+				def["name"]
+				+ status
+				+ "\n\nThe panel beside it has the details. Click the x or right-click to close it."
+			)
+		var s: String = def["name"] + "\n" + def["desc"] + status
 		if Buildings.needs_worker(b):
 			s += "\n" + BuildingPanel.worker_text(state, b)
 			s += "\n" + Work.text(state, b)
@@ -470,7 +501,10 @@ func _tile_text() -> String:
 	var hint := Overlays.blocked_hint(state, hover)
 	if t["yields"] != "":
 		var item: String = t["yields"]
-		var s := "%s\n%s. Hold the mouse on it to gather." % [t["name"], hold_hint(item)]
+		var how := "Hold the mouse on it to gather."
+		if not nudge.is_empty() and nudge["tile"] == hover:
+			how = "You let go too soon: keep the mouse down until the ring fills."
+		var s := "%s\n%s. %s" % [t["name"], hold_hint(item), how]
 		if Data.FOOD_VALUE.has(item):
 			s += " It's food: the %s eat it." % Data.PEOPLE["many"]
 		s += "\n" + learn_text(item)
@@ -619,6 +653,7 @@ func _draw() -> void:
 			Art.pill(self, Vector2(hr.get_center().x, hr.end.y + 4), tag, Color.WHITE, OUTLINE, 12)
 
 	_draw_hold_ring()
+	_draw_nudge()
 	if paused:
 		Art.pill(self, Vector2(World.WIDTH * TILE / 2.0, 8), "Paused · Space to resume", GOAL_COLOR, OUTLINE, 16)
 
@@ -715,6 +750,26 @@ func _draw_hold_ring() -> void:
 	if state.harvest_frac > 0.0:
 		var to := -PI / 2.0 + TAU * state.harvest_frac
 		draw_arc(c, radius, -PI / 2.0, to, maxi(4, int(40 * state.harvest_frac)), GOAL_COLOR, 4.0, true)
+
+
+## A quick click on a resource: the ring shows how far the hold got and fades, with a hint to keep the button down.
+func _draw_nudge() -> void:
+	if nudge.is_empty():
+		return
+	var p: Vector2i = nudge["tile"]
+	var fade: float = clampf(2.0 * (1.0 - nudge["t"] / NUDGE_TIME), 0.0, 1.0)
+	var c := _tile_center(p)
+	var radius := TILE * 0.42
+	draw_arc(c, radius, 0.0, TAU, 40, Color(OUTLINE, fade), 7.0, true)
+	draw_arc(c, radius, 0.0, TAU, 40, Color(1, 1, 1, 0.3 * fade), 3.0, true)
+	var to := -PI / 2.0 + TAU * maxf(nudge["frac"], 0.12)  # always a little arc, so the ring reads as unfinished
+	draw_arc(c, radius, -PI / 2.0, to, 12, Color(GOAL_COLOR, fade), 4.0, true)
+	var item := Hands.item_at(state, p)
+	if item != "":
+		var secs := str(snappedf(Hands.hold_time(state, item), 0.1))
+		Art.pill(
+			self, c + Vector2(0, TILE * 0.7), "Hold the mouse down for %ss to gather" % secs, GOAL_COLOR, OUTLINE, 12
+		)
 
 
 ## A hut that hauls by clicks (before Paths & Haulers, or with no road link) shows its trip queue as
