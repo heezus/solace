@@ -477,6 +477,12 @@ func _draw() -> void:
 		elif placing == "road" and state.tile_at(hover) == "rock":
 			note = "Cut a pass · %s" % Ui.cost_text(Data.PASS_COST)
 		Overlays.placement_ghost(self, state, placing, hover, note)
+	elif state.in_bounds(hover) and not state.fog.is_revealed(hover):
+		var fr := _tile_rect(hover)
+		Art.dashed_rect(self, fr.grow(-1), Color(1, 1, 1, 0.6), 2.0, 5.0, 4.0)
+		Art.pill(
+			self, Vector2(fr.get_center().x, fr.end.y + 4), "Unexplored · build nearby to see", Color.WHITE, OUTLINE, 12
+		)
 	elif state.in_bounds(hover) and state.fog.is_revealed(hover) and Overlays.blocked_hint(state, hover) != "":
 		draw_rect(_tile_rect(hover).grow(-1), Color(1, 1, 1, 0.8), false, 2.0)
 		var r := _tile_rect(hover)
