@@ -56,8 +56,21 @@ const STARVE_TIME := 20.0
 const KITH_SPEED := 2.0
 ## Items a hauler carries per trip.
 const CARRY := 5
-## Path cost of each tile kind. Rivers are impassable without a road (bridge), or slow once Rafts are known.
+## Path cost of each tile kind. Rivers are impassable without a Wooden Bridge, or slow once Rafts are known.
 const WALK_COST := {"tree": 2.0, "rock": 2.0, "road": 0.5, "river": 4.0}
+
+## Dwellings must stand within this many tiles of the Hearth (the Camp), where the Kith are born.
+const HEARTH_RADIUS := 6.0
+
+# --- Fog of war ----------------------------------------------------------------
+## How far each thing lets the Kith see, in tiles. Scouting adds SCOUTING_SIGHT to buildings and Kith.
+const SIGHT_START := 6
+const SIGHT_BUILDING := 3
+const SIGHT_KITH := 2
+const SCOUTING_SIGHT := 2
+
+## Rates in the top bar are averaged over this many seconds.
+const RATE_WINDOW := 30
 
 # --- Map tiles ---------------------------------------------------------------
 
@@ -248,7 +261,8 @@ const TECHS := {
 		"pos": Vector2(2, 2),
 		"requires": ["cordage", "gatherers_hut"],
 		"cost": {"rope": 10, "wood": 30},
-		"desc": "Idle Kith carry goods between buildings and the stockpile. Unlocks Roads and Storehouses.",
+		"desc":
+		"Idle Kith carry goods between buildings and the stockpile. Unlocks Roads, Wooden Bridges and Storehouses.",
 	},
 	"nets":
 	{
@@ -434,20 +448,20 @@ const RECIPES := {
 }
 
 # --- Buildings ---------------------------------------------------------------
-## kind: "camp" | "house" | "road" | "field" | "depot" | "gatherer" | "processor" | "power" | "aura" | "cairn"
+## kind: "camp" | "house" | "road" | "bridge" | "field" | "depot" | "gatherer" | "processor" | "power" | "aura" | "cairn"
 ## Processors turn `in` into `out` every `time` seconds (a processor with no `in` just makes `out`).
 ## Buildings without a worker show `status`, or `desc` if they have none.
 
 const BUILDINGS := {
 	"camp":
 	{
-		"name": "Camp",
+		"name": "Hearth",
 		"kind": "camp",
 		"tech": "",
 		"cost": {},
 		"housing": 4,
 		"color": Color("e76f51"),
-		"desc": "The Kith's home and stockpile. Houses 4.",
+		"desc": "The Kith's home fire and stockpile. Kith are born here. Houses 4.",
 	},
 	"dwelling":
 	{
@@ -456,8 +470,9 @@ const BUILDINGS := {
 		"tech": "",
 		"cost": {"wood": 12, "fiber": 6},
 		"housing": 3,
+		"near_hearth": true,
 		"color": Color("e9c46a"),
-		"desc": "Room for 3 more Kith. They grow when there is spare food.",
+		"desc": "Room for 3 more Kith. Must be within 6 tiles of the Hearth. They grow when there is spare food.",
 	},
 	"road":
 	{
@@ -465,8 +480,17 @@ const BUILDINGS := {
 		"kind": "road",
 		"tech": "haulers",
 		"cost": {"stone": 1},
-		"color": Color("c9a66b"),
-		"desc": "Kith walk twice as fast on roads. Lay one across the river to bridge it. Drag to paint.",
+		"color": Color("c8a36a"),
+		"desc": "Kith walk twice as fast on roads. Roads can't cross the river: build a Wooden Bridge. Drag to lay.",
+	},
+	"bridge":
+	{
+		"name": "Wooden Bridge",
+		"kind": "bridge",
+		"tech": "haulers",
+		"cost": {"wood": 10, "rope": 2},
+		"color": Color("f4a261"),
+		"desc": "Goes on a river tile. The Kith cross it at road speed. Drag to span the river.",
 	},
 	"field":
 	{
@@ -596,6 +620,7 @@ const BUILDINGS := {
 const BUILD_ORDER := [
 	"dwelling",
 	"road",
+	"bridge",
 	"field",
 	"storehouse",
 	"charcoal_pit",

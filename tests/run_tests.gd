@@ -5,6 +5,10 @@ extends SceneTree
 const Data = preload("res://scripts/data.gd")
 const GameState = preload("res://scripts/game_state.gd")
 const Main = preload("res://scripts/main.gd")
+const TechPanel = preload("res://scripts/tech_panel.gd")
+const Ui = preload("res://scripts/ui.gd")
+const Goals = preload("res://scripts/goals.gd")
+const ConventionTests = preload("res://tests/convention_tests.gd")
 
 var failures := 0
 
@@ -38,6 +42,7 @@ func _init() -> void:
 	test_calendar_gates_bronze_dawn()
 	test_lore_and_side_branch_effects()
 	test_fishing_weir_makes_fish()
+	ConventionTests.new().run(self)
 	print("FAILED: %d" % failures if failures > 0 else "ALL TESTS PASSED")
 	quit(1 if failures > 0 else 0)
 
@@ -48,9 +53,11 @@ func check(cond: bool, what: String) -> void:
 		printerr("FAIL: " + what)
 
 
+## A new camp with the whole map explored, so tests can build anywhere.
 func fresh() -> GameState:
 	var s := GameState.new()
 	s.generate(42)
+	s.fog.reveal_all()
 	return s
 
 
@@ -212,15 +219,15 @@ func test_flour_is_kept_for_research() -> void:
 
 func test_goals_advance_in_order() -> void:
 	var s := fresh()
-	check(s.current_goal() == 0, "first goal is gathering")
+	check(Goals.current_goal(s) == 0, "first goal is gathering")
 	s.inv["wood"] = 10
 	s.inv["stone"] = 10
 	s.inv["flint"] = 5
 	s.tick(0.1)
-	check(s.current_goal() == 1, "gathering done, next is knapping")
+	check(Goals.current_goal(s) == 1, "gathering done, next is knapping")
 	s.research("knapping")
 	s.tick(0.1)
-	check(s.current_goal() == 2, "knapping done, next is flint tools")
+	check(Goals.current_goal(s) == 2, "knapping done, next is flint tools")
 	check(s.goals_done.has("gather"), "earlier goals stay done after spending")
 
 
@@ -240,10 +247,12 @@ func test_shortfall_text() -> void:
 	var s := fresh()
 	s.inv["stone"] = 4
 	s.inv["clay"] = 0
-	check(s.shortfall_text({"stone": 10, "clay": 10}) == "need 6 Stone, 10 Clay", "shortfall lists what's missing")
+	check(
+		Ui.shortfall_text(s.inv, {"stone": 10, "clay": 10}) == "need 6 Stone, 10 Clay", "shortfall lists what's missing"
+	)
 	s.inv["stone"] = 10
 	s.inv["clay"] = 10
-	check(s.shortfall_text({"stone": 10, "clay": 10}) == "", "no shortfall when affordable")
+	check(Ui.shortfall_text(s.inv, {"stone": 10, "clay": 10}) == "", "no shortfall when affordable")
 
 
 func place_free(s: GameState, type: String, p: Vector2i) -> bool:
@@ -251,6 +260,7 @@ func place_free(s: GameState, type: String, p: Vector2i) -> bool:
 	s.add("stone", 100)
 	s.add("fiber", 100)
 	s.add("grain", 100)
+	s.add("rope", 100)
 	s.researched[Data.BUILDINGS[type]["tech"]] = true
 	return s.place(type, p)
 
@@ -277,7 +287,7 @@ func test_population_grows_with_food_and_room() -> void:
 	for i in int(Data.GROW_TIME * 2 + 2):
 		s.tick(1.0)
 	check(s.kith.size() == s.housing(), "grows until the Camp is full")
-	check(s.growth_note().begins_with("No room"), "says it needs room")
+	check(Ui.growth_note(s).begins_with("No room"), "says it needs room")
 	place_free(s, "dwelling", s.camp_pos + Vector2i(0, 2))
 	for i in int(Data.GROW_TIME + 2):
 		s.tick(1.0)
@@ -301,6 +311,8 @@ func haul_rate(dist_x: int) -> int:
 	s.camp_pos = Vector2i(1, 10)
 	s._place_building("camp", s.camp_pos)
 	s._build_walk_grid()
+	s.fog.setup(GameState.WIDTH, GameState.HEIGHT)
+	s.fog.reveal_all()
 	for i in Data.KITH_START:
 		s._add_kith()
 	s.inv["berries"] = 500
@@ -320,6 +332,7 @@ func test_distance_slows_haulers() -> void:
 	check(near > far, "distance matters: near pit delivers more (near %d, far %d)" % [near, far])
 
 
+## A Wooden Bridge (Paths & Haulers) spans the river at road speed.
 func test_roads_bridge_the_river() -> void:
 	var s := fresh()
 	var river := find_tile(s, "river")
@@ -327,12 +340,17 @@ func test_roads_bridge_the_river() -> void:
 	var far_bank := river + Vector2i(2, 0)
 	check(s.walk_cost(bank) >= 1.0, "no road: normal speed")
 	check(s.astar.is_point_solid(river), "the river blocks walking")
-	check(place_free(s, "road", river), "a road can cross the river")
-	check(place_free(s, "road", river + Vector2i(1, 0)), "both river tiles")
+	check(Data.BUILDINGS["bridge"]["tech"] == "haulers", "bridges come with Paths & Haulers")
+	check(s.placement_error("bridge", bank) == "Bridges go on river tiles", "bridges only go on the river")
+	var wood: int = s.inv["wood"] + 100
+	check(place_free(s, "bridge", river), "a bridge goes on the river")
+	check(s.inv["wood"] == wood - 10, "a bridge costs 10 Wood")
+	check(place_free(s, "bridge", river + Vector2i(1, 0)), "both river tiles")
 	check(not s.astar.is_point_solid(river), "bridged river is walkable")
-	check(s.walk_cost(river) < 1.0, "roads are fast")
+	check(s.walk_cost(river) < 1.0, "bridges are road speed")
 	var path := s.astar.get_id_path(bank, far_bank)
 	check(river in path, "the path uses the bridge")
+	check(s.built_type(river) == "bridge", "it counts as a bridge")
 
 
 ## Every parent sits left of its child, no two cards overlap, and most techs join two branches.
@@ -366,8 +384,7 @@ func test_tech_tree_is_a_web() -> void:
 func check_cards_dont_overlap() -> void:
 	var rects := {}
 	for tech in Data.TECHS:
-		var p: Vector2 = Data.TECHS[tech]["pos"]
-		rects[tech] = Rect2(Vector2(p.x * Main.COL_W, p.y * Main.ROW_H), Main.CARD)
+		rects[tech] = Rect2(TechPanel.card_pos(tech), TechPanel.CARD)
 	for a in rects:
 		for b in rects:
 			if a < b:
@@ -480,7 +497,7 @@ func test_rafts_cross_the_river() -> void:
 	check(s.walk_cost(river) > 1.0, "slower than open ground")
 	var path := s.astar.get_id_path(river + Vector2i(-1, 0), river + Vector2i(2, 0))
 	check(not path.is_empty(), "Kith can cross without a bridge")
-	place_free(s, "road", river)
+	place_free(s, "bridge", river)
 	check(s.walk_cost(river) < 1.0, "a bridge is still road speed")
 
 

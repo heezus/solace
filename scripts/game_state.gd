@@ -3,6 +3,12 @@ extends RefCounted
 ## so it can run headless in tests.
 
 const Data = preload("res://scripts/data.gd")
+const Fog = preload("res://scripts/fog.gd")
+const Flows = preload("res://scripts/flows.gd")
+const MapGen = preload("res://scripts/map_gen.gd")
+const Haulers = preload("res://scripts/haulers.gd")
+const Goals = preload("res://scripts/goals.gd")
+const Rules = preload("res://scripts/rules.gd")
 
 const WIDTH := 36
 const HEIGHT := 22
@@ -32,6 +38,8 @@ var grow_timer := 0.0
 var starve_timer := 0.0
 var astar := AStarGrid2D.new()
 var events: Array = []  # messages for the UI to show and clear
+var fog := Fog.new()
+var flows := Flows.new()  # what made and used each item lately, for the top bar rates
 
 
 func _init() -> void:
@@ -46,66 +54,7 @@ func _init() -> void:
 
 
 func generate(seed_value: int) -> void:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = seed_value
-	tiles.clear()
-	tiles.resize(WIDTH * HEIGHT)
-	tiles.fill("grass")
-
-	# A meandering river down the right third of the map, with gravel and clay banks.
-	var rx := int(WIDTH * 0.7)
-	for y in HEIGHT:
-		rx = clampi(rx + rng.randi_range(-1, 1), int(WIDTH * 0.6), WIDTH - 4)
-		_set_tile(Vector2i(rx, y), "river")
-		_set_tile(Vector2i(rx + 1, y), "river")
-		for side in [Vector2i(rx - 1, y), Vector2i(rx + 2, y)]:
-			var roll := rng.randf()
-			if roll < 0.25:
-				_set_tile(side, "gravel")
-			elif roll < 0.5:
-				_set_tile(side, "clay")
-
-	_scatter(rng, "tree", 7, 3, 0.75)
-	_scatter(rng, "rock", 5, 2, 0.7)
-	_scatter(rng, "berry", 4, 1, 0.8)
-	_scatter(rng, "grain", 4, 2, 0.7)
-
-	# Clear the Camp and the ground around it.
-	camp_pos = Vector2i(int(WIDTH / 3.0), int(HEIGHT / 2.0))
-	for dy in range(-2, 3):
-		for dx in range(-2, 3):
-			var p := camp_pos + Vector2i(dx, dy)
-			if in_bounds(p) and tile_at(p) != "river":
-				_set_tile(p, "grass")
-	# Guarantee every resource near the Camp so the opening never stalls.
-	_set_tile(camp_pos + Vector2i(-3, -1), "tree")
-	_set_tile(camp_pos + Vector2i(-3, 0), "tree")
-	_set_tile(camp_pos + Vector2i(3, 2), "rock")
-	_set_tile(camp_pos + Vector2i(-2, 3), "berry")
-	_set_tile(camp_pos + Vector2i(2, -3), "grain")
-	_place_building("camp", camp_pos)
-	_build_walk_grid()
-	kith.clear()
-	for i in Data.KITH_START:
-		_add_kith()
-
-	# One ancient star shard, far from home.
-	for attempt in 200:
-		var p := Vector2i(rng.randi_range(1, WIDTH - 2), rng.randi_range(1, HEIGHT - 2))
-		if tile_at(p) == "grass" and p.distance_to(camp_pos) > 10 and not building_at.has(p):
-			_set_tile(p, "shard")
-			shard_pos = p
-			break
-
-
-func _scatter(rng: RandomNumberGenerator, tile: String, count: int, radius: int, density: float) -> void:
-	for i in count:
-		var c := Vector2i(rng.randi_range(0, WIDTH - 1), rng.randi_range(0, HEIGHT - 1))
-		for dy in range(-radius, radius + 1):
-			for dx in range(-radius, radius + 1):
-				var p := c + Vector2i(dx, dy)
-				if in_bounds(p) and tile_at(p) == "grass" and rng.randf() < density:
-					_set_tile(p, tile)
+	MapGen.generate(self, seed_value, WIDTH, HEIGHT)
 
 
 func _set_tile(p: Vector2i, tile: String) -> void:
@@ -123,6 +72,11 @@ func tile_at(p: Vector2i) -> String:
 	return tiles[p.y * WIDTH + p.x]
 
 
+## How far something sees: Scouting adds to buildings and Kith alike.
+func _sight(base: int) -> int:
+	return base + (Data.SCOUTING_SIGHT if researched.has("scouting") else 0)
+
+
 # --- Stockpile ---------------------------------------------------------------
 
 
@@ -133,7 +87,7 @@ func can_afford(cost: Dictionary) -> bool:
 	return true
 
 
-func pay(cost: Dictionary) -> void:
+func _pay(cost: Dictionary) -> void:
 	for id in cost:
 		inv[id] -= cost[id]
 
@@ -143,17 +97,7 @@ func add(id: String, amount: int) -> void:
 	seen[id] = true
 
 
-## "need 10 Clay, 3 Rope" for whatever the stockpile is short of, or "" if affordable.
-func shortfall_text(cost: Dictionary) -> String:
-	var parts: Array = []
-	for id in cost:
-		var short: int = cost[id] - inv.get(id, 0)
-		if short > 0:
-			parts.append("%d %s" % [short, Data.ITEMS[id]["name"]])
-	return "" if parts.is_empty() else "need " + ", ".join(parts)
-
-
-func hand_yield() -> int:
+func _hand_yield() -> int:
 	return 2 if inv.get("flint_tools", 0) > 0 else 1
 
 
@@ -184,6 +128,8 @@ func _grow_time() -> float:
 
 
 func gather_by_hand(p: Vector2i) -> String:
+	if not fog.is_revealed(p):
+		return ""
 	var tile := tile_at(p)
 	if tile == "shard":
 		shard_seen = true
@@ -193,8 +139,9 @@ func gather_by_hand(p: Vector2i) -> String:
 	var item: String = Data.TILES[tile]["yields"]
 	if item == "":
 		return ""
-	var n := hand_yield() * _gather_mult(item)
+	var n := _hand_yield() * _gather_mult(item)
 	add(item, n)
+	flows.add(item, n, "hand")
 	return "+%d %s" % [n, Data.ITEMS[item]["name"]]
 
 
@@ -230,10 +177,13 @@ func can_research(tech: String) -> bool:
 func research(tech: String) -> bool:
 	if not can_research(tech):
 		return false
-	pay(Data.TECHS[tech]["cost"])
+	_pay(Data.TECHS[tech]["cost"])
 	researched[tech] = true
 	if tech in ["paved_roads", "rafts"]:
 		_refresh_walk_grid()
+	if tech == "scouting":
+		for b in buildings:
+			fog.reveal(b["pos"], _sight(Data.SIGHT_BUILDING))
 	events.append("Discovered %s" % Data.TECHS[tech]["name"])
 	if tech == "bronze_dawn":
 		won = true
@@ -255,9 +205,12 @@ func craft(recipe: String) -> bool:
 	var r: Dictionary = Data.RECIPES[recipe]
 	if not recipe_unlocked(recipe) or not can_afford(r["in"]):
 		return false
-	pay(r["in"])
+	_pay(r["in"])
+	for id in r["in"]:
+		flows.add(id, -r["in"][id], "craft")
 	for id in r["out"]:
 		add(id, r["out"][id])
+		flows.add(id, r["out"][id], "craft")
 	return true
 
 
@@ -274,11 +227,21 @@ func placement_error(type: String, p: Vector2i) -> String:
 	var def: Dictionary = Data.BUILDINGS[type]
 	if not building_unlocked(type):
 		return "Not discovered yet"
-	if not in_bounds(p) or building_at.has(p) or roads.has(p):
+	if not in_bounds(p):
+		return "Off the map"
+	if not fog.is_revealed(p):
+		return "Unexplored: build or walk closer to see it"
+	if building_at.has(p) or roads.has(p):
 		return "Something is already there"
 	if def["kind"] == "road":
-		if tile_at(p) != "grass" and tile_at(p) != "river":
-			return "Roads go on grassland or across the river"
+		if tile_at(p) == "river":
+			return "Roads can't cross the river: build a Wooden Bridge"
+		if tile_at(p) != "grass":
+			return "Roads go on grassland"
+		return "" if can_afford(def["cost"]) else "Not enough materials"
+	if def["kind"] == "bridge":
+		if tile_at(p) != "river":
+			return "Bridges go on river tiles"
 		return "" if can_afford(def["cost"]) else "Not enough materials"
 	if def["kind"] == "field":
 		if tile_at(p) != "grass":
@@ -290,6 +253,8 @@ func placement_error(type: String, p: Vector2i) -> String:
 		return "Must touch the river"
 	if def.get("needs_shard", false) and not _touches(p, "shard"):
 		return "Must go next to the Strange Stone"
+	if def.get("near_hearth", false) and not _near_hearth(p):
+		return "Must be within %d tiles of the Hearth" % int(Data.HEARTH_RADIUS)
 	if not can_afford(def["cost"]):
 		return "Not enough materials"
 	return ""
@@ -298,17 +263,113 @@ func placement_error(type: String, p: Vector2i) -> String:
 func place(type: String, p: Vector2i) -> bool:
 	if placement_error(type, p) != "":
 		return false
-	pay(Data.BUILDINGS[type]["cost"])
-	if Data.BUILDINGS[type]["kind"] == "road":
-		roads[p] = true
+	_pay(Data.BUILDINGS[type]["cost"])
+	var kind: String = Data.BUILDINGS[type]["kind"]
+	if kind in ["road", "bridge"]:
+		roads[p] = true  # a bridge is a road over the river
 		_update_walk_cell(p)
-	elif Data.BUILDINGS[type]["kind"] == "field":
+		fog.reveal(p, _sight(Data.SIGHT_KITH))
+	elif kind == "field":
 		_set_tile(p, "grain")
 		fields[p] = true
 		_update_walk_cell(p)
 	else:
 		_place_building(type, p)
+		fog.reveal(p, _sight(Data.SIGHT_BUILDING))
 	return true
+
+
+## Place along a dragged line; returns how many went down.
+func place_line(type: String, line: Array) -> int:
+	var n := 0
+	for p in line:
+		if place(type, p):
+			n += 1
+	return n
+
+
+func _near_hearth(p: Vector2i) -> bool:
+	return Vector2(p).distance_to(Vector2(camp_pos)) <= Data.HEARTH_RADIUS
+
+
+## The type of whatever the player built at p (a building, road, bridge or field), or "".
+func built_type(p: Vector2i) -> String:
+	if building_at.has(p):
+		return buildings[building_at[p]]["type"]
+	if roads.has(p):
+		return "bridge" if tile_at(p) == "river" else "road"
+	if fields.has(p):
+		return "field"
+	return ""
+
+
+## Tear down what stands at p for half its cost back. Its worker goes idle; whatever it held
+## goes to the stockpile. The Hearth stays. Returns the refund, or {} if nothing was torn down.
+func demolish(p: Vector2i) -> Dictionary:
+	var type := built_type(p)
+	if type == "" or Data.BUILDINGS[type]["kind"] == "camp":
+		return {}
+	var refund := Rules.refund_of(type)
+	for id in refund:
+		add(id, refund[id])
+	if roads.has(p):
+		roads.erase(p)
+		_update_walk_cell(p)
+	elif fields.has(p):
+		fields.erase(p)
+		_set_tile(p, "grass")
+		_update_walk_cell(p)
+	else:
+		_remove_building(building_at[p])
+	events.append("Tore down the %s" % Data.BUILDINGS[type]["name"])
+	return refund
+
+
+func _remove_building(i: int) -> void:
+	var b: Dictionary = buildings[i]
+	_release_worker(b)
+	for id in b["out"]:
+		add(id, b["out"][id])
+	for id in b["inbuf"]:
+		add(id, b["inbuf"][id])
+	for k in kith:
+		if not k["task"].is_empty() and k["task"].get("building", -1) == i:
+			_drop_task(k)
+			k["path"] = []
+	buildings.remove_at(i)
+	building_at.clear()
+	for j in buildings.size():
+		building_at[buildings[j]["pos"]] = j
+	for k in kith:
+		if k["job"] == "work" and k["building"] > i:
+			k["building"] -= 1
+		if k["task"].get("building", -1) > i:
+			k["task"]["building"] -= 1
+
+
+## Send a building's worker off the job: they drop what they carry at the stockpile and go idle.
+func _release_worker(b: Dictionary) -> void:
+	if b["worker"] < 0:
+		return
+	var k: Dictionary = kith[b["worker"]]
+	for id in k["carry"]:
+		add(id, k["carry"][id])
+	k["carry"] = {}
+	k["task"] = {}
+	k["job"] = ""
+	k["building"] = -1
+	k["phase"] = ""
+	k["timer"] = 0.0
+	k["path"] = []
+	b["worker"] = -1
+
+
+## A paused building frees its worker and gets no deliveries until it's resumed.
+func set_paused(i: int, on: bool) -> void:
+	var b: Dictionary = buildings[i]
+	b["paused"] = on
+	if on:
+		_release_worker(b)
 
 
 func _place_building(type: String, p: Vector2i) -> void:
@@ -326,6 +387,8 @@ func _place_building(type: String, p: Vector2i) -> void:
 		"incoming": {},  # inputs haulers are carrying here
 		"unreachable": 0.0,  # seconds left to show "can't reach"
 		"field_extra": 0.0,  # Calendar's part-item bonus from Fields, paid out once it reaches 1
+		"paused": false,
+		"alert": "",  # a short warning for the pill under the building, "" when all is well
 	}
 	if Data.BUILDINGS[type]["kind"] == "gatherer":
 		for t in gather_tiles(p):
@@ -533,6 +596,7 @@ func _add_kith() -> void:
 		"timer": 0.0,
 		"carry": {},
 		"task": {},
+		"seen": Vector2i(-99, -99),  # the tile they last lifted the fog around
 	}
 	kith.append(k)
 
@@ -546,14 +610,6 @@ func housing() -> int:
 	return total
 
 
-func idle_kith() -> int:
-	var n := 0
-	for k in kith:
-		if k["job"] != "work":
-			n += 1
-	return n
-
-
 func needs_worker(b: Dictionary) -> bool:
 	return Data.BUILDINGS[b["type"]]["kind"] in ["gatherer", "processor"]
 
@@ -562,7 +618,7 @@ func needs_worker(b: Dictionary) -> bool:
 func _assign_jobs() -> void:
 	for i in buildings.size():
 		var b: Dictionary = buildings[i]
-		if not needs_worker(b) or b["worker"] >= 0:
+		if not needs_worker(b) or b["worker"] >= 0 or b["paused"]:
 			continue
 		var pick := -1
 		for j in kith.size():
@@ -640,32 +696,20 @@ func _grow(delta: float, fed: bool) -> void:
 		events.append("A Kith was born")
 
 
-## Why the population isn't growing, for the UI. "" when it is.
-func growth_note() -> String:
-	if starving:
-		return "Starving: no food"
-	if kith.size() >= housing():
-		return "No room: build a Dwelling"
-	if food_total() < kith.size() * 2 + Data.BIRTH_FOOD:
-		return "Needs %d spare food to grow" % int(kith.size() * 2 + Data.BIRTH_FOOD)
-	return ""
-
-
 # --- Simulation --------------------------------------------------------------
 
 
 func tick(delta: float) -> void:
 	if won:
 		return
+	flows.advance(delta)
 	_assign_jobs()
 	food_use = kith.size() * Data.FOOD_PER_KITH_PER_SEC * (0.75 if researched.has("preservation") else 1.0)
 	var fed := _eat(food_use * delta)
 	starving = not fed
 	_grow(delta, fed)
 
-	for g in Data.GOALS:
-		if not goals_done.has(g["id"]) and goal_met(g):
-			goals_done[g["id"]] = true
+	Goals.update(self)
 
 	if fed:
 		for k in kith:
@@ -673,9 +717,14 @@ func tick(delta: float) -> void:
 				"work":
 					_tick_worker(k, delta)
 				"haul":
-					_tick_hauler(k, delta)
+					Haulers.tick(self, k, delta)
 				_:
 					_step(k, delta)
+	for k in kith:
+		var here := _tile_of(k)
+		if here != k["seen"]:
+			k["seen"] = here
+			fog.reveal(here, _sight(Data.SIGHT_KITH))
 	for b in buildings:
 		b["unreachable"] = maxf(b["unreachable"] - delta, 0.0)
 		_tick_building(b, delta, fed)
@@ -687,6 +736,7 @@ func _eat(need: float) -> bool:
 		if id == "":
 			return false
 		inv[id] -= 1
+		flows.add(id, -1, "kith")
 		food_credit += food_value(id)
 	food_credit -= need
 	return true
@@ -738,6 +788,7 @@ func _tick_worker(k: Dictionary, delta: float) -> void:
 			if _step(k, delta):
 				for id in k["carry"]:
 					b["out"][id] = b["out"].get(id, 0) + k["carry"][id]
+					flows.add(id, k["carry"][id], b["type"])
 				k["carry"] = {}
 				k["phase"] = "home"
 
@@ -751,98 +802,6 @@ func _next_gather_tile(k: Dictionary, b: Dictionary) -> Vector2i:
 		if _walk_to(k, t):
 			return t
 	return b["pos"]
-
-
-func _tick_hauler(k: Dictionary, delta: float) -> void:
-	if k["task"].is_empty():
-		if not _find_haul_task(k) and k["path"].is_empty() and _tile_of(k) != _nearest_depot(_tile_of(k)):
-			_walk_to(k, _nearest_depot(_tile_of(k)))
-		_step(k, delta)
-		return
-	if not _step(k, delta):
-		return
-	var t: Dictionary = k["task"]
-	var b: Dictionary = buildings[t["building"]]
-	match k["phase"]:
-		"to_pickup":
-			var left := carry_cap()
-			for id in b["out"].keys():
-				var n: int = mini(b["out"][id], left)
-				if n > 0:
-					k["carry"][id] = k["carry"].get(id, 0) + n
-					b["out"][id] -= n
-					left -= n
-				if b["out"][id] == 0:
-					b["out"].erase(id)
-			b["claimed"] = false
-			k["task"] = {"kind": "dropoff", "building": t["building"]}
-			_walk_to(k, _nearest_depot(_tile_of(k)))
-			k["phase"] = "to_depot"
-		"to_depot":
-			for id in k["carry"]:
-				add(id, k["carry"][id])
-			k["carry"] = {}
-			k["task"] = {}
-		"to_stock":
-			var n: int = mini(t["amount"], inv.get(t["item"], 0))
-			b["incoming"][t["item"]] -= t["amount"] - n
-			t["amount"] = n
-			if n == 0:
-				k["task"] = {}
-				return
-			inv[t["item"]] -= n
-			k["carry"] = {t["item"]: n}
-			if not _walk_to(k, b["pos"]):
-				b["unreachable"] = 2.0
-				_drop_task(k)
-				return
-			k["phase"] = "to_drop"
-		"to_drop":
-			b["inbuf"][t["item"]] = b["inbuf"].get(t["item"], 0) + t["amount"]
-			b["incoming"][t["item"]] -= t["amount"]
-			k["carry"] = {}
-			k["task"] = {}
-
-
-## Pick the closest useful trip: empty a building's output, or bring a processor its inputs.
-func _find_haul_task(k: Dictionary) -> bool:
-	var here := _tile_of(k)
-	var best := {}
-	var best_d := INF
-	for i in buildings.size():
-		var b: Dictionary = buildings[i]
-		if not needs_worker(b) or b["unreachable"] > 0.0:
-			continue
-		var d := Vector2(here).distance_to(Vector2(b["pos"]))
-		if d >= best_d:
-			continue
-		if buffered(b["out"]) > 0 and not b["claimed"]:
-			best = {"kind": "pickup", "building": i}
-			best_d = d
-			continue
-		var def: Dictionary = Data.BUILDINGS[b["type"]]
-		for id in def.get("in", {}):
-			var want: int = def["in"][id] * 2 - b["inbuf"].get(id, 0) - b["incoming"].get(id, 0)
-			var n := mini(mini(want, inv.get(id, 0)), carry_cap())
-			if n > 0:
-				best = {"kind": "deliver", "building": i, "item": id, "amount": n}
-				best_d = d
-				break
-	if best.is_empty():
-		return false
-	var b: Dictionary = buildings[best["building"]]
-	var to: Vector2i = b["pos"] if best["kind"] == "pickup" else _nearest_depot(here)
-	if not _walk_to(k, to):
-		b["unreachable"] = 2.0
-		return false
-	k["task"] = best
-	if best["kind"] == "pickup":
-		b["claimed"] = true
-		k["phase"] = "to_pickup"
-	else:
-		b["incoming"][best["item"]] = b["incoming"].get(best["item"], 0) + best["amount"]
-		k["phase"] = "to_stock"
-	return true
 
 
 ## The Camp or Storehouse closest to p.
@@ -867,48 +826,6 @@ func flour_reserve() -> int:
 	return keep
 
 
-# --- Goals -------------------------------------------------------------------
-
-
-func _has_building(type: String) -> bool:
-	for b in buildings:
-		if b["type"] == type:
-			return true
-	return false
-
-
-## A goal is met when its `tech` is researched or its `building` stands; the rest are checked by id.
-func goal_met(g: Dictionary) -> bool:
-	if g.has("tech"):
-		return researched.has(g["tech"])
-	if g.has("building"):
-		return _has_building(g["building"])
-	match g["id"]:
-		"gather":
-			return inv["wood"] >= 10 and inv["stone"] >= 10 and inv["flint"] >= 5 or researched.has("knapping")
-		"tools":
-			return inv.get("flint_tools", 0) > 0
-		"berries":
-			for b in buildings:
-				if "berries" in b["gather_items"]:
-					return true
-		"road":
-			return roads.size() >= 5
-		"grind":
-			for b in buildings:
-				if b["type"] == "grindstone" and is_powered(b["pos"]):
-					return true
-	return false
-
-
-## Index into Data.GOALS of the first goal not yet done, or GOALS.size() when all are.
-func current_goal() -> int:
-	for i in Data.GOALS.size():
-		if not goals_done.has(Data.GOALS[i]["id"]):
-			return i
-	return Data.GOALS.size()
-
-
 func _wants_to_work(b: Dictionary) -> bool:
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
 	match def["kind"]:
@@ -931,34 +848,36 @@ func _worker_home(b: Dictionary) -> bool:
 
 func _tick_building(b: Dictionary, delta: float, fed: bool) -> void:
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
+	b["alert"] = ""
 	if not needs_worker(b):
 		b["status"] = def.get("status", def["desc"])
 		return
+	if b["paused"]:
+		_set_status(b, "Paused: its worker is free for other jobs", "Paused")
+		return
 	if b["worker"] < 0:
-		b["status"] = "No worker: more Kith needed (they grow with food and Dwellings)"
+		_set_status(b, "No worker: more Kith needed (they grow with food and Dwellings)", "Idle: no free Kith")
 		return
 	if not fed:
-		b["status"] = "Hungry: bring food (berries, fish or flour)"
+		_set_status(b, "Hungry: bring food (berries, fish or flour)", "Hungry: no food")
 		return
 	if b["unreachable"] > 0.0:
-		b["status"] = "The Kith can't reach it. Lay a Road across the river"
+		_set_status(b, "Cut off by water: build a Wooden Bridge (Paths & Haulers)", "Cut off: needs a bridge")
 		return
 	if def.get("needs_power", false) and not is_powered(b["pos"]):
-		b["status"] = "No power: build a Water Wheel nearby"
+		_set_status(b, "No power: build a Water Wheel nearby", "No power")
 		return
 	if not _worker_home(b):
 		b["status"] = "Worker walking here"
 		return
 	if not _wants_to_work(b):
-		b["status"] = _idle_reason(b, def)
+		_idle_reason(b, def)
 		return
 	if def["kind"] == "gatherer":
 		var k: Dictionary = kith[b["worker"]]
 		match k["phase"]:
 			"to_tile":
 				b["status"] = "Walking out to gather"
-			"harvest":
-				b["status"] = "Working"
 			"to_home":
 				b["status"] = "Carrying %s home" % Data.ITEMS[k["carry"].keys()[0]]["name"]
 			_:
@@ -971,24 +890,56 @@ func _tick_building(b: Dictionary, delta: float, fed: bool) -> void:
 	b["progress"] = 0.0
 	for id in def["in"]:
 		b["inbuf"][id] -= def["in"][id]
+		flows.add(id, -def["in"][id], b["type"])
 	for id in def["out"]:
 		b["out"][id] = b["out"].get(id, 0) + def["out"][id]
+		flows.add(id, def["out"][id], b["type"])
 
 
-func _idle_reason(b: Dictionary, def: Dictionary) -> String:
+func _set_status(b: Dictionary, status: String, alert: String) -> void:
+	b["status"] = status
+	b["alert"] = alert
+
+
+## Why a staffed building is standing still: full, or short of an input.
+func _idle_reason(b: Dictionary, def: Dictionary) -> void:
 	if buffered(b["out"]) >= Data.BUFFER_CAP:
-		return "Full: click to collect" if not has_haulers() else "Full: waiting for a hauler"
-	if def.get("needs_power", false) and not is_powered(b["pos"]):
-		return "No power: build a Water Wheel nearby"
+		if has_haulers():
+			_set_status(b, "Full: waiting for a hauler", "Full: waiting for a hauler")
+		else:
+			_set_status(b, "Full: click to collect", "Full: click to collect")
+		return
 	var missing: Array = []
 	for id in def.get("in", {}):
 		if b["inbuf"].get(id, 0) < def["in"][id]:
 			missing.append(Data.ITEMS[id]["name"])
 	if missing.is_empty():
-		return "Idle"
+		b["status"] = "Idle"
+		return
 	var how := "click to load" if not has_haulers() else "waiting for a hauler"
 	if has_haulers():
 		for id in def["in"]:
 			if b["inbuf"].get(id, 0) + b["incoming"].get(id, 0) < def["in"][id] and inv.get(id, 0) == 0:
 				how = "stockpile is out"
-	return "Needs %s (%s)" % [", ".join(missing), how]
+	_set_status(b, "Needs %s (%s)" % [", ".join(missing), how], "Needs " + ", ".join(missing))
+
+
+# --- Trips -------------------------------------------------------------------
+
+
+## The walk from p to the nearest stockpile: {"ok": false} when water cuts it off, otherwise
+## {"ok": true, "tiles": one-way steps, "seconds": there and back, "depot": Vector2i}.
+func trip_info(p: Vector2i) -> Dictionary:
+	var depot := _nearest_depot(p)
+	if depot == p:
+		return {"ok": true, "tiles": 0, "seconds": 0.0, "depot": depot}
+	var was := astar.is_point_solid(p)
+	astar.set_point_solid(p, false)
+	var path := astar.get_id_path(p, depot)
+	astar.set_point_solid(p, was)
+	if path.is_empty():
+		return {"ok": false, "tiles": 0, "seconds": 0.0, "depot": depot}
+	var secs := 0.0
+	for i in range(1, path.size()):
+		secs += Vector2(path[i - 1]).distance_to(Vector2(path[i])) * walk_cost(path[i]) / Data.KITH_SPEED
+	return {"ok": true, "tiles": path.size() - 1, "seconds": secs * 2.0, "depot": depot}
