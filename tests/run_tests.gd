@@ -24,6 +24,9 @@ const SaveTests = preload("res://tests/save_tests.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
 const GoldenTests = preload("res://tests/golden_tests.gd")
 const NewcomerTests = preload("res://tests/newcomer_tests.gd")
+const HutFocusTests = preload("res://tests/hut_focus_tests.gd")
+const GrowthTests = preload("res://tests/growth_tests.gd")
+const HaulerTests = preload("res://tests/hauler_tests.gd")
 const World = preload("res://scripts/world.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const Buildings = preload("res://scripts/buildings.gd")
@@ -73,6 +76,9 @@ func _init() -> void:
 	StoryTests.new().run(self)
 	ArcTests.new().run(self)
 	SaveTests.new().run(self)
+	HutFocusTests.new().run(self)
+	GrowthTests.new().run(self)
+	HaulerTests.new().run(self)
 	NewcomerTests.new().run(self)
 	if not "fast" in OS.get_cmdline_user_args():  # `-- fast` skips the bot's slow runs while iterating
 		test_pacing_bot()
@@ -389,6 +395,13 @@ func test_shortfall_text() -> void:
 	check(Ui.shortfall_text(s.economy.inv, {"stone": 10, "clay": 10}) == "", "no shortfall when affordable")
 
 
+## Food coming in steadily: a full window of berries from a hut, more than any camp of ours eats.
+func steady_income(s: Sim) -> void:
+	s.economy.flows.hist = []
+	for _n in Data.RATE_WINDOW:
+		s.economy.flows.hist.append({"berries|gatherers_hut": 1.0})
+
+
 func place_free(s: Sim, type: String, p: Vector2i) -> bool:
 	s.economy.add("wood", 100)
 	s.economy.add("stone", 100)
@@ -422,11 +435,13 @@ func test_population_grows_with_food_and_room() -> void:
 	var s := fresh()
 	s.economy.inv["berries"] = 200
 	for i in int(Data.GROW_TIME * 2 + 2):
+		steady_income(s)
 		s.tick(1.0)
 	check(s.people.kith.size() == s.town.housing(), "grows until the Camp is full")
 	check(Ui.growth_note(s).begins_with("No room"), "says it needs room")
 	place_free(s, "dwelling", s.world.camp_pos + Vector2i(0, 2))
 	for i in int(Data.GROW_TIME + 2):
+		steady_income(s)
 		s.tick(1.0)
 	check(s.people.kith.size() == s.town.housing() - 2, "a Dwelling makes room for more")
 

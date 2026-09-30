@@ -19,7 +19,7 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 	if k["task"].is_empty():
 		if k["path"].is_empty():
 			var here: Vector2i = Kith.tile_of(k)
-			var home := _home_depot(s, here)
+			var home := _home_depot(s, k, here)
 			if here == home and _find_task(s, k):
 				return
 			if here != home:
@@ -74,8 +74,14 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 			Roads.walk(s, k, t["depot"])  # back along the road to wait at the depot
 
 
-## Where an idle hauler waits: the nearest depot a road network touches, or the Hearth when none does.
-static func _home_depot(s, here: Vector2i) -> Vector2i:
+## Where an idle hauler waits. Haulers are born at the Hearth, so left to stand where they are none would ever
+## serve a Storehouse's workshops: they spread over the depots that have road-linked buildings to serve (by their
+## name, so it never changes on them and never depends on chance). With none, the nearest depot a road touches,
+## or the Hearth when none does.
+static func _home_depot(s, k: Dictionary, here: Vector2i) -> Vector2i:
+	var posts := Roads.posts(s)
+	if not posts.is_empty():
+		return posts[absi(hash(k["name"])) % posts.size()]
 	var best: Vector2i = s.world.camp_pos
 	var best_d := INF
 	for depot in Roads.depots(s):

@@ -24,7 +24,7 @@ const BUILDINGS := {
 		"housing": 3,
 		"near_hearth": true,
 		"color": Color("e9c46a"),
-		"desc": "Room for 3 more Kith. Must be within 6 tiles of the Hearth. They grow when there is spare food.",
+		"desc": "Room for 3 more Kith. Must be within 6 tiles of the Hearth. They grow while food keeps coming in.",
 	},
 	"road":
 	{
@@ -103,7 +103,7 @@ const BUILDINGS := {
 		"radius": 2,
 		"time": 3.0,
 		"color": Color("f4a261"),
-		"desc": "Gathers from resource tiles within 2 tiles.",
+		"desc": "Works one resource within 2 tiles: the one it stands next to. Click it to change.",
 	},
 	"kiln":
 	{

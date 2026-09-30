@@ -26,7 +26,7 @@ const World = preload("res://scripts/world.gd")
 
 const _POINTS := ["pos"]  # the building entries that are tile positions (saved as [x, y])
 
-## each: {type, pos, progress, inbuf, out, status, gather_items, gather_index, worker, ...}
+## each: {type, pos, progress, inbuf, out, status, gather_items, focus, gather_index, worker, ...}
 var buildings: Array = []
 var building_at: Dictionary = {}  # Vector2i -> index into buildings
 var road_rev := 0  # bumped whenever roads or buildings change, so Roads rebuilds its networks
@@ -140,7 +140,8 @@ func add_building(type: String, p: Vector2i) -> void:
 		"inbuf": {},
 		"out": {},
 		"status": "",
-		"gather_items": [],
+		"gather_items": [],  # what was in reach when it was built (a hut works only its `focus`)
+		"focus": "",  # the one item a Gatherer's Hut gathers, "" for none (see default_focus)
 		"gather_index": 0,
 		"worker": -1,  # index into kith, or -1
 		"claimed": false,  # a hauler is on its way to empty it
@@ -155,6 +156,7 @@ func add_building(type: String, p: Vector2i) -> void:
 	if Data.BUILDINGS[type]["kind"] == "gatherer":
 		for t in gather_tiles(p):
 			b["gather_items"].append(Data.TILES[_world.tile_at(t)]["yields"])
+		b["focus"] = default_focus(p)
 	building_at[p] = buildings.size()
 	buildings.append(b)
 
@@ -167,6 +169,62 @@ func hut_radius() -> int:
 ## Resource tiles a Gatherer's Hut at p would work.
 func gather_tiles(p: Vector2i) -> Array:
 	return _world.gather_tiles(p, hut_radius())
+
+
+## The items a Gatherer's Hut at p could be set to work: what its reach holds, in Data.ITEM_ORDER.
+func focus_options(p: Vector2i) -> Array:
+	var seen := {}
+	for t in gather_tiles(p):
+		seen[Data.TILES[_world.tile_at(t)]["yields"]] = true
+	return Data.ITEM_ORDER.filter(func(id): return seen.has(id))
+
+
+## What a new hut at p works: the item of the resource tile nearest it (huts stand on open grass, so the
+## one it was put next to). The same distance goes to the item with more tiles in reach, then to the one
+## first in Data.ITEM_ORDER, so the choice never depends on chance. "" when nothing is in reach.
+func default_focus(p: Vector2i) -> String:
+	var count := {}
+	var near := {}
+	for t in gather_tiles(p):
+		var item: String = Data.TILES[_world.tile_at(t)]["yields"]
+		count[item] = count.get(item, 0) + 1
+		near[item] = minf(near.get(item, INF), Vector2(t).distance_to(Vector2(p)))
+	var best := ""
+	for item in Data.ITEM_ORDER:
+		if not count.has(item):
+			continue
+		if best == "" or near[item] < near[best] - 0.001:
+			best = item
+		elif absf(near[item] - near[best]) <= 0.001 and count[item] > count[best]:
+			best = item
+	return best
+
+
+## The tiles in reach of hut `b` that hold its focus: the only ones it walks out to.
+func focus_tiles(b: Dictionary) -> Array:
+	var item: String = b["focus"]
+	return gather_tiles(b["pos"]).filter(func(t): return item != "" and Data.TILES[_world.tile_at(t)]["yields"] == item)
+
+
+## Set hut i to work `item`. False when that isn't something in its reach.
+func set_focus(i: int, item: String) -> bool:
+	var b: Dictionary = buildings[i]
+	if Data.BUILDINGS[b["type"]]["kind"] != "gatherer" or item not in focus_options(b["pos"]):
+		return false
+	b["focus"] = item
+	b["gather_index"] = 0
+	return true
+
+
+## Move hut i on to the next item in its reach (around to the first). Returns the new focus, "" when
+## there is none to choose.
+func cycle_focus(i: int) -> String:
+	var b: Dictionary = buildings[i]
+	var options := focus_options(b["pos"])
+	if options.is_empty():
+		return ""
+	set_focus(i, options[(options.find(b["focus"]) + 1) % options.size()])
+	return b["focus"]
 
 
 # --- Demolishing -------------------------------------------------------------
@@ -316,6 +374,8 @@ func from_dict(d: Dictionary) -> void:
 	building_at.clear()
 	for saved in d.get("buildings", []):
 		var b := _building_from_dict(saved)
+		if not saved.has("focus") and Data.BUILDINGS[b["type"]]["kind"] == "gatherer":
+			b["focus"] = default_focus(b["pos"])  # a save from before huts had a focus: pick as a new hut would
 		building_at[b["pos"]] = buildings.size()
 		buildings.append(b)
 	road_rev = int(d.get("road_rev", 0))
@@ -335,6 +395,7 @@ static func _building_from_dict(d: Dictionary) -> Dictionary:
 	for key in ["inbuf", "out", "incoming"]:
 		b[key] = Codec.int_dict(d[key])
 	b["gather_items"] = Codec.strings(d["gather_items"])
+	b["focus"] = String(d.get("focus", ""))
 	for key in ["progress", "unreachable", "field_extra", "rush_cd"]:
 		b[key] = float(d[key])
 	for key in ["gather_index", "worker", "trips"]:
