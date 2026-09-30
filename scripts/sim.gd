@@ -137,7 +137,7 @@ func gather_by_hand(p: Vector2i) -> String:
 		return ""
 	var n := Hands.harvest_yield(self, item)
 	economy.add(item, n)
-	economy.note(item, n, "hand")
+	economy.note(item, n, Data.FLOW_HAND_SOURCE)
 	Hands.teach(self, item)
 	return "+%d %s" % [n, Data.ITEMS[item]["name"]]
 
@@ -160,7 +160,7 @@ func _tech_done(tech: String) -> void:
 	if tech == "scouting":
 		for b in town.buildings:
 			fog.reveal(b["pos"], _sight(Data.SIGHT_BUILDING))
-	events.append("Discovered %s" % Data.TECHS[tech]["name"])
+	events.append(Data.DISCOVERED_EVENT % Data.TECHS[tech]["name"])
 	if tech == "haulers":
 		for b in town.buildings:
 			b["trips"] = 0  # huts loop on their own from now on

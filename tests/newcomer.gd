@@ -1,13 +1,15 @@
 extends RefCounted
 ## A first-time player, scripted. It only does what the Goals panel asks, in order: it holds the mouse on
-## what the goal needs, researches what it names, places what it says to place and sends the trip it is told
-## to send. It doesn't plan ahead, craft for later or read the rest of the game. The one thing it reacts to
-## besides the goals is the food warning: while the warning is up it holds on Berry Bushes, as any player who
-## read the toast would. Otherwise it idles (a goal it can't do leaves it idle).
-## It also keeps clicking its Berry hut, the one the goal called the food, whenever the trip pips run out, as
-## the hut panel says. It records what every hut's worker carries out (`gathered`) and the least food it ever held.
-## The `idler` variant does nothing at all. tests/newcomer_tests.gd plays both and checks that the Kith stay
-## fed, or that a warning came before anyone left.
+## what the goal needs, researches what it names, places what it says to place and clicks what it says to click.
+## It doesn't plan ahead, craft for later or read the rest of the game. Its `mode`:
+##   "literal"  follows the goal text to the letter: a hut beside the Berry Bushes, then one click on it for a trip.
+##              After that it reacts only to the food warning, as the toast says: click the berry hut for a trip (or,
+##              with no berry hut, hold the mouse on Berry Bushes). Otherwise it idles.
+##   "one_hut"  two huts on Berry Bushes, and it keeps clicking only the first whenever its trips run out. The other
+##              is never clicked, the warning is ignored, and it does nothing else.
+## The `idler` variant does nothing at all. It records what every hut's worker carries out (`gathered`) and the
+## least food it ever held. tests/newcomer_tests.gd plays them and checks that the Kith stay fed, or that a warning
+## came before anyone left.
 
 const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
@@ -37,6 +39,7 @@ const HUT_TILES := ["tree", "rock"]
 
 var s: Sim
 var idler := false  # does nothing at all
+var mode := "literal"  # see the top of the file
 var clock := 0.0
 var think := 0.0
 var warned_at := -1.0  # when the food warning first came, -1 if it never did
@@ -50,6 +53,7 @@ var trips_sent := 0
 var reading := 0.0  # seconds still spent reading the panel: hands off the mouse
 var _reading_for := ""  # what the player last read: a goal id, or "warning"
 var _carrying := {}  # hut tile -> its worker was carrying something at the last step
+var _click_new_hut := false  # the goal said to click the berry hut it just placed
 
 
 func play(map_seed: int, seconds: float) -> void:
@@ -109,20 +113,38 @@ func _watch_huts() -> void:
 		_carrying[b["pos"]] = not carry.is_empty()
 
 
-## Click the Berry hut when it has no trip queued: the food hut is worth a click, as its panel says.
-func _tend_food_hut() -> void:
+## Click a Berry hut that has a worker and no trip queued, for a trip. `first_only` looks at the first Berry hut
+## alone, the one this player ever clicks. Returns true when a click was made.
+func _click_berry_hut(first_only := false) -> bool:
 	for i in s.town.buildings.size():
 		var b: Dictionary = s.town.buildings[i]
-		if b["focus"] == "berries" and b["worker"] >= 0 and b["trips"] == 0 and s.people.knows_focus(b):
+		if b["focus"] != "berries":
+			continue
+		if b["worker"] >= 0 and b["trips"] == 0 and s.people.knows_focus(b):
 			Workers.click(s, i)
-			return
+			trips_sent += 1
+			return true
+		if first_only:
+			return false
+	return false
+
+
+func _berry_huts() -> int:
+	var n := 0
+	for b in s.town.buildings:
+		n += 1 if b["focus"] == "berries" else 0
+	return n
 
 
 func _decide() -> void:
-	_tend_food_hut()
-	if s.economy.low:  # the warning is up: hold on the berries until it goes down
+	if mode == "one_hut":
+		_click_berry_hut(true)
+	elif _click_new_hut and _click_berry_hut():
+		_click_new_hut = false  # "then click it to send a trip"
+	if mode == "literal" and s.economy.low:  # the toast: click your berry hut, or hold on the bushes
 		_read("warning")
-		_hold_on("berries")
+		if not _click_berry_hut():
+			_hold_on("berries")
 		return
 	var i := s.story.current_goal()
 	_read(Data.GOALS[i]["id"] if i < Data.GOALS.size() else "")
@@ -130,8 +152,11 @@ func _decide() -> void:
 		_stop()
 		return
 	var g: Dictionary = Data.GOALS[i]
+	if mode == "one_hut" and g["id"] != "hut" and _berry_huts() < 2 and s.story.goals_done.has("hut"):
+		_build("gatherers_hut", "berry")  # a second hut on the bushes, which it then never clicks
+		return
 	if g.has("building"):
-		_build(g["building"], "")
+		_build(g["building"], "berry" if mode == "one_hut" and g["id"] == "hut" else "")
 	elif g.has("tech"):
 		_research(g["tech"])
 	else:
@@ -212,8 +237,8 @@ func _build(type: String, near: String) -> void:
 		_gather_for(cost)
 		return
 	var site := _site(type, near)
-	if site.x >= 0 and not s.place(type, site):
-		site = Vector2i(-1, -1)
+	if site.x >= 0 and s.place(type, site) and near == "berry":
+		_click_new_hut = true
 	_stop()
 
 

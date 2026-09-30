@@ -31,12 +31,15 @@ const START_BERRIES := 10
 ## this many seconds at the current eating rate, and comes down again once it would last FOOD_CLEAR_SECONDS.
 const FOOD_WARN_SECONDS := 60.0
 const FOOD_CLEAR_SECONDS := 120.0
+## Food in the stockpile under this counts as short: a new hut that could work food or something else at the same
+## distance works the food.
+const FOOD_SHORT_STOCK := 30.0
 const KITH_START := 3
 ## A new Kith is born every GROW_TIME seconds while there is room and steady food. Birth costs BIRTH_FOOD.
 const GROW_TIME := 12.0
 const BIRTH_FOOD := 5.0
 ## A birth also needs this much food in the stockpile for each person already there, and food coming in
-## steadily (Economy.food_is_steady): what the buildings and the player's hands bring over the last
+## steadily (Economy.food_is_steady): what the buildings bring (not hand-gathering) over the last
 ## RATE_WINDOW seconds must cover what everyone eats.
 const BIRTH_RESERVE := 2.0
 ## After this long with no food, one Kith leaves.
@@ -59,6 +62,8 @@ const SCOUTING_SIGHT := 2
 const RATE_WINDOW := 30
 ## The flow source that eating is noted under (the top bar's hover panel shows it as "Eaten by ...").
 const FLOW_EAT_SOURCE := "kith"
+## The flow source the player's own hand-gathering is noted under (it is not food income for growth).
+const FLOW_HAND_SOURCE := "hand"
 ## The flow source a worker taking a Flint Tool from the stockpile is noted under.
 const FLOW_TOOL_SOURCE := "kith"
 

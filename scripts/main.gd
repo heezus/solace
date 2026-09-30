@@ -54,6 +54,7 @@ var rubble: Array = []  # {pos: Vector2i, t: float}, torn-down buildings fading 
 var messages := Messages.new()
 var toasts: ToastStack
 var msg_log: MessageLog
+var told := {}  # warm lines already said (see _watch_flavor)
 var was_starving := false
 var top_bar: TopBar
 var bottom_bar: BuildBar
@@ -109,6 +110,7 @@ func _process(delta: float) -> void:
 		r["t"] += delta
 	rubble = rubble.filter(func(r): return r["t"] < Overlays.RUBBLE_TIME)
 	_watch_food()
+	_watch_flavor()
 	messages.advance(delta)
 	_layout()
 	hover = _tile_under()
@@ -389,6 +391,17 @@ func _watch_food() -> void:
 		messages.resolve("food")
 
 
+## Say each warm line once, when its first moment comes (the story ids it waits for are in Data.FLAVOR_STORY).
+func _watch_flavor() -> void:
+	for id in Data.FLAVOR_STORY:
+		if state.story.events.has(id) and not told.has(id):
+			told[id] = true
+			_toast(Data.FLAVOR_STORY[id], 5.0)
+	if not told.has("stock") and state.economy.inv.get(Data.FLAVOR_STOCK_ITEM, 0) >= Data.FLAVOR_STOCK_AMOUNT:
+		told["stock"] = true
+		_toast(Data.FLAVOR_STOCK, 5.0)
+
+
 ## A discovery that unlocks buildings: their cards and tab glow, and a toast says where to find them.
 func _on_tech_researched(tech: String) -> void:
 	var types := Rules.buildings_of(tech)
@@ -540,13 +553,13 @@ func _draw_aura_ranges(hovered_type: String) -> void:
 				draw_circle(_tile_center(b["pos"]), radius, AURA_FILL)
 
 
-## Outline the hut's reach and light up the tiles it would gather from.
+## Outline the hut's reach and light up the tiles of the one resource it works (or would start on).
 func _draw_gather_range(p: Vector2i) -> void:
 	var r := state.town.hut_radius()
 	var reach := Rect2(MAP_ORIGIN + Vector2(p - Vector2i(r, r)) * TILE, Vector2.ONE * (2 * r + 1) * TILE)
 	draw_rect(reach, Color(1, 0.82, 0.4, 0.12))
 	draw_rect(reach, GOAL_COLOR, false, 2.0)
-	for t in state.town.gather_tiles(p):
+	for t in state.town.tiles_of(p, state.town.focus_at(p)):  # only what the hut works
 		draw_rect(_tile_rect(t).grow(-3), Color(1, 0.82, 0.4, 0.35))
 		draw_rect(_tile_rect(t).grow(-3), GOAL_COLOR, false, 2.0)
 
@@ -565,6 +578,8 @@ func _draw_building(b: Dictionary) -> void:
 	Art.building(self, b["type"], c, working, time)
 	if def["kind"] == "gatherer":
 		HutFocus.draw_marker(self, r, b["focus"])
+		if HutFocus.wants_click(state, b):
+			HutFocus.draw_click_badge(self, r, time)
 
 	# Progress bar and held output.
 	if def.has("time") and working:
