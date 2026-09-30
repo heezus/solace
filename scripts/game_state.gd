@@ -4,6 +4,7 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 const Fog = preload("res://scripts/fog.gd")
+const Economy = preload("res://scripts/economy.gd")
 const Flows = preload("res://scripts/flows.gd")
 const MapGen = preload("res://scripts/map_gen.gd")
 const Haulers = preload("res://scripts/haulers.gd")
@@ -21,17 +22,12 @@ const HEIGHT := 22
 const NEIGHBORS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
 var tiles: Array = []  # flat array of tile ids, index = y * WIDTH + x
-var inv: Dictionary = {}
 var researched: Dictionary = {}
 var buildings: Array = []  # each: {type, pos, progress, inbuf, out, status, gather_items, gather_index, worker, ...}
 var building_at: Dictionary = {}  # Vector2i -> index into buildings
 var camp_pos := Vector2i.ZERO
 var shard_pos := Vector2i(-1, -1)
-var food_credit := 5.0
 var won := false
-var starving := false
-var food_use := 0.0  # food eaten per second right now
-var seen: Dictionary = {}  # items the player has ever held, so the top bar keeps showing them
 var goals_done: Dictionary = {}
 var roads: Dictionary = {}  # Vector2i -> true
 var road_rev := 0  # bumped whenever roads or buildings change, so Roads rebuilds its networks
@@ -59,18 +55,33 @@ var starve_timer := 0.0
 var astar := AStarGrid2D.new()
 var events: Array = []  # messages for the UI to show and clear
 var fog := Fog.new()
-var flows := Flows.new()  # what made and used each item lately, for the top bar rates
 var research_goal := ""  # the tech the research queue is working toward, "" for none
 var research_queue: Array = []  # the next techs on the way there, researched as soon as affordable
+var economy := Economy.new(researched)  # stockpile, food and flows; it reads `researched` but never writes it
 
-
-func _init() -> void:
-	for id in Data.ITEM_ORDER:
-		inv[id] = 0
-	inv["berries"] = 10
-	for id in ["wood", "stone", "flint", "berries"]:
-		seen[id] = true
-
+# Pass-throughs to the Economy block, for callers not yet moved to `economy`.
+var inv: Dictionary:
+	get:
+		return economy.inv
+var seen: Dictionary:  # items the player has ever held, so the top bar keeps showing them
+	get:
+		return economy.seen
+var food_credit: float:
+	get:
+		return economy.food_credit
+	set(value):
+		economy.food_credit = value
+var starving: bool:
+	get:
+		return economy.starving
+	set(value):
+		economy.starving = value
+var food_use: float:  # food eaten per second right now
+	get:
+		return economy.food_use
+var flows: Flows:
+	get:
+		return economy.flows
 
 # --- Map ---------------------------------------------------------------------
 
@@ -103,20 +114,15 @@ func _sight(base: int) -> int:
 
 
 func can_afford(cost: Dictionary) -> bool:
-	for id in cost:
-		if inv.get(id, 0) < cost[id]:
-			return false
-	return true
+	return economy.can_afford(cost)
 
 
 func _pay(cost: Dictionary) -> void:
-	for id in cost:
-		inv[id] -= cost[id]
+	economy.pay(cost)
 
 
 func add(id: String, amount: int) -> void:
-	inv[id] = inv.get(id, 0) + amount
-	seen[id] = true
+	economy.add(id, amount)
 
 
 ## What one harvest of `item` by hand gives: base x tool x rank (Hands.harvest_yield).
@@ -167,8 +173,8 @@ func record_story(id: String) -> void:
 ## A worker without a tool takes one from the stockpile.
 func _equip(k: Dictionary) -> void:
 	if k["tool"] <= 0 and inv.get("flint_tools", 0) > 0:
-		inv["flint_tools"] -= 1
-		flows.add("flint_tools", -1, "kith")
+		economy.pay({"flint_tools": 1})
+		economy.note("flint_tools", -1, "kith")
 		k["tool"] = Data.TOOL_JOBS
 
 
@@ -189,11 +195,7 @@ func hut_radius() -> int:
 
 
 func food_value(id: String) -> float:
-	if id == "flour" and researched.has("baking"):
-		return Data.BAKED_FLOUR_FOOD
-	if id == "berries" and researched.has("smoking"):
-		return Data.SMOKED_BERRY_FOOD
-	return Data.FOOD_VALUE[id]
+	return economy.food_value(id)
 
 
 ## Seconds between births. Storytelling shortens it.
@@ -216,7 +218,7 @@ func gather_by_hand(p: Vector2i) -> String:
 		return ""
 	var n := harvest_yield(item)
 	add(item, n)
-	flows.add(item, n, "hand")
+	economy.note(item, n, "hand")
 	Hands.teach(self, item)
 	return "+%d %s" % [n, Data.ITEMS[item]["name"]]
 
@@ -571,15 +573,12 @@ func haul(index: int) -> void:
 			var want: int = def["in"][id] * 2 - b["inbuf"].get(id, 0)
 			var take: int = mini(want, inv.get(id, 0))
 			if take > 0:
-				inv[id] -= take
+				economy.pay({id: take})
 				b["inbuf"][id] = b["inbuf"].get(id, 0) + take
 
 
 func food_total() -> float:
-	var total := 0.0
-	for id in Data.FOOD_VALUE:
-		total += inv.get(id, 0) * food_value(id)
-	return total
+	return economy.food_total()
 
 
 # --- Walking -----------------------------------------------------------------
@@ -784,12 +783,10 @@ func _grow(delta: float, fed: bool) -> void:
 func tick(delta: float) -> void:
 	if won:
 		return
-	flows.advance(delta)
+	economy.advance(delta)
 	Research.tick(self)
 	_assign_jobs()
-	food_use = kith.size() * Data.FOOD_PER_KITH_PER_SEC * (0.75 if researched.has("preservation") else 1.0)
-	var fed := _eat(food_use * delta)
-	starving = not fed
+	var fed := economy.feed(kith.size(), delta)
 	_grow(delta, fed)
 
 	Goals.update(self)
@@ -819,24 +816,7 @@ func tick(delta: float) -> void:
 
 
 func _eat(need: float) -> bool:
-	while food_credit < need:
-		var id := _next_food()
-		if id == "":
-			return false
-		inv[id] -= 1
-		flows.add(id, -1, "kith")
-		food_credit += food_value(id)
-	food_credit -= need
-	return true
-
-
-## The first food in eating order the stockpile can spare, or "" if none.
-func _next_food() -> String:
-	for id in Data.EAT_ORDER:
-		var keep := flour_reserve() if id == "flour" else 0
-		if inv.get(id, 0) > keep:
-			return id
-	return ""
+	return economy.eat(need)
 
 
 ## The Camp or Storehouse closest to p.
@@ -854,11 +834,7 @@ func _nearest_depot(p: Vector2i) -> Vector2i:
 
 ## Flour kept back for research, so buildings don't eat the Bronze Dawn cost.
 func flour_reserve() -> int:
-	var keep := 0
-	for tech in Data.TECHS:
-		if not researched.has(tech):
-			keep += Data.TECHS[tech]["cost"].get("flour", 0)
-	return keep
+	return economy.flour_reserve()
 
 
 func _wants_to_work(b: Dictionary) -> bool:
@@ -950,10 +926,10 @@ func _finish_cycle(b: Dictionary) -> void:
 	_wear(b)
 	for id in def["in"]:
 		b["inbuf"][id] -= def["in"][id]
-		flows.add(id, -def["in"][id], b["type"])
+		economy.note(id, -def["in"][id], b["type"])
 	for id in def["out"]:
 		b["out"][id] = b["out"].get(id, 0) + def["out"][id]
-		flows.add(id, def["out"][id], b["type"])
+		economy.note(id, def["out"][id], b["type"])
 
 
 func _set_status(b: Dictionary, status: String, alert: String) -> void:

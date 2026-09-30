@@ -46,6 +46,8 @@ const SCOUTING_SIGHT := 2
 
 ## Rates in the top bar are averaged over this many seconds.
 const RATE_WINDOW := 30
+## The flow source that eating is noted under (the top bar's hover panel shows it as "Eaten by ...").
+const FLOW_EAT_SOURCE := "kith"
 
 ## Tech bonuses GameState applies.
 const STORYTELLING_GROW := 0.75  # grow time multiplier
