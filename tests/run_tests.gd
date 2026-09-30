@@ -136,7 +136,7 @@ func give(s: Sim, amount: int) -> void:
 
 ## A spot where the river is 2 tiles wide between two open banks: {"river": its first tile, "side": the
 ## step across it (east or south)}. The bridge tests build on it.
-func find_crossing(s: Sim) -> Dictionary:
+func _find_crossing(s: Sim) -> Dictionary:
 	for y in World.HEIGHT:
 		for x in World.WIDTH:
 			for side in [Vector2i(1, 0), Vector2i(0, 1)]:
@@ -506,7 +506,7 @@ func test_distance_slows_haulers() -> void:
 ## A Wooden Bridge (Paths & Haulers) spans the river at road speed.
 func test_roads_bridge_the_river() -> void:
 	var s := fresh()
-	var cross := find_crossing(s)
+	var cross := _find_crossing(s)
 	var river: Vector2i = cross["river"]
 	var side: Vector2i = cross["side"]
 	var bank := river - side
