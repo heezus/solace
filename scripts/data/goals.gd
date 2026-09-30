@@ -1,7 +1,7 @@
 extends RefCounted
 ## The opening checklist and the story events. Read through the `Data` facade (scripts/data.gd).
 
-## Major story moments, by stable id, recorded in GameState.story_events so a future profile save can
+## Major story moments, by stable id, recorded by the Story block (Story.events) so a future profile save can
 ## keep them across runs.
 const STORY_EVENTS := {
 	"first_lesson": "A Kith learned a job by watching",
@@ -11,8 +11,14 @@ const STORY_EVENTS := {
 	"bronze_dawn": "The stone age ended",
 }
 
+## Techs that are story moments: tech id -> the STORY_EVENTS id the Story block records when it is researched.
+const STORY_TECHS := {
+	"haulers": "haulers",
+	"bronze_dawn": "bronze_dawn",
+}
+
 ## The opening checklist. A goal with `tech` or `building` is met once that is researched or built;
-## GameState.goal_met() checks the others by id.
+## Story.goal_met() checks the others by id.
 
 const GOALS := [
 	{"id": "learn_wood", "text": "Hold the mouse on trees to gather Wood, until a Kith learns it (10 harvests)"},

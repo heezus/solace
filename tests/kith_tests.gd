@@ -12,6 +12,7 @@ const Data = preload("res://scripts/data.gd")
 const Economy = preload("res://scripts/economy.gd")
 const GameState = preload("res://scripts/game_state.gd")
 const Kith = preload("res://scripts/kith.gd")
+const Monitor = preload("res://tests/monitor.gd")
 const Pathing = preload("res://scripts/pathing.gd")
 const Research = preload("res://scripts/research.gd")
 const World = preload("res://scripts/world.gd")
@@ -55,6 +56,8 @@ func run(runner) -> void:
 	test_knowing_what_to_gather()
 	test_nearest_depot_and_trip()
 	test_a_trip_cut_off_by_water()
+	test_signals_for_births_and_leavers()
+	test_signals_for_lessons_and_trips()
 	test_game_state_passes_through()
 	test_game_state_ticks_through_the_block()
 
@@ -96,7 +99,8 @@ func _block(count: int = 0, stock: Dictionary = {}, done: Array = []) -> Kith:
 	var research := Research.new(_eco, _techs, _shard_seen)
 	_town = Buildings.new(_world, _eco, research, _seen)
 	_town.add_building("camp", _camp)
-	var k := Kith.new(_world, _pathing, _eco, research, _town, _note)
+	var k := Kith.new(_world, _pathing, _eco, research, _town)
+	k.announce.connect(_note)
 	k.found(count)
 	return k
 
@@ -140,13 +144,13 @@ func test_found_and_names() -> void:
 		t.check(
 			k.kith[i]["job"] == "" and k.kith[i]["building"] == -1 and k.kith[i]["tool"] == 0, "with no job or tool"
 		)
-	t.check(k.born == 3, "three births counted")
+	t.check(k.births == 3, "three births counted")
 	k.found(2)
 	t.check(
 		k.kith.size() == 2 and k.kith[0]["name"] == Data.PEOPLE_NAMES[3],
 		"founding again starts over, but never repeats a name"
 	)
-	t.check(k.born == 5, "the count of births keeps counting")
+	t.check(k.births == 5, "the count of births keeps counting")
 
 
 func test_names_come_round() -> void:
@@ -164,6 +168,42 @@ func test_names_come_round() -> void:
 	for p in k.kith.slice(0, n * 3):
 		names[p["name"]] = true
 	t.check(names.size() == n * 3, "no name is given twice in three rounds")
+
+
+func test_signals_for_births_and_leavers() -> void:
+	var k := _block(1, {"berries": 40})
+	var m := Monitor.new()
+	m.watch(k, "born")
+	m.watch(k, "left")
+	m.watch(k, "announce")
+	_grow_for(k, int(Data.GROW_TIME))
+	t.check(m.args_of("born") == [[Data.PEOPLE_NAMES[1]]], "a birth emits born(name) once")
+	t.check(m.names() == ["born", "announce"], "then the announcement")
+	t.check(m.count("left") == 0, "nobody left")
+	var hungry := _block(3)
+	var h := Monitor.new()
+	h.watch(hungry, "born")
+	h.watch(hungry, "left")
+	_grow_for(hungry, int(Data.STARVE_TIME), false)
+	t.check(h.args_of("left") == [[Data.PEOPLE_NAMES[2]]], "starvation emits left(name) for the one who goes")
+	t.check(h.count("born") == 0, "and no birth")
+	var founded := Monitor.new()
+	var fresh_block := _block(0)
+	founded.watch(fresh_block, "born")
+	fresh_block.found(3)
+	t.check(founded.count() == 0 and fresh_block.kith.size() == 3, "the starting people are founded, not born")
+
+
+func test_signals_for_lessons_and_trips() -> void:
+	var k := _block(2)
+	var m := Monitor.new()
+	m.watch(k, "learned")
+	m.watch(k, "trip_started")
+	k.learn("wood", "Aro")
+	t.check(k.knows("wood") and k.learned_by["wood"] == "Aro", "learn records who learned what")
+	t.check(m.args_of("learned") == [["wood", "Aro"]], "and emits learned(item, name)")
+	k.start_trip(k.kith[0])
+	t.check(k.kith[0]["trip"] and m.count("trip_started") == 1, "start_trip marks the worker and signals")
 
 
 func test_births_need_time_room_and_food() -> void:
@@ -553,7 +593,7 @@ func test_job_titles() -> void:
 	t.check(k.building_job(camp) == "", "the Hearth has no job")
 	t.check(k.building_job(pit) == Data.BUILDINGS["charcoal_pit"]["job"], "a workshop names its own job")
 	t.check(k.building_job(hut) == Data.HUT_JOBS["wood"]["title"], "a hut is named for what it gathers most")
-	k.learned["stone"] = "Aro"
+	k.learned_by["stone"] = "Aro"
 	t.check(k.building_job(hut) == Data.HUT_JOBS["stone"]["title"], "once they know one, that counts far more")
 	t.check(k.job_of(k.kith[0]) == Data.JOB_IDLE, "no job yet is Idle")
 	t.check(k.title_of(k.kith[0]) == "%s the %s" % [Data.PEOPLE_NAMES[0], Data.JOB_IDLE], "titled by name")
@@ -576,7 +616,7 @@ func test_job_titles() -> void:
 func test_knowing_what_to_gather() -> void:
 	var k := _block(1)
 	t.check(not k.knows("wood"), "no one knows Wood at first")
-	k.learned["wood"] = Data.PEOPLE_NAMES[0]
+	k.learned_by["wood"] = Data.PEOPLE_NAMES[0]
 	t.check(k.knows("wood") and not k.knows("stone"), "and only what was learned")
 	_world.set_tile(Vector2i(4, 2), "tree")
 	_world.set_tile(Vector2i(4, 6), "rock")
@@ -633,8 +673,8 @@ func test_a_trip_cut_off_by_water() -> void:
 func test_game_state_passes_through() -> void:
 	var s: GameState = t.fresh()
 	t.check(is_same(s.kith, s.people.kith), "GameState.kith is the block's list")
-	t.check(s.born == s.people.born and s.born == Data.KITH_START, "and born its count")
-	t.check(is_same(s.learned, s.people.learned), "and learned its dictionary")
+	t.check(s.born == s.people.births and s.born == Data.KITH_START, "and born its count")
+	t.check(is_same(s.learned, s.people.learned_by), "and learned its dictionary")
 	s.learned["wood"] = "Aro"
 	t.check(s.people.knows("wood"), "a write through the pass-through reaches the block")
 	t.check(s.kith.size() == Data.KITH_START, "the camp starts with the first people")

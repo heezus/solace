@@ -7,7 +7,6 @@ const GameState = preload("res://scripts/game_state.gd")
 const Main = preload("res://scripts/main.gd")
 const TechLayout = preload("res://scripts/tech_layout.gd")
 const Ui = preload("res://scripts/ui.gd")
-const Goals = preload("res://scripts/goals.gd")
 const Rules = preload("res://scripts/rules.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Haulers = preload("res://scripts/haulers.gd")
@@ -20,6 +19,7 @@ const PathingTests = preload("res://tests/pathing_tests.gd")
 const BuildingsTests = preload("res://tests/buildings_tests.gd")
 const KithTests = preload("res://tests/kith_tests.gd")
 const ArcTests = preload("res://tests/arc_tests.gd")
+const StoryTests = preload("res://tests/story_tests.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
 const GoldenTests = preload("res://tests/golden_tests.gd")
 
@@ -64,6 +64,7 @@ func _init() -> void:
 	PathingTests.new().run(self)
 	BuildingsTests.new().run(self)
 	KithTests.new().run(self)
+	StoryTests.new().run(self)
 	ArcTests.new().run(self)
 	if not "fast" in OS.get_cmdline_user_args():  # `-- fast` skips the bot's slow runs while iterating
 		test_pacing_bot()
@@ -317,24 +318,24 @@ func test_flour_is_kept_for_research() -> void:
 
 func test_goals_advance_in_order() -> void:
 	var s := fresh()
-	check(Goals.current_goal(s) == 0, "first goal is learning Wood by hand")
+	check(s.story.current_goal() == 0, "first goal is learning Wood by hand")
 	for i in Data.LEARN_CLICKS:
 		s.gather_by_hand(find_tile(s, "tree"))
 	s.tick(0.1)
-	check(Goals.current_goal(s) == 1, "Wood learned, next Stone and Flint")
+	check(s.story.current_goal() == 1, "Wood learned, next Stone and Flint")
 	for tile in ["rock", "gravel"]:
 		for i in Data.LEARN_CLICKS:
 			s.gather_by_hand(find_tile(s, tile))
 	s.tick(0.1)
-	check(Goals.current_goal(s) == 2, "then find the flax")
+	check(s.story.current_goal() == 2, "then find the flax")
 	s.gather_by_hand(find_tile(s, "flax"))
 	s.tick(0.1)
-	check(Goals.current_goal(s) == 3, "then Knapping")
+	check(s.story.current_goal() == 3, "then Knapping")
 	s.inv["flint"] = 5
 	s.inv["stone"] = 10
 	s.research("knapping")
 	s.tick(0.1)
-	check(Goals.current_goal(s) == 4, "knapping done, next is flint tools")
+	check(s.story.current_goal() == 4, "knapping done, next is flint tools")
 	check(s.goals_done.has("learn_wood"), "earlier goals stay done")
 	var ids: Array = Data.GOALS.map(func(g): return g["id"])
 	check(

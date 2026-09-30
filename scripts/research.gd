@@ -6,6 +6,9 @@ extends RefCounted
 ## What happens in the world when a tech completes (a new road speed, the fog, a win) is not decided
 ## here: research() and tick() only report which techs were completed, and their owner reacts.
 ## GameState owns one and passes its old tech methods through to it.
+## Signal: tech_researched(id) fires once for each tech as it completes (Story and the owner listen).
+
+signal tech_researched(id: String)
 
 const Data = preload("res://scripts/data.gd")
 const Economy = preload("res://scripts/economy.gd")
@@ -66,6 +69,7 @@ func research(tech: String) -> bool:
 		return false
 	_economy.pay(Data.TECHS[tech]["cost"])
 	researched[tech] = true
+	tech_researched.emit(tech)
 	return true
 
 

@@ -1,6 +1,11 @@
 extends RefCounted
 ## The whole simulation: map, stockpile, tech, buildings. No rendering here,
 ## so it can run headless in tests.
+## The blocks never call each other to report: they emit signals, and _init below is the one place that
+## connects them (Story listens, the message queue listens).
+
+## The player clicked the Strange Stone (it reveals the hidden techs). Story listens.
+signal shard_found
 
 const Data = preload("res://scripts/data.gd")
 const Fog = preload("res://scripts/fog.gd")
@@ -11,7 +16,7 @@ const World = preload("res://scripts/world.gd")
 const Pathing = preload("res://scripts/pathing.gd")
 const Haulers = preload("res://scripts/haulers.gd")
 const Kith = preload("res://scripts/kith.gd")
-const Goals = preload("res://scripts/goals.gd")
+const Story = preload("res://scripts/story.gd")
 const Research = preload("res://scripts/research.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const Ranks = preload("res://scripts/ranks.gd")
@@ -24,7 +29,6 @@ const HEIGHT := World.HEIGHT
 const NEIGHBORS := World.NEIGHBORS
 
 var won := false
-var goals_done: Dictionary = {}
 var hand_tools := false  # you've made a Flint Tool, so hand gathering is doubled for good
 var shard_seen := false  # the player has clicked the Strange Stone, revealing hidden techs
 var hand_counts: Dictionary = {}  # item -> times harvested by hand
@@ -34,8 +38,6 @@ var harvest_held := 0.0
 var harvest_frac := 0.0
 var rushes := 0  # buildings rushed so far
 var ranks: Dictionary = {}  # tech -> rank bought on its card (2 or 3); a researched tech is rank 1
-## Stable ids from Data.STORY_EVENTS, in the order they happened (for a future profile save).
-var story_events: Array = []
 var events: Array = []  # messages for the UI to show and clear
 var fog := Fog.new()
 var tech_set: Dictionary = {}  # the researched techs, built first: Economy and Research both hold this one set (use `researched`)
@@ -49,7 +51,17 @@ var tech_tree := Research.new(economy, tech_set, _hidden_shown)
 var town := Buildings.new(world, economy, tech_tree, fog.is_revealed)
 ## The people: the Kith, who they are, how many, what they work at and where they walk. They read `world`,
 ## `pathing`, `town` and `tech_tree`, eat through `economy`, and report messages through _announce.
-var people := Kith.new(world, pathing, economy, tech_tree, town, _announce)
+var people := Kith.new(world, pathing, economy, tech_tree, town)
+## The story moments and the opening checklist. It listens to the other blocks' signals (see _init).
+var story := Story.new()
+
+# Pass-throughs to the Story block, for callers not yet moved to `story`.
+var story_events: Array:  # stable ids from Data.STORY_EVENTS, in the order they happened
+	get:
+		return story.events
+var goals_done: Dictionary:  # goal id -> true
+	get:
+		return story.goals_done
 
 # Pass-throughs to the World and Pathing blocks, for callers not yet moved to `world` and `pathing`.
 var tiles: Array:  # flat array of tile ids, index = y * WIDTH + x
@@ -99,10 +111,10 @@ var kith: Array:  # each a person on the map: {pos, path, job, building, phase, 
 		return people.kith
 var born: int:  # people named so far, for the next name
 	get:
-		return people.born
+		return people.births
 var learned: Dictionary:  # item -> name of the person who learned to gather it by watching you
 	get:
-		return people.learned
+		return people.learned_by
 
 # Pass-throughs to the Research block, for callers not yet moved to `tech_tree`.
 var researched: Dictionary:
@@ -138,6 +150,16 @@ var food_use: float:  # food eaten per second right now
 var flows: Flows:
 	get:
 		return economy.flows
+
+
+## Wire the blocks together. Every signal connection in the game is here, so it is all in one place.
+func _init() -> void:
+	tech_tree.tech_researched.connect(story.on_tech_researched)
+	people.learned.connect(story.on_learned)
+	people.trip_started.connect(story.on_trip_started)
+	shard_found.connect(story.on_shard_found)
+	people.announce.connect(_announce)
+
 
 # --- Map ---------------------------------------------------------------------
 
@@ -213,13 +235,6 @@ func release_harvest() -> void:
 	harvest_frac = 0.0
 
 
-## Note a story moment once, by its id in Data.STORY_EVENTS.
-func record_story(id: String) -> void:
-	assert(Data.STORY_EVENTS.has(id), "unknown story event " + id)
-	if id not in story_events:
-		story_events.append(id)
-
-
 func hut_radius() -> int:
 	return town.hut_radius()
 
@@ -234,7 +249,7 @@ func gather_by_hand(p: Vector2i) -> String:
 	var tile := tile_at(p)
 	if tile == "shard":
 		shard_seen = true
-		record_story("shard_found")
+		shard_found.emit()
 		return Data.SHARD_TEXT
 	if tile == "":
 		return ""
@@ -285,15 +300,13 @@ func _tech_done(tech: String) -> void:
 			fog.reveal(b["pos"], _sight(Data.SIGHT_BUILDING))
 	events.append("Discovered %s" % Data.TECHS[tech]["name"])
 	if tech == "haulers":
-		record_story("haulers")
 		for b in buildings:
 			b["trips"] = 0  # huts loop on their own from now on
 	if tech == "bronze_dawn":
 		won = true
-		record_story("bronze_dawn")
 
 
-## For the Kith block: tell the player something (the UI shows and clears `events`).
+## Connected to Kith.announce: tell the player something (the UI shows and clears `events`).
 func _announce(message: String) -> void:
 	events.append(message)
 
@@ -492,7 +505,7 @@ func tick(delta: float) -> void:
 	var fed := economy.feed(people.kith.size(), delta)
 	people.grow(delta, fed)
 
-	Goals.update(self)
+	story.update(self)
 
 	if fed:
 		for k in people.kith:

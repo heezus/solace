@@ -68,6 +68,7 @@ const BUFFER_CAP := DataBuildings.BUFFER_CAP
 
 # --- Goals: data/goals.gd ---
 const STORY_EVENTS := DataGoals.STORY_EVENTS
+const STORY_TECHS := DataGoals.STORY_TECHS
 const GOALS := DataGoals.GOALS
 
 # --- Tuning: data/tuning.gd ---

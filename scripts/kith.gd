@@ -1,6 +1,6 @@
 extends RefCounted
 ## The Kith block: the people the player leads. It holds the list of them (`kith`, each one a person on the
-## map), who has learned to gather what (`learned`), the count of births that gives the next name, and the
+## map), who has learned to gather what (`learned_by`), the count of births that gives the next name, and the
 ## birth and starvation timers. It grows the population against housing and food, gives out jobs (staff the
 ## buildings in the order they were built, then haul once haulers are researched, else wait at the hearth),
 ## walks people along a Pathing path, wears and hands out tools, names each job and person ("Aro the
@@ -9,9 +9,20 @@ extends RefCounted
 ## block (paths and walk cost) and Research (haulers, Storytelling). It pays and eats through the Economy.
 ## It never writes another block's variables except the worker link on a building's own record (`worker`,
 ## `claimed`, `incoming`), which the job rules own. What a worker does at their building each tick is still
-## in scripts/workers.gd and scripts/haulers.gd, and a message for the player goes out through a callable:
-## announce.call(text: String) -> void. No faction word is spelled here: names and messages are in Data.
-## GameState owns one (`people`) and passes the old `kith`, `born` and `learned` variables through to it.
+## in scripts/workers.gd and scripts/haulers.gd. No faction word is spelled here: names and messages are in Data.
+## Signals (the owner connects them, the block never calls another block to report):
+##   announce(message): tell the player something (the owner shows it)
+##   born(name) and left(name): a birth, and a Kith who leaves in search of food (not the starting people)
+##   learned(item, name): someone learned to gather `item` by watching the player
+##   trip_started: a hut worker set out on a trip the player clicked
+## GameState owns one (`people`) and passes the old `kith`, `born` and `learned` variables through to it
+## (here they are `births` and `learned_by`, since a signal has the name).
+
+signal announce(message: String)
+signal born(name: String)
+signal left(name: String)
+signal learned(item: String, name: String)
+signal trip_started
 
 const Buildings = preload("res://scripts/buildings.gd")
 const Data = preload("res://scripts/data.gd")
@@ -24,8 +35,8 @@ const World = preload("res://scripts/world.gd")
 ##  building: int, phase: String, timer: float, carry: Dictionary, task: Dictionary, name: String,
 ##  tool: int, trip: bool, seen: Vector2i}
 var kith: Array = []
-var learned: Dictionary = {}  # item -> name of the person who learned to gather it by watching you
-var born := 0  # people named so far, for the next name
+var learned_by: Dictionary = {}  # item -> name of the person who learned to gather it by watching you
+var births := 0  # people named so far, for the next name
 var grow_timer := 0.0
 var starve_timer := 0.0
 var _world: World
@@ -33,18 +44,14 @@ var _pathing: Pathing
 var _economy: Economy
 var _research: Research
 var _town: Buildings
-var _announce: Callable  # (String) -> void: tell the player something
 
 
-func _init(
-	world: World, pathing: Pathing, economy: Economy, research: Research, town: Buildings, announce: Callable
-) -> void:
+func _init(world: World, pathing: Pathing, economy: Economy, research: Research, town: Buildings) -> void:
 	_world = world
 	_pathing = pathing
 	_economy = economy
 	_research = research
 	_town = town
-	_announce = announce
 
 
 # --- Population --------------------------------------------------------------
@@ -79,8 +86,8 @@ func add_kith() -> void:
 ## The next name from Data.PEOPLE_NAMES, with " II", " III"... once each name is taken.
 func _next_name() -> String:
 	var names: Array = Data.PEOPLE_NAMES
-	var n: int = born
-	born += 1
+	var n: int = births
+	births += 1
 	var round_no := int(float(n) / names.size()) + 1
 	return names[n % names.size()] + ("" if round_no == 1 else " " + Data.RANK_NAMES[mini(round_no, 3)])
 
@@ -110,7 +117,8 @@ func grow(delta: float, fed: bool) -> void:
 		grow_timer = 0.0
 		_economy.eat(Data.BIRTH_FOOD)
 		add_kith()
-		_announce.call(Data.BORN_EVENT % Data.PEOPLE["one"])
+		born.emit(kith[kith.size() - 1]["name"])
+		announce.emit(Data.BORN_EVENT % Data.PEOPLE["one"])
 
 
 ## Someone leaves in search of food: the last one not at a building, or the last one of all.
@@ -127,12 +135,25 @@ func _remove_kith() -> void:
 	for b in _town.buildings:
 		if b["worker"] > gone:
 			b["worker"] -= 1
-	_announce.call(Data.LEFT_EVENT % Data.PEOPLE["one"])
+	left.emit(k["name"])
+	announce.emit(Data.LEFT_EVENT % Data.PEOPLE["one"])
 
 
 ## True once someone has learned to gather `item` by watching you (Data.LEARN_CLICKS clicks).
 func knows(item: String) -> bool:
-	return learned.has(item)
+	return learned_by.has(item)
+
+
+## `who` has learned to gather `item` by watching the player.
+func learn(item: String, who: String) -> void:
+	learned_by[item] = who
+	learned.emit(item, who)
+
+
+## A hut worker sets out on a trip the player clicked (a road-linked hut runs on its own instead).
+func start_trip(k: Dictionary) -> void:
+	k["trip"] = true
+	trip_started.emit()
 
 
 ## True if a hut at p would find something the people know how to gather.
@@ -255,7 +276,7 @@ func wear(b: Dictionary) -> void:
 	if k["tool"] > 0:
 		k["tool"] -= 1
 		if k["tool"] == 0:
-			_announce.call("A Flint Tool wore out")
+			announce.emit("A Flint Tool wore out")
 	equip(k)
 
 
