@@ -104,6 +104,16 @@ static func tech_icon(ci: CanvasItem, icon: String, r: Rect2, time: float) -> vo
 				ci.draw_rect(Rect2(-8, -8, 16, 16), Color("8a6a44"))
 				for x in [-5, 0, 5]:
 					ci.draw_line(Vector2(x, 5), Vector2(x, -5), Color("f2c14e"), 2.0)
+		"@axe":
+			# A wooden haft with a flint head lashed on with cord.
+			ci.draw_line(Vector2(-9, 12), Vector2(6, -9), OUTLINE, 6.0)
+			ci.draw_line(Vector2(-9, 12), Vector2(6, -9), Color("a47148"), 3.0)
+			outlined_poly(
+				ci,
+				PackedVector2Array([Vector2(1, -13), Vector2(12, -11), Vector2(13, 0), Vector2(5, -3)]),
+				Color("4a4e69")
+			)
+			ci.draw_line(Vector2(1, -8), Vector2(6, -4), Color("e9c46a"), 2.0)
 		"@bread":
 			var loaf := PackedVector2Array()
 			for i in 16:

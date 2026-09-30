@@ -46,6 +46,10 @@ static func generate(s, seed_value: int, w: int, h: int) -> void:
 	s._set_tile(camp + Vector2i(3, 2), "rock")
 	s._set_tile(camp + Vector2i(-2, 3), "berry")
 	s._set_tile(camp + Vector2i(2, -3), "grain")
+	# Flint mostly lies on the river banks, out in the fog, so a little crops out near the Hearth too:
+	# Knapping needs it before anything can be built out there.
+	s._set_tile(camp + Vector2i(4, 0), "gravel")
+	s._set_tile(camp + Vector2i(4, 1), "gravel")
 	s._place_building("camp", camp)
 	s._build_walk_grid()
 	s.fog.reveal(camp, Data.SIGHT_START)

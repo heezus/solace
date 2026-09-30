@@ -212,11 +212,14 @@ func test_rates_count_making_and_using() -> void:
 
 
 ## Every line runs in the gutters and channels: none passes under a card, none shares a track with another,
-## and the board fits the 1280 px window across (it scrolls down).
+## and the board scrolls cleanly in a 1280 x 800 window: one tier plus the gate past the edge at most.
 func test_research_board_lines_stay_in_channels() -> void:
 	var lay := TechLayout.build()
 	t.check(lay["overflow"] == 0, "every line found a free track (%d did not)" % lay["overflow"])
-	t.check(lay["size"].x <= 1230.0, "the board fits across a 1280 px window (%d)" % int(lay["size"].x))
+	t.check(
+		lay["size"].x <= 1230.0 + TechLayout.PITCH,
+		"the board is at most a tier wider than the window (%d)" % int(lay["size"].x)
+	)
 	t.check(lay["edges"].size() == TechLayout.links().size(), "one line per requirement")
 	var segs: Array = []
 	for e in lay["edges"]:
@@ -284,10 +287,10 @@ func test_research_queue() -> void:
 	for i in 4:
 		s.tick(0.1)
 	t.check(s.researched.has("grindstone"), "the queue researches its way to the goal")
-	for r in ["water_wheel", "masonry", "pottery"]:
+	for r in ["water_wheel", "masonry", "stone_axe", "farming"]:
 		t.check(s.researched.has(r), "including " + r)
 	t.check(s.research_queue.is_empty() and s.research_goal == "", "and empties once it's there")
-	t.check(not s.researched.has("farming"), "nothing off the route is researched")
+	t.check(not s.researched.has("pottery"), "nothing off the route is researched")
 	var s2: GameState = t.fresh()
 	var route := Rules.route_to("calendar", s2.researched, Rules.visible_techs(false))
 	t.check(route[route.size() - 1] == "calendar", "a route ends at its goal")

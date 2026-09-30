@@ -21,7 +21,6 @@ const LOCKED_TEXT := Color("b9c6d0")
 const HIDDEN_EDGE := Color("8fb3c9")
 const GATE := Color("e3a857")
 const GATE_BG := Color("3a2f1f")
-const TIER_NAMES := ["TIER I  ·  ROOTS", "TIER II", "TIER III", "TIER IV", "THE GATE"]
 
 var state: GameState
 var lay: Dictionary
@@ -118,9 +117,9 @@ func _draw() -> void:
 		for ch in name:
 			spaced += ch + " "
 		draw_string(font, Vector2(TechLayout.LEFT, lane["top"] - 10.0), spaced, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, col)
-	for t in TIER_NAMES.size():
+	for t in Data.TIER_NAMES.size():
 		var x := TechLayout.LEFT + t * TechLayout.PITCH
-		draw_string(font, Vector2(x, 16), TIER_NAMES[t], HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.75))
+		draw_string(font, Vector2(x, 16), Data.TIER_NAMES[t], HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.75))
 	for lit in [false, true]:
 		for e in lay["edges"]:
 			_draw_edge(e, lit)

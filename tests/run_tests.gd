@@ -8,6 +8,7 @@ const Main = preload("res://scripts/main.gd")
 const TechLayout = preload("res://scripts/tech_layout.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Goals = preload("res://scripts/goals.gd")
+const Rules = preload("res://scripts/rules.gd")
 const ConventionTests = preload("res://tests/convention_tests.gd")
 const BonusTests = preload("res://tests/bonus_tests.gd")
 
@@ -34,6 +35,7 @@ func _init() -> void:
 	test_distance_slows_haulers()
 	test_roads_bridge_the_river()
 	test_tech_tree_is_a_web()
+	test_tech_tree_v4()
 	test_tech_effects()
 	test_requires_any()
 	test_star_lore_is_hidden_until_the_shard_is_clicked()
@@ -89,6 +91,15 @@ func test_map_has_every_resource_near_camp() -> void:
 	var s := fresh()
 	for t in ["tree", "rock", "berry", "grain", "river"]:
 		check(find_tile(s, t) != Vector2i(-1, -1), "map has " + t)
+	var start := GameState.new()
+	start.generate(7)
+	for t in ["tree", "rock", "berry", "grain", "gravel"]:
+		var near := false
+		for y in range(-Data.SIGHT_START, Data.SIGHT_START + 1):
+			for x in range(-Data.SIGHT_START, Data.SIGHT_START + 1):
+				var p: Vector2i = start.camp_pos + Vector2i(x, y)
+				near = near or (start.tile_at(p) == t and start.fog.is_revealed(p))
+		check(near, t + " is in sight of the Hearth at the start")
 	check(s.building_at.has(s.camp_pos), "camp is placed")
 	check(s.shard_pos != Vector2i(-1, -1), "star shard is placed")
 
@@ -116,7 +127,9 @@ func test_tech_requires_its_parents() -> void:
 	give(s, 999)
 	check(not s.can_research("gatherers_hut"), "hut needs knapping first")
 	check(s.research("knapping"), "knapping is a root")
-	check(s.research("gatherers_hut"), "hut unlocked after knapping")
+	check(not s.can_research("gatherers_hut"), "the hut needs Foraging too: tools to build it, food to fill it")
+	check(s.research("foraging"), "foraging is a root")
+	check(s.research("gatherers_hut"), "hut unlocked after knapping and foraging")
 
 
 func test_every_tech_is_reachable() -> void:
@@ -390,6 +403,43 @@ func test_tech_tree_is_a_web() -> void:
 		check("star_lore" not in Data.TECHS[tech]["requires"], tech + " doesn't strictly need hidden Star Lore")
 
 
+## Tech tree v4 (mockups/tech-tree-v4.md): each link reads "you need X to invent Y".
+func test_tech_tree_v4() -> void:
+	check(TechLayout.links().size() == 48, "v4 has 48 links (%d)" % TechLayout.links().size())
+	check(Data.LANE_ORDER == ["fiber", "stone", "land", "hearth", "lore"], "lanes run Fiber, Stone, Land, Hearth, Lore")
+	check(Data.TECHS["bronze_dawn"]["tier"] == 5, "the gate sits after Tier V")
+	check(Data.TIER_NAMES.size() == 6, "every column has a caption")
+	var links := {
+		"gatherers_hut": ["knapping", "foraging"],
+		"stone_axe": ["knapping", "cordage"],
+		"shelter": ["cordage", "foraging"],
+		"farming": ["gatherers_hut", "stone_axe"],
+		"scouting": ["gatherers_hut", "storytelling"],
+		"water_wheel": ["stone_axe", "masonry"],
+		"rafts": ["nets", "stone_axe"],
+		"grindstone": ["water_wheel", "farming"],
+		"carrying_poles": ["haulers", "stone_axe"],
+		"baking": ["grindstone", "pottery"],
+	}
+	for tech in links:
+		var want: Array = links[tech].duplicate()
+		var have: Array = Data.TECHS[tech]["requires"].duplicate()
+		want.sort()
+		have.sort()
+		check(have == want, "%s needs %s (has %s)" % [tech, want, have])
+	for tech in ["nets", "smoking", "stone_axe"]:
+		check(Data.TECHS[tech]["tier"] == 1, tech + " sits in Tier II")
+	for tech in Data.TECHS:
+		check(Data.TECHS[tech]["slot"] <= 1, tech + ": each lane has two rows")
+	# Side branches are exactly the techs Bronze Dawn can do without.
+	var route := Rules.route_to("bronze_dawn", {}, Rules.visible_techs(true))
+	check(route.size() == 18, "Bronze Dawn needs 18 techs (%d)" % route.size())
+	for tech in Data.TECHS:
+		check(
+			Data.TECHS[tech].get("side", false) == (tech not in route), tech + " is a side branch only if off the route"
+		)
+
+
 func check_cards_dont_overlap() -> void:
 	var lay := TechLayout.build()
 	var rects: Dictionary = lay["rects"]
@@ -497,8 +547,10 @@ func test_rafts_cross_the_river() -> void:
 	give(s, 999)
 	var river := find_tile(s, "river")
 	check(s.astar.is_point_solid(river), "the river blocks walking")
-	for t in ["cordage", "foraging", "knapping", "gatherers_hut", "haulers", "nets"]:
+	for t in ["cordage", "foraging", "knapping", "nets"]:
 		s.researched[t] = true
+	check(not s.can_research("rafts"), "Rafts need logs: Stone Axe first")
+	s.researched["stone_axe"] = true
 	check(s.research("rafts"), "research Rafts")
 	check(not s.astar.is_point_solid(river), "Rafts make the river walkable")
 	check(s.walk_cost(river) == Data.WALK_COST["river"], "rafting is slow")
