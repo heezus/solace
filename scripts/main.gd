@@ -45,6 +45,8 @@ var tech_panel: TechPanel
 var building_panel: BuildingPanel
 var win_overlay: Control
 var ui_refresh := 0.0
+var paused := false
+var speed := 1  # simulation steps per frame: 1x, 2x or 3x
 
 
 func _ready() -> void:
@@ -56,7 +58,9 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	time += delta
-	state.tick(delta)
+	if not paused:
+		for i in speed:
+			state.tick(delta)
 	for e in state.events:
 		_toast(e, 3.0)
 	state.events.clear()
@@ -126,12 +130,26 @@ func _unhandled_input(event: InputEvent) -> void:
 		match event.keycode:
 			KEY_T:
 				tech_panel.visible = not tech_panel.visible
+			KEY_SPACE:
+				_set_speed(0)
+			KEY_1, KEY_2, KEY_3:
+				_set_speed(event.keycode - KEY_0)
 			KEY_X:
 				placing = "" if placing == "demolish" else "demolish"
 			KEY_ESCAPE:
 				placing = ""
 				tech_panel.visible = false
 				building_panel.select(Vector2i(-1, -1))
+
+
+## 0 toggles pause; 1, 2 or 3 sets the speed and unpauses.
+func _set_speed(v: int) -> void:
+	if v == 0:
+		paused = not paused
+	else:
+		speed = v
+		paused = false
+	_refresh_ui()
 
 
 func _tile_under() -> Vector2i:
@@ -195,6 +213,7 @@ func _build_ui() -> void:
 	top_bar = TopBar.new()
 	layer.add_child(top_bar)
 	top_bar.setup(state)
+	top_bar.speed_picked.connect(_set_speed)
 
 	# Bottom bar: tabs of fixed-size build buttons, Demolish and Craft.
 	bottom_bar = BuildBar.new()
@@ -278,7 +297,7 @@ func _build_win_overlay(layer: CanvasLayer) -> void:
 
 
 func _refresh_ui() -> void:
-	top_bar.refresh(false, 1.0)
+	top_bar.refresh(paused, speed)
 	bottom_bar.refresh(placing, Research.ready_list(state).size())
 	tech_panel.refresh()
 	building_panel.refresh()
@@ -428,6 +447,9 @@ func _draw() -> void:
 		draw_rect(_tile_rect(hover).grow(-2), OUTLINE, false, 2.0)
 	elif state.in_bounds(hover):
 		draw_rect(_tile_rect(hover).grow(-1), Color(1, 1, 1, 0.8), false, 2.0)
+
+	if paused:
+		Art.pill(self, Vector2(GameState.WIDTH * TILE / 2.0, 8), "Paused · Space to resume", GOAL_COLOR, OUTLINE, 16)
 
 	var font := ThemeDB.fallback_font
 	for pop in popups:

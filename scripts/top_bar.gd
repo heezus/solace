@@ -3,7 +3,7 @@ extends PanelContainer
 ## count and the net rate per second (green up, red down). Hovering a chip drops a panel explaining
 ## where that good comes from and where it goes.
 
-signal speed_picked(value: float)  # 0 toggles pause
+signal speed_picked(value: int)  # 0 toggles pause
 
 const Data = preload("res://scripts/data.gd")
 const GameState = preload("res://scripts/game_state.gd")
@@ -79,6 +79,17 @@ func setup(game: GameState) -> void:
 	note.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
 	note.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	h.add_child(note)
+	h.add_child(VSeparator.new())
+	for part in [["Pause", 0], ["1x", 1], ["2x", 2], ["3x", 3]]:
+		var b := Ui.button(part[0])
+		b.toggle_mode = true
+		b.custom_minimum_size = Vector2(52 if part[1] == 0 else 32, 26)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		b.tooltip_text = "Pause or resume (Space)" if part[1] == 0 else "Speed x%d (key %d)" % [part[1], part[1]]
+		var v: int = part[1]
+		b.pressed.connect(func(): speed_picked.emit(v))
+		h.add_child(b)
+		speed_buttons[v] = b
 
 	flow_panel = PanelContainer.new()
 	flow_panel.top_level = true
@@ -140,7 +151,7 @@ func food_rate() -> float:
 	return total
 
 
-func refresh(paused: bool, speed: float) -> void:
+func refresh(paused: bool, speed: int) -> void:
 	var idle := Ui.idle_kith(state)
 	var workers := state.kith.size() - idle
 	var jobs := 0
@@ -186,7 +197,7 @@ func refresh(paused: bool, speed: float) -> void:
 		c["box"].tooltip_text = "" if flow_item == id else Data.ITEMS[id]["name"]
 		c["box"].add_theme_stylebox_override("panel", _ring() if flow_item == id else StyleBoxEmpty.new())
 	for v in speed_buttons:
-		speed_buttons[v].button_pressed = paused if v == 0.0 else (not paused and is_equal_approx(v, speed))
+		speed_buttons[v].button_pressed = paused if v == 0 else (not paused and v == speed)
 	if flow_item != "":
 		_fill_flow(flow_item)
 
