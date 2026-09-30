@@ -10,6 +10,7 @@ const Data = preload("res://scripts/data.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
 const Ranks = preload("res://scripts/ranks.gd")
 const Hands = preload("res://scripts/hands.gd")
+const World = preload("res://scripts/world.gd")
 
 const BOT_STEPS_PER_FRAME := 40
 const MAX_FRAMES := 4000
@@ -177,8 +178,8 @@ func _then(f: Callable, wait := 1) -> void:
 func _nearest(tile: String) -> Vector2i:
 	var s = main.state
 	var best := Vector2i(-1, -1)
-	for y in s.HEIGHT:
-		for x in s.WIDTH:
+	for y in World.HEIGHT:
+		for x in World.WIDTH:
 			var p := Vector2i(x, y)
 			if s.world.tile_at(p) == tile and s.fog.is_revealed(p) and not s.town.building_at.has(p):
 				if (
@@ -506,8 +507,8 @@ func _road_drag() -> void:
 	for id in Data.BUILDINGS["road"]["cost"]:  # whatever a Road costs, enough for the drag whatever else is held
 		s.economy.inv[id] = maxi(s.economy.inv.get(id, 0), 40)
 	var start := Vector2i(-1, -1)
-	for y in range(2, s.HEIGHT - 2):
-		for x in range(2, s.WIDTH - 6):
+	for y in range(2, World.HEIGHT - 2):
+		for x in range(2, World.WIDTH - 6):
 			var ok := start.x < 0
 			for i in 4:
 				ok = ok and s.town.placement_error("road", Vector2i(x + i, y)) == ""
