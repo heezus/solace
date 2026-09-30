@@ -15,6 +15,7 @@ const ConventionTests = preload("res://tests/convention_tests.gd")
 const BonusTests = preload("res://tests/bonus_tests.gd")
 const ArcTests = preload("res://tests/arc_tests.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
+const GoldenTests = preload("res://tests/golden_tests.gd")
 
 var failures := 0
 
@@ -61,8 +62,13 @@ func _init() -> void:
 ## A headless player (tests/autoplay.gd) plays the stone age on a few maps. It should reach Bronze Dawn
 ## in 8 to 25 simulated minutes; data.gd is tuned so it takes about 12 to 16.
 func test_pacing_bot() -> void:
+	var golden := GoldenTests.new()
+	var have_golden := golden.load_golden(self)
 	for map_seed in [1, 2, 3]:
-		var r: Dictionary = Autoplay.new().play(map_seed, 30 * 60.0)
+		var bot := Autoplay.new()
+		var r: Dictionary = bot.play(map_seed, 30 * 60.0)
+		if have_golden:
+			golden.check_run(map_seed, bot)  # win time and final state must match tests/golden.json
 		var minutes: float = r["seconds"] / 60.0
 		print(
 			(
