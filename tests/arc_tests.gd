@@ -25,7 +25,7 @@ func run(runner) -> void:
 	test_click_yield_math()
 	test_hold_to_harvest()
 	test_rank_costs_and_effects()
-	# test_tier_costs_scale()
+	test_tier_costs_scale()
 	test_story_events()
 	test_job_titles()
 
@@ -142,7 +142,8 @@ func test_rush_and_its_cooldown() -> void:
 	t.check(Workers.can_rush(s, b), "a working building can be rushed")
 	var before := s.buffered(b["out"])
 	t.check(Workers.rush(s, i), "rush it")
-	t.check(s.buffered(b["out"]) == before + 1, "the rush finished the cycle at once")
+	var batch: int = Data.BUILDINGS["charcoal_pit"]["out"]["charcoal"]
+	t.check(s.buffered(b["out"]) == before + batch, "the rush finished the cycle at once")
 	t.check(is_equal_approx(b["rush_cd"], Data.RUSH_COOLDOWN), "then a %d s cooldown" % Data.RUSH_COOLDOWN)
 	run_for(s, 1.0)
 	t.check(not Workers.rush(s, i), "no second rush during the cooldown")

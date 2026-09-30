@@ -12,6 +12,7 @@ const Research = preload("res://scripts/research.gd")
 const Rules = preload("res://scripts/rules.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Workers = preload("res://scripts/workers.gd")
+const Ranks = preload("res://scripts/ranks.gd")
 
 const DT := 0.1
 const THINK := 1.0  # seconds between decisions
@@ -29,6 +30,11 @@ const RAW_TILE := {
 	"berries": "berry",
 	"grain": "grain",
 }
+## A hut is paused while everything it gathers is past this and not needed.
+const HUT_SURPLUS := 150
+## One more workshop of a kind for every WORKSHOP_PER of its good still wanted, up to WORKSHOPS_MAX.
+const WORKSHOP_PER := 40.0
+const WORKSHOPS_MAX := 4
 ## Which workshop makes each made good.
 const MAKER := {"rope": "twine_post", "charcoal": "charcoal_pit", "brick": "kiln", "flour": "grindstone"}
 
@@ -117,8 +123,8 @@ func _trace() -> void:
 				missing[id] = "%d/%d" % [s.inv.get(id, 0), cost[id]]
 	lines.append(
 		(
-			"%5.0f s  .. next %s missing %s  Kith %d, workers %d, clicks %s"
-			% [clock, next, missing, s.kith.size(), _workers(), clicked]
+			"%5.0f s  .. next %s missing %s  Kith %d, workers %d, clicks %s short %s"
+			% [clock, next, missing, s.kith.size(), _workers(), clicked, _short()]
 		)
 	)
 	clicked = {}
@@ -147,7 +153,7 @@ func _short() -> Dictionary:
 	for made in ["flour", "brick", "charcoal", "rope"]:
 		var n: int = want.get(made, 0) - s.inv.get(made, 0)
 		if n > 0:
-			_want(want, Data.BUILDINGS[MAKER[made]]["in"], n)
+			_want(want, Data.BUILDINGS[MAKER[made]]["in"], _batches(made, n))
 	var short := {}
 	for id in want:
 		var n: int = want[id] - s.inv.get(id, 0)
@@ -172,8 +178,13 @@ func _route_need() -> Dictionary:
 		var inputs: Dictionary = Data.BUILDINGS[MAKER[made]]["in"]
 		for id in inputs:
 			if MAKER.has(id) and left > 0:
-				need[id] = need.get(id, 0) + left * inputs[id]
+				need[id] = need.get(id, 0) + _batches(made, left) * inputs[id]
 	return need
+
+
+## How many workshop cycles make n of `made` (a Kiln fires two Brick a cycle).
+func _batches(made: String, n: int) -> int:
+	return ceili(n / float(Data.BUILDINGS[MAKER[made]]["out"][made]))
 
 
 func _want(want: Dictionary, cost: Dictionary, times: int) -> void:
@@ -198,7 +209,7 @@ func _next_click() -> String:
 		for made in ["flour", "brick", "charcoal", "rope"]:
 			var n: int = want.get(made, 0) - s.inv.get(made, 0)
 			if n > 0:
-				_want(want, Data.BUILDINGS[MAKER[made]]["in"], n)
+				_want(want, Data.BUILDINGS[MAKER[made]]["in"], _batches(made, n))
 		var short := {}
 		for id in want:
 			if want[id] > s.inv.get(id, 0):
@@ -286,7 +297,7 @@ func _nearest_tile(tile: String, from: Vector2i) -> Vector2i:
 	for y in GameState.HEIGHT:
 		for x in GameState.WIDTH:
 			var p := Vector2i(x, y)
-			if s.tile_at(p) == tile and s.fog.is_revealed(p) and not s.building_at.has(p):
+			if s.tile_at(p) == tile and Hands.item_at(s, p) != "":
 				var d := Vector2(p).distance_to(Vector2(from))
 				if d < best_d:
 					best = p
@@ -326,7 +337,11 @@ func _place_storehouse() -> bool:
 		var depot: Vector2i = s._nearest_depot(b["pos"])
 		if Vector2(depot).distance_to(Vector2(b["pos"])) > 6.0:
 			var at: Vector2i = b["pos"]
-			return _place_best("storehouse", func(p): return -Vector2(p).distance_to(Vector2(at)))
+			var near := func(p):
+				var d := Vector2(p).distance_to(Vector2(at))
+				return -d if d <= 4.0 else -INF
+			if _place_best("storehouse", near):
+				return true
 	return false
 
 
@@ -346,12 +361,12 @@ func _count(type: String) -> int:
 	return n
 
 
-## Huts whose range holds `item` (or open-grass huts, for Fiber).
-func _huts_for(item: String) -> int:
-	var n := 0
+## Huts that gather mostly `item` (open-grass huts, for Fiber): each counts for its share of `item`.
+func _huts_for(item: String) -> float:
+	var n := 0.0
 	for b in s.buildings:
-		if b["type"] == "gatherers_hut" and item in b["gather_items"]:
-			n += 1
+		if b["type"] == "gatherers_hut" and not b["gather_items"].is_empty():
+			n += b["gather_items"].count(item) / float(b["gather_items"].size())
 	return n
 
 
@@ -361,6 +376,8 @@ func _decide() -> void:
 	var short := _short()
 	var later := _route_need()
 	_pause_surplus(short, later)
+	if _buy_rank(short):
+		return
 	if _house_wanted() and s.food_total() >= s.kith.size() * 2.0 + Data.BIRTH_FOOD:
 		if _place_near_hearth("dwelling"):
 			return
@@ -372,6 +389,9 @@ func _decide() -> void:
 		return
 	if _workers() + _haulers_wanted() >= s.kith.size() + 1:
 		return
+	for type in _workshops_due() if s.has_haulers() else []:
+		if _place_workshop(type):
+			return
 	if s.building_unlocked("gatherers_hut"):
 		if _huts_for("berries") < 1 + int(s.kith.size() / 6.0):
 			if _place_hut("berries"):
@@ -381,20 +401,49 @@ func _decide() -> void:
 			var want := 0 if n <= 0 else 1 + mini(int(n / 30.0), 2)
 			if item in ["wood", "stone"]:
 				want = maxi(want, 1)
-			if _huts_for(item) < want and _place_hut(item):
+			var have := _huts_for(item)
+			if have < want - 0.5 and (_place_hut(item, have) or (have < 0.5 and _explore_for(item))):
 				return
 	for made in MAKER:
 		var n: int = short.get(made, 0)
 		if s.has_haulers():  # before haulers every workshop costs clicks to feed, so only build what's due
 			n = maxi(n, later.get(made, 0) - s.inv.get(made, 0))
 		var type: String = MAKER[made]
-		if n > 0 and s.building_unlocked(type) and _count(type) < 1 + mini(int(n / 30.0), 1):
+		if n > 0 and s.building_unlocked(type) and _count(type) < 1 + mini(int(n / WORKSHOP_PER), WORKSHOPS_MAX - 1):
 			if _place_workshop(type):
 				return
 	if s.building_unlocked("field") and s.fields.size() < 8 and short.get("grain", 0) > 0 and _place_field():
 		return
 	if s.has_haulers() and not short.has("stone"):
 		_lay_roads()
+
+
+## Buy the next rank on a tech whose good we're short of, when that leaves enough for the next tech.
+func _buy_rank(short: Dictionary) -> bool:
+	var next: Dictionary = Data.TECHS[s.research_queue[0]]["cost"] if not s.research_queue.is_empty() else {}
+	for tech in Data.TECH_ORDER:
+		var r: Dictionary = Data.TECHS[tech].get("rank", {})
+		var good: String = r.get("item", "")
+		for made in MAKER:
+			if MAKER[made] == r.get("building", ""):
+				good = made
+		var price := Ranks.next_cost(s, tech)
+		if short.has(good) and not s.researched.has(tech) and s.can_research(tech):  # a side tech, as rank I
+			price = Data.TECHS[tech]["cost"]
+		if not short.has(good) or price.is_empty() or not s.can_afford(price):
+			continue
+		var spare := true
+		for id in price:
+			spare = spare and s.inv.get(id, 0) - price[id] >= next.get(id, 0)
+		if spare and not s.researched.has(tech):
+			s.research(tech)
+			return true
+		if spare and Ranks.buy(s, tech):
+			lines.append(
+				"%5.0f s    rank %s on %s" % [clock, Data.RANK_NAMES[Ranks.rank(s, tech)], Data.TECHS[tech]["name"]]
+			)
+			return true
+	return false
 
 
 ## When something we need lies only out in the fog (Clay on the river banks), build a hut at the
@@ -409,6 +458,25 @@ func _explore(short: Dictionary) -> bool:
 	return false
 
 
+## No good hut spot in sight for `item`: push the fog back toward the nearest unseen tile of it (for
+## Fiber, the nearest stretch of open grass).
+func _explore_for(item: String) -> bool:
+	var best := Vector2i(-1, -1)
+	var best_d := INF
+	for y in GameState.HEIGHT:
+		for x in GameState.WIDTH:
+			var p := Vector2i(x, y)
+			if s.fog.is_revealed(p) or s.tile_at(p) != RAW_TILE[item] or not reach.has(p):
+				continue
+			if item == "fiber" and not s.gather_tiles(p).is_empty():
+				continue
+			var d := Vector2(p).distance_to(Vector2(s.camp_pos))
+			if d < best_d:
+				best = p
+				best_d = d
+	return best.x >= 0 and _explore_to(best)
+
+
 ## Push the edge of what we can see toward `target`: a few road tiles once there are roads (each one
 ## lifts the fog around it), or a hut before that.
 func _explore_to(target: Vector2i) -> bool:
@@ -417,7 +485,7 @@ func _explore_to(target: Vector2i) -> bool:
 		return _place_best("gatherers_hut", score)
 	var laid := false
 	for i in 3:
-		if not _place_best("road", score):
+		if _spare_stone() <= 0 or not _place_best("road", score):
 			break
 		laid = true
 	return laid
@@ -444,7 +512,7 @@ func _nearest_hidden(tile: String) -> Vector2i:
 	for y in GameState.HEIGHT:
 		for x in GameState.WIDTH:
 			var p := Vector2i(x, y)
-			if s.tile_at(p) == tile:
+			if s.tile_at(p) == tile and reach.has(p):
 				var d := Vector2(p).distance_to(Vector2(s.camp_pos))
 				if d < best_d:
 					best = p
@@ -456,6 +524,13 @@ func _nearest_hidden(tile: String) -> Vector2i:
 ## the next Dwelling needs; resume them after.
 func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
 	var saving := {}
+	# Raw goods the next tech pays in directly go to it, not into a workshop.
+	var next: String = s.research_queue[0] if not s.research_queue.is_empty() else ""
+	if next != "":
+		var cost: Dictionary = Data.TECHS[next]["cost"]
+		for id in cost:
+			if RAW_TILE.has(id) and s.inv.get(id, 0) < cost[id]:
+				saving[id] = true
 	if _house_wanted():
 		var house: Dictionary = Data.BUILDINGS["dwelling"]["cost"]
 		for id in house:
@@ -464,6 +539,16 @@ func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
 	for i in s.buildings.size():
 		var b: Dictionary = s.buildings[i]
 		var def: Dictionary = Data.BUILDINGS[b["type"]]
+		if def["kind"] == "gatherer" and not b["gather_items"].is_empty():
+			# A hut whose goods mostly pile up unneeded only keeps the haulers busy: its Kith can carry instead.
+			var useful := 0
+			for id in b["gather_items"]:
+				if s.inv.get(id, 0) < HUT_SURPLUS or short.has(id):
+					useful += 1
+			var idle: bool = useful * 4 < b["gather_items"].size()
+			if idle != b["paused"]:
+				s.set_paused(i, idle)
+			continue
 		if def["kind"] != "processor":
 			continue
 		var made: String = def["out"].keys()[0]
@@ -478,8 +563,9 @@ func _place_near_hearth(type: String) -> bool:
 	return _place_best(type, func(p): return -Vector2(p).distance_to(Vector2(s.camp_pos)))
 
 
-## A hut where `item` is thickest in its range and little else is (open grass for Fiber).
-func _place_hut(item: String) -> bool:
+## A hut where `item` is thickest in its range and little else is (open grass for Fiber). Once there
+## is some hut for it, only a spot where it's at least a third of the range is worth a Kith.
+func _place_hut(item: String, have := 0.0) -> bool:
 	var tile: String = RAW_TILE[item]
 	return _place_best(
 		"gatherers_hut",
@@ -493,7 +579,7 @@ func _place_hut(item: String) -> bool:
 					other += 1
 			if item == "fiber":
 				return -INF if mine + other > 0 else -Vector2(p).distance_to(Vector2(s.camp_pos))
-			if mine == 0:
+			if mine == 0 or (have > 0.0 and mine < 3 and mine * 2 < other):
 				return -INF
 			return mine * 3.0 - other * 2.0 - Vector2(p).distance_to(Vector2(s.camp_pos))
 	)
@@ -592,6 +678,14 @@ func _place_best(type: String, score: Callable) -> bool:
 	return true
 
 
+## Stone beyond what the next tech and a hut still need: only that goes into roads.
+func _spare_stone() -> int:
+	var keep := 10
+	if not s.research_queue.is_empty():
+		keep += int(Data.TECHS[s.research_queue[0]]["cost"].get("stone", 0))
+	return s.inv.get("stone", 0) - keep
+
+
 ## Roads from each far worker building toward its stockpile, over grass, a few tiles a decision.
 func _lay_roads() -> void:
 	var budget := 3
@@ -603,7 +697,7 @@ func _lay_roads() -> void:
 			continue
 		var path := s.astar.get_id_path(b["pos"], trip["depot"])
 		for p in path:
-			if budget <= 0 or s.inv.get("stone", 0) < 20:
+			if budget <= 0 or _spare_stone() <= 0:
 				return
 			if s.place("road", p):
 				budget -= 1

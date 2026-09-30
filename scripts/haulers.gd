@@ -61,7 +61,9 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 			k["task"] = {}
 
 
-## Pick the closest useful trip: empty a building's output, or bring a processor its inputs.
+## Pick the closest useful trip: empty a building's output, or bring a processor its inputs. A
+## building that has stopped (a workshop with nothing to work, or one full up) counts as a third as
+## far, so busy huts near the stockpile don't starve the far ones.
 static func _find_task(s, k: Dictionary) -> bool:
 	var here: Vector2i = s._tile_of(k)
 	var best := {}
@@ -71,6 +73,9 @@ static func _find_task(s, k: Dictionary) -> bool:
 		if not s.needs_worker(cand) or cand["unreachable"] > 0.0:
 			continue
 		var d := Vector2(here).distance_to(Vector2(cand["pos"]))
+		var starved: bool = not Data.BUILDINGS[cand["type"]].get("in", {}).is_empty() and s.buffered(cand["inbuf"]) == 0
+		if starved or s.buffered(cand["out"]) >= Data.BUFFER_CAP:
+			d /= 3.0
 		if d >= best_d:
 			continue
 		if s.buffered(cand["out"]) > 0 and not cand["claimed"]:
