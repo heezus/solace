@@ -144,3 +144,42 @@ static func status_pills(ci: CanvasItem, s) -> void:
 			PackedVector2Array([at + Vector2(0, -5), at + Vector2(-5, 1), at + Vector2(5, 1)]), OUTLINE
 		)
 		Art.pill(ci, at, b["alert"], ALERT, OUTLINE, 10)
+
+
+## The settlement: a dashed Kith-colored ring 6 tiles around the Hearth. Faint while playing,
+## strong and labeled while placing a Dwelling, with the good empty spots inside dashed in white.
+static func settlement_ring(ci: CanvasItem, s, strong: bool) -> void:
+	var c := center(s.camp_pos)
+	var radius: float = (Data.HEARTH_RADIUS + 0.5) * TILE
+	ci.draw_circle(c, radius, Color(KITH, 0.14 if strong else 0.05))
+	Art.dashed_circle(ci, c, radius, Color(KITH, 1.0 if strong else 0.7), 4.0 if strong else 2.5, 10.0, 7.0)
+	if not strong:
+		return
+	for y in range(-int(Data.HEARTH_RADIUS), int(Data.HEARTH_RADIUS) + 1):
+		for x in range(-int(Data.HEARTH_RADIUS), int(Data.HEARTH_RADIUS) + 1):
+			var p: Vector2i = s.camp_pos + Vector2i(x, y)
+			if s.in_bounds(p) and s.placement_error("dwelling", p) == "":
+				Art.dashed_rect(ci, rect(p).grow(-4), Color(1, 1, 1, 0.8), 1.5, 4.0, 3.0)
+	var label := "Settlement · %d tiles around the Hearth" % int(Data.HEARTH_RADIUS)
+	Art.pill(ci, c - Vector2(0, radius + 12), label, KITH, Color.WHITE, 12)
+
+
+## What the placement ghost's pill says when the spot won't do.
+static func ghost_text(type: String, err: String) -> String:
+	if type == "dwelling" and err.begins_with("Must be within"):
+		return "Too far from the Hearth · dwellings go inside the ring"
+	return err
+
+
+## The ghost of the building being placed: its sprite over a green or alert tint, and a pill
+## saying why when the spot won't do.
+static func placement_ghost(ci: CanvasItem, s, type: String, p: Vector2i) -> void:
+	var err: String = s.placement_error(type, p)
+	var r := rect(p)
+	ci.draw_rect(r.grow(-2), Color(0.3, 1, 0.4, 0.4) if err == "" else Color(ALERT, 0.45))
+	var tex := Art.building_sprite(type)
+	if tex != null and Data.BUILDINGS[type]["kind"] not in ["road", "field"]:
+		ci.draw_texture_rect(tex, r.grow(-3), false, Color(1, 1, 1, 0.6))
+	ci.draw_rect(r.grow(-2), OUTLINE if err == "" else ALERT, false, 2.0)
+	if err != "":
+		Art.pill(ci, Vector2(r.get_center().x, r.end.y + 4), ghost_text(type, err), ALERT, Color.WHITE, 12)

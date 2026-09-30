@@ -100,6 +100,10 @@ func test_dwellings_stay_near_the_hearth() -> void:
 	t.check(
 		s.placement_error("dwelling", far) == "Must be within 6 tiles of the Hearth", "no Dwelling far from the Hearth"
 	)
+	t.check(
+		Overlays.ghost_text("dwelling", s.placement_error("dwelling", far)).begins_with("Too far from the Hearth"),
+		"the ghost's pill says the Dwelling is too far"
+	)
 	t.check(s.place("dwelling", near), "a Dwelling near the Hearth")
 	t.check(
 		s.placement_error("storehouse", far) != "Must be within 6 tiles of the Hearth", "other buildings go anywhere"

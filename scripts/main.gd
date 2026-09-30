@@ -62,7 +62,12 @@ func _process(delta: float) -> void:
 		for i in speed:
 			state.tick(delta)
 	for e in state.events:
-		_toast(e, 3.0)
+		if e == "A Kith was born":
+			var at := Overlays.center(state.camp_pos) - Vector2(0, 12)
+			popups.append({"pos": at, "text": "+1 Kith", "t": 0.0, "col": KITH.lightened(0.3)})
+			_toast("New Kith arrive at the Hearth while food lasts", 2.5)
+		else:
+			_toast(e, 3.0)
 	state.events.clear()
 	if state.won and not win_overlay.visible:
 		win_overlay.visible = true
@@ -424,6 +429,7 @@ func _draw() -> void:
 					Color(0.16, 0.62, 0.56, 0.18)
 				)
 	_draw_aura_ranges(hovered_type)
+	Overlays.settlement_ring(self, state, placing == "dwelling")
 	for b in state.buildings:
 		_draw_building(b)
 	Overlays.rubble(self, rubble)
@@ -441,10 +447,7 @@ func _draw() -> void:
 	if placing == "demolish" and state.in_bounds(hover):
 		Overlays.demolish_hover(self, state, hover)
 	elif placing != "" and state.in_bounds(hover):
-		var ok := state.placement_error(placing, hover) == ""
-		var c := Color(0.3, 1, 0.4, 0.45) if ok else Color(1, 0.25, 0.25, 0.45)
-		draw_rect(_tile_rect(hover).grow(-2), c)
-		draw_rect(_tile_rect(hover).grow(-2), OUTLINE, false, 2.0)
+		Overlays.placement_ghost(self, state, placing, hover)
 	elif state.in_bounds(hover):
 		draw_rect(_tile_rect(hover).grow(-1), Color(1, 1, 1, 0.8), false, 2.0)
 
@@ -456,7 +459,8 @@ func _draw() -> void:
 		var pos: Vector2 = pop["pos"] + Vector2(-20, -10 - pop["t"] * 30)
 		var a: float = 1.0 - pop["t"] / 1.2
 		draw_string_outline(font, pos, pop["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, 5, Color(OUTLINE, a))
-		draw_string(font, pos, pop["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1, 1, 1, a))
+		var col: Color = pop.get("col", Color.WHITE)
+		draw_string(font, pos, pop["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(col, a))
 
 
 ## Unexplored tiles: nearly opaque, with a softer edge next to explored ground.
