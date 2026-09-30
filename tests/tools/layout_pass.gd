@@ -2,12 +2,15 @@ extends SceneTree
 ## The map's fit scale over a long run: the bot plays to Bronze Dawn with the UI refreshing every frame,
 ## and the map's scale may change only when the window size does (the bars must keep steady heights).
 ## It also checks the HUD's fit, at 1280x800 and after two resizes: the Info panel stays above the bottom bar
-## even with a wall of text, a building's popup stays on screen, the top bar never runs past the window and
-## none of its text is cut short (also with the food warning and starvation showing), a toast never covers a
-## chip, every chip has a name and a tooltip, and a Hearth's blurb shows once.
+## even with a wall of text, a building's details are docked in the Info panel (nothing floats over the map),
+## the top bar never runs past the window and none of its text is cut short (also with the food warning and
+## starvation showing), toasts stack without overlapping each other or a chip, every chip has a name, a tooltip
+## and a sprite, a Hearth's blurb shows once, every build card's text fits it, and the message log opens.
 ## Run: godot --headless --path . -s tests/tools/layout_pass.gd   (exits 1 on a problem)
 
 const Data = preload("res://scripts/data.gd")
+const World = preload("res://scripts/world.gd")
+const HoverText = preload("res://scripts/hover_text.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
 
 const BOT_STEPS_PER_FRAME := 20
@@ -97,11 +100,16 @@ func _hud_checks() -> void:
 			_show_hearth_panel()
 		10:
 			_check_hearth_blurb_once()
+			_check_card_is_docked("the Hearth's card")
 			main.building_panel.select(Vector2i(-1, -1))
 			main._toast("A toast that must not cover the chips", 30.0)
+			main._toast("A second toast, stacked under the first, not over it", 30.0)
+			main.messages.push("A third that stays until it is clicked", 0.0, true)
+			main.messages.push("A fourth: " + WALL, 30.0)
 		12:
 			_check_toast_and_chips()
-			main.toast_time = 0.0
+			main.messages.active.clear()
+			main.messages.changed.emit()
 			main.state.economy.low = true
 		14:
 			_check_top_bar_text("with the food warning up")
@@ -146,8 +154,27 @@ func _hud_checks() -> void:
 			_check_fit("with a wall of text in the Info panel")
 			main.ui_refresh = 0.0
 			frozen = false
+		54:
+			frozen = true
+			_show_hut_panel_with_a_wall_of_text()
+		55:
+			_check_card_buttons("a hut's card with a wall of text")
+			main.building_panel.select(Vector2i(-1, -1))
+			main.ui_refresh = 0.0
+			frozen = false
+		56:
+			frozen = true
+			main.msg_log.visible = false
+			main.messages.push("Discovered a thing", 30.0)
+			main.msg_log.toggle()
+		58:
+			_check_log_opens()
+			main.msg_log.visible = false
+			frozen = false
 	if frame > 5 and frame % 5 == 0:
 		_check_fit("at frame %d" % frame)
+	if frame > 5 and frame % 20 == 0:
+		_check_build_cards("at frame %d" % frame)
 	if frame > 5 and frame % 25 == 0:
 		_check_top_bar_text("at frame %d" % frame)
 
@@ -162,8 +189,7 @@ func _stress_case(n: int) -> void:
 		0, 1, 2:
 			eco.inv["berries"] = 0 if n != 0 else 3
 		3:
-			main.ui_refresh = 999.0  # keep the hint the map would show for the best yield
-			main.top_bar.set_click_hint("Hold: +27 Berries, 0.4s")
+			main.msg_log.visible = true  # the log is open over the map: the top bar must not care
 		4:
 			for id in Data.ITEM_ORDER:
 				eco.inv[id] = 9999
@@ -187,17 +213,58 @@ func _check_stable(what: String) -> void:
 	_check_top_bar_text(what)
 
 
+## A hut (placed by hand) selected, with far more text in its card than the panel has room for.
+func _show_hut_panel_with_a_wall_of_text() -> void:
+	var s = main.state
+	for id in s.economy.inv:
+		s.economy.inv[id] = maxi(s.economy.inv[id], 40)
+	s.research("gatherers_hut")
+	var at := Vector2i(-1, -1)
+	for r in range(1, 6):
+		for dy in range(-r, r + 1):
+			for dx in range(-r, r + 1):
+				var p: Vector2i = s.world.camp_pos + Vector2i(dx, dy)
+				if at.x < 0 and s.town.placement_error("gatherers_hut", p) == "":
+					at = p
+	if at.x < 0 or not s.place("gatherers_hut", at):
+		problems.append("couldn't place a hut for the card check")
+		return
+	main.building_panel.select(at)
+	main.ui_refresh = 999.0
+	main.building_panel.parts["desc"].text = WALL.repeat(4)
+
+
+## Collect, Pause and Demolish stay on the side panel and above the bottom bar, however tall the card is.
+func _check_card_buttons(what: String) -> void:
+	hud_checks += 1
+	var side: Rect2 = main.side_panel.get_global_rect()
+	var bottom: Rect2 = main.bottom_bar.get_global_rect()
+	var seen := 0
+	for key in ["collect", "pause", "demolish"]:
+		var b: Button = main.building_panel.parts[key]
+		if not b.is_visible_in_tree():
+			continue
+		seen += 1
+		var r: Rect2 = b.get_global_rect()
+		if r.size.x < 20.0 or r.size.y < 20.0 or not side.encloses(r) or r.end.y > bottom.position.y + 1.0:
+			problems.append(
+				"%s: the %s button (%s) isn't reachable (side panel %s, bottom bar %s)" % [what, key, r, side, bottom]
+			)
+	if seen < 2:
+		problems.append("%s: only %d card buttons showed (want Pause and Demolish)" % [what, seen])
+
+
 func _show_hearth_panel() -> void:
 	main.building_panel.select(main.state.world.camp_pos)
 	main.ui_refresh = 0.0
 
 
-## Clicking the Hearth: its blurb is on screen once, across its popup and the Info panel.
+## Clicking the Hearth: its blurb is on screen once, across its card and the Info panel.
 func _check_hearth_blurb_once() -> void:
 	hud_checks += 1
 	var blurb: String = Data.BUILDINGS["camp"]["desc"]
 	main.hover = main.state.world.camp_pos
-	var texts: Array = [main._hover_text()]
+	var texts: Array = [HoverText.text(main)]
 	for key in ["status", "desc"]:
 		if main.building_panel.parts[key].visible:
 			texts.append(main.building_panel.parts[key].text)
@@ -205,27 +272,32 @@ func _check_hearth_blurb_once() -> void:
 	for text in texts:
 		n += String(text).count(blurb)
 	if n != 1:
-		problems.append("the Hearth's blurb shows %d times across its popup and the Info panel (want 1)" % n)
+		problems.append("the Hearth's blurb shows %d times across its card and the Info panel (want 1)" % n)
 
 
-## A toast sits below the top bar, clear of every chip; every chip has a name and a tooltip.
+## Toasts sit below the top bar, clear of every chip and of each other; every chip has a name, a tooltip
+## and a sprite behind nothing.
 func _check_toast_and_chips() -> void:
 	hud_checks += 1
-	var toast: Rect2 = main.toast_label.get_global_rect()
+	_check_toast_stack()
 	var bar: Rect2 = main.top_bar.get_global_rect()
-	if toast.position.y < bar.end.y - 0.5:
-		problems.append("the toast (%s) starts inside the top bar (%s)" % [toast, bar])
 	for id in main.top_bar.chips:
 		var c: Dictionary = main.top_bar.chips[id]
-		if c["box"].visible and toast.intersects(c["box"].get_global_rect()):
-			problems.append("the toast covers the %s chip" % id)
+		for tid in main.toasts.panels:
+			if main.toasts.panels[tid].get_global_rect().intersects(c["box"].get_global_rect()):
+				problems.append("a toast covers the %s chip" % id)
 		if c["box"].tooltip_text == "":
 			problems.append("the %s chip has no tooltip" % id)
 		if c["title"].text == "":
 			problems.append("the %s chip has no name" % id)
+		var icon: Control = c["icon"]
+		if not icon is TextureRect or icon.texture == null:
+			problems.append("the %s chip has no sprite" % id)
+		elif icon.size.x < 24.0 or icon.get_global_rect().end.y > bar.end.y:
+			problems.append("the %s chip's sprite is %s (want 24 px, inside the bar)" % [id, icon.size])
 
 
-## The Info panel and the popup stay where they belong, and the top bar stays inside the window.
+## The Info panel stays above the bottom bar, and the top bar stays inside the window.
 func _check_fit(when: String) -> void:
 	hud_checks += 1
 	var vp: Vector2 = main.get_viewport_rect().size
@@ -238,9 +310,8 @@ func _check_fit(when: String) -> void:
 	var bar: Rect2 = main.top_bar.get_global_rect()
 	if bar.end.x > vp.x + 1.0:
 		problems.append("%s: the top bar (%.0f wide) is wider than the window (%.0f)" % [when, bar.end.x, vp.x])
-	var panel: Rect2 = main.building_panel.get_global_rect()
-	if main.building_panel.visible and not Rect2(Vector2.ZERO, vp).encloses(panel):
-		problems.append("%s: the building popup %s runs off the window %s" % [when, panel, vp])
+	if main.building_panel.visible:
+		_check_card_is_docked("the building card " + when)
 
 
 ## No text in the top bar is cut short: a line either fits its width or wraps and fits its height.
@@ -259,6 +330,113 @@ func _check_top_bar_text(when: String) -> void:
 				problems.append('%s: "%s" is cut short in the top bar (%.0f > %.0f px)' % [when, l.text, w, r.size.x])
 		elif l.get_line_count() > l.get_visible_line_count() or r.end.y > bar.end.y + 1.0:
 			problems.append('%s: "%s" is cut short in the top bar' % [when, l.text])
+
+
+## The map's rectangle on screen.
+func _map_rect() -> Rect2:
+	return Rect2(main.position, Vector2(World.WIDTH, World.HEIGHT) * main.TILE * main.scale.x)
+
+
+## The selected building's card is docked in the side panel: not floating, inside its width, off the map.
+func _check_card_is_docked(what: String) -> void:
+	hud_checks += 1
+	var card: Control = main.building_panel
+	if card.top_level or not main.side_panel.is_ancestor_of(card):
+		problems.append("%s isn't docked in the side panel (a popup?)" % what)
+	var rect: Rect2 = card.get_global_rect()
+	var side: Rect2 = main.side_panel.get_global_rect()
+	if not card.visible or rect.position.x < side.position.x or rect.end.x > side.end.x + 1.0:
+		problems.append("%s (%s) isn't inside the side panel (%s)" % [what, rect, side])
+	if rect.intersects(_map_rect()):
+		problems.append("%s (%s) covers the map (%s)" % [what, rect, _map_rect()])
+	var close: Control = card.get_child(0).get_child(0).get_child(2)
+	if not close is Button or close.text != "x" or close.size.x < 24.0:
+		problems.append("%s has no visible close x" % what)
+
+
+## Toasts stack: no two overlap, none covers a chip or starts inside the top bar; a sticky one says so.
+func _check_toast_stack() -> void:
+	var rects: Array = []
+	for id in main.toasts.panels:
+		var p: Control = main.toasts.panels[id]
+		rects.append(p.get_global_rect())
+	if rects.size() < 4:
+		problems.append("only %d toasts stacked (want 4)" % rects.size())
+	for i in rects.size():
+		for j in range(i + 1, rects.size()):
+			if rects[i].intersects(rects[j]):
+				problems.append("toasts %d and %d overlap (%s, %s)" % [i, j, rects[i], rects[j]])
+		if rects[i].position.y < main.top_bar.get_global_rect().end.y - 0.5:
+			problems.append("toast %d starts inside the top bar" % i)
+		if rects[i].end.x > main.get_viewport_rect().size.x - main.SIDE_W:
+			problems.append("toast %d runs into the side panel (%s)" % [i, rects[i]])
+
+
+## Every build card's words fit it: no cut-off, at most two lines under a locked card, nothing with dots.
+func _check_build_cards(when: String) -> void:
+	hud_checks += 1
+	for type in main.bottom_bar.build_buttons:
+		var parts: Dictionary = main.bottom_bar.build_buttons[type]
+		var card: Control = parts["button"]
+		if not card.is_visible_in_tree():
+			continue
+		for key in ["title", "sub", "why"]:
+			var l: Label = parts[key]
+			if l.text == "":
+				continue
+			var font: Font = l.get_theme_font("font")
+			var fs: int = l.get_theme_font_size("font_size")
+			if l.text.contains("..."):
+				problems.append('%s: the %s card says "%s"' % [when, type, l.text])
+			var lines := 1
+			var w := font.get_string_size(l.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+			if l.autowrap_mode == TextServer.AUTOWRAP_OFF:
+				if w > l.size.x + 0.5:
+					problems.append(
+						'%s: "%s" is cut off on the %s card (%.0f > %.0f px)' % [when, l.text, type, w, l.size.x]
+					)
+			else:
+				lines = l.get_line_count()
+				w = l.size.x
+				if lines > 2:
+					problems.append('%s: "%s" takes %d lines on the %s card' % [when, l.text, lines, type])
+			var end := Vector2(l.position.x + w, l.position.y + lines * font.get_height(fs))
+			if end.x > card.size.x or end.y > card.size.y:
+				problems.append(
+					(
+						"%s: the %s text of the %s card runs past the card (to %s of %s)"
+						% [when, key, type, end, card.size]
+					)
+				)
+		if (
+			parts["pips"].visible
+			and not Rect2(Vector2.ZERO, card.size).encloses(Rect2(parts["pips"].position, parts["pips"].size))
+		):
+			problems.append("%s: the price of the %s card runs past the card" % [when, type])
+	for type in ["shard_cairn", "standing_stone"]:
+		if (
+			main.bottom_bar.build_buttons[type]["button"].is_visible_in_tree()
+			and not (
+				main.state.town.unlocked(type) or main.state.tech_tree.requirements_met(Data.BUILDINGS[type]["tech"])
+			)
+		):
+			problems.append("%s: the story card %s shows before it is revealed" % [when, type])
+
+
+func _check_log_opens() -> void:
+	hud_checks += 1
+	if not main.msg_log.visible:
+		problems.append("the message log didn't open")
+		return
+	if main.msg_log.list.get_child_count() < 1:
+		problems.append("the message log is empty")
+	if not Rect2(Vector2.ZERO, main.get_viewport_rect().size).encloses(main.msg_log.get_global_rect()):
+		problems.append("the message log runs off the window (%s)" % main.msg_log.get_global_rect())
+	var found := false
+	for l in _labels(main.msg_log):
+		found = found or l.text == "Discovered a thing"
+	if not found:
+		problems.append("the newest message isn't in the log")
 
 
 func _labels(node: Node) -> Array:

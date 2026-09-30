@@ -1,7 +1,8 @@
 extends PanelContainer
-## The selection panel for a clicked building, anchored beside it on the map: status, what it does,
-## its recipe or what it gathers, the worker and their tool, the speed math, what it holds, the trip
-## to the stockpile, and Collect, Pause and Demolish buttons.
+## The selected building's details, docked in the side panel's Info section (never floating over the map, so
+## it can't cover the tiles you want next): status, what it does, its recipe or what it gathers, the worker and
+## their tool in plain words (the exact numbers are in a tooltip), what it holds, the trip to the stockpile, and
+## Collect, Pause and Demolish buttons, with an x to close it.
 
 signal demolish_pressed(p: Vector2i)
 signal closed
@@ -16,8 +17,8 @@ const Roads = preload("res://scripts/roads.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Work = preload("res://scripts/work.gd")
+const HutFocus = preload("res://scripts/hut_focus.gd")
 
-const WIDTH := 252.0
 const INSET := Color("1b3a47")
 
 var state: Sim
@@ -28,10 +29,9 @@ var parts := {}
 func setup(game: Sim) -> void:
 	state = game
 	visible = false
-	add_theme_stylebox_override("panel", Ui.panel_style(Ui.PANEL, 10))
-	custom_minimum_size = Vector2(WIDTH, 0)
+	add_theme_stylebox_override("panel", Ui.panel_style(Ui.PANEL, 8))
 	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 5)
+	v.add_theme_constant_override("separation", 4)
 	add_child(v)
 
 	var head := HBoxContainer.new()
@@ -52,15 +52,25 @@ func setup(game: Sim) -> void:
 	parts["status"] = _wrapped(11)
 	names.add_child(parts["status"])
 	var close := Ui.button("x")
-	close.custom_minimum_size = Vector2(24, 24)
+	close.custom_minimum_size = Vector2(28, 28)
 	close.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	close.tooltip_text = Data.CLOSE_TIP
+	close.add_theme_stylebox_override("normal", _x_style(Ui.BAR))
+	close.add_theme_stylebox_override("hover", _x_style(Ui.BAD.darkened(0.3)))
 	close.pressed.connect(func(): closed.emit())
 	head.add_child(close)
 
-	for key in ["desc", "recipe", "worker", "math", "click"]:
+	for key in ["desc", "recipe", "worker", "pace", "click"]:
 		parts[key] = _wrapped(12)
 		v.add_child(parts[key])
-	parts["math"].add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
+	parts["pace"].add_theme_color_override("font_color", Color(1, 1, 1, 0.75))
+	parts["pace"].mouse_filter = Control.MOUSE_FILTER_STOP  # its tooltip has the exact numbers
+	var focus := HutFocus.new()  # what a hut works: one line, one click to change (scripts/hut_focus.gd)
+	focus.setup(game)
+	focus.changed.connect(refresh)
+	v.add_child(focus)
+	v.move_child(focus, parts["recipe"].get_index())
+	parts["focus"] = focus
 	parts["holding"] = Ui.label("", 12)
 	v.add_child(parts["holding"])
 	var bar := ProgressBar.new()
@@ -77,9 +87,12 @@ func setup(game: Sim) -> void:
 	trip.add_child(parts["trip"])
 	v.add_child(trip)
 
+	# The buttons are docked under the scrolling Info area (SidePanel moves them there), so they never scroll out of reach.
 	var buttons := HBoxContainer.new()
 	buttons.add_theme_constant_override("separation", 6)
 	v.add_child(buttons)
+	parts["buttons"] = buttons
+	visibility_changed.connect(_sync_buttons)
 	var collect := _button("Collect", Ui.HIGHLIGHT, Ui.HIGHLIGHT)
 	collect.add_theme_color_override("font_color", Art.OUTLINE)
 	collect.pressed.connect(_on_collect)
@@ -95,11 +108,23 @@ func setup(game: Sim) -> void:
 	parts["demolish"] = demolish
 
 
+## The button row follows the card: shown while a building is selected, wherever it was docked.
+func _sync_buttons() -> void:
+	parts["buttons"].visible = visible
+
+
 func _wrapped(font_size: int) -> Label:
 	var l := Ui.label("", font_size)
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD
-	l.custom_minimum_size = Vector2(WIDTH - 60, 0)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.custom_minimum_size = Vector2(60, 0)  # it wraps to whatever width the side panel gives
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	return l
+
+
+static func _x_style(bg: Color) -> StyleBoxFlat:
+	var style := Ui.panel_style(bg, 2)
+	style.set_border_width_all(2)
+	return style
 
 
 func _button(text: String, bg: Color, border: Color) -> Button:
@@ -160,12 +185,15 @@ func refresh() -> void:
 		col = Ui.GOOD
 	status.add_theme_color_override("font_color", col)
 	parts["desc"].text = def["desc"]
+	parts["desc"].visible = def["kind"] not in ["gatherer", "processor"]  # what it gathers or makes says it better
+	parts["focus"].show_for(b)
 	parts["recipe"].text = recipe_text(state, b)
 	parts["recipe"].visible = parts["recipe"].text != ""
 	parts["worker"].text = worker_text(state, b)
 	parts["worker"].visible = Buildings.needs_worker(b)
-	parts["math"].text = Work.text(state, b)
-	parts["math"].visible = Buildings.needs_worker(b) and parts["math"].text != ""
+	parts["pace"].text = pace_text(state, b)
+	parts["pace"].visible = parts["pace"].text != ""
+	parts["pace"].tooltip_text = Data.PACE_TIP % Work.text(state, b).replace("\n", "; ")
 	parts["click"].text = click_text(state, b)
 	parts["click"].visible = parts["click"].text != ""
 	parts["click"].add_theme_color_override("font_color", Ui.HIGHLIGHT)
@@ -173,7 +201,7 @@ func refresh() -> void:
 	parts["holding"].visible = Buildings.needs_worker(b)
 	parts["bar"].visible = Buildings.needs_worker(b)
 	parts["holding"].text = (
-		"Holding %d / %d%s" % [held, Data.BUFFER_CAP, (": " + Ui.cost_text(b["out"])) if held > 0 else ""]
+		Data.HOLDING % [held, Data.BUFFER_CAP] + ((": " + Ui.cost_text(b["out"])) if held > 0 else "")
 	)
 	parts["bar"].max_value = Data.BUFFER_CAP
 	parts["bar"].value = held
@@ -202,7 +230,7 @@ static func recipe_text(s: Sim, b: Dictionary) -> String:
 			var ins := Ui.cost_text(def["in"]) if not def["in"].is_empty() else "nothing"
 			return "%s → %s / %s s" % [ins, Ui.cost_text(def["out"]), str(snappedf(Work.time(s, b), 0.1))]
 		"gatherer":
-			return gather_text(s, s.town.gather_tiles(b["pos"]))
+			return gather_text(s, s.town.gather_tiles(b["pos"]), b["focus"], true)
 	return ""
 
 
@@ -212,34 +240,61 @@ static func click_text(s: Sim, b: Dictionary) -> String:
 		return ""
 	var kind: String = Data.BUILDINGS[b["type"]]["kind"]
 	if kind == "gatherer" and not Roads.automated(s, b):
-		var pips := ""
-		for n in Data.TRIP_QUEUE:
-			pips += "●" if n < b["trips"] else "○"
-		return (
-			"Trips %s  ·  click the hut to send its %s for a bundle (up to %d queued)"
-			% [pips, Data.PEOPLE["one"], Data.TRIP_QUEUE]
-		)
+		return Data.TRIPS_HINT % [Data.PEOPLE["one"], b["trips"], Data.TRIP_QUEUE]
 	if b["rush_cd"] > 0.0:
-		return "Rush ready in %d s" % ceili(b["rush_cd"])
+		return Data.RUSH_COOL % ceili(b["rush_cd"])
 	if Workers.can_rush(s, b):
-		return "Click to rush: finish this cycle now (then %d s to recover)" % int(Data.RUSH_COOLDOWN)
-	return "Click to rush while it's working"
+		return Data.RUSH_HINT % int(Data.RUSH_COOLDOWN)
+	return Data.RUSH_WAIT
 
 
-## "Worker: Aro the Woodcutter · Flint Tool, 32 jobs left".
+## Who works here, in a sentence: "Aro the Woodcutter works here. Their flint tool has 32 uses left."
 static func worker_text(s: Sim, b: Dictionary) -> String:
-	var job := s.people.building_job(b)
 	if b["paused"]:
-		return "Worker: no %s while paused" % job
+		return Data.WORKER_PAUSED % Data.PEOPLE["one"]
 	if b["worker"] < 0:
-		return "Worker: no %s yet · waiting for a free %s" % [job, Data.PEOPLE["one"]]
+		return Data.WORKER_NONE % Data.PEOPLE["one"]
 	var k: Dictionary = s.people.kith[b["worker"]]
-	var who := "Worker: " + s.people.title_of(k)
+	var who: String = Data.WORKER_HERE % s.people.title_of(k)
 	if k["tool"] > 0:
-		return who + " · Flint Tool, %d jobs left" % k["tool"]
+		return who + " " + Data.WORKER_TOOL % k["tool"]
 	if Hands.recipe_unlocked(s, "flint_tools"):
-		return who + " · no tool (craft Flint Tools: +50% speed)"
+		return who + " " + Data.WORKER_NO_TOOL % roundi(Data.BONUSES["tools"]["add"] * 100.0)
 	return who
+
+
+## How fast it goes, in plain words (the exact numbers are the tooltip): what a trip brings back and how long the
+## work takes, or what a workshop makes a minute, and what speeds it up.
+static func pace_text(s: Sim, b: Dictionary) -> String:
+	var def: Dictionary = Data.BUILDINGS[b["type"]]
+	if not def.has("time") or not Buildings.needs_worker(b):
+		return ""
+	var lines: Array = []
+	if def["kind"] == "gatherer":
+		var bundles: Array = []
+		var seen := {}
+		for item in b["gather_items"]:
+			if not seen.has(item) and s.people.knows(item):
+				seen[item] = true
+				bundles.append("%d %s" % [Work.bundle_size(s, b, item), Data.ITEMS[item]["name"]])
+		if not bundles.is_empty():
+			lines.append(Data.PACE_TRIP % ", ".join(bundles))
+		lines.append(Data.PACE_WORK % str(snappedf(Work.time(s, b), 0.1)))
+	else:
+		var made := 0
+		for id in def["out"]:
+			made += def["out"][id]
+		var per_min := 60.0 / Work.time(s, b) * made
+		lines.append(
+			Data.PACE_MAKES % [str(snappedf(per_min, 0.1)).trim_suffix(".0"), Data.ITEMS[def["out"].keys()[0]]["name"]]
+		)
+	var boosts: Array = []
+	for bonus in Bonuses.active(s, b, ""):
+		if bonus["group"] == "speed":
+			boosts.append("%s (+%d%%)" % [bonus["name"], roundi(bonus["add"] * 100.0)])
+	if not boosts.is_empty():
+		lines.append(Data.PACE_BOOST % ", ".join(boosts))
+	return " ".join(lines)
 
 
 ## "To Hearth · 11 tiles · 22 s a trip", or "" for the Hearth itself.
@@ -254,8 +309,10 @@ static func trip_text(s: Sim, p: Vector2i) -> String:
 	return "To %s · %d tiles · %d s a trip" % [where, info["tiles"], roundi(info["seconds"])]
 
 
-## "Gathers from the 5 highlighted tiles (within 2), taking turns: Wood x3, Stone x2."
-static func gather_text(s: Sim, tiles: Array) -> String:
+## "Gathers from the 5 highlighted tiles (within 2), taking turns: Wood x3, Stone x2." `short` is the card's version:
+## "Gathers from the 5 highlighted tiles: Wood x3, Stone x2 (not learned yet)." `focus` is the resource the hut
+## works ("" to leave that out): "... It works only Wood."
+static func gather_text(s: Sim, tiles: Array, focus := "", short := false) -> String:
 	var r := s.town.hut_radius()
 	if tiles.is_empty():
 		return "No resources within %d tiles: it would have nothing to gather (bare grass gives nothing)." % r
@@ -265,6 +322,13 @@ static func gather_text(s: Sim, tiles: Array) -> String:
 		counts[item] = counts.get(item, 0) + 1
 	var out: Array = []
 	for id in counts:
-		var known := "" if s.people.knows(id) else " not yet learned (gather by hand %dx)" % Data.LEARN_CLICKS
+		var known := ""
+		if not s.people.knows(id):
+			known = " (not learned yet)" if short else " not yet learned (gather by hand %dx)" % Data.LEARN_CLICKS
 		out.append("%s x%d%s" % [Data.ITEMS[id]["name"], counts[id], known])
-	return "Gathers from the %d highlighted tiles (within %d), taking turns: %s." % [tiles.size(), r, ", ".join(out)]
+	var line := "Gathers from the %d highlighted tiles: %s." % [tiles.size(), ", ".join(out)]
+	if not short:
+		line = "Gathers from the %d highlighted tiles (within %d): %s." % [tiles.size(), r, ", ".join(out)]
+	if focus != "":
+		line += " It works only %s." % Data.ITEMS[focus]["name"]
+	return line

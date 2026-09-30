@@ -95,12 +95,13 @@ static func _deliver(s, k: Dictionary, b: Dictionary) -> void:
 	k["trip"] = false
 
 
-## The next tile in the hut's rotation that the Kith know how to gather and can reach, or
-## Vector2i(-1, -1) when there's nothing (bare grass gives nothing: Fiber comes from flax).
+## The next tile in the hut's rotation among those that hold its focus (a hut works one resource), or
+## Vector2i(-1, -1) when there's nothing: the focus isn't learned yet, none is in reach, or none can be
+## walked to.
 static func next_gather_tile(s, k: Dictionary, b: Dictionary) -> Vector2i:
-	var tiles: Array = s.town.gather_tiles(b["pos"]).filter(
-		func(t): return s.people.knows(Data.TILES[s.world.tile_at(t)]["yields"])
-	)
+	if not s.people.knows_focus(b):
+		return Vector2i(-1, -1)
+	var tiles: Array = s.town.focus_tiles(b)
 	for _attempt in tiles.size():
 		var t: Vector2i = tiles[b["gather_index"] % tiles.size()]
 		b["gather_index"] += 1
@@ -135,12 +136,19 @@ static func click(s, i: int) -> String:
 ## Queue one trip at hut i (up to Data.TRIP_QUEUE). Returns what happened, for the map.
 static func dispatch(s, i: int) -> String:
 	var b: Dictionary = s.town.buildings[i]
-	if not s.people.knows_any(b["pos"]):
-		return "Nothing learned yet: gather by hand %dx" % Data.LEARN_CLICKS
+	if not s.people.knows_focus(b):
+		return "Nothing learned yet: %s" % teach_note(b)
 	if b["trips"] >= Data.TRIP_QUEUE:
 		return "Trips full (%d)" % Data.TRIP_QUEUE
 	b["trips"] += 1
 	return "Trip %d/%d" % [b["trips"], Data.TRIP_QUEUE]
+
+
+## What a hut needs before it can work: its focus taught by hand, or something in reach to focus on.
+static func teach_note(b: Dictionary) -> String:
+	if b["focus"] == "":
+		return "nothing in reach to gather"
+	return "gather %s by hand %dx to teach it" % [Data.ITEMS[b["focus"]]["name"], Data.LEARN_CLICKS]
 
 
 ## True while building b is partway through a cycle that a rush can finish.
@@ -233,8 +241,8 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 			"to_depot":
 				b["status"] = "Carrying %s to the stockpile" % Data.ITEMS[k["carry"].keys()[0]]["name"]
 			"home":
-				if not s.people.knows_any(b["pos"]):
-					b["status"] = "Knows nothing here yet: gather by hand %dx to teach it" % Data.LEARN_CLICKS
+				if not s.people.knows_focus(b):
+					b["status"] = "Can't work it yet: " + teach_note(b)
 				elif not Roads.automated(s, b) and b["trips"] <= 0:
 					b["status"] = "Waiting: click to send a trip" + road_note(s, b)
 				else:

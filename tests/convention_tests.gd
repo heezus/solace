@@ -306,7 +306,7 @@ func test_rates_count_making_and_using() -> void:
 	s2.tech_tree.researched["haulers"] = true
 	t.place_free(s2, "gatherers_hut", s2.world.camp_pos + Vector2i(-2, 0))
 	t.road_link(s2, s2.world.camp_pos + Vector2i(-2, 0))
-	for i in 120:
+	for i in 240:  # two minutes: the starting food credit is eaten first, then whole berries come off the stockpile
 		s2.tick(0.5)
 	t.check(s2.economy.flows.rate("wood") > 0.0, "a working hut makes wood (%.2f/s)" % s2.economy.flows.rate("wood"))
 	t.check(s2.economy.flows.rate("berries") < 0.0, "the Kith eat berries (%.2f/s)" % s2.economy.flows.rate("berries"))
@@ -439,7 +439,10 @@ func test_building_panel_texts() -> void:
 	t.check(BuildingPanel.trip_text(s, s.world.camp_pos) == "", "the Hearth has no trip line")
 	t.check(BuildingPanel.recipe_text(s, hut).begins_with("Gathers from"), "a hut lists what it gathers")
 	var worker := BuildingPanel.worker_text(s, hut)
-	t.check(worker.begins_with("Worker: %s the " % Data.PEOPLE_NAMES[0]), "and its worker, by name and job: " + worker)
+	t.check(
+		worker.begins_with("%s the " % Data.PEOPLE_NAMES[0]) and worker.contains("works here"),
+		"and its worker, by name and job, in a sentence: " + worker
+	)
 	var q := s.world.camp_pos + Vector2i(2, 0)
 	t.place_free(s, "twine_post", q)
 	var post: Dictionary = s.town.buildings[s.town.building_at[q]]
