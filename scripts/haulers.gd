@@ -5,6 +5,11 @@ extends RefCounted
 const Data = preload("res://scripts/data.gd")
 
 
+## Items a hauler carries per trip: Carrying Poles double it.
+static func carry_cap(s) -> int:
+	return Data.CARRY * (2 if s.researched.has("carrying_poles") else 1)
+
+
 static func tick(s, k: Dictionary, delta: float) -> void:
 	if k["task"].is_empty():
 		if not _find_task(s, k) and k["path"].is_empty() and s._tile_of(k) != s._nearest_depot(s._tile_of(k)):
@@ -17,7 +22,7 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 	var b: Dictionary = s.buildings[t["building"]]
 	match k["phase"]:
 		"to_pickup":
-			var left: int = s.carry_cap()
+			var left: int = carry_cap(s)
 			for id in b["out"].keys():
 				var n: int = mini(b["out"][id], left)
 				if n > 0:
@@ -62,21 +67,21 @@ static func _find_task(s, k: Dictionary) -> bool:
 	var best := {}
 	var best_d := INF
 	for i in s.buildings.size():
-		var b: Dictionary = s.buildings[i]
-		if not s.needs_worker(b) or b["unreachable"] > 0.0:
+		var cand: Dictionary = s.buildings[i]
+		if not s.needs_worker(cand) or cand["unreachable"] > 0.0:
 			continue
-		var d := Vector2(here).distance_to(Vector2(b["pos"]))
+		var d := Vector2(here).distance_to(Vector2(cand["pos"]))
 		if d >= best_d:
 			continue
-		if s.buffered(b["out"]) > 0 and not b["claimed"]:
+		if s.buffered(cand["out"]) > 0 and not cand["claimed"]:
 			best = {"kind": "pickup", "building": i}
 			best_d = d
 			continue
-		var def: Dictionary = Data.BUILDINGS[b["type"]]
-		var inputs: Dictionary = {} if b["paused"] else def.get("in", {})
+		var def: Dictionary = Data.BUILDINGS[cand["type"]]
+		var inputs: Dictionary = {} if cand["paused"] else def.get("in", {})
 		for id in inputs:
-			var want: int = def["in"][id] * 2 - b["inbuf"].get(id, 0) - b["incoming"].get(id, 0)
-			var n := mini(mini(want, s.inv.get(id, 0)), s.carry_cap())
+			var want: int = def["in"][id] * 2 - cand["inbuf"].get(id, 0) - cand["incoming"].get(id, 0)
+			var n := mini(mini(want, s.inv.get(id, 0)), carry_cap(s))
 			if n > 0:
 				best = {"kind": "deliver", "building": i, "item": id, "amount": n}
 				best_d = d

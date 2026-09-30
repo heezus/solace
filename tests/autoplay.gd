@@ -10,13 +10,16 @@ const Data = preload("res://scripts/data.gd")
 const GameState = preload("res://scripts/game_state.gd")
 const Research = preload("res://scripts/research.gd")
 const Rules = preload("res://scripts/rules.gd")
+const Hands = preload("res://scripts/hands.gd")
+const Workers = preload("res://scripts/workers.gd")
 
 const DT := 0.1
 const THINK := 1.0  # seconds between decisions
-## Clicks a second: brisk while gathering by hand is the main way to get anything, easing off once
-## haulers carry for you.
-const CLICKS_EARLY := 1.0
-const CLICKS_LATE := 0.4
+## Building clicks a second (dispatching trips, loading workshops, rushing), taken between harvests.
+const CLICKS_EARLY := 2.0
+const CLICKS_LATE := 1.0
+## Share of the time the bot holds on a tile once haulers carry for it (always, before that).
+const HOLD_LATE := 0.4
 const RAW_TILE := {
 	"wood": "tree",
 	"stone": "rock",
@@ -33,40 +36,75 @@ var s: GameState
 var clock := 0.0
 var clicks := 0.0
 var think := 0.0
-var log: Array = []
+var lines: Array = []
 var known := {}  # techs already logged
 var trace := false  # log what the next tech is waiting on, every minute
-var clicked := {}  # what the clicks went to since the last trace
+var clicked := {}  # what the harvests and clicks went to since the last trace
+var hold_tile := Vector2i(-1, -1)  # the tile the bot is holding on, (-1, -1) for none
 var reach := {}  # tiles the Kith can walk to from the Hearth, refreshed each decision
 
 
-func play(seed: int, max_seconds: float) -> Dictionary:
-	s = GameState.new()
-	s.generate(seed)
-	Research.set_goal(s, "bronze_dawn")
+func play(map_seed: int, max_seconds: float) -> Dictionary:
+	var game := GameState.new()
+	game.generate(map_seed)
+	attach(game)
 	while clock < max_seconds and not s.won:
+		step(true)
+	return {"won": s.won, "seconds": clock, "log": lines}
+
+
+## Play `game` from here on: step() then advances it (tests/tools/play_pass.gd runs it under the live UI).
+func attach(game: GameState) -> void:
+	s = game
+	Research.set_goal(s, "bronze_dawn")
+
+
+## One DT of play: tick the simulation (unless something else ticks it), then click and decide.
+func step(tick: bool) -> void:
+	if tick:
 		s.tick(DT)
-		clock += DT
 		s.events.clear()
-		_log_research()
-		clicks += DT * (CLICKS_LATE if s.has_haulers() else CLICKS_EARLY)
-		if trace and fmod(clock, 60.0) < DT - 0.001:
-			_trace()
-		think -= DT
-		if think <= 0.0:
-			think = THINK
-			_decide()
-		while clicks >= 1.0:
+	clock += DT
+	_log_research()
+	clicks += DT * (CLICKS_LATE if s.has_haulers() else CLICKS_EARLY)
+	if trace and fmod(clock, 60.0) < DT - 0.001:
+		_trace()
+	clicks = minf(clicks, 4.0)
+	think -= DT
+	if think <= 0.0:
+		think = THINK
+		_decide()
+	# The hand is free between harvests: that's when it clicks buildings (which lets go of the hold).
+	if _harvest() or hold_tile.x < 0:
+		while clicks >= 1.0 and _click():
 			clicks -= 1.0
-			_click()
-	return {"won": s.won, "seconds": clock, "log": log}
+			s.release_harvest()
+			hold_tile = Vector2i(-1, -1)
+
+
+## Hold on the tile for what's shortest; true when a harvest just completed.
+func _harvest() -> bool:
+	if s.has_haulers() and fmod(clock, 10.0) >= HOLD_LATE * 10.0:
+		s.release_harvest()
+		hold_tile = Vector2i(-1, -1)
+		return false
+	if hold_tile.x < 0 or Hands.item_at(s, hold_tile) == "":  # a building may have gone up on it
+		hold_tile = _pick_tile()
+		if hold_tile.x < 0:
+			return false
+	var item: String = Data.TILES[s.tile_at(hold_tile)]["yields"]
+	if s.hold_harvest(hold_tile, DT) == "":
+		return false
+	clicked[item] = clicked.get(item, 0) + 1
+	hold_tile = Vector2i(-1, -1)
+	return true
 
 
 func _log_research() -> void:
 	for tech in s.researched:
 		if not known.has(tech):
 			known[tech] = true
-			log.append("%5.0f s  %s  (Kith %d)" % [clock, Data.TECHS[tech]["name"], s.kith.size()])
+			lines.append("%5.0f s  %s  (Kith %d)" % [clock, Data.TECHS[tech]["name"], s.kith.size()])
 
 
 func _trace() -> void:
@@ -77,7 +115,7 @@ func _trace() -> void:
 		for id in cost:
 			if s.inv.get(id, 0) < cost[id]:
 				missing[id] = "%d/%d" % [s.inv.get(id, 0), cost[id]]
-	log.append(
+	lines.append(
 		(
 			"%5.0f s  .. next %s missing %s  Kith %d, workers %d, clicks %s"
 			% [clock, next, missing, s.kith.size(), _workers(), clicked]
@@ -103,8 +141,8 @@ func _short() -> Dictionary:
 		_want(want, Data.BUILDINGS["dwelling"]["cost"], 1)
 	for type in _workshops_due():
 		_want(want, Data.BUILDINGS[type]["cost"], 1)
-	var tools: int = _workers() + 1 - s.tools_held() - s.inv.get("flint_tools", 0)
-	if s.recipe_unlocked("flint_tools") and tools > 0:
+	var tools: int = _workers() + 1 - Hands.tools_held(s) - s.inv.get("flint_tools", 0)
+	if Hands.recipe_unlocked(s, "flint_tools") and tools > 0:
 		_want(want, Data.RECIPES["flint_tools"]["in"], mini(tools, 2))
 	for made in ["flour", "brick", "charcoal", "rope"]:
 		var n: int = want.get(made, 0) - s.inv.get(made, 0)
@@ -185,22 +223,53 @@ func _most_short_raw(short: Dictionary) -> String:
 # --- Clicks ------------------------------------------------------------------
 
 
-## One click: collect from a full building before haulers, craft a tool, or gather what's shortest.
-func _click() -> void:
+## One click on a building, if one is worth it: before haulers, send hut trips and load or empty
+## workshops; after, rush the building making what's shortest. Crafting a tool counts too.
+## Returns false when there's nothing to click.
+func _click() -> bool:
 	if not s.has_haulers():
 		for i in s.buildings.size():
 			var b: Dictionary = s.buildings[i]
 			var def: Dictionary = Data.BUILDINGS[b["type"]]
+			if def["kind"] == "gatherer" and b["worker"] >= 0 and b["trips"] < Data.TRIP_QUEUE:
+				if Workers.knows_any(s, b["pos"]):
+					Workers.click(s, i)
+					clicked["trip"] = clicked.get("trip", 0) + 1
+					return true
 			var hungry := false
 			if def["kind"] == "processor" and not b["paused"] and s.can_afford(def["in"]):
 				for id in def["in"]:
 					hungry = hungry or b["inbuf"].get(id, 0) < def["in"][id]
 			if s.buffered(b["out"]) >= 5 or hungry:
-				s.haul(i)
-				return
-	if s.recipe_unlocked("flint_tools") and s.tools_held() + s.inv.get("flint_tools", 0) < _workers() + 1:
-		if s.inv.get("flint", 0) >= 2 and s.inv.get("wood", 0) >= 2 and s.craft("flint_tools"):
-			return
+				Workers.click(s, i)
+				return true
+	if Hands.recipe_unlocked(s, "flint_tools") and Hands.tools_held(s) + s.inv.get("flint_tools", 0) < _workers() + 1:
+		if s.inv.get("flint", 0) >= 2 and s.inv.get("wood", 0) >= 2 and Hands.craft(s, "flint_tools"):
+			return true
+	return _rush()
+
+
+## Rush a working building, workshops first (their goods take longest), then huts.
+func _rush() -> bool:
+	var best := -1
+	for i in s.buildings.size():
+		var b: Dictionary = s.buildings[i]
+		if not Workers.can_rush(s, b):
+			continue
+		if Data.BUILDINGS[b["type"]]["kind"] == "processor":
+			best = i
+			break
+		if best < 0:
+			best = i
+	if best < 0:
+		return false
+	Workers.rush(s, best)
+	clicked["rush"] = clicked.get("rush", 0) + 1
+	return true
+
+
+## The tile to hold on next: the raw good that's shortest, or Berries when food runs low.
+func _pick_tile() -> Vector2i:
 	var item := _next_click()
 	# Kith are born only with food to spare, so keep some while there's room for them.
 	var room := s.kith.size() < s.housing()
@@ -208,10 +277,7 @@ func _click() -> void:
 		item = "berries"
 	if item == "":
 		item = "stone" if s.inv.get("stone", 0) < s.inv.get("wood", 0) else "wood"
-	var p := _nearest_tile(RAW_TILE[item], s.camp_pos)
-	if p.x >= 0:
-		s.gather_by_hand(p)
-		clicked[item] = clicked.get(item, 0) + 1
+	return _nearest_tile(RAW_TILE[item], s.camp_pos)
 
 
 func _nearest_tile(tile: String, from: Vector2i) -> Vector2i:
@@ -298,7 +364,7 @@ func _decide() -> void:
 	if _house_wanted() and s.food_total() >= s.kith.size() * 2.0 + Data.BIRTH_FOOD:
 		if _place_near_hearth("dwelling"):
 			return
-	if s.has_haulers() and _place_storehouse():
+	if s.building_unlocked("storehouse") and _place_storehouse():
 		return
 	if _explore(short):
 		return
@@ -325,7 +391,7 @@ func _decide() -> void:
 		if n > 0 and s.building_unlocked(type) and _count(type) < 1 + mini(int(n / 30.0), 1):
 			if _place_workshop(type):
 				return
-	if s.building_unlocked("field") and _count("field") < 8 and short.get("grain", 0) > 0 and _place_field():
+	if s.building_unlocked("field") and s.fields.size() < 8 and short.get("grain", 0) > 0 and _place_field():
 		return
 	if s.has_haulers() and not short.has("stone"):
 		_lay_roads()
@@ -522,7 +588,7 @@ func _place_best(type: String, score: Callable) -> bool:
 				best_score = v
 	if best.x < 0 or not s.place(type, best):
 		return false
-	log.append("%5.0f s    + %s at %s" % [clock, Data.BUILDINGS[type]["name"], best])
+	lines.append("%5.0f s    + %s at %s" % [clock, Data.BUILDINGS[type]["name"], best])
 	return true
 
 

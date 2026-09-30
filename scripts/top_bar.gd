@@ -9,6 +9,8 @@ const Data = preload("res://scripts/data.gd")
 const GameState = preload("res://scripts/game_state.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
+const Hands = preload("res://scripts/hands.gd")
+const Workers = preload("res://scripts/workers.gd")
 
 const RAW := ["wood", "stone", "flint", "fiber", "clay", "berries", "grain", "fish"]
 const LOSS := Color("ff9aa9")
@@ -21,6 +23,7 @@ var jobs_label: Label
 var food_label: Label
 var food_bar: ProgressBar
 var tools_label: Label
+var click_label: Label
 var chips := {}  # item -> {"box", "count", "rate"}
 var flow_panel: PanelContainer
 var flow_box: VBoxContainer
@@ -43,7 +46,7 @@ func setup(game: GameState) -> void:
 	kv.add_child(kith_label)
 	kv.add_child(jobs_label)
 	kv.mouse_filter = Control.MOUSE_FILTER_PASS
-	kv.tooltip_text = "Kith work buildings and haul goods. Each building needs one. They grow with spare food and room."
+	kv.tooltip_text = ""  # filled in refresh() with the job counts
 	h.add_child(kv)
 	h.add_child(VSeparator.new())
 
@@ -61,6 +64,11 @@ func setup(game: GameState) -> void:
 	tools_label = Ui.label("", 12)
 	tools_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	h.add_child(tools_label)
+	click_label = Ui.label("", 12)
+	click_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	click_label.add_theme_color_override("font_color", Ui.HIGHLIGHT)
+	click_label.custom_minimum_size = Vector2(118, 0)
+	h.add_child(click_label)
 	h.add_child(VSeparator.new())
 
 	var goods := HFlowContainer.new()
@@ -157,7 +165,11 @@ func refresh(paused: bool, speed: int) -> void:
 	var jobs := 0
 	for b in state.buildings:
 		jobs += 1 if state.needs_worker(b) and not b["paused"] else 0
-	kith_label.text = "Kith %d / %d" % [state.kith.size(), state.housing()]
+	kith_label.text = "%s %d / %d" % [Data.PEOPLE["many"], state.kith.size(), state.housing()]
+	kith_label.get_parent().tooltip_text = (
+		"%s\n%s work buildings and haul goods. Each building needs one. They grow with spare food and room."
+		% [Workers.job_counts(state), Data.PEOPLE["many"]]
+	)
 	var note := Ui.growth_note(state)
 	kith_label.add_theme_color_override("font_color", Ui.HIGHLIGHT if note != "" else Ui.GOOD)
 	jobs_label.text = "Jobs %d / %d  ·  %d %s" % [workers, jobs, idle, "hauling" if state.has_haulers() else "idle"]
@@ -177,7 +189,7 @@ func refresh(paused: bool, speed: int) -> void:
 	food_bar.value = minf(food, food_bar.max_value)
 	food_bar.modulate = Ui.BAD if fr < -0.005 else Ui.HIGHLIGHT
 	tools_label.visible = state.seen.has("flint_tools")
-	var held := state.tools_held()
+	var held := Hands.tools_held(state)
 	tools_label.text = "Tools %d/%d Kith" % [held, state.kith.size()]
 	tools_label.tooltip_text = (
 		"Kith holding a Flint Tool work 50%% faster. Each tool lasts %d jobs; spares in the stockpile: %d."
@@ -195,11 +207,19 @@ func refresh(paused: bool, speed: int) -> void:
 		c["rate"].text = rate_text(r)
 		c["rate"].add_theme_color_override("font_color", rate_color(r))
 		c["box"].tooltip_text = "" if flow_item == id else Data.ITEMS[id]["name"]
-		c["box"].add_theme_stylebox_override("panel", _ring() if flow_item == id else StyleBoxEmpty.new())
+		if flow_item == id:
+			c["box"].add_theme_stylebox_override("panel", _ring())
+		else:
+			c["box"].add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	for v in speed_buttons:
 		speed_buttons[v].button_pressed = paused if v == 0 else (not paused and v == speed)
 	if flow_item != "":
 		_fill_flow(flow_item)
+
+
+## What a click on the hovered resource tile gives, e.g. "Click: +4 Wood"; "" when not over one.
+func set_click_hint(text: String) -> void:
+	click_label.text = text
 
 
 func _ring() -> StyleBoxFlat:

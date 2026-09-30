@@ -11,6 +11,8 @@ const GameState = preload("res://scripts/game_state.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
+const Workers = preload("res://scripts/workers.gd")
+const Hands = preload("res://scripts/hands.gd")
 
 const WIDTH := 252.0
 const INSET := Color("1b3a47")
@@ -52,7 +54,7 @@ func setup(game: GameState) -> void:
 	close.pressed.connect(func(): closed.emit())
 	head.add_child(close)
 
-	for key in ["desc", "recipe", "worker", "math"]:
+	for key in ["desc", "recipe", "worker", "math", "click"]:
 		parts[key] = _wrapped(12)
 		v.add_child(parts[key])
 	parts["math"].add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
@@ -90,8 +92,8 @@ func setup(game: GameState) -> void:
 	parts["demolish"] = demolish
 
 
-func _wrapped(size: int) -> Label:
-	var l := Ui.label("", size)
+func _wrapped(font_size: int) -> Label:
+	var l := Ui.label("", font_size)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD
 	l.custom_minimum_size = Vector2(WIDTH - 60, 0)
 	return l
@@ -160,6 +162,9 @@ func refresh() -> void:
 	parts["worker"].visible = state.needs_worker(b)
 	parts["math"].text = Bonuses.text(state, b)
 	parts["math"].visible = state.needs_worker(b) and parts["math"].text != ""
+	parts["click"].text = click_text(state, b)
+	parts["click"].visible = parts["click"].text != ""
+	parts["click"].add_theme_color_override("font_color", Ui.HIGHLIGHT)
 	var held := state.buffered(b["out"])
 	parts["holding"].visible = state.needs_worker(b)
 	parts["bar"].visible = state.needs_worker(b)
@@ -197,18 +202,40 @@ static func recipe_text(s: GameState, b: Dictionary) -> String:
 	return ""
 
 
-## "Worker: 1 Kith · Flint Tool, 32 jobs left".
+## What clicking the building does now: send a trip (before Paths & Haulers), or rush it.
+static func click_text(s: GameState, b: Dictionary) -> String:
+	if not s.needs_worker(b):
+		return ""
+	var kind: String = Data.BUILDINGS[b["type"]]["kind"]
+	if kind == "gatherer" and not s.has_haulers():
+		var pips := ""
+		for n in Data.TRIP_QUEUE:
+			pips += "●" if n < b["trips"] else "○"
+		return (
+			"Trips %s  ·  click the hut to send its %s for a bundle (up to %d queued)"
+			% [pips, Data.PEOPLE["one"], Data.TRIP_QUEUE]
+		)
+	if b["rush_cd"] > 0.0:
+		return "Rush ready in %d s" % ceili(b["rush_cd"])
+	if Workers.can_rush(s, b):
+		return "Click to rush: finish this cycle now (then %d s to recover)" % int(Data.RUSH_COOLDOWN)
+	return "Click to rush while it's working"
+
+
+## "Worker: Aro the Woodcutter · Flint Tool, 32 jobs left".
 static func worker_text(s: GameState, b: Dictionary) -> String:
+	var job := Workers.building_job(s, b)
 	if b["paused"]:
-		return "Worker: none while paused"
+		return "Worker: no %s while paused" % job
 	if b["worker"] < 0:
-		return "Worker: none yet · waiting for a free Kith"
+		return "Worker: no %s yet · waiting for a free %s" % [job, Data.PEOPLE["one"]]
 	var k: Dictionary = s.kith[b["worker"]]
+	var who := "Worker: " + Workers.title_of(s, k)
 	if k["tool"] > 0:
-		return "Worker: 1 Kith · Flint Tool, %d jobs left" % k["tool"]
-	if s.recipe_unlocked("flint_tools"):
-		return "Worker: 1 Kith · no tool (craft Flint Tools: +50% speed)"
-	return "Worker: 1 Kith"
+		return who + " · Flint Tool, %d jobs left" % k["tool"]
+	if Hands.recipe_unlocked(s, "flint_tools"):
+		return who + " · no tool (craft Flint Tools: +50% speed)"
+	return who
 
 
 ## "To Hearth · 11 tiles · 22 s a trip", or "" for the Hearth itself.
@@ -234,5 +261,6 @@ static func gather_text(s: GameState, tiles: Array) -> String:
 		counts[item] = counts.get(item, 0) + 1
 	var out: Array = []
 	for id in counts:
-		out.append("%s x%d" % [Data.ITEMS[id]["name"], counts[id]])
+		var known := "" if s.knows(id) else " not yet learned (gather by hand %dx)" % Data.LEARN_CLICKS
+		out.append("%s x%d%s" % [Data.ITEMS[id]["name"], counts[id], known])
 	return "Gathers from the %d highlighted tiles (within %d), taking turns: %s." % [tiles.size(), r, ", ".join(out)]

@@ -18,8 +18,14 @@ static func goal_met(s, g: Dictionary) -> bool:
 	if g.has("building"):
 		return _has_building(s, g["building"])
 	match g["id"]:
-		"gather":
-			return s.inv["wood"] >= 10 and s.inv["stone"] >= 10 and s.inv["flint"] >= 5 or s.researched.has("knapping")
+		"learn_wood":
+			return s.knows("wood")
+		"learn_stone":
+			return s.knows("stone") and s.knows("flint")
+		"trip":
+			return "first_trip" in s.story_events or s.has_haulers()
+		"rush":
+			return s.rushes > 0
 		"tools":
 			return s.hand_tools
 		"berries":

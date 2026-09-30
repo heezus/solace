@@ -14,6 +14,8 @@ const BuildingPanel = preload("res://scripts/building_panel.gd")
 const Overlays = preload("res://scripts/overlays.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const Rules = preload("res://scripts/rules.gd")
+const Workers = preload("res://scripts/workers.gd")
+const Hands = preload("res://scripts/hands.gd")
 
 const TILE := 32.0
 const MAP_ORIGIN := Vector2.ZERO  # the node's transform scales and centers the map
@@ -50,6 +52,7 @@ var win_overlay: Control
 var ui_refresh := 0.0
 var paused := false
 var speed := 1  # simulation steps per frame: 1x, 2x or 3x
+var holding := false  # the left button is down on a resource tile: hold to harvest
 
 
 func _ready() -> void:
@@ -65,7 +68,7 @@ func _process(delta: float) -> void:
 		for i in speed:
 			state.tick(delta)
 	for e in state.events:
-		if e == "A Kith was born":
+		if e == Data.BORN_EVENT % Data.PEOPLE["one"]:
 			var at := Overlays.center(state.camp_pos) - Vector2(0, 12)
 			popups.append({"pos": at, "text": "+1 Kith", "t": 0.0, "col": KITH.lightened(0.3)})
 			_toast("New Kith arrive at the Hearth while food lasts", 2.5)
@@ -84,6 +87,7 @@ func _process(delta: float) -> void:
 	toast_label.modulate.a = clampf(toast_time, 0.0, 1.0)
 	_layout()
 	hover = _tile_under()
+	_hold(delta)
 	ui_refresh -= delta
 	if ui_refresh <= 0.0:
 		ui_refresh = 0.2
@@ -120,6 +124,7 @@ func _layout() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_stop_holding()
 		if drag_from.x >= 0:
 			_lay_line()
 	elif event is InputEventMouseButton and event.pressed:
@@ -195,18 +200,39 @@ func _click_tile(p: Vector2i) -> void:
 			_toast(err, 2.0)
 		return
 	if state.building_at.has(p):
-		var i: int = state.building_at[p]
-		if not state.has_haulers():
-			state.haul(i)
+		var note := Workers.click(state, state.building_at[p])
+		if note != "":
+			popups.append({"pos": _tile_center(p), "text": note, "t": 0.0})
 		building_panel.select(p)
 		return
 	building_panel.select(Vector2i(-1, -1))
-	var first_look := not state.shard_seen
-	var msg := state.gather_by_hand(p)
-	if msg == Data.SHARD_TEXT:
-		_toast(msg + ("\nA new idea stirs in the tech tree: Star Lore." if first_look else ""), 8.0)
-	elif msg != "":
-		popups.append({"pos": _tile_center(p), "text": msg, "t": 0.0})
+	if state.tile_at(p) == "shard" and state.fog.is_revealed(p):
+		var first_look := not state.shard_seen
+		_toast(state.gather_by_hand(p) + ("\nA new idea stirs in the tech tree: Star Lore." if first_look else ""), 8.0)
+		return
+	# Everything else is gathered by holding: _process fills the ring while the button stays down.
+	state.release_harvest()
+	holding = true
+
+
+## Hold to harvest, each frame the button is down: over a Control (a bar, a panel) it doesn't count.
+func _hold(delta: float) -> void:
+	if not holding:
+		return
+	if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or placing != "":
+		_stop_holding()
+		return
+	if get_viewport().gui_get_hovered_control() != null or not state.in_bounds(hover):
+		state.release_harvest()
+		return
+	var msg := state.hold_harvest(hover, delta)
+	if msg != "":
+		popups.append({"pos": _tile_center(hover), "text": msg, "t": 0.0})
+
+
+func _stop_holding() -> void:
+	holding = false
+	state.release_harvest()
 
 
 ## Tear down what's at p for half its cost back.
@@ -244,7 +270,7 @@ func _build_ui() -> void:
 	layer.add_child(bottom_bar)
 	bottom_bar.setup(state)
 	bottom_bar.build_picked.connect(func(type): placing = "" if placing == type else type)
-	bottom_bar.craft_picked.connect(func(r): state.craft(r))
+	bottom_bar.craft_picked.connect(func(r): Hands.craft(state, r))
 	bottom_bar.tech_pressed.connect(func(): tech_panel.visible = not tech_panel.visible)
 	bottom_bar.demolish_pressed.connect(func(): placing = "" if placing == "demolish" else "demolish")
 
@@ -342,6 +368,8 @@ func _refresh_ui() -> void:
 		goal_labels[1].visible = true
 		goal_labels[1].text = "All goals done."
 	info_label.text = _hover_text()
+	var item := _hover_item()
+	top_bar.set_click_hint(hold_hint(item) if item != "" else "")
 
 
 func _hover_text() -> String:
@@ -364,6 +392,22 @@ func _hover_text() -> String:
 		return "Point at the map to see what's there."
 	if not state.fog.is_revealed(hover):
 		return "Unexplored. Build nearby to see it."
+	var who := _kith_here(hover)
+	return (who + "\n\n" if who != "" else "") + _tile_text()
+
+
+## "Aro the Woodcutter, Tam the Hauler" for the Kith standing on or walking through tile p.
+func _kith_here(p: Vector2i) -> String:
+	var names: Array = []
+	for k in state.kith:
+		var at: Vector2 = k["pos"]
+		if Vector2i(roundi(at.x), roundi(at.y)) == p:
+			names.append(Workers.title_of(state, k))
+	return ", ".join(names)
+
+
+## What's on the hovered tile: a building, a road, a resource or open ground.
+func _tile_text() -> String:
 	if state.building_at.has(hover):
 		var b: Dictionary = state.buildings[state.building_at[hover]]
 		var def: Dictionary = Data.BUILDINGS[b["type"]]
@@ -375,7 +419,8 @@ func _hover_text() -> String:
 			s += "\nHolding " + Ui.cost_text(b["out"])
 		if def["kind"] == "gatherer":
 			s += "\n\n" + BuildingPanel.gather_text(state, state.gather_tiles(hover))
-		return s + "\n\nClick for its panel."
+		var click := BuildingPanel.click_text(state, b)
+		return s + "\n\n" + (click + "\n" if click != "" else "") + "Click for its panel."
 	var t: Dictionary = Data.TILES[state.tile_at(hover)]
 	if state.roads.has(hover):
 		if state.tile_at(hover) == "river":
@@ -383,11 +428,39 @@ func _hover_text() -> String:
 		return "Road on %s. Kith walk twice as fast here." % t["name"]
 	var hint := Overlays.blocked_hint(state, hover)
 	if t["yields"] != "":
-		var s := "%s\nClick to gather %s." % [t["name"], Data.ITEMS[t["yields"]]["name"]]
-		if Data.FOOD_VALUE.has(t["yields"]):
-			s += " It's food: running buildings eat it."
+		var item: String = t["yields"]
+		var s := "%s\n%s. Hold the mouse on it to gather." % [t["name"], hold_hint(item)]
+		if Data.FOOD_VALUE.has(item):
+			s += " It's food: the %s eat it." % Data.PEOPLE["many"]
+		s += "\n" + learn_text(item)
 		return s + ("\n" + hint + "." if hint != "" else "")
 	return t["name"] + ("\n" + hint + "." if hint != "" else "")
+
+
+## "Hold: +3 Wood, 0.7s".
+func hold_hint(item: String) -> String:
+	var secs := str(snappedf(Hands.hold_time(state, item), 0.1))
+	return "Hold: +%d %s, %ss" % [state.harvest_yield(item), Data.ITEMS[item]["name"], secs]
+
+
+## How far a Kith is from learning to gather `item` by watching you.
+func learn_text(item: String) -> String:
+	var item_name: String = Data.ITEMS[item]["name"]
+	if state.knows(item):
+		return "%s knows how to gather %s: huts can gather it." % [state.learned[item], item_name]
+	return (
+		"Harvested by hand %d/%d. A %s is watching and will learn %s."
+		% [state.hand_counts.get(item, 0), Data.LEARN_CLICKS, Data.PEOPLE["one"], item_name]
+	)
+
+
+## The tile under the mouse gives this when clicked, or "" if it isn't a resource you can see.
+func _hover_item() -> String:
+	if placing != "" or not state.in_bounds(hover) or not state.fog.is_revealed(hover):
+		return ""
+	if state.building_at.has(hover) or state.roads.has(hover) or state.tile_at(hover) == "":
+		return ""
+	return Data.TILES[state.tile_at(hover)]["yields"]
 
 
 func _progress(cost: Dictionary, limit: int) -> String:
@@ -491,7 +564,15 @@ func _draw() -> void:
 		)
 	elif state.in_bounds(hover):
 		draw_rect(_tile_rect(hover).grow(-1), Color(1, 1, 1, 0.8), false, 2.0)
+		var item := _hover_item()
+		if item != "":
+			var hr := _tile_rect(hover)
+			var tag := hold_hint(item)
+			if not state.knows(item):
+				tag += "  ·  taught %d/%d" % [state.hand_counts.get(item, 0), Data.LEARN_CLICKS]
+			Art.pill(self, Vector2(hr.get_center().x, hr.end.y + 4), tag, Color.WHITE, OUTLINE, 12)
 
+	_draw_hold_ring()
 	if paused:
 		Art.pill(self, Vector2(GameState.WIDTH * TILE / 2.0, 8), "Paused · Space to resume", GOAL_COLOR, OUTLINE, 16)
 
@@ -569,10 +650,50 @@ func _draw_building(b: Dictionary) -> void:
 			11,
 			OUTLINE
 		)
+	_draw_trips(b, r)
+	_draw_rush(b, r)
 	if b["status"].begins_with("Hungry") or b["status"].begins_with("No power"):
 		draw_string(
 			ThemeDB.fallback_font, r.position + Vector2(-2, 10), "!", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color("ef476f")
 		)
+
+
+## Hold to harvest: an outline ring over the held tile, with a highlight arc filling clockwise from the top.
+func _draw_hold_ring() -> void:
+	if not holding or not state.in_bounds(state.harvest_tile) or Hands.item_at(state, state.harvest_tile) == "":
+		return
+	var c := _tile_center(state.harvest_tile)
+	var radius := TILE * 0.42
+	draw_arc(c, radius, 0.0, TAU, 40, OUTLINE, 7.0, true)
+	draw_arc(c, radius, 0.0, TAU, 40, Color(1, 1, 1, 0.3), 3.0, true)
+	if state.harvest_frac > 0.0:
+		var to := -PI / 2.0 + TAU * state.harvest_frac
+		draw_arc(c, radius, -PI / 2.0, to, maxi(4, int(40 * state.harvest_frac)), GOAL_COLOR, 4.0, true)
+
+
+## Before Paths & Haulers, a hut shows its trip queue as pips along the top: gold for each queued trip.
+func _draw_trips(b: Dictionary, r: Rect2) -> void:
+	if Data.BUILDINGS[b["type"]]["kind"] != "gatherer" or state.has_haulers():
+		return
+	for n in Data.TRIP_QUEUE:
+		var c := r.position + Vector2(r.size.x / 2.0 + (n - (Data.TRIP_QUEUE - 1) / 2.0) * 8.0, -3.0)
+		draw_circle(c, 3.6, OUTLINE)
+		draw_circle(c, 2.4, GOAL_COLOR if n < b["trips"] else Color(1, 1, 1, 0.35))
+
+
+## A rushed building shows its cooldown as a shrinking wedge in its top-left corner.
+func _draw_rush(b: Dictionary, r: Rect2) -> void:
+	if b["rush_cd"] <= 0.0:
+		return
+	var c := r.position + Vector2(5, 5)
+	var frac: float = b["rush_cd"] / Data.RUSH_COOLDOWN
+	draw_circle(c, 5.5, OUTLINE)
+	draw_circle(c, 4.0, Color(1, 1, 1, 0.3))
+	var pts := PackedVector2Array([c])
+	for n in 13:
+		pts.append(c + Vector2.from_angle(-PI / 2.0 + TAU * frac * n / 12.0) * 4.0)
+	if frac > 0.02:
+		draw_colored_polygon(pts, GOAL_COLOR)
 
 
 ## Each Kith is a small figure; haulers and hut workers show what they carry.

@@ -9,8 +9,11 @@ const TechLayout = preload("res://scripts/tech_layout.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Goals = preload("res://scripts/goals.gd")
 const Rules = preload("res://scripts/rules.gd")
+const Hands = preload("res://scripts/hands.gd")
+const Haulers = preload("res://scripts/haulers.gd")
 const ConventionTests = preload("res://tests/convention_tests.gd")
 const BonusTests = preload("res://tests/bonus_tests.gd")
+const ArcTests = preload("res://tests/arc_tests.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
 
 var failures := 0
@@ -48,6 +51,7 @@ func _init() -> void:
 	test_fishing_weir_makes_fish()
 	ConventionTests.new().run(self)
 	BonusTests.new().run(self)
+	ArcTests.new().run(self)
 	test_pacing_bot()
 	print("FAILED: %d" % failures if failures > 0 else "ALL TESTS PASSED")
 	quit(1 if failures > 0 else 0)
@@ -56,17 +60,17 @@ func _init() -> void:
 ## A headless player (tests/autoplay.gd) plays the stone age on a few maps. It should reach Bronze Dawn
 ## in 8 to 25 simulated minutes; data.gd is tuned so it takes about 12 to 16.
 func test_pacing_bot() -> void:
-	for seed in [1, 2, 3]:
-		var r: Dictionary = Autoplay.new().play(seed, 30 * 60.0)
+	for map_seed in [1, 2, 3]:
+		var r: Dictionary = Autoplay.new().play(map_seed, 30 * 60.0)
 		var minutes: float = r["seconds"] / 60.0
 		print(
 			(
 				"Pacing bot, map %d: %s at %.1f simulated minutes"
-				% [seed, "Bronze Dawn" if r["won"] else "no win", minutes]
+				% [map_seed, "Bronze Dawn" if r["won"] else "no win", minutes]
 			)
 		)
-		check(r["won"], "the bot reaches Bronze Dawn on map %d" % seed)
-		check(minutes >= 8.0 and minutes <= 25.0, "map %d takes 8 to 25 minutes (%.1f)" % [seed, minutes])
+		check(r["won"], "the bot reaches Bronze Dawn on map %d" % map_seed)
+		check(minutes >= 8.0 and minutes <= 25.0, "map %d takes 8 to 25 minutes (%.1f)" % [map_seed, minutes])
 		if not r["won"]:
 			for line in r["log"]:
 				print("  ", line)
@@ -130,14 +134,16 @@ func test_hand_gathering_and_tools() -> void:
 	var tree := find_tile(s, "tree")
 	s.gather_by_hand(tree)
 	check(s.inv["wood"] == 1, "hand gather gives 1 wood")
+	check(is_equal_approx(Hands.hold_time(s, "wood"), Data.HOLD_TIME), "a 1 s hold with bare hands")
 	s.researched["knapping"] = true
 	s.inv["flint"] = 2
 	s.inv["wood"] = 2
-	check(s.craft("flint_tools"), "can craft flint tools")
+	check(Hands.craft(s, "flint_tools"), "can craft flint tools")
 	check(s.inv["wood"] == 0, "crafting spent the wood")
 	check(s.inv["flint_tools"] == 1, "have flint tools")
 	s.gather_by_hand(tree)
-	check(s.inv["wood"] == 2, "flint tools double hand gathering")
+	check(s.inv["wood"] == 1, "flint tools don't change the yield by hand")
+	check(is_equal_approx(Hands.hold_time(s, "wood"), 0.7), "they shorten the hold to 0.7 s")
 	check(not s.shard_seen, "the shard starts unseen")
 	check(s.gather_by_hand(s.shard_pos) == Data.SHARD_TEXT, "shard shows flavor text")
 	check(s.shard_seen, "clicking the shard marks it seen")
@@ -167,13 +173,19 @@ func test_every_tech_is_reachable() -> void:
 func test_gatherer_fills_until_hauled() -> void:
 	var s := fresh()
 	give(s, 100)
+	s.learned["wood"] = "Aro"
 	s.researched["gatherers_hut"] = true
+	s.researched["haulers"] = true
 	var p := s.camp_pos + Vector2i(-2, 0)
 	check(s.place("gatherers_hut", p), "place hut next to forest")
 	for i in 400:
 		s.tick(0.5)
+		for k in s.kith:
+			if k["job"] == "haul":
+				k["job"] = "idle"  # nobody free to haul, so the hut fills up
 	var b: Dictionary = s.buildings[s.building_at[p]]
-	check(s.buffered(b["out"]) == Data.BUFFER_CAP, "hut stops when full")
+	check(s.buffered(b["out"]) >= Data.BUFFER_CAP, "hut stops when full")
+	check(s.buffered(b["out"]) < Data.BUFFER_CAP + Data.BUNDLE, "and brings back no more after that")
 	var before: int = s.inv["wood"]
 	s.haul(s.building_at[p])
 	check(s.buffered(b["out"]) == 0, "hauling empties the hut")
@@ -255,16 +267,28 @@ func test_flour_is_kept_for_research() -> void:
 
 func test_goals_advance_in_order() -> void:
 	var s := fresh()
-	check(Goals.current_goal(s) == 0, "first goal is gathering")
-	s.inv["wood"] = 10
-	s.inv["stone"] = 10
-	s.inv["flint"] = 5
+	check(Goals.current_goal(s) == 0, "first goal is learning Wood by hand")
+	for i in Data.LEARN_CLICKS:
+		s.gather_by_hand(find_tile(s, "tree"))
 	s.tick(0.1)
-	check(Goals.current_goal(s) == 1, "gathering done, next is knapping")
+	check(Goals.current_goal(s) == 1, "Wood learned, next Stone and Flint")
+	for tile in ["rock", "gravel"]:
+		for i in Data.LEARN_CLICKS:
+			s.gather_by_hand(find_tile(s, tile))
+	s.tick(0.1)
+	check(Goals.current_goal(s) == 2, "then Knapping")
+	s.inv["flint"] = 5
+	s.inv["stone"] = 10
 	s.research("knapping")
 	s.tick(0.1)
-	check(Goals.current_goal(s) == 2, "knapping done, next is flint tools")
-	check(s.goals_done.has("gather"), "earlier goals stay done after spending")
+	check(Goals.current_goal(s) == 3, "knapping done, next is flint tools")
+	check(s.goals_done.has("learn_wood"), "earlier goals stay done")
+	var ids: Array = Data.GOALS.map(func(g): return g["id"])
+	check(
+		ids.find("trip") > ids.find("hut") and ids.find("trip") < ids.find("haulers"),
+		"a trip comes between hut and Haulers"
+	)
+	check(ids.find("rush") > ids.find("haulers"), "and rushing after Haulers")
 
 
 func test_hut_gather_preview_matches_placement() -> void:
@@ -314,7 +338,10 @@ func test_kith_staff_buildings_in_order() -> void:
 			staffed += 1
 	check(staffed == Data.KITH_START, "one worker per building, as many as there are Kith")
 	var last: Dictionary = s.buildings[s.buildings.size() - 1]
-	check(last["worker"] == -1 and last["status"].begins_with("No worker"), "the newest building waits for a worker")
+	check(
+		last["worker"] == -1 and last["status"].begins_with("No Woodcutter yet"),
+		"the newest building waits for a worker"
+	)
 
 
 func test_population_grows_with_food_and_room() -> void:
@@ -394,7 +421,7 @@ func test_roads_bridge_the_river() -> void:
 
 ## Every parent sits left of its child, no two cards overlap, and most techs join two branches.
 func test_tech_tree_is_a_web() -> void:
-	check(Data.TECHS.size() == 28, "the stone age has 28 techs")
+	check(Data.TECHS.size() == 29, "the stone age has 29 techs")
 	check(Data.TECH_ORDER.size() == Data.TECHS.size(), "TECH_ORDER lists every tech once")
 	var roots := 0
 	var multi := 0
@@ -426,7 +453,7 @@ func test_tech_tree_is_a_web() -> void:
 
 ## Tech tree v4 (mockups/tech-tree-v4.md): each link reads "you need X to invent Y".
 func test_tech_tree_v4() -> void:
-	check(TechLayout.links().size() == 48, "v4 has 48 links (%d)" % TechLayout.links().size())
+	check(TechLayout.links().size() == 51, "v4 plus the Storehouse has 51 links (%d)" % TechLayout.links().size())
 	check(Data.LANE_ORDER == ["fiber", "stone", "land", "hearth", "lore"], "lanes run Fiber, Stone, Land, Hearth, Lore")
 	check(Data.TECHS["bronze_dawn"]["tier"] == 5, "the gate sits after Tier V")
 	check(Data.TIER_NAMES.size() == 6, "every column has a caption")
@@ -454,7 +481,7 @@ func test_tech_tree_v4() -> void:
 		check(Data.TECHS[tech]["slot"] <= 1, tech + ": each lane has two rows")
 	# Side branches are exactly the techs Bronze Dawn can do without.
 	var route := Rules.route_to("bronze_dawn", {}, Rules.visible_techs(true))
-	check(route.size() == 18, "Bronze Dawn needs 18 techs (%d)" % route.size())
+	check(route.size() == 19, "Bronze Dawn needs 19 techs (%d)" % route.size())
 	for tech in Data.TECHS:
 		check(
 			Data.TECHS[tech].get("side", false) == (tech not in route), tech + " is a side branch only if off the route"
@@ -480,9 +507,9 @@ func test_tech_effects() -> void:
 	s.researched["foraging"] = true
 	s.gather_by_hand(berry)
 	check(s.inv["berries"] == 2, "foraging doubles berries")
-	check(s.carry_cap() == Data.CARRY, "normal carry")
+	check(Haulers.carry_cap(s) == Data.CARRY, "normal carry")
 	s.researched["carrying_poles"] = true
-	check(s.carry_cap() == Data.CARRY * 2, "carrying poles double carry")
+	check(Haulers.carry_cap(s) == Data.CARRY * 2, "carrying poles double carry")
 	s.researched["baking"] = true
 	check(s.food_value("flour") == 5.0, "baking makes flour worth 5")
 	var h := s.housing()
@@ -609,9 +636,9 @@ func test_lore_and_side_branch_effects() -> void:
 	var hut: Dictionary = s.buildings[s.building_at[p]]
 	var base := s._work_time(hut)
 	var clay := find_tile(s, "clay")
-	check(s._harvest_amount(hut, clay, "clay") == 1, "one clay per harvest")
+	check(s._harvest_amount(hut, clay, "clay") == Data.BUNDLE, "a bundle of clay per harvest")
 	s.researched["ochre"] = true
-	check(s._harvest_amount(hut, clay, "clay") == 2, "Ochre: huts bring back twice the Clay")
+	check(s._harvest_amount(hut, clay, "clay") == Data.BUNDLE * 2, "Ochre: huts bring back twice the Clay")
 	check(is_equal_approx(s.work_speed(hut), 1.0), "Ochre doesn't touch speed")
 	check(place_free(s, "standing_stone", p + Vector2i(0, 2)), "place a Standing Stone 2 tiles off")
 	check(is_equal_approx(s.work_speed(hut), 1.0), "2 tiles off is too far for a Standing Stone")
@@ -620,21 +647,21 @@ func test_lore_and_side_branch_effects() -> void:
 	check(is_equal_approx(s._work_time(hut), base / 2.0), "and the cycle takes half as long")
 
 	var tree := find_tile(s, "tree")
-	check(s._harvest_amount(hut, tree, "wood") == 1, "one wood per harvest")
+	check(s._harvest_amount(hut, tree, "wood") == Data.BUNDLE, "a bundle of wood per harvest")
 	s.researched["stone_axe"] = true
-	check(s._harvest_amount(hut, tree, "wood") == 2, "Stone Axe: huts gather Wood twice as fast")
+	check(s._harvest_amount(hut, tree, "wood") == Data.BUNDLE * 3, "Stone Axe: huts bring back three times the Wood")
 
 	var field := find_grass(s, true)
 	check(place_free(s, "field", field), "sow a field by the river")
 	var total := 0
 	for i in 4:
 		total += s._harvest_amount(hut, field, "grain")
-	check(total == 4, "four harvests of a Field give 4 grain")
+	check(total == 4 * Data.BUNDLE, "four harvests of a Field give four bundles")
 	s.researched["calendar"] = true
 	total = 0
 	for i in 4:
 		total += s._harvest_amount(hut, field, "grain")
-	check(total == 5, "Calendar: Fields yield 25% more")
+	check(total == 5 * Data.BUNDLE, "Calendar: Fields yield 25% more")
 
 	var dry := find_grass(s, false)
 	place_free(s, "field", dry)

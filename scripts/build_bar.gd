@@ -12,6 +12,7 @@ const Data = preload("res://scripts/data.gd")
 const GameState = preload("res://scripts/game_state.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
+const Hands = preload("res://scripts/hands.gd")
 
 const BUTTON := Vector2(142, 50)
 const LOCKED_BG := Color("1f3a47")
@@ -191,9 +192,9 @@ func refresh(placing: String, ready_count: int) -> void:
 	for r in craft_buttons:
 		var b: Button = craft_buttons[r]
 		var rec: Dictionary = Data.RECIPES[r]
-		b.disabled = not state.recipe_unlocked(r) or not state.can_afford(rec["in"])
+		b.disabled = not Hands.recipe_unlocked(state, r) or not state.can_afford(rec["in"])
 		b.tooltip_text = "%s: %s into %s" % [rec["name"], Ui.cost_text(rec["in"]), Ui.cost_text(rec["out"])]
-		if not state.recipe_unlocked(r):
+		if not Hands.recipe_unlocked(state, r):
 			b.tooltip_text += "\nResearch %s first." % Data.TECHS[rec["tech"]]["name"]
 
 
@@ -201,6 +202,8 @@ func _sub_text(type: String) -> String:
 	match Data.BUILDINGS[type]["kind"]:
 		"road", "field", "bridge":
 			return "Ready · drag to lay"
+	if Data.BUILDINGS[type]["tech"] == "":
+		return "Always available"
 	return "Ready"
 
 
@@ -209,6 +212,8 @@ func _tooltip(type: String) -> String:
 	var s: String = def["name"] + "\n" + def["desc"]
 	if not def["cost"].is_empty():
 		s += "\nCost: " + Ui.progress_text(state.inv, def["cost"], 99)
-	if not state.building_unlocked(type):
+	if def["tech"] == "":
+		s += "\nAlways available: no research needed."
+	elif not state.building_unlocked(type):
 		s += "\nResearch %s to unlock it." % Data.TECHS[def["tech"]]["name"]
 	return s

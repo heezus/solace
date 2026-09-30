@@ -5,6 +5,7 @@ extends RefCounted
 ## Static, and works on the GameState passed in.
 
 const Data = preload("res://scripts/data.gd")
+const Ranks = preload("res://scripts/ranks.gd")
 
 
 ## The bonuses at work on building b now, for `item` (yield bonuses name the item they apply to):
@@ -18,11 +19,21 @@ static func active(s, b: Dictionary, item: String) -> Array:
 			continue
 		if bonus.has("kinds") and kind not in bonus["kinds"]:
 			continue
+		if bonus.has("types") and b["type"] not in bonus["types"]:
+			continue
 		if bonus.has("item") and bonus["item"] != item:
 			continue
 		if not _applies(s, b, id):
 			continue
-		out.append({"id": id, "name": bonus["name"], "group": bonus["group"], "add": bonus["add"]})
+		var add: float = bonus["add"]
+		var name: String = bonus["name"]
+		if bonus.has("rank_of"):
+			var extra: int = Ranks.rank(s, bonus["rank_of"]) - 1
+			if extra <= 0:
+				continue
+			add *= extra
+			name = "%s %s" % [Data.TECHS[bonus["rank_of"]]["name"], Data.RANK_NAMES[extra + 1]]
+		out.append({"id": id, "name": name, "group": bonus["group"], "add": add})
 	return out
 
 
@@ -54,6 +65,13 @@ static func yield_mult(s, b: Dictionary, item: String) -> float:
 	return total(active(s, b, item), "yield")
 
 
+## The Yield bonuses that only buildings get (those with `kinds`, like Ochre at huts). The others
+## (Foraging) are already in the click yield a hut's bundle is based on.
+static func building_yield(s, b: Dictionary, item: String) -> float:
+	var parts: Array = active(s, b, item).filter(func(p): return Data.BONUSES[p["id"]].has("kinds"))
+	return total(parts, "yield")
+
+
 ## "20 jobs/min x Speed 2.5 (Flint Tools +50%, Standing Stone +100%) = 50 jobs/min", plus a line per yield bonus.
 static func text(s, b: Dictionary) -> String:
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
@@ -78,10 +96,13 @@ static func text(s, b: Dictionary) -> String:
 		line += " x Speed %s (%s) = %s %s" % [_num(sp), ", ".join(names), _num(base * sp), unit]
 	if def["kind"] == "gatherer":
 		line += ", plus walking"
+		var seen := {}
 		for item in b["gather_items"]:
-			var y := yield_mult(s, b, item)
-			if y > 1.0 and not line.contains("Yield x%s on %s" % [_num(y), Data.ITEMS[item]["name"]]):
-				line += "\nYield x%s on %s" % [_num(y), Data.ITEMS[item]["name"]]
+			if seen.has(item) or not s.knows(item):
+				continue
+			seen[item] = true
+			var n: int = s._bundle_size(b, item)
+			line += "\nBundle: %d %s (%d x a click)" % [n, Data.ITEMS[item]["name"], Data.BUNDLE]
 	return line
 
 
