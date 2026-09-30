@@ -98,20 +98,21 @@ func food_income() -> float:
 	for id in Data.FOOD_VALUE:
 		var by_source := flows.parts(id)
 		for source in by_source:
-			if source != "hand" and by_source[source] > 0.0:
+			if source != Data.FLOW_HAND_SOURCE and by_source[source] > 0.0:
 				total += by_source[source] * food_value(id)
 	return total
 
 
 ## Food made per second, in food units, over the whole flow window (Data.RATE_WINDOW seconds, so a stretch
-## with little history counts as little): everything but eating, that is huts, haulers, fields, the Fishing
-## Weir, the Grindstone and the player's hands while they are gathering. A stockpile is not income.
+## with little history counts as little): what the buildings make (huts and their haulers, fields, the Fishing
+## Weir, the Grindstone). The player's own hands are not income and neither is the stockpile: a burst of
+## hand-gathering is a spike, and growth waits for food that keeps coming without the player.
 func food_supply() -> float:
 	var total := 0.0
 	for id in Data.FOOD_VALUE:
 		var by_source := flows.parts_over(id, float(Data.RATE_WINDOW))
 		for source in by_source:
-			if source != Data.FLOW_EAT_SOURCE and by_source[source] > 0.0:
+			if source != Data.FLOW_EAT_SOURCE and source != Data.FLOW_HAND_SOURCE and by_source[source] > 0.0:
 				total += by_source[source] * food_value(id)
 	return total
 

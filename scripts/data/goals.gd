@@ -36,14 +36,20 @@ const GOALS := [
 	{"id": "hut_tech", "text": "Discover Gatherer's Hut", "tech": "gatherers_hut"},
 	{
 		"id": "hut",
-		"text": "Place a Gatherer's Hut next to trees or rocks: it works the one resource it stands next to",
+		"text": "Place a Gatherer's Hut next to trees or rocks. A hut works one resource, and only when you click it",
 		"building": "gatherers_hut"
 	},
-	{"id": "trip", "text": "Click your hut to send a trip: its Kith brings back a bundle (3 harvests' worth)"},
+	{
+		"id": "trip",
+		"text": "Click your hut to send a trip: its Kith brings back a bundle (3 harvests' worth). No click, no trip"
+	},
 	{
 		"id": "berries",
 		"text":
-		"Place a hut right beside Berry Bushes, or click a hut to switch it to Berries: a hut works one resource"
+		(
+			"Place a hut right beside Berry Bushes (or click a hut to switch it to Berries), then click it to send"
+			+ " a trip for berries. A hut only works when you click it"
+		)
 	},
 	{"id": "dwelling", "text": "Build a Dwelling. Kith grow when there's room and steady food", "building": "dwelling"},
 	{"id": "charcoal", "text": "Discover Fire, then build a Charcoal Pit", "building": "charcoal_pit"},

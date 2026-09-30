@@ -553,13 +553,13 @@ func _draw_aura_ranges(hovered_type: String) -> void:
 				draw_circle(_tile_center(b["pos"]), radius, AURA_FILL)
 
 
-## Outline the hut's reach and light up the tiles it would gather from.
+## Outline the hut's reach and light up the tiles of the one resource it works (or would start on).
 func _draw_gather_range(p: Vector2i) -> void:
 	var r := state.town.hut_radius()
 	var reach := Rect2(MAP_ORIGIN + Vector2(p - Vector2i(r, r)) * TILE, Vector2.ONE * (2 * r + 1) * TILE)
 	draw_rect(reach, Color(1, 0.82, 0.4, 0.12))
 	draw_rect(reach, GOAL_COLOR, false, 2.0)
-	for t in state.town.gather_tiles(p):
+	for t in state.town.tiles_of(p, state.town.focus_at(p)):  # only what the hut works
 		draw_rect(_tile_rect(t).grow(-3), Color(1, 0.82, 0.4, 0.35))
 		draw_rect(_tile_rect(t).grow(-3), GOAL_COLOR, false, 2.0)
 
@@ -578,6 +578,8 @@ func _draw_building(b: Dictionary) -> void:
 	Art.building(self, b["type"], c, working, time)
 	if def["kind"] == "gatherer":
 		HutFocus.draw_marker(self, r, b["focus"])
+		if HutFocus.wants_click(state, b):
+			HutFocus.draw_click_badge(self, r, time)
 
 	# Progress bar and held output.
 	if def.has("time") and working:

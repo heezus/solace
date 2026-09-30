@@ -179,31 +179,39 @@ func focus_options(p: Vector2i) -> Array:
 	return Data.ITEM_ORDER.filter(func(id): return seen.has(id))
 
 
-## What a new hut at p works: the item of the resource tile nearest it (huts stand on open grass, so the
-## one it was put next to). The same distance goes to the item with more tiles in reach, then to the one
-## first in Data.ITEM_ORDER, so the choice never depends on chance. "" when nothing is in reach.
+## What a new hut at p works: the item of the resource tile nearest it (huts stand on open grass, so the one it
+## was put next to), however many tiles of something else are in reach. At the same distance a hut goes to food
+## while the stockpile is short (Data.FOOD_SHORT_STOCK, or the food warning is up), else to the item first in
+## Data.ITEM_ORDER, so the choice never depends on chance. "" when nothing is in reach.
 func default_focus(p: Vector2i) -> String:
-	var count := {}
 	var near := {}
 	for t in gather_tiles(p):
 		var item: String = Data.TILES[_world.tile_at(t)]["yields"]
-		count[item] = count.get(item, 0) + 1
 		near[item] = minf(near.get(item, INF), Vector2(t).distance_to(Vector2(p)))
+	var order: Array = Data.ITEM_ORDER.duplicate()
+	if _economy.low or _economy.food_total() < Data.FOOD_SHORT_STOCK:
+		order = Data.ITEM_ORDER.filter(func(id): return Data.FOOD_VALUE.has(id))
+		order += Data.ITEM_ORDER.filter(func(id): return not Data.FOOD_VALUE.has(id))
 	var best := ""
-	for item in Data.ITEM_ORDER:
-		if not count.has(item):
-			continue
-		if best == "" or near[item] < near[best] - 0.001:
-			best = item
-		elif absf(near[item] - near[best]) <= 0.001 and count[item] > count[best]:
+	for item in order:
+		if near.has(item) and (best == "" or near[item] < near[best] - 0.001):
 			best = item
 	return best
 
 
 ## The tiles in reach of hut `b` that hold its focus: the only ones it walks out to.
 func focus_tiles(b: Dictionary) -> Array:
-	var item: String = b["focus"]
-	return gather_tiles(b["pos"]).filter(func(t): return item != "" and Data.TILES[_world.tile_at(t)]["yields"] == item)
+	return tiles_of(b["pos"], b["focus"])
+
+
+## The tiles in reach of a hut at p that hold `item` ("" gives none).
+func tiles_of(p: Vector2i, item: String) -> Array:
+	return gather_tiles(p).filter(func(t): return item != "" and Data.TILES[_world.tile_at(t)]["yields"] == item)
+
+
+## What the hut at p works, or what a new one there would: the tiles to show for its range.
+func focus_at(p: Vector2i) -> String:
+	return buildings[building_at[p]]["focus"] if building_at.has(p) else default_focus(p)
 
 
 ## Set hut i to work `item`. False when that isn't something in its reach.

@@ -137,7 +137,7 @@ func gather_by_hand(p: Vector2i) -> String:
 		return ""
 	var n := Hands.harvest_yield(self, item)
 	economy.add(item, n)
-	economy.note(item, n, "hand")
+	economy.note(item, n, Data.FLOW_HAND_SOURCE)
 	Hands.teach(self, item)
 	return "+%d %s" % [n, Data.ITEMS[item]["name"]]
 

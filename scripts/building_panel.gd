@@ -230,7 +230,7 @@ static func recipe_text(s: Sim, b: Dictionary) -> String:
 			var ins := Ui.cost_text(def["in"]) if not def["in"].is_empty() else "nothing"
 			return "%s → %s / %s s" % [ins, Ui.cost_text(def["out"]), str(snappedf(Work.time(s, b), 0.1))]
 		"gatherer":
-			return gather_text(s, s.town.gather_tiles(b["pos"]), b["focus"], true)
+			return gather_text(s, s.town.focus_tiles(b), true)
 	return ""
 
 
@@ -271,14 +271,9 @@ static func pace_text(s: Sim, b: Dictionary) -> String:
 		return ""
 	var lines: Array = []
 	if def["kind"] == "gatherer":
-		var bundles: Array = []
-		var seen := {}
-		for item in b["gather_items"]:
-			if not seen.has(item) and s.people.knows(item):
-				seen[item] = true
-				bundles.append("%d %s" % [Work.bundle_size(s, b, item), Data.ITEMS[item]["name"]])
-		if not bundles.is_empty():
-			lines.append(Data.PACE_TRIP % ", ".join(bundles))
+		var item: String = b["focus"]
+		if item != "" and s.people.knows(item):
+			lines.append(Data.PACE_TRIP % ("%d %s" % [Work.bundle_size(s, b, item), Data.ITEMS[item]["name"]]))
 		lines.append(Data.PACE_WORK % str(snappedf(Work.time(s, b), 0.1)))
 	else:
 		var made := 0
@@ -309,26 +304,17 @@ static func trip_text(s: Sim, p: Vector2i) -> String:
 	return "To %s · %d tiles · %d s a trip" % [where, info["tiles"], roundi(info["seconds"])]
 
 
-## "Gathers from the 5 highlighted tiles (within 2), taking turns: Wood x3, Stone x2." `short` is the card's version:
-## "Gathers from the 5 highlighted tiles: Wood x3, Stone x2 (not learned yet)." `focus` is the resource the hut
-## works ("" to leave that out): "... It works only Wood."
-static func gather_text(s: Sim, tiles: Array, focus := "", short := false) -> String:
+## "Gathers from the 3 highlighted tiles (within 2): Berries x3." `tiles` are the tiles of the one resource the hut
+## works (Buildings.focus_tiles), the same ones the map highlights. `short` is the card's version, without the range.
+static func gather_text(s: Sim, tiles: Array, short := false) -> String:
 	var r := s.town.hut_radius()
 	if tiles.is_empty():
 		return "No resources within %d tiles: it would have nothing to gather (bare grass gives nothing)." % r
-	var counts := {}
-	for p in tiles:
-		var item: String = Data.TILES[s.world.tile_at(p)]["yields"]
-		counts[item] = counts.get(item, 0) + 1
-	var out: Array = []
-	for id in counts:
-		var known := ""
-		if not s.people.knows(id):
-			known = " (not learned yet)" if short else " not yet learned (gather by hand %dx)" % Data.LEARN_CLICKS
-		out.append("%s x%d%s" % [Data.ITEMS[id]["name"], counts[id], known])
-	var line := "Gathers from the %d highlighted tiles: %s." % [tiles.size(), ", ".join(out)]
-	if not short:
-		line = "Gathers from the %d highlighted tiles (within %d): %s." % [tiles.size(), r, ", ".join(out)]
-	if focus != "":
-		line += " It works only %s." % Data.ITEMS[focus]["name"]
-	return line
+	var item: String = Data.TILES[s.world.tile_at(tiles[0])]["yields"]
+	var known := ""
+	if not s.people.knows(item):
+		known = " (not learned yet)" if short else " not yet learned (gather by hand %dx)" % Data.LEARN_CLICKS
+	var what := "%s x%d%s" % [Data.ITEMS[item]["name"], tiles.size(), known]
+	if short:
+		return "Gathers from the %d highlighted tiles: %s." % [tiles.size(), what]
+	return "Gathers from the %d highlighted tiles (within %d): %s." % [tiles.size(), r, what]

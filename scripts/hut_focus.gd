@@ -7,6 +7,9 @@ signal changed
 
 const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
+const Art = preload("res://scripts/art.gd")
+const Roads = preload("res://scripts/roads.gd")
+const Buildings = preload("res://scripts/buildings.gd")
 
 var state: Sim
 var index := -1  # the hut's place in the building list, -1 for none
@@ -63,3 +66,24 @@ static func draw_marker(ci: CanvasItem, r: Rect2, item: String) -> void:
 	var at := Rect2(r.position + Vector2(3, r.size.y - 16), Vector2(9, 9))
 	ci.draw_rect(at, Data.ITEMS[item]["color"])
 	ci.draw_rect(at, Color("1b2a33"), false, 1.5)
+
+
+## True for a hut that is standing idle until someone clicks it: it has a worker who can work its focus, no road
+## links it to run it on its own, and no trip is waiting. (An unlinked hut only works on clicked trips.)
+static func wants_click(s: Sim, b: Dictionary) -> bool:
+	if Data.BUILDINGS[b["type"]]["kind"] != "gatherer" or b["worker"] < 0 or b["paused"]:
+		return false
+	return (
+		not Roads.automated(s, b)
+		and b["trips"] == 0
+		and Buildings.buffered(b["out"]) < Data.BUFFER_CAP
+		and s.people.knows_focus(b)
+	)
+
+
+## A small pulsing "click" pill over a hut that is waiting for a click.
+static func draw_click_badge(ci: CanvasItem, r: Rect2, time: float) -> void:
+	var pulse := 0.55 + 0.45 * sin(time * 5.0)
+	Art.pill(
+		ci, Vector2(r.get_center().x, r.position.y - 26.0), "click", Color(1.0, 0.82, 0.4, pulse), Color("1b2a33"), 11
+	)

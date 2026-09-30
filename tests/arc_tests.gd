@@ -87,10 +87,10 @@ func test_huts_gather_only_what_is_learned() -> void:
 	t.check(not s.people.knows_any(b["pos"]), "a new camp knows no jobs")
 	t.check(Workers.dispatch(s, r[1]).begins_with("Nothing learned"), "so a hut can't send a trip yet")
 	t.check(b["trips"] == 0, "and nothing is queued")
-	var preview := BuildingPanel.gather_text(s, s.town.gather_tiles(b["pos"]))
+	var preview := BuildingPanel.gather_text(s, s.town.focus_tiles(b))
 	t.check(preview.contains("not yet learned (gather by hand 10x)"), "the preview says what isn't learned: " + preview)
 	s.people.learned_by["wood"] = "Aro"
-	preview = BuildingPanel.gather_text(s, s.town.gather_tiles(b["pos"]))
+	preview = BuildingPanel.gather_text(s, s.town.focus_tiles(b))
 	t.check(preview.contains("Wood x") and not preview.contains("Wood x1 (not"), "Wood is learned: " + preview)
 	t.check(s.people.knows_any(b["pos"]), "the hut knows Wood now")
 	var k: Dictionary = s.people.kith[b["worker"]]

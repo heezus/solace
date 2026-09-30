@@ -225,7 +225,8 @@ func _check_stable(what: String) -> void:
 func _show_hut_panel_with_a_wall_of_text() -> void:
 	var s = main.state
 	for id in s.economy.inv:
-		s.economy.inv[id] = maxi(s.economy.inv[id], 40)
+		if not Data.FOOD_VALUE.has(id):  # food stays as it is: a big pantry with no income would stop the bot growing
+			s.economy.inv[id] = maxi(s.economy.inv[id], 40)
 	s.research("gatherers_hut")
 	var at := Vector2i(-1, -1)
 	for r in range(1, 6):
