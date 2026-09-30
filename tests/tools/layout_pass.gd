@@ -27,6 +27,8 @@ var problems: Array = []
 var changes := 0
 var refit_due := 0  # the frame by which the map must have refit after a resize
 var hud_checks := 0  # how many HUD checks ran
+var base := {}  # the top bar's height and the map's place before the stress cases
+var saved := {}  # the stockpile as it was, put back after them
 var frozen := false  # the bot's ticking is paused while a check sets the state by hand
 
 
@@ -109,11 +111,38 @@ func _hud_checks() -> void:
 			main.state.economy.starving = false
 			main.state.economy.low = false
 			frozen = false
-		20:
+		28:
+			frozen = true
+			base = {
+				"bar": main.top_bar.size.y,
+				"pos": main.position,
+				"scale": main.scale,
+				"chip_x": main.top_bar.chips["wood"]["box"].get_global_rect().position.x,
+			}
+			var eco = main.state.economy
+			saved = {"inv": eco.inv.duplicate(), "seen": eco.seen.duplicate(), "flows": eco.flows.to_dict()}
+		30, 33, 36, 39, 42:
+			_stress_case((frame - 30) / 3)
+		32, 35, 38, 41:
+			_check_stable("stress case %d" % ((frame - 32) / 3))
+			main.ui_refresh = 0.0
+		44:
+			_check_stable("stress case 4")
+			var eco = main.state.economy
+			eco.inv.clear()
+			eco.inv.merge(saved["inv"])
+			eco.seen.clear()
+			eco.seen.merge(saved["seen"])
+			eco.flows.from_dict(saved["flows"])
+			eco.low = false
+			eco.starving = false
+			main.ui_refresh = 0.0
+			frozen = false
+		50:
 			frozen = true
 			main.ui_refresh = 999.0
 			main.info_label.text = WALL.repeat(40)  # far more than fits
-		22:
+		52:
 			_check_fit("with a wall of text in the Info panel")
 			main.ui_refresh = 0.0
 			frozen = false
@@ -121,6 +150,41 @@ func _hud_checks() -> void:
 		_check_fit("at frame %d" % frame)
 	if frame > 5 and frame % 25 == 0:
 		_check_top_bar_text("at frame %d" % frame)
+
+
+## Long top-bar text, one case at a time: the food warning, starving, needs-room text, the longest hold hint,
+## and every chip showing with big numbers. Each is applied here and checked two frames on (_check_stable).
+func _stress_case(n: int) -> void:
+	var eco = main.state.economy
+	eco.low = n in [0, 2]
+	eco.starving = n == 1
+	match n:
+		0, 1, 2:
+			eco.inv["berries"] = 0 if n != 0 else 3
+		3:
+			main.ui_refresh = 999.0  # keep the hint the map would show for the best yield
+			main.top_bar.set_click_hint("Hold: +27 Berries, 0.4s")
+		4:
+			for id in Data.ITEM_ORDER:
+				eco.inv[id] = 9999
+				eco.seen[id] = true
+				eco.flows.add(id, 12.5, "hand")
+			eco.flows.advance(1.0)
+
+
+## The top bar is as tall as it was, the map hasn't moved or changed scale, and no text is cut short.
+func _check_stable(what: String) -> void:
+	hud_checks += 1
+	if main.top_bar.size.y != base["bar"]:
+		problems.append("%s: the top bar went from %.0f to %.0f tall" % [what, base["bar"], main.top_bar.size.y])
+	if main.position != base["pos"] or main.scale != base["scale"]:
+		problems.append(
+			"%s: the map moved (%s, x%s -> %s, x%s)" % [what, base["pos"], base["scale"], main.position, main.scale]
+		)
+	var chip_x: float = main.top_bar.chips["wood"]["box"].get_global_rect().position.x
+	if not is_equal_approx(chip_x, base["chip_x"]):
+		problems.append("%s: the chips moved sideways (%.0f -> %.0f)" % [what, base["chip_x"], chip_x])
+	_check_top_bar_text(what)
 
 
 func _show_hearth_panel() -> void:
