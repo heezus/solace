@@ -1,6 +1,8 @@
 extends Control
-## The research board: lane bands, tier columns, one card per tech and neutral lines between them.
-## Hovering a card lights its whole chain in gold. Drag empty space to pan.
+## The tech board: lane bands, tier columns, one card per tech and neutral lines between them. Hovering a card
+## lights the lines to the techs it needs and the ones it leads to (one step each way) and dims the rest.
+## Two views: the whole board, or "next steps", a plain grid of just what can be discovered next.
+## Drag empty space to pan.
 
 signal card_clicked(tech: String)
 signal hover_changed(tech: String)
@@ -20,6 +22,9 @@ const DONE_BG := Color("24475e")
 const READY_BG := Color("32607f")
 const LOCKED_BG := Color("1f3b53")
 const LOCKED_TEXT := Color("b9c6d0")
+const GRID_COLS := 4  # the next-steps view: cards per row
+const GRID_GAP := 24.0
+const GRID_MARGIN := 16.0
 const PIP := 20.0  # a cost item's sprite
 const HIDDEN_EDGE := Color("8fb3c9")
 const GATE := Color("e3a857")
@@ -28,7 +33,9 @@ const GATE_BG := Color("3a2f1f")
 var state: Sim
 var lay: Dictionary
 var hovered := ""
-var chain := {}  # techs lit by the hover: the hovered one, its ancestors and descendants
+var chain := {}  # techs lit by the hover: the hovered one, what it directly needs and what directly needs it
+var view := "all"  # "next": a grid of what can be discovered next; "all": the whole board
+var grid := {}  # tech -> Rect2, the cards in the next-steps view
 var bold: Font
 var pan_from := Vector2(-1, -1)
 
@@ -45,12 +52,62 @@ func setup(game: Sim) -> void:
 
 
 func card_rect(tech: String) -> Rect2:
+	if view == "next" and grid.has(tech):
+		return grid[tech]
 	return lay["rects"][tech]
+
+
+## Whether the current view shows this tech's card.
+func shows(tech: String) -> bool:
+	return view == "all" or grid.has(tech)
+
+
+## The techs that can be discovered next: not done, everything they need is, and on show. Affordable ones first.
+func next_techs() -> Array:
+	var out: Array = Data.TECH_ORDER.filter(
+		func(t): return not state.tech_tree.researched.has(t) and state.tech_tree.requirements_met(t)
+	)
+	out.sort_custom(func(a, b): return state.tech_tree.can_research(a) and not state.tech_tree.can_research(b))
+	return out
+
+
+## Switch views, and lay out the grid of next steps when that is the view.
+func set_view(v: String) -> void:
+	view = v
+	_set_hover("")
+	update_view()
+
+
+## Keep the view's layout and size right (the grid follows what is next as techs are discovered).
+func update_view() -> void:
+	if view == "all":
+		grid = {}
+		custom_minimum_size = lay["size"]
+		return
+	var techs := next_techs()
+	if techs.size() != grid.size() or techs.any(func(t): return not grid.has(t)):
+		grid = {}
+		for i in techs.size():
+			var col := i % GRID_COLS
+			var row := floori(float(i) / GRID_COLS)
+			grid[techs[i]] = Rect2(
+				Vector2(
+					GRID_MARGIN + col * (TechLayout.CARD_W + GRID_GAP),
+					GRID_MARGIN + row * (TechLayout.CARD_H + GRID_GAP)
+				),
+				TechLayout.CARD
+			)
+	var rows := ceili(float(maxi(grid.size(), 1)) / GRID_COLS)
+	custom_minimum_size = Vector2(
+		GRID_MARGIN * 2 + GRID_COLS * (TechLayout.CARD_W + GRID_GAP),
+		GRID_MARGIN * 2 + rows * (TechLayout.CARD_H + GRID_GAP)
+	)
+	queue_redraw()
 
 
 func _tech_at(p: Vector2) -> String:
 	for tech in Data.TECH_ORDER:
-		if card_rect(tech).has_point(p):
+		if shows(tech) and state.tech_tree.tech_visible(tech) and card_rect(tech).has_point(p):
 			return tech
 	return ""
 
@@ -89,25 +146,26 @@ func _set_hover(tech: String) -> void:
 		return
 	hovered = tech
 	chain = {}
-	if tech != "":
+	if tech != "" and view == "all":
 		chain[tech] = true
-		_walk(tech, true)
-		_walk(tech, false)
+		_add_neighbors(tech)
 	hover_changed.emit(tech)
 	queue_redraw()
 
 
-## Mark every visible ancestor (up) or descendant (down) of tech.
-func _walk(tech: String, up: bool) -> void:
+## Light one step each way: the techs `tech` needs and the techs that need it. Nothing further.
+func _add_neighbors(tech: String) -> void:
 	for e in lay["edges"]:
-		var near: String = e["to"] if up else e["from"]
-		var far: String = e["from"] if up else e["to"]
-		if near == tech and state.tech_tree.tech_visible(far) and not chain.has(far):
-			chain[far] = true
-			_walk(far, up)
+		if e["to"] == tech and state.tech_tree.tech_visible(e["from"]):
+			chain[e["from"]] = true
+		elif e["from"] == tech and state.tech_tree.tech_visible(e["to"]):
+			chain[e["to"]] = true
 
 
 func _draw() -> void:
+	if view == "next":
+		_draw_next()
+		return
 	var font := ThemeDB.fallback_font
 	for i in lay["lanes"].size():
 		var lane: Dictionary = lay["lanes"][i]
@@ -131,6 +189,22 @@ func _draw() -> void:
 		_draw_card(tech)
 
 
+## The next-steps view: just the cards, in a grid, or a note when there is nothing to discover yet.
+func _draw_next() -> void:
+	if grid.is_empty():
+		draw_string(
+			ThemeDB.fallback_font,
+			Vector2(GRID_MARGIN, 40),
+			Data.NEXT_NONE,
+			HORIZONTAL_ALIGNMENT_LEFT,
+			-1,
+			14,
+			Color(1, 1, 1, 0.7)
+		)
+	for tech in grid:
+		_draw_card(tech)
+
+
 func _edge_visible(e: Dictionary) -> bool:
 	return state.tech_tree.tech_visible(e["from"]) and state.tech_tree.tech_visible(e["to"])
 
@@ -139,7 +213,7 @@ func _edge_visible(e: Dictionary) -> bool:
 func _draw_edge(e: Dictionary, lit_pass: bool) -> void:
 	if not _edge_visible(e):
 		return
-	var lit: bool = not chain.is_empty() and chain.has(e["from"]) and chain.has(e["to"])
+	var lit: bool = hovered != "" and (e["from"] == hovered or e["to"] == hovered)
 	if lit != lit_pass:
 		return
 	var met: bool = state.tech_tree.researched.has(e["from"])
@@ -180,12 +254,14 @@ func _draw_card(tech: String) -> void:
 	var dim := not chain.is_empty() and not chain.has(tech)
 	var a := 0.25 if dim else 1.0
 	if not state.tech_tree.tech_visible(tech):
+		if not state.fog.is_revealed(state.world.shard_pos):
+			return  # nothing to give away before the Strange Stone has been seen
 		Art.dashed_rect(self, r, Color(HIDDEN_EDGE, a), 2.0, 6.0, 4.0)
 		draw_string(bold, r.position + Vector2(16, 28), "? ? ?", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1, 1, 1, a))
 		draw_string(
 			ThemeDB.fallback_font,
 			r.position + Vector2(16, 46),
-			"Click the Strange Stone",
+			Data.HIDDEN_CARD_HINT,
 			HORIZONTAL_ALIGNMENT_LEFT,
 			-1,
 			11,
@@ -219,7 +295,7 @@ func _draw_card(tech: String) -> void:
 	draw_string(bold, Vector2(x, r.position.y + 22), t["name"], HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 78.0, 14, text)
 	var builds := Rules.buildings_of(tech)
 	var shows_build := not done and not builds.is_empty()  # a second cost row: what the building costs after
-	var unlock: String = t["unlock"] + ("  ·  side branch" if t.get("side", false) else "")
+	var unlock: String = t["unlock"] + ("  ·  " + Data.TECH_OPTIONAL if t.get("side", false) else "")
 	var sub := Color(text, text.a * 0.8)
 	draw_string(
 		ThemeDB.fallback_font,

@@ -26,6 +26,7 @@ func run(runner) -> void:
 	test_hut_panel_speaks_plainly()
 	test_status_pills_are_short()
 	test_every_kith_has_a_place_on_the_map()
+	test_words_are_plain()
 
 
 func test_card_says_what_is_missing() -> void:
@@ -197,3 +198,30 @@ func test_every_kith_has_a_place_on_the_map() -> void:
 				spots[i]["pos"].distance_to(spots[j]["pos"]) > 12.0,
 				"Kith %d and %d don't stand on each other (%.0f)" % [i, j, spots[i]["pos"].distance_to(spots[j]["pos"])]
 			)
+
+
+## The wording rules: one verb for research, the Hearth (never "camp") in what the player reads, a skill
+## toast that names the Kith once and never a tech's name, and the readouts explaining themselves.
+func test_words_are_plain() -> void:
+	for goal in Data.GOALS:
+		t.check(not goal["text"].contains("esearch"), "goal '%s' says Discover, not Research" % goal["text"])
+	t.check(Data.DISCOVERED_EVENT % "Knapping" == "Discovered Knapping", "one verb: Discovered")
+	var s = t.fresh()
+	s.economy.inv["flint"] = 99
+	s.economy.inv["stone"] = 99
+	s.events.clear()
+	s.research("knapping")
+	t.check(s.events.has("Discovered Knapping"), "discovering a tech says so: %s" % [s.events])
+	var tech_names: Array = Data.TECHS.values().map(func(x): return String(x["name"]).to_lower())
+	for item in Data.HUT_JOBS:
+		var line: String = Data.LEARNED_LINE % ["Aro", Data.HUT_JOBS[item]["craft"], Data.HUT_JOBS[item]["title"]]
+		t.check(line.count("Aro") == 1, "the skill toast names Aro once: " + line)
+		t.check(Data.HUT_JOBS[item]["craft"].begins_with("to "), "the skill reads as what they do: " + line)
+		t.check(not tech_names.has(Data.HUT_JOBS[item]["craft"]), "the skill isn't named like a tech: " + line)
+	for text in [Data.CAMP_TOAST, Data.BORN_TOAST, Data.FLAVOR_STOCK, Data.UNEXPLORED_INFO]:
+		t.check(not text.to_lower().contains("camp"), "player text says Hearth, not camp: " + text)
+	for id in Data.FLAVOR_STORY:
+		t.check(Data.STORY_EVENTS.has(id), "the warm line waits for a real story moment: " + id)
+	var kith_label: String = Data.KITH_LABEL % ["Kith", 3, 4]
+	t.check(kith_label == "Kith 3  ·  homes for 4", "the Kith count says what the second number is: " + kith_label)
+	t.check(Data.JOBS_LABEL.begins_with("Jobs filled"), "the Jobs readout says what it counts")

@@ -66,7 +66,7 @@ func test_learning_at_ten_clicks() -> void:
 	t.check(s.people.knows("wood"), "the 10th click teaches a Kith to gather Wood")
 	var first: String = Data.PEOPLE_NAMES[0]
 	t.check(s.people.learned_by["wood"] == first, "the first learner is " + first)
-	var toast := "%s learned woodcutting. %s the Woodcutter" % [first, first]
+	var toast: String = Data.LEARNED_LINE % [first, Data.HUT_JOBS["wood"]["craft"], "Woodcutter"]
 	t.check(s.events.has(toast), "and the toast says so: %s" % [s.events])
 	s.events.clear()
 	s.gather_by_hand(tree)

@@ -20,7 +20,7 @@ const FLAT := Color("9fb4bf")
 const MINUS := "−"
 const CHIP_W := 74.0
 const ICON := 24.0  # a good's sprite, with nothing behind it
-const ROW_H := 40.0  # a row of chips keeps this height whether or not its goods have appeared yet
+const ROW_H := 45.0  # a row of chips keeps this height whether or not its goods have appeared yet
 const CAPTION_W := 40.0
 const FOOD_W := 190.0
 
@@ -245,17 +245,12 @@ func refresh(paused: bool, speed: int) -> void:
 	var jobs := 0
 	for b in state.town.buildings:
 		jobs += 1 if Buildings.needs_worker(b) and not b["paused"] else 0
-	kith_label.text = "%s %d / %d" % [Data.PEOPLE["many"], state.people.kith.size(), state.town.housing()]
-	kith_label.get_parent().tooltip_text = (
-		"%s\n%s work buildings and haul goods. Each building needs one. They grow when there is room and steady food."
-		% [state.people.job_counts(), Data.PEOPLE["many"]]
-	)
+	kith_label.text = Data.KITH_LABEL % [Data.PEOPLE["many"], state.people.kith.size(), state.town.housing()]
+	kith_label.get_parent().tooltip_text = Data.JOBS_TIP % [state.people.job_counts(), Data.PEOPLE["many"]]
 	var note := Ui.growth_note(state)
 	kith_label.add_theme_color_override("font_color", Ui.HIGHLIGHT if note != "" else Ui.GOOD)
-	jobs_label.text = (
-		"Jobs %d / %d  ·  %d %s"
-		% [workers, jobs, idle, "hauling" if state.tech_tree.researched.has("haulers") else "idle"]
-	)
+	var rest: String = Data.HAUL_WORD if state.tech_tree.researched.has("haulers") else Data.IDLE_WORD
+	jobs_label.text = Data.JOBS_LABEL % [workers, jobs, idle, rest]
 	note_label.text = note
 	note_label.visible = note != ""
 	note_label.add_theme_color_override("font_color", Ui.BAD if state.economy.starving else Ui.HIGHLIGHT)
