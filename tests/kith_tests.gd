@@ -15,6 +15,7 @@ const Kith = preload("res://scripts/kith.gd")
 const Monitor = preload("res://tests/monitor.gd")
 const Pathing = preload("res://scripts/pathing.gd")
 const Research = preload("res://scripts/research.gd")
+const RunSave = preload("res://scripts/run_save.gd")
 const World = preload("res://scripts/world.gd")
 
 var t  # the runner, tests/run_tests.gd
@@ -58,6 +59,7 @@ func run(runner) -> void:
 	test_a_trip_cut_off_by_water()
 	test_signals_for_births_and_leavers()
 	test_signals_for_lessons_and_trips()
+	test_to_dict_and_from_dict()
 	test_game_state_passes_through()
 	test_game_state_ticks_through_the_block()
 
@@ -668,6 +670,44 @@ func test_a_trip_cut_off_by_water() -> void:
 
 
 # --- GameState ---------------------------------------------------------------
+
+
+## The people (positions, paths, tasks, what they carry), who learned what, the birth count and the timers
+## survive a dict and a JSON round trip, and nothing is emitted.
+func test_to_dict_and_from_dict() -> void:
+	var a := _block(3, {"flint_tools": 2})
+	var huts := _huts(2)
+	a.assign_jobs()
+	a.kith[0]["pos"] = Vector2(2.25, 4.5)
+	a.kith[0]["path"] = [Vector2i(3, 4), Vector2i(3, 3)]
+	a.kith[0]["timer"] = 0.7
+	a.kith[0]["task"] = {"tile": Vector2i(5, 5)}
+	a.kith[1]["carry"] = {"wood": 2}
+	a.kith[1]["job"] = "haul"
+	a.kith[1]["task"] = {"kind": "deliver", "building": huts[1], "item": "wood", "amount": 3, "depot": Vector2i(1, 4)}
+	a.kith[1]["trip"] = true
+	a.learn("wood", "Aro")
+	a.learn("stone", "Bel")
+	a.grow_timer = 3.5
+	a.starve_timer = 1.5
+	var d := a.to_dict()
+	var b := _block()
+	var m := Monitor.new()
+	for sig in ["born", "left", "learned", "announce", "trip_started"]:
+		m.watch(b, sig)
+	b.from_dict(d)
+	t.check(RunSave.to_json(b.to_dict()) == RunSave.to_json(d), "a Kith restored from a dict writes the same dict")
+	t.check(b.kith == a.kith, "every person comes back as they were, tasks and paths too")
+	t.check(b.learned_by == a.learned_by and b.learned_by.keys() == ["wood", "stone"], "who learned what, in order")
+	t.check(b.births == a.births and b.grow_timer == 3.5 and b.starve_timer == 1.5, "the count and the timers")
+	t.check(m.count() == 0, "restoring emits nothing")
+	var c := _block()
+	c.from_dict(RunSave.from_json(RunSave.to_json(d)))
+	t.check(RunSave.to_json(c.to_dict()) == RunSave.to_json(d), "the same after a trip through JSON text")
+	t.check(c.kith == a.kith, "and the people are the same (Vector2, Vector2i and ints, not floats)")
+	t.check(c.kith[1]["task"]["depot"] is Vector2i and c.kith[1]["task"]["amount"] is int, "task positions and counts")
+	c.from_dict({})
+	t.check(c.kith.is_empty() and c.learned_by.is_empty() and c.births == 0, "an empty dict clears it")
 
 
 func test_game_state_passes_through() -> void:

@@ -6,6 +6,7 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 const GameState = preload("res://scripts/game_state.gd")
+const RunSave = preload("res://scripts/run_save.gd")
 const World = preload("res://scripts/world.gd")
 
 var t  # the runner, tests/run_tests.gd
@@ -27,6 +28,7 @@ func run(runner) -> void:
 	test_roads_bookkeeping()
 	test_fields_bookkeeping()
 	test_world_stands_alone()
+	test_to_dict_and_from_dict()
 	test_game_state_passes_through()
 	test_game_state_generate_sets_the_camp_up()
 
@@ -212,6 +214,40 @@ func test_fields_bookkeeping() -> void:
 	t.check(w.tile_at(p) == "grass", "and the tile is grass again")
 	w.remove_field(p)
 	t.check(w.fields.is_empty() and w.tile_at(p) == "grass", "clearing a field twice does nothing")
+
+
+## The tiles, the camp and shard, and the roads and fields (in the order laid) survive a dict and a JSON
+## round trip, into a world of any size.
+func test_to_dict_and_from_dict() -> void:
+	var a := _tiny()
+	a.camp_pos = Vector2i(2, 3)
+	a.shard_pos = Vector2i(3, 0)
+	a.add_road(Vector2i(2, 2))
+	a.add_road(Vector2i(4, 2))
+	a.add_road(Vector2i(0, 3))
+	a.add_field(Vector2i(3, 3))
+	a.add_field(Vector2i(0, 1))
+	var d := a.to_dict()
+	var b := World.new()  # the game's size: the dict brings its own
+	b.from_dict(d)
+	t.check(RunSave.to_json(b.to_dict()) == RunSave.to_json(d), "a World restored from a dict writes the same dict")
+	t.check(b.width == 6 and b.height == 4 and b.tiles == a.tiles, "the size and the tiles")
+	t.check(b.camp_pos == a.camp_pos and b.shard_pos == a.shard_pos, "the camp and the shard")
+	t.check(
+		b.roads.keys() == a.roads.keys() and b.fields.keys() == a.fields.keys(), "roads and fields, in the same order"
+	)
+	var c := World.new(2, 2)
+	c.from_dict(RunSave.from_json(RunSave.to_json(d)))
+	t.check(RunSave.to_json(c.to_dict()) == RunSave.to_json(d), "the same after a trip through JSON text")
+	t.check(
+		c.tile_at(Vector2i(5, 3)) == "grass" and c.tile_at(Vector2i(4, 1)) == "river",
+		"and it answers like the original"
+	)
+	c.from_dict({"width": 3, "height": 3, "tiles": ["grass"]})
+	t.check(
+		c.tiles.size() == 9 and c.tiles.count("grass") == 9 and c.roads.is_empty(),
+		"a tile list that doesn't fit leaves open grass"
+	)
 
 
 func test_world_stands_alone() -> void:

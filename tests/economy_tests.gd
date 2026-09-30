@@ -7,6 +7,7 @@ extends RefCounted
 const Data = preload("res://scripts/data.gd")
 const Economy = preload("res://scripts/economy.gd")
 const GameState = preload("res://scripts/game_state.gd")
+const RunSave = preload("res://scripts/run_save.gd")
 
 var t  # the runner, tests/run_tests.gd
 
@@ -30,6 +31,7 @@ func run(runner) -> void:
 	test_eating_shows_up_as_a_flow()
 	test_flow_window_forgets()
 	test_economy_stands_alone()
+	test_to_dict_and_from_dict()
 	test_game_state_passes_through()
 
 
@@ -306,6 +308,42 @@ func test_flow_window_forgets() -> void:
 	e.advance(1.0)
 	t.check(e.rate("wood") == 0.0, "old flows drop out of the window")
 	t.check(e.parts("wood").is_empty(), "sources too")
+
+
+## The stockpile, what was ever held, the food credit and the flow window survive a dict and a JSON round trip.
+func test_to_dict_and_from_dict() -> void:
+	var a := _empty()
+	a.add("wood", 7)
+	a.add("clay", 2)
+	a.inv["berries"] = 12
+	a.food_credit = 0.35
+	a.feed(3, 0.5)
+	a.note("wood", 6, "gatherers_hut")
+	a.advance(1.5)
+	a.note("wood", -1, "craft")
+	var d := a.to_dict()
+	var b := Economy.new({})
+	b.from_dict(d)
+	t.check(RunSave.to_json(b.to_dict()) == RunSave.to_json(d), "an Economy restored from a dict writes the same dict")
+	t.check(
+		b.inv == a.inv and b.seen == a.seen and b.food_credit == a.food_credit,
+		"the stock, the seen items and the credit"
+	)
+	t.check(b.starving == a.starving and b.food_use == a.food_use, "and the eating state")
+	t.check(is_equal_approx(b.rate("wood"), a.rate("wood")) and b.parts("wood") == a.parts("wood"), "and the rates")
+	var c := Economy.new({})
+	c.from_dict(RunSave.from_json(RunSave.to_json(d)))
+	t.check(RunSave.to_json(c.to_dict()) == RunSave.to_json(d), "the same after a trip through JSON text")
+	t.check(c.inv["wood"] is int and c.inv.keys() == a.inv.keys(), "counts are ints again, in the same order")
+	c.advance(1.0)
+	b.advance(1.0)
+	t.check(c.flows.hist == b.flows.hist, "the flow window carries on the same")
+	var held := c.inv
+	c.from_dict({})
+	t.check(
+		is_same(held, c.inv) and c.inv["wood"] == 0 and c.inv.size() == Data.ITEM_ORDER.size(),
+		"a partial dict loads in place"
+	)
 
 
 func test_economy_stands_alone() -> void:

@@ -10,6 +10,7 @@ extends RefCounted
 
 signal tech_researched(id: String)
 
+const Codec = preload("res://scripts/save_codec.gd")
 const Data = preload("res://scripts/data.gd")
 const Economy = preload("res://scripts/economy.gd")
 const Rules = preload("res://scripts/rules.gd")
@@ -118,3 +119,20 @@ func tick() -> Array:
 ## Techs that can be researched right now, in tree order.
 func ready_list() -> Array:
 	return Data.TECH_ORDER.filter(func(t): return can_research(t))
+
+
+# --- Save --------------------------------------------------------------------
+
+
+## The researched techs (in the order they were researched), the goal and the queue, as JSON-safe values.
+func to_dict() -> Dictionary:
+	return {"researched": Codec.keys(researched), "goal": goal, "queue": queue.duplicate()}
+
+
+## Restore what to_dict wrote. The researched set is refilled in place, since the Economy reads the same one.
+## Nothing is emitted: the techs were already announced in the run that was saved.
+func from_dict(d: Dictionary) -> void:
+	researched.clear()
+	researched.merge(Codec.to_set(d.get("researched", [])))
+	goal = String(d.get("goal", ""))
+	queue = Codec.strings(d.get("queue", []))
