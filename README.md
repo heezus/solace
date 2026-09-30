@@ -12,8 +12,10 @@ This is the **first playable**: the stone age loop with a lite tech tree, ending
 ## Controls
 | Action | Input |
 |---|---|
-| Gather from a tile | Left-click it |
-| Collect from / load a building (before haulers) | Left-click the building |
+| Gather from a tile | Hold the left button on it: a ring fills, then the harvest pops (keep holding to repeat) |
+| Send a hut's Kith out for a bundle | Left-click the hut (up to 3 trips queue, shown as pips) |
+| Collect from / load a building with no road | Left-click the building |
+| Rush a working building | Left-click it (then a 5 s cooldown) |
 | Lay roads | Pick Road, then click or drag |
 | Place a building | Pick it in the bottom bar, then left-click open grassland |
 | Stop placing | Right-click or Esc |
@@ -22,12 +24,15 @@ This is the **first playable**: the stone age loop with a lite tech tree, ending
 
 ## How the loop works
 - Follow the **Goals** panel on the right. The **Info** panel explains whatever you point at.
-- Click resources by hand at first. Knapping lets you craft Flint Tools, which doubles hand gathering.
+- Gather by hand at first. Harvest a resource 10 times and a watching Kith learns it: its Gatherer's Hut then works it.
+  Knapping lets you craft Flint Tools, which shorten the hold. A harvest yields base x tool x rank, and ranks II and III
+  on a tech's card raise it further.
 - The **Kith** are your people, and each one is on the map. Every building needs one Kith to work it.
   They eat food (berries, or flour at 3x value). They grow when there is spare food and room: the Camp houses 4, each **Dwelling** 3. If the food runs out, they stop working, and after a while one leaves.
 - A **Gatherer's Hut** sends its worker out to the resource tiles within 2 tiles and back, so a hut surrounded by resources is faster.
-- **Paths & Haulers** turns idle Kith into haulers. They walk goods between buildings and the nearest Camp or **Storehouse**, so distance matters.
-- **Roads** double walking speed, and a road across the river is a bridge. Click or drag to lay them.
+- Fiber comes from **wild flax**, never bare grass. There is always a patch near the Camp.
+- **Paths & Haulers** turns idle Kith into haulers. They serve only buildings a **Road** links to the Camp or a **Storehouse**, and walk the roads only. A linked hut loops on its own; an unlinked one shows "Needs road" and still needs clicks.
+- **Roads** (2 Wood a tile) double walking speed. They fell forest, cut passes through rocks for 3 Stone, and a road across the river is a bridge. Click or drag to lay them.
 - Flour that research still needs is never eaten.
 - The **Water Wheel** must touch the river and powers machines within 3 tiles. The **Grindstone** needs power.
 - Research **Bronze Dawn** to end the stone age.

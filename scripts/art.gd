@@ -151,6 +151,19 @@ static func feature(ci: CanvasItem, t: String, c: Vector2, p: Vector2i, time: fl
 			outlined_circle(ci, c + Vector2(0, 2), 10.0, Color("558b2f"))
 			for off in [Vector2(-4, -1), Vector2(3, 3), Vector2(4, -4), Vector2(-2, 6)]:
 				ci.draw_circle(c + off, 2.5, Color("d62246"))
+		"flax":
+			var tex := sprite("flax")
+			if tex != null:
+				ci.draw_texture_rect(tex, Rect2(c - Vector2(16, 16), Vector2(32, 32)), false)
+				return
+			# Drawn stand-in if the sprite is missing: slender stems with small blue flowers.
+			for i in 4:
+				var x := -9 + i * 6
+				var top := c + Vector2(x + (i % 2) * 2 - 1, -7 + (i % 2) * 4)
+				ci.draw_line(c + Vector2(x, 11), top, OUTLINE, 3.4)
+				ci.draw_line(c + Vector2(x, 11), top, Color("6f9a3c"), 1.6)
+				outlined_circle(ci, top, 2.5, Color("6d8fe0"))
+				ci.draw_circle(top, 1.0, Color("f2c14e"))
 		"grain":
 			for i in 4:
 				var x := -9 + i * 6

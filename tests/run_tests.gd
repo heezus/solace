@@ -52,7 +52,8 @@ func _init() -> void:
 	ConventionTests.new().run(self)
 	BonusTests.new().run(self)
 	ArcTests.new().run(self)
-	test_pacing_bot()
+	if not "fast" in OS.get_cmdline_user_args():  # `-- fast` skips the bot's slow runs while iterating
+		test_pacing_bot()
 	print("FAILED: %d" % failures if failures > 0 else "ALL TESTS PASSED")
 	quit(1 if failures > 0 else 0)
 
@@ -101,6 +102,35 @@ func find_tile(s: GameState, tile: String) -> Vector2i:
 			if s.tile_at(Vector2i(x, y)) == tile:
 				return Vector2i(x, y)
 	return Vector2i(-1, -1)
+
+
+## Link the building at p to the Hearth with road (test setup, not the placement rules): the shortest
+## side-by-side path over tiles with no building on them, the ends left off.
+func road_link(s: GameState, p: Vector2i) -> void:
+	var from := {}
+	var todo: Array = [p]
+	from[p] = p
+	var found := false
+	while not todo.is_empty() and not found:
+		var q: Vector2i = todo.pop_front()
+		for n in GameState.NEIGHBORS:
+			var r: Vector2i = q + n
+			if from.has(r) or not s.in_bounds(r) or s.tile_at(r) == "river":
+				continue
+			if r == s.camp_pos:
+				from[r] = q
+				found = true
+				break
+			if s.building_at.has(r):
+				continue
+			from[r] = q
+			todo.append(r)
+	var at: Vector2i = from.get(s.camp_pos, p)
+	while at != p:
+		s.roads[at] = true
+		s._update_walk_cell(at)
+		at = from[at]
+	s.road_rev += 1
 
 
 func find_grass(s: GameState, near_river: bool) -> Vector2i:
@@ -178,6 +208,7 @@ func test_gatherer_fills_until_hauled() -> void:
 	s.researched["haulers"] = true
 	var p := s.camp_pos + Vector2i(-2, 0)
 	check(s.place("gatherers_hut", p), "place hut next to forest")
+	road_link(s, p)
 	for i in 400:
 		s.tick(0.5)
 		for k in s.kith:
@@ -199,6 +230,7 @@ func test_haulers_automate_a_chain() -> void:
 	s.researched["haulers"] = true
 	var p := find_grass(s, false)
 	check(s.place("charcoal_pit", p), "place charcoal pit")
+	road_link(s, p)
 	var charcoal_before: int = s.inv["charcoal"]
 	for i in 100:
 		s.tick(0.5)
@@ -276,12 +308,15 @@ func test_goals_advance_in_order() -> void:
 		for i in Data.LEARN_CLICKS:
 			s.gather_by_hand(find_tile(s, tile))
 	s.tick(0.1)
-	check(Goals.current_goal(s) == 2, "then Knapping")
+	check(Goals.current_goal(s) == 2, "then find the flax")
+	s.gather_by_hand(find_tile(s, "flax"))
+	s.tick(0.1)
+	check(Goals.current_goal(s) == 3, "then Knapping")
 	s.inv["flint"] = 5
 	s.inv["stone"] = 10
 	s.research("knapping")
 	s.tick(0.1)
-	check(Goals.current_goal(s) == 3, "knapping done, next is flint tools")
+	check(Goals.current_goal(s) == 4, "knapping done, next is flint tools")
 	check(s.goals_done.has("learn_wood"), "earlier goals stay done")
 	var ids: Array = Data.GOALS.map(func(g): return g["id"])
 	check(
@@ -382,6 +417,7 @@ func haul_rate(dist_x: int) -> int:
 	s.inv["wood"] = 500
 	s.researched["haulers"] = true
 	place_free(s, "charcoal_pit", s.camp_pos + Vector2i(dist_x, 0))
+	road_link(s, s.camp_pos + Vector2i(dist_x, 0))
 	s.inv["charcoal"] = 0
 	for i in 600:
 		s.tick(0.25)

@@ -11,6 +11,8 @@ const BuildingPanel = preload("res://scripts/building_panel.gd")
 const Ranks = preload("res://scripts/ranks.gd")
 const Workers = preload("res://scripts/workers.gd")
 const Hands = preload("res://scripts/hands.gd")
+const MapGen = preload("res://scripts/map_gen.gd")
+const Roads = preload("res://scripts/roads.gd")
 
 var t  # the runner, tests/run_tests.gd
 
@@ -25,9 +27,13 @@ func run(runner) -> void:
 	test_click_yield_math()
 	test_hold_to_harvest()
 	test_rank_costs_and_effects()
-	# test_tier_costs_scale()
+	test_tier_costs_scale()
 	test_story_events()
 	test_job_titles()
+	test_fiber_comes_from_flax()
+	test_flax_near_every_hearth()
+	test_haulers_need_roads()
+	test_haulers_walk_roads_only()
 
 
 ## A camp with a hut next to the forest west of the Hearth, the whole map in sight and food to spare.
@@ -123,6 +129,10 @@ func test_no_loop_before_haulers_loop_after() -> void:
 	run_for(s, 60.0)
 	t.check(s.inv["wood"] == wood and s.buffered(b["out"]) == 0, "before Paths & Haulers a hut doesn't loop")
 	s.researched["haulers"] = true
+	run_for(s, 30.0)
+	t.check(s.inv["wood"] == wood and s.buffered(b["out"]) == 0, "researching it alone doesn't: no road yet")
+	t.check(b["alert"] == "Needs road", "the hut shows Needs road: " + b["alert"])
+	t.road_link(s, b["pos"])
 	run_for(s, 60.0)
 	t.check(s.inv["wood"] + s.buffered(b["out"]) > wood, "after it, the hut gathers on its own")
 	t.check(s.inv["wood"] > wood, "and haulers carry the Wood to the stockpile")
@@ -142,7 +152,8 @@ func test_rush_and_its_cooldown() -> void:
 	t.check(Workers.can_rush(s, b), "a working building can be rushed")
 	var before := s.buffered(b["out"])
 	t.check(Workers.rush(s, i), "rush it")
-	t.check(s.buffered(b["out"]) == before + 1, "the rush finished the cycle at once")
+	var batch: int = Data.BUILDINGS["charcoal_pit"]["out"]["charcoal"]
+	t.check(s.buffered(b["out"]) == before + batch, "the rush finished the cycle at once")
 	t.check(is_equal_approx(b["rush_cd"], Data.RUSH_COOLDOWN), "then a %d s cooldown" % Data.RUSH_COOLDOWN)
 	run_for(s, 1.0)
 	t.check(not Workers.rush(s, i), "no second rush during the cooldown")
@@ -156,6 +167,7 @@ func test_rush_and_its_cooldown() -> void:
 	var hut: Dictionary = s2.buildings[r[1]]
 	s2.learned["wood"] = "Aro"
 	s2.researched["haulers"] = true
+	t.road_link(s2, hut["pos"])
 	run_for(s2, 1.5)
 	var k: Dictionary = s2.kith[hut["worker"]]
 	t.check(k["phase"] in ["to_tile", "harvest"], "the hut worker is out: " + k["phase"])
@@ -164,6 +176,16 @@ func test_rush_and_its_cooldown() -> void:
 	t.check(s2.buffered(hut["out"]) == held + s2._bundle_size(hut, "wood"), "the bundle is home at once")
 	t.check(k["phase"] == "home", "and the worker with it")
 	t.check(not Workers.can_rush(s2, hut), "on cooldown")
+
+	# A road felled the tree the worker was out at: a rush brings nothing, not an item with no name.
+	run_for(s2, Data.RUSH_COOLDOWN + 1.5)
+	if k["phase"] in ["to_tile", "harvest"]:
+		var tile: Vector2i = k["task"].get("tile", hut["pos"])
+		s2._set_tile(tile, "grass")
+		t.check(Workers.rush(s2, r[1]), "rush a worker whose tree is gone")
+		t.check(not s2.inv.has("") and not hut["out"].has(""), "nothing with no name is stored")
+	else:
+		t.check(false, "the hut worker should be out again: " + k["phase"])
 
 
 func test_click_yield_math() -> void:
@@ -349,3 +371,154 @@ func test_job_titles() -> void:
 	for i in Data.PEOPLE_NAMES.size() + 1:
 		s._add_kith()
 	t.check(s.kith[-1]["name"].ends_with(" II"), "names come round again with II: " + s.kith[-1]["name"])
+
+
+## Fiber comes only from wild flax: bare grass gives nothing by hand or to a hut, and a hut by the
+## flax cuts it once a Kith has learned it (its worker is the Thatcher).
+func test_fiber_comes_from_flax() -> void:
+	var s: GameState = t.fresh()
+	s.inv["berries"] = 200
+	t.check(Data.TILES["grass"]["yields"] == "" and Data.TILES["flax"]["yields"] == "fiber", "flax yields Fiber")
+	t.check(not Data.TILES["flax"]["buildable"], "flax can't be built on")
+	var grass: Vector2i = t.find_grass(s, false)
+	t.check(Hands.item_at(s, grass) == "", "bare grass gives nothing by hand")
+	for i in 30:
+		t.check(s.hold_harvest(grass, 0.1) == "", "holding on grass never pays out")
+	t.check(s.inv.get("fiber", 0) == 0, "no Fiber from grass")
+	var flax: Vector2i = s.camp_pos + MapGen.FLAX_PATCH[0]
+	t.check(s.tile_at(flax) == "flax", "the Hearth's flax patch is there")
+	for i in Data.LEARN_CLICKS:
+		s.gather_by_hand(flax)
+	t.check(s.knows("fiber"), "10 harvests of flax teach it")
+	# A hut with only grass in range has nothing to gather: clear a patch of ground for one.
+	var open: Vector2i = s.camp_pos + Vector2i(0, 6)
+	for dy in range(-2, 3):
+		for dx in range(-2, 3):
+			s._set_tile(open + Vector2i(dx, dy), "grass")
+	s._build_walk_grid()
+	t.place_free(s, "gatherers_hut", open)
+	var bare: Dictionary = s.buildings[s.building_at[open]]
+	t.check(bare["gather_items"].is_empty(), "a hut on bare grass lists nothing to gather")
+	t.check(not Workers.knows_any(s, open), "and knows nothing it could gather there")
+	# A hut next to the flax cuts it.
+	var by := flax + Vector2i(1, 1)
+	if s.placement_error("gatherers_hut", by) != "":
+		by = flax + Vector2i(0, 2)
+	t.check(t.place_free(s, "gatherers_hut", by), "a hut by the flax")
+	var hut: Dictionary = s.buildings[s.building_at[by]]
+	t.check("fiber" in hut["gather_items"], "it will gather Fiber")
+	s.inv["fiber"] = 0
+	s.researched["haulers"] = true
+	t.road_link(s, by)
+	t.road_link(s, open)
+	run_for(s, 90.0)
+	t.check(s.inv.get("fiber", 0) + hut["out"].get("fiber", 0) > 0, "the hut brings in Fiber from the flax")
+	t.check(bare["out"].is_empty() and bare["status"] != "Working", "the bare-grass hut brings nothing")
+
+
+## Every map has wild flax within a hut's reach of the Hearth, in sight from the start, and more
+## patches out on the grassland.
+func test_flax_near_every_hearth() -> void:
+	for map_seed in [1, 2, 3, 4, 5, 6, 7, 8, 42, 1234, 99991]:
+		var s := GameState.new()
+		s.generate(map_seed)
+		var near := 0
+		var total := 0
+		for y in GameState.HEIGHT:
+			for x in GameState.WIDTH:
+				var p := Vector2i(x, y)
+				if s.tile_at(p) != "flax":
+					continue
+				total += 1
+				var d: Vector2i = (p - s.camp_pos).abs()
+				if maxi(d.x, d.y) <= 4 and s.fog.is_revealed(p) and s.trip_info(p)["ok"]:
+					near += 1
+		t.check(near >= 2, "map %d: flax in sight and reach of the Hearth (%d tiles)" % [map_seed, near])
+		t.check(total >= near + 4, "map %d: more flax patches out on the grassland (%d tiles)" % [map_seed, total])
+
+
+## Paths & Haulers alone automates nothing: a hut or workshop with no road link keeps working by
+## clicks and shows Needs road; a road to the Hearth (or a Storehouse) makes it run on its own, and
+## tearing the road up unlinks it again.
+func test_haulers_need_roads() -> void:
+	var s: GameState = t.fresh()
+	s.inv["berries"] = 500
+	s.inv["wood"] = 200
+	s.researched["haulers"] = true
+	var p := open_spot(s, 4)
+	t.check(t.place_free(s, "charcoal_pit", p), "a pit four tiles from the Hearth")
+	var i: int = s.building_at[p]
+	var pit: Dictionary = s.buildings[i]
+	t.check(not Roads.linked(s, pit) and not Roads.automated(s, pit), "no road: not linked")
+	run_for(s, 20.0)
+	t.check(s.buffered(pit["inbuf"]) == 0 and pit["alert"] == "Needs road", "no hauler loads it: " + pit["alert"])
+	t.check(pit["status"].contains("Needs road"), "its status says so: " + pit["status"])
+	t.check(Workers.road_hint(s, p).contains("Hearth"), "and what to connect: " + Workers.road_hint(s, p))
+	Workers.click(s, i)
+	t.check(s.buffered(pit["inbuf"]) > 0, "a click still loads it by hand")
+	t.road_link(s, p)
+	t.check(Roads.linked(s, pit) and Roads.depot_of(s, pit) == s.camp_pos, "a road to the Hearth links it")
+	var charcoal: int = s.inv.get("charcoal", 0)
+	run_for(s, 60.0)
+	t.check(s.inv.get("charcoal", 0) > charcoal + 4, "haulers keep it loaded and emptied")
+	t.check(pit["alert"] != "Needs road", "the marker is gone")
+	var road: Vector2i = Vector2i(-1, -1)
+	for n in GameState.NEIGHBORS:
+		if s.roads.has(p + n):
+			road = p + n
+	s.demolish(road)
+	t.check(not Roads.linked(s, pit), "tearing up the road unlinks it")
+	# A Storehouse is a depot too: a road to it is enough.
+	var s2: GameState = t.fresh()
+	s2.inv["berries"] = 500
+	s2.researched["haulers"] = true
+	var store := open_spot(s2, 6)
+	var pit2: Vector2i = store + Vector2i(2, 0)
+	for q in [store + Vector2i(1, 0), pit2]:
+		s2._set_tile(q, "grass")
+	t.check(t.place_free(s2, "storehouse", store) and t.place_free(s2, "charcoal_pit", pit2), "a Storehouse and a pit")
+	s2.roads[store + Vector2i(1, 0)] = true
+	s2.road_rev += 1
+	var b2: Dictionary = s2.buildings[s2.building_at[pit2]]
+	t.check(Roads.linked(s2, b2) and Roads.depot_of(s2, b2) == store, "one road tile to the Storehouse links it")
+
+
+## The open grass tile nearest the Hearth at least `dist` tiles from it (in steps), with nothing
+## built next to it.
+func open_spot(s: GameState, dist: int) -> Vector2i:
+	var best := Vector2i(-1, -1)
+	var best_d := INF
+	for y in GameState.HEIGHT:
+		for x in GameState.WIDTH:
+			var p := Vector2i(x, y)
+			var d := Vector2(p).distance_to(Vector2(s.camp_pos))
+			var steps: int = maxi(absi(p.x - s.camp_pos.x), absi(p.y - s.camp_pos.y))
+			if steps >= dist and d < best_d and s.tile_at(p) == "grass" and not s.building_at.has(p):
+				best = p
+				best_d = d
+	return best
+
+
+## Haulers never leave the roads on a job: every step of a pickup or delivery is a road tile, the
+## depot or the building they serve.
+func test_haulers_walk_roads_only() -> void:
+	var s: GameState = t.fresh()
+	s.inv["berries"] = 500
+	s.inv["wood"] = 300
+	s.researched["haulers"] = true
+	var p := open_spot(s, 5)
+	t.check(t.place_free(s, "charcoal_pit", p), "a pit to serve")
+	t.road_link(s, p)
+	var off_road := 0
+	var tasks := 0
+	for step in 600:
+		s.tick(0.1)
+		for k in s.kith:
+			if k["job"] != "haul" or not k["task"].has("kind"):
+				continue
+			tasks += 1
+			for q in k["path"]:
+				if not s.roads.has(q) and q != p and q != s.camp_pos:
+					off_road += 1
+	t.check(tasks > 0, "haulers took jobs")
+	t.check(off_road == 0, "every hauler step on a job is a road tile (%d off-road)" % off_road)

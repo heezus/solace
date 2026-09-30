@@ -5,6 +5,7 @@ extends RefCounted
 ## sends a trip, or rushes it. Static, and works on the GameState passed in.
 
 const Data = preload("res://scripts/data.gd")
+const Roads = preload("res://scripts/roads.gd")
 
 
 ## One step of a worker's day at their building.
@@ -21,19 +22,16 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 		"home":
 			if def["kind"] != "gatherer" or s.buffered(b["out"]) >= Data.BUFFER_CAP:
 				return
-			if not s.has_haulers() and b["trips"] <= 0:
+			if not Roads.automated(s, b) and b["trips"] <= 0:
 				return  # waits for a click
 			var target := next_gather_tile(s, k, b)
 			if target.x < 0:
 				return  # nothing here it knows how to gather yet
-			k["trip"] = not s.has_haulers()
+			k["trip"] = not Roads.automated(s, b)
 			if k["trip"]:
 				s.record_story("first_trip")
-			if target == b["pos"]:
-				k["phase"] = "harvest"  # nothing reachable: cut grass by the hut
-			else:
-				k["task"] = {"tile": target}
-				k["phase"] = "to_tile"
+			k["task"] = {"tile": target}
+			k["phase"] = "to_tile"
 		"to_tile":
 			if s._step(k, delta):
 				k["phase"] = "harvest"
@@ -57,6 +55,11 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 static func _finish_harvest(s, k: Dictionary, b: Dictionary, tile: Vector2i) -> void:
 	k["timer"] = 0.0
 	var item := tile_item(s, b, tile)
+	if item == "":  # the tile changed while they worked (a road cut through it): nothing to bring
+		k["task"] = {}
+		s._walk_to(k, b["pos"])
+		k["phase"] = "to_home"
+		return
 	k["carry"] = {item: s._harvest_amount(b, tile, item)}
 	s._wear(b)
 	k["task"] = {}
@@ -68,9 +71,9 @@ static func _finish_harvest(s, k: Dictionary, b: Dictionary, tile: Vector2i) -> 
 		k["phase"] = "to_home"
 
 
-## What a hut gathers at `tile` (the hut's own tile means cutting grass for Fiber).
-static func tile_item(s, b: Dictionary, tile: Vector2i) -> String:
-	return Data.TILES[s.tile_at(tile)]["yields"] if tile != b["pos"] else "fiber"
+## What a hut gathers at `tile`.
+static func tile_item(s, _b: Dictionary, tile: Vector2i) -> String:
+	return Data.TILES[s.tile_at(tile)]["yields"]
 
 
 ## Put down what a hut worker carries: into the stockpile at the end of a trip, else into the hut.
@@ -87,8 +90,8 @@ static func _deliver(s, k: Dictionary, b: Dictionary) -> void:
 	k["trip"] = false
 
 
-## The next tile in the hut's rotation that the Kith know how to gather and can reach. Falls back to
-## the hut itself (cutting grass) once Fiber is known, and Vector2i(-1, -1) when there's nothing.
+## The next tile in the hut's rotation that the Kith know how to gather and can reach, or
+## Vector2i(-1, -1) when there's nothing (bare grass gives nothing: Fiber comes from flax).
 static func next_gather_tile(s, k: Dictionary, b: Dictionary) -> Vector2i:
 	var tiles: Array = s.gather_tiles(b["pos"]).filter(func(t): return s.knows(Data.TILES[s.tile_at(t)]["yields"]))
 	for _attempt in tiles.size():
@@ -96,13 +99,11 @@ static func next_gather_tile(s, k: Dictionary, b: Dictionary) -> Vector2i:
 		b["gather_index"] += 1
 		if s._walk_to(k, t):
 			return t
-	return b["pos"] if s.knows("fiber") else Vector2i(-1, -1)
+	return Vector2i(-1, -1)
 
 
 ## True if a hut at p would find something the Kith know how to gather.
 static func knows_any(s, p: Vector2i) -> bool:
-	if s.knows("fiber"):
-		return true
 	for t in s.gather_tiles(p):
 		if s.knows(Data.TILES[s.tile_at(t)]["yields"]):
 			return true
@@ -170,7 +171,7 @@ static func click(s, i: int) -> String:
 	var kind: String = Data.BUILDINGS[b["type"]]["kind"]
 	if not s.needs_worker(b):
 		return ""
-	if not s.has_haulers():
+	if not Roads.automated(s, b):
 		var held: int = s.buffered(b["out"])
 		s.haul(i)
 		if kind == "gatherer":
@@ -221,8 +222,9 @@ static func rush(s, i: int) -> bool:
 	if k["phase"] in ["to_tile", "harvest"]:
 		var tile: Vector2i = k["task"].get("tile", b["pos"])
 		var item := tile_item(s, b, tile)
-		k["carry"] = {item: s._harvest_amount(b, tile, item)}
-		s._wear(b)
+		if item != "":  # "" when a road felled or cut the tile away under them: nothing to bring
+			k["carry"] = {item: s._harvest_amount(b, tile, item)}
+			s._wear(b)
 	_deliver(s, k, b)
 	k["task"] = {}
 	k["path"] = []
@@ -230,3 +232,48 @@ static func rush(s, i: int) -> bool:
 	k["pos"] = Vector2(b["pos"])
 	k["phase"] = "home"
 	return true
+
+
+# --- Status ----------------------------------------------------------------------
+
+
+## Why a staffed building is standing still: full, or short of an input.
+static func idle_reason(s, b: Dictionary, def: Dictionary) -> void:
+	var auto := Roads.automated(s, b)
+	if s.buffered(b["out"]) >= Data.BUFFER_CAP:
+		if auto:
+			s._set_status(b, "Full: waiting for a hauler", "Full: waiting for a hauler")
+		else:
+			s._set_status(b, "Full: click to collect" + road_note(s, b), "Full: click to collect")
+		return
+	var missing: Array = []
+	for id in def.get("in", {}):
+		if b["inbuf"].get(id, 0) < def["in"][id]:
+			missing.append(Data.ITEMS[id]["name"])
+	if missing.is_empty():
+		b["status"] = "Idle"
+		return
+	var how := "waiting for a hauler" if auto else "click to load" + road_note(s, b)
+	if auto:
+		for id in def["in"]:
+			if b["inbuf"].get(id, 0) + b["incoming"].get(id, 0) < def["in"][id] and s.inv.get(id, 0) == 0:
+				how = "stockpile is out"
+	s._set_status(b, "Needs %s (%s)" % [", ".join(missing), how], "Needs " + ", ".join(missing))
+
+
+## After Paths & Haulers, what a building with no road link needs: "" once it's linked (or before).
+static func road_note(s, b: Dictionary) -> String:
+	if not s.has_haulers() or Roads.linked(s, b):
+		return ""
+	return ". Needs road: " + road_hint(s, b["pos"])
+
+
+## "lay Road from here to the Hearth (4 tiles), then haulers carry for it".
+static func road_hint(s, p: Vector2i) -> String:
+	var g := Roads.gap(s, p)
+	if g["to"].x < 0:
+		return "linked by road"
+	var what := "the road to the Hearth" if s.roads.has(g["to"]) else "the Hearth"
+	if s.building_at.has(g["to"]) and g["to"] != s.camp_pos:
+		what = "the Storehouse"
+	return "lay Road from here to %s (about %d tiles) so haulers carry for it" % [what, g["tiles"]]

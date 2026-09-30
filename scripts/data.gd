@@ -8,7 +8,7 @@ const ITEMS := {
 	"wood": {"name": "Wood", "color": Color("8b5a2b")},
 	"stone": {"name": "Stone", "color": Color("9aa0a6")},
 	"flint": {"name": "Flint", "color": Color("4a4e69")},
-	"fiber": {"name": "Fiber", "color": Color("a7c957")},
+	"fiber": {"name": "Fiber", "color": Color("a7c957"), "desc": "Cut from wild flax"},
 	"clay": {"name": "Clay", "color": Color("c8553d")},
 	"berries": {"name": "Berries", "color": Color("d62246")},
 	"grain": {"name": "Grain", "color": Color("e9c46a")},
@@ -115,7 +115,7 @@ const STARVE_TIME := 20.0
 ## Tiles per second on open ground. Roads double it; forest and rocks halve it.
 const KITH_SPEED := 2.0
 ## Items a hauler carries per trip.
-const CARRY := 5
+const CARRY := 10
 ## Path cost of each tile kind. Rivers are impassable without a Wooden Bridge, or slow once Rafts are known.
 const WALK_COST := {"tree": 2.0, "rock": 2.0, "road": 0.5, "river": 4.0}
 
@@ -138,7 +138,8 @@ const RATE_WINDOW := 30
 # --- Map tiles ---------------------------------------------------------------
 
 const TILES := {
-	"grass": {"name": "Grassland", "yields": "fiber", "color": Color("7cb342"), "buildable": true},
+	"grass": {"name": "Grassland", "yields": "", "color": Color("7cb342"), "buildable": true},
+	"flax": {"name": "Wild Flax", "yields": "fiber", "color": Color("7cb342"), "buildable": false},
 	"tree": {"name": "Forest", "yields": "wood", "color": Color("2e7d32"), "buildable": false},
 	"rock": {"name": "Rocks", "yields": "stone", "color": Color("8d8d8d"), "buildable": false},
 	"gravel": {"name": "Riverbed Gravel", "yields": "flint", "color": Color("b0a18a"), "buildable": false},
@@ -313,7 +314,7 @@ const TECHS := {
 		"unlock": "Water Wheel",
 		"icon": "water_wheel",
 		"requires": ["stone_axe", "masonry"],
-		"cost": {"rope": 10, "wood": 40, "stone": 10},
+		"cost": {"rope": 30, "wood": 40, "stone": 20},
 		"desc": "Harness the river. Powers machines within 3 tiles.",
 	},
 	"masonry":
@@ -374,7 +375,7 @@ const TECHS := {
 		"icon": "@clay",
 		"side": true,
 		"requires": ["storytelling", "foraging"],
-		"cost": {"clay": 10, "berries": 10},
+		"cost": {"clay": 15, "berries": 15},
 		"rank": {"item": "clay"},
 		"effect": "ochre",
 		"desc": "Know the red earth. Gatherer's Huts bring back twice the Clay per trip.",
@@ -408,7 +409,7 @@ const TECHS := {
 		"icon": "watchtower",
 		"side": true,
 		"requires": ["gatherers_hut", "storytelling"],
-		"cost": {"berries": 20, "wood": 20},
+		"cost": {"berries": 40, "wood": 30, "rope": 10},
 		"effect": "scouting",
 		"desc": "Know the land. Gatherer's Huts reach 3 tiles instead of 2.",
 	},
@@ -423,7 +424,7 @@ const TECHS := {
 		"unlock": "Field",
 		"icon": "field",
 		"requires": ["gatherers_hut", "stone_axe"],
-		"cost": {"grain": 20, "wood": 20},
+		"cost": {"grain": 40, "wood": 30, "rope": 10},
 		"rank": {"item": "grain"},
 		"desc": "Sow wild grain. Plant Fields of grain on open grassland.",
 	},
@@ -438,7 +439,7 @@ const TECHS := {
 		"unlock": "Road, Wooden Bridge",
 		"icon": "hauler",
 		"requires": ["cordage", "gatherers_hut"],
-		"cost": {"rope": 10, "wood": 30},
+		"cost": {"rope": 30, "wood": 50},
 		"desc": "Idle Kith carry goods between buildings and the stockpile. Unlocks Roads and Wooden Bridges.",
 	},
 	"storehouse":
@@ -452,7 +453,7 @@ const TECHS := {
 		"unlock": "Storehouse",
 		"icon": "storehouse",
 		"requires": ["haulers", "masonry"],
-		"cost": {"stone": 30, "rope": 10, "wood": 20},
+		"cost": {"stone": 60, "wood": 100, "brick": 40},
 		"desc": "Stone walls and a roof for goods. Build Storehouses: haulers drop off and pick up at the nearest one.",
 	},
 	"nets":
@@ -481,7 +482,7 @@ const TECHS := {
 		"unlock": "Grindstone",
 		"icon": "grindstone",
 		"requires": ["water_wheel", "farming"],
-		"cost": {"stone": 20, "brick": 10},
+		"cost": {"stone": 60, "wood": 80, "brick": 30, "rope": 30},
 		"desc": "A powered millstone. Grinds grain into flour, the best food.",
 	},
 	"smoking":
@@ -513,7 +514,7 @@ const TECHS := {
 		"side": true,
 		"requires": ["masonry"],
 		"requires_any": ["storytelling", "star_lore"],
-		"cost": {"stone": 50, "rope": 10},
+		"cost": {"stone": 60, "rope": 20},
 		"desc": "Raise great stones. Buildings right next to a Standing Stone work twice as fast.",
 	},
 	"stone_axe":
@@ -524,13 +525,13 @@ const TECHS := {
 		"lane": "stone",
 		"tier": 1,
 		"slot": 0,
-		"unlock": "Wood x2",
+		"unlock": "Wood x3",
 		"icon": "@axe",
 		"requires": ["knapping", "cordage"],
-		"cost": {"flint": 10, "wood": 15},
+		"cost": {"flint": 10, "wood": 15, "rope": 5},
 		"rank": {"item": "wood"},
 		"effect": "stone_axe",
-		"desc": "Haft a flint head with cord. Wood x2 per harvest, by hand and from huts. Clears land for Farming.",
+		"desc": "Haft a flint head with cord. Wood x3 per harvest, by hand and from huts. Clears land for Farming.",
 	},
 	"irrigation":
 	{
@@ -544,7 +545,7 @@ const TECHS := {
 		"icon": "@irrigation",
 		"side": true,
 		"requires": ["water_wheel", "farming"],
-		"cost": {"clay": 20, "stone": 20},
+		"cost": {"clay": 80, "stone": 80, "brick": 40},
 		"effect": "irrigation",
 		"desc": "Dig ditches from the river. Fields that touch the river grow twice as fast.",
 	},
@@ -559,7 +560,7 @@ const TECHS := {
 		"unlock": "Kith eat less",
 		"icon": "granary",
 		"requires": ["farming", "pottery"],
-		"cost": {"clay": 20, "berries": 20},
+		"cost": {"clay": 60, "berries": 80, "charcoal": 40, "brick": 20},
 		"effect": "preservation",
 		"desc": "Sealed pots keep food. The Kith eat 25% less.",
 	},
@@ -571,13 +572,13 @@ const TECHS := {
 		"lane": "fiber",
 		"tier": 3,
 		"slot": 0,
-		"unlock": "Carry 10",
+		"unlock": "Carry 20",
 		"icon": "hauler_pack",
 		"side": true,
 		"requires": ["haulers", "stone_axe"],
-		"cost": {"rope": 15, "wood": 20},
+		"cost": {"rope": 60, "wood": 100, "charcoal": 40},
 		"effect": "carrying_poles",
-		"desc": "Haulers carry 10 at a time instead of 5.",
+		"desc": "Haulers carry 20 at a time instead of 10.",
 	},
 	"paved_roads":
 	{
@@ -590,7 +591,7 @@ const TECHS := {
 		"unlock": "Roads 4x",
 		"icon": "tile_road",
 		"requires": ["haulers", "masonry"],
-		"cost": {"stone": 40, "rope": 10},
+		"cost": {"stone": 100, "wood": 60, "brick": 20, "rope": 20},
 		"effect": "paved_roads",
 		"desc": "Roads are 4x faster than open ground, up from 2x.",
 	},
@@ -605,7 +606,7 @@ const TECHS := {
 		"unlock": "Flour worth 5",
 		"icon": "@bread",
 		"requires": ["grindstone", "pottery"],
-		"cost": {"flour": 10, "charcoal": 20},
+		"cost": {"flour": 40, "charcoal": 80, "brick": 80},
 		"effect": "baking",
 		"desc": "Bake flour into bread in a clay oven. Flour is worth 5 food, up from 3.",
 	},
@@ -621,7 +622,7 @@ const TECHS := {
 		"icon": "raft",
 		"side": true,
 		"requires": ["nets", "stone_axe"],
-		"cost": {"wood": 40, "rope": 15},
+		"cost": {"wood": 50, "rope": 30},
 		"effect": "rafts",
 		"desc": "Lash logs together. Kith can cross the river without a bridge, slowly.",
 	},
@@ -637,7 +638,7 @@ const TECHS := {
 		"icon": "@calendar",
 		"requires": ["farming"],
 		"requires_any": ["megaliths", "storytelling"],
-		"cost": {"grain": 30, "stone": 20},
+		"cost": {"grain": 100, "stone": 40, "wood": 30, "brick": 30},
 		"effect": "calendar",
 		"desc": "Count the moons and sow on time. Fields yield 25% more.",
 	},
@@ -652,7 +653,7 @@ const TECHS := {
 		"unlock": "The next era",
 		"icon": "item_bronze",
 		"requires": ["preservation", "paved_roads", "baking", "calendar", "storehouse"],
-		"cost": {"brick": 30, "flour": 20, "rope": 30, "stone": 60},
+		"cost": {"brick": 80, "flour": 60, "rope": 80, "stone": 100, "charcoal": 100, "wood": 160},
 		"desc": "The stone age ends. The next era begins.",
 	},
 }
@@ -730,11 +731,12 @@ const BUILDINGS := {
 		"name": "Road",
 		"kind": "road",
 		"tech": "haulers",
-		"cost": {"stone": 1},
+		"cost": {"wood": 2},
 		"color": Color("c8a36a"),
 		"desc":
 		(
-			"Kith walk twice as fast on roads. On Rocks, a Road cuts a pass for 3 Stone."
+			"A timber trackway. Kith walk twice as fast on roads, and haulers serve only road-linked buildings."
+			+ " Through Forest, a Road fells the trees; on Rocks, it cuts a pass for 3 Stone."
 			+ " Roads can't cross the river: build a Wooden Bridge. Drag to lay."
 		),
 	},
@@ -774,7 +776,7 @@ const BUILDINGS := {
 		"tech": "fire",
 		"cost": {"wood": 5, "stone": 5},
 		"in": {"wood": 2},
-		"out": {"charcoal": 1},
+		"out": {"charcoal": 2},
 		"time": 4.0,
 		"color": Color("3d405b"),
 		"desc": "Smoulders wood into charcoal.",
@@ -811,7 +813,7 @@ const BUILDINGS := {
 		"tech": "pottery",
 		"cost": {"stone": 10, "clay": 10},
 		"in": {"clay": 1, "charcoal": 1},
-		"out": {"brick": 1},
+		"out": {"brick": 2},
 		"time": 5.0,
 		"color": Color("9c3d2e"),
 		"desc": "Fires clay into brick.",
@@ -914,6 +916,7 @@ const BUFFER_CAP := 10
 const GOALS := [
 	{"id": "learn_wood", "text": "Hold the mouse on trees to gather Wood, until a Kith learns it (10 harvests)"},
 	{"id": "learn_stone", "text": "Gather Stone and Flint by hand until they're learned too"},
+	{"id": "flax", "text": "Find Wild Flax (little blue flowers) and gather it: all Fiber comes from flax"},
 	{"id": "knapping", "text": "Press T and research Knapping", "tech": "knapping"},
 	{"id": "tools", "text": "Craft Flint Tools: each harvest takes 0.7s instead of 1s"},
 	{"id": "hut_tech", "text": "Research Gatherer's Hut", "tech": "gatherers_hut"},
@@ -923,9 +926,9 @@ const GOALS := [
 	{"id": "dwelling", "text": "Build a Dwelling. Kith grow when there's room and spare food", "building": "dwelling"},
 	{"id": "charcoal", "text": "Research Fire, then build a Charcoal Pit", "building": "charcoal_pit"},
 	{"id": "twine", "text": "Research Cordage, then build a Twine Post", "building": "twine_post"},
-	{"id": "haulers", "text": "Research Paths & Haulers: huts gather on their own, idle Kith carry", "tech": "haulers"},
+	{"id": "haulers", "text": "Research Paths & Haulers: it unlocks Roads and lets idle Kith haul", "tech": "haulers"},
+	{"id": "road", "text": "Lay a Road from a hut to the Hearth: road-linked buildings run on their own"},
 	{"id": "rush", "text": "Click a working building to rush it: it finishes its cycle at once"},
-	{"id": "road", "text": "Lay Roads out to far buildings. Kith walk twice as fast"},
 	{"id": "kiln", "text": "Research Pottery, then build a Kiln", "building": "kiln"},
 	{
 		"id": "wheel",

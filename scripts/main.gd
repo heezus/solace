@@ -15,10 +15,12 @@ const Overlays = preload("res://scripts/overlays.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const Rules = preload("res://scripts/rules.gd")
 const Workers = preload("res://scripts/workers.gd")
+const Roads = preload("res://scripts/roads.gd")
 const Hands = preload("res://scripts/hands.gd")
 
 const TILE := 32.0
 const MAP_ORIGIN := Vector2.ZERO  # the node's transform scales and centers the map
+const FIT_SETTLE_FRAMES := 3  # frames after a window resize while the bars settle to their new size
 const OUTLINE: Color = Art.OUTLINE
 const OUTLINE_W := 2.5
 const KITH := Color("e76f51")
@@ -30,6 +32,9 @@ const FOG := Color("2c3834")
 const LINE_TYPES := ["road", "bridge", "field"]  # laid by dragging
 const AURA_FILL := Color(0.55, 0.45, 0.6, 0.2)
 
+var fit_vp := Vector2.ZERO  # the window size the map was last fit to
+var fit_bars := Vector2.ZERO  # the top and bottom bar heights the fit uses
+var fit_settle := 0
 var state: GameState
 var placing := ""  # building type being placed, "" when not placing
 var hover := Vector2i(-1, -1)
@@ -95,16 +100,27 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 
-## Fit the map between the bars and left of the side panel, scaled and centered.
+## Fit the map between the bars and left of the side panel, scaled and centered. The fit follows the
+## window size only: the bars keep steady heights (see TopBar._fix_width), and at one window size the
+## fit uses the tallest each bar has been once the window settled, so a bar can never make the map
+## jump back and forth. The scale is kept to steps of 1/64.
 func _layout() -> void:
 	var vp := get_viewport_rect().size
-	var top := top_bar.size.y
-	var bottom := bottom_bar.size.y
+	if vp != fit_vp:
+		fit_vp = vp
+		fit_settle = FIT_SETTLE_FRAMES
+	if fit_settle > 0:
+		fit_settle -= 1
+		fit_bars = Vector2(top_bar.size.y, bottom_bar.size.y)
+	else:
+		fit_bars = fit_bars.max(Vector2(top_bar.size.y, bottom_bar.size.y))
+	var top := fit_bars.x
+	var bottom := fit_bars.y
 	side_panel.position = Vector2(vp.x - SIDE_W - 8, top + 8)
 	side_panel.size = Vector2(SIDE_W, maxf(vp.y - top - bottom - 16, 100))
 	var area := Rect2(8, top + 8, vp.x - SIDE_W - 24, vp.y - top - bottom - 16)
 	var map_size := Vector2(GameState.WIDTH, GameState.HEIGHT) * TILE
-	var k := maxf(minf(area.size.x / map_size.x, area.size.y / map_size.y), 0.1)
+	var k := maxf(floorf(minf(area.size.x / map_size.x, area.size.y / map_size.y) * 64.0) / 64.0, 0.1)
 	scale = Vector2(k, k)
 	position = (area.position + (area.size - map_size * k) / 2.0).round()
 	if building_panel.visible:
@@ -387,6 +403,8 @@ func _hover_text() -> String:
 				s += "\n\nCan't build here: " + err + "."
 			if placing == "gatherers_hut":
 				s += "\n\n" + BuildingPanel.gather_text(state, state.gather_tiles(hover))
+			if state.has_haulers() and Data.BUILDINGS[placing]["kind"] in ["gatherer", "processor"]:
+				s += "\n" + _road_preview(hover)
 		return s
 	if not state.in_bounds(hover):
 		return "Point at the map to see what's there."
@@ -394,6 +412,14 @@ func _hover_text() -> String:
 		return "Unexplored. Build nearby to see it."
 	var who := _kith_here(hover)
 	return (who + "\n\n" if who != "" else "") + _tile_text()
+
+
+## Whether a building placed at p would be linked by road, and if not, how far the road has to go.
+func _road_preview(p: Vector2i) -> String:
+	var g := Roads.gap(state, p)
+	if g["to"].x < 0:
+		return "Road: linked here, haulers will carry for it."
+	return "Needs road: no road touches here. Lay about %d tiles of Road to link it." % g["tiles"]
 
 
 ## "Aro the Woodcutter, Tam the Hauler" for the Kith standing on or walking through tile p.
@@ -419,6 +445,15 @@ func _tile_text() -> String:
 			s += "\nHolding " + Ui.cost_text(b["out"])
 		if def["kind"] == "gatherer":
 			s += "\n\n" + BuildingPanel.gather_text(state, state.gather_tiles(hover))
+		if state.has_haulers() and state.needs_worker(b):
+			s += (
+				"\n"
+				+ (
+					"Road: linked, haulers carry for it"
+					if Roads.linked(state, b)
+					else "Needs road: " + Workers.road_hint(state, hover)
+				)
+			)
 		var click := BuildingPanel.click_text(state, b)
 		return s + "\n\n" + (click + "\n" if click != "" else "") + "Click for its panel."
 	var t: Dictionary = Data.TILES[state.tile_at(hover)]
@@ -491,7 +526,7 @@ func _draw() -> void:
 			var t := state.tile_at(p)
 			var base: Color = (
 				Data.TILES["grass"]["color"]
-				if t in ["tree", "rock", "berry", "grain", "shard"]
+				if t in ["tree", "rock", "berry", "grain", "flax", "shard"]
 				else Data.TILES[t]["color"]
 			)
 			if (x + y) % 2 == 0:
@@ -549,6 +584,8 @@ func _draw() -> void:
 			note = BuildingPanel.trip_text(state, hover)
 		elif placing == "road" and state.tile_at(hover) == "rock":
 			note = "Cut a pass · %s" % Ui.cost_text(Data.PASS_COST)
+		elif placing == "road" and state.tile_at(hover) == "tree":
+			note = "Fell the trees · %s" % Ui.cost_text(Data.BUILDINGS["road"]["cost"])
 		Overlays.placement_ghost(self, state, placing, hover, note)
 	elif state.in_bounds(hover) and not state.fog.is_revealed(hover):
 		var fr := _tile_rect(hover)
@@ -671,9 +708,10 @@ func _draw_hold_ring() -> void:
 		draw_arc(c, radius, -PI / 2.0, to, maxi(4, int(40 * state.harvest_frac)), GOAL_COLOR, 4.0, true)
 
 
-## Before Paths & Haulers, a hut shows its trip queue as pips along the top: gold for each queued trip.
+## A hut that hauls by clicks (before Paths & Haulers, or with no road link) shows its trip queue as
+## pips along the top: gold for each queued trip.
 func _draw_trips(b: Dictionary, r: Rect2) -> void:
-	if Data.BUILDINGS[b["type"]]["kind"] != "gatherer" or state.has_haulers():
+	if Data.BUILDINGS[b["type"]]["kind"] != "gatherer" or Roads.automated(state, b):
 		return
 	for n in Data.TRIP_QUEUE:
 		var c := r.position + Vector2(r.size.x / 2.0 + (n - (Data.TRIP_QUEUE - 1) / 2.0) * 8.0, -3.0)

@@ -189,7 +189,7 @@ static func placement_ghost(ci: CanvasItem, s, type: String, p: Vector2i, note: 
 		Art.pill(ci, Vector2(r.get_center().x, r.end.y + 4), note, Color.WHITE, OUTLINE, 12)
 
 
-## "Road: 7 tiles · 7 Stone · release to lay" for a drag over `tiles`, counting only those it can go on.
+## "Road: 7 tiles · 14 Wood · release to lay" for a drag over `tiles`, counting only those it can go on.
 static func line_text(s, type: String, tiles: Array) -> String:
 	var total := {}
 	var n := 0

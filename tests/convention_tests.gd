@@ -144,8 +144,14 @@ func test_roads_cut_mountain_passes() -> void:
 	t.check(s.roads.has(rock), "with a road through it")
 	t.check(is_equal_approx(s.walk_cost(rock), Data.WALK_COST["road"]), "which walks like any road")
 	var grass: Vector2i = s.camp_pos + Vector2i(0, 2)
+	s.inv["wood"] = 2
 	t.check(s.place("road", grass), "a road by the Hearth")
-	t.check(s.inv["stone"] == 1, "a road on grass still costs 1 Stone")
+	t.check(s.inv["stone"] == 2 and s.inv["wood"] == 0, "a road on grass costs 2 Wood, no Stone")
+	var tree: Vector2i = t.find_tile(s, "tree")
+	s.inv["wood"] = 2
+	t.check(s.placement_error("road", tree) == "", "a road can go through Forest")
+	t.check(s.place("road", tree) and s.inv["wood"] == 0, "for the same 2 Wood")
+	t.check(s.tile_at(tree) == "grass" and s.roads.has(tree), "and the trees are felled for it")
 	var line: Array = [grass + Vector2i(1, 0), grass + Vector2i(2, 0)]
 	t.check(Overlays.line_text(s, "road", line).begins_with("Road: "), "a drag's pill counts the tiles")
 
@@ -203,6 +209,7 @@ func test_rates_count_making_and_using() -> void:
 	s2.learned["wood"] = "Aro"
 	s2.researched["haulers"] = true
 	t.place_free(s2, "gatherers_hut", s2.camp_pos + Vector2i(-2, 0))
+	t.road_link(s2, s2.camp_pos + Vector2i(-2, 0))
 	for i in 120:
 		s2.tick(0.5)
 	t.check(s2.flows.rate("wood") > 0.0, "a working hut makes wood (%.2f/s)" % s2.flows.rate("wood"))

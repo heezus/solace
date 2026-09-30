@@ -14,6 +14,7 @@ const Bonuses = preload("res://scripts/bonuses.gd")
 const Ranks = preload("res://scripts/ranks.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Workers = preload("res://scripts/workers.gd")
+const Roads = preload("res://scripts/roads.gd")
 
 const WIDTH := 36
 const HEIGHT := 22
@@ -33,6 +34,8 @@ var food_use := 0.0  # food eaten per second right now
 var seen: Dictionary = {}  # items the player has ever held, so the top bar keeps showing them
 var goals_done: Dictionary = {}
 var roads: Dictionary = {}  # Vector2i -> true
+var road_rev := 0  # bumped whenever roads or buildings change, so Roads rebuilds its networks
+var road_net: Dictionary = {}  # Roads' cache of the road networks and which buildings they link
 var fields: Dictionary = {}  # Vector2i -> true, grain tiles the Kith sowed
 var hand_tools := false  # you've made a Flint Tool, so hand gathering is doubled for good
 var shard_seen := false  # the player has clicked the Strange Stone, revealing hidden techs
@@ -294,8 +297,8 @@ func placement_error(type: String, p: Vector2i) -> String:
 	if def["kind"] == "road":
 		if tile_at(p) == "river":
 			return "Roads can't cross the river: build a Wooden Bridge"
-		if tile_at(p) not in ["grass", "rock"]:
-			return "Roads go on grassland, or cut a pass through Rocks"
+		if tile_at(p) not in ["grass", "rock", "tree"]:
+			return "Roads go on grassland or through Forest, or cut a pass through Rocks"
 		return "" if can_afford(Rules.cost_at(type, tile_at(p))) else "Not enough materials"
 	if def["kind"] == "bridge":
 		if tile_at(p) != "river":
@@ -322,11 +325,15 @@ func place(type: String, p: Vector2i) -> bool:
 	if placement_error(type, p) != "":
 		return false
 	_pay(Rules.cost_at(type, tile_at(p)))
+	road_rev += 1
 	var kind: String = Data.BUILDINGS[type]["kind"]
 	if kind in ["road", "bridge"]:
 		if tile_at(p) == "rock":
 			_set_tile(p, "grass")  # a mountain pass: the rock is cut away
 			events.append("Cut a pass through the rocks")
+		elif tile_at(p) == "tree":
+			_set_tile(p, "grass")  # the trees are felled for the road
+			events.append("Felled the trees for a road")
 		roads[p] = true  # a bridge is a road over the river
 		_update_walk_cell(p)
 		fog.reveal(p, _sight(Data.SIGHT_KITH))
@@ -373,6 +380,7 @@ func demolish(p: Vector2i) -> Dictionary:
 	var refund := Rules.refund_of(type)
 	for id in refund:
 		add(id, refund[id])
+	road_rev += 1
 	if roads.has(p):
 		roads.erase(p)
 		_update_walk_cell(p)
@@ -457,13 +465,11 @@ func _place_building(type: String, p: Vector2i) -> void:
 	if Data.BUILDINGS[type]["kind"] == "gatherer":
 		for t in gather_tiles(p):
 			b["gather_items"].append(Data.TILES[tile_at(t)]["yields"])
-		if b["gather_items"].is_empty():
-			b["gather_items"].append("fiber")  # nothing else nearby: it cuts grass
 	building_at[p] = buildings.size()
 	buildings.append(b)
 
 
-## Resource tiles a Gatherer's Hut at p would work (grass only if there is nothing else).
+## Resource tiles a Gatherer's Hut at p would work.
 func gather_tiles(p: Vector2i) -> Array:
 	var r := hut_radius()
 	var found: Array = []
@@ -806,6 +812,10 @@ func tick(delta: float) -> void:
 		b["unreachable"] = maxf(b["unreachable"] - delta, 0.0)
 		b["rush_cd"] = maxf(b["rush_cd"] - delta, 0.0)
 		_tick_building(b, delta, fed)
+		if has_haulers() and needs_worker(b) and not b["paused"] and not Roads.linked(self, b):
+			var a: String = b["alert"]
+			if a == "" or a.begins_with("Full") or a.begins_with("Needs"):
+				b["alert"] = "Needs road"  # it still works by clicks, but no hauler serves it
 
 
 func _eat(need: float) -> bool:
@@ -903,13 +913,15 @@ func _tick_building(b: Dictionary, delta: float, fed: bool) -> void:
 		b["status"] = "%s walking here" % Workers.title_of(self, kith[b["worker"]])
 		return
 	if not _wants_to_work(b):
-		_idle_reason(b, def)
+		Workers.idle_reason(self, b, def)
 		return
 	if def["kind"] == "gatherer":
 		var k: Dictionary = kith[b["worker"]]
 		match k["phase"]:
 			"to_tile":
 				b["status"] = "Walking out to gather"
+			"to_home" when k["carry"].is_empty():
+				b["status"] = "Walking home"
 			"to_home":
 				b["status"] = "Carrying %s home" % Data.ITEMS[k["carry"].keys()[0]]["name"]
 			"to_depot":
@@ -917,8 +929,8 @@ func _tick_building(b: Dictionary, delta: float, fed: bool) -> void:
 			"home":
 				if not Workers.knows_any(self, b["pos"]):
 					b["status"] = "Knows nothing here yet: gather by hand %dx to teach it" % Data.LEARN_CLICKS
-				elif not has_haulers() and b["trips"] <= 0:
-					b["status"] = "Waiting: click to send a trip"
+				elif not Roads.automated(self, b) and b["trips"] <= 0:
+					b["status"] = "Waiting: click to send a trip" + Workers.road_note(self, b)
 				else:
 					b["status"] = "Working"
 			_:
@@ -947,29 +959,6 @@ func _finish_cycle(b: Dictionary) -> void:
 func _set_status(b: Dictionary, status: String, alert: String) -> void:
 	b["status"] = status
 	b["alert"] = alert
-
-
-## Why a staffed building is standing still: full, or short of an input.
-func _idle_reason(b: Dictionary, def: Dictionary) -> void:
-	if buffered(b["out"]) >= Data.BUFFER_CAP:
-		if has_haulers():
-			_set_status(b, "Full: waiting for a hauler", "Full: waiting for a hauler")
-		else:
-			_set_status(b, "Full: click to collect", "Full: click to collect")
-		return
-	var missing: Array = []
-	for id in def.get("in", {}):
-		if b["inbuf"].get(id, 0) < def["in"][id]:
-			missing.append(Data.ITEMS[id]["name"])
-	if missing.is_empty():
-		b["status"] = "Idle"
-		return
-	var how := "click to load" if not has_haulers() else "waiting for a hauler"
-	if has_haulers():
-		for id in def["in"]:
-			if b["inbuf"].get(id, 0) + b["incoming"].get(id, 0) < def["in"][id] and inv.get(id, 0) == 0:
-				how = "stockpile is out"
-	_set_status(b, "Needs %s (%s)" % [", ".join(missing), how], "Needs " + ", ".join(missing))
 
 
 # --- Trips -------------------------------------------------------------------

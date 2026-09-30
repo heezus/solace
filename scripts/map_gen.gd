@@ -4,6 +4,9 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 
+## The flax patch every map gets near the Hearth (offsets from it), within a hut's reach of it.
+const FLAX_PATCH := [Vector2i(-2, -3), Vector2i(-1, -3), Vector2i(-2, -4)]
+
 
 ## `s` is the GameState; w and h are its map size.
 static func generate(s, seed_value: int, w: int, h: int) -> void:
@@ -31,6 +34,7 @@ static func generate(s, seed_value: int, w: int, h: int) -> void:
 	_scatter(s, w, h, rng, "rock", 5, 2, 0.7)
 	_scatter(s, w, h, rng, "berry", 4, 1, 0.8)
 	_scatter(s, w, h, rng, "grain", 4, 2, 0.7)
+	_scatter(s, w, h, rng, "flax", 5, 1, 0.75)  # wild flax in patches on open grassland, anywhere
 
 	# Clear the Hearth and the ground around it.
 	var camp := Vector2i(int(w / 3.0), int(h / 2.0))
@@ -43,9 +47,14 @@ static func generate(s, seed_value: int, w: int, h: int) -> void:
 	# Guarantee every resource near the Hearth so the opening never stalls.
 	s._set_tile(camp + Vector2i(-3, -1), "tree")
 	s._set_tile(camp + Vector2i(-3, 0), "tree")
-	s._set_tile(camp + Vector2i(3, 2), "rock")
-	s._set_tile(camp + Vector2i(-2, 3), "berry")
+	for off in [Vector2i(3, 2), Vector2i(4, 2), Vector2i(3, 3)]:  # a small outcrop: every tier costs Stone
+		s._set_tile(camp + off, "rock")
+	for off in [Vector2i(-2, 3), Vector2i(-1, 3), Vector2i(-2, 4)]:  # a berry patch: food for the first Kith
+		s._set_tile(camp + off, "berry")
 	s._set_tile(camp + Vector2i(2, -3), "grain")
+	# A patch of wild flax: Fiber comes only from flax, and Cordage needs it early.
+	for off in FLAX_PATCH:
+		s._set_tile(camp + off, "flax")
 	# Flint mostly lies on the river banks, out in the fog, so a little crops out near the Hearth too:
 	# Knapping needs it before anything can be built out there.
 	s._set_tile(camp + Vector2i(4, 0), "gravel")

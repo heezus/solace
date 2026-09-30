@@ -12,6 +12,7 @@ const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const Workers = preload("res://scripts/workers.gd")
+const Roads = preload("res://scripts/roads.gd")
 const Hands = preload("res://scripts/hands.gd")
 
 const WIDTH := 252.0
@@ -202,12 +203,12 @@ static func recipe_text(s: GameState, b: Dictionary) -> String:
 	return ""
 
 
-## What clicking the building does now: send a trip (before Paths & Haulers), or rush it.
+## What clicking the building does now: send a trip (before Paths & Haulers, or with no road link), or rush it.
 static func click_text(s: GameState, b: Dictionary) -> String:
 	if not s.needs_worker(b):
 		return ""
 	var kind: String = Data.BUILDINGS[b["type"]]["kind"]
-	if kind == "gatherer" and not s.has_haulers():
+	if kind == "gatherer" and not Roads.automated(s, b):
 		var pips := ""
 		for n in Data.TRIP_QUEUE:
 			pips += "●" if n < b["trips"] else "○"
@@ -254,7 +255,7 @@ static func trip_text(s: GameState, p: Vector2i) -> String:
 static func gather_text(s: GameState, tiles: Array) -> String:
 	var r := s.hut_radius()
 	if tiles.is_empty():
-		return "No resources within %d tiles: it will cut grass for Fiber." % r
+		return "No resources within %d tiles: it would have nothing to gather (bare grass gives nothing)." % r
 	var counts := {}
 	for p in tiles:
 		var item: String = Data.TILES[s.tile_at(p)]["yields"]
