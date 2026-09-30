@@ -61,17 +61,13 @@ static func finish_cycle(s, b: Dictionary) -> void:
 		s.economy.note(id, def["out"][id], b["type"])
 
 
-## What a building's card says about its rate: the speed math, then a gatherer's bundle for each item its
-## people know how to gather.
+## What a building's card says about its rate: the speed math, then a hut's bundle of its focus once its
+## people know how to gather it.
 static func text(s, b: Dictionary) -> String:
 	var line := Bonuses.text(s, b)
 	if line == "" or Data.BUILDINGS[b["type"]]["kind"] != "gatherer":
 		return line
-	var seen := {}
-	for item in b["gather_items"]:
-		if seen.has(item) or not s.people.knows(item):
-			continue
-		seen[item] = true
-		var n := bundle_size(s, b, item)
-		line += "\nBundle: %d %s (%d x a click)" % [n, Data.ITEMS[item]["name"], Data.BUNDLE]
+	var item: String = b["focus"]
+	if item != "" and s.people.knows(item):
+		line += "\nBundle: %d %s (%d x a click)" % [bundle_size(s, b, item), Data.ITEMS[item]["name"], Data.BUNDLE]
 	return line

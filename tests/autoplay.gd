@@ -249,7 +249,7 @@ func _click() -> bool:
 		var def: Dictionary = Data.BUILDINGS[b["type"]]
 		if not Roads.automated(s, b):
 			if def["kind"] == "gatherer" and b["worker"] >= 0 and b["trips"] < Data.TRIP_QUEUE:
-				if s.people.knows_any(b["pos"]):
+				if s.people.knows_focus(b):
 					Workers.click(s, i)
 					clicked["trip"] = clicked.get("trip", 0) + 1
 					return true
@@ -370,12 +370,12 @@ func _count(type: String) -> int:
 	return n
 
 
-## Huts that gather `item`: each counts for its share of `item` among what it gathers.
+## Huts set to gather `item` (a hut works one resource).
 func _huts_for(item: String) -> float:
 	var n := 0.0
 	for b in s.town.buildings:
-		if b["type"] == "gatherers_hut" and not b["gather_items"].is_empty():
-			n += b["gather_items"].count(item) / float(b["gather_items"].size())
+		if b["type"] == "gatherers_hut" and b["focus"] == item:
+			n += 1.0
 	return n
 
 
@@ -561,13 +561,10 @@ func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
 	for i in s.town.buildings.size():
 		var b: Dictionary = s.town.buildings[i]
 		var def: Dictionary = Data.BUILDINGS[b["type"]]
-		if def["kind"] == "gatherer" and not b["gather_items"].is_empty():
-			# A hut whose goods mostly pile up unneeded only keeps the haulers busy: its Kith can carry instead.
-			var useful := 0
-			for id in b["gather_items"]:
-				if s.economy.inv.get(id, 0) < HUT_SURPLUS or short.has(id):
-					useful += 1
-			var idle: bool = useful * 4 < b["gather_items"].size()
+		if def["kind"] == "gatherer" and b["focus"] != "":
+			# A hut whose goods pile up unneeded only keeps the haulers busy: its Kith can carry instead.
+			var id: String = b["focus"]
+			var idle: bool = s.economy.inv.get(id, 0) >= HUT_SURPLUS and not short.has(id)
 			if idle != b["paused"]:
 				s.set_paused(i, idle)
 			continue
@@ -585,24 +582,18 @@ func _place_near_hearth(type: String) -> bool:
 	return _place_best(type, func(p): return -Vector2(p).distance_to(Vector2(s.world.camp_pos)))
 
 
-## A hut where `item` is thickest in its range and little else is. Once there
-## is some hut for it, only a spot where it's at least a third of the range is worth a Kith.
+## A hut where `item` is thickest in its range, set to gather it (a hut works one resource).
 func _place_hut(item: String, have := 0.0) -> bool:
 	var tile: String = RAW_TILE[item]
-	return _place_best(
-		"gatherers_hut",
-		func(p):
-			var mine := 0
-			var other := 0
-			for t in s.town.gather_tiles(p):
-				if s.world.tile_at(t) == tile:
-					mine += 1
-				else:
-					other += 1
-			if mine == 0 or (have > 0.0 and mine < 3 and mine * 2 < other):
-				return -INF
-			return mine * 3.0 - other * 2.0 - Vector2(p).distance_to(Vector2(s.world.camp_pos))
-	)
+	var score := func(p):
+		var mine := 0
+		for t in s.town.gather_tiles(p):
+			if s.world.tile_at(t) == tile:
+				mine += 1
+		if mine == 0 or (have > 0.0 and mine < 3):
+			return -INF
+		return mine * 3.0 - Vector2(p).distance_to(Vector2(s.world.camp_pos))
+	return _place_best("gatherers_hut", score, item)
 
 
 ## Once the Water Wheel is researched, put one on the bank nearest the Hearth, exploring toward it
@@ -681,7 +672,7 @@ func _flood_reach() -> void:
 
 ## Place `type` on the revealed tile with the best score (skipping -INF), if it can be afforded.
 ## Buildings go only where the Kith can walk; roads may push out from there.
-func _place_best(type: String, score: Callable) -> bool:
+func _place_best(type: String, score: Callable, focus := "") -> bool:
 	if not s.town.unlocked(type) or not s.economy.can_afford(Data.BUILDINGS[type]["cost"]):
 		return false
 	var best := Vector2i(-1, -1)
@@ -699,6 +690,8 @@ func _place_best(type: String, score: Callable) -> bool:
 				best_score = v
 	if best.x < 0 or not s.place(type, best):
 		return false
+	if focus != "":
+		s.town.set_focus(s.town.building_at[best], focus)
 	lines.append("%5.0f s    + %s at %s" % [clock, Data.BUILDINGS[type]["name"], best])
 	return true
 

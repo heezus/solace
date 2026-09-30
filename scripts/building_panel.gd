@@ -17,6 +17,7 @@ const Roads = preload("res://scripts/roads.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Work = preload("res://scripts/work.gd")
+const HutFocus = preload("res://scripts/hut_focus.gd")
 
 const INSET := Color("1b3a47")
 
@@ -64,6 +65,12 @@ func setup(game: Sim) -> void:
 		v.add_child(parts[key])
 	parts["pace"].add_theme_color_override("font_color", Color(1, 1, 1, 0.75))
 	parts["pace"].mouse_filter = Control.MOUSE_FILTER_STOP  # its tooltip has the exact numbers
+	var focus := HutFocus.new()  # what a hut works: one line, one click to change (scripts/hut_focus.gd)
+	focus.setup(game)
+	focus.changed.connect(refresh)
+	v.add_child(focus)
+	v.move_child(focus, parts["recipe"].get_index())
+	parts["focus"] = focus
 	parts["holding"] = Ui.label("", 12)
 	v.add_child(parts["holding"])
 	var bar := ProgressBar.new()
@@ -179,6 +186,7 @@ func refresh() -> void:
 	status.add_theme_color_override("font_color", col)
 	parts["desc"].text = def["desc"]
 	parts["desc"].visible = def["kind"] not in ["gatherer", "processor"]  # what it gathers or makes says it better
+	parts["focus"].show_for(b)
 	parts["recipe"].text = recipe_text(state, b)
 	parts["recipe"].visible = parts["recipe"].text != ""
 	parts["worker"].text = worker_text(state, b)
@@ -222,7 +230,7 @@ static func recipe_text(s: Sim, b: Dictionary) -> String:
 			var ins := Ui.cost_text(def["in"]) if not def["in"].is_empty() else "nothing"
 			return "%s → %s / %s s" % [ins, Ui.cost_text(def["out"]), str(snappedf(Work.time(s, b), 0.1))]
 		"gatherer":
-			return gather_text(s, s.town.gather_tiles(b["pos"]), true)
+			return gather_text(s, s.town.gather_tiles(b["pos"]), b["focus"], true)
 	return ""
 
 
@@ -302,8 +310,9 @@ static func trip_text(s: Sim, p: Vector2i) -> String:
 
 
 ## "Gathers from the 5 highlighted tiles (within 2), taking turns: Wood x3, Stone x2." `short` is the card's version:
-## "Gathers from the 5 highlighted tiles: Wood x3, Stone x2 (not learned yet)."
-static func gather_text(s: Sim, tiles: Array, short := false) -> String:
+## "Gathers from the 5 highlighted tiles: Wood x3, Stone x2 (not learned yet)." `focus` is the resource the hut
+## works ("" to leave that out): "... It works only Wood."
+static func gather_text(s: Sim, tiles: Array, focus := "", short := false) -> String:
 	var r := s.town.hut_radius()
 	if tiles.is_empty():
 		return "No resources within %d tiles: it would have nothing to gather (bare grass gives nothing)." % r
@@ -317,6 +326,9 @@ static func gather_text(s: Sim, tiles: Array, short := false) -> String:
 		if not s.people.knows(id):
 			known = " (not learned yet)" if short else " not yet learned (gather by hand %dx)" % Data.LEARN_CLICKS
 		out.append("%s x%d%s" % [Data.ITEMS[id]["name"], counts[id], known])
-	if short:
-		return "Gathers from the %d highlighted tiles: %s." % [tiles.size(), ", ".join(out)]
-	return "Gathers from the %d highlighted tiles (within %d), taking turns: %s." % [tiles.size(), r, ", ".join(out)]
+	var line := "Gathers from the %d highlighted tiles: %s." % [tiles.size(), ", ".join(out)]
+	if not short:
+		line = "Gathers from the %d highlighted tiles (within %d): %s." % [tiles.size(), r, ", ".join(out)]
+	if focus != "":
+		line += " It works only %s." % Data.ITEMS[focus]["name"]
+	return line

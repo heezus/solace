@@ -100,9 +100,15 @@ func grow_time() -> float:
 	return Data.GROW_TIME * (Data.STORYTELLING_GROW if _research.unlocked("storytelling") else 1.0)
 
 
-## One tick of the population. Fed and with room (and food enough for one more), a birth comes every
-## grow_time() seconds and eats Data.BIRTH_FOOD; unfed, the timer for the next departure runs, and the
-## last one who isn't working leaves. The last person never leaves.
+## True when there is food enough for one more mouth: the stockpile covers the birth (and a small reserve
+## for everyone) and the food coming in over the last Data.RATE_WINDOW seconds covers what they eat.
+func food_ready_for_birth() -> bool:
+	return _economy.food_total() >= kith.size() * Data.BIRTH_RESERVE + Data.BIRTH_FOOD and _economy.food_is_steady()
+
+
+## One tick of the population. Fed, with room and steady food, a birth comes every grow_time() seconds
+## and eats Data.BIRTH_FOOD; unfed, the timer for the next departure runs, and the last one who isn't
+## working leaves. The last person never leaves.
 func grow(delta: float, fed: bool) -> void:
 	if not fed:
 		starve_timer += delta
@@ -112,7 +118,7 @@ func grow(delta: float, fed: bool) -> void:
 			_remove_kith()
 		return
 	starve_timer = 0.0
-	if kith.size() >= _town.housing() or _economy.food_total() < kith.size() * 2 + Data.BIRTH_FOOD:
+	if kith.size() >= _town.housing() or not food_ready_for_birth():
 		grow_timer = 0.0
 		return
 	grow_timer += delta
@@ -165,6 +171,11 @@ func knows_any(p: Vector2i) -> bool:
 		if knows(Data.TILES[_world.tile_at(t)]["yields"]):
 			return true
 	return false
+
+
+## True if hut `b` can work its focus: the people know how to gather it and some of it is in reach.
+func knows_focus(b: Dictionary) -> bool:
+	return b["focus"] != "" and knows(b["focus"]) and not _town.focus_tiles(b).is_empty()
 
 
 # --- Jobs --------------------------------------------------------------------
@@ -287,13 +298,15 @@ func wear(b: Dictionary) -> void:
 
 
 ## The job title of whoever works building b: the building's `job`, or for a hut the title of what it
-## gathers most (among what the people know, once they know any of it).
+## gathers (its focus; a hut with none is named for what is most in its reach among what the people know).
 func building_job(b: Dictionary) -> String:
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
 	if def.has("job"):
 		return def["job"]
 	if def["kind"] != "gatherer":
 		return ""
+	if b["focus"] != "":
+		return Data.HUT_JOBS[b["focus"]]["title"]
 	var counts := {}
 	for item in b["gather_items"]:
 		counts[item] = counts.get(item, 0) + (100 if knows(item) else 1)
