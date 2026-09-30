@@ -62,21 +62,24 @@ const STORY_EVENTS := {
 }
 
 # --- From Hands to Haulers (14-hands-to-haulers.md) --------------------------------
-## Gather a resource by hand this many times and a watching Kith learns it: huts may then gather it.
+## Harvest a resource by hand this many times and a watching Kith learns it: huts may then gather it.
 const LEARN_CLICKS := 10
-## A hut trip brings back a bundle: this many times your click yield for that resource.
+## A hut trip brings back a bundle: this many times your harvest yield for that resource.
 const BUNDLE := 3
 ## Trips a hut can have queued before Paths & Haulers (the one under way counts).
 const TRIP_QUEUE := 3
 ## Clicking a working building finishes its cycle now, then it can't be rushed for this long.
 const RUSH_COOLDOWN := 5.0
-## Click yield is base x tool x rank. Tools multiply it; the best one that applies counts.
-## `crafted` needs a Flint Tool made once, `tech` a researched tech (Bronze Tools is era 2's slot),
-## `item` limits it to one resource.
-const CLICK_TOOLS := {
-	"flint_tools": {"name": "Flint Tools", "mult": 2, "crafted": true},
+## Gathering by hand is a hold: a ring fills over the tile for HOLD_TIME seconds, then the harvest pops,
+## and it repeats while you hold. A harvest's yield is base x tool x rank.
+const HOLD_TIME := 1.0
+## Hand tools: the best one that applies counts for each part. `hold` shortens the hold (seconds),
+## `mult` multiplies the yield. `crafted` needs a Flint Tool made once, `tech` a researched tech
+## (Bronze Tools is era 2's slot), `item` limits it to one resource.
+const HAND_TOOLS := {
+	"flint_tools": {"name": "Flint Tools", "hold": 0.7, "crafted": true},
 	"stone_axe": {"name": "Stone Axe", "mult": 3, "tech": "stone_axe", "item": "wood"},
-	"bronze_tools": {"name": "Bronze Tools", "mult": 4, "tech": "bronze_tools"},
+	"bronze_tools": {"name": "Bronze Tools", "hold": 0.4, "tech": "bronze_tools"},
 }
 ## Ranks I to III: rank I is the tech, ranks II and III are optional buys on its card.
 const MAX_RANK := 3
@@ -174,7 +177,7 @@ const STORYTELLING_GROW := 0.75  # grow time multiplier
 ## They add within a group and multiply across groups. Optional keys: `tech` (needs it researched),
 ## `kinds` (building kinds it applies to), `types` (building types), `item` (only harvests of that item),
 ## `rank_of` (a tech's ranks: `add` per rank bought beyond I).
-## The Stone Axe is a click tool (CLICK_TOOLS): huts get it through their bundle, which is based on a click.
+## The Stone Axe is a hand tool (HAND_TOOLS): huts get it through their bundle, which is based on a harvest.
 ## "tools" applies while the worker holds a Flint Tool, "standing_stone" next to a Standing Stone.
 const BONUSES := {
 	"tools": {"name": "Flint Tools", "group": "speed", "add": 0.5, "kinds": ["gatherer", "processor"]},
@@ -888,16 +891,19 @@ const BUFFER_CAP := 10
 ## GameState.goal_met() checks the others by id.
 
 const GOALS := [
-	{"id": "gather", "text": "Click trees, rocks and gravel: get 10 Wood, 10 Stone, 5 Flint"},
+	{"id": "learn_wood", "text": "Hold the mouse on trees to gather Wood, until a Kith learns it (10 harvests)"},
+	{"id": "learn_stone", "text": "Gather Stone and Flint by hand until they're learned too"},
 	{"id": "knapping", "text": "Press T and research Knapping", "tech": "knapping"},
-	{"id": "tools", "text": "Craft Flint Tools (doubles hand gathering)"},
+	{"id": "tools", "text": "Craft Flint Tools: each harvest takes 0.7s instead of 1s"},
 	{"id": "hut_tech", "text": "Research Gatherer's Hut", "tech": "gatherers_hut"},
 	{"id": "hut", "text": "Place a Gatherer's Hut next to trees or rocks", "building": "gatherers_hut"},
+	{"id": "trip", "text": "Click your hut to send a trip: its Kith brings back a bundle (3 harvests' worth)"},
 	{"id": "berries", "text": "Place a hut near Berry Bushes. The Kith eat food"},
 	{"id": "dwelling", "text": "Build a Dwelling. Kith grow when there's room and spare food", "building": "dwelling"},
 	{"id": "charcoal", "text": "Research Fire, then build a Charcoal Pit", "building": "charcoal_pit"},
 	{"id": "twine", "text": "Research Cordage, then build a Twine Post", "building": "twine_post"},
-	{"id": "haulers", "text": "Research Paths & Haulers: idle Kith carry goods for you", "tech": "haulers"},
+	{"id": "haulers", "text": "Research Paths & Haulers: huts gather on their own, idle Kith carry", "tech": "haulers"},
+	{"id": "rush", "text": "Click a working building to rush it: it finishes its cycle at once"},
 	{"id": "road", "text": "Lay Roads out to far buildings. Kith walk twice as fast"},
 	{"id": "kiln", "text": "Research Pottery, then build a Kiln", "building": "kiln"},
 	{
@@ -906,6 +912,7 @@ const GOALS := [
 		"building": "water_wheel"
 	},
 	{"id": "grind", "text": "Build a Grindstone within 3 tiles of the wheel"},
+	{"id": "storehouse", "text": "Research Storehouse and build one by far workshops", "building": "storehouse"},
 	{"id": "calendar", "text": "Research Calendar: Farming, plus Storytelling or Megaliths", "tech": "calendar"},
 	{"id": "bronze", "text": "Research Bronze Dawn", "tech": "bronze_dawn"},
 ]

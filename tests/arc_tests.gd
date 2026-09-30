@@ -10,6 +10,7 @@ const Bonuses = preload("res://scripts/bonuses.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
 const Ranks = preload("res://scripts/ranks.gd")
 const Workers = preload("res://scripts/workers.gd")
+const Hands = preload("res://scripts/hands.gd")
 
 var t  # the runner, tests/run_tests.gd
 
@@ -22,6 +23,7 @@ func run(runner) -> void:
 	test_no_loop_before_haulers_loop_after()
 	test_rush_and_its_cooldown()
 	test_click_yield_math()
+	test_hold_to_harvest()
 	test_rank_costs_and_effects()
 	# test_tier_costs_scale()
 	test_story_events()
@@ -102,7 +104,8 @@ func test_dispatch_trips_and_queue_cap() -> void:
 	t.check("first_trip" in s.story_events, "the first trip is a story moment")
 	run_for(s, 90.0)
 	t.check(b["trips"] == 0, "all three trips done")
-	var bundle: int = Data.BUNDLE * s.click_yield("wood")
+	var bundle: int = Data.BUNDLE * s.harvest_yield("wood")
+	t.check(bundle == 3, "a bundle is 3 harvests")
 	t.check(s.inv["wood"] == wood + bundle * Data.TRIP_QUEUE, "each trip brings a bundle to the stockpile")
 	t.check(s.buffered(b["out"]) == 0, "straight to the stockpile, not the hut")
 	run_for(s, 20.0)
@@ -163,26 +166,56 @@ func test_rush_and_its_cooldown() -> void:
 
 func test_click_yield_math() -> void:
 	var s: GameState = t.fresh()
-	t.check(s.click_yield("wood") == 1, "base: 1 a click")
+	t.check(s.harvest_yield("wood") == 1, "base: 1 a harvest")
+	t.check(is_equal_approx(Hands.hold_time(s, "wood"), 1.0), "held for 1 s")
 	s.hand_tools = true
-	t.check(s.click_yield("stone") == 2, "Flint Tools: x2")
+	t.check(s.harvest_yield("stone") == 1, "Flint Tools don't raise the yield")
+	t.check(is_equal_approx(Hands.hold_time(s, "stone"), 0.7), "they shorten the hold to 0.7 s")
 	s.researched["stone_axe"] = true
-	t.check(s.click_yield("wood") == 3, "Stone Axe: x3 for Wood (the best tool counts, they don't stack)")
-	t.check(s.click_yield("stone") == 2, "the Stone Axe is for Wood only")
+	t.check(s.harvest_yield("wood") == 3, "Stone Axe: x3 for Wood")
+	t.check(s.harvest_yield("stone") == 1, "the Stone Axe is for Wood only")
 	s.researched["masonry"] = true
 	s.ranks["masonry"] = 2
-	t.check(s.click_yield("stone") == 4, "Masonry II: base 2 x Flint Tools 2 = 4 Stone")
+	t.check(s.harvest_yield("stone") == 2, "Masonry II: base 2")
 	s.ranks["masonry"] = 3
-	t.check(s.click_yield("stone") == 6, "Masonry III: base 3 x 2 = 6")
+	t.check(s.harvest_yield("stone") == 3, "Masonry III: base 3")
+	s.ranks["stone_axe"] = 3
+	t.check(s.harvest_yield("wood") == 9, "Stone Axe III: base 3 x axe 3 = 9 Wood")
 	s.researched["foraging"] = true
-	t.check(s.click_yield("berries") == 4, "Foraging still doubles Berries: 1 x 2 x 2")
-	t.check(
-		Data.CLICK_TOOLS.has("bronze_tools") and Data.CLICK_TOOLS["bronze_tools"]["mult"] == 4, "Bronze Tools x4 waits"
-	)
+	t.check(s.harvest_yield("berries") == 2, "Foraging still doubles Berries")
+	t.check(Data.HAND_TOOLS["bronze_tools"]["hold"] == 0.4, "the Bronze Tools slot: a 0.4 s hold")
 	var tree: Vector2i = t.find_tile(s, "tree")
 	var wood: int = s.inv["wood"]
 	s.gather_by_hand(tree)
-	t.check(s.inv["wood"] == wood + 3, "a click gives exactly the click yield")
+	t.check(s.inv["wood"] == wood + 9, "a harvest gives exactly the harvest yield")
+
+
+func test_hold_to_harvest() -> void:
+	var s: GameState = t.fresh()
+	var tree: Vector2i = t.find_tile(s, "tree")
+	var rock: Vector2i = t.find_tile(s, "rock")
+	t.check(s.hold_harvest(tree, 0.5) == "", "half a second: nothing yet")
+	t.check(is_equal_approx(s.harvest_frac, 0.5), "the ring is half full")
+	t.check(s.hold_harvest(tree, 0.5) == "+1 Wood", "a full second: the harvest pops")
+	t.check(s.inv["wood"] == 1 and is_equal_approx(s.harvest_frac, 0.0), "and the ring starts again")
+	for i in 25:
+		s.hold_harvest(tree, 0.1)
+	t.check(s.inv["wood"] == 3, "holding keeps harvesting: 2 more in 2.5 s (%d)" % s.inv["wood"])
+	s.hold_harvest(tree, 0.9)
+	s.hold_harvest(rock, 0.2)
+	t.check(s.inv["stone"] == 0 and is_equal_approx(s.harvest_frac, 0.2), "moving to another tile starts over")
+	s.release_harvest()
+	t.check(s.harvest_frac == 0.0 and s.harvest_tile == Vector2i(-1, -1), "letting go empties the ring")
+	s.hold_harvest(rock, 0.9)
+	s.release_harvest()
+	s.hold_harvest(rock, 0.2)
+	t.check(s.inv["stone"] == 0, "a released hold doesn't count toward the next")
+	s.hand_tools = true
+	t.check(s.hold_harvest(rock, 0.5) == "+1 Stone", "Flint Tools: 0.7 s a harvest")
+	t.check(s.hold_harvest(s.camp_pos, 5.0) == "", "the Hearth isn't a resource")
+	for i in Data.LEARN_CLICKS:
+		s.hold_harvest(rock, 0.7)
+	t.check(s.knows("stone"), "learning takes %d harvests" % Data.LEARN_CLICKS)
 
 
 func test_rank_costs_and_effects() -> void:

@@ -10,6 +10,7 @@ const Ui = preload("res://scripts/ui.gd")
 const Goals = preload("res://scripts/goals.gd")
 const Rules = preload("res://scripts/rules.gd")
 const Hands = preload("res://scripts/hands.gd")
+const Haulers = preload("res://scripts/haulers.gd")
 const ConventionTests = preload("res://tests/convention_tests.gd")
 const BonusTests = preload("res://tests/bonus_tests.gd")
 const ArcTests = preload("res://tests/arc_tests.gd")
@@ -133,6 +134,7 @@ func test_hand_gathering_and_tools() -> void:
 	var tree := find_tile(s, "tree")
 	s.gather_by_hand(tree)
 	check(s.inv["wood"] == 1, "hand gather gives 1 wood")
+	check(is_equal_approx(Hands.hold_time(s, "wood"), Data.HOLD_TIME), "a 1 s hold with bare hands")
 	s.researched["knapping"] = true
 	s.inv["flint"] = 2
 	s.inv["wood"] = 2
@@ -140,7 +142,8 @@ func test_hand_gathering_and_tools() -> void:
 	check(s.inv["wood"] == 0, "crafting spent the wood")
 	check(s.inv["flint_tools"] == 1, "have flint tools")
 	s.gather_by_hand(tree)
-	check(s.inv["wood"] == 2, "flint tools double hand gathering")
+	check(s.inv["wood"] == 1, "flint tools don't change the yield by hand")
+	check(is_equal_approx(Hands.hold_time(s, "wood"), 0.7), "they shorten the hold to 0.7 s")
 	check(not s.shard_seen, "the shard starts unseen")
 	check(s.gather_by_hand(s.shard_pos) == Data.SHARD_TEXT, "shard shows flavor text")
 	check(s.shard_seen, "clicking the shard marks it seen")
@@ -264,16 +267,28 @@ func test_flour_is_kept_for_research() -> void:
 
 func test_goals_advance_in_order() -> void:
 	var s := fresh()
-	check(Goals.current_goal(s) == 0, "first goal is gathering")
-	s.inv["wood"] = 10
-	s.inv["stone"] = 10
-	s.inv["flint"] = 5
+	check(Goals.current_goal(s) == 0, "first goal is learning Wood by hand")
+	for i in Data.LEARN_CLICKS:
+		s.gather_by_hand(find_tile(s, "tree"))
 	s.tick(0.1)
-	check(Goals.current_goal(s) == 1, "gathering done, next is knapping")
+	check(Goals.current_goal(s) == 1, "Wood learned, next Stone and Flint")
+	for tile in ["rock", "gravel"]:
+		for i in Data.LEARN_CLICKS:
+			s.gather_by_hand(find_tile(s, tile))
+	s.tick(0.1)
+	check(Goals.current_goal(s) == 2, "then Knapping")
+	s.inv["flint"] = 5
+	s.inv["stone"] = 10
 	s.research("knapping")
 	s.tick(0.1)
-	check(Goals.current_goal(s) == 2, "knapping done, next is flint tools")
-	check(s.goals_done.has("gather"), "earlier goals stay done after spending")
+	check(Goals.current_goal(s) == 3, "knapping done, next is flint tools")
+	check(s.goals_done.has("learn_wood"), "earlier goals stay done")
+	var ids: Array = Data.GOALS.map(func(g): return g["id"])
+	check(
+		ids.find("trip") > ids.find("hut") and ids.find("trip") < ids.find("haulers"),
+		"a trip comes between hut and Haulers"
+	)
+	check(ids.find("rush") > ids.find("haulers"), "and rushing after Haulers")
 
 
 func test_hut_gather_preview_matches_placement() -> void:
@@ -489,9 +504,9 @@ func test_tech_effects() -> void:
 	s.researched["foraging"] = true
 	s.gather_by_hand(berry)
 	check(s.inv["berries"] == 2, "foraging doubles berries")
-	check(s.carry_cap() == Data.CARRY, "normal carry")
+	check(Haulers.carry_cap(s) == Data.CARRY, "normal carry")
 	s.researched["carrying_poles"] = true
-	check(s.carry_cap() == Data.CARRY * 2, "carrying poles double carry")
+	check(Haulers.carry_cap(s) == Data.CARRY * 2, "carrying poles double carry")
 	s.researched["baking"] = true
 	check(s.food_value("flour") == 5.0, "baking makes flour worth 5")
 	var h := s.housing()

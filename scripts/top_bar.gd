@@ -9,6 +9,7 @@ const Data = preload("res://scripts/data.gd")
 const GameState = preload("res://scripts/game_state.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
+const Hands = preload("res://scripts/hands.gd")
 
 const RAW := ["wood", "stone", "flint", "fiber", "clay", "berries", "grain", "fish"]
 const LOSS := Color("ff9aa9")
@@ -183,7 +184,7 @@ func refresh(paused: bool, speed: int) -> void:
 	food_bar.value = minf(food, food_bar.max_value)
 	food_bar.modulate = Ui.BAD if fr < -0.005 else Ui.HIGHLIGHT
 	tools_label.visible = state.seen.has("flint_tools")
-	var held := state.tools_held()
+	var held := Hands.tools_held(state)
 	tools_label.text = "Tools %d/%d Kith" % [held, state.kith.size()]
 	tools_label.tooltip_text = (
 		"Kith holding a Flint Tool work 50%% faster. Each tool lasts %d jobs; spares in the stockpile: %d."

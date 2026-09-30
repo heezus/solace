@@ -36,7 +36,12 @@ var roads: Dictionary = {}  # Vector2i -> true
 var fields: Dictionary = {}  # Vector2i -> true, grain tiles the Kith sowed
 var hand_tools := false  # you've made a Flint Tool, so hand gathering is doubled for good
 var shard_seen := false  # the player has clicked the Strange Stone, revealing hidden techs
-var hand_counts: Dictionary = {}  # item -> times gathered by hand
+var hand_counts: Dictionary = {}  # item -> times harvested by hand
+## Hold to harvest: the tile being held, seconds held so far, and 0 to 1 of the current harvest.
+var harvest_tile := Vector2i(-1, -1)
+var harvest_held := 0.0
+var harvest_frac := 0.0
+var rushes := 0  # buildings rushed so far
 var learned: Dictionary = {}  # item -> name of the Kith who learned to gather it by watching you
 var ranks: Dictionary = {}  # tech -> rank bought on its card (2 or 3); a researched tech is rank 1
 ## Stable ids from Data.STORY_EVENTS, in the order they happened (for a future profile save).
@@ -110,9 +115,37 @@ func add(id: String, amount: int) -> void:
 	seen[id] = true
 
 
-## What one click on a resource tile gives: base x tool x rank (Hands.click_yield).
-func click_yield(item: String) -> int:
-	return Hands.click_yield(self, item)
+## What one harvest of `item` by hand gives: base x tool x rank (Hands.harvest_yield).
+func harvest_yield(item: String) -> int:
+	return Hands.harvest_yield(self, item)
+
+
+## Hold the mouse on tile p for `delta` more seconds (real time, not game speed). The ring fills over
+## Hands.hold_time; when it's full the tile is harvested and the ring starts again. Moving to another
+## tile starts over. Returns the harvest's text when one completes, else "".
+func hold_harvest(p: Vector2i, delta: float) -> String:
+	if p != harvest_tile:
+		release_harvest()
+		harvest_tile = p
+	var item := Hands.item_at(self, p)
+	if item == "":
+		harvest_frac = 0.0
+		return ""
+	var need := Hands.hold_time(self, item)
+	harvest_held += delta
+	if harvest_held < need:
+		harvest_frac = harvest_held / need
+		return ""
+	harvest_held -= need
+	harvest_frac = harvest_held / need
+	return gather_by_hand(p)
+
+
+## Let go: the ring empties.
+func release_harvest() -> void:
+	harvest_tile = Vector2i(-1, -1)
+	harvest_held = 0.0
+	harvest_frac = 0.0
 
 
 ## True once a Kith has learned to gather `item` by watching you (Data.LEARN_CLICKS clicks).
@@ -125,15 +158,6 @@ func record_story(id: String) -> void:
 	assert(Data.STORY_EVENTS.has(id), "unknown story event " + id)
 	if id not in story_events:
 		story_events.append(id)
-
-
-## How many Kith hold a Flint Tool.
-func tools_held() -> int:
-	var n := 0
-	for k in kith:
-		if k["tool"] > 0:
-			n += 1
-	return n
 
 
 ## A worker without a tool takes one from the stockpile.
@@ -158,10 +182,6 @@ func _wear(b: Dictionary) -> void:
 
 func hut_radius() -> int:
 	return Data.BUILDINGS["gatherers_hut"]["radius"] + (1 if researched.has("scouting") else 0)
-
-
-func carry_cap() -> int:
-	return Data.CARRY * (2 if researched.has("carrying_poles") else 1)
 
 
 func food_value(id: String) -> float:
@@ -190,7 +210,7 @@ func gather_by_hand(p: Vector2i) -> String:
 	var item: String = Data.TILES[tile]["yields"]
 	if item == "":
 		return ""
-	var n := click_yield(item)
+	var n := harvest_yield(item)
 	add(item, n)
 	flows.add(item, n, "hand")
 	Hands.teach(self, item)
@@ -500,7 +520,7 @@ func _harvest_time(b: Dictionary, tile: Vector2i) -> float:
 
 ## A hut's bundle of `item`, before any Calendar share.
 func _bundle_size(b: Dictionary, item: String) -> int:
-	return roundi(Data.BUNDLE * click_yield(item) * Bonuses.building_yield(self, b, item))
+	return roundi(Data.BUNDLE * harvest_yield(item) * Bonuses.building_yield(self, b, item))
 
 
 ## How much one harvest of `tile` brings back: a bundle, Data.BUNDLE times your click yield for the item

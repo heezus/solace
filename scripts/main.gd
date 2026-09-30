@@ -52,6 +52,7 @@ var win_overlay: Control
 var ui_refresh := 0.0
 var paused := false
 var speed := 1  # simulation steps per frame: 1x, 2x or 3x
+var holding := false  # the left button is down on a resource tile: hold to harvest
 
 
 func _ready() -> void:
@@ -86,6 +87,7 @@ func _process(delta: float) -> void:
 	toast_label.modulate.a = clampf(toast_time, 0.0, 1.0)
 	_layout()
 	hover = _tile_under()
+	_hold(delta)
 	ui_refresh -= delta
 	if ui_refresh <= 0.0:
 		ui_refresh = 0.2
@@ -122,6 +124,7 @@ func _layout() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_stop_holding()
 		if drag_from.x >= 0:
 			_lay_line()
 	elif event is InputEventMouseButton and event.pressed:
@@ -203,12 +206,33 @@ func _click_tile(p: Vector2i) -> void:
 		building_panel.select(p)
 		return
 	building_panel.select(Vector2i(-1, -1))
-	var first_look := not state.shard_seen
-	var msg := state.gather_by_hand(p)
-	if msg == Data.SHARD_TEXT:
-		_toast(msg + ("\nA new idea stirs in the tech tree: Star Lore." if first_look else ""), 8.0)
-	elif msg != "":
-		popups.append({"pos": _tile_center(p), "text": msg, "t": 0.0})
+	if state.tile_at(p) == "shard" and state.fog.is_revealed(p):
+		var first_look := not state.shard_seen
+		_toast(state.gather_by_hand(p) + ("\nA new idea stirs in the tech tree: Star Lore." if first_look else ""), 8.0)
+		return
+	# Everything else is gathered by holding: _process fills the ring while the button stays down.
+	state.release_harvest()
+	holding = true
+
+
+## Hold to harvest, each frame the button is down: over a Control (a bar, a panel) it doesn't count.
+func _hold(delta: float) -> void:
+	if not holding:
+		return
+	if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or placing != "":
+		_stop_holding()
+		return
+	if get_viewport().gui_get_hovered_control() != null or not state.in_bounds(hover):
+		state.release_harvest()
+		return
+	var msg := state.hold_harvest(hover, delta)
+	if msg != "":
+		popups.append({"pos": _tile_center(hover), "text": msg, "t": 0.0})
+
+
+func _stop_holding() -> void:
+	holding = false
+	state.release_harvest()
 
 
 ## Tear down what's at p for half its cost back.
@@ -345,7 +369,7 @@ func _refresh_ui() -> void:
 		goal_labels[1].text = "All goals done."
 	info_label.text = _hover_text()
 	var item := _hover_item()
-	top_bar.set_click_hint(click_hint(item) if item != "" else "")
+	top_bar.set_click_hint(hold_hint(item) if item != "" else "")
 
 
 func _hover_text() -> String:
@@ -389,7 +413,7 @@ func _hover_text() -> String:
 	var hint := Overlays.blocked_hint(state, hover)
 	if t["yields"] != "":
 		var item: String = t["yields"]
-		var s := "%s\n%s." % [t["name"], click_hint(item)]
+		var s := "%s\n%s. Hold the mouse on it to gather." % [t["name"], hold_hint(item)]
 		if Data.FOOD_VALUE.has(item):
 			s += " It's food: the %s eat it." % Data.PEOPLE["many"]
 		s += "\n" + learn_text(item)
@@ -397,9 +421,10 @@ func _hover_text() -> String:
 	return t["name"] + ("\n" + hint + "." if hint != "" else "")
 
 
-## "Click: +4 Wood".
-func click_hint(item: String) -> String:
-	return "Click: +%d %s" % [state.click_yield(item), Data.ITEMS[item]["name"]]
+## "Hold: +3 Wood, 0.7s".
+func hold_hint(item: String) -> String:
+	var secs := str(snappedf(Hands.hold_time(state, item), 0.1))
+	return "Hold: +%d %s, %ss" % [state.harvest_yield(item), Data.ITEMS[item]["name"], secs]
 
 
 ## How far a Kith is from learning to gather `item` by watching you.
@@ -408,7 +433,7 @@ func learn_text(item: String) -> String:
 	if state.knows(item):
 		return "%s knows how to gather %s: huts can gather it." % [state.learned[item], item_name]
 	return (
-		"Gathered by hand %d/%d. A %s is watching and will learn %s."
+		"Harvested by hand %d/%d. A %s is watching and will learn %s."
 		% [state.hand_counts.get(item, 0), Data.LEARN_CLICKS, Data.PEOPLE["one"], item_name]
 	)
 
@@ -526,11 +551,12 @@ func _draw() -> void:
 		var item := _hover_item()
 		if item != "":
 			var hr := _tile_rect(hover)
-			var tag := click_hint(item)
+			var tag := hold_hint(item)
 			if not state.knows(item):
 				tag += "  ·  taught %d/%d" % [state.hand_counts.get(item, 0), Data.LEARN_CLICKS]
 			Art.pill(self, Vector2(hr.get_center().x, hr.end.y + 4), tag, Color.WHITE, OUTLINE, 12)
 
+	_draw_hold_ring()
 	if paused:
 		Art.pill(self, Vector2(GameState.WIDTH * TILE / 2.0, 8), "Paused · Space to resume", GOAL_COLOR, OUTLINE, 16)
 
@@ -614,6 +640,19 @@ func _draw_building(b: Dictionary) -> void:
 		draw_string(
 			ThemeDB.fallback_font, r.position + Vector2(-2, 10), "!", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color("ef476f")
 		)
+
+
+## Hold to harvest: an outline ring over the held tile, with a highlight arc filling clockwise from the top.
+func _draw_hold_ring() -> void:
+	if not holding or not state.in_bounds(state.harvest_tile) or Hands.item_at(state, state.harvest_tile) == "":
+		return
+	var c := _tile_center(state.harvest_tile)
+	var radius := TILE * 0.42
+	draw_arc(c, radius, 0.0, TAU, 40, OUTLINE, 7.0, true)
+	draw_arc(c, radius, 0.0, TAU, 40, Color(1, 1, 1, 0.3), 3.0, true)
+	if state.harvest_frac > 0.0:
+		var to := -PI / 2.0 + TAU * state.harvest_frac
+		draw_arc(c, radius, -PI / 2.0, to, maxi(4, int(40 * state.harvest_frac)), GOAL_COLOR, 4.0, true)
 
 
 ## Before Paths & Haulers, a hut shows its trip queue as pips along the top: gold for each queued trip.

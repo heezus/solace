@@ -80,7 +80,8 @@ func _move(canvas_at: Vector2) -> void:
 	var e := InputEventMouseMotion.new()
 	e.position = at
 	e.global_position = at
-	root.push_input(e)
+	Input.parse_input_event(e)
+	Input.flush_buffered_events()
 
 
 func _button(canvas_at: Vector2, index: MouseButton, pressed: bool) -> void:
@@ -92,7 +93,8 @@ func _button(canvas_at: Vector2, index: MouseButton, pressed: bool) -> void:
 	e.pressed = pressed
 	if pressed and index == MOUSE_BUTTON_LEFT:
 		e.button_mask = MOUSE_BUTTON_MASK_LEFT
-	root.push_input(e)
+	Input.parse_input_event(e)
+	Input.flush_buffered_events()
 
 
 func _click(at: Vector2, index := MOUSE_BUTTON_LEFT) -> void:
@@ -108,13 +110,54 @@ func _click_control(c: Control) -> void:
 	_click(c.get_global_rect().get_center())
 
 
+## Press the left button at `at` and keep it down.
+func _hold_on(at: Vector2) -> void:
+	_move(at)
+	_button(at, MOUSE_BUTTON_LEFT, true)
+
+
+func _expect(ok: bool, problem: String) -> void:
+	if not ok:
+		problems.append(problem)
+
+
+## Hold the script until `cond` is true, for up to `ms` real milliseconds.
+func _wait_for(cond: Callable, problem: String, ms: int) -> void:
+	var until := [0]
+	var poll := func(self_ref: Callable) -> void:
+		if until[0] == 0:
+			until[0] = Time.get_ticks_msec() + ms
+		if cond.call():
+			return
+		if Time.get_ticks_msec() > until[0]:
+			problems.append(problem)
+			return
+		steps.push_front(func(): self_ref.call(self_ref))
+	steps.append(func(): poll.call(poll))
+
+
+## Click every build tab three times over in one frame, with the button already down on the map:
+## each click must switch the tab at once, and none may reach the map.
+func _rapid_tabs() -> void:
+	var s = main.state
+	var names: Array = main.bottom_bar.tab_buttons.keys()
+	var stone: int = s.hand_counts.get("stone", 0)
+	for i in 3:
+		for tab_name in names:
+			_click_control(main.bottom_bar.tab_buttons[tab_name])
+			_expect(main.bottom_bar.tab == tab_name, "the %s tab didn't switch at once" % tab_name)
+	_expect(s.hand_counts.get("stone", 0) == stone, "a tab click harvested Stone")
+	_expect(main.placing == "", "a tab click started placing something")
+
+
 func _key(code: Key) -> void:
 	for pressed in [true, false]:
 		var e := InputEventKey.new()
 		e.keycode = code
 		e.physical_keycode = code
 		e.pressed = pressed
-		root.push_input(e)
+		Input.parse_input_event(e)
+		Input.flush_buffered_events()
 
 
 ## Queue `f` to run on a frame of its own, `wait` frames later.
@@ -163,10 +206,22 @@ func _script() -> void:
 		var p := _nearest(tile)
 		if p.x >= 0:
 			_then(func(): _move(_screen_of(p)))
-	# Gather each basic resource by hand until a Kith learns it.
-	for tile in ["tree", "rock", "gravel", "berry", "grass"]:
-		for i in Data.LEARN_CLICKS + 2:
-			_then(func(): _click(_screen_of(_nearest(tile))))
+	# Hold on trees until a Kith learns Wood; a quick click harvests nothing.
+	_then(func(): _click(_screen_of(_nearest("tree"))))
+	_then(func(): _expect(s.hand_counts.is_empty(), "a quick click harvested something"), 30)
+	_then(func(): _hold_on(_screen_of(_nearest("tree"))))
+	_wait_for(func(): return s.knows("wood"), "holding on a tree didn't teach Wood", 20000)
+	_then(func(): _button(_screen_of(_nearest("tree")), MOUSE_BUTTON_LEFT, false))
+	_then(func(): _expect(not main.holding and s.harvest_frac == 0.0, "letting go didn't empty the ring"))
+	# UI clicks are never throttled and never harvest: tabs switch on every click, even mid-hold.
+	_then(func(): _hold_on(_screen_of(_nearest("rock"))))
+	_then(func(): _rapid_tabs(), 20)
+	_then(func(): _button(Vector2(5, 300), MOUSE_BUTTON_LEFT, false))
+	_then(
+		func():
+			for item in ["stone", "flint", "berries", "fiber"]:
+				s.learned[item] = "Tester"
+	)
 	# Research the first techs and try every tab and build button, and both crafts.
 	_then(
 		func():

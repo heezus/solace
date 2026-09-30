@@ -162,6 +162,7 @@ static func rush(s, i: int) -> bool:
 	if not can_rush(s, b):
 		return false
 	b["rush_cd"] = Data.RUSH_COOLDOWN
+	s.rushes += 1
 	if Data.BUILDINGS[b["type"]]["kind"] == "processor":
 		s._finish_cycle(b)
 		return true
