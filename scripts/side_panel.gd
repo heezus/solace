@@ -8,8 +8,8 @@ const Sim = preload("res://scripts/sim.gd")
 const Ui = preload("res://scripts/ui.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
 
-const GOOD := Color("80ed99")
-const GOAL_COLOR := Color("ffd166")
+const GOOD: Color = Ui.GOOD
+const GOAL_COLOR: Color = Ui.HIGHLIGHT
 const GOALS_SHOWN := 4
 
 var goal_header: Label
@@ -20,9 +20,18 @@ var building_panel: BuildingPanel
 var wrap_width := 260.0
 
 
+## The panel runs from the top bar to the bottom bar with one 3 px `ui-line` rule against the map.
+static func _style() -> StyleBoxFlat:
+	var s := Ui.bar_style(Ui.PANEL, true)
+	s.border_width_bottom = 0
+	s.border_width_left = 3
+	s.set_content_margin_all(12)
+	return s
+
+
 func setup(game: Sim, width: float) -> void:
 	wrap_width = width - 30.0
-	add_theme_stylebox_override("panel", Ui.panel_style(Color("264653"), 12))
+	add_theme_stylebox_override("panel", _style())
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 6)
 	add_child(v)
@@ -74,7 +83,7 @@ func refresh_goals(s: Sim) -> void:
 			continue
 		var done: bool = s.story.goals_done.has(Data.GOALS[gi]["id"])
 		l.text = ("Done: " if done else ("> " if gi == cur else "  ")) + Data.GOALS[gi]["text"]
-		var col := GOOD if done else (GOAL_COLOR if gi == cur else Color(1, 1, 1, 0.55))
+		var col := GOOD if done else (GOAL_COLOR if gi == cur else Ui.TEXT)
 		l.add_theme_color_override("font_color", col)
 	if cur >= Data.GOALS.size():
 		goal_labels[1].visible = true

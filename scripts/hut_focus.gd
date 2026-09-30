@@ -8,6 +8,7 @@ signal changed
 const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Art = preload("res://scripts/art.gd")
+const Ui = preload("res://scripts/ui.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 
@@ -20,10 +21,10 @@ func setup(game: Sim) -> void:
 	flat = true
 	alignment = HORIZONTAL_ALIGNMENT_LEFT
 	visible = false
-	add_theme_font_size_override("font_size", 12)
-	add_theme_color_override("font_color", Color("ffd166"))
-	add_theme_color_override("font_hover_color", Color.WHITE)
-	add_theme_color_override("font_disabled_color", Color("ffd166"))
+	add_theme_font_size_override("font_size", Ui.MIN_TEXT)
+	add_theme_color_override("font_color", Ui.TEXT)
+	add_theme_color_override("font_hover_color", Ui.HIGHLIGHT)
+	add_theme_color_override("font_disabled_color", Ui.TEXT)
 
 
 ## Show the line for building b (hidden unless it is a hut).

@@ -6,27 +6,82 @@ const Data = preload("res://scripts/data.gd")
 const Art = preload("res://scripts/art.gd")
 const Rules = preload("res://scripts/rules.gd")
 
-const OUTLINE: Color = Art.OUTLINE
-const BAD := Color("ef476f")
-const SHORT := Color("ff6f61")  # a count the stockpile falls short of
-const GOOD := Color("9fe39f")  # the `positive` token
-const HIGHLIGHT := Color("ffd166")
-const PANEL := Color("1d3557")
-const BAR := Color("264653")
-const CARD := Color("32607f")
+const OUTLINE: Color = Art.OUTLINE  # the sprite outline, also the map's
+
+## The warm UI palette (mockups/look-and-scale.md): cocoa surfaces, cream text, four accents with one job each.
+const BAR := Color("3b2a24")  # `ui-bar`: the top and bottom bars
+const PANEL := Color("4a372e")  # `ui-panel`: Goals, Info, popovers
+const CARD := Color("6a4c3b")  # `ui-card`: cards and buttons at rest
+const CARD_DONE := Color("57703f")  # `card-done`: a researched card (moss)
+const CARD_LOCKED := Color("3f2f28")  # `card-locked`
+const TEXT := Color("f6ead7")  # `ui-text`: cream
+const TEXT_DIM := Color("c9b59b")  # `ui-text-dim`: secondary text
+const LINE := Color("211510")  # `ui-line`: the 2 px outline of a card and of the map frame
+const KITH := Color("e76f51")  # the one primary action, the selected tab, the Hearth
+const HIGHLIGHT := Color("ffd166")  # gold: the current goal, ready to research, hover, range highlights
+const GOOD := Color("7fb069")  # moss, the `positive` token: enough of a cost, done goals, researched
+const BAD := Color("d64550")  # `alert`: shortage and danger only
+const SHORT := Color("ee8189")  # `alert` lifted to read as text on cocoa: a count the stockpile falls short of
+const RADIUS := 8  # `radius-panel`
+const MIN_TEXT := 14  # nothing on screen is smaller
+const LABEL_TEXT := 16  # UI labels; numbers are 18
+
+
+## Warm defaults for every Control that doesn't set its own: cream text, cocoa buttons (gold-rimmed on hover,
+## Kith orange when pressed or selected), cocoa tooltips and bars. Call once, before the UI is built.
+static func apply_theme() -> void:
+	var t := ThemeDB.get_default_theme()
+	t.set_default_font_size(MIN_TEXT)
+	for type in ["Label", "Button", "CheckBox", "LinkButton"]:
+		t.set_color("font_color", type, TEXT)
+		t.set_color("font_hover_color", type, TEXT)
+		t.set_color("font_pressed_color", type, TEXT)
+		t.set_color("font_hover_pressed_color", type, TEXT)
+		t.set_color("font_focus_color", type, TEXT)
+		t.set_color("font_disabled_color", type, Color(TEXT_DIM, 0.6))
+	t.set_font_size("font_size", "Label", MIN_TEXT)
+	t.set_font_size("font_size", "Button", MIN_TEXT)
+	var normal := panel_style(CARD, 6)
+	t.set_stylebox("normal", "Button", normal)
+	var hover := panel_style(CARD.lightened(0.12), 6)
+	hover.border_color = HIGHLIGHT
+	t.set_stylebox("hover", "Button", hover)
+	t.set_stylebox("pressed", "Button", panel_style(KITH, 6))
+	t.set_stylebox("hover_pressed", "Button", panel_style(KITH.lightened(0.1), 6))
+	t.set_stylebox("disabled", "Button", panel_style(CARD_LOCKED, 6))
+	t.set_stylebox("focus", "Button", StyleBoxEmpty.new())
+	var tip := panel_style(PANEL, 8)
+	tip.set_border_width_all(2)
+	t.set_stylebox("panel", "TooltipPanel", tip)
+	t.set_color("font_color", "TooltipLabel", TEXT)
+	t.set_font_size("font_size", "TooltipLabel", MIN_TEXT)
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = Color.WHITE  # tinted by each bar's modulate
+	fill.set_corner_radius_all(3)
+	t.set_stylebox("fill", "ProgressBar", fill)
+	var track := StyleBoxFlat.new()
+	track.bg_color = LINE
+	track.set_corner_radius_all(3)
+	t.set_stylebox("background", "ProgressBar", track)
+	for type in ["HSeparator", "VSeparator"]:
+		var line := StyleBoxLine.new()
+		line.color = LINE
+		line.thickness = 2
+		line.vertical = type == "VSeparator"
+		t.set_stylebox("separator", type, line)
 
 
 static func label(text: String, size: int) -> Label:
 	var l := Label.new()
 	l.text = text
-	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_font_size_override("font_size", maxi(size, MIN_TEXT))
 	return l
 
 
 ## A small caption, used for "Build:" and similar headings.
 static func heading(text: String) -> Label:
-	var l := label(text, 13)
-	l.add_theme_color_override("font_color", Color("a8dadc"))
+	var l := label(text, MIN_TEXT)
+	l.add_theme_color_override("font_color", TEXT_DIM)
 	return l
 
 
@@ -34,17 +89,31 @@ static func button(text: String) -> Button:
 	var b := Button.new()
 	b.text = text
 	b.focus_mode = Control.FOCUS_NONE
-	b.add_theme_font_size_override("font_size", 13)
+	b.add_theme_font_size_override("font_size", MIN_TEXT)
 	return b
 
 
+## A cocoa panel with the 2 px `ui-line` outline and `radius-panel` corners.
 static func panel_style(color: Color, margin: int = 8) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
 	s.bg_color = color
-	s.border_color = OUTLINE
-	s.set_border_width_all(3)
-	s.set_corner_radius_all(6)
+	s.border_color = LINE
+	s.set_border_width_all(2)
+	s.set_corner_radius_all(RADIUS)
 	s.set_content_margin_all(margin)
+	return s
+
+
+## A bar that runs edge to edge: one 3 px `ui-line` rule on the side facing the map, no rounded corners.
+static func bar_style(color: Color, rule_on_bottom: bool) -> StyleBoxFlat:
+	var s := StyleBoxFlat.new()
+	s.bg_color = color
+	s.border_color = LINE
+	s.border_width_bottom = 3 if rule_on_bottom else 0
+	s.border_width_top = 0 if rule_on_bottom else 3
+	s.set_content_margin_all(6)
+	s.content_margin_top = 4
+	s.content_margin_bottom = 4
 	return s
 
 
@@ -108,7 +177,7 @@ static func update_pips(row: HBoxContainer, cost: Dictionary, inv: Dictionary) -
 	for id in cost:
 		var l: Label = row.get_child(i).get_child(1)
 		l.text = str(cost[id])
-		l.add_theme_color_override("font_color", Color.WHITE if inv.get(id, 0) >= cost[id] else SHORT)
+		l.add_theme_color_override("font_color", TEXT if inv.get(id, 0) >= cost[id] else SHORT)
 		i += 1
 
 
@@ -146,7 +215,7 @@ static func rate_text(per_min: float) -> String:
 
 static func rate_color(per_min: float) -> Color:
 	if roundi(per_min) == 0:
-		return Color(1, 1, 1, 0.5)
+		return Color(TEXT_DIM, 0.8)
 	return GOOD if per_min > 0.0 else BAD
 
 
@@ -157,8 +226,8 @@ static func badge(tech: String) -> PanelContainer:
 	s.set_border_width_all(2)
 	s.set_corner_radius_all(4)
 	p.add_theme_stylebox_override("panel", s)
-	p.custom_minimum_size = Vector2(26, 22)
-	var l := label(Data.TECHS[tech]["abbr"], 12)
+	p.custom_minimum_size = Vector2(30, 24)
+	var l := label(Data.TECHS[tech]["abbr"], MIN_TEXT)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.add_theme_color_override("font_outline_color", OUTLINE)
 	l.add_theme_constant_override("outline_size", 4)

@@ -11,6 +11,7 @@ const CARD_PLACING := "Placing"
 const CARD_LOCKED := "Locked"
 const CARD_NEED := "Need %s"  # "4 Wood, 2 Rope"
 const CARD_NEED_MORE := "Need %s +%d more"  # "4 Wood", how many other items are short
+const CARD_NEED_PLUS := "Need %s +%d"  # the same, shorter
 const CARD_NEED_ITEMS := "Need more"  # when even the short form doesn't fit
 const CARD_DISCOVER := "Discover %s"  # a tech's name
 

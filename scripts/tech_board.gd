@@ -15,18 +15,18 @@ const TechLayout = preload("res://scripts/tech_layout.gd")
 const Ranks = preload("res://scripts/ranks.gd")
 const Rules = preload("res://scripts/rules.gd")
 
-const MET := Color("d3e2ef")
-const NEEDED := Color("5f7d9c")
+const MET := Color("c9b59b")
+const NEEDED := Color("8a6d5a")
 const GOLD := Color("ffd166")
-const DONE_BG := Color("24475e")
-const READY_BG := Color("32607f")
-const LOCKED_BG := Color("1f3b53")
-const LOCKED_TEXT := Color("b9c6d0")
+const DONE_BG := Ui.CARD_DONE
+const READY_BG := Ui.CARD
+const LOCKED_BG := Ui.CARD_LOCKED
+const LOCKED_TEXT := Color("b5a08a")
 const GRID_COLS := 4  # the next-steps view: cards per row
 const GRID_GAP := 24.0
 const GRID_MARGIN := 16.0
 const PIP := 20.0  # a cost item's sprite
-const HIDDEN_EDGE := Color("8fb3c9")
+const HIDDEN_EDGE := Color("c9b59b")
 const GATE := Color("e3a857")
 const GATE_BG := Color("3a2f1f")
 
@@ -180,7 +180,7 @@ func _draw() -> void:
 		draw_string(font, Vector2(TechLayout.LEFT, lane["top"] - 10.0), spaced, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, col)
 	for t in Data.TIER_NAMES.size():
 		var x := TechLayout.LEFT + t * TechLayout.PITCH
-		draw_string(font, Vector2(x, 16), Data.TIER_NAMES[t], HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.75))
+		draw_string(font, Vector2(x, 16), Data.TIER_NAMES[t], HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(Ui.TEXT, 0.75))
 	for lit in [false, true]:
 		for e in lay["edges"]:
 			_draw_edge(e, lit)
@@ -199,7 +199,7 @@ func _draw_next() -> void:
 			HORIZONTAL_ALIGNMENT_LEFT,
 			-1,
 			14,
-			Color(1, 1, 1, 0.7)
+			Color(Ui.TEXT, 0.7)
 		)
 	for tech in grid:
 		_draw_card(tech)
@@ -238,13 +238,13 @@ func _draw_or_pills() -> void:
 		var c: Vector2 = lay["pills"][tech]
 		var r := Rect2(c - Vector2(11, 8), Vector2(22, 16))
 		var box := StyleBoxFlat.new()
-		box.bg_color = Color("172c4a")
+		box.bg_color = Ui.BAR
 		box.border_color = GOLD if chain.has(tech) else NEEDED
 		box.set_border_width_all(2)
 		box.set_corner_radius_all(8)
 		draw_style_box(box, r)
 		draw_string(
-			ThemeDB.fallback_font, r.position + Vector2(5, 12), "or", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color.WHITE
+			ThemeDB.fallback_font, r.position + Vector2(5, 12), "or", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Ui.TEXT
 		)
 
 
@@ -257,7 +257,7 @@ func _draw_card(tech: String) -> void:
 		if not state.fog.is_revealed(state.world.shard_pos):
 			return  # nothing to give away before the Strange Stone has been seen
 		Art.dashed_rect(self, r, Color(HIDDEN_EDGE, a), 2.0, 6.0, 4.0)
-		draw_string(bold, r.position + Vector2(16, 28), "? ? ?", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1, 1, 1, a))
+		draw_string(bold, r.position + Vector2(16, 28), "? ? ?", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(Ui.TEXT, a))
 		draw_string(
 			ThemeDB.fallback_font,
 			r.position + Vector2(16, 46),
@@ -282,14 +282,14 @@ func _draw_card(tech: String) -> void:
 	box.set_corner_radius_all(6)
 	draw_style_box(box, r)
 	var icon := Rect2(r.position + Vector2(8, 8), Vector2(36, 36))
-	draw_rect(icon, Color(0.1, 0.16, 0.24, a))
+	draw_rect(icon, Color(0.13, 0.08, 0.06, a))
 	Art.tech_icon(self, t["icon"], icon, 0.0)
 	if not open and not done:
-		draw_rect(icon, Color(0.12, 0.17, 0.22, 0.55))  # locked: washed out
+		draw_rect(icon, Color(0.13, 0.09, 0.07, 0.55))  # locked: washed out
 	if dim:
-		draw_rect(icon, Color(0.09, 0.17, 0.29, 0.75))
+		draw_rect(icon, Color(0.13, 0.08, 0.06, 0.75))
 	draw_rect(icon, Color(Art.OUTLINE, a), false, 2.0)
-	var text := Color(1, 1, 1, a) if open or done else Color(LOCKED_TEXT, a)
+	var text := Color(Ui.TEXT, a) if open or done else Color(LOCKED_TEXT, a)
 	var x := r.position.x + 52.0  # the text beside the icon
 	var x0 := r.position.x + 8.0  # the cost rows run the whole width under it
 	draw_string(bold, Vector2(x, r.position.y + 22), t["name"], HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 78.0, 14, text)
@@ -310,7 +310,7 @@ func _draw_card(tech: String) -> void:
 	if done and not next_rank.is_empty():
 		# The next rank's cost, bought by clicking the card.
 		var label := "Rank %s:" % Data.RANK_NAMES[Ranks.rank(state, tech) + 1]
-		var col := Color(GOLD, a) if Ranks.can_buy(state, tech) else Color(1, 1, 1, 0.7 * a)
+		var col := Color(GOLD, a) if Ranks.can_buy(state, tech) else Color(Ui.TEXT, 0.7 * a)
 		draw_string(
 			ThemeDB.fallback_font, Vector2(x0, r.position.y + 62), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, col
 		)
@@ -362,7 +362,7 @@ func _draw_cost(cost: Dictionary, at: Vector2, a: float, stock: Dictionary = {})
 		var need: int = cost[id]
 		Art.item_icon(self, id, Rect2(x, at.y, PIP, PIP), a)
 		var s := "%d/%d" % [mini(have, need), need]
-		var col := Color(1, 1, 1, 0.9 * a) if have >= need else Color(Ui.SHORT, a)
+		var col := Color(Ui.TEXT, 0.9 * a) if have >= need else Color(Ui.SHORT, a)
 		draw_string(font, Vector2(x + PIP + 1, at.y + 15), s, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, col)
 		x += PIP + 1.0 + font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x + 8.0
 
@@ -378,7 +378,7 @@ func _draw_build_cost(tech: String, type: String, at: Vector2, a: float) -> void
 		HORIZONTAL_ALIGNMENT_LEFT,
 		-1,
 		9,
-		Color(1, 1, 1, 0.6 * a)
+		Color(Ui.TEXT, 0.6 * a)
 	)
 	var w := ThemeDB.fallback_font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 9).x
 	var left := Rules.left_after(state.economy.inv, Data.TECHS[tech]["cost"])
@@ -393,7 +393,7 @@ func _draw_rank_pips(tech: String, r: Rect2, a: float) -> void:
 		var pts := PackedVector2Array(
 			[c + Vector2(0, -3.5), c + Vector2(3.5, 0), c + Vector2(0, 3.5), c + Vector2(-3.5, 0)]
 		)
-		draw_colored_polygon(pts, Color(GOLD, a) if i < held else Color(1, 1, 1, 0.12 * a))
+		draw_colored_polygon(pts, Color(GOLD, a) if i < held else Color(Ui.TEXT, 0.12 * a))
 		pts.append(pts[0])
 		draw_polyline(pts, Color(Art.OUTLINE, a), 1.5, true)
 
@@ -436,7 +436,7 @@ func _draw_gate(tech: String, r: Rect2, a: float) -> void:
 		HORIZONTAL_ALIGNMENT_LEFT,
 		-1,
 		10,
-		Color(1, 1, 1, 0.75 * a)
+		Color(Ui.TEXT, 0.75 * a)
 	)
 	for n in needs:
 		y += 16
@@ -458,13 +458,13 @@ func _draw_gate(tech: String, r: Rect2, a: float) -> void:
 		HORIZONTAL_ALIGNMENT_LEFT,
 		-1,
 		10,
-		Color(1, 1, 1, 0.75 * a)
+		Color(Ui.TEXT, 0.75 * a)
 	)
 	for id in t["cost"]:
 		y += 16
 		var have: int = state.economy.inv.get(id, 0)
 		var need: int = t["cost"][id]
-		var col := Color(1, 1, 1, a) if have >= need else Color(Ui.SHORT, a)
+		var col := Color(Ui.TEXT, a) if have >= need else Color(Ui.SHORT, a)
 		var line := "%d/%d" % [mini(have, need), need]
 		Art.item_icon(self, id, Rect2(r.position.x + 10, y - 13, 16, 16), a)
 		draw_string(

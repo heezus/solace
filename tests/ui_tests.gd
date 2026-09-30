@@ -10,7 +10,7 @@ const BuildingPanel = preload("res://scripts/building_panel.gd")
 const Overlays = preload("res://scripts/overlays.gd")
 const KithArt = preload("res://scripts/kith_art.gd")
 
-const CARD_TEXT_W := 110.0  # the width of a card's state line (BuildBar.TEXT_W)
+const CARD_TEXT_W := 124.0  # the width of a card's state line (BuildBar.TEXT_W)
 
 var t  # the runner, tests/run_tests.gd
 

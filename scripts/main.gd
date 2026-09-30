@@ -31,11 +31,10 @@ const MAP_ORIGIN := Vector2.ZERO  # the node's transform scales and centers the 
 const FIT_SETTLE_FRAMES := 3  # frames after a window resize while the bars settle to their new size
 const OUTLINE: Color = Art.OUTLINE
 const OUTLINE_W := 2.5
-const KITH := Color("e76f51")
-const SIDE_W := 290.0
-const BAD := Color("ef476f")
-const GOAL_COLOR := Color("ffd166")
-const FOG := Color("2c3834")
+const KITH: Color = Ui.KITH
+const SIDE_W := 264.0
+const BAD: Color = Ui.BAD
+const GOAL_COLOR: Color = Ui.HIGHLIGHT
 const LINE_TYPES := ["road", "bridge", "field"]  # laid by dragging
 const AURA_FILL := Color(0.55, 0.45, 0.6, 0.2)
 const NUDGE_TIME := 2.0  # seconds the "hold it down" hint stays after a click that let go too soon
@@ -74,6 +73,7 @@ var nudge := {}
 
 
 func _ready() -> void:
+	Ui.apply_theme()
 	state = Sim.new()
 	state.generate(randi())
 	_build_ui()
@@ -525,7 +525,7 @@ func _draw() -> void:
 		var pos: Vector2 = pop["pos"] + Vector2(-20, -10 - pop["t"] * 30)
 		var a: float = 1.0 - pop["t"] / 1.2
 		draw_string_outline(font, pos, pop["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, 5, Color(OUTLINE, a))
-		var col: Color = pop.get("col", Color.WHITE)
+		var col: Color = pop.get("col", Ui.TEXT)
 		draw_string(font, pos, pop["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(col, a))
 
 
@@ -539,7 +539,7 @@ func _draw_fog() -> void:
 			var edge := false
 			for n in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
 				edge = edge or state.fog.is_revealed(p + n)
-			draw_rect(_tile_rect(p), Color(FOG, 0.55 if edge else 0.94))
+			draw_rect(_tile_rect(p), Color(Data.FOG, 0.55 if edge else 0.94))
 
 
 ## A Standing Stone's reach: under the cursor while placing one, around each one while hovering one.
@@ -588,7 +588,7 @@ func _draw_building(b: Dictionary) -> void:
 	var held := Buildings.buffered(b["out"])
 	if held > 0:
 		var badge := r.position + Vector2(r.size.x - 2, 2)
-		Art.outlined_circle(self, badge, 7.0, Color("ffd166") if held < Data.BUFFER_CAP else Color("ef476f"))
+		Art.outlined_circle(self, badge, 7.0, GOAL_COLOR if held < Data.BUFFER_CAP else BAD)
 		draw_string(
 			ThemeDB.fallback_font,
 			badge + Vector2(-4 if held < 10 else -7, 4),
@@ -601,9 +601,7 @@ func _draw_building(b: Dictionary) -> void:
 	_draw_trips(b, r)
 	_draw_rush(b, r)
 	if b["status"].begins_with("Hungry") or b["status"].begins_with("No power"):
-		draw_string(
-			ThemeDB.fallback_font, r.position + Vector2(-2, 10), "!", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color("ef476f")
-		)
+		draw_string(ThemeDB.fallback_font, r.position + Vector2(-2, 10), "!", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, BAD)
 
 
 ## Hold to harvest: an outline ring over the held tile, with a highlight arc filling clockwise from the top.

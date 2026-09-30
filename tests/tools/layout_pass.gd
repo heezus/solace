@@ -4,7 +4,7 @@ extends SceneTree
 ## It also checks the HUD's fit, at 1280x800 and after two resizes: the Info panel stays above the bottom bar
 ## even with a wall of text, a building's details are docked in the Info panel (nothing floats over the map),
 ## the top bar never runs past the window and none of its text is cut short (also with the food warning and
-## starvation showing), toasts stack without overlapping each other or a chip, every chip has a name, a tooltip
+## starvation showing), toasts stack without overlapping each other or a chip, every chip has a tooltip that names it
 ## and a sprite, a Hearth's blurb shows once, every build card's text fits it, and the message log opens.
 ## Run: godot --headless --path . -s tests/tools/layout_pass.gd   (exits 1 on a problem)
 
@@ -284,7 +284,7 @@ func _check_hearth_blurb_once() -> void:
 		problems.append("the Hearth's blurb shows %d times across its card and the Info panel (want 1)" % n)
 
 
-## Toasts sit below the top bar, clear of every chip and of each other; every chip has a name, a tooltip
+## Toasts sit below the top bar, clear of every chip and of each other; every chip has a tooltip that names it
 ## and a sprite behind nothing.
 func _check_toast_and_chips() -> void:
 	hud_checks += 1
@@ -297,8 +297,8 @@ func _check_toast_and_chips() -> void:
 				problems.append("a toast covers the %s chip" % id)
 		if c["box"].tooltip_text == "":
 			problems.append("the %s chip has no tooltip" % id)
-		if c["title"].text == "":
-			problems.append("the %s chip has no name" % id)
+		elif not String(c["box"].tooltip_text).begins_with(Data.ITEMS[id]["name"]):
+			problems.append("the %s chip's tooltip doesn't start with its name (the icon carries it)" % id)
 		var icon: Control = c["icon"]
 		if not icon is TextureRect or icon.texture == null:
 			problems.append("the %s chip has no sprite" % id)

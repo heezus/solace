@@ -10,9 +10,8 @@ const Rules = preload("res://scripts/rules.gd")
 
 const TILE := 32.0
 const OUTLINE: Color = Art.OUTLINE
-const ALERT := Color("ef476f")
-const KITH := Color("e76f51")
-const FOG := Color("2c3834")
+const ALERT: Color = Ui.BAD
+const KITH: Color = Ui.KITH
 const RUBBLE_TIME := 0.9
 const PILL_FONT := 10
 
