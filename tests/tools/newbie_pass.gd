@@ -118,7 +118,7 @@ func _key(code: Key) -> void:
 
 func _screen_text() -> String:
 	var goals: Array = []
-	for g in main.goal_labels:
+	for g in main.side_panel.goal_labels:
 		if g.text != "":
 			goals.append(g.text)
 	var inv := []
@@ -130,13 +130,24 @@ func _screen_text() -> String:
 		"GOALS: %s\n    INFO: %s\n    TOAST: %s\n    HAVE: %s\n    KITH: %d, learned: %s"
 		% [
 			" | ".join(goals),
-			main.info_label.text.replace("\n", " / "),
-			main.toast_label.text if main.toast_label.visible else "",
+			main.side_panel.info_label.text.replace("\n", " / "),
+			_toast_text(),
 			", ".join(inv),
 			s.people.kith.size(),
 			", ".join(s.people.learned_by.keys()),
 		]
 	)
+
+
+func _toast_text() -> String:
+	var out: Array = []
+	for m in main.messages.active:
+		out.append(m["text"])
+	return " || ".join(out)
+
+
+func _layout_text() -> String:
+	return "map_pos=%s scale=%s top_bar_h=%.0f side_w=%.0f" % [main.position, main.scale, main.top_bar.size.y, main.side_panel.size.x]
 
 
 func _shot(name: String) -> void:
@@ -146,7 +157,7 @@ func _shot(name: String) -> void:
 	var img := root.get_texture().get_image()
 	var path := "%s/%02d_%s.png" % [out_dir, shot_n, name]
 	img.save_png(ProjectSettings.globalize_path(path) if path.begins_with("user://") else path)
-	_say("SHOT %02d %s\n    %s" % [shot_n, name, _screen_text()])
+	_say("SHOT %02d %s\n    %s\n    LAYOUT: %s" % [shot_n, name, _screen_text(), _layout_text()])
 
 
 func _nearest(tile: String) -> Vector2i:
@@ -379,6 +390,18 @@ func _run() -> void:
 		await _place_near("gatherers_hut", "berry", "hut2_berries")
 		_click(_screen_of(_last_spot))
 		await _wait(0.5)
+		var f = main.building_panel.parts["focus"]
+		_say("hut2 focus panel: visible=%s text='%s' hut focus=%s" % [f.visible, f.text, main.state.town.buildings[main.state.town.building_at[_last_spot]]["focus"]])
+		await _shot("hut2_selected_focus")
+		if f.visible and not f.disabled and main.state.town.buildings[main.state.town.building_at[_last_spot]]["focus"] != "berries":
+			for i in 4:
+				_click_control(f)
+				await _wait(0.3)
+				if main.state.town.buildings[main.state.town.building_at[_last_spot]]["focus"] == "berries":
+					break
+			_say("after clicking focus: '%s'" % f.text)
+			await _shot("hut2_focus_changed")
+		main.building_panel.select(Vector2i(-1, -1))
 		_key(KEY_3)
 		await _wait(30.0)
 		await _shot("both_huts_30s_at_3x")
@@ -409,6 +432,9 @@ func _run() -> void:
 		await _wait(30.0)
 		await _shot("workshops_30s_later")
 		_kith_check("end")
+		await _wait(60.0)
+		await _shot("final_60s_more")
+		_kith_check("final")
 	else:
 		_say("never got the Gatherer's Hut tech")
 	_say("end of newbie pass")
