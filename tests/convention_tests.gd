@@ -526,14 +526,15 @@ func test_data_facade_exports_every_domain_constant() -> void:
 
 
 func test_sim_surface_stays_small() -> void:
+	var script: Script = Sim
 	var commands: Array = []
-	for m in Sim.get_script_method_list():
+	for m in script.get_script_method_list():
 		if not String(m["name"]).begins_with("_"):
 			commands.append(m["name"])
 	commands.sort()
 	t.check(commands == SIM_COMMANDS, "Sim's public methods are exactly its commands: " + str(commands))
 	var fields: Array = []
-	for p in Sim.get_script_property_list():
+	for p in script.get_script_property_list():
 		if p["usage"] & PROPERTY_USAGE_SCRIPT_VARIABLE and not String(p["name"]).begins_with("_"):
 			fields.append(p["name"])
 	t.check(fields.size() <= 20, "Sim's public fields are the blocks and a few run flags (%d)" % fields.size())
@@ -559,7 +560,8 @@ func test_sim_reaches_every_block() -> void:
 
 func test_sim_keeps_no_pass_throughs() -> void:
 	var s: Sim = t.fresh()
-	var constants := Sim.get_script_constant_map()
+	var script: Script = Sim
+	var constants := script.get_script_constant_map()
 	var back: Array = []
 	for name in SIM_RETIRED:
 		if s.has_method(name) or name in s or constants.has(name):
