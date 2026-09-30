@@ -99,7 +99,6 @@ func setup(game: Sim) -> void:
 	demolish.pressed.connect(func(): demolish_pressed.emit(pos))
 	buttons.add_child(demolish)
 	parts["demolish"] = demolish
-	v.move_child(buttons, 1)  # right under the title, so they never scroll out of the Info panel
 
 
 ## The button row follows the card: shown while a building is selected, wherever it was docked.
