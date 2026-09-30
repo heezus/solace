@@ -344,6 +344,7 @@ func _run() -> void:
 			await _wait(0.3)
 		await _wait(6.0)
 		await _shot("hut1_trip_running")
+		main.building_panel.select(Vector2i(-1, -1))  # close the hut popup: it covers the bushes
 		# Berries: learn them by hand, then a second hut beside the bushes.
 		ok = await _gather_until("berries", func(): return s.people.knows("berries"), 90.0)
 		_say("berries learned=%s" % ok)
