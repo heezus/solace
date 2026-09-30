@@ -5,7 +5,6 @@ const Data = preload("res://scripts/data.gd")
 const GameState = preload("res://scripts/game_state.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
-const Goals = preload("res://scripts/goals.gd")
 const TechPanel = preload("res://scripts/tech_panel.gd")
 const BuildBar = preload("res://scripts/build_bar.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
@@ -369,7 +368,7 @@ func _refresh_ui() -> void:
 	tech_panel.refresh()
 	building_panel.refresh()
 
-	var cur := Goals.current_goal(state)
+	var cur := state.story.current_goal()
 	goal_header.text = "Goals (%d/%d)" % [mini(cur, Data.GOALS.size()), Data.GOALS.size()]
 	for i in goal_labels.size():
 		var gi := cur - 1 + i

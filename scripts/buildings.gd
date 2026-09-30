@@ -11,6 +11,11 @@ extends RefCounted
 ## report what they did, and their owner does the rest. A building's work cycle needs the Kith, the haulers
 ## and the Bonuses, so that stays with the owner too.
 ## GameState owns one and passes its old building methods and variables through to it.
+## Signals: built(type, pos) when place() puts a building, road, bridge or field down, and demolished(type, pos)
+## when demolish() takes one away (the Hearth goes down through add_building and is not announced).
+
+signal built(type: String, pos: Vector2i)
+signal demolished(type: String, pos: Vector2i)
 
 const Data = preload("res://scripts/data.gd")
 const Economy = preload("res://scripts/economy.gd")
@@ -119,6 +124,7 @@ func place(type: String, p: Vector2i) -> Dictionary:
 		_world.add_field(p)
 	else:
 		add_building(type, p)
+	built.emit(type, p)
 	return {"kind": kind, "cleared": cleared}
 
 
@@ -183,6 +189,7 @@ func demolish(p: Vector2i) -> Dictionary:
 		_world.remove_field(p)
 	else:
 		index = building_at[p]
+	demolished.emit(type, p)
 	return {"type": type, "refund": refund, "index": index}
 
 

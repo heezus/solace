@@ -28,9 +28,10 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 			var target := next_gather_tile(s, k, b)
 			if target.x < 0:
 				return  # nothing here it knows how to gather yet
-			k["trip"] = not Roads.automated(s, b)
-			if k["trip"]:
-				s.record_story("first_trip")
+			if Roads.automated(s, b):
+				k["trip"] = false
+			else:
+				s.people.start_trip(k)
 			k["task"] = {"tile": target}
 			k["phase"] = "to_tile"
 		"to_tile":

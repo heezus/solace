@@ -7,6 +7,7 @@ extends RefCounted
 const Data = preload("res://scripts/data.gd")
 const Economy = preload("res://scripts/economy.gd")
 const GameState = preload("res://scripts/game_state.gd")
+const Monitor = preload("res://tests/monitor.gd")
 const Research = preload("res://scripts/research.gd")
 
 var t  # the runner, tests/run_tests.gd
@@ -31,6 +32,8 @@ func run(runner) -> void:
 	test_tick_researches_what_is_affordable()
 	test_tick_goes_step_by_step()
 	test_ready_list_is_in_tree_order()
+	test_tech_researched_signal()
+	test_tick_signals_each_tech_in_order()
 	test_research_stands_alone()
 	test_game_state_passes_through()
 	test_game_state_runs_the_effects()
@@ -54,6 +57,34 @@ func _block(stock: Dictionary = {}, done: Array = []) -> Research:
 	for id in stock:
 		_eco.inv[id] = stock[id]
 	return Research.new(_eco, _techs, _shard_seen)
+
+
+func test_tech_researched_signal() -> void:
+	var r := _block({"fiber": 20})
+	var m := Monitor.new()
+	m.watch(r, "tech_researched")
+	t.check(not r.research("gatherers_hut") and m.count() == 0, "a refused research signals nothing")
+	t.check(r.research("cordage"), "research Cordage")
+	t.check(m.args_of("tech_researched") == [["cordage"]], "tech_researched(id) fires once, with the id")
+	t.check(_techs.has("cordage"), "after the tech is in the set")
+	t.check(not r.research("cordage") and m.count() == 1, "a repeat signals nothing")
+	r.unlocked("cordage")
+	r.can_research("knapping")
+	t.check(m.count() == 1, "queries never signal")
+
+
+func test_tick_signals_each_tech_in_order() -> void:
+	var r := _block({"fiber": 15, "wood": 99, "stone": 99, "flint": 99})
+	var m := Monitor.new()
+	m.watch(r, "tech_researched")
+	r.set_goal("gatherers_hut")
+	var route := r.queue.duplicate()
+	var done := r.tick()
+	t.check(done.size() > 0, "the tick researched something")
+	t.check(
+		m.args_of("tech_researched") == done.map(func(id): return [id]), "one signal per tech, in the order returned"
+	)
+	t.check(route.slice(0, done.size()) == done, "in queue order")
 
 
 func test_requirements() -> void:
