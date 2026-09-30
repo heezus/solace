@@ -38,6 +38,7 @@ func run(runner) -> void:
 	test_the_river_runs_from_high_to_low()
 	test_there_is_a_river_to_bridge()
 	test_the_hearth_is_on_dry_lowland_by_the_river()
+	test_there_is_room_for_a_water_wheel()
 	test_rocks_lie_high_and_forest_lies_wet()
 	test_grain_flax_and_berries_follow_the_land()
 	test_clay_and_gravel_lie_on_the_banks()
@@ -338,6 +339,27 @@ func test_the_hearth_is_on_dry_lowland_by_the_river() -> void:
 					"seed %d: no river on the Hearth's ground" % map_seed
 				)
 	t.check(lowland == SEEDS, "every Hearth is on the lower half of the land")
+
+
+## A Water Wheel must touch the river and its workshops stand within 3 tiles: every map keeps open ground on a
+## bank the Hearth can walk to, a little way from it (near enough to be built up, far enough to have room).
+func test_there_is_room_for_a_water_wheel() -> void:
+	for map_seed in range(1, SEEDS + 1):
+		var w := _world(map_seed)
+		var walk := MapGen._flood(w, w.camp_pos, false)
+		var best := 0
+		var at := Vector2i(-1, -1)
+		for p in walk:
+			if w.tile_at(p) == "grass" and w.touches_river(p) and MapGen._cheb(p, w.camp_pos) <= 16:
+				var room := MapGen._count_near(w, p, "grass", 3)
+				if room > best:
+					best = room
+					at = p
+		t.check(
+			best >= MapGen.WHEEL_ROOM,
+			"seed %d: open bank for a wheel within 16 tiles of the Hearth (%d grass round %s)" % [map_seed, best, at]
+		)
+		t.check(MapGen._open_banks(w, walk) >= MapGen.OPEN_BANK_MIN, "seed %d: open bank tiles to build on" % map_seed)
 
 
 func test_rocks_lie_high_and_forest_lies_wet() -> void:

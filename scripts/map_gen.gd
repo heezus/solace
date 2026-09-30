@@ -31,7 +31,7 @@ const MIN_HEIGHT := 16
 const ATTEMPTS := 24
 ## The Hearth sits this many tiles from the edge and this close to the river (steps) on dry lowland.
 const CAMP_MARGIN := Vector2i(5, 5)
-const CAMP_RIVER := Vector2i(5, 11)
+const CAMP_RIVER := Vector2i(5, 10)
 const CAMP_LOW_PERCENT := 50  # the Hearth's ground is below this share of the map's heights
 const CAMP_WET_MAX := 700
 ## The patch of ground around the Hearth every map guarantees a resource in, from the corner to corner.
@@ -43,6 +43,10 @@ const REACH_MIN := {"tree": 12, "rock": 8, "berry": 5, "grain": 6, "flax": 6, "g
 const FAR_BANK_SHARE := 8  # at least this percent of the land must lie across the water: a crossing to solve
 
 const RIDGE_PERCENT := 72  # the ridge follows this height
+const FLOODPLAIN_MIN := 5.0  # the open bank lies this far from the Hearth, at least
+const FLOODPLAIN_AT := 6.0  # and as near to this as the river allows: close enough to build up, far enough to have room
+const FLOODPLAIN_REACH := 4  # and keeps open ground this many tiles round it
+const WHEEL_ROOM := 20  # grass tiles in the 7 by 7 round a bank tile that a Water Wheel can stand on
 const BANK_FOREST := 450  # forest noise (thousandths) above which trees grow right down to the water
 const OPEN_BANK_MIN := 5  # grass tiles beside the river, reachable by land
 const BEND := 3  # how many steps either way the river's turn is read over
@@ -94,6 +98,7 @@ static func _attempt(s, land_seed: int) -> Dictionary:
 		s.set_tile(p, "river")
 	s.camp_pos = _pick_camp(s, land, rng)
 	land["camp"] = s.camp_pos
+	land["zone"] = _floodplain(s)
 	land["seed_rock"] = land_seed + 4
 	land["seed_forest"] = land_seed + 5
 	land["seed_meadow"] = land_seed + 6
@@ -126,7 +131,7 @@ static func _pick_camp(s, land: Dictionary, rng: RandomNumberGenerator) -> Vecto
 				continue
 			if Terrain.wet_of(land, p) > CAMP_WET_MAX or not _footprint_dry(land, p):
 				continue
-			var score := absi(d - 7) * 35 + Terrain.height_of(land, p) / 25 + rng.randi_range(0, 100)
+			var score := absi(d - 6) * 35 + Terrain.height_of(land, p) / 25 + rng.randi_range(0, 100)
 			if score < best_score:
 				best_score = score
 				best = p
@@ -140,6 +145,39 @@ static func _footprint_dry(land: Dictionary, p: Vector2i) -> bool:
 		if d.x >= FOOTPRINT_MIN.x and d.x <= FOOTPRINT_MAX.x and d.y >= FOOTPRINT_MIN.y and d.y <= FOOTPRINT_MAX.y:
 			return false
 	return true
+
+
+## The floodplain: open ground by the river, a short way from the Hearth. Nothing but grass
+## is laid on it, so there is room for a Water Wheel and the workshops that need its power. A set of tiles.
+static func _floodplain(s) -> Dictionary:
+	var reach := _flood(s, s.camp_pos, true)
+	var landing := Vector2i(-1, -1)
+	var best_d := 1000000.0
+	for y in s.height:
+		for x in s.width:
+			var p := Vector2i(x, y)
+			if not reach.has(p) or s.tile_at(p) != "grass" or _river_beside(s, p).x < 0:
+				continue
+			if (
+				x < FLOODPLAIN_REACH
+				or y < FLOODPLAIN_REACH
+				or x >= s.width - FLOODPLAIN_REACH
+				or y >= s.height - FLOODPLAIN_REACH
+			):
+				continue  # the whole plain must be on the map
+			var d := Vector2(p).distance_to(Vector2(s.camp_pos))
+			if d >= FLOODPLAIN_MIN and absf(d - FLOODPLAIN_AT) < best_d:
+				best_d = absf(d - FLOODPLAIN_AT)
+				landing = p
+	var zone := {}
+	if landing.x < 0:
+		return zone
+	for dy in range(-FLOODPLAIN_REACH, FLOODPLAIN_REACH + 1):
+		for dx in range(-FLOODPLAIN_REACH, FLOODPLAIN_REACH + 1):
+			var q := landing + Vector2i(dx, dy)
+			if s.in_bounds(q) and s.tile_at(q) != "river":
+				zone[q] = true
+	return zone
 
 
 # --- Rock ------------------------------------------------------------------------
@@ -194,7 +232,7 @@ static func _gaps(n: int, rng: RandomNumberGenerator) -> Dictionary:
 
 ## Rock on a grass tile that is not by the Hearth.
 static func _rock_at(s, land: Dictionary, p: Vector2i) -> void:
-	if s.tile_at(p) == "grass" and _cheb(p, land["camp"]) > 6:
+	if s.tile_at(p) == "grass" and _cheb(p, land["camp"]) > 6 and not land["zone"].has(p):
 		s.set_tile(p, "rock")
 
 
@@ -206,7 +244,7 @@ static func _lay_boulders(s, land: Dictionary) -> void:
 	for y in s.height:
 		for x in s.width:
 			var p := Vector2i(x, y)
-			if s.tile_at(p) == "grass" and _cheb(p, land["camp"]) > 6 and Terrain.height_of(land, p) >= floor_h:
+			if _free(s, land, p) and _cheb(p, land["camp"]) > 6 and Terrain.height_of(land, p) >= floor_h:
 				cells.append(p)
 	var score := func(p: Vector2i) -> int: return Terrain.height_of(land, p) / 2 + rock[p.y * s.width + p.x]
 	for p in _top(cells, score, s.width * s.height * 5 / 100):
@@ -225,7 +263,7 @@ static func _lay_forest(s, land: Dictionary) -> void:
 	for y in s.height:
 		for x in s.width:
 			var p := Vector2i(x, y)
-			if s.tile_at(p) != "grass" or _cheb(p, land["camp"]) <= 2 or Terrain.height_of(land, p) > cap:
+			if not _free(s, land, p) or _cheb(p, land["camp"]) <= 2 or Terrain.height_of(land, p) > cap:
 				continue
 			if Terrain.dist_of(land, p) > 1 or noise[y * s.width + x] > BANK_FOREST:
 				cells.append(p)
@@ -243,7 +281,7 @@ static func _lay_meadows(s, land: Dictionary) -> void:
 		for x in s.width:
 			var p := Vector2i(x, y)
 			var wet := Terrain.wet_of(land, p)
-			if s.tile_at(p) != "grass" or _cheb(p, land["camp"]) <= 2 or Terrain.dist_of(land, p) < 2:
+			if not _free(s, land, p) or _cheb(p, land["camp"]) <= 2 or Terrain.dist_of(land, p) < 2:
 				continue
 			if wet >= 200 and wet <= 750 and Terrain.height_of(land, p) <= cap and _count_near(s, p, "tree", 1) == 0:
 				cells.append(p)
@@ -259,7 +297,7 @@ static func _lay_berries(s, land: Dictionary, rng: RandomNumberGenerator) -> voi
 	for y in s.height:
 		for x in s.width:
 			var p := Vector2i(x, y)
-			if s.tile_at(p) != "grass" or _cheb(p, land["camp"]) <= 2 or not s.touches(p, "tree"):
+			if not _free(s, land, p) or _cheb(p, land["camp"]) <= 2 or not s.touches(p, "tree"):
 				continue
 			if noise[y * s.width + x] > -200 and rng.randf() < 0.3:
 				s.set_tile(p, "berry")
@@ -293,13 +331,13 @@ static func _flax_patch(s, land: Dictionary, c: Vector2i, rng: RandomNumberGener
 
 ## Flax may grow on grass that is off the bank and has no forest or rock touching it.
 static func _flax_ok(s, land: Dictionary, p: Vector2i) -> bool:
-	if s.tile_at(p) != "grass" or Terrain.dist_of(land, p) < 2 or _cheb(p, land["camp"]) <= 2:
+	if not _free(s, land, p) or Terrain.dist_of(land, p) < 2 or _cheb(p, land["camp"]) <= 2:
 		return false
 	return _count_near(s, p, "tree", 1) == 0 and _count_near(s, p, "rock", 1) == 0
 
 
 static func _open_grass(s, land: Dictionary, p: Vector2i) -> bool:
-	if not s.in_bounds(p) or s.tile_at(p) != "grass" or _cheb(p, land["camp"]) <= 2:
+	if not s.in_bounds(p) or not _free(s, land, p) or _cheb(p, land["camp"]) <= 2:
 		return false
 	return Terrain.dist_of(land, p) >= 2 and Terrain.wet_of(land, p) <= 650 and _count_near(s, p, "grass", 1) == 9
 
@@ -316,7 +354,7 @@ static func _lay_banks(s, land: Dictionary, rng: RandomNumberGenerator) -> void:
 		for x in s.width:
 			var b := Vector2i(x, y)
 			var r := _river_beside(s, b)
-			if s.tile_at(b) != "grass" or r == Vector2i(-1, -1) or _cheb(b, land["camp"]) <= 2:
+			if not _free(s, land, b) or r == Vector2i(-1, -1) or _cheb(b, land["camp"]) <= 2:
 				continue
 			var tile := _bank_tile(land, water[r], b, rng)
 			if _count_near(s, b, "rock", 2) > 0 and rng.randf() < 0.8:
@@ -327,7 +365,7 @@ static func _lay_banks(s, land: Dictionary, rng: RandomNumberGenerator) -> void:
 				clay.append(b)
 	for c in clay:  # clay lies a little way in from the water, too
 		for n in NEIGHBORS:
-			if s.tile_at(c + n) == "grass" and _cheb(c + n, land["camp"]) > 2 and rng.randf() < 0.5:
+			if _free(s, land, c + n) and _cheb(c + n, land["camp"]) > 2 and rng.randf() < 0.5:
 				s.set_tile(c + n, "clay")
 
 
@@ -453,6 +491,8 @@ static func faults_of(s, land: Dictionary) -> Array:
 			faults.append("too little %s reachable (%d)" % [tile, whole.get(tile, 0)])
 	if _open_banks(s, walk) < OPEN_BANK_MIN:
 		faults.append("no open river bank for a wheel or a weir")
+	if not _wheel_site(s, walk, camp):
+		faults.append("no room for a Water Wheel and its workshops by the river")
 	var far: Vector2i = s.shard_pos
 	if not s.in_bounds(far) or s.tile_at(far) != "shard":
 		faults.append("no Strange Stone")
@@ -462,6 +502,15 @@ static func faults_of(s, land: Dictionary) -> Array:
 	if loose.size() * 100 > land_tiles * (100 - FAR_BANK_SHARE):
 		faults.append("no far bank to bridge to")
 	return faults
+
+
+## True if a Water Wheel has a place: a reachable bank tile near the Hearth with open grass round it.
+static func _wheel_site(s, walk: Dictionary, camp: Vector2i) -> bool:
+	for p in walk:
+		if s.tile_at(p) == "grass" and _cheb(p, camp) <= 16 and _river_beside(s, p).x >= 0:
+			if _count_near(s, p, "grass", 3) >= WHEEL_ROOM:
+				return true
+	return false
 
 
 ## How many grass tiles beside the river the Kith can walk to.
@@ -517,6 +566,9 @@ static func patch(s, land: Dictionary) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = camp.x * 1000 + camp.y
 	_lay_hearth(s, rng)
+	for p in land["zone"]:  # the floodplain is open ground again
+		if s.tile_at(p) != "river" and _cheb(p, camp) > 2:
+			s.set_tile(p, "grass")
 	for tile in NEAR_MIN:
 		_top_up(s, tile, NEAR_MIN[tile], Data.SIGHT_START)
 	for tile in REACH_MIN:
@@ -603,6 +655,11 @@ static func _plain_map(s, seed_value: int) -> void:
 
 
 # --- Helpers ------------------------------------------------------------------------
+
+
+## Grass that no layer has claimed and that is not on the floodplain.
+static func _free(s, land: Dictionary, p: Vector2i) -> bool:
+	return s.tile_at(p) == "grass" and not land["zone"].has(p)
 
 
 ## Chebyshev distance: the size of the square between two tiles.
