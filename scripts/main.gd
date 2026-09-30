@@ -9,7 +9,6 @@ const Goals = preload("res://scripts/goals.gd")
 const TechPanel = preload("res://scripts/tech_panel.gd")
 const BuildBar = preload("res://scripts/build_bar.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
-const Research = preload("res://scripts/research.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
 const Overlays = preload("res://scripts/overlays.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
@@ -366,7 +365,7 @@ func _build_win_overlay(layer: CanvasLayer) -> void:
 
 func _refresh_ui() -> void:
 	top_bar.refresh(paused, speed)
-	bottom_bar.refresh(placing, Research.ready_list(state).size())
+	bottom_bar.refresh(placing, state.tech_tree.ready_list().size())
 	tech_panel.refresh()
 	building_panel.refresh()
 

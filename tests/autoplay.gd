@@ -8,7 +8,6 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 const GameState = preload("res://scripts/game_state.gd")
-const Research = preload("res://scripts/research.gd")
 const Rules = preload("res://scripts/rules.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Workers = preload("res://scripts/workers.gd")
@@ -67,7 +66,7 @@ func play(map_seed: int, max_seconds: float) -> Dictionary:
 ## Play `game` from here on: step() then advances it (tests/tools/play_pass.gd runs it under the live UI).
 func attach(game: GameState) -> void:
 	s = game
-	Research.set_goal(s, "bronze_dawn")
+	s.tech_tree.set_goal("bronze_dawn")
 
 
 ## One DT of play: tick the simulation (unless something else ticks it), then click and decide.
@@ -142,7 +141,7 @@ func _trace() -> void:
 ## what they're made of.
 func _short() -> Dictionary:
 	if s.research_goal == "" and not s.won:
-		Research.set_goal(s, "bronze_dawn")
+		s.tech_tree.set_goal("bronze_dawn")
 	var want := {}
 	for tech in s.research_queue.slice(0, 3):
 		_want(want, Data.TECHS[tech]["cost"], 1)

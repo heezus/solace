@@ -1,48 +1,111 @@
 extends RefCounted
-## The research queue: click a far tech to make it the goal, and the techs it still needs line up
-## (up to Data.QUEUE_SLOTS at a time). Each one is researched as soon as it's affordable.
-## Static, and works on the GameState passed in (its research_goal and research_queue).
+## The Research block: which techs are researched, what each one still needs, the research goal and the
+## queue of techs on the way to it (up to Data.QUEUE_SLOTS at a time, each researched as soon as it is
+## affordable). It stands alone and never reaches into another block. Costs are paid through the Economy
+## handed in at construction, and whether hidden techs are on show comes in as a read-only callable.
+## What happens in the world when a tech completes (a new road speed, the fog, a win) is not decided
+## here: research() and tick() only report which techs were completed, and their owner reacts.
+## GameState owns one and passes its old tech methods through to it.
 
 const Data = preload("res://scripts/data.gd")
+const Economy = preload("res://scripts/economy.gd")
 const Rules = preload("res://scripts/rules.gd")
 
+var researched: Dictionary  # tech id -> true (the Economy reads the same set as a view, and never writes it)
+var goal := ""  # the tech the queue is working toward, "" for none
+var queue: Array = []  # the next techs on the way there, researched as soon as affordable
+var _economy: Economy
+var _hidden_shown: Callable  # () -> bool: true once hidden techs are on show (the Strange Stone was clicked)
 
-static func set_goal(s, tech: String) -> void:
-	s.research_goal = tech
-	refill(s)
+
+## `researched_set` is the dictionary the Economy also holds (built first, since each needs the other).
+func _init(economy: Economy, researched_set: Dictionary, hidden_shown: Callable) -> void:
+	_economy = economy
+	researched = researched_set
+	_hidden_shown = hidden_shown
 
 
-static func clear(s) -> void:
-	s.research_goal = ""
-	s.research_queue = []
+# --- Requirements ------------------------------------------------------------
+
+
+## Hidden techs (Star Lore) only show once the Strange Stone has been clicked.
+func tech_visible(tech: String) -> bool:
+	return _hidden_shown.call() or not Data.TECHS[tech].get("hidden", false)
+
+
+## How many requirements are still open. A `requires_any` list counts as one.
+func missing_requirements(tech: String) -> int:
+	var def: Dictionary = Data.TECHS[tech]
+	var n := 0
+	for r in def["requires"]:
+		if not researched.has(r):
+			n += 1
+	var any: Array = def.get("requires_any", [])
+	if not any.is_empty() and not any.any(func(r): return researched.has(r)):
+		n += 1
+	return n
+
+
+func requirements_met(tech: String) -> bool:
+	return tech_visible(tech) and missing_requirements(tech) == 0
+
+
+func can_research(tech: String) -> bool:
+	return not researched.has(tech) and requirements_met(tech) and _economy.can_afford(Data.TECHS[tech]["cost"])
+
+
+## Pay for `tech` and mark it researched. Returns false, and takes nothing, when it can't be researched
+## yet. A true result means the tech was just completed: the owner runs whatever that sets off.
+func research(tech: String) -> bool:
+	if not can_research(tech):
+		return false
+	_economy.pay(Data.TECHS[tech]["cost"])
+	researched[tech] = true
+	return true
+
+
+# --- The goal and the queue --------------------------------------------------
+
+
+func set_goal(tech: String) -> void:
+	goal = tech
+	refill()
+
+
+func clear() -> void:
+	goal = ""
+	queue = []
 
 
 ## Queue the next few techs on the way to the goal, parents first. The goal is dropped once reached.
-static func refill(s) -> void:
-	if s.research_goal == "":
-		s.research_queue = []
+func refill() -> void:
+	if goal == "":
+		queue = []
 		return
-	var route := Rules.route_to(s.research_goal, s.researched, Rules.visible_techs(s.shard_seen))
-	s.research_queue = route.slice(0, Data.QUEUE_SLOTS)
+	var route := Rules.route_to(goal, researched, Rules.visible_techs(_hidden_shown.call()))
+	queue = route.slice(0, Data.QUEUE_SLOTS)
 	if route.is_empty():
-		s.research_goal = ""
+		goal = ""
 
 
-## Research whatever in the queue has become affordable.
-static func tick(s) -> void:
-	if s.research_queue.is_empty():
-		return
+## Research whatever in the queue has become affordable, then refill it. Returns the techs completed
+## this call, in the order they were researched.
+func tick() -> Array:
+	var done: Array = []
+	if queue.is_empty():
+		return done
 	var changed := false
-	for tech in s.research_queue:
-		if s.researched.has(tech):
+	for tech in queue:
+		if researched.has(tech):
 			changed = true
-		elif s.can_research(tech):
-			s.research(tech)
+		elif research(tech):
+			done.append(tech)
 			changed = true
 	if changed:
-		refill(s)
+		refill()
+	return done
 
 
 ## Techs that can be researched right now, in tree order.
-static func ready_list(s) -> Array:
-	return Data.TECH_ORDER.filter(func(t): return s.can_research(t))
+func ready_list() -> Array:
+	return Data.TECH_ORDER.filter(func(t): return can_research(t))
