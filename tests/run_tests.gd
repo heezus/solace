@@ -343,6 +343,9 @@ func test_roads_bridge_the_river() -> void:
 	check(s.walk_cost(bank) >= 1.0, "no road: normal speed")
 	check(s.astar.is_point_solid(river), "the river blocks walking")
 	check(Data.BUILDINGS["bridge"]["tech"] == "haulers", "bridges come with Paths & Haulers")
+	s.researched["haulers"] = true
+	s.inv["wood"] = 100
+	s.inv["rope"] = 10
 	check(s.placement_error("bridge", bank) == "Bridges go on river tiles", "bridges only go on the river")
 	var wood: int = s.inv["wood"] + 100
 	check(place_free(s, "bridge", river), "a bridge goes on the river")

@@ -168,7 +168,7 @@ func test_fog_lifts_around_buildings_and_kith() -> void:
 	s.inv["berries"] = 50
 	s.tick(0.1)
 	t.check(s.fog.count() > before, "walking Kith lift the fog around them")
-	check(sight_after_a_walk(true) > sight_after_a_walk(false), "Scouting lets the Kith see farther")
+	t.check(sight_after_a_walk(true) > sight_after_a_walk(false), "Scouting lets the Kith see farther")
 
 
 ## How many tiles are explored after one Kith steps just past the fog's edge.
