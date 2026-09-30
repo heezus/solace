@@ -30,7 +30,7 @@ var row: HBoxContainer
 func setup(game: GameState) -> void:
 	state = game
 	add_theme_stylebox_override("panel", Ui.panel_style(Ui.BAR, 6))
-	set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	grow_vertical = Control.GROW_DIRECTION_BEGIN
 	var h := HBoxContainer.new()
 	h.add_theme_constant_override("separation", 10)

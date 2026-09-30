@@ -31,7 +31,7 @@ var speed_buttons := {}
 func setup(game: GameState) -> void:
 	state = game
 	add_theme_stylebox_override("panel", Ui.panel_style(Ui.BAR, 6))
-	set_anchors_preset(Control.PRESET_TOP_WIDE)
+	set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
 	var h := HBoxContainer.new()
 	h.add_theme_constant_override("separation", 10)
 	add_child(h)

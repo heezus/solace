@@ -302,7 +302,7 @@ func _build_side_panel(layer: CanvasLayer) -> void:
 func _build_win_overlay(layer: CanvasLayer) -> void:
 	var overlay := ColorRect.new()
 	overlay.color = Color(0.05, 0.05, 0.08, 0.85)
-	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	overlay.visible = false
 	layer.add_child(overlay)
 	win_overlay = overlay
