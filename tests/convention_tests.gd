@@ -3,7 +3,7 @@ extends RefCounted
 ## fog and rates. Run from tests/run_tests.gd, which owns check() and the helpers.
 
 const Data = preload("res://scripts/data.gd")
-const GameState = preload("res://scripts/game_state.gd")
+const Sim = preload("res://scripts/sim.gd")
 const Rules = preload("res://scripts/rules.gd")
 const TechLayout = preload("res://scripts/tech_layout.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
@@ -34,7 +34,7 @@ func run(runner) -> void:
 
 
 func test_demolish_refunds_half() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	s.inv["berries"] = 100
 	var near := s.camp_pos + Vector2i(-2, 0)
 	var other := s.camp_pos + Vector2i(-2, 1)
@@ -69,7 +69,7 @@ func test_demolish_refunds_half() -> void:
 
 
 func test_pause_frees_the_worker() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	s.inv["berries"] = 100
 	var p := s.camp_pos + Vector2i(-2, 0)
 	t.place_free(s, "gatherers_hut", p)
@@ -86,11 +86,11 @@ func test_pause_frees_the_worker() -> void:
 
 
 func test_dwellings_stay_near_the_hearth() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	var near := s.camp_pos + Vector2i(0, 2)
 	var far := Vector2i(-1, -1)
-	for y in GameState.HEIGHT:
-		for x in GameState.WIDTH:
+	for y in Sim.HEIGHT:
+		for x in Sim.WIDTH:
 			var p := Vector2i(x, y)
 			if (
 				far.x < 0
@@ -115,7 +115,7 @@ func test_dwellings_stay_near_the_hearth() -> void:
 
 
 func test_roads_dont_cross_rivers() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	var river: Vector2i = t.find_tile(s, "river")
 	s.researched["haulers"] = true
 	s.inv["stone"] = 10
@@ -127,7 +127,7 @@ func test_roads_dont_cross_rivers() -> void:
 
 
 func test_roads_cut_mountain_passes() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	var rock: Vector2i = t.find_tile(s, "rock")
 	s.researched["haulers"] = true
 	s.inv["stone"] = 2
@@ -157,7 +157,7 @@ func test_roads_cut_mountain_passes() -> void:
 
 
 func test_fog_lifts_around_buildings_and_kith() -> void:
-	var s := GameState.new()
+	var s := Sim.new()
 	s.generate(42)
 	t.check(s.fog.is_revealed(s.camp_pos), "the Hearth is in view")
 	t.check(s.fog.is_revealed(s.camp_pos + Vector2i(Data.SIGHT_START, 0)), "6 tiles around it too")
@@ -182,7 +182,7 @@ func test_fog_lifts_around_buildings_and_kith() -> void:
 
 ## How many tiles are explored after one Kith steps just past the fog's edge.
 func sight_after_a_walk(scouting: bool) -> int:
-	var s := GameState.new()
+	var s := Sim.new()
 	s.generate(42)
 	if scouting:
 		s.researched["scouting"] = true
@@ -193,7 +193,7 @@ func sight_after_a_walk(scouting: bool) -> int:
 
 
 func test_rates_count_making_and_using() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	t.check(s.flows.rate("wood") == 0.0, "no rate before anything happens")
 	s.flows.add("wood", 6, "gatherers_hut")
 	s.flows.add("wood", -2, "charcoal_pit")
@@ -204,7 +204,7 @@ func test_rates_count_making_and_using() -> void:
 	for i in Data.RATE_WINDOW + 5:
 		s.flows.advance(1.0)
 	t.check(s.flows.rate("wood") == 0.0, "old flows drop out of the window")
-	var s2: GameState = t.fresh()
+	var s2: Sim = t.fresh()
 	s2.inv["berries"] = 100
 	s2.learned["wood"] = "Aro"
 	s2.researched["haulers"] = true
@@ -286,7 +286,7 @@ func test_board_layout_is_data() -> void:
 ## Clicking a far tech makes it the goal: its missing chain is queued (a few at a time)
 ## and researched as each becomes affordable.
 func test_research_queue() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	s.tech_tree.set_goal("grindstone")
 	t.check(s.research_goal == "grindstone", "the goal is set")
 	t.check(s.research_queue.size() <= Data.QUEUE_SLOTS and s.research_queue.size() >= 3, "a few techs are queued")
@@ -302,7 +302,7 @@ func test_research_queue() -> void:
 		t.check(s.researched.has(r), "including " + r)
 	t.check(s.research_queue.is_empty() and s.research_goal == "", "and empties once it's there")
 	t.check(not s.researched.has("pottery"), "nothing off the route is researched")
-	var s2: GameState = t.fresh()
+	var s2: Sim = t.fresh()
 	var route := Rules.route_to("calendar", s2.researched, Rules.visible_techs(false))
 	t.check(route[route.size() - 1] == "calendar", "a route ends at its goal")
 	t.check("storytelling" in route and "megaliths" not in route, "an either-or takes the shorter branch")
@@ -332,7 +332,7 @@ func test_build_tabs_cover_every_building() -> void:
 
 
 func test_building_panel_texts() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	s.inv["berries"] = 100
 	var p := s.camp_pos + Vector2i(-2, 0)
 	t.place_free(s, "gatherers_hut", p)
@@ -370,21 +370,21 @@ func test_tree_gates_every_building() -> void:
 			continue
 		var unlock: String = Data.TECHS[tech]["unlock"]
 		t.check(unlock.contains(def["name"]), "%s's card names the %s it unlocks: %s" % [tech, def["name"], unlock])
-		var s: GameState = t.fresh()
+		var s: Sim = t.fresh()
 		t.give(s, 999)
 		s.shard_seen = true
 		for other in Data.TECHS:
 			if other != tech:
 				s.researched[other] = true
 		var ok := 0
-		for y in GameState.HEIGHT:
-			for x in GameState.WIDTH:
+		for y in Sim.HEIGHT:
+			for x in Sim.WIDTH:
 				if s.placement_error(type, Vector2i(x, y)) == "":
 					ok += 1
 		t.check(ok == 0, "%s can't be placed anywhere before %s (%d tiles)" % [type, tech, ok])
 		s.researched[tech] = true
-		for y in GameState.HEIGHT:
-			for x in GameState.WIDTH:
+		for y in Sim.HEIGHT:
+			for x in Sim.WIDTH:
 				if s.placement_error(type, Vector2i(x, y)) == "":
 					ok += 1
 		t.check(ok > 0 or def["kind"] == "camp", "%s can be placed once %s is researched" % [type, tech])
@@ -395,7 +395,7 @@ func test_tree_gates_every_building() -> void:
 		t.check(
 			Data.TECHS[rec["tech"]]["unlock"].contains(rec["name"]), "%s's card names %s" % [rec["tech"], rec["name"]]
 		)
-		var s: GameState = t.fresh()
+		var s: Sim = t.fresh()
 		t.give(s, 99)
 		t.check(not Hands.craft(s, r), "can't craft %s before %s" % [r, rec["tech"]])
 	# Every card's summary fits on it.

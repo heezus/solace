@@ -3,7 +3,7 @@ extends RefCounted
 ## III are optional buys on the same card, each costing Data.RANK_COST_STEP times the rank before.
 ## A tech has ranks when Data.TECHS gives it a `rank` entry: {"item": id} adds 1 to that item's click
 ## base per rank beyond I, {"building": type} is +25% Speed there (the BONUSES "rank_<type>" entry).
-## Ranks are side progress: Bronze Dawn never needs them. Static, and works on the GameState passed in.
+## Ranks are side progress: Bronze Dawn never needs them. Static, and works on the Sim passed in.
 
 const Data = preload("res://scripts/data.gd")
 

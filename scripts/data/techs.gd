@@ -6,7 +6,7 @@ extends RefCounted
 ## `unlock` is the card's one-line summary, `icon` a sprite in art/sprites ("@name" for a drawn one),
 ## and `side` marks an optional branch that Bronze Dawn doesn't need.
 ## `requires` must all be researched; `requires_any` (optional) needs just one of its techs.
-## `effect` marks a tech whose bonus GameState applies while it is researched.
+## `effect` marks a tech whose bonus Sim applies while it is researched.
 ## `hidden` techs stay out of the tree until the player has clicked the Strange Stone.
 ## `rank` gives a tech optional ranks II and III, bought on its card (never needed for Bronze Dawn):
 ## {"item": id} adds 1 to that item's click base per rank, {"building": type} is +25% Speed there

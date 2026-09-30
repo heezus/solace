@@ -25,7 +25,7 @@ func is_empty() -> bool:
 	return chronicle.is_empty() and knowledge.is_empty()
 
 
-## Merge the run in `s` (a GameState) into the profile: its story ids and the items its people have learned.
+## Merge the run in `s` (a Sim) into the profile: its story ids and the items its people have learned.
 func absorb(s) -> void:
 	merge(s.story.events, s.people.learned_by.keys())
 

@@ -6,7 +6,7 @@ signal card_clicked(tech: String)
 signal hover_changed(tech: String)
 
 const Data = preload("res://scripts/data.gd")
-const GameState = preload("res://scripts/game_state.gd")
+const Sim = preload("res://scripts/sim.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const TechLayout = preload("res://scripts/tech_layout.gd")
@@ -23,7 +23,7 @@ const HIDDEN_EDGE := Color("8fb3c9")
 const GATE := Color("e3a857")
 const GATE_BG := Color("3a2f1f")
 
-var state: GameState
+var state: Sim
 var lay: Dictionary
 var hovered := ""
 var chain := {}  # techs lit by the hover: the hovered one, its ancestors and descendants
@@ -31,7 +31,7 @@ var bold: Font
 var pan_from := Vector2(-1, -1)
 
 
-func setup(game: GameState) -> void:
+func setup(game: Sim) -> void:
 	state = game
 	lay = TechLayout.build()
 	custom_minimum_size = lay["size"]

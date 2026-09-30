@@ -1,11 +1,11 @@
 extends RefCounted
 ## Unit testbench for the World block (scripts/world.gd): bounds, tile lookups, neighbours and the river,
 ## which tiles a gatherer can work, map generation from a seed, and the roads and fields bookkeeping.
-## World is built alone, on a tiny hand-made map; no Kith, no Fog and no GameState. The last tests check
-## GameState's pass-throughs still reach the same block. Run from tests/run_tests.gd, which owns check().
+## World is built alone, on a tiny hand-made map; no Kith, no Fog and no Sim. The last tests check
+## Sim's pass-throughs still reach the same block. Run from tests/run_tests.gd, which owns check().
 
 const Data = preload("res://scripts/data.gd")
-const GameState = preload("res://scripts/game_state.gd")
+const Sim = preload("res://scripts/sim.gd")
 const RunSave = preload("res://scripts/run_save.gd")
 const World = preload("res://scripts/world.gd")
 
@@ -29,8 +29,8 @@ func run(runner) -> void:
 	test_fields_bookkeeping()
 	test_world_stands_alone()
 	test_to_dict_and_from_dict()
-	test_game_state_passes_through()
-	test_game_state_generate_sets_the_camp_up()
+	test_sim_passes_through()
+	test_sim_generate_sets_the_camp_up()
 
 
 ## A 6 by 4 map: grass, a river down column 4, a tree at (1, 1), rocks at (2, 1) and (1, 2), and a
@@ -257,13 +257,13 @@ func test_world_stands_alone() -> void:
 	t.check(not ("astar" in w), "and no walking grid: that is Pathing's")
 
 
-func test_game_state_passes_through() -> void:
-	var s := GameState.new()
+func test_sim_passes_through() -> void:
+	var s := Sim.new()
 	t.check(s.tiles == s.world.tiles, "tiles reads the World's")
 	s.world.set_tile(Vector2i(3, 3), "clay")
 	t.check(s.tile_at(Vector2i(3, 3)) == "clay", "tile_at reads the World")
-	t.check(s.in_bounds(Vector2i(0, 0)) and not s.in_bounds(Vector2i(GameState.WIDTH, 0)), "in_bounds too")
-	t.check(GameState.WIDTH == World.WIDTH and GameState.HEIGHT == World.HEIGHT, "the map size is the World's")
+	t.check(s.in_bounds(Vector2i(0, 0)) and not s.in_bounds(Vector2i(Sim.WIDTH, 0)), "in_bounds too")
+	t.check(Sim.WIDTH == World.WIDTH and Sim.HEIGHT == World.HEIGHT, "the map size is the World's")
 	s.camp_pos = Vector2i(5, 6)
 	t.check(s.world.camp_pos == Vector2i(5, 6), "camp_pos writes through")
 	s.shard_pos = Vector2i(7, 8)
@@ -282,12 +282,12 @@ func test_game_state_passes_through() -> void:
 	t.check(s.gather_tiles(Vector2i(10, 11)).size() == 3, "and Scouting widens it")
 
 
-func test_game_state_generate_sets_the_camp_up() -> void:
-	var s := GameState.new()
+func test_sim_generate_sets_the_camp_up() -> void:
+	var s := Sim.new()
 	s.generate(42)
 	var w := World.new()
 	w.generate(42)
-	t.check(s.tiles == w.tiles, "GameState.generate makes the World's map")
+	t.check(s.tiles == w.tiles, "Sim.generate makes the World's map")
 	t.check(s.camp_pos == w.camp_pos and s.shard_pos == w.shard_pos, "with the same camp and shard")
 	t.check(s.building_at.has(s.camp_pos) and s.buildings.size() == 1, "the Hearth is placed")
 	t.check(s.kith.size() == Data.KITH_START, "the first Kith are born")

@@ -4,7 +4,7 @@ extends RefCounted
 ## is linked when it touches (side by side, not diagonally) a road tile of a network that also touches
 ## a depot, or the depot itself (right next door, no road is needed). Haulers walk that network only;
 ## unlinked buildings work as before Haulers (click to send a trip, click to load or collect). Static,
-## and works on the GameState passed in: it reads the map and the roads from its World and walk costs
+## and works on the Sim passed in: it reads the map and the roads from its World and walk costs
 ## from its Pathing. It is not part of either block, because the networks also depend on the buildings.
 ##
 ## The networks are cached in s.road_net and rebuilt when s.road_rev changes (place and demolish bump

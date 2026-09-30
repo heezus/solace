@@ -2,7 +2,7 @@ extends Node2D
 ## Draws the map in a flat, bold-outlined vector style and builds the UI in code.
 
 const Data = preload("res://scripts/data.gd")
-const GameState = preload("res://scripts/game_state.gd")
+const Sim = preload("res://scripts/sim.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const TechPanel = preload("res://scripts/tech_panel.gd")
@@ -33,7 +33,7 @@ const AURA_FILL := Color(0.55, 0.45, 0.6, 0.2)
 var fit_vp := Vector2.ZERO  # the window size the map was last fit to
 var fit_bars := Vector2.ZERO  # the top and bottom bar heights the fit uses
 var fit_settle := 0
-var state: GameState
+var state: Sim
 var placing := ""  # building type being placed, "" when not placing
 var hover := Vector2i(-1, -1)
 var drag_from := Vector2i(-1, -1)  # where a road, bridge or field drag started
@@ -59,7 +59,7 @@ var holding := false  # the left button is down on a resource tile: hold to harv
 
 
 func _ready() -> void:
-	state = GameState.new()
+	state = Sim.new()
 	state.generate(randi())
 	_build_ui()
 	_toast(Data.CAMP_TOAST % Data.PEOPLE["many"], 6.0)
@@ -119,7 +119,7 @@ func _layout() -> void:
 	side_panel.position = Vector2(vp.x - SIDE_W - 8, top + 8)
 	side_panel.size = Vector2(SIDE_W, maxf(vp.y - top - bottom - 16, 100))
 	var area := Rect2(8, top + 8, vp.x - SIDE_W - 24, vp.y - top - bottom - 16)
-	var map_size := Vector2(GameState.WIDTH, GameState.HEIGHT) * TILE
+	var map_size := Vector2(Sim.WIDTH, Sim.HEIGHT) * TILE
 	var k := maxf(floorf(minf(area.size.x / map_size.x, area.size.y / map_size.y) * 64.0) / 64.0, 0.1)
 	scale = Vector2(k, k)
 	position = (area.position + (area.size - map_size * k) / 2.0).round()
@@ -182,7 +182,7 @@ func _set_speed(v: int) -> void:
 
 ## The tiles the current drag covers, ending under the mouse (kept on the map).
 func _drag_line() -> Array:
-	var end := _tile_under().clamp(Vector2i.ZERO, Vector2i(GameState.WIDTH - 1, GameState.HEIGHT - 1))
+	var end := _tile_under().clamp(Vector2i.ZERO, Vector2i(Sim.WIDTH - 1, Sim.HEIGHT - 1))
 	return Rules.line_tiles(drag_from, end)
 
 
@@ -520,8 +520,8 @@ func _tile_center(p: Vector2i) -> Vector2:
 
 func _draw() -> void:
 	# Ground.
-	for y in GameState.HEIGHT:
-		for x in GameState.WIDTH:
+	for y in Sim.HEIGHT:
+		for x in Sim.WIDTH:
 			var p := Vector2i(x, y)
 			var t := state.tile_at(p)
 			var base: Color = (
@@ -532,13 +532,13 @@ func _draw() -> void:
 			if (x + y) % 2 == 0:
 				base = base.lightened(0.04)
 			draw_rect(_tile_rect(p), base)
-	var map_rect := Rect2(MAP_ORIGIN, Vector2(GameState.WIDTH, GameState.HEIGHT) * TILE)
+	var map_rect := Rect2(MAP_ORIGIN, Vector2(Sim.WIDTH, Sim.HEIGHT) * TILE)
 	draw_rect(map_rect, OUTLINE, false, 4.0)
 	_draw_roads()
 
 	# Features.
-	for y in GameState.HEIGHT:
-		for x in GameState.WIDTH:
+	for y in Sim.HEIGHT:
+		for x in Sim.WIDTH:
 			var p := Vector2i(x, y)
 			Art.feature(self, state.tile_at(p), _tile_center(p), p, time)
 
@@ -611,7 +611,7 @@ func _draw() -> void:
 
 	_draw_hold_ring()
 	if paused:
-		Art.pill(self, Vector2(GameState.WIDTH * TILE / 2.0, 8), "Paused · Space to resume", GOAL_COLOR, OUTLINE, 16)
+		Art.pill(self, Vector2(Sim.WIDTH * TILE / 2.0, 8), "Paused · Space to resume", GOAL_COLOR, OUTLINE, 16)
 
 	var font := ThemeDB.fallback_font
 	for pop in popups:
@@ -624,8 +624,8 @@ func _draw() -> void:
 
 ## Unexplored tiles: nearly opaque, with a softer edge next to explored ground.
 func _draw_fog() -> void:
-	for y in GameState.HEIGHT:
-		for x in GameState.WIDTH:
+	for y in Sim.HEIGHT:
+		for x in Sim.WIDTH:
 			var p := Vector2i(x, y)
 			if state.fog.is_revealed(p):
 				continue
@@ -766,7 +766,7 @@ func _draw_roads() -> void:
 				draw_line(Vector2(x, c.y - 11), Vector2(x, c.y + 11), OUTLINE, 1.5)
 			continue
 		draw_circle(c, 8.0, dirt)
-		for n in GameState.NEIGHBORS:
+		for n in Sim.NEIGHBORS:
 			if state.roads.has(p + n) or state.building_at.has(p + n):
 				var half := Vector2(n) * TILE * 0.5
 				var w := Vector2(absf(n.y), absf(n.x)) * 8.0

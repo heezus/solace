@@ -5,7 +5,7 @@ extends PanelContainer
 ## are queued and researched as soon as each is affordable.
 
 const Data = preload("res://scripts/data.gd")
-const GameState = preload("res://scripts/game_state.gd")
+const Sim = preload("res://scripts/sim.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Rules = preload("res://scripts/rules.gd")
 const TechBoard = preload("res://scripts/tech_board.gd")
@@ -13,7 +13,7 @@ const Ranks = preload("res://scripts/ranks.gd")
 
 const BG := Color("172c4a")
 
-var state: GameState
+var state: Sim
 var board: TechBoard
 var scroll: ScrollContainer
 var counter: Label
@@ -25,7 +25,7 @@ var rows_key := ""  # what the queue and ready rows show, so they're only rebuil
 var selected := ""
 
 
-func setup(game: GameState) -> void:
+func setup(game: Sim) -> void:
 	state = game
 	add_theme_stylebox_override("panel", Ui.panel_style(BG, 12))
 	set_anchors_preset(Control.PRESET_FULL_RECT)

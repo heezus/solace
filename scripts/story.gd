@@ -3,9 +3,9 @@ extends RefCounted
 ## order they happened, for a future profile save) and the opening checklist (`goals_done`, from Data.GOALS).
 ## It listens: the owner connects the other blocks' signals to the on_* methods below, so no block calls
 ## Story and Story never calls a block. record(id) notes a moment once. A goal is met when its `tech` is
-## researched or its `building` stands, and the rest are checked by id against the GameState handed to
+## researched or its `building` stands, and the rest are checked by id against the Sim handed to
 ## goal_met() and update() (it is only read, never kept). Faction words are in Data, not spelled here.
-## GameState owns one (`story`) and passes `story_events` and `goals_done` through to it.
+## Sim owns one (`story`) and passes `story_events` and `goals_done` through to it.
 ## Signal: recorded(id) fires the first time each story id is recorded.
 
 signal recorded(id: String)
@@ -46,7 +46,7 @@ func on_trip_started() -> void:
 	record("first_trip")
 
 
-## GameState.shard_found: the Strange Stone was clicked.
+## Sim.shard_found: the Strange Stone was clicked.
 func on_shard_found() -> void:
 	record("shard_found")
 

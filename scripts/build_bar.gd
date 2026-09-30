@@ -9,7 +9,7 @@ signal tech_pressed
 signal demolish_pressed
 
 const Data = preload("res://scripts/data.gd")
-const GameState = preload("res://scripts/game_state.gd")
+const Sim = preload("res://scripts/sim.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Hands = preload("res://scripts/hands.gd")
@@ -18,7 +18,7 @@ const BUTTON := Vector2(142, 50)
 const LOCKED_BG := Color("1f3a47")
 const LOCKED_TEXT := Color("9fb4bf")
 
-var state: GameState
+var state: Sim
 var tab := "Gathering"
 var tab_buttons := {}
 var build_buttons := {}  # type -> {"button", "name", "sub"}
@@ -28,7 +28,7 @@ var demolish_button: Button
 var row: HBoxContainer
 
 
-func setup(game: GameState) -> void:
+func setup(game: Sim) -> void:
 	state = game
 	add_theme_stylebox_override("panel", Ui.panel_style(Ui.BAR, 6))
 	set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)

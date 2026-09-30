@@ -3,7 +3,7 @@ extends RefCounted
 ## fields laid on it. It stands alone: it reads Data and nothing else, and never reaches into another
 ## block. Fog (which tiles have been seen) is its own block and is not held here. What a tile costs to
 ## walk over is the Pathing block's business, and what may be built on it is decided by the caller.
-## GameState owns one and passes its old map methods and variables through to it.
+## Sim owns one and passes its old map methods and variables through to it.
 
 const Codec = preload("res://scripts/save_codec.gd")
 const Data = preload("res://scripts/data.gd")

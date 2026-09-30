@@ -2,7 +2,7 @@ extends RefCounted
 ## Building workers (design-system/14-hands-to-haulers.md). A worker walks to their building. A hut's
 ## worker walks out to a resource tile the Kith know and brings back a bundle: to the stockpile, one
 ## trip per click, before Paths & Haulers; into the hut, over and over, after it. Clicking a building
-## sends a trip, or rushes it. Static, and works on the GameState passed in.
+## sends a trip, or rushes it. Static, and works on the Sim passed in.
 
 const Data = preload("res://scripts/data.gd")
 const Kith = preload("res://scripts/kith.gd")

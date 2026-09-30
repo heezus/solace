@@ -3,7 +3,7 @@ extends SceneTree
 ## Run: godot --headless --path . -s tests/run_tests.gd
 
 const Data = preload("res://scripts/data.gd")
-const GameState = preload("res://scripts/game_state.gd")
+const Sim = preload("res://scripts/sim.gd")
 const Main = preload("res://scripts/main.gd")
 const TechLayout = preload("res://scripts/tech_layout.gd")
 const Ui = preload("res://scripts/ui.gd")
@@ -106,21 +106,21 @@ func check(cond: bool, what: String) -> void:
 
 
 ## A new camp with the whole map explored, so tests can build anywhere.
-func fresh() -> GameState:
-	var s := GameState.new()
+func fresh() -> Sim:
+	var s := Sim.new()
 	s.generate(42)
 	s.fog.reveal_all()
 	return s
 
 
-func give(s: GameState, amount: int) -> void:
+func give(s: Sim, amount: int) -> void:
 	for id in Data.ITEM_ORDER:
 		s.inv[id] = amount
 
 
-func find_tile(s: GameState, tile: String) -> Vector2i:
-	for y in GameState.HEIGHT:
-		for x in GameState.WIDTH:
+func find_tile(s: Sim, tile: String) -> Vector2i:
+	for y in Sim.HEIGHT:
+		for x in Sim.WIDTH:
 			if s.tile_at(Vector2i(x, y)) == tile:
 				return Vector2i(x, y)
 	return Vector2i(-1, -1)
@@ -128,14 +128,14 @@ func find_tile(s: GameState, tile: String) -> Vector2i:
 
 ## Link the building at p to the Hearth with road (test setup, not the placement rules): the shortest
 ## side-by-side path over tiles with no building on them, the ends left off.
-func road_link(s: GameState, p: Vector2i) -> void:
+func road_link(s: Sim, p: Vector2i) -> void:
 	var from := {}
 	var todo: Array = [p]
 	from[p] = p
 	var found := false
 	while not todo.is_empty() and not found:
 		var q: Vector2i = todo.pop_front()
-		for n in GameState.NEIGHBORS:
+		for n in Sim.NEIGHBORS:
 			var r: Vector2i = q + n
 			if from.has(r) or not s.in_bounds(r) or s.tile_at(r) == "river":
 				continue
@@ -155,9 +155,9 @@ func road_link(s: GameState, p: Vector2i) -> void:
 	s.road_rev += 1
 
 
-func find_grass(s: GameState, near_river: bool) -> Vector2i:
-	for y in GameState.HEIGHT:
-		for x in GameState.WIDTH:
+func find_grass(s: Sim, near_river: bool) -> Vector2i:
+	for y in Sim.HEIGHT:
+		for x in Sim.WIDTH:
 			var p := Vector2i(x, y)
 			if s.tile_at(p) == "grass" and not s.building_at.has(p) and s.touches_river(p) == near_river:
 				return p
@@ -168,7 +168,7 @@ func test_map_has_every_resource_near_camp() -> void:
 	var s := fresh()
 	for t in ["tree", "rock", "berry", "grain", "river"]:
 		check(find_tile(s, t) != Vector2i(-1, -1), "map has " + t)
-	var start := GameState.new()
+	var start := Sim.new()
 	start.generate(7)
 	for t in ["tree", "rock", "berry", "grain", "gravel"]:
 		var near := false
@@ -372,7 +372,7 @@ func test_shortfall_text() -> void:
 	check(Ui.shortfall_text(s.inv, {"stone": 10, "clay": 10}) == "", "no shortfall when affordable")
 
 
-func place_free(s: GameState, type: String, p: Vector2i) -> bool:
+func place_free(s: Sim, type: String, p: Vector2i) -> bool:
 	s.add("wood", 100)
 	s.add("stone", 100)
 	s.add("fiber", 100)
@@ -425,13 +425,13 @@ func test_starving_kith_leave() -> void:
 
 ## Two identical charcoal pits, one next to the Camp and one far away: the near one delivers more.
 func haul_rate(dist_x: int) -> int:
-	var s := GameState.new()
-	s.tiles.resize(GameState.WIDTH * GameState.HEIGHT)
+	var s := Sim.new()
+	s.tiles.resize(Sim.WIDTH * Sim.HEIGHT)
 	s.tiles.fill("grass")
 	s.camp_pos = Vector2i(1, 10)
 	s.town.add_building("camp", s.camp_pos)
 	s.pathing.build()
-	s.fog.setup(GameState.WIDTH, GameState.HEIGHT)
+	s.fog.setup(Sim.WIDTH, Sim.HEIGHT)
 	s.fog.reveal_all()
 	for i in Data.KITH_START:
 		s.people.add_kith()
@@ -628,7 +628,7 @@ func test_shard_cairn() -> void:
 		s.placement_error("shard_cairn", s.camp_pos + Vector2i(0, 2)) == "Must go next to the Strange Stone",
 		"cairn needs the shard"
 	)
-	for n in GameState.NEIGHBORS:
+	for n in Sim.NEIGHBORS:
 		var p: Vector2i = s.shard_pos + n
 		if s.tile_at(p) == "grass" and not s.building_at.has(p):
 			check(s.place("shard_cairn", p), "cairn goes beside the shard")
@@ -733,8 +733,8 @@ func test_fishing_weir_makes_fish() -> void:
 	var s := fresh()
 	s.inv["berries"] = 100
 	var bank := Vector2i(-1, -1)
-	for y in GameState.HEIGHT:
-		for x in GameState.WIDTH:
+	for y in Sim.HEIGHT:
+		for x in Sim.WIDTH:
 			var p := Vector2i(x, y)
 			if bank.x < 0 and s.tile_at(p) == "grass" and s.tile_at(p + Vector2i(1, 0)) == "river":
 				bank = p

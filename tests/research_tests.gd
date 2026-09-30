@@ -1,12 +1,12 @@
 extends RefCounted
 ## Unit testbench for the Research block (scripts/research.gd): requirements, hidden techs, paying for a
 ## tech, the goal and the queue. Research is built alone, on an Economy with a hand-set stockpile; no map,
-## no Kith and no GameState. The last tests check GameState's pass-throughs and the effects it runs when
+## no Kith and no Sim. The last tests check Sim's pass-throughs and the effects it runs when
 ## Research reports a tech completed. Run from tests/run_tests.gd, which owns check() and the helpers.
 
 const Data = preload("res://scripts/data.gd")
 const Economy = preload("res://scripts/economy.gd")
-const GameState = preload("res://scripts/game_state.gd")
+const Sim = preload("res://scripts/sim.gd")
 const Monitor = preload("res://tests/monitor.gd")
 const Research = preload("res://scripts/research.gd")
 const RunSave = preload("res://scripts/run_save.gd")
@@ -37,9 +37,9 @@ func run(runner) -> void:
 	test_tick_signals_each_tech_in_order()
 	test_research_stands_alone()
 	test_to_dict_and_from_dict()
-	test_game_state_passes_through()
-	test_game_state_runs_the_effects()
-	test_game_state_queue_ticks()
+	test_sim_passes_through()
+	test_sim_runs_the_effects()
+	test_sim_queue_ticks()
 
 
 func _shard_seen() -> bool:
@@ -325,16 +325,16 @@ func test_research_stands_alone() -> void:
 	t.check(e.food_value("flour") == Data.BAKED_FLOUR_FOOD, "an Economy sees the block's set through its view")
 
 
-func test_game_state_passes_through() -> void:
-	var s: GameState = t.fresh()
+func test_sim_passes_through() -> void:
+	var s: Sim = t.fresh()
 	t.check(s.researched == s.tech_tree.researched and s.research_queue == s.tech_tree.queue, "the set and queue")
 	s.researched["knapping"] = true
-	t.check(s.tech_tree.researched.has("knapping"), "a write to GameState.researched lands in the block")
+	t.check(s.tech_tree.researched.has("knapping"), "a write to Sim.researched lands in the block")
 	t.check(
 		s.economy.food_value("berries") == 1.0 and not s.researched.has("smoking"), "and the Economy's view is shared"
 	)
 	s.researched["smoking"] = true
-	t.check(s.economy.food_value("berries") == Data.SMOKED_BERRY_FOOD, "so it sees techs set on GameState")
+	t.check(s.economy.food_value("berries") == Data.SMOKED_BERRY_FOOD, "so it sees techs set on Sim")
 	s.tech_tree.set_goal("gatherers_hut")
 	t.check(
 		s.research_goal == "gatherers_hut" and s.research_queue == ["foraging", "gatherers_hut"], "goal and queue read"
@@ -342,17 +342,17 @@ func test_game_state_passes_through() -> void:
 	t.check(s.missing_requirements("gatherers_hut") == 1 and not s.requirements_met("gatherers_hut"), "requirements")
 	t.check(not s.tech_visible("star_lore"), "hidden until the shard is seen")
 	s.shard_seen = true
-	t.check(s.tech_visible("star_lore"), "GameState.shard_seen is what the block reads")
+	t.check(s.tech_visible("star_lore"), "Sim.shard_seen is what the block reads")
 	t.check(not s.can_research("cordage"), "cordage is unaffordable with nothing in the stockpile")
 	s.inv["fiber"] = 15
 	t.check(s.can_research("cordage"), "and affordable with the fiber")
-	t.check(s.research("cordage") and s.inv["fiber"] == 0, "GameState.research pays through the Economy")
+	t.check(s.research("cordage") and s.inv["fiber"] == 0, "Sim.research pays through the Economy")
 	t.check(not s.research("cordage"), "a repeat is refused")
 	t.check(s.researched.has("cordage") and s.tech_tree.researched.has("cordage"), "in the block's set")
 
 
-func test_game_state_runs_the_effects() -> void:
-	var s: GameState = t.fresh()
+func test_sim_runs_the_effects() -> void:
+	var s: Sim = t.fresh()
 	t.give(s, 999)
 	t.check(s.research("cordage"), "research Cordage")
 	t.check("Discovered Cordage" in s.events, "completing a tech announces it")
@@ -373,8 +373,8 @@ func test_game_state_runs_the_effects() -> void:
 	t.check("Discovered %s" % Data.TECHS["bronze_dawn"]["name"] in s.events, "and announces it")
 
 
-func test_game_state_queue_ticks() -> void:
-	var s: GameState = t.fresh()
+func test_sim_queue_ticks() -> void:
+	var s: Sim = t.fresh()
 	s.tech_tree.set_goal("cordage")
 	s.tick(0.1)
 	t.check(not s.researched.has("cordage"), "a tick with an empty stockpile researches nothing")

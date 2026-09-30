@@ -2,7 +2,7 @@ extends RefCounted
 ## Haulers: idle Kith who empty buildings into a stockpile and bring workshops their inputs. They
 ## serve only buildings a road links to a depot (scripts/roads.gd), and walk those roads only: a hauler
 ## waits at a depot (the Hearth or a Storehouse), takes a job on a road network that depot touches, and
-## comes back along it. Static, and works on the GameState passed in.
+## comes back along it. Static, and works on the Sim passed in.
 
 const Data = preload("res://scripts/data.gd")
 const Kith = preload("res://scripts/kith.gd")

@@ -4,7 +4,7 @@ extends RefCounted
 ## Run from tests/run_tests.gd, which owns check() and the helpers.
 
 const Data = preload("res://scripts/data.gd")
-const GameState = preload("res://scripts/game_state.gd")
+const Sim = preload("res://scripts/sim.gd")
 const Rules = preload("res://scripts/rules.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
@@ -38,7 +38,7 @@ func run(runner) -> void:
 
 ## A camp with a hut next to the forest west of the Hearth, the whole map in sight and food to spare.
 func hut_camp() -> Array:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	s.inv["berries"] = 200
 	var p: Vector2i = s.camp_pos + Vector2i(-2, 0)
 	t.place_free(s, "gatherers_hut", p)
@@ -46,13 +46,13 @@ func hut_camp() -> Array:
 	return [s, s.building_at[p]]
 
 
-func run_for(s: GameState, seconds: float) -> void:
+func run_for(s: Sim, seconds: float) -> void:
 	for i in int(seconds / 0.1):
 		s.tick(0.1)
 
 
 func test_learning_at_ten_clicks() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	var tree: Vector2i = t.find_tile(s, "tree")
 	for i in Data.LEARN_CLICKS - 1:
 		s.gather_by_hand(tree)
@@ -77,7 +77,7 @@ func test_learning_at_ten_clicks() -> void:
 
 func test_huts_gather_only_what_is_learned() -> void:
 	var r := hut_camp()
-	var s: GameState = r[0]
+	var s: Sim = r[0]
 	var b: Dictionary = s.buildings[r[1]]
 	t.check(not s.people.knows_any(b["pos"]), "a new camp knows no jobs")
 	t.check(Workers.dispatch(s, r[1]).begins_with("Nothing learned"), "so a hut can't send a trip yet")
@@ -96,7 +96,7 @@ func test_huts_gather_only_what_is_learned() -> void:
 
 func test_dispatch_trips_and_queue_cap() -> void:
 	var r := hut_camp()
-	var s: GameState = r[0]
+	var s: Sim = r[0]
 	var i: int = r[1]
 	var b: Dictionary = s.buildings[i]
 	s.learned["wood"] = "Aro"
@@ -122,7 +122,7 @@ func test_dispatch_trips_and_queue_cap() -> void:
 
 func test_no_loop_before_haulers_loop_after() -> void:
 	var r := hut_camp()
-	var s: GameState = r[0]
+	var s: Sim = r[0]
 	var b: Dictionary = s.buildings[r[1]]
 	s.learned["wood"] = "Aro"
 	var wood: int = s.inv["wood"]
@@ -139,7 +139,7 @@ func test_no_loop_before_haulers_loop_after() -> void:
 
 
 func test_rush_and_its_cooldown() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	s.inv["berries"] = 200
 	s.inv["wood"] = 50
 	var p: Vector2i = s.camp_pos + Vector2i(2, 0)
@@ -163,7 +163,7 @@ func test_rush_and_its_cooldown() -> void:
 
 	# After Paths & Haulers, clicking a hut rushes its trip home.
 	var r := hut_camp()
-	var s2: GameState = r[0]
+	var s2: Sim = r[0]
 	var hut: Dictionary = s2.buildings[r[1]]
 	s2.learned["wood"] = "Aro"
 	s2.researched["haulers"] = true
@@ -189,7 +189,7 @@ func test_rush_and_its_cooldown() -> void:
 
 
 func test_click_yield_math() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	t.check(s.harvest_yield("wood") == 1, "base: 1 a harvest")
 	t.check(is_equal_approx(Hands.hold_time(s, "wood"), 1.0), "held for 1 s")
 	s.hand_tools = true
@@ -215,7 +215,7 @@ func test_click_yield_math() -> void:
 
 
 func test_hold_to_harvest() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	var tree: Vector2i = t.find_tile(s, "tree")
 	var rock: Vector2i = t.find_tile(s, "rock")
 	t.check(s.hold_harvest(tree, 0.5) == "", "half a second: nothing yet")
@@ -258,7 +258,7 @@ func test_rank_costs_and_effects() -> void:
 		for id in c1:
 			t.check(c2[id] == roundi(c1[id] * 2.5), "%s II costs 2.5x rank I in %s" % [tech, id])
 			t.check(c3[id] == roundi(c1[id] * 6.25), "%s III costs 2.5x rank II in %s" % [tech, id])
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	t.give(s, 9999)
 	t.check(Ranks.rank(s, "cordage") == 0 and Ranks.next_cost(s, "cordage").is_empty(), "no ranks before the tech")
 	s.research("cordage")
@@ -279,7 +279,7 @@ func test_rank_costs_and_effects() -> void:
 	t.check(is_equal_approx(Bonuses.speed(s, s.buildings[s.building_at[q]]), 1.0), "and nowhere else")
 	# Ranks are never on the way to Bronze Dawn.
 	var route := Rules.route_to("bronze_dawn", {}, Rules.visible_techs(true))
-	var s2: GameState = t.fresh()
+	var s2: Sim = t.fresh()
 	t.give(s2, 99999)
 	for tech in route:
 		s2.research(tech)
@@ -314,7 +314,7 @@ func test_tier_costs_scale() -> void:
 
 
 func test_story_events() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	t.check(s.story_events.is_empty(), "no story yet")
 	s.gather_by_hand(s.shard_pos)
 	s.gather_by_hand(s.shard_pos)
@@ -334,7 +334,7 @@ func test_story_events() -> void:
 
 ## Job titles are labels from data (07-glossary.md): each worker building resolves to one.
 func test_job_titles() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	s.inv["berries"] = 200
 	for type in Data.BUILDINGS:
 		var def: Dictionary = Data.BUILDINGS[type]
@@ -376,7 +376,7 @@ func test_job_titles() -> void:
 ## Fiber comes only from wild flax: bare grass gives nothing by hand or to a hut, and a hut by the
 ## flax cuts it once a Kith has learned it (its worker is the Thatcher).
 func test_fiber_comes_from_flax() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	s.inv["berries"] = 200
 	t.check(Data.TILES["grass"]["yields"] == "" and Data.TILES["flax"]["yields"] == "fiber", "flax yields Fiber")
 	t.check(not Data.TILES["flax"]["buildable"], "flax can't be built on")
@@ -420,12 +420,12 @@ func test_fiber_comes_from_flax() -> void:
 ## patches out on the grassland.
 func test_flax_near_every_hearth() -> void:
 	for map_seed in [1, 2, 3, 4, 5, 6, 7, 8, 42, 1234, 99991]:
-		var s := GameState.new()
+		var s := Sim.new()
 		s.generate(map_seed)
 		var near := 0
 		var total := 0
-		for y in GameState.HEIGHT:
-			for x in GameState.WIDTH:
+		for y in Sim.HEIGHT:
+			for x in Sim.WIDTH:
 				var p := Vector2i(x, y)
 				if s.tile_at(p) != "flax":
 					continue
@@ -441,7 +441,7 @@ func test_flax_near_every_hearth() -> void:
 ## clicks and shows Needs road; a road to the Hearth (or a Storehouse) makes it run on its own, and
 ## tearing the road up unlinks it again.
 func test_haulers_need_roads() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	s.inv["berries"] = 500
 	s.inv["wood"] = 200
 	s.researched["haulers"] = true
@@ -463,13 +463,13 @@ func test_haulers_need_roads() -> void:
 	t.check(s.inv.get("charcoal", 0) > charcoal + 4, "haulers keep it loaded and emptied")
 	t.check(pit["alert"] != "Needs road", "the marker is gone")
 	var road: Vector2i = Vector2i(-1, -1)
-	for n in GameState.NEIGHBORS:
+	for n in Sim.NEIGHBORS:
 		if s.roads.has(p + n):
 			road = p + n
 	s.demolish(road)
 	t.check(not Roads.linked(s, pit), "tearing up the road unlinks it")
 	# A Storehouse is a depot too: a road to it is enough.
-	var s2: GameState = t.fresh()
+	var s2: Sim = t.fresh()
 	s2.inv["berries"] = 500
 	s2.researched["haulers"] = true
 	var store := open_spot(s2, 6)
@@ -485,11 +485,11 @@ func test_haulers_need_roads() -> void:
 
 ## The open grass tile nearest the Hearth at least `dist` tiles from it (in steps), with nothing
 ## built next to it.
-func open_spot(s: GameState, dist: int) -> Vector2i:
+func open_spot(s: Sim, dist: int) -> Vector2i:
 	var best := Vector2i(-1, -1)
 	var best_d := INF
-	for y in GameState.HEIGHT:
-		for x in GameState.WIDTH:
+	for y in Sim.HEIGHT:
+		for x in Sim.WIDTH:
 			var p := Vector2i(x, y)
 			var d := Vector2(p).distance_to(Vector2(s.camp_pos))
 			var steps: int = maxi(absi(p.x - s.camp_pos.x), absi(p.y - s.camp_pos.y))
@@ -502,7 +502,7 @@ func open_spot(s: GameState, dist: int) -> Vector2i:
 ## Haulers never leave the roads on a job: every step of a pickup or delivery is a road tile, the
 ## depot or the building they serve.
 func test_haulers_walk_roads_only() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	s.inv["berries"] = 500
 	s.inv["wood"] = 300
 	s.researched["haulers"] = true

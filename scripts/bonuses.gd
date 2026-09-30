@@ -2,7 +2,7 @@ extends RefCounted
 ## Work multipliers. Every bonus is in one of two groups: Speed (shorter work cycles) and Yield (more
 ## per harvest). Bonuses add within a group (+50% and +100% make +150%) and the groups multiply.
 ## Data.BONUSES lists them; new ones (Bronze Tools, later upgrades) plug in the same way.
-## Static, and works on the GameState passed in.
+## Static, and works on the Sim passed in.
 
 const Data = preload("res://scripts/data.gd")
 const Ranks = preload("res://scripts/ranks.gd")

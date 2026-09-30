@@ -4,7 +4,7 @@ extends RefCounted
 ## and how it stays apart from the run save. run() is quick and runs everywhere; run_system() plays the pacing
 ## bot and needs a few minutes of simulated play, so run_tests.gd skips it with `-- fast`.
 ## The system-level tests are the important ones: a run dumped in the middle of a game and loaded into a
-## fresh GameState must go on exactly like the original (same state hash, same full dump), and a bot that is
+## fresh Sim must go on exactly like the original (same state hash, same full dump), and a bot that is
 ## dumped and restored along the way must still win at the golden time with the golden hash.
 ## Nothing touches the disk except one small file under user:// that is deleted again.
 ## Run from tests/run_tests.gd, which owns check().
@@ -14,7 +14,7 @@ const Codec = preload("res://scripts/save_codec.gd")
 const Data = preload("res://scripts/data.gd")
 const Fog = preload("res://scripts/fog.gd")
 const Flows = preload("res://scripts/flows.gd")
-const GameState = preload("res://scripts/game_state.gd")
+const Sim = preload("res://scripts/sim.gd")
 const GoldenTests = preload("res://tests/golden_tests.gd")
 const Profile = preload("res://scripts/profile.gd")
 const Roads = preload("res://scripts/roads.gd")
@@ -61,8 +61,8 @@ static func via_json(d: Dictionary) -> Dictionary:
 
 
 ## A new game on `map_seed` with a few things done, so the save has something in every block.
-func _played(map_seed: int = 7, seconds: int = 200) -> GameState:
-	var s := GameState.new()
+func _played(map_seed: int = 7, seconds: int = 200) -> Sim:
+	var s := Sim.new()
 	s.generate(map_seed)
 	var bot := Autoplay.new()
 	bot.attach(s)
@@ -124,7 +124,7 @@ func test_flows_round_trip() -> void:
 
 
 func test_a_new_game_round_trips() -> void:
-	var a := GameState.new()
+	var a := Sim.new()
 	a.generate(5)
 	var d := RunSave.dump(a)
 	t.check(int(d["version"]) == RunSave.VERSION, "the dump carries its version")
@@ -134,8 +134,8 @@ func test_a_new_game_round_trips() -> void:
 	want.append("version")
 	want.sort()
 	t.check(keys == want, "and one section per block, no more")
-	var b := GameState.new()
-	t.check(RunSave.restore(b, via_json(d)), "a fresh GameState takes the dump")
+	var b := Sim.new()
+	t.check(RunSave.restore(b, via_json(d)), "a fresh Sim takes the dump")
 	t.check(text(RunSave.dump(b)) == text(d), "and writes it back the same")
 	var golden := GoldenTests.new()
 	t.check(golden.state_hash(a) == golden.state_hash(b), "with the same state hash")
@@ -148,10 +148,10 @@ func test_a_played_game_round_trips() -> void:
 	)
 	t.check(not a.hand_counts.is_empty() and a.flows.hist.size() > 10, "and hand counts and flows")
 	var d := RunSave.dump(a)
-	var b := GameState.new()
+	var b := Sim.new()
 	t.check(RunSave.restore(b, d), "restore from the dump itself")
 	t.check(text(RunSave.dump(b)) == text(d), "a played game writes back the same dump")
-	var c := GameState.new()
+	var c := Sim.new()
 	t.check(RunSave.restore(c, via_json(d)), "restore from parsed JSON")
 	t.check(text(RunSave.dump(c)) == text(d), "and writes the same dump")
 	var golden := GoldenTests.new()
@@ -204,7 +204,7 @@ func test_bad_saves_are_refused() -> void:
 func test_run_save_file() -> void:
 	var a := _played(7, 30)
 	t.check(RunSave.save(a, TEMP_RUN), "the run is written to a file")
-	var b := GameState.new()
+	var b := Sim.new()
 	t.check(RunSave.load_into(b, TEMP_RUN), "and read back into a fresh game")
 	t.check(text(RunSave.dump(b)) == text(RunSave.dump(a)), "the same game")
 	var f := FileAccess.open(TEMP_RUN, FileAccess.WRITE)
@@ -223,7 +223,7 @@ func test_run_save_file() -> void:
 
 func test_derived_state_is_rebuilt() -> void:
 	var a := _played(7, 400)
-	var b := GameState.new()
+	var b := Sim.new()
 	t.check(RunSave.restore(b, via_json(RunSave.dump(a))), "set up: a loaded game")
 	t.check(b.road_net.is_empty() and b.road_rev == a.road_rev, "the road cache starts empty, at the same revision")
 	var same_grid := true
@@ -251,7 +251,7 @@ func test_derived_state_is_rebuilt() -> void:
 func test_profile_absorb() -> void:
 	var p := Profile.new()
 	t.check(p.is_empty() and p.chronicle.is_empty() and p.knowledge.is_empty(), "a new profile is empty")
-	var s := GameState.new()
+	var s := Sim.new()
 	s.generate(3)
 	s.story.record("shard_found")
 	s.story.record("first_lesson")
@@ -271,7 +271,7 @@ func test_profile_absorb() -> void:
 	t.check(
 		p.knowledge == ["wood", "flint", "stone"] and p.knows("stone") and not p.knows("clay"), "same for knowledge"
 	)
-	var other := GameState.new()
+	var other := Sim.new()
 	other.generate(9)
 	other.story.record("haulers")
 	other.story.record("first_trip")
@@ -299,7 +299,7 @@ func test_profile_absorb() -> void:
 		q.chronicle.size() == r.chronicle.size() and q.knowledge.size() == r.knowledge.size(),
 		"the order of runs never duplicates"
 	)
-	var fresh := GameState.new()
+	var fresh := Sim.new()
 	fresh.generate(3)
 	var untouched := text(RunSave.dump(fresh))
 	p.absorb(fresh)
@@ -380,7 +380,7 @@ func test_run_save_and_profile_stay_apart() -> void:
 		t.check(not p.to_json().contains('"%s"' % word), "and no run data (%s) inside" % word)
 	t.check(Profile.is_profile(profile) and not Profile.is_profile(saved_run), "one is not taken for the other")
 	t.check(RunSave.is_run_save(saved_run) and not RunSave.is_run_save(profile), "either way round")
-	var fresh := GameState.new()
+	var fresh := Sim.new()
 	t.check(RunSave.restore(fresh, via_json(saved_run)), "restoring a run needs no profile")
 	t.check(
 		fresh.people.learned_by == s.people.learned_by and fresh.story.events == s.story.events,
@@ -393,7 +393,7 @@ func test_run_save_and_profile_stay_apart() -> void:
 
 ## A bot on `map_seed`, played up to `seconds` of simulated time.
 func _bot_at(map_seed: int, seconds: float) -> Autoplay:
-	var game := GameState.new()
+	var game := Sim.new()
 	game.generate(map_seed)
 	var bot := Autoplay.new()
 	bot.attach(game)
@@ -404,7 +404,7 @@ func _bot_at(map_seed: int, seconds: float) -> Autoplay:
 
 ## A second bot playing a restored copy of `bot`'s game from the same moment. The bot keeps a little state of
 ## its own (the clock, the click budget, what it is holding on), copied here, not changed in the bot.
-func _clone(bot: Autoplay, game: GameState) -> Autoplay:
+func _clone(bot: Autoplay, game: Sim) -> Autoplay:
 	var c := Autoplay.new()
 	c.s = game
 	_copy_mind(bot, c)
@@ -422,7 +422,7 @@ func _copy_mind(from: Autoplay, to: Autoplay) -> void:
 	to.lines = from.lines.duplicate()
 
 
-## Dump the game in the middle of play, load it into a fresh GameState, and play both on with the same bot
+## Dump the game in the middle of play, load it into a fresh Sim, and play both on with the same bot
 ## steps: they must stay the same, second for second.
 func test_a_loaded_game_carries_on_the_same() -> void:
 	var golden := GoldenTests.new()
@@ -435,9 +435,9 @@ func test_a_loaded_game_carries_on_the_same() -> void:
 		s.kith.any(func(k): return not k["task"].is_empty()) and not s.roads.is_empty(),
 		"with haulers on a task and roads laid"
 	)
-	var loaded_game := GameState.new()
+	var loaded_game := Sim.new()
 	var text_form := RunSave.to_json(RunSave.dump(s))
-	t.check(RunSave.restore(loaded_game, RunSave.from_json(text_form)), "the dump is loaded into a fresh GameState")
+	t.check(RunSave.restore(loaded_game, RunSave.from_json(text_form)), "the dump is loaded into a fresh Sim")
 	var loaded := _clone(original, loaded_game)
 	t.check(golden.state_hash(loaded.s) == golden.state_hash(s), "the loaded copy starts with the same hash")
 	var same := true
@@ -462,13 +462,13 @@ func test_a_loaded_game_carries_on_the_same() -> void:
 
 
 ## The bot plays map 3 straight through, but at three points its game is dumped to JSON and swapped for a fresh
-## GameState restored from that dump. It must still win at the golden time, with the golden hash.
+## Sim restored from that dump. It must still win at the golden time, with the golden hash.
 func test_the_bot_wins_on_time_through_restores() -> void:
 	var golden := GoldenTests.new()
 	if not golden.load_golden(t):
 		return
 	var bot := Autoplay.new()
-	var game := GameState.new()
+	var game := Sim.new()
 	game.generate(3)
 	bot.attach(game)
 	var points := [250.0, 550.0, 800.0]
@@ -476,7 +476,7 @@ func test_the_bot_wins_on_time_through_restores() -> void:
 	while bot.clock < 30 * 60.0 and not bot.s.won:
 		if not points.is_empty() and bot.clock >= points[0]:
 			points.remove_at(0)
-			var fresh := GameState.new()
+			var fresh := Sim.new()
 			if RunSave.restore(fresh, RunSave.from_json(RunSave.to_json(RunSave.dump(bot.s)))):
 				bot.s = fresh
 				restored += 1

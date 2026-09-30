@@ -8,7 +8,7 @@ extends RefCounted
 ## simulation with a fixed DT (0.1 s), so no wall-clock time and no global random number is involved.
 ## Run from tests/run_tests.gd, which owns check().
 
-const GameState = preload("res://scripts/game_state.gd")
+const Sim = preload("res://scripts/sim.gd")
 
 const GOLDEN_PATH := "res://tests/golden.json"
 
@@ -57,7 +57,7 @@ func _entry(map_seed: int, got: Dictionary) -> String:
 
 ## The bot's result: the win time in whole simulated seconds (-1 when it never won) and the state hash.
 func snapshot(bot) -> Dictionary:
-	var s: GameState = bot.s
+	var s: Sim = bot.s
 	return {
 		"win_seconds": roundi(bot.clock) if s.won else -1,
 		"state_hash": state_hash(s),
@@ -68,11 +68,11 @@ func snapshot(bot) -> Dictionary:
 ## player would call the game: the stockpile, what's researched, every building with its position, type
 ## and stock, the roads, fields and fog, and the Kith. Keys are sorted and floats are rounded to
 ## thousandths, so it doesn't depend on dictionary order or on how a float prints.
-func state_hash(s: GameState) -> String:
+func state_hash(s: Sim) -> String:
 	return canonical(s).sha256_text()
 
 
-func canonical(s: GameState) -> String:
+func canonical(s: Sim) -> String:
 	var lines: Array = []
 	lines.append("won %s" % s.won)
 	lines.append("inv %s" % _counts(s.inv))

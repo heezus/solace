@@ -1,7 +1,7 @@
 extends RefCounted
 ## Map overlays drawn over the tiles and buildings: demolish hover and rubble, flow arrows for the
 ## selected workshop, status pills pinned under buildings, the settlement ring, and the fog.
-## Static: each takes the CanvasItem to draw on (the map) and the GameState.
+## Static: each takes the CanvasItem to draw on (the map) and the Sim.
 
 const Data = preload("res://scripts/data.gd")
 const Art = preload("res://scripts/art.gd")

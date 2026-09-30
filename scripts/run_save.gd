@@ -1,9 +1,9 @@
 extends RefCounted
 ## The run save: everything one run of the game holds, written as JSON-safe values and read back into a
-## GameState, so a loaded game goes on exactly as the saved one would have. Each block writes and reads its
-## own state (to_dict / from_dict); this is the one place that gathers them, plus the few fields GameState
+## Sim, so a loaded game goes on exactly as the saved one would have. Each block writes and reads its
+## own state (to_dict / from_dict); this is the one place that gathers them, plus the few fields Sim
 ## keeps for itself (the win flag, hand tools, hand counts, the held harvest, rushes, ranks, the message queue).
-## Static, and works on the GameState passed in, like Hands and Ranks.
+## Static, and works on the Sim passed in, like Hands and Ranks.
 ##
 ## What is not saved because it is derived: the walking grid (rebuilt from the map and the techs), the road
 ## network cache (rebuilt when Roads next needs it) and the `building_at` index (rebuilt from the list).
@@ -98,7 +98,7 @@ static func load_into(s, path: String = PATH) -> bool:
 	return restore(s, from_json(FileAccess.get_file_as_string(path)))
 
 
-# --- What GameState keeps for itself -----------------------------------------
+# --- What Sim keeps for itself -----------------------------------------
 
 
 static func _game_to_dict(s) -> Dictionary:

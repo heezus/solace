@@ -1,12 +1,12 @@
 extends RefCounted
 ## Unit testbench for the Economy block (scripts/economy.gd): stockpile, food and eating, item flows.
 ## Economy is built alone, with a hand-set stockpile and a hand-set set of researched techs; no map,
-## no Kith and no GameState. The last test checks GameState's pass-throughs still reach the same block.
+## no Kith and no Sim. The last test checks Sim's pass-throughs still reach the same block.
 ## Run from tests/run_tests.gd, which owns check() and the helpers.
 
 const Data = preload("res://scripts/data.gd")
 const Economy = preload("res://scripts/economy.gd")
-const GameState = preload("res://scripts/game_state.gd")
+const Sim = preload("res://scripts/sim.gd")
 const RunSave = preload("res://scripts/run_save.gd")
 
 var t  # the runner, tests/run_tests.gd
@@ -32,7 +32,7 @@ func run(runner) -> void:
 	test_flow_window_forgets()
 	test_economy_stands_alone()
 	test_to_dict_and_from_dict()
-	test_game_state_passes_through()
+	test_sim_passes_through()
 
 
 ## An Economy with every count zeroed, so a test sets exactly the stock it needs.
@@ -366,9 +366,9 @@ func test_economy_stands_alone() -> void:
 	)
 
 
-func test_game_state_passes_through() -> void:
-	var s := GameState.new()
-	t.check(s.inv == s.economy.inv, "GameState.inv is the Economy's stockpile")
+func test_sim_passes_through() -> void:
+	var s := Sim.new()
+	t.check(s.inv == s.economy.inv, "Sim.inv is the Economy's stockpile")
 	s.inv["wood"] = 9
 	t.check(s.economy.inv["wood"] == 9 and s.can_afford({"wood": 9}), "a write through it lands there")
 	s.add("clay", 2)
@@ -387,7 +387,7 @@ func test_game_state_passes_through() -> void:
 	s.inv["berries"] = 3
 	t.check(is_equal_approx(s.food_total(), 3.0) and s.food_value("berries") == 1.0, "food queries agree")
 	s.researched["smoking"] = true
-	t.check(s.economy.food_value("berries") == Data.SMOKED_BERRY_FOOD, "the block sees GameState's researched techs")
+	t.check(s.economy.food_value("berries") == Data.SMOKED_BERRY_FOOD, "the block sees Sim's researched techs")
 	s.economy.note("wood", 2, "hand")
 	s.flows.advance(1.0)
 	t.check(is_equal_approx(s.flows.rate("wood"), 2.0) and s.flows == s.economy.flows, "flows are the block's flows")

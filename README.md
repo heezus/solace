@@ -43,7 +43,7 @@ This is the **first playable**: the stone age loop with a lite tech tree, ending
 |---|---|
 | `scripts/data.gd` | The `Data` facade: `Data.X` reads a constant from the domain file that defines it. |
 | `scripts/data/` | The data, by domain: items, people, tiles, techs, buildings, goals and tuning. Tune the game here. |
-| `scripts/game_state.gd` | The simulation (no rendering), so it can be tested headless. |
+| `scripts/sim.gd` | The simulation (no rendering), so it can be tested headless. |
 | `scripts/main.gd` | Vector drawing (Advance Wars style) and UI, built in code. |
 | `scripts/art.gd` | Static drawing helpers: map features, building shapes, tech-tree arrows. |
 | `scenes/main.tscn` | The single scene. |

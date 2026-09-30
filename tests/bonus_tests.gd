@@ -3,7 +3,7 @@ extends RefCounted
 ## Run from tests/run_tests.gd, which owns check() and the helpers.
 
 const Data = preload("res://scripts/data.gd")
-const GameState = preload("res://scripts/game_state.gd")
+const Sim = preload("res://scripts/sim.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const Hands = preload("res://scripts/hands.gd")
 
@@ -29,7 +29,7 @@ func test_bonuses_add_within_and_multiply_across() -> void:
 	t.check(is_equal_approx(Bonuses.total(parts, "yield"), 2.0), "yield bonuses are their own group")
 	t.check(is_equal_approx(Bonuses.total([], "speed"), 1.0), "no bonuses: x1")
 
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	s.inv["berries"] = 100
 	var p := s.camp_pos + Vector2i(-2, 0)
 	t.place_free(s, "gatherers_hut", p)
@@ -53,7 +53,7 @@ func test_bonuses_add_within_and_multiply_across() -> void:
 
 
 func test_workers_take_tools() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	s.inv["berries"] = 100
 	var p := s.camp_pos + Vector2i(-2, 0)
 	t.place_free(s, "gatherers_hut", p)
@@ -79,7 +79,7 @@ func test_workers_take_tools() -> void:
 
 
 func test_tools_wear_out() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	s.inv["berries"] = 100
 	var p := s.camp_pos + Vector2i(-2, 0)
 	t.place_free(s, "gatherers_hut", p)
@@ -100,7 +100,7 @@ func test_tools_wear_out() -> void:
 
 
 func test_hand_gathering_keeps_its_tools() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	var tree: Vector2i = t.find_tile(s, "tree")
 	s.researched["knapping"] = true
 	s.inv["flint"] = 2

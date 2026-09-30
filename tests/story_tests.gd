@@ -1,11 +1,11 @@
 extends RefCounted
 ## Unit testbench for the Story block (scripts/story.gd) and the signal wiring of the whole game: story ids
 ## stay unique and recorded once, the goals stay done once met, and each story moment comes from a signal
-## that GameState._init connects, checked with the signal monitor (tests/monitor.gd). The first tests build
-## Story alone and feed it by hand, with no GameState. Run from tests/run_tests.gd, which owns check().
+## that Sim._init connects, checked with the signal monitor (tests/monitor.gd). The first tests build
+## Story alone and feed it by hand, with no Sim. Run from tests/run_tests.gd, which owns check().
 
 const Data = preload("res://scripts/data.gd")
-const GameState = preload("res://scripts/game_state.gd")
+const Sim = preload("res://scripts/sim.gd")
 const Monitor = preload("res://tests/monitor.gd")
 const Rules = preload("res://scripts/rules.gd")
 const RunSave = preload("res://scripts/run_save.gd")
@@ -23,7 +23,7 @@ func run(runner) -> void:
 	test_goals_stay_done()
 	test_story_needs_no_other_block()
 	test_to_dict_and_from_dict()
-	test_game_state_passes_through()
+	test_sim_passes_through()
 	test_researching_haulers_records_once()
 	test_bronze_dawn_is_recorded_and_wins()
 	test_learning_by_watching_records_a_lesson()
@@ -93,7 +93,7 @@ func test_current_goal_follows_goals_done() -> void:
 
 
 func test_goals_stay_done() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	s.story.update(s)
 	t.check(not s.goals_done.has("knapping"), "Knapping is not done at the start")
 	s.researched["knapping"] = true
@@ -137,16 +137,16 @@ func test_story_needs_no_other_block() -> void:
 	t.check(story.current_goal() == 0 and story.events == ["first_lesson"], "records and reads goals on its own")
 
 
-func test_game_state_passes_through() -> void:
-	var s: GameState = t.fresh()
-	t.check(is_same(s.story_events, s.story.events), "GameState.story_events is Story's list")
-	t.check(is_same(s.goals_done, s.story.goals_done), "GameState.goals_done is Story's dictionary")
+func test_sim_passes_through() -> void:
+	var s: Sim = t.fresh()
+	t.check(is_same(s.story_events, s.story.events), "Sim.story_events is Story's list")
+	t.check(is_same(s.goals_done, s.story.goals_done), "Sim.goals_done is Story's dictionary")
 	s.story.record("shard_found")
 	t.check(s.story_events == ["shard_found"], "and it is live")
 
 
 func test_researching_haulers_records_once() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	t.give(s, 999)
 	var research := Monitor.new()
 	var story := Monitor.new()
@@ -167,7 +167,7 @@ func test_researching_haulers_records_once() -> void:
 
 
 func test_bronze_dawn_is_recorded_and_wins() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	t.give(s, 99999)
 	var story := Monitor.new()
 	story.watch(s.story, "recorded")
@@ -179,7 +179,7 @@ func test_bronze_dawn_is_recorded_and_wins() -> void:
 
 
 func test_learning_by_watching_records_a_lesson() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	var people := Monitor.new()
 	people.watch(s.people, "learned")
 	var tree: Vector2i = t.find_tile(s, "tree")
@@ -199,7 +199,7 @@ func test_learning_by_watching_records_a_lesson() -> void:
 
 
 func test_the_first_trip_is_a_signal() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	var people := Monitor.new()
 	people.watch(s.people, "trip_started")
 	s.inv["berries"] = 200
@@ -218,7 +218,7 @@ func test_the_first_trip_is_a_signal() -> void:
 
 
 func test_the_strange_stone_is_a_signal() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	var m := Monitor.new()
 	m.watch(s, "shard_found")
 	m.watch(s.story, "recorded")
@@ -230,7 +230,7 @@ func test_the_strange_stone_is_a_signal() -> void:
 
 
 func test_story_order_matches_the_moments() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	s.gather_by_hand(s.shard_pos)
 	var tree: Vector2i = t.find_tile(s, "tree")
 	for i in Data.LEARN_CLICKS:
@@ -246,7 +246,7 @@ func test_story_order_matches_the_moments() -> void:
 
 
 func test_kith_messages_reach_the_player() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	var m := Monitor.new()
 	m.watch(s.people, "announce")
 	m.watch(s.people, "born")
@@ -259,11 +259,11 @@ func test_kith_messages_reach_the_player() -> void:
 	t.check(m.count("born") == 1, "a birth is one born signal")
 	t.check(m.args_of("born")[0] == [s.kith[s.kith.size() - 1]["name"]], "carrying the newborn's name")
 	var told := Data.BORN_EVENT % Data.PEOPLE["one"]
-	t.check(m.args_of("announce") == [[told]] and told in s.events, "and GameState shows the announcement")
+	t.check(m.args_of("announce") == [[told]] and told in s.events, "and Sim shows the announcement")
 
 
 func test_a_hidden_tech_waits_for_the_stone() -> void:
-	var s: GameState = t.fresh()
+	var s: Sim = t.fresh()
 	t.check(not s.tech_visible("star_lore"), "hidden before the Strange Stone")
 	s.gather_by_hand(s.shard_pos)
 	t.check(s.tech_visible("star_lore"), "visible after: the signal did not replace the flag")

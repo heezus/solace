@@ -1,5 +1,5 @@
 extends RefCounted
-## A headless player for pacing. It plays the stone age through GameState the way a person would:
+## A headless player for pacing. It plays the stone age through Sim the way a person would:
 ## it clicks resources by hand early on, crafts Flint Tools, sets Bronze Dawn as the research goal
 ## (the queue researches each tech on the way as soon as it's affordable), places huts next to what
 ## the next techs need, workshops by the Hearth, dwellings when the Kith run out of room, fields once
@@ -7,7 +7,7 @@ extends RefCounted
 ## play() returns {"won", "seconds", "log"}; run_tests.gd checks the time and prints it.
 
 const Data = preload("res://scripts/data.gd")
-const GameState = preload("res://scripts/game_state.gd")
+const Sim = preload("res://scripts/sim.gd")
 const Rules = preload("res://scripts/rules.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Workers = preload("res://scripts/workers.gd")
@@ -42,7 +42,7 @@ const WORKSHOPS_MAX := 4
 ## Which workshop makes each made good.
 const MAKER := {"rope": "twine_post", "charcoal": "charcoal_pit", "brick": "kiln", "flour": "grindstone"}
 
-var s: GameState
+var s: Sim
 var clock := 0.0
 var clicks := 0.0
 var think := 0.0
@@ -55,7 +55,7 @@ var reach := {}  # tiles the Kith can walk to from the Hearth, refreshed each de
 
 
 func play(map_seed: int, max_seconds: float) -> Dictionary:
-	var game := GameState.new()
+	var game := Sim.new()
 	game.generate(map_seed)
 	attach(game)
 	while clock < max_seconds and not s.won:
@@ -64,7 +64,7 @@ func play(map_seed: int, max_seconds: float) -> Dictionary:
 
 
 ## Play `game` from here on: step() then advances it (tests/tools/play_pass.gd runs it under the live UI).
-func attach(game: GameState) -> void:
+func attach(game: Sim) -> void:
 	s = game
 	s.tech_tree.set_goal("bronze_dawn")
 
@@ -298,8 +298,8 @@ func _pick_tile() -> Vector2i:
 func _nearest_tile(tile: String, from: Vector2i) -> Vector2i:
 	var best := Vector2i(-1, -1)
 	var best_d := INF
-	for y in GameState.HEIGHT:
-		for x in GameState.WIDTH:
+	for y in Sim.HEIGHT:
+		for x in Sim.WIDTH:
 			var p := Vector2i(x, y)
 			if s.tile_at(p) == tile and Hands.item_at(s, p) != "":
 				var d := Vector2(p).distance_to(Vector2(from))
@@ -469,8 +469,8 @@ func _explore(short: Dictionary) -> bool:
 func _explore_for(item: String) -> bool:
 	var best := Vector2i(-1, -1)
 	var best_d := INF
-	for y in GameState.HEIGHT:
-		for x in GameState.WIDTH:
+	for y in Sim.HEIGHT:
+		for x in Sim.WIDTH:
 			var p := Vector2i(x, y)
 			if s.fog.is_revealed(p) or s.tile_at(p) != RAW_TILE[item] or not reach.has(p):
 				continue
@@ -512,8 +512,8 @@ func _at_fog_edge(p: Vector2i) -> bool:
 func _nearest_bank() -> Vector2i:
 	var best := Vector2i(-1, -1)
 	var best_d := INF
-	for y in GameState.HEIGHT:
-		for x in GameState.WIDTH:
+	for y in Sim.HEIGHT:
+		for x in Sim.WIDTH:
 			var p := Vector2i(x, y)
 			if s.tile_at(p) == "grass" and s.touches_river(p) and not s.fog.is_revealed(p):
 				var d := Vector2(p).distance_to(Vector2(s.camp_pos))
@@ -526,8 +526,8 @@ func _nearest_bank() -> Vector2i:
 func _nearest_hidden(tile: String) -> Vector2i:
 	var best := Vector2i(-1, -1)
 	var best_d := INF
-	for y in GameState.HEIGHT:
-		for x in GameState.WIDTH:
+	for y in Sim.HEIGHT:
+		for x in Sim.WIDTH:
 			var p := Vector2i(x, y)
 			if s.tile_at(p) == tile and reach.has(p):
 				var d := Vector2(p).distance_to(Vector2(s.camp_pos))
@@ -664,7 +664,7 @@ func _flood_reach() -> void:
 	var todo: Array = [s.camp_pos]
 	while not todo.is_empty():
 		var p: Vector2i = todo.pop_back()
-		for n in GameState.NEIGHBORS:
+		for n in Sim.NEIGHBORS:
 			var q: Vector2i = p + n
 			if s.in_bounds(q) and not reach.has(q) and not s.astar.is_point_solid(q):
 				reach[q] = true
@@ -678,8 +678,8 @@ func _place_best(type: String, score: Callable) -> bool:
 		return false
 	var best := Vector2i(-1, -1)
 	var best_score := -INF
-	for y in GameState.HEIGHT:
-		for x in GameState.WIDTH:
+	for y in Sim.HEIGHT:
+		for x in Sim.WIDTH:
 			var p := Vector2i(x, y)
 			if not reach.has(p) or s.placement_error(type, p) != "":
 				continue
@@ -752,7 +752,7 @@ func _road_search(p: Vector2i, ground: Array) -> Array:
 			depot_net[id] = true
 	var from := {}
 	var todo: Array = []
-	for n in GameState.NEIGHBORS:
+	for n in Sim.NEIGHBORS:
 		var q: Vector2i = p + n
 		if _paveable(q, ground):
 			from[q] = p
@@ -760,7 +760,7 @@ func _road_search(p: Vector2i, ground: Array) -> Array:
 	while not todo.is_empty():
 		var q: Vector2i = todo.pop_front()
 		var done := false
-		for n in GameState.NEIGHBORS:
+		for n in Sim.NEIGHBORS:
 			if (q + n) in Roads.depots(s):
 				done = true
 		if s.roads.has(q) and depot_net.has(s.road_net["net"].get(q, -1)):
@@ -772,7 +772,7 @@ func _road_search(p: Vector2i, ground: Array) -> Array:
 					path.push_front(q)
 				q = from[q]
 			return path
-		for n in GameState.NEIGHBORS:
+		for n in Sim.NEIGHBORS:
 			var r: Vector2i = q + n
 			if not from.has(r) and _paveable(r, ground):
 				from[r] = q

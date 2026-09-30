@@ -15,7 +15,7 @@ extends RefCounted
 ##   born(name) and left(name): a birth, and a Kith who leaves in search of food (not the starting people)
 ##   learned(item, name): someone learned to gather `item` by watching the player
 ##   trip_started: a hut worker set out on a trip the player clicked
-## GameState owns one (`people`) and passes the old `kith`, `born` and `learned` variables through to it
+## Sim owns one (`people`) and passes the old `kith`, `born` and `learned` variables through to it
 ## (here they are `births` and `learned_by`, since a signal has the name).
 
 signal announce(message: String)

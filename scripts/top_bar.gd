@@ -6,7 +6,7 @@ extends PanelContainer
 signal speed_picked(value: int)  # 0 toggles pause
 
 const Data = preload("res://scripts/data.gd")
-const GameState = preload("res://scripts/game_state.gd")
+const Sim = preload("res://scripts/sim.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Hands = preload("res://scripts/hands.gd")
@@ -16,7 +16,7 @@ const LOSS := Color("ff9aa9")
 const FLAT := Color("9fb4bf")
 const MINUS := "−"
 
-var state: GameState
+var state: Sim
 var kith_label: Label
 var jobs_label: Label
 var food_label: Label
@@ -30,7 +30,7 @@ var flow_item := ""
 var speed_buttons := {}
 
 
-func setup(game: GameState) -> void:
+func setup(game: Sim) -> void:
 	state = game
 	add_theme_stylebox_override("panel", Ui.panel_style(Ui.BAR, 6))
 	set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)

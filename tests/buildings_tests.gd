@@ -2,7 +2,7 @@ extends RefCounted
 ## Unit testbench for the Buildings block (scripts/buildings.gd): the placement rules, placing and tearing
 ## down, the refund, pausing, power and aura range, housing and the work rules that live in the block.
 ## Buildings is built alone, on a hand-made World, an Economy with a hand-set stockpile and a hand-set set
-## of researched techs; no Kith, no fog block and no GameState. The last tests check GameState's
+## of researched techs; no Kith, no fog block and no Sim. The last tests check Sim's
 ## pass-throughs and the effects it runs around a placement or a demolition (fog, walking grid, workers).
 ## Run from tests/run_tests.gd, which owns check() and the helpers.
 
@@ -10,7 +10,7 @@ const Buildings = preload("res://scripts/buildings.gd")
 const Data = preload("res://scripts/data.gd")
 const Economy = preload("res://scripts/economy.gd")
 const Fog = preload("res://scripts/fog.gd")
-const GameState = preload("res://scripts/game_state.gd")
+const Sim = preload("res://scripts/sim.gd")
 const Monitor = preload("res://tests/monitor.gd")
 const Research = preload("res://scripts/research.gd")
 const RunSave = preload("res://scripts/run_save.gd")
@@ -58,10 +58,10 @@ func run(runner) -> void:
 	test_static_helpers()
 	test_buildings_stand_alone()
 	test_to_dict_and_from_dict()
-	test_game_state_passes_through()
-	test_game_state_place_runs_the_effects()
-	test_game_state_demolish_frees_the_worker()
-	test_game_state_pause_frees_the_worker()
+	test_sim_passes_through()
+	test_sim_place_runs_the_effects()
+	test_sim_demolish_frees_the_worker()
+	test_sim_pause_frees_the_worker()
 
 
 func _seen(p: Vector2i) -> bool:
@@ -553,8 +553,8 @@ func test_buildings_stand_alone() -> void:
 	t.check(_techs.size() == 1, "placing never writes the techs")
 
 
-func test_game_state_passes_through() -> void:
-	var s: GameState = t.fresh()
+func test_sim_passes_through() -> void:
+	var s: Sim = t.fresh()
 	t.check(is_same(s.buildings, s.town.buildings), "buildings is the block's list")
 	t.check(is_same(s.building_at, s.town.building_at), "so is building_at")
 	s.road_rev += 1
@@ -573,8 +573,8 @@ func test_game_state_passes_through() -> void:
 	t.check(s.placement_error("dwelling", s.camp_pos) == "Something is already there", "placement_error too")
 
 
-func test_game_state_place_runs_the_effects() -> void:
-	var s: GameState = t.fresh()
+func test_sim_place_runs_the_effects() -> void:
+	var s: Sim = t.fresh()
 	t.give(s, 100)
 	s.researched["haulers"] = true
 	s.researched["scouting"] = true
@@ -590,7 +590,7 @@ func test_game_state_place_runs_the_effects() -> void:
 	s.fog.reveal(grass, 0)
 	t.check(s.place("dwelling", grass), "a Dwelling")
 	var want := Fog.new()
-	want.setup(GameState.WIDTH, GameState.HEIGHT)
+	want.setup(Sim.WIDTH, Sim.HEIGHT)
 	want.reveal(grass, Data.SIGHT_BUILDING + Data.SCOUTING_SIGHT)
 	t.check(
 		s.fog.count() == want.count() and s.fog.is_revealed(grass), "the fog lifts around it, by its sight and Scouting"
@@ -617,8 +617,8 @@ func test_game_state_place_runs_the_effects() -> void:
 	t.check(not s.place("road", s.camp_pos + Vector2i(-4, 2)) and s.events.size() == n, "a refused place says nothing")
 
 
-func test_game_state_demolish_frees_the_worker() -> void:
-	var s: GameState = t.fresh()
+func test_sim_demolish_frees_the_worker() -> void:
+	var s: Sim = t.fresh()
 	t.give(s, 100)
 	s.researched["gatherers_hut"] = true
 	var first := s.camp_pos + Vector2i(0, 2)
@@ -640,8 +640,8 @@ func test_game_state_demolish_frees_the_worker() -> void:
 	)
 
 
-func test_game_state_pause_frees_the_worker() -> void:
-	var s: GameState = t.fresh()
+func test_sim_pause_frees_the_worker() -> void:
+	var s: Sim = t.fresh()
 	t.give(s, 100)
 	s.researched["gatherers_hut"] = true
 	var p := s.camp_pos + Vector2i(0, 2)
