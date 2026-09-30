@@ -4,6 +4,7 @@ extends SceneTree
 
 const Data = preload("res://scripts/data.gd")
 const GameState = preload("res://scripts/game_state.gd")
+const Main = preload("res://scripts/main.gd")
 
 var failures := 0
 
@@ -29,6 +30,14 @@ func _init() -> void:
 	test_roads_bridge_the_river()
 	test_tech_tree_is_a_web()
 	test_tech_effects()
+	test_requires_any()
+	test_star_lore_is_hidden_until_the_shard_is_clicked()
+	test_shard_cairn()
+	test_smoking_makes_berries_worth_more()
+	test_rafts_cross_the_river()
+	test_calendar_gates_bronze_dawn()
+	test_lore_and_side_branch_effects()
+	test_fishing_weir_makes_fish()
 	print("FAILED: %d" % failures if failures > 0 else "ALL TESTS PASSED")
 	quit(1 if failures > 0 else 0)
 
@@ -88,7 +97,9 @@ func test_hand_gathering_and_tools() -> void:
 	check(s.inv["flint_tools"] == 1, "have flint tools")
 	s.gather_by_hand(tree)
 	check(s.inv["wood"] == 2, "flint tools double hand gathering")
+	check(not s.shard_seen, "the shard starts unseen")
 	check(s.gather_by_hand(s.shard_pos) == Data.SHARD_TEXT, "shard shows flavor text")
+	check(s.shard_seen, "clicking the shard marks it seen")
 
 
 func test_tech_requires_its_parents() -> void:
@@ -102,6 +113,7 @@ func test_tech_requires_its_parents() -> void:
 func test_every_tech_is_reachable() -> void:
 	var s := fresh()
 	give(s, 9999)
+	s.gather_by_hand(s.shard_pos)  # reveals Star Lore
 	for i in Data.TECH_ORDER.size():
 		for tech in Data.TECH_ORDER:
 			s.research(tech)
@@ -323,22 +335,43 @@ func test_roads_bridge_the_river() -> void:
 	check(river in path, "the path uses the bridge")
 
 
+## Every parent sits left of its child, no two cards overlap, and most techs join two branches.
 func test_tech_tree_is_a_web() -> void:
+	check(Data.TECHS.size() == 28, "the stone age has 28 techs")
+	check(Data.TECH_ORDER.size() == Data.TECHS.size(), "TECH_ORDER lists every tech once")
 	var roots := 0
 	var multi := 0
-	var positions := {}
 	for tech in Data.TECHS:
 		var t: Dictionary = Data.TECHS[tech]
-		roots += 1 if t["requires"].is_empty() else 0
-		multi += 1 if t["requires"].size() >= 2 else 0
-		for r in t["requires"]:
+		var any: Array = t.get("requires_any", [])
+		roots += 1 if t["requires"].is_empty() and any.is_empty() else 0
+		multi += 1 if t["requires"].size() + mini(any.size(), 1) >= 2 else 0
+		check(any.size() != 1, tech + ": an either-or list needs at least two techs")
+		for r in t["requires"] + any:
 			check(Data.TECHS.has(r), tech + " requires a real tech")
 			check(t["pos"].x > Data.TECHS[r]["pos"].x, tech + " sits right of " + r + " so arrows point forward")
-		check(not positions.has(t["pos"]), tech + " has its own spot in the tree")
-		positions[t["pos"]] = true
 		check(tech in Data.TECH_ORDER, tech + " is listed in TECH_ORDER")
-	check(roots >= 3, "several starting techs")
-	check(multi >= 6, "many techs join two branches")
+		check(t.has("color") and t.has("abbr") and t.has("desc"), tech + " has a color, badge and text")
+	check(roots == 5, "five starting techs, one per lane")
+	check(multi >= 15, "most techs join two branches")
+	check_cards_dont_overlap()
+	var colors := {}
+	for tech in Data.TECHS:
+		colors[Data.TECHS[tech]["color"].to_html()] = true
+	check(colors.size() == Data.TECHS.size(), "every tech has its own color")
+	for tech in Data.TECHS:
+		check("star_lore" not in Data.TECHS[tech]["requires"], tech + " doesn't strictly need hidden Star Lore")
+
+
+func check_cards_dont_overlap() -> void:
+	var rects := {}
+	for tech in Data.TECHS:
+		var p: Vector2 = Data.TECHS[tech]["pos"]
+		rects[tech] = Rect2(Vector2(p.x * Main.COL_W, p.y * Main.ROW_H), Main.CARD)
+	for a in rects:
+		for b in rects:
+			if a < b:
+				check(not rects[a].intersects(rects[b]), a + " and " + b + " cards don't overlap")
 
 
 func test_tech_effects() -> void:
@@ -370,3 +403,158 @@ func test_tech_effects() -> void:
 	var grass := find_grass(s, false)
 	check(place_free(s, "field", grass), "sow a field")
 	check(s.tile_at(grass) == "grain", "field grows grain")
+
+
+## Megaliths needs Masonry and one of Storytelling or Star Lore; either one alone is enough.
+func test_requires_any() -> void:
+	var s := fresh()
+	give(s, 999)
+	for t in ["knapping", "fire", "masonry"]:
+		check(s.research(t), "research " + t)
+	check(not s.requirements_met("megaliths"), "Megaliths needs Storytelling or Star Lore too")
+	check(s.missing_requirements("megaliths") == 1, "an either-or counts as one missing tech")
+	check(s.research("storytelling"), "research Storytelling")
+	check(s.can_research("megaliths"), "Storytelling alone unlocks Megaliths")
+	var s2 := fresh()
+	give(s2, 999)
+	s2.gather_by_hand(s2.shard_pos)
+	for t in ["knapping", "fire", "masonry", "star_lore"]:
+		s2.researched[t] = true
+	check(not s2.researched.has("storytelling"), "no Storytelling in the second camp")
+	check(s2.can_research("megaliths"), "Star Lore alone unlocks Megaliths")
+	check(s2.research("megaliths"), "research Megaliths through Star Lore")
+
+
+func test_star_lore_is_hidden_until_the_shard_is_clicked() -> void:
+	var s := fresh()
+	give(s, 999)
+	check(s.research("storytelling"), "research Storytelling")
+	check(not s.tech_visible("star_lore"), "Star Lore is hidden at first")
+	check(not s.can_research("star_lore"), "hidden Star Lore can't be researched")
+	check(s.tech_visible("megaliths"), "other techs are visible")
+	s.gather_by_hand(s.shard_pos)
+	check(s.tech_visible("star_lore"), "clicking the Strange Stone reveals Star Lore")
+	check(s.research("star_lore"), "then it can be researched")
+	check(s.building_unlocked("shard_cairn"), "Star Lore unlocks the Shard Cairn")
+
+
+func test_shard_cairn() -> void:
+	var s := fresh()
+	give(s, 100)
+	s.shard_seen = true
+	s.researched["star_lore"] = true
+	check(
+		s.placement_error("shard_cairn", s.camp_pos + Vector2i(0, 2)) == "Must go next to the Strange Stone",
+		"cairn needs the shard"
+	)
+	for n in GameState.NEIGHBORS:
+		var p: Vector2i = s.shard_pos + n
+		if s.tile_at(p) == "grass" and not s.building_at.has(p):
+			check(s.place("shard_cairn", p), "cairn goes beside the shard")
+			s.tick(0.1)
+			check(s.buildings[s.building_at[p]]["status"] == "It hums. Nothing more. Yet.", "the cairn only hums")
+			return
+
+
+func test_smoking_makes_berries_worth_more() -> void:
+	var s := fresh()
+	s.inv["berries"] = 10
+	s.inv["flour"] = 0
+	check(s.food_value("berries") == 1.0, "berries are worth 1")
+	var before := s.food_total()
+	s.researched["smoking"] = true
+	check(s.food_value("berries") == 2.0, "smoked berries are worth 2")
+	check(s.food_total() == before * 2.0, "smoking doubles berry food")
+
+
+func test_rafts_cross_the_river() -> void:
+	var s := fresh()
+	give(s, 999)
+	var river := find_tile(s, "river")
+	check(s.astar.is_point_solid(river), "the river blocks walking")
+	for t in ["cordage", "foraging", "knapping", "gatherers_hut", "haulers", "nets"]:
+		s.researched[t] = true
+	check(s.research("rafts"), "research Rafts")
+	check(not s.astar.is_point_solid(river), "Rafts make the river walkable")
+	check(s.walk_cost(river) == Data.WALK_COST["river"], "rafting is slow")
+	check(s.walk_cost(river) > 1.0, "slower than open ground")
+	var path := s.astar.get_id_path(river + Vector2i(-1, 0), river + Vector2i(2, 0))
+	check(not path.is_empty(), "Kith can cross without a bridge")
+	place_free(s, "road", river)
+	check(s.walk_cost(river) < 1.0, "a bridge is still road speed")
+
+
+func test_calendar_gates_bronze_dawn() -> void:
+	var s := fresh()
+	give(s, 999)
+	check("calendar" in Data.TECHS["bronze_dawn"]["requires"], "Bronze Dawn requires Calendar")
+	for t in Data.TECHS["bronze_dawn"]["requires"]:
+		if t != "calendar":
+			s.researched[t] = true
+	check(not s.can_research("bronze_dawn"), "no Bronze Dawn without Calendar")
+	s.researched["farming"] = true
+	s.researched["storytelling"] = true
+	check(s.research("calendar"), "Calendar through Farming and Storytelling")
+	check(s.research("bronze_dawn"), "then Bronze Dawn")
+	var ids: Array = Data.GOALS.map(func(g): return g["id"])
+	check(ids.find("calendar") == ids.find("bronze") - 1, "the Calendar goal comes right before Bronze Dawn")
+
+
+func test_lore_and_side_branch_effects() -> void:
+	var s := fresh()
+	check(s._grow_time() == Data.GROW_TIME, "normal grow time")
+	s.researched["storytelling"] = true
+	check(s._grow_time() == Data.GROW_TIME * 0.75, "Storytelling: Kith born 25% faster")
+
+	var p := s.camp_pos + Vector2i(-2, 0)
+	place_free(s, "gatherers_hut", p)
+	var hut: Dictionary = s.buildings[s.building_at[p]]
+	var base := s._work_time(hut)
+	s.researched["ochre"] = true
+	check(is_equal_approx(s.work_speed(hut), 1.1), "Ochre: huts harvest 10% faster")
+	check(s._work_time(hut) < base, "Ochre shortens the harvest")
+	check(place_free(s, "standing_stone", p + Vector2i(0, 2)), "place a Standing Stone near the hut")
+	check(is_equal_approx(s.work_speed(hut), 1.1 * 1.15), "Standing Stone: 15% faster within 3 tiles")
+
+	var tree := find_tile(s, "tree")
+	check(s._harvest_amount(hut, tree, "wood") == 1, "one wood per harvest")
+	s.researched["stone_axe"] = true
+	check(s._harvest_amount(hut, tree, "wood") == 2, "Stone Axe: huts gather Wood twice as fast")
+
+	var field := find_grass(s, true)
+	check(place_free(s, "field", field), "sow a field by the river")
+	var total := 0
+	for i in 4:
+		total += s._harvest_amount(hut, field, "grain")
+	check(total == 4, "four harvests of a Field give 4 grain")
+	s.researched["calendar"] = true
+	total = 0
+	for i in 4:
+		total += s._harvest_amount(hut, field, "grain")
+	check(total == 5, "Calendar: Fields yield 25% more")
+
+	var dry := find_grass(s, false)
+	place_free(s, "field", dry)
+	var t := s._harvest_time(hut, field)
+	s.researched["irrigation"] = true
+	check(is_equal_approx(s._harvest_time(hut, field), t / 2.0), "Irrigation: river Fields grow twice as fast")
+	check(is_equal_approx(s._harvest_time(hut, dry), t), "dry Fields are unchanged")
+
+
+func test_fishing_weir_makes_fish() -> void:
+	var s := fresh()
+	s.inv["berries"] = 100
+	var bank := Vector2i(-1, -1)
+	for y in GameState.HEIGHT:
+		for x in GameState.WIDTH:
+			var p := Vector2i(x, y)
+			if bank.x < 0 and s.tile_at(p) == "grass" and s.tile_at(p + Vector2i(1, 0)) == "river":
+				bank = p
+	check(s.placement_error("fishing_weir", s.camp_pos + Vector2i(0, 2)) != "", "weir needs Nets and the river")
+	s.add("rope", 10)
+	check(place_free(s, "fishing_weir", bank), "place a weir on the near bank")
+	for i in 200:
+		s.tick(0.5)
+	var b: Dictionary = s.buildings[s.building_at[bank]]
+	check(b["out"].get("fish", 0) > 0, "the weir traps fish")
+	check(s.food_value("fish") == 2.0, "fish are worth 2 food")

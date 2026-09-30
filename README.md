@@ -39,6 +39,7 @@ This is the **first playable**: the stone age loop with a lite tech tree, ending
 | `scripts/data.gd` | All items, tiles, techs, recipes and buildings. Tune the game here. |
 | `scripts/game_state.gd` | The simulation (no rendering), so it can be tested headless. |
 | `scripts/main.gd` | Vector drawing (Advance Wars style) and UI, built in code. |
+| `scripts/art.gd` | Static drawing helpers: map features, building shapes, tech-tree arrows. |
 | `scenes/main.tscn` | The single scene. |
 | `tests/run_tests.gd` | Headless logic tests. |
 

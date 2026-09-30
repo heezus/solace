@@ -3,19 +3,22 @@ extends Node2D
 
 const Data = preload("res://scripts/data.gd")
 const GameState = preload("res://scripts/game_state.gd")
+const Art = preload("res://scripts/art.gd")
 
 const TILE := 32.0
 const MAP_ORIGIN := Vector2.ZERO  # the node's transform scales and centers the map
-const OUTLINE := Color("1b1b1f")
+const OUTLINE: Color = Art.OUTLINE
 const OUTLINE_W := 2.5
 const KITH := Color("e76f51")
 const SIDE_W := 290.0
 const BAD := Color("ef476f")
 const GOOD := Color("80ed99")
 const GOAL_COLOR := Color("ffd166")
-const CARD := Vector2(186, 58)
+const CARD := Vector2(186, 54)
 const COL_W := 238.0
-const ROW_H := 70.0
+const ROW_H := 64.0
+const DIM_ARROW := Color(0.75, 0.8, 0.85, 0.35)
+const AURA_FILL := Color(0.55, 0.45, 0.6, 0.2)
 
 var state: GameState
 var placing := ""  # building type being placed, "" when not placing
@@ -132,9 +135,10 @@ func _click_tile(p: Vector2i) -> void:
 		if not state.has_haulers():
 			state.haul(i)
 		return
+	var first_look := not state.shard_seen
 	var msg := state.gather_by_hand(p)
 	if msg == Data.SHARD_TEXT:
-		_toast(msg, 8.0)
+		_toast(msg + ("\nA new idea stirs in the tech tree: Star Lore." if first_look else ""), 8.0)
 	elif msg != "":
 		popups.append({"pos": _tile_center(p), "text": msg, "t": 0.0})
 
@@ -159,7 +163,7 @@ func _build_ui() -> void:
 	items.add_child(kith_label)
 	food_label = _label("", 15)
 	food_label.mouse_filter = Control.MOUSE_FILTER_PASS
-	food_label.tooltip_text = "Every Kith eats food: Berries are worth 1, Flour 3."
+	food_label.tooltip_text = "Every Kith eats food: Berries, Fish and Flour. Hover one to see what it's worth."
 	items.add_child(food_label)
 	items.add_child(VSeparator.new())
 	for id in Data.ITEM_ORDER:
@@ -273,7 +277,9 @@ func _build_tech_panel(layer: CanvasLayer) -> void:
 	close.pressed.connect(func(): tech_panel.visible = false)
 	head.add_child(close)
 	v.add_child(head)
-	v.add_child(_label("Arrows show what each tech leads to. Gold outline: ready to research now.", 13))
+	v.add_child(
+		_label("Arrows show what each tech leads to. Dashed arrows: either one will do. Gold outline: ready now.", 13)
+	)
 
 	tech_graph = Control.new()
 	var span := Vector2.ZERO
@@ -361,30 +367,67 @@ func _ignore_mouse(n: Node) -> void:
 
 
 ## Curved arrows from each requirement to the tech that needs it. Lit once the requirement is done;
-## the selected tech's arrows are drawn thick.
+## the selected tech's arrows are drawn thick. Hidden techs and their arrows are left out.
 func _draw_tech_arrows() -> void:
 	for tech in Data.TECHS:
+		if not state.tech_visible(tech):
+			continue
+		var to := _card_pos(tech) + Vector2(-2, CARD.y / 2.0)
 		for r in Data.TECHS[tech]["requires"]:
-			var a := _card_pos(r) + Vector2(CARD.x, CARD.y / 2.0)
-			var b := _card_pos(tech) + Vector2(-2, CARD.y / 2.0)
-			var lit: bool = state.researched.has(r)
-			var focus: bool = selected_tech in [r, tech]
-			var col: Color = _tech_color(r) if lit else Color(0.75, 0.8, 0.85, 0.35)
-			if focus:
-				col = Color(1, 1, 1, 0.9) if not lit else col.lightened(0.2)
-			var w := 4.0 if focus else 2.5
-			var dx := (b.x - a.x) * 0.5
-			var pts := PackedVector2Array()
-			for i in 21:
-				var t := i / 20.0
-				pts.append(a.bezier_interpolate(a + Vector2(dx, 0), b - Vector2(dx, 0), b, t))
-			tech_graph.draw_polyline(pts, OUTLINE, w + 3.0, true)
-			tech_graph.draw_polyline(pts, col, w, true)
-			var head := PackedVector2Array([b, b + Vector2(-12, -7), b + Vector2(-12, 7)])
-			tech_graph.draw_colored_polygon(head, col)
-			tech_graph.draw_polyline(
-				PackedVector2Array([b, b + Vector2(-12, -7), b + Vector2(-12, 7), b]), OUTLINE, 1.5
-			)
+			_draw_link(r, tech, to)
+		var any := _visible_any(tech)
+		if any.size() == 1:
+			_draw_link(any[0], tech, to)
+		elif any.size() > 1:
+			_draw_or_links(tech, any)
+
+
+## The `requires_any` techs the player can see. With Star Lore hidden, Megaliths shows a plain arrow.
+func _visible_any(tech: String) -> Array:
+	return Data.TECHS[tech].get("requires_any", []).filter(func(r): return state.tech_visible(r))
+
+
+func _draw_link(r: String, tech: String, to: Vector2) -> void:
+	var focus: bool = selected_tech in [r, tech]
+	var col := _arrow_color(r, state.researched.has(r), focus)
+	Art.draw_curve(tech_graph, Art.curve(_card_out(r), to), col, 4.0 if focus else 2.5, false)
+	Art.draw_head(tech_graph, to, col)
+
+
+## Either-or parents: dashed curves merge at a dot, then one arrow enters the card low on its left edge.
+## Each dash lights with its own parent; the merged arrow lights once any parent is done.
+func _draw_or_links(tech: String, any: Array) -> void:
+	var to := _card_pos(tech) + Vector2(-2, CARD.y * 0.8)
+	var merge := to - Vector2(22, 0)
+	var src: String = any[0]
+	for r in any:
+		var focus: bool = selected_tech in [r, tech]
+		var col := _arrow_color(r, state.researched.has(r), focus)
+		Art.draw_curve(tech_graph, Art.curve(_card_out(r), merge), col, 3.0 if focus else 2.0, true)
+		if state.researched.has(r) and not state.researched.has(src):
+			src = r
+	var lit: bool = state.researched.has(src)
+	var focused: bool = selected_tech == tech or selected_tech in any
+	var col := _arrow_color(src, lit, focused)
+	Art.draw_curve(tech_graph, PackedVector2Array([merge, to]), col, 4.0 if focused else 2.5, false)
+	Art.draw_head(tech_graph, to, col)
+	tech_graph.draw_circle(merge, 5.0, col)
+	tech_graph.draw_arc(merge, 5.0, 0, TAU, 16, OUTLINE, 1.5, true)
+	var font := ThemeDB.fallback_font
+	tech_graph.draw_string_outline(font, merge + Vector2(-7, -8), "or", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, 4, OUTLINE)
+	tech_graph.draw_string(font, merge + Vector2(-7, -8), "or", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color.WHITE)
+
+
+func _arrow_color(r: String, lit: bool, focus: bool) -> Color:
+	var col: Color = _tech_color(r) if lit else DIM_ARROW
+	if focus:
+		col = col.lightened(0.2) if lit else Color(1, 1, 1, 0.9)
+	return col
+
+
+## Where arrows leave a tech's card: the middle of its right edge.
+func _card_out(tech: String) -> Vector2:
+	return _card_pos(tech) + Vector2(CARD.x, CARD.y / 2.0)
 
 
 func _build_win_overlay(layer: CanvasLayer) -> void:
@@ -413,6 +456,7 @@ func _refresh_ui() -> void:
 		var n: int = state.inv.get(id, 0)
 		item_boxes[id].visible = state.seen.has(id)
 		item_labels[id].text = "%s %d" % [Data.ITEMS[id]["name"], n]
+		item_boxes[id].tooltip_text = _item_tooltip(id)
 		var zero_color := BAD if Data.FOOD_VALUE.has(id) else Color(1, 1, 1, 0.45)
 		item_labels[id].add_theme_color_override("font_color", zero_color if n == 0 else Color.WHITE)
 	var note := state.growth_note()
@@ -491,6 +535,7 @@ func _refresh_ui() -> void:
 func _refresh_tech_panel() -> void:
 	for tech in tech_cards:
 		var c: Dictionary = tech_cards[tech]
+		c["card"].visible = state.tech_visible(tech)
 		var done: bool = state.researched.has(tech)
 		var ready := state.requirements_met(tech)
 		var can := state.can_research(tech)
@@ -509,7 +554,7 @@ func _refresh_tech_panel() -> void:
 		else:
 			style.bg_color = Color("22384f")
 			style.border_color = col.darkened(0.4)
-			var missing: int = Data.TECHS[tech]["requires"].filter(func(r): return not state.researched.has(r)).size()
+			var missing := state.missing_requirements(tech)
 			c["status"].text = "Needs %d more tech%s" % [missing, "" if missing == 1 else "s"]
 		if tech == selected_tech:
 			style.border_color = Color.WHITE
@@ -525,10 +570,7 @@ func _refresh_tech_panel() -> void:
 	tech_detail["title"].text = t["name"]
 	tech_detail["title"].add_theme_color_override("font_color", _tech_color(selected_tech).lightened(0.3))
 	tech_detail["desc"].text = t["desc"]
-	var needs: Array = t["requires"].map(
-		func(r): return Data.TECHS[r]["name"] + (" (done)" if state.researched.has(r) else " (not yet)")
-	)
-	tech_detail["needs"].text = "Needs: " + (", ".join(needs) if not needs.is_empty() else "nothing, start here")
+	tech_detail["needs"].text = "Needs: " + _needs_text(selected_tech)
 	tech_detail["unlocks"].text = "Unlocks: " + _unlocks_text(selected_tech)
 	tech_detail["cost"].text = "Cost: " + _progress_text(t["cost"], 99)
 	var b: Button = tech_detail["button"]
@@ -543,6 +585,21 @@ func _refresh_tech_panel() -> void:
 		b.text = "Research " + t["name"]
 	if tech_panel.visible:
 		tech_graph.queue_redraw()
+
+
+## "Masonry (done), one of Storytelling (not yet) or Star Lore (not yet)", or "nothing, start here".
+func _needs_text(tech: String) -> String:
+	var parts: Array = Data.TECHS[tech]["requires"].map(_need_name)
+	var any: Array = _visible_any(tech).map(_need_name)
+	if any.size() == 1:
+		parts.append(any[0])
+	elif any.size() > 1:
+		parts.append("one of " + " or ".join(any))
+	return ", ".join(parts) if not parts.is_empty() else "nothing, start here"
+
+
+func _need_name(r: String) -> String:
+	return Data.TECHS[r]["name"] + (" (done)" if state.researched.has(r) else " (not yet)")
 
 
 ## "Wood 5/20, Stone 10/10": what you have toward each cost. Shows at most `limit` entries.
@@ -575,6 +632,9 @@ func _hover_text() -> String:
 		var s: String = def["name"] + "\n" + def["desc"] + "\n\nStatus: " + b["status"]
 		if state.needs_worker(b):
 			s += "\nWorker: " + ("yes" if b["worker"] >= 0 else "none, grow more Kith")
+			var speed := state.work_speed(b)
+			if speed > 1.0:
+				s += "\nWorks %d%% faster (Ochre, Standing Stones)" % roundi((speed - 1.0) * 100.0)
 		if state.buffered(b["out"]) > 0:
 			s += "\nHolding " + _cost_text(b["out"])
 		if def["kind"] == "gatherer":
@@ -616,8 +676,9 @@ func _unlocks_text(tech: String) -> String:
 			parts.append("crafting " + Data.RECIPES[r]["name"])
 	var next: Array = []
 	for t in Data.TECH_ORDER:
-		if tech in Data.TECHS[t]["requires"]:
-			next.append(Data.TECHS[t]["name"])
+		var d: Dictionary = Data.TECHS[t]
+		if state.tech_visible(t) and (tech in d["requires"] or tech in d.get("requires_any", [])):
+			next.append(d["name"])
 	var s := ", ".join(parts) if not parts.is_empty() else "nothing to build"
 	if not next.is_empty():
 		s += ". Leads to " + ", ".join(next)
@@ -743,9 +804,9 @@ func _draw() -> void:
 	for y in GameState.HEIGHT:
 		for x in GameState.WIDTH:
 			var p := Vector2i(x, y)
-			_draw_feature(state.tile_at(p), _tile_center(p), p)
+			Art.feature(self, state.tile_at(p), _tile_center(p), p, time)
 
-	# Ranges: a hut's gathering tiles, and power range for wheels.
+	# Ranges: a hut's gathering tiles, power range for wheels, Standing Stone reach.
 	var hovered_type := ""
 	if state.building_at.has(hover):
 		hovered_type = state.buildings[state.building_at[hover]]["type"]
@@ -761,6 +822,7 @@ func _draw() -> void:
 					Data.BUILDINGS["water_wheel"]["radius"] * TILE,
 					Color(0.16, 0.62, 0.56, 0.18)
 				)
+	_draw_aura_ranges(hovered_type)
 	for b in state.buildings:
 		_draw_building(b)
 	_draw_kith()
@@ -782,6 +844,17 @@ func _draw() -> void:
 		draw_string(font, pos, pop["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1, 1, 1, a))
 
 
+## A Standing Stone's reach: under the cursor while placing one, around each one while hovering one.
+func _draw_aura_ranges(hovered_type: String) -> void:
+	var radius: float = Data.BUILDINGS["standing_stone"]["radius"] * TILE
+	if placing == "standing_stone" and state.in_bounds(hover):
+		draw_circle(_tile_center(hover), radius, AURA_FILL)
+	if hovered_type == "standing_stone":
+		for b in state.buildings:
+			if b["type"] == "standing_stone":
+				draw_circle(_tile_center(b["pos"]), radius, AURA_FILL)
+
+
 ## Outline the hut's reach and light up the tiles it would gather from.
 func _draw_gather_range(p: Vector2i) -> void:
 	var r := state.hut_radius()
@@ -791,47 +864,6 @@ func _draw_gather_range(p: Vector2i) -> void:
 	for t in state.gather_tiles(p):
 		draw_rect(_tile_rect(t).grow(-3), Color(1, 0.82, 0.4, 0.35))
 		draw_rect(_tile_rect(t).grow(-3), GOAL_COLOR, false, 2.0)
-
-
-func _draw_feature(t: String, c: Vector2, p: Vector2i) -> void:
-	var jitter := Vector2(((p.x * 7 + p.y * 3) % 5) - 2, ((p.x * 3 + p.y * 5) % 5) - 2)
-	match t:
-		"tree":
-			draw_rect(Rect2(c + Vector2(-2, 2), Vector2(4, 9)), Color("6d4c41"))
-			_outlined_circle(c + Vector2(0, -3) + jitter * 0.5, 10.0, Color("2e7d32"))
-			draw_circle(c + Vector2(-3, -6) + jitter * 0.5, 3.0, Color("43a047"))
-		"rock":
-			var pts := PackedVector2Array(
-				[c + Vector2(-11, 8), c + Vector2(-8, -5), c + Vector2(0, -10), c + Vector2(9, -4), c + Vector2(11, 8)]
-			)
-			_outlined_poly(pts, Color("9e9e9e"))
-			draw_line(c + Vector2(-2, -6), c + Vector2(2, 4), Color("757575"), 2.0)
-		"gravel":
-			for i in 5:
-				draw_circle(c + Vector2((i * 11) % 20 - 10, (i * 7) % 16 - 8), 2.5, Color("4a4e69"))
-		"clay":
-			draw_circle(c + Vector2(-5, 3), 5.0, Color("a0522d"))
-			draw_circle(c + Vector2(6, -3), 4.0, Color("a0522d"))
-		"berry":
-			_outlined_circle(c + Vector2(0, 2), 10.0, Color("558b2f"))
-			for off in [Vector2(-4, -1), Vector2(3, 3), Vector2(4, -4), Vector2(-2, 6)]:
-				draw_circle(c + off, 2.5, Color("d62246"))
-		"grain":
-			for i in 4:
-				var x := -9 + i * 6
-				draw_line(c + Vector2(x, 10), c + Vector2(x + 2, -8), Color("8d6e1f"), 2.0)
-				draw_circle(c + Vector2(x + 2, -8), 2.5, Color("f2c14e"))
-		"river":
-			var w := sin(time * 2.0 + p.y * 0.9) * 3.0
-			draw_line(c + Vector2(-10 + w, -4), c + Vector2(-2 + w, -4), Color(1, 1, 1, 0.5), 2.0)
-			draw_line(c + Vector2(2 - w, 5), c + Vector2(10 - w, 5), Color(1, 1, 1, 0.5), 2.0)
-		"shard":
-			var glow := 0.35 + 0.25 * sin(time * 2.5)
-			draw_circle(c, 13.0, Color(0.6, 0.95, 1.0, glow * 0.5))
-			var pts := PackedVector2Array(
-				[c + Vector2(0, -10), c + Vector2(6, 0), c + Vector2(0, 10), c + Vector2(-6, 0)]
-			)
-			_outlined_poly(pts, Color("bdf4ff"))
 
 
 func _draw_building(b: Dictionary) -> void:
@@ -845,64 +877,16 @@ func _draw_building(b: Dictionary) -> void:
 	draw_rect(r, KITH.darkened(0.15))
 	draw_rect(r, OUTLINE, false, OUTLINE_W)
 
-	match b["type"]:
-		"camp":
-			_outlined_poly(
-				PackedVector2Array([c + Vector2(-11, 9), c + Vector2(0, -11), c + Vector2(11, 9)]), Color("f4e1c1")
-			)
-			var flame := 3.0 + sin(time * 10.0) * 1.0
-			draw_circle(c + Vector2(0, 5), flame, Color("ffb703"))
-		"charcoal_pit":
-			_outlined_circle(c + Vector2(0, 4), 9.0, Color("3d405b"))
-			if working:
-				for i in 3:
-					var t := fmod(time * 0.6 + i / 3.0, 1.0)
-					draw_circle(
-						c + Vector2(sin(t * 6.0) * 3.0, -2 - t * 12), 2.0 + t * 2.0, Color(0.8, 0.8, 0.8, 1.0 - t)
-					)
-		"twine_post":
-			draw_rect(Rect2(c + Vector2(-2, -11), Vector2(4, 20)), Color("6d4c41"))
-			_outlined_circle(c + Vector2(0, 2), 6.0, Color("bc8a5f"))
-		"gatherers_hut":
-			draw_rect(Rect2(c + Vector2(-8, -1), Vector2(16, 10)), Color("f4a261"))
-			draw_rect(Rect2(c + Vector2(-8, -1), Vector2(16, 10)), OUTLINE, false, 2.0)
-			_outlined_poly(
-				PackedVector2Array([c + Vector2(-11, 0), c + Vector2(0, -11), c + Vector2(11, 0)]), Color("e9c46a")
-			)
-		"kiln":
-			_outlined_circle(c + Vector2(0, 2), 10.0, Color("9c3d2e"))
-			draw_circle(c + Vector2(0, 5), 4.0, Color("ffb703") if working else OUTLINE)
-		"dwelling":
-			draw_rect(Rect2(c + Vector2(-9, -1), Vector2(18, 10)), Color("d4a373"))
-			draw_rect(Rect2(c + Vector2(-9, -1), Vector2(18, 10)), OUTLINE, false, 2.0)
-			_outlined_poly(
-				PackedVector2Array([c + Vector2(-12, 0), c + Vector2(0, -10), c + Vector2(12, 0)]), Color("a8dadc")
-			)
-			draw_rect(Rect2(c + Vector2(-2, 3), Vector2(4, 6)), OUTLINE)
-		"storehouse":
-			var box := Rect2(c + Vector2(-10, -8), Vector2(20, 17))
-			draw_rect(box, Color("8d6e63"))
-			draw_rect(box, OUTLINE, false, 2.0)
-			draw_line(box.position, box.end, OUTLINE, 1.5)
-			draw_line(box.position + Vector2(box.size.x, 0), box.position + Vector2(0, box.size.y), OUTLINE, 1.5)
-		"water_wheel", "grindstone":
-			var col := Color("2a9d8f") if b["type"] == "water_wheel" else Color("adb5bd")
-			var spinning: bool = b["type"] == "water_wheel" or working
-			var ang := time * 2.0 if spinning else 0.0
-			_outlined_circle(c, 11.0, col)
-			for i in 4:
-				var a := ang + i * PI / 4.0
-				draw_line(c - Vector2.from_angle(a) * 10.0, c + Vector2.from_angle(a) * 10.0, OUTLINE, 2.0)
-			draw_circle(c, 3.0, OUTLINE)
+	Art.building(self, b["type"], c, working, time)
 
 	# Progress bar and held output.
 	if def.has("time") and working:
-		var frac: float = b["progress"] / def["time"]
+		var frac := state.progress_frac(b)
 		draw_rect(Rect2(r.position + Vector2(2, r.size.y - 5), Vector2((r.size.x - 4) * frac, 3)), Color("ffd166"))
 	var held := state.buffered(b["out"])
 	if held > 0:
 		var badge := r.position + Vector2(r.size.x - 2, 2)
-		_outlined_circle(badge, 7.0, Color("ffd166") if held < Data.BUFFER_CAP else Color("ef476f"))
+		Art.outlined_circle(self, badge, 7.0, Color("ffd166") if held < Data.BUFFER_CAP else Color("ef476f"))
 		draw_string(
 			ThemeDB.fallback_font,
 			badge + Vector2(-4 if held < 10 else -7, 4),
@@ -929,7 +913,7 @@ func _draw_kith() -> void:
 			continue  # inside their building
 		var bob := sin(time * 12.0 + c.x) * 1.5 if not k["path"].is_empty() else 0.0
 		c += Vector2(0, bob)
-		_outlined_circle(c, 5.0, KITH.lightened(0.25) if k["job"] == "haul" else KITH)
+		Art.outlined_circle(self, c, 5.0, KITH.lightened(0.25) if k["job"] == "haul" else KITH)
 		for id in k["carry"]:
 			draw_rect(Rect2(c + Vector2(-4, -13), Vector2(8, 7)), Data.ITEMS[id]["color"])
 			draw_rect(Rect2(c + Vector2(-4, -13), Vector2(8, 7)), OUTLINE, false, 1.5)
@@ -951,15 +935,3 @@ func _draw_roads() -> void:
 				var half := Vector2(n) * TILE * 0.5
 				var w := Vector2(absf(n.y), absf(n.x)) * 8.0
 				draw_colored_polygon(PackedVector2Array([c - w, c + w, c + half + w, c + half - w]), dirt)
-
-
-func _outlined_circle(c: Vector2, radius: float, color: Color) -> void:
-	draw_circle(c, radius, color)
-	draw_arc(c, radius, 0, TAU, 24, OUTLINE, 2.0, true)
-
-
-func _outlined_poly(pts: PackedVector2Array, color: Color) -> void:
-	draw_colored_polygon(pts, color)
-	var closed := pts.duplicate()
-	closed.append(pts[0])
-	draw_polyline(closed, OUTLINE, 2.0, true)

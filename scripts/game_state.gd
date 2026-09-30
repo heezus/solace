@@ -22,6 +22,8 @@ var food_use := 0.0  # food eaten per second right now
 var seen: Dictionary = {}  # items the player has ever held, so the top bar keeps showing them
 var goals_done: Dictionary = {}
 var roads: Dictionary = {}  # Vector2i -> true
+var fields: Dictionary = {}  # Vector2i -> true, grain tiles the Kith sowed
+var shard_seen := false  # the player has clicked the Strange Stone, revealing hidden techs
 ## The Kith, each a person on the map:
 ## {pos: Vector2 (tile coords), path: Array of Vector2i, job: "" | "work" | "haul", building: int,
 ##  phase: String, timer: float, carry: Dictionary, task: Dictionary}
@@ -170,13 +172,21 @@ func carry_cap() -> int:
 
 func food_value(id: String) -> float:
 	if id == "flour" and researched.has("baking"):
-		return 5.0
+		return Data.BAKED_FLOUR_FOOD
+	if id == "berries" and researched.has("smoking"):
+		return Data.SMOKED_BERRY_FOOD
 	return Data.FOOD_VALUE[id]
+
+
+## Seconds between births. Storytelling shortens it.
+func _grow_time() -> float:
+	return Data.GROW_TIME * (Data.STORYTELLING_GROW if researched.has("storytelling") else 1.0)
 
 
 func gather_by_hand(p: Vector2i) -> String:
 	var tile := tile_at(p)
 	if tile == "shard":
+		shard_seen = true
 		return Data.SHARD_TEXT
 	if tile == "":
 		return ""
@@ -191,11 +201,26 @@ func gather_by_hand(p: Vector2i) -> String:
 # --- Tech --------------------------------------------------------------------
 
 
-func requirements_met(tech: String) -> bool:
-	for r in Data.TECHS[tech]["requires"]:
+## Hidden techs (Star Lore) only show once the Strange Stone has been clicked.
+func tech_visible(tech: String) -> bool:
+	return shard_seen or not Data.TECHS[tech].get("hidden", false)
+
+
+## How many requirements are still open. A `requires_any` list counts as one.
+func missing_requirements(tech: String) -> int:
+	var t: Dictionary = Data.TECHS[tech]
+	var n := 0
+	for r in t["requires"]:
 		if not researched.has(r):
-			return false
-	return true
+			n += 1
+	var any: Array = t.get("requires_any", [])
+	if not any.is_empty() and not any.any(func(r): return researched.has(r)):
+		n += 1
+	return n
+
+
+func requirements_met(tech: String) -> bool:
+	return tech_visible(tech) and missing_requirements(tech) == 0
 
 
 func can_research(tech: String) -> bool:
@@ -207,9 +232,8 @@ func research(tech: String) -> bool:
 		return false
 	pay(Data.TECHS[tech]["cost"])
 	researched[tech] = true
-	if tech == "paved_roads":
-		for p in roads:
-			_update_walk_cell(p)
+	if tech in ["paved_roads", "rafts"]:
+		_refresh_walk_grid()
 	events.append("Discovered %s" % Data.TECHS[tech]["name"])
 	if tech == "bronze_dawn":
 		won = true
@@ -264,6 +288,8 @@ func placement_error(type: String, p: Vector2i) -> String:
 		return "Build on open grassland"
 	if def.get("needs_river", false) and not touches_river(p):
 		return "Must touch the river"
+	if def.get("needs_shard", false) and not _touches(p, "shard"):
+		return "Must go next to the Strange Stone"
 	if not can_afford(def["cost"]):
 		return "Not enough materials"
 	return ""
@@ -278,6 +304,7 @@ func place(type: String, p: Vector2i) -> bool:
 		_update_walk_cell(p)
 	elif Data.BUILDINGS[type]["kind"] == "field":
 		_set_tile(p, "grain")
+		fields[p] = true
 		_update_walk_cell(p)
 	else:
 		_place_building(type, p)
@@ -298,6 +325,7 @@ func _place_building(type: String, p: Vector2i) -> void:
 		"claimed": false,  # a hauler is on its way to empty it
 		"incoming": {},  # inputs haulers are carrying here
 		"unreachable": 0.0,  # seconds left to show "can't reach"
+		"field_extra": 0.0,  # Calendar's part-item bonus from Fields, paid out once it reaches 1
 	}
 	if Data.BUILDINGS[type]["kind"] == "gatherer":
 		for t in gather_tiles(p):
@@ -321,19 +349,75 @@ func gather_tiles(p: Vector2i) -> Array:
 
 
 func touches_river(p: Vector2i) -> bool:
+	return _touches(p, "river")
+
+
+## True if a tile beside p (not diagonal) is `tile`.
+func _touches(p: Vector2i, tile: String) -> bool:
 	for n in NEIGHBORS:
-		if tile_at(p + n) == "river":
+		if tile_at(p + n) == tile:
 			return true
 	return false
 
 
 func is_powered(p: Vector2i) -> bool:
+	return _in_range_of("power", p)
+
+
+## True if p is within the radius of any building of this kind.
+func _in_range_of(kind: String, p: Vector2i) -> bool:
 	for b in buildings:
 		var def: Dictionary = Data.BUILDINGS[b["type"]]
 		var bp: Vector2i = b["pos"]
-		if def["kind"] == "power" and Vector2(bp).distance_to(Vector2(p)) <= def["radius"]:
+		if def["kind"] == kind and Vector2(bp).distance_to(Vector2(p)) <= def["radius"]:
 			return true
 	return false
+
+
+## How fast a building's worker works: Ochre speeds huts, a Standing Stone speeds everything near it.
+func work_speed(b: Dictionary) -> float:
+	var speed := 1.0
+	if Data.BUILDINGS[b["type"]]["kind"] == "gatherer" and researched.has("ochre"):
+		speed *= Data.OCHRE_SPEED
+	if _in_range_of("aura", b["pos"]):
+		speed *= Data.STANDING_STONE_SPEED
+	return speed
+
+
+## Seconds for one work cycle at this building.
+func _work_time(b: Dictionary) -> float:
+	return Data.BUILDINGS[b["type"]]["time"] / work_speed(b)
+
+
+## Seconds for a hut worker to harvest `tile`. Irrigation halves it for Fields touching the river.
+func _harvest_time(b: Dictionary, tile: Vector2i) -> float:
+	var t := _work_time(b)
+	if researched.has("irrigation") and fields.has(tile) and touches_river(tile):
+		t /= 2.0
+	return t
+
+
+## How much one harvest of `tile` brings back. Stone Axe doubles Wood; Calendar adds a quarter
+## to Fields, paid out as whole items as the building's share builds up.
+func _harvest_amount(b: Dictionary, tile: Vector2i, item: String) -> int:
+	var n := _gather_mult(item)
+	if item == "wood" and researched.has("stone_axe"):
+		n *= 2
+	if fields.has(tile) and researched.has("calendar"):
+		b["field_extra"] = b.get("field_extra", 0.0) + n * Data.CALENDAR_FIELD_BONUS
+		if b["field_extra"] >= 1.0:
+			b["field_extra"] -= 1.0
+			n += 1
+	return n
+
+
+## 0 to 1: how far along the current work cycle is, for the progress bar.
+func progress_frac(b: Dictionary) -> float:
+	if Data.BUILDINGS[b["type"]]["kind"] == "gatherer" and b["worker"] >= 0:
+		var k: Dictionary = kith[b["worker"]]
+		var tile: Vector2i = k["task"].get("tile", b["pos"])
+		return clampf(k["timer"] / _harvest_time(b, tile), 0.0, 1.0)
+	return clampf(b["progress"] / _work_time(b), 0.0, 1.0)
 
 
 func buffered(dict: Dictionary) -> int:
@@ -374,6 +458,10 @@ func _build_walk_grid() -> void:
 	astar.cell_size = Vector2.ONE
 	astar.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_ONLY_IF_NO_OBSTACLES
 	astar.update()
+	_refresh_walk_grid()
+
+
+func _refresh_walk_grid() -> void:
 	for y in HEIGHT:
 		for x in WIDTH:
 			_update_walk_cell(Vector2i(x, y))
@@ -381,11 +469,11 @@ func _build_walk_grid() -> void:
 
 func _update_walk_cell(p: Vector2i) -> void:
 	var t := tile_at(p)
-	astar.set_point_solid(p, t == "river" and not roads.has(p))
+	astar.set_point_solid(p, t == "river" and not roads.has(p) and not researched.has("rafts"))
 	astar.set_point_weight_scale(p, walk_cost(p))
 
 
-## Relative time to cross a tile: roads are fast, forest and rocks are slow.
+## Relative time to cross a tile: roads are fast, forest and rocks are slow, rafting a river slower.
 func walk_cost(p: Vector2i) -> float:
 	if roads.has(p):
 		return Data.WALK_COST["road"] / (2.0 if researched.has("paved_roads") else 1.0)
@@ -545,7 +633,7 @@ func _grow(delta: float, fed: bool) -> void:
 		grow_timer = 0.0
 		return
 	grow_timer += delta
-	if grow_timer >= Data.GROW_TIME:
+	if grow_timer >= _grow_time():
 		grow_timer = 0.0
 		_eat(Data.BIRTH_FOOD)
 		_add_kith()
@@ -555,7 +643,7 @@ func _grow(delta: float, fed: bool) -> void:
 ## Why the population isn't growing, for the UI. "" when it is.
 func growth_note() -> String:
 	if starving:
-		return "Starving: no berries or flour"
+		return "Starving: no food"
 	if kith.size() >= housing():
 		return "No room: build a Dwelling"
 	if food_total() < kith.size() * 2 + Data.BIRTH_FOOD:
@@ -576,7 +664,7 @@ func tick(delta: float) -> void:
 	_grow(delta, fed)
 
 	for g in Data.GOALS:
-		if not goals_done.has(g["id"]) and goal_met(g["id"]):
+		if not goals_done.has(g["id"]) and goal_met(g):
 			goals_done[g["id"]] = true
 
 	if fed:
@@ -595,16 +683,22 @@ func tick(delta: float) -> void:
 
 func _eat(need: float) -> bool:
 	while food_credit < need:
-		if inv.get("berries", 0) > 0:
-			inv["berries"] -= 1
-			food_credit += food_value("berries")
-		elif inv.get("flour", 0) > flour_reserve():
-			inv["flour"] -= 1
-			food_credit += food_value("flour")
-		else:
+		var id := _next_food()
+		if id == "":
 			return false
+		inv[id] -= 1
+		food_credit += food_value(id)
 	food_credit -= need
 	return true
+
+
+## The first food in eating order the stockpile can spare, or "" if none.
+func _next_food() -> String:
+	for id in Data.EAT_ORDER:
+		var keep := flour_reserve() if id == "flour" else 0
+		if inv.get(id, 0) > keep:
+			return id
+	return ""
 
 
 ## A worker walks to their building. Hut workers then walk out to each resource tile and carry it home.
@@ -631,14 +725,12 @@ func _tick_worker(k: Dictionary, delta: float) -> void:
 			if _step(k, delta):
 				k["phase"] = "harvest"
 		"harvest":
+			var tile: Vector2i = k["task"].get("tile", b["pos"])
 			k["timer"] += delta
-			b["progress"] = k["timer"]
-			if k["timer"] >= def["time"]:
+			if k["timer"] >= _harvest_time(b, tile):
 				k["timer"] = 0.0
-				b["progress"] = 0.0
-				var tile: Vector2i = k["task"].get("tile", b["pos"])
 				var item: String = Data.TILES[tile_at(tile)]["yields"] if tile != b["pos"] else "fiber"
-				k["carry"] = {item: _gather_mult(item)}
+				k["carry"] = {item: _harvest_amount(b, tile, item)}
 				k["task"] = {}
 				_walk_to(k, b["pos"])
 				k["phase"] = "to_home"
@@ -778,51 +870,34 @@ func flour_reserve() -> int:
 # --- Goals -------------------------------------------------------------------
 
 
-func has_building(type: String) -> bool:
+func _has_building(type: String) -> bool:
 	for b in buildings:
 		if b["type"] == type:
 			return true
 	return false
 
 
-func goal_met(id: String) -> bool:
-	match id:
+## A goal is met when its `tech` is researched or its `building` stands; the rest are checked by id.
+func goal_met(g: Dictionary) -> bool:
+	if g.has("tech"):
+		return researched.has(g["tech"])
+	if g.has("building"):
+		return _has_building(g["building"])
+	match g["id"]:
 		"gather":
 			return inv["wood"] >= 10 and inv["stone"] >= 10 and inv["flint"] >= 5 or researched.has("knapping")
-		"knapping":
-			return researched.has("knapping")
 		"tools":
 			return inv.get("flint_tools", 0) > 0
-		"hut_tech":
-			return researched.has("gatherers_hut")
-		"hut":
-			return has_building("gatherers_hut")
 		"berries":
 			for b in buildings:
 				if "berries" in b["gather_items"]:
 					return true
-			return false
-		"dwelling":
-			return has_building("dwelling")
 		"road":
 			return roads.size() >= 5
-		"charcoal":
-			return has_building("charcoal_pit")
-		"twine":
-			return has_building("twine_post")
-		"haulers":
-			return researched.has("haulers")
-		"kiln":
-			return has_building("kiln")
-		"wheel":
-			return has_building("water_wheel")
 		"grind":
 			for b in buildings:
 				if b["type"] == "grindstone" and is_powered(b["pos"]):
 					return true
-			return false
-		"bronze":
-			return won
 	return false
 
 
@@ -857,13 +932,13 @@ func _worker_home(b: Dictionary) -> bool:
 func _tick_building(b: Dictionary, delta: float, fed: bool) -> void:
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
 	if not needs_worker(b):
-		b["status"] = def["desc"]
+		b["status"] = def.get("status", def["desc"])
 		return
 	if b["worker"] < 0:
 		b["status"] = "No worker: more Kith needed (they grow with food and Dwellings)"
 		return
 	if not fed:
-		b["status"] = "Hungry: bring berries or flour"
+		b["status"] = "Hungry: bring food (berries, fish or flour)"
 		return
 	if b["unreachable"] > 0.0:
 		b["status"] = "The Kith can't reach it. Lay a Road across the river"
@@ -891,7 +966,7 @@ func _tick_building(b: Dictionary, delta: float, fed: bool) -> void:
 		return
 	b["status"] = "Working"
 	b["progress"] += delta
-	if b["progress"] < def["time"]:
+	if b["progress"] < _work_time(b):
 		return
 	b["progress"] = 0.0
 	for id in def["in"]:
