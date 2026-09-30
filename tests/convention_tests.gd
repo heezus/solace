@@ -20,6 +20,7 @@ func run(runner) -> void:
 	test_pause_frees_the_worker()
 	test_dwellings_stay_near_the_hearth()
 	test_roads_dont_cross_rivers()
+	test_roads_cut_mountain_passes()
 	test_fog_lifts_around_buildings_and_kith()
 	test_rates_count_making_and_using()
 	test_research_board_lines_stay_in_channels()
@@ -120,6 +121,30 @@ func test_roads_dont_cross_rivers() -> void:
 	t.check(s.astar.is_point_solid(river), "the river still blocks walking")
 	var line := Rules.line_tiles(Vector2i(2, 3), Vector2i(5, 1))
 	t.check(line.size() == 6 and line[0] == Vector2i(2, 3) and line[5] == Vector2i(5, 1), "a drag covers an L of tiles")
+
+
+func test_roads_cut_mountain_passes() -> void:
+	var s: GameState = t.fresh()
+	var rock: Vector2i = t.find_tile(s, "rock")
+	s.researched["haulers"] = true
+	s.inv["stone"] = 2
+	t.check(s.placement_error("road", rock) == "Not enough materials", "a pass costs more than a road")
+	s.inv["stone"] = 5
+	t.check(Overlays.blocked_hint(s, rock) == "Cut a pass with a Road (3 Stone)", "rocks say how to get through")
+	var river: Vector2i = t.find_tile(s, "river")
+	t.check(
+		Overlays.blocked_hint(s, river) == "Cross with a Wooden Bridge (Paths & Haulers)", "the river says how to cross"
+	)
+	t.check(s.place("road", rock), "a road goes down on Rocks")
+	t.check(s.inv["stone"] == 2, "for 3 Stone")
+	t.check(s.tile_at(rock) == "grass", "and clears the rock into a pass")
+	t.check(s.roads.has(rock), "with a road through it")
+	t.check(is_equal_approx(s.walk_cost(rock), Data.WALK_COST["road"]), "which walks like any road")
+	var grass: Vector2i = s.camp_pos + Vector2i(0, 2)
+	t.check(s.place("road", grass), "a road by the Hearth")
+	t.check(s.inv["stone"] == 1, "a road on grass still costs 1 Stone")
+	var line: Array = [grass + Vector2i(1, 0), grass + Vector2i(2, 0)]
+	t.check(Overlays.line_text(s, "road", line).begins_with("Road: "), "a drag's pill counts the tiles")
 
 
 func test_fog_lifts_around_buildings_and_kith() -> void:

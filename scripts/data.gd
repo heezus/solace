@@ -59,6 +59,9 @@ const CARRY := 5
 ## Path cost of each tile kind. Rivers are impassable without a Wooden Bridge, or slow once Rafts are known.
 const WALK_COST := {"tree": 2.0, "rock": 2.0, "road": 0.5, "river": 4.0}
 
+## A Road laid on Rocks cuts a mountain pass: it costs this instead, and the rock is cleared.
+const PASS_COST := {"stone": 3}
+
 ## Dwellings must stand within this many tiles of the Hearth (the Camp), where the Kith are born.
 const HEARTH_RADIUS := 6.0
 
@@ -632,7 +635,11 @@ const BUILDINGS := {
 		"tech": "haulers",
 		"cost": {"stone": 1},
 		"color": Color("c8a36a"),
-		"desc": "Kith walk twice as fast on roads. Roads can't cross the river: build a Wooden Bridge. Drag to lay.",
+		"desc":
+		(
+			"Kith walk twice as fast on roads. On Rocks, a Road cuts a pass for 3 Stone."
+			+ " Roads can't cross the river: build a Wooden Bridge. Drag to lay."
+		),
 	},
 	"bridge":
 	{

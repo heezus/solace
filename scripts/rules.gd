@@ -65,3 +65,10 @@ static func visible_techs(shard_seen: bool) -> Dictionary:
 		if shard_seen or not Data.TECHS[tech].get("hidden", false):
 			out[tech] = true
 	return out
+
+
+## What building `type` costs on a tile: a Road on Rocks cuts a pass for PASS_COST.
+static func cost_at(type: String, tile: String) -> Dictionary:
+	if Data.BUILDINGS[type]["kind"] == "road" and tile == "rock":
+		return Data.PASS_COST
+	return Data.BUILDINGS[type]["cost"]

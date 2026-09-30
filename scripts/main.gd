@@ -13,6 +13,7 @@ const Research = preload("res://scripts/research.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
 const Overlays = preload("res://scripts/overlays.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
+const Rules = preload("res://scripts/rules.gd")
 
 const TILE := 32.0
 const MAP_ORIGIN := Vector2.ZERO  # the node's transform scales and centers the map
@@ -24,11 +25,13 @@ const BAD := Color("ef476f")
 const GOOD := Color("80ed99")
 const GOAL_COLOR := Color("ffd166")
 const FOG := Color("2c3834")
+const LINE_TYPES := ["road", "bridge", "field"]  # laid by dragging
 const AURA_FILL := Color(0.55, 0.45, 0.6, 0.2)
 
 var state: GameState
 var placing := ""  # building type being placed, "" when not placing
 var hover := Vector2i(-1, -1)
+var drag_from := Vector2i(-1, -1)  # where a road, bridge or field drag started
 var time := 0.0
 var popups: Array = []  # {pos: Vector2, text: String, t: float}
 var rubble: Array = []  # {pos: Vector2i, t: float}, torn-down buildings fading out
@@ -116,21 +119,20 @@ func _layout() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if (
-		event is InputEventMouseMotion
-		and placing in ["road", "bridge", "field"]
-		and event.button_mask & MOUSE_BUTTON_MASK_LEFT
-	):
-		var p := _tile_under()
-		if state.placement_error(placing, p) == "":
-			state.place(placing, p)
+	if event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if drag_from.x >= 0:
+			_lay_line()
 	elif event is InputEventMouseButton and event.pressed:
 		var p := _tile_under()
 		if event.button_index == MOUSE_BUTTON_RIGHT:
 			placing = ""
+			drag_from = Vector2i(-1, -1)
 			building_panel.select(Vector2i(-1, -1))
 		elif event.button_index == MOUSE_BUTTON_LEFT and state.in_bounds(p):
-			_click_tile(p)
+			if placing in LINE_TYPES:
+				drag_from = p  # laid on release, with a preview while dragging
+			else:
+				_click_tile(p)
 	elif event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:
 			KEY_T:
@@ -155,6 +157,23 @@ func _set_speed(v: int) -> void:
 		speed = v
 		paused = false
 	_refresh_ui()
+
+
+## The tiles the current drag covers, ending under the mouse (kept on the map).
+func _drag_line() -> Array:
+	var end := _tile_under().clamp(Vector2i.ZERO, Vector2i(GameState.WIDTH - 1, GameState.HEIGHT - 1))
+	return Rules.line_tiles(drag_from, end)
+
+
+## Release: lay the dragged road, bridge or fields on every tile that takes it.
+func _lay_line() -> void:
+	var line := _drag_line()
+	drag_from = Vector2i(-1, -1)
+	if placing not in LINE_TYPES:
+		return
+	var err := state.placement_error(placing, line[0])
+	if state.place_line(placing, line) == 0 and err != "":
+		_toast(err, 2.0)
 
 
 func _tile_under() -> Vector2i:
@@ -332,7 +351,7 @@ func _hover_text() -> String:
 		var def: Dictionary = Data.BUILDINGS[placing]
 		var s := "Placing %s. Left-click open grassland, right-click to stop." % def["name"]
 		if def["kind"] in ["road", "bridge", "field"]:
-			s = "Laying %s: click or drag. Right-click to stop." % def["name"]
+			s = "Laying %s: click, or drag and release to lay a line. Right-click to stop." % def["name"]
 		s += "\nCost: " + (_progress(def["cost"], 99) if not def["cost"].is_empty() else "free")
 		if state.in_bounds(hover):
 			var err := state.placement_error(placing, hover)
@@ -359,13 +378,16 @@ func _hover_text() -> String:
 		return s + "\n\nClick for its panel."
 	var t: Dictionary = Data.TILES[state.tile_at(hover)]
 	if state.roads.has(hover):
+		if state.tile_at(hover) == "river":
+			return "Wooden Bridge. Kith and haulers cross the river here."
 		return "Road on %s. Kith walk twice as fast here." % t["name"]
+	var hint := Overlays.blocked_hint(state, hover)
 	if t["yields"] != "":
 		var s := "%s\nClick to gather %s." % [t["name"], Data.ITEMS[t["yields"]]["name"]]
 		if Data.FOOD_VALUE.has(t["yields"]):
 			s += " It's food: running buildings eat it."
-		return s
-	return t["name"]
+		return s + ("\n" + hint + "." if hint != "" else "")
+	return t["name"] + ("\n" + hint + "." if hint != "" else "")
 
 
 func _progress(cost: Dictionary, limit: int) -> String:
@@ -446,8 +468,21 @@ func _draw() -> void:
 	# Placement ghost.
 	if placing == "demolish" and state.in_bounds(hover):
 		Overlays.demolish_hover(self, state, hover)
+	elif placing in LINE_TYPES and drag_from.x >= 0:
+		Overlays.line_ghost(self, state, placing, _drag_line())
 	elif placing != "" and state.in_bounds(hover):
-		Overlays.placement_ghost(self, state, placing, hover)
+		var note := ""
+		if Data.BUILDINGS[placing]["kind"] in ["gatherer", "processor"]:
+			note = BuildingPanel.trip_text(state, hover)
+		elif placing == "road" and state.tile_at(hover) == "rock":
+			note = "Cut a pass · %s" % Ui.cost_text(Data.PASS_COST)
+		Overlays.placement_ghost(self, state, placing, hover, note)
+	elif state.in_bounds(hover) and state.fog.is_revealed(hover) and Overlays.blocked_hint(state, hover) != "":
+		draw_rect(_tile_rect(hover).grow(-1), Color(1, 1, 1, 0.8), false, 2.0)
+		var r := _tile_rect(hover)
+		Art.pill(
+			self, Vector2(r.get_center().x, r.end.y + 4), Overlays.blocked_hint(state, hover), Color.WHITE, OUTLINE, 12
+		)
 	elif state.in_bounds(hover):
 		draw_rect(_tile_rect(hover).grow(-1), Color(1, 1, 1, 0.8), false, 2.0)
 
@@ -556,6 +591,10 @@ func _draw_roads() -> void:
 	for p in state.roads:
 		var c := _tile_center(p)
 		if state.tile_at(p) == "river":
+			var bridge := Art.sprite("tile_bridge_wood")
+			if bridge != null:
+				draw_texture_rect(bridge, _tile_rect(p), false)
+				continue
 			draw_rect(_tile_rect(p).grow_individual(0, -5, 0, -5), Color("8d6e63"))
 			for i in 4:
 				var x := _tile_rect(p).position.x + 4 + i * 8

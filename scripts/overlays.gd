@@ -173,7 +173,7 @@ static func ghost_text(type: String, err: String) -> String:
 
 ## The ghost of the building being placed: its sprite over a green or alert tint, and a pill
 ## saying why when the spot won't do.
-static func placement_ghost(ci: CanvasItem, s, type: String, p: Vector2i) -> void:
+static func placement_ghost(ci: CanvasItem, s, type: String, p: Vector2i, note: String) -> void:
 	var err: String = s.placement_error(type, p)
 	var r := rect(p)
 	ci.draw_rect(r.grow(-2), Color(0.3, 1, 0.4, 0.4) if err == "" else Color(ALERT, 0.45))
@@ -183,3 +183,56 @@ static func placement_ghost(ci: CanvasItem, s, type: String, p: Vector2i) -> voi
 	ci.draw_rect(r.grow(-2), OUTLINE if err == "" else ALERT, false, 2.0)
 	if err != "":
 		Art.pill(ci, Vector2(r.get_center().x, r.end.y + 4), ghost_text(type, err), ALERT, Color.WHITE, 12)
+	elif note != "":
+		Art.pill(ci, Vector2(r.get_center().x, r.end.y + 4), note, Color.WHITE, OUTLINE, 12)
+
+
+## "Road: 7 tiles · 7 Stone · release to lay" for a drag over `tiles`, counting only those it can go on.
+static func line_text(s, type: String, tiles: Array) -> String:
+	var total := {}
+	var n := 0
+	for p in tiles:
+		if s.placement_error(type, p) != "":
+			continue
+		n += 1
+		var cost := Rules.cost_at(type, s.tile_at(p))
+		for id in cost:
+			total[id] = total.get(id, 0) + cost[id]
+	var name: String = Data.BUILDINGS[type]["name"]
+	if n == 0:
+		return "%s: nowhere to lay here" % name
+	var text := (
+		"%s: %d tile%s · %s" % [name, n, "" if n == 1 else "s", Ui.cost_text(total) if not total.is_empty() else "free"]
+	)
+	if not s.can_afford(total):
+		return text + " · you have enough for part of it"
+	return text + " · release to lay"
+
+
+## Dragging a road, bridge or fields: a white ghost over each tile it can go on, alert on the rest,
+## a dashed cursor tile at the end and a pill with the count and cost.
+static func line_ghost(ci: CanvasItem, s, type: String, tiles: Array) -> void:
+	for p in tiles:
+		var r := rect(p)
+		if s.placement_error(type, p) == "":
+			ci.draw_rect(r.grow(-3), Color(OUTLINE, 0.35))
+			ci.draw_rect(r.grow(-7), Color(1, 1, 1, 0.55))
+		else:
+			ci.draw_rect(r.grow(-3), Color(ALERT, 0.45))
+	var end: Vector2i = tiles[tiles.size() - 1]
+	Art.dashed_rect(ci, rect(end).grow(-1), Color.WHITE, 2.0, 5.0, 4.0)
+	Art.pill(
+		ci, Vector2(rect(end).get_center().x, rect(end).end.y + 4), line_text(s, type, tiles), Color.WHITE, OUTLINE, 12
+	)
+
+
+## Hovering a tile nothing can be built on yet says how to get past it.
+static func blocked_hint(s, p: Vector2i) -> String:
+	match s.tile_at(p):
+		"river":
+			if s.roads.has(p):
+				return ""
+			return "Cross with a Wooden Bridge (Paths & Haulers)"
+		"rock":
+			return "Cut a pass with a Road (%d Stone)" % Data.PASS_COST["stone"]
+	return ""
