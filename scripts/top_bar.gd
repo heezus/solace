@@ -417,7 +417,7 @@ func _maker_name(source: String, id: String) -> String:
 			return "Crafted by hand"
 	var n := 0
 	for b in state.town.buildings:
-		if b["type"] == source and (id in b["gather_items"] or Data.BUILDINGS[source].get("out", {}).has(id)):
+		if b["type"] == source and (id == b["focus"] or Data.BUILDINGS[source].get("out", {}).has(id)):
 			n += 1
 	var title := _type_name(source)
 	return "%d %ss" % [n, title] if n > 1 else title

@@ -24,6 +24,7 @@ const HoverText = preload("res://scripts/hover_text.gd")
 const Messages = preload("res://scripts/messages.gd")
 const ToastStack = preload("res://scripts/toast_stack.gd")
 const MessageLog = preload("res://scripts/message_log.gd")
+const HutFocus = preload("res://scripts/hut_focus.gd")
 
 const TILE := 32.0
 const MAP_ORIGIN := Vector2.ZERO  # the node's transform scales and centers the map
@@ -575,6 +576,8 @@ func _draw_building(b: Dictionary) -> void:
 	draw_rect(r, OUTLINE, false, OUTLINE_W)
 
 	Art.building(self, b["type"], c, working, time)
+	if def["kind"] == "gatherer":
+		HutFocus.draw_marker(self, r, b["focus"])
 
 	# Progress bar and held output.
 	if def.has("time") and working:

@@ -4,6 +4,8 @@ extends RefCounted
 ## to send. It doesn't plan ahead, craft for later or read the rest of the game. The one thing it reacts to
 ## besides the goals is the food warning: while the warning is up it holds on Berry Bushes, as any player who
 ## read the toast would. Otherwise it idles (a goal it can't do leaves it idle).
+## It also keeps clicking its Berry hut, the one the goal called the food, whenever the trip pips run out, as
+## the hut panel says. It records what every hut's worker carries out (`gathered`) and the least food it ever held.
 ## The `idler` variant does nothing at all. tests/newcomer_tests.gd plays both and checks that the Kith stay
 ## fed, or that a warning came before anyone left.
 
@@ -41,10 +43,13 @@ var warned_at := -1.0  # when the food warning first came, -1 if it never did
 var left_at := -1.0  # when the first Kith left, -1 if none did
 var left := 0  # how many left
 var min_kith := 0  # the fewest Kith alive at any time
+var min_food := INF  # the least food (in food units) the stockpile ever held
+var gathered := {}  # hut tile -> {item: how many its worker carried out}, counted once per bundle picked up
 var hold_tile := Vector2i(-1, -1)
 var trips_sent := 0
 var reading := 0.0  # seconds still spent reading the panel: hands off the mouse
 var _reading_for := ""  # what the player last read: a goal id, or "warning"
+var _carrying := {}  # hut tile -> its worker was carrying something at the last step
 
 
 func play(map_seed: int, seconds: float) -> void:
@@ -73,6 +78,8 @@ func step() -> void:
 	s.events.clear()
 	clock += DT
 	min_kith = mini(min_kith, s.people.kith.size())
+	min_food = minf(min_food, s.economy.food_total())
+	_watch_huts()
 	if idler:
 		return
 	think -= DT
@@ -88,7 +95,31 @@ func step() -> void:
 			s.hold_harvest(hold_tile, DT)
 
 
+## Note each new bundle a hut's worker picks up, by item.
+func _watch_huts() -> void:
+	for b in s.town.buildings:
+		if Data.BUILDINGS[b["type"]]["kind"] != "gatherer" or b["worker"] < 0:
+			continue
+		var carry: Dictionary = s.people.kith[b["worker"]]["carry"]
+		if not carry.is_empty() and not _carrying.get(b["pos"], false):
+			var got: Dictionary = gathered.get(b["pos"], {})
+			for id in carry:
+				got[id] = got.get(id, 0) + carry[id]
+			gathered[b["pos"]] = got
+		_carrying[b["pos"]] = not carry.is_empty()
+
+
+## Click the Berry hut when it has no trip queued: the food hut is worth a click, as its panel says.
+func _tend_food_hut() -> void:
+	for i in s.town.buildings.size():
+		var b: Dictionary = s.town.buildings[i]
+		if b["focus"] == "berries" and b["worker"] >= 0 and b["trips"] == 0 and s.people.knows_focus(b):
+			Workers.click(s, i)
+			return
+
+
 func _decide() -> void:
+	_tend_food_hut()
 	if s.economy.low:  # the warning is up: hold on the berries until it goes down
 		_read("warning")
 		_hold_on("berries")
@@ -205,10 +236,13 @@ func _site(type: String, near: String) -> Vector2i:
 	return best
 
 
+## Would a hut at p be beside what the goal names? A hut works the resource nearest it, so "right beside
+## Berry Bushes" means the bushes are what it would start on.
 func _gathers(p: Vector2i, near: String) -> bool:
-	var kinds := [near] if near != "" else HUT_TILES
+	if near != "":
+		return s.town.default_focus(p) == Data.TILES[near]["yields"]
 	for t in s.town.gather_tiles(p):
-		if s.world.tile_at(t) in kinds:
+		if s.world.tile_at(t) in HUT_TILES:
 			return true
 	return false
 
@@ -232,7 +266,7 @@ func _gather_for(cost: Dictionary) -> void:
 func _send_trip() -> void:
 	for i in s.town.buildings.size():
 		var b: Dictionary = s.town.buildings[i]
-		if Data.BUILDINGS[b["type"]]["kind"] == "gatherer" and b["worker"] >= 0 and s.people.knows_any(b["pos"]):
+		if Data.BUILDINGS[b["type"]]["kind"] == "gatherer" and b["worker"] >= 0 and s.people.knows_focus(b):
 			Workers.click(s, i)
 			trips_sent += 1
 			return

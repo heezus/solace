@@ -348,19 +348,19 @@ func test_job_titles() -> void:
 	for type in Data.BUILDINGS:
 		var def: Dictionary = Data.BUILDINGS[type]
 		if def["kind"] in ["processor", "gatherer"]:
-			var b := {"type": type, "gather_items": []}
+			var b := {"type": type, "gather_items": [], "focus": ""}
 			var job := s.people.building_job(b)
 			t.check(job != "" and job != Data.JOB_IDLE, "%s's worker has a job title (%s)" % [type, job])
 	for tile in Data.TILES:
 		var item: String = Data.TILES[tile]["yields"]
 		if item != "":
 			t.check(Data.HUT_JOBS.has(item), "a hut gathering %s has a job title" % item)
-			var b := {"type": "gatherers_hut", "gather_items": [item, item, "fiber"]}
+			var b := {"type": "gatherers_hut", "gather_items": [item, item, "fiber"], "focus": ""}
 			t.check(
 				s.people.building_job(b) == Data.HUT_JOBS[item]["title"],
 				"a hut takes the title of what it gathers most"
 			)
-	var mixed := {"type": "gatherers_hut", "gather_items": ["stone", "stone", "wood"]}
+	var mixed := {"type": "gatherers_hut", "gather_items": ["stone", "stone", "wood"], "focus": ""}
 	s.people.learned_by["wood"] = "Aro"
 	t.check(s.people.building_job(mixed) == "Woodcutter", "counting only what the Kith know, once they know some")
 	var names := {}
