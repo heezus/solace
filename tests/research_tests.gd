@@ -67,6 +67,7 @@ func test_requirements() -> void:
 	_techs["foraging"] = true
 	t.check(r.missing_requirements("gatherers_hut") == 0 and r.requirements_met("gatherers_hut"), "both done")
 	t.check(r.missing_requirements("bronze_dawn") == 5, "Bronze Dawn is five techs away")
+	t.check(r.unlocked("knapping") and not r.unlocked("cordage"), "unlocked is true for researched techs only")
 
 
 func test_requires_any() -> void:

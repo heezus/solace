@@ -242,9 +242,9 @@ static func idle_reason(s, b: Dictionary, def: Dictionary) -> void:
 	var auto := Roads.automated(s, b)
 	if s.buffered(b["out"]) >= Data.BUFFER_CAP:
 		if auto:
-			s._set_status(b, "Full: waiting for a hauler", "Full: waiting for a hauler")
+			s.town.set_status(b, "Full: waiting for a hauler", "Full: waiting for a hauler")
 		else:
-			s._set_status(b, "Full: click to collect" + road_note(s, b), "Full: click to collect")
+			s.town.set_status(b, "Full: click to collect" + road_note(s, b), "Full: click to collect")
 		return
 	var missing: Array = []
 	for id in def.get("in", {}):
@@ -258,7 +258,7 @@ static func idle_reason(s, b: Dictionary, def: Dictionary) -> void:
 		for id in def["in"]:
 			if b["inbuf"].get(id, 0) + b["incoming"].get(id, 0) < def["in"][id] and s.inv.get(id, 0) == 0:
 				how = "stockpile is out"
-	s._set_status(b, "Needs %s (%s)" % [", ".join(missing), how], "Needs " + ", ".join(missing))
+	s.town.set_status(b, "Needs %s (%s)" % [", ".join(missing), how], "Needs " + ", ".join(missing))
 
 
 ## After Paths & Haulers, what a building with no road link needs: "" once it's linked (or before).
