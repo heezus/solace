@@ -203,6 +203,7 @@ func test_rates_count_making_and_using() -> void:
 	s2.learned["wood"] = "Aro"
 	s2.researched["haulers"] = true
 	t.place_free(s2, "gatherers_hut", s2.camp_pos + Vector2i(-2, 0))
+	t.road_link(s2, s2.camp_pos + Vector2i(-2, 0))
 	for i in 120:
 		s2.tick(0.5)
 	t.check(s2.flows.rate("wood") > 0.0, "a working hut makes wood (%.2f/s)" % s2.flows.rate("wood"))

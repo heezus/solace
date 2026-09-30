@@ -13,6 +13,7 @@ const Rules = preload("res://scripts/rules.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Workers = preload("res://scripts/workers.gd")
 const Ranks = preload("res://scripts/ranks.gd")
+const Roads = preload("res://scripts/roads.gd")
 
 const DT := 0.1
 const THINK := 1.0  # seconds between decisions
@@ -32,6 +33,8 @@ const RAW_TILE := {
 }
 ## A hut is paused while everything it gathers is past this and not needed.
 const HUT_SURPLUS := 150
+## Road tiles laid toward an unlinked building per decision.
+const ROADS_PER_DECISION := 4
 ## One more workshop of a kind for every WORKSHOP_PER of its good still wanted, up to WORKSHOPS_MAX.
 const WORKSHOP_PER := 40.0
 const WORKSHOPS_MAX := 4
@@ -234,14 +237,14 @@ func _most_short_raw(short: Dictionary) -> String:
 # --- Clicks ------------------------------------------------------------------
 
 
-## One click on a building, if one is worth it: before haulers, send hut trips and load or empty
-## workshops; after, rush the building making what's shortest. Crafting a tool counts too.
-## Returns false when there's nothing to click.
+## One click on a building, if one is worth it: send hut trips and load or empty workshops that no
+## road links yet (all of them before haulers); else rush the building making what's shortest.
+## Crafting a tool counts too. Returns false when there's nothing to click.
 func _click() -> bool:
-	if not s.has_haulers():
-		for i in s.buildings.size():
-			var b: Dictionary = s.buildings[i]
-			var def: Dictionary = Data.BUILDINGS[b["type"]]
+	for i in s.buildings.size():
+		var b: Dictionary = s.buildings[i]
+		var def: Dictionary = Data.BUILDINGS[b["type"]]
+		if not Roads.automated(s, b):
 			if def["kind"] == "gatherer" and b["worker"] >= 0 and b["trips"] < Data.TRIP_QUEUE:
 				if Workers.knows_any(s, b["pos"]):
 					Workers.click(s, i)
@@ -378,6 +381,8 @@ func _decide() -> void:
 	_pause_surplus(short, later)
 	if _buy_rank(short):
 		return
+	if s.has_haulers() and _link_roads():
+		return
 	if _house_wanted() and s.food_total() >= s.kith.size() * 2.0 + Data.BIRTH_FOOD:
 		if _place_near_hearth("dwelling"):
 			return
@@ -414,8 +419,6 @@ func _decide() -> void:
 				return
 	if s.building_unlocked("field") and s.fields.size() < 8 and short.get("grain", 0) > 0 and _place_field():
 		return
-	if s.has_haulers() and not short.has("stone"):
-		_lay_roads()
 
 
 ## Buy the next rank on a tech whose good we're short of, when that leaves enough for the next tech.
@@ -663,6 +666,8 @@ func _place_best(type: String, score: Callable) -> bool:
 			var p := Vector2i(x, y)
 			if not reach.has(p) or s.placement_error(type, p) != "":
 				continue
+			if type != "road" and _doorstep(p):
+				continue  # the Hearth's four sides stay open, for roads out
 			var v: float = score.call(p)
 			if v > best_score:
 				best = p
@@ -681,18 +686,70 @@ func _spare_stone() -> int:
 	return s.inv.get("stone", 0) - keep
 
 
-## Roads from each far worker building toward its stockpile, over grass, a few tiles a decision.
-func _lay_roads() -> void:
-	var budget := 3
+## Haulers serve only road-linked buildings: lay Road from the first unlinked worker building to the
+## nearest road network that reaches a depot (or to a depot), a few tiles a decision. True if any went down.
+func _link_roads() -> bool:
 	for b in s.buildings:
-		if not s.needs_worker(b) or budget <= 0:
+		if not s.needs_worker(b) or b["paused"] or Roads.linked(s, b):
 			continue
-		var trip := s.trip_info(b["pos"])
-		if not trip["ok"] or trip["seconds"] < 6.0:
-			continue
-		var path := s.astar.get_id_path(b["pos"], trip["depot"])
+		var path := _road_path(b["pos"])
+		var laid := 0
 		for p in path:
-			if budget <= 0 or _spare_stone() <= 0:
-				return
+			if laid >= ROADS_PER_DECISION or not s.can_afford(Rules.cost_at("road", s.tile_at(p))):
+				break
 			if s.place("road", p):
-				budget -= 1
+				laid += 1
+		if laid > 0:
+			return true
+	return false
+
+
+## The tiles to pave, nearest first, joining building p to a depot's road network: a search over tiles a
+## road can go on (open grass, rock, or road already there), from p's sides to a road on a network
+## that reaches a depot, or to a tile beside a depot. [] when there's no way.
+func _road_path(p: Vector2i) -> Array:
+	var depot_net := {}
+	for depot in Roads.depots(s):
+		for id in Roads.depot_nets(s, depot):
+			depot_net[id] = true
+	var from := {}
+	var todo: Array = []
+	for n in GameState.NEIGHBORS:
+		var q: Vector2i = p + n
+		if _paveable(q):
+			from[q] = p
+			todo.append(q)
+	while not todo.is_empty():
+		var q: Vector2i = todo.pop_front()
+		var done := false
+		for n in GameState.NEIGHBORS:
+			if (q + n) in Roads.depots(s):
+				done = true
+		if s.roads.has(q) and depot_net.has(s.road_net["net"].get(q, -1)):
+			done = true
+		if done:
+			var path: Array = []
+			while q != p:
+				if not s.roads.has(q):
+					path.push_front(q)
+				q = from[q]
+			return path
+		for n in GameState.NEIGHBORS:
+			var r: Vector2i = q + n
+			if not from.has(r) and _paveable(r):
+				from[r] = q
+				todo.append(r)
+	return []
+
+
+## A tile right beside the Hearth, kept free so roads can always leave it.
+func _doorstep(p: Vector2i) -> bool:
+	return absi(p.x - s.camp_pos.x) + absi(p.y - s.camp_pos.y) == 1
+
+
+func _paveable(p: Vector2i) -> bool:
+	if s.roads.has(p):
+		return true
+	if not s.in_bounds(p) or not s.fog.is_revealed(p) or s.building_at.has(p) or not reach.has(p):
+		return false
+	return s.tile_at(p) in ["grass", "rock"]

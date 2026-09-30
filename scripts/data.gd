@@ -925,9 +925,9 @@ const GOALS := [
 	{"id": "dwelling", "text": "Build a Dwelling. Kith grow when there's room and spare food", "building": "dwelling"},
 	{"id": "charcoal", "text": "Research Fire, then build a Charcoal Pit", "building": "charcoal_pit"},
 	{"id": "twine", "text": "Research Cordage, then build a Twine Post", "building": "twine_post"},
-	{"id": "haulers", "text": "Research Paths & Haulers: huts gather on their own, idle Kith carry", "tech": "haulers"},
+	{"id": "haulers", "text": "Research Paths & Haulers: it unlocks Roads and lets idle Kith haul", "tech": "haulers"},
+	{"id": "road", "text": "Lay a Road from a hut to the Hearth: road-linked buildings run on their own"},
 	{"id": "rush", "text": "Click a working building to rush it: it finishes its cycle at once"},
-	{"id": "road", "text": "Lay Roads out to far buildings. Kith walk twice as fast"},
 	{"id": "kiln", "text": "Research Pottery, then build a Kiln", "building": "kiln"},
 	{
 		"id": "wheel",

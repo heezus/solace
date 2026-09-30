@@ -5,6 +5,7 @@ extends RefCounted
 ## sends a trip, or rushes it. Static, and works on the GameState passed in.
 
 const Data = preload("res://scripts/data.gd")
+const Roads = preload("res://scripts/roads.gd")
 
 
 ## One step of a worker's day at their building.
@@ -21,12 +22,12 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 		"home":
 			if def["kind"] != "gatherer" or s.buffered(b["out"]) >= Data.BUFFER_CAP:
 				return
-			if not s.has_haulers() and b["trips"] <= 0:
+			if not Roads.automated(s, b) and b["trips"] <= 0:
 				return  # waits for a click
 			var target := next_gather_tile(s, k, b)
 			if target.x < 0:
 				return  # nothing here it knows how to gather yet
-			k["trip"] = not s.has_haulers()
+			k["trip"] = not Roads.automated(s, b)
 			if k["trip"]:
 				s.record_story("first_trip")
 			k["task"] = {"tile": target}
@@ -54,6 +55,11 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 static func _finish_harvest(s, k: Dictionary, b: Dictionary, tile: Vector2i) -> void:
 	k["timer"] = 0.0
 	var item := tile_item(s, b, tile)
+	if item == "":  # the tile changed while they worked (a road cut through the rock): nothing to bring
+		k["task"] = {}
+		s._walk_to(k, b["pos"])
+		k["phase"] = "to_home"
+		return
 	k["carry"] = {item: s._harvest_amount(b, tile, item)}
 	s._wear(b)
 	k["task"] = {}
@@ -165,7 +171,7 @@ static func click(s, i: int) -> String:
 	var kind: String = Data.BUILDINGS[b["type"]]["kind"]
 	if not s.needs_worker(b):
 		return ""
-	if not s.has_haulers():
+	if not Roads.automated(s, b):
 		var held: int = s.buffered(b["out"])
 		s.haul(i)
 		if kind == "gatherer":
@@ -225,3 +231,48 @@ static func rush(s, i: int) -> bool:
 	k["pos"] = Vector2(b["pos"])
 	k["phase"] = "home"
 	return true
+
+
+# --- Status ----------------------------------------------------------------------
+
+
+## Why a staffed building is standing still: full, or short of an input.
+static func idle_reason(s, b: Dictionary, def: Dictionary) -> void:
+	var auto := Roads.automated(s, b)
+	if s.buffered(b["out"]) >= Data.BUFFER_CAP:
+		if auto:
+			s._set_status(b, "Full: waiting for a hauler", "Full: waiting for a hauler")
+		else:
+			s._set_status(b, "Full: click to collect" + road_note(s, b), "Full: click to collect")
+		return
+	var missing: Array = []
+	for id in def.get("in", {}):
+		if b["inbuf"].get(id, 0) < def["in"][id]:
+			missing.append(Data.ITEMS[id]["name"])
+	if missing.is_empty():
+		b["status"] = "Idle"
+		return
+	var how := "waiting for a hauler" if auto else "click to load" + road_note(s, b)
+	if auto:
+		for id in def["in"]:
+			if b["inbuf"].get(id, 0) + b["incoming"].get(id, 0) < def["in"][id] and s.inv.get(id, 0) == 0:
+				how = "stockpile is out"
+	s._set_status(b, "Needs %s (%s)" % [", ".join(missing), how], "Needs " + ", ".join(missing))
+
+
+## After Paths & Haulers, what a building with no road link needs: "" once it's linked (or before).
+static func road_note(s, b: Dictionary) -> String:
+	if not s.has_haulers() or Roads.linked(s, b):
+		return ""
+	return ". Needs road: " + road_hint(s, b["pos"])
+
+
+## "lay Road from here to the Hearth (4 tiles), then haulers carry for it".
+static func road_hint(s, p: Vector2i) -> String:
+	var g := Roads.gap(s, p)
+	if g["to"].x < 0:
+		return "linked by road"
+	var what := "the road to the Hearth" if s.roads.has(g["to"]) else "the Hearth"
+	if s.building_at.has(g["to"]) and g["to"] != s.camp_pos:
+		what = "the Storehouse"
+	return "lay Road from here to %s (about %d tiles) so haulers carry for it" % [what, g["tiles"]]

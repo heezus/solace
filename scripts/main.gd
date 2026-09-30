@@ -15,6 +15,7 @@ const Overlays = preload("res://scripts/overlays.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const Rules = preload("res://scripts/rules.gd")
 const Workers = preload("res://scripts/workers.gd")
+const Roads = preload("res://scripts/roads.gd")
 const Hands = preload("res://scripts/hands.gd")
 
 const TILE := 32.0
@@ -402,6 +403,8 @@ func _hover_text() -> String:
 				s += "\n\nCan't build here: " + err + "."
 			if placing == "gatherers_hut":
 				s += "\n\n" + BuildingPanel.gather_text(state, state.gather_tiles(hover))
+			if state.has_haulers() and Data.BUILDINGS[placing]["kind"] in ["gatherer", "processor"]:
+				s += "\n" + _road_preview(hover)
 		return s
 	if not state.in_bounds(hover):
 		return "Point at the map to see what's there."
@@ -409,6 +412,14 @@ func _hover_text() -> String:
 		return "Unexplored. Build nearby to see it."
 	var who := _kith_here(hover)
 	return (who + "\n\n" if who != "" else "") + _tile_text()
+
+
+## Whether a building placed at p would be linked by road, and if not, how far the road has to go.
+func _road_preview(p: Vector2i) -> String:
+	var g := Roads.gap(state, p)
+	if g["to"].x < 0:
+		return "Road: linked here, haulers will carry for it."
+	return "Needs road: no road touches here. Lay about %d tiles of Road to link it." % g["tiles"]
 
 
 ## "Aro the Woodcutter, Tam the Hauler" for the Kith standing on or walking through tile p.
@@ -434,6 +445,15 @@ func _tile_text() -> String:
 			s += "\nHolding " + Ui.cost_text(b["out"])
 		if def["kind"] == "gatherer":
 			s += "\n\n" + BuildingPanel.gather_text(state, state.gather_tiles(hover))
+		if state.has_haulers() and state.needs_worker(b):
+			s += (
+				"\n"
+				+ (
+					"Road: linked, haulers carry for it"
+					if Roads.linked(state, b)
+					else "Needs road: " + Workers.road_hint(state, hover)
+				)
+			)
 		var click := BuildingPanel.click_text(state, b)
 		return s + "\n\n" + (click + "\n" if click != "" else "") + "Click for its panel."
 	var t: Dictionary = Data.TILES[state.tile_at(hover)]
@@ -686,9 +706,10 @@ func _draw_hold_ring() -> void:
 		draw_arc(c, radius, -PI / 2.0, to, maxi(4, int(40 * state.harvest_frac)), GOAL_COLOR, 4.0, true)
 
 
-## Before Paths & Haulers, a hut shows its trip queue as pips along the top: gold for each queued trip.
+## A hut that hauls by clicks (before Paths & Haulers, or with no road link) shows its trip queue as
+## pips along the top: gold for each queued trip.
 func _draw_trips(b: Dictionary, r: Rect2) -> void:
-	if Data.BUILDINGS[b["type"]]["kind"] != "gatherer" or state.has_haulers():
+	if Data.BUILDINGS[b["type"]]["kind"] != "gatherer" or Roads.automated(state, b):
 		return
 	for n in Data.TRIP_QUEUE:
 		var c := r.position + Vector2(r.size.x / 2.0 + (n - (Data.TRIP_QUEUE - 1) / 2.0) * 8.0, -3.0)

@@ -2,6 +2,7 @@ extends RefCounted
 ## The opening checklist (Data.GOALS). Static, and works on the GameState passed in.
 
 const Data = preload("res://scripts/data.gd")
+const Roads = preload("res://scripts/roads.gd")
 
 
 ## Mark every goal that's met now. Goals stay done after that, even once the items are spent.
@@ -35,7 +36,9 @@ static func goal_met(s, g: Dictionary) -> bool:
 				if "berries" in b["gather_items"]:
 					return true
 		"road":
-			return s.roads.size() >= 5
+			for b in s.buildings:
+				if s.needs_worker(b) and Roads.linked(s, b):
+					return true
 		"grind":
 			for b in s.buildings:
 				if b["type"] == "grindstone" and s.is_powered(b["pos"]):
