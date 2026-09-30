@@ -4,7 +4,8 @@ extends RefCounted
 ## is linked when it touches (side by side, not diagonally) a road tile of a network that also touches
 ## a depot, or the depot itself (right next door, no road is needed). Haulers walk that network only;
 ## unlinked buildings work as before Haulers (click to send a trip, click to load or collect). Static,
-## and works on the GameState passed in.
+## and works on the GameState passed in: it reads the map and the roads from its World and walk costs
+## from its Pathing. It is not part of either block, because the networks also depend on the buildings.
 ##
 ## The networks are cached in s.road_net and rebuilt when s.road_rev changes (place and demolish bump
 ## it): {"rev", "depots", "net": road tile -> network id, "depot_nets": depot pos -> [ids] (each depot's
@@ -49,7 +50,7 @@ static func depots(s) -> Array:
 
 
 static func _find_depots(s) -> Array:
-	var out: Array = [s.camp_pos]
+	var out: Array = [s.world.camp_pos]
 	for b in s.buildings:
 		if Data.BUILDINGS[b["type"]]["kind"] == "depot":
 			out.append(b["pos"])
@@ -119,7 +120,7 @@ static func _cache(s) -> Dictionary:
 static func _build(s) -> Dictionary:
 	var net := {}
 	var next_id := 0
-	for start in s.roads:
+	for start in s.world.roads:
 		if net.has(start):
 			continue
 		var todo: Array = [start]
@@ -128,7 +129,7 @@ static func _build(s) -> Dictionary:
 			var p: Vector2i = todo.pop_back()
 			for n in SIDES:
 				var q: Vector2i = p + n
-				if s.roads.has(q) and not net.has(q):
+				if s.world.roads.has(q) and not net.has(q):
 					net[q] = next_id
 					todo.append(q)
 		next_id += 1
@@ -163,14 +164,14 @@ static func _build(s) -> Dictionary:
 		if not best.is_empty():
 			link[b["pos"]] = best
 	var grid := AStarGrid2D.new()
-	grid.region = Rect2i(0, 0, s.WIDTH, s.HEIGHT)
+	grid.region = Rect2i(0, 0, s.world.width, s.world.height)
 	grid.cell_size = Vector2.ONE
 	grid.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_NEVER
 	grid.update()
 	grid.fill_solid_region(grid.region, true)
-	for p in s.roads:
+	for p in s.world.roads:
 		grid.set_point_solid(p, false)
-		grid.set_point_weight_scale(p, s.walk_cost(p))
+		grid.set_point_weight_scale(p, s.pathing.walk_cost(p))
 	return {
 		"rev": s.road_rev,
 		"depots": all_depots,
