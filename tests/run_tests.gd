@@ -52,7 +52,8 @@ func _init() -> void:
 	ConventionTests.new().run(self)
 	BonusTests.new().run(self)
 	ArcTests.new().run(self)
-	test_pacing_bot()
+	if not "fast" in OS.get_cmdline_user_args():  # `-- fast` skips the bot's slow runs while iterating
+		test_pacing_bot()
 	print("FAILED: %d" % failures if failures > 0 else "ALL TESTS PASSED")
 	quit(1 if failures > 0 else 0)
 

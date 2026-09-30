@@ -34,6 +34,8 @@ const RAW_TILE := {
 ## A hut is paused while everything it gathers is past this and not needed.
 const HUT_SURPLUS := 150
 ## Road tiles laid toward an unlinked building per decision.
+const LANE_ARM := 10  # how far the kept-open arms run out from the Hearth
+const HAULER_PER := 3.0  # buildings per hauler the bot keeps free
 const ROADS_PER_DECISION := 4
 ## One more workshop of a kind for every WORKSHOP_PER of its good still wanted, up to WORKSHOPS_MAX.
 const WORKSHOP_PER := 40.0
@@ -327,9 +329,9 @@ func _house_wanted() -> bool:
 	return s.kith.size() >= s.housing() and _workers() + _haulers_wanted() + 3 > s.kith.size()
 
 
-## Once Paths & Haulers is in, keep a few Kith free to carry: one for every four buildings.
+## Once Paths & Haulers is in, keep a few Kith free to carry: one for every HAULER_PER buildings.
 func _haulers_wanted() -> int:
-	return 1 + int(_workers() / 4.0) if s.has_haulers() else 0
+	return 1 + int(_workers() / HAULER_PER) if s.has_haulers() else 0
 
 
 ## A Storehouse by any workshop or hut far from a stockpile, so haulers fetch and drop off nearby.
@@ -386,21 +388,24 @@ func _decide() -> void:
 	if _house_wanted() and s.food_total() >= s.kith.size() * 2.0 + Data.BIRTH_FOOD:
 		if _place_near_hearth("dwelling"):
 			return
+		if s.research("shelter"):
+			return  # no room left by the Hearth: Thatched Roofs make each Dwelling house more
 	if s.building_unlocked("storehouse") and _place_storehouse():
 		return
 	if _explore(short):
 		return
 	if _water_wheel():
 		return
-	if _workers() + _haulers_wanted() >= s.kith.size() + 1:
-		return
-	for type in _workshops_due() if s.has_haulers() else []:
+	for type in _workshops_due() if s.has_haulers() else []:  # the route needs these, hands or not
 		if _place_workshop(type):
 			return
+	var fed := s.food_total() >= s.kith.size() * 2.0 + Data.BIRTH_FOOD
+	if s.building_unlocked("gatherers_hut") and _huts_for("berries") < 1 + int(s.kith.size() / 6.0):
+		if (not fed or _workers() + _haulers_wanted() < s.kith.size() + 1) and _place_hut("berries"):
+			return  # food comes first: more Kith are born only while there's food to spare
+	if _workers() + _haulers_wanted() >= s.kith.size() + 1:
+		return
 	if s.building_unlocked("gatherers_hut"):
-		if _huts_for("berries") < 1 + int(s.kith.size() / 6.0):
-			if _place_hut("berries"):
-				return
 		for item in ["wood", "stone", "fiber", "flint", "clay", "grain"]:
 			var n: int = short.get(item, 0)
 			var want := 0 if n <= 0 else 1 + mini(int(n / 30.0), 2)
@@ -478,27 +483,40 @@ func _explore_for(item: String) -> bool:
 
 
 ## Push the edge of what we can see toward `target`: a few road tiles once there are roads (each one
-## lifts the fog around it), or a hut before that.
+## lifts the fog around it), or a hut before that. A road goes only at the fog's edge.
 func _explore_to(target: Vector2i) -> bool:
 	var score := func(p): return -Vector2(p).distance_to(Vector2(target))
 	if not s.building_unlocked("road"):
 		return _place_best("gatherers_hut", score)
+	score = func(p): return -Vector2(p).distance_to(Vector2(target)) if _at_fog_edge(p) else -INF
 	var laid := false
 	for i in 3:
-		if _spare_stone() <= 0 or not _place_best("road", score):
+		if _spare("wood") < 2 or not _place_best("road", score):
 			break
 		laid = true
 	return laid
 
 
-## The river-bank grass tile nearest the Hearth, seen or not, for the Water Wheel.
+## Grass or Forest with unseen ground within a Kith's sight of it: a road there lifts some fog.
+func _at_fog_edge(p: Vector2i) -> bool:
+	if s.tile_at(p) not in ["grass", "tree"] or s.touches_river(p):  # the banks stay open for a Water Wheel
+		return false
+	for dy in range(-Data.SIGHT_KITH, Data.SIGHT_KITH + 1):
+		for dx in range(-Data.SIGHT_KITH, Data.SIGHT_KITH + 1):
+			var q: Vector2i = p + Vector2i(dx, dy)
+			if s.in_bounds(q) and not s.fog.is_revealed(q):
+				return true
+	return false
+
+
+## The unseen river-bank grass tile nearest the Hearth, to explore toward for the Water Wheel.
 func _nearest_bank() -> Vector2i:
 	var best := Vector2i(-1, -1)
 	var best_d := INF
 	for y in GameState.HEIGHT:
 		for x in GameState.WIDTH:
 			var p := Vector2i(x, y)
-			if s.tile_at(p) == "grass" and s.touches_river(p) and not s.building_at.has(p):
+			if s.tile_at(p) == "grass" and s.touches_river(p) and not s.fog.is_revealed(p):
 				var d := Vector2(p).distance_to(Vector2(s.camp_pos))
 				if d < best_d:
 					best = p
@@ -666,8 +684,8 @@ func _place_best(type: String, score: Callable) -> bool:
 			var p := Vector2i(x, y)
 			if not reach.has(p) or s.placement_error(type, p) != "":
 				continue
-			if type != "road" and _doorstep(p):
-				continue  # the Hearth's four sides stay open, for roads out
+			if type != "road" and _lane(p):
+				continue  # kept open so roads can always reach the Hearth
 			var v: float = score.call(p)
 			if v > best_score:
 				best = p
@@ -678,12 +696,24 @@ func _place_best(type: String, score: Callable) -> bool:
 	return true
 
 
-## Stone beyond what the next tech and a hut still need: only that goes into roads.
-func _spare_stone() -> int:
+## What we hold of `item` beyond what the next tech and the workshops due still need: only that goes
+## into roads.
+func _spare(item: String) -> int:
 	var keep := 10
 	if not s.research_queue.is_empty():
-		keep += int(Data.TECHS[s.research_queue[0]]["cost"].get("stone", 0))
-	return s.inv.get("stone", 0) - keep
+		keep += int(Data.TECHS[s.research_queue[0]]["cost"].get(item, 0))
+	for type in _workshops_due():
+		keep += int(Data.BUILDINGS[type]["cost"].get(item, 0))
+	return s.inv.get(item, 0) - keep
+
+
+## True if a road on `p` fits in what we can spare.
+func _road_affordable(p: Vector2i) -> bool:
+	var cost: Dictionary = Rules.cost_at("road", s.tile_at(p))
+	for id in cost:
+		if cost[id] > _spare(id):
+			return false
+	return s.can_afford(cost)
 
 
 ## Haulers serve only road-linked buildings: lay Road from the first unlinked worker building to the
@@ -695,7 +725,7 @@ func _link_roads() -> bool:
 		var path := _road_path(b["pos"])
 		var laid := 0
 		for p in path:
-			if laid >= ROADS_PER_DECISION or not s.can_afford(Rules.cost_at("road", s.tile_at(p))):
+			if laid >= ROADS_PER_DECISION or not _road_affordable(p):
 				break
 			if s.place("road", p):
 				laid += 1
@@ -704,10 +734,19 @@ func _link_roads() -> bool:
 	return false
 
 
-## The tiles to pave, nearest first, joining building p to a depot's road network: a search over tiles a
-## road can go on (open grass, rock, or road already there), from p's sides to a road on a network
-## that reaches a depot, or to a tile beside a depot. [] when there's no way.
+## The tiles to pave, nearest first, joining building p to a depot's road network: a search from p's
+## sides to a road on a network that reaches a depot, or to a tile beside a depot, over open grass
+## (or road already there), then through Forest too, then cutting passes through Rocks (3 Stone a
+## tile) only when there's no other way. [] when there's none.
 func _road_path(p: Vector2i) -> Array:
+	for ground in [["grass"], ["grass", "tree"], ["grass", "tree", "rock"]]:
+		var path := _road_search(p, ground)
+		if not path.is_empty():
+			return path
+	return []
+
+
+func _road_search(p: Vector2i, ground: Array) -> Array:
 	var depot_net := {}
 	for depot in Roads.depots(s):
 		for id in Roads.depot_nets(s, depot):
@@ -716,7 +755,7 @@ func _road_path(p: Vector2i) -> Array:
 	var todo: Array = []
 	for n in GameState.NEIGHBORS:
 		var q: Vector2i = p + n
-		if _paveable(q):
+		if _paveable(q, ground):
 			from[q] = p
 			todo.append(q)
 	while not todo.is_empty():
@@ -736,20 +775,22 @@ func _road_path(p: Vector2i) -> Array:
 			return path
 		for n in GameState.NEIGHBORS:
 			var r: Vector2i = q + n
-			if not from.has(r) and _paveable(r):
+			if not from.has(r) and _paveable(r, ground):
 				from[r] = q
 				todo.append(r)
 	return []
 
 
-## A tile right beside the Hearth, kept free so roads can always leave it.
-func _doorstep(p: Vector2i) -> bool:
-	return absi(p.x - s.camp_pos.x) + absi(p.y - s.camp_pos.y) == 1
+## A tile the bot never builds on, so roads can always reach the Hearth: the ring right around it
+## (cleared grass on every map) and the four arms running straight out from it.
+func _lane(p: Vector2i) -> bool:
+	var d := (p - s.camp_pos).abs()
+	return maxi(d.x, d.y) == 1 or (mini(d.x, d.y) == 0 and maxi(d.x, d.y) <= LANE_ARM)
 
 
-func _paveable(p: Vector2i) -> bool:
+func _paveable(p: Vector2i, ground: Array) -> bool:
 	if s.roads.has(p):
 		return true
 	if not s.in_bounds(p) or not s.fog.is_revealed(p) or s.building_at.has(p) or not reach.has(p):
 		return false
-	return s.tile_at(p) in ["grass", "rock"]
+	return s.tile_at(p) in ground

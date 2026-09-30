@@ -297,8 +297,8 @@ func placement_error(type: String, p: Vector2i) -> String:
 	if def["kind"] == "road":
 		if tile_at(p) == "river":
 			return "Roads can't cross the river: build a Wooden Bridge"
-		if tile_at(p) not in ["grass", "rock"]:
-			return "Roads go on grassland, or cut a pass through Rocks"
+		if tile_at(p) not in ["grass", "rock", "tree"]:
+			return "Roads go on grassland or through Forest, or cut a pass through Rocks"
 		return "" if can_afford(Rules.cost_at(type, tile_at(p))) else "Not enough materials"
 	if def["kind"] == "bridge":
 		if tile_at(p) != "river":
@@ -331,6 +331,9 @@ func place(type: String, p: Vector2i) -> bool:
 		if tile_at(p) == "rock":
 			_set_tile(p, "grass")  # a mountain pass: the rock is cut away
 			events.append("Cut a pass through the rocks")
+		elif tile_at(p) == "tree":
+			_set_tile(p, "grass")  # the trees are felled for the road
+			events.append("Felled the trees for a road")
 		roads[p] = true  # a bridge is a road over the river
 		_update_walk_cell(p)
 		fog.reveal(p, _sight(Data.SIGHT_KITH))

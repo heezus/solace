@@ -47,8 +47,10 @@ static func generate(s, seed_value: int, w: int, h: int) -> void:
 	# Guarantee every resource near the Hearth so the opening never stalls.
 	s._set_tile(camp + Vector2i(-3, -1), "tree")
 	s._set_tile(camp + Vector2i(-3, 0), "tree")
-	s._set_tile(camp + Vector2i(3, 2), "rock")
-	s._set_tile(camp + Vector2i(-2, 3), "berry")
+	for off in [Vector2i(3, 2), Vector2i(4, 2), Vector2i(3, 3)]:  # a small outcrop: every tier costs Stone
+		s._set_tile(camp + off, "rock")
+	for off in [Vector2i(-2, 3), Vector2i(-1, 3), Vector2i(-2, 4)]:  # a berry patch: food for the first Kith
+		s._set_tile(camp + off, "berry")
 	s._set_tile(camp + Vector2i(2, -3), "grain")
 	# A patch of wild flax: Fiber comes only from flax, and Cordage needs it early.
 	for off in FLAX_PATCH:

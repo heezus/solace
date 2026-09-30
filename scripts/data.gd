@@ -115,7 +115,7 @@ const STARVE_TIME := 20.0
 ## Tiles per second on open ground. Roads double it; forest and rocks halve it.
 const KITH_SPEED := 2.0
 ## Items a hauler carries per trip.
-const CARRY := 5
+const CARRY := 10
 ## Path cost of each tile kind. Rivers are impassable without a Wooden Bridge, or slow once Rafts are known.
 const WALK_COST := {"tree": 2.0, "rock": 2.0, "road": 0.5, "river": 4.0}
 
@@ -525,13 +525,13 @@ const TECHS := {
 		"lane": "stone",
 		"tier": 1,
 		"slot": 0,
-		"unlock": "Wood x2",
+		"unlock": "Wood x3",
 		"icon": "@axe",
 		"requires": ["knapping", "cordage"],
 		"cost": {"flint": 10, "wood": 15, "rope": 5},
 		"rank": {"item": "wood"},
 		"effect": "stone_axe",
-		"desc": "Haft a flint head with cord. Wood x2 per harvest, by hand and from huts. Clears land for Farming.",
+		"desc": "Haft a flint head with cord. Wood x3 per harvest, by hand and from huts. Clears land for Farming.",
 	},
 	"irrigation":
 	{
@@ -572,13 +572,13 @@ const TECHS := {
 		"lane": "fiber",
 		"tier": 3,
 		"slot": 0,
-		"unlock": "Carry 10",
+		"unlock": "Carry 20",
 		"icon": "hauler_pack",
 		"side": true,
 		"requires": ["haulers", "stone_axe"],
 		"cost": {"rope": 60, "wood": 100, "charcoal": 40},
 		"effect": "carrying_poles",
-		"desc": "Haulers carry 10 at a time instead of 5.",
+		"desc": "Haulers carry 20 at a time instead of 10.",
 	},
 	"paved_roads":
 	{
@@ -653,7 +653,7 @@ const TECHS := {
 		"unlock": "The next era",
 		"icon": "item_bronze",
 		"requires": ["preservation", "paved_roads", "baking", "calendar", "storehouse"],
-		"cost": {"brick": 100, "flour": 80, "rope": 80, "stone": 100, "charcoal": 100, "wood": 140},
+		"cost": {"brick": 80, "flour": 60, "rope": 80, "stone": 100, "charcoal": 100, "wood": 160},
 		"desc": "The stone age ends. The next era begins.",
 	},
 }
@@ -731,11 +731,12 @@ const BUILDINGS := {
 		"name": "Road",
 		"kind": "road",
 		"tech": "haulers",
-		"cost": {"stone": 1},
+		"cost": {"wood": 2},
 		"color": Color("c8a36a"),
 		"desc":
 		(
-			"Kith walk twice as fast on roads. On Rocks, a Road cuts a pass for 3 Stone."
+			"A timber trackway. Kith walk twice as fast on roads, and haulers serve only road-linked buildings."
+			+ " Through Forest, a Road fells the trees; on Rocks, it cuts a pass for 3 Stone."
 			+ " Roads can't cross the river: build a Wooden Bridge. Drag to lay."
 		),
 	},

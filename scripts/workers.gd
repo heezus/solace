@@ -55,7 +55,7 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 static func _finish_harvest(s, k: Dictionary, b: Dictionary, tile: Vector2i) -> void:
 	k["timer"] = 0.0
 	var item := tile_item(s, b, tile)
-	if item == "":  # the tile changed while they worked (a road cut through the rock): nothing to bring
+	if item == "":  # the tile changed while they worked (a road cut through it): nothing to bring
 		k["task"] = {}
 		s._walk_to(k, b["pos"])
 		k["phase"] = "to_home"
@@ -222,8 +222,9 @@ static func rush(s, i: int) -> bool:
 	if k["phase"] in ["to_tile", "harvest"]:
 		var tile: Vector2i = k["task"].get("tile", b["pos"])
 		var item := tile_item(s, b, tile)
-		k["carry"] = {item: s._harvest_amount(b, tile, item)}
-		s._wear(b)
+		if item != "":  # "" when a road felled or cut the tile away under them: nothing to bring
+			k["carry"] = {item: s._harvest_amount(b, tile, item)}
+			s._wear(b)
 	_deliver(s, k, b)
 	k["task"] = {}
 	k["path"] = []

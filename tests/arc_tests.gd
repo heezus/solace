@@ -177,6 +177,16 @@ func test_rush_and_its_cooldown() -> void:
 	t.check(k["phase"] == "home", "and the worker with it")
 	t.check(not Workers.can_rush(s2, hut), "on cooldown")
 
+	# A road felled the tree the worker was out at: a rush brings nothing, not an item with no name.
+	run_for(s2, Data.RUSH_COOLDOWN + 1.5)
+	if k["phase"] in ["to_tile", "harvest"]:
+		var tile: Vector2i = k["task"].get("tile", hut["pos"])
+		s2._set_tile(tile, "grass")
+		t.check(Workers.rush(s2, r[1]), "rush a worker whose tree is gone")
+		t.check(not s2.inv.has("") and not hut["out"].has(""), "nothing with no name is stored")
+	else:
+		t.check(false, "the hut worker should be out again: " + k["phase"])
+
 
 func test_click_yield_math() -> void:
 	var s: GameState = t.fresh()

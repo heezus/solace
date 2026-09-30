@@ -584,6 +584,8 @@ func _draw() -> void:
 			note = BuildingPanel.trip_text(state, hover)
 		elif placing == "road" and state.tile_at(hover) == "rock":
 			note = "Cut a pass · %s" % Ui.cost_text(Data.PASS_COST)
+		elif placing == "road" and state.tile_at(hover) == "tree":
+			note = "Fell the trees · %s" % Ui.cost_text(Data.BUILDINGS["road"]["cost"])
 		Overlays.placement_ghost(self, state, placing, hover, note)
 	elif state.in_bounds(hover) and not state.fog.is_revealed(hover):
 		var fr := _tile_rect(hover)
