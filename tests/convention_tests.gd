@@ -22,6 +22,7 @@ func run(runner) -> void:
 	test_research_board_lines_stay_in_channels()
 	test_research_queue()
 	test_side_branches_are_marked()
+	test_build_tabs_cover_every_building()
 
 
 func test_demolish_refunds_half() -> void:
@@ -253,3 +254,15 @@ func test_side_branches_are_marked() -> void:
 			t.check(
 				Data.TECHS[tech].get("side", false) == (tech not in needed), tech + " is marked side only if optional"
 			)
+
+
+## Every building the player can place sits in exactly one build tab.
+func test_build_tabs_cover_every_building() -> void:
+	for type in Data.BUILD_ORDER:
+		var n := 0
+		for tab in Data.BUILD_TABS:
+			n += 1 if type in Data.BUILD_TABS[tab] else 0
+		t.check(n == 1, type + " is in exactly one build tab")
+	for tab in Data.BUILD_TABS:
+		for type in Data.BUILD_TABS[tab]:
+			t.check(type in Data.BUILD_ORDER, type + " in the " + tab + " tab is a real building")

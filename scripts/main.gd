@@ -7,6 +7,8 @@ const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Goals = preload("res://scripts/goals.gd")
 const TechPanel = preload("res://scripts/tech_panel.gd")
+const BuildBar = preload("res://scripts/build_bar.gd")
+const Research = preload("res://scripts/research.gd")
 
 const TILE := 32.0
 const MAP_ORIGIN := Vector2.ZERO  # the node's transform scales and centers the map
@@ -30,15 +32,13 @@ var item_boxes := {}
 var item_labels := {}
 var food_label: Label
 var kith_label: Label
-var build_buttons := {}
-var craft_buttons := {}
 var goal_labels: Array = []
 var goal_header: Label
 var info_label: Label
 var toast_label: Label
 var toast_time := 0.0
 var top_bar: PanelContainer
-var bottom_bar: PanelContainer
+var bottom_bar: BuildBar
 var side_panel: PanelContainer
 var tech_panel: TechPanel
 var win_overlay: Control
@@ -121,6 +121,9 @@ func _tile_under() -> Vector2i:
 
 
 func _click_tile(p: Vector2i) -> void:
+	if placing == "demolish":
+		_demolish(p)
+		return
 	if placing != "":
 		var err := state.placement_error(placing, p)
 		if err == "":
@@ -141,6 +144,20 @@ func _click_tile(p: Vector2i) -> void:
 		_toast(msg + ("\nA new idea stirs in the tech tree: Star Lore." if first_look else ""), 8.0)
 	elif msg != "":
 		popups.append({"pos": _tile_center(p), "text": msg, "t": 0.0})
+
+
+## Tear down what's at p for half its cost back.
+func _demolish(p: Vector2i) -> void:
+	var type := state.built_type(p)
+	if type == "":
+		return
+	if Data.BUILDINGS[type]["kind"] == "camp":
+		_toast("The Hearth stays: it's the heart of the settlement.", 2.0)
+		return
+	var refund := state.demolish(p)
+	popups.append(
+		{"pos": _tile_center(p), "text": "+" + Ui.cost_text(refund) if not refund.is_empty() else "Cleared", "t": 0.0}
+	)
 
 
 # --- UI ----------------------------------------------------------------------
@@ -184,35 +201,14 @@ func _build_ui() -> void:
 		item_boxes[id] = box
 		item_labels[id] = l
 
-	# Bottom bar: build, craft, tech. Wraps onto a second row when the window is narrow.
-	bottom_bar = PanelContainer.new()
-	bottom_bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom_bar.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	bottom_bar.add_theme_stylebox_override("panel", Ui.panel_style(Color("264653")))
+	# Bottom bar: tabs of fixed-size build buttons, Demolish and Craft.
+	bottom_bar = BuildBar.new()
 	layer.add_child(bottom_bar)
-	var bar := HFlowContainer.new()
-	bar.add_theme_constant_override("h_separation", 6)
-	bar.add_theme_constant_override("v_separation", 6)
-	bottom_bar.add_child(bar)
-	var tech_btn := Ui.button("Tech Tree (T)")
-	tech_btn.pressed.connect(func(): tech_panel.visible = not tech_panel.visible)
-	bar.add_child(tech_btn)
-	bar.add_child(VSeparator.new())
-	bar.add_child(Ui.heading("Build:"))
-	for type in Data.BUILD_ORDER:
-		var b := Ui.button(Data.BUILDINGS[type]["name"])
-		b.icon = Ui.swatch_texture(Ui.tech_color(Data.BUILDINGS[type]["tech"]))
-		b.pressed.connect(func(): placing = "" if placing == type else type)
-		bar.add_child(b)
-		build_buttons[type] = b
-	bar.add_child(VSeparator.new())
-	bar.add_child(Ui.heading("Craft:"))
-	for r in Data.RECIPES:
-		var b := Ui.button("Craft " + Data.RECIPES[r]["name"])
-		b.icon = Ui.swatch_texture(Ui.tech_color(Data.RECIPES[r]["tech"]))
-		b.pressed.connect(func(): state.craft(r))
-		bar.add_child(b)
-		craft_buttons[r] = b
+	bottom_bar.setup(state)
+	bottom_bar.build_picked.connect(func(type): placing = "" if placing == type else type)
+	bottom_bar.craft_picked.connect(func(r): state.craft(r))
+	bottom_bar.tech_pressed.connect(func(): tech_panel.visible = not tech_panel.visible)
+	bottom_bar.demolish_pressed.connect(func(): placing = "" if placing == "demolish" else "demolish")
 
 	_build_side_panel(layer)
 
@@ -314,31 +310,7 @@ func _refresh_ui() -> void:
 		food_label.text = s
 		food_label.add_theme_color_override("font_color", GOAL_COLOR if state.food_total() < 5 else Color.WHITE)
 
-	for type in build_buttons:
-		var b: Button = build_buttons[type]
-		var def: Dictionary = Data.BUILDINGS[type]
-		b.tooltip_text = def["desc"]
-		if not state.building_unlocked(type):
-			b.text = "%s (research %s)" % [def["name"], Data.TECHS[def["tech"]]["name"]]
-			b.disabled = true
-			continue
-		var short := Ui.shortfall_text(state.inv, def["cost"])
-		var label: String = (
-			def["name"] + " (" + (_progress(def["cost"], 99) if short != "" else Ui.cost_text(def["cost"])) + ")"
-		)
-		b.text = ("> " if placing == type else "") + label
-		b.disabled = short != "" and placing != type
-	for r in craft_buttons:
-		var b: Button = craft_buttons[r]
-		var rec: Dictionary = Data.RECIPES[r]
-		if not state.recipe_unlocked(r):
-			b.text = "%s (research %s)" % [rec["name"], Data.TECHS[rec["tech"]]["name"]]
-			b.disabled = true
-			continue
-		var short := Ui.shortfall_text(state.inv, rec["in"])
-		b.text = ("Craft %s (%s)" % [rec["name"], _progress(rec["in"], 99) if short != "" else Ui.cost_text(rec["in"])])
-		b.disabled = short != ""
-
+	bottom_bar.refresh(placing, Research.ready_list(state).size())
 	tech_panel.refresh()
 
 	var cur := Goals.current_goal(state)
@@ -360,10 +332,14 @@ func _refresh_ui() -> void:
 
 
 func _hover_text() -> String:
+	if placing == "demolish":
+		return "Demolish: click a building, road or field to tear it down for half its cost back. Right-click to stop."
 	if placing != "":
-		var s := "Placing %s. Left-click open grassland, right-click to stop." % Data.BUILDINGS[placing]["name"]
-		if placing == "road":
-			s = "Laying Road: click or drag across grassland, or across the river to bridge it. Right-click to stop."
+		var def: Dictionary = Data.BUILDINGS[placing]
+		var s := "Placing %s. Left-click open grassland, right-click to stop." % def["name"]
+		if def["kind"] in ["road", "bridge", "field"]:
+			s = "Laying %s: click or drag. Right-click to stop." % def["name"]
+		s += "\nCost: " + (_progress(def["cost"], 99) if not def["cost"].is_empty() else "free")
 		if state.in_bounds(hover):
 			var err := state.placement_error(placing, hover)
 			if err != "":
@@ -489,7 +465,10 @@ func _draw() -> void:
 	_draw_fog()
 
 	# Placement ghost.
-	if placing != "" and state.in_bounds(hover):
+	if placing == "demolish" and state.in_bounds(hover):
+		draw_rect(_tile_rect(hover), Color(BAD, 0.35))
+		draw_rect(_tile_rect(hover), BAD, false, 3.0)
+	elif placing != "" and state.in_bounds(hover):
 		var ok := state.placement_error(placing, hover) == ""
 		var c := Color(0.3, 1, 0.4, 0.45) if ok else Color(1, 0.25, 0.25, 0.45)
 		draw_rect(_tile_rect(hover).grow(-2), c)

@@ -755,6 +755,15 @@ const BUILDINGS := {
 	},
 }
 
+## The build bar's tabs, in order. Craft by hand has its own small group beside them.
+const BUILD_TABS := {
+	"Homes": ["dwelling"],
+	"Gathering": ["gatherers_hut", "field", "fishing_weir"],
+	"Workshops": ["charcoal_pit", "twine_post", "kiln", "water_wheel", "grindstone"],
+	"Logistics": ["road", "bridge", "storehouse"],
+	"Lore": ["standing_stone", "shard_cairn"],
+}
+
 const BUILD_ORDER := [
 	"dwelling",
 	"road",

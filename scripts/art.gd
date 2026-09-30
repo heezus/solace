@@ -7,7 +7,14 @@ const OUTLINE := Color("1b1b1f")
 const STONE_GLOW := Color(0.6, 0.95, 1.0)
 const SPRITE_DIR := "res://art/sprites/"
 
+## Buildings whose sprite has another name.
+const SPRITE_OF := {"camp": "hearth", "road": "tile_path", "bridge": "tile_bridge_wood"}
+
 static var _sprites := {}
+
+
+static func building_sprite(type: String) -> Texture2D:
+	return sprite(SPRITE_OF.get(type, type))
 
 
 ## The imported SVG sprite `name` from art/sprites, or null if it isn't there
