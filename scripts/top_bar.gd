@@ -201,7 +201,10 @@ func refresh(paused: bool, speed: int) -> void:
 		c["rate"].text = rate_text(r)
 		c["rate"].add_theme_color_override("font_color", rate_color(r))
 		c["box"].tooltip_text = "" if flow_item == id else Data.ITEMS[id]["name"]
-		c["box"].add_theme_stylebox_override("panel", _ring() if flow_item == id else StyleBoxEmpty.new())
+		if flow_item == id:
+			c["box"].add_theme_stylebox_override("panel", _ring())
+		else:
+			c["box"].add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	for v in speed_buttons:
 		speed_buttons[v].button_pressed = paused if v == 0 else (not paused and v == speed)
 	if flow_item != "":

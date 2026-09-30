@@ -17,6 +17,7 @@ jobs:
         run: |
           pip install "gdtoolkit==4.*"
           gdlint scripts tests
+          gdformat -l 120 --check scripts tests
 
       - name: Install Godot
         run: |
@@ -25,11 +26,27 @@ jobs:
           mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
           ./godot --version
 
+      # Every Godot step fails on any ERROR, SCRIPT ERROR, WARNING or Parse Error line, not only on a
+      # failed assertion (tests/tools/run_checked.sh).
       - name: Import project
-        run: ./godot --headless --path . --import || true
+        run: tests/tools/run_checked.sh ./godot --headless --path . --import
+
+      - name: No new .uid or .import files after import
+        run: |
+          git status --porcelain
+          test -z "$(git status --porcelain -- '*.uid' '*.import')"
+
+      - name: No GDScript warnings the editor would show
+        run: tests/tools/check_warnings.sh ./godot
 
       - name: Check the main scene loads
-        run: ./godot --headless --path . --quit-after 120 2>&1 | tee run.log; ! grep -E "SCRIPT ERROR|Parse Error|ERROR:" run.log
+        run: tests/tools/run_checked.sh ./godot --headless --path . --quit-after 120
 
       - name: Run logic tests
-        run: ./godot --headless --path . -s tests/run_tests.gd
+        run: tests/tools/run_checked.sh ./godot --headless --path . -s tests/run_tests.gd
+
+      - name: Play the main scene with input, to Bronze Dawn
+        run: |
+          sudo apt-get update -q && sudo apt-get install -yq xvfb
+          tests/tools/run_checked.sh xvfb-run -a -s "-screen 0 1280x800x24" \
+            ./godot --rendering-driver opengl3 --audio-driver Dummy --path . -s tests/tools/play_pass.gd

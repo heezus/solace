@@ -62,20 +62,20 @@ static func _find_task(s, k: Dictionary) -> bool:
 	var best := {}
 	var best_d := INF
 	for i in s.buildings.size():
-		var b: Dictionary = s.buildings[i]
-		if not s.needs_worker(b) or b["unreachable"] > 0.0:
+		var cand: Dictionary = s.buildings[i]
+		if not s.needs_worker(cand) or cand["unreachable"] > 0.0:
 			continue
-		var d := Vector2(here).distance_to(Vector2(b["pos"]))
+		var d := Vector2(here).distance_to(Vector2(cand["pos"]))
 		if d >= best_d:
 			continue
-		if s.buffered(b["out"]) > 0 and not b["claimed"]:
+		if s.buffered(cand["out"]) > 0 and not cand["claimed"]:
 			best = {"kind": "pickup", "building": i}
 			best_d = d
 			continue
-		var def: Dictionary = Data.BUILDINGS[b["type"]]
-		var inputs: Dictionary = {} if b["paused"] else def.get("in", {})
+		var def: Dictionary = Data.BUILDINGS[cand["type"]]
+		var inputs: Dictionary = {} if cand["paused"] else def.get("in", {})
 		for id in inputs:
-			var want: int = def["in"][id] * 2 - b["inbuf"].get(id, 0) - b["incoming"].get(id, 0)
+			var want: int = def["in"][id] * 2 - cand["inbuf"].get(id, 0) - cand["incoming"].get(id, 0)
 			var n := mini(mini(want, s.inv.get(id, 0)), s.carry_cap())
 			if n > 0:
 				best = {"kind": "deliver", "building": i, "item": id, "amount": n}

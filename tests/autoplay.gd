@@ -34,40 +34,52 @@ var s: GameState
 var clock := 0.0
 var clicks := 0.0
 var think := 0.0
-var log: Array = []
+var lines: Array = []
 var known := {}  # techs already logged
 var trace := false  # log what the next tech is waiting on, every minute
 var clicked := {}  # what the clicks went to since the last trace
 var reach := {}  # tiles the Kith can walk to from the Hearth, refreshed each decision
 
 
-func play(seed: int, max_seconds: float) -> Dictionary:
-	s = GameState.new()
-	s.generate(seed)
-	Research.set_goal(s, "bronze_dawn")
+func play(map_seed: int, max_seconds: float) -> Dictionary:
+	var game := GameState.new()
+	game.generate(map_seed)
+	attach(game)
 	while clock < max_seconds and not s.won:
+		step(true)
+	return {"won": s.won, "seconds": clock, "log": lines}
+
+
+## Play `game` from here on: step() then advances it (tests/tools/play_pass.gd runs it under the live UI).
+func attach(game: GameState) -> void:
+	s = game
+	Research.set_goal(s, "bronze_dawn")
+
+
+## One DT of play: tick the simulation (unless something else ticks it), then click and decide.
+func step(tick: bool) -> void:
+	if tick:
 		s.tick(DT)
-		clock += DT
 		s.events.clear()
-		_log_research()
-		clicks += DT * (CLICKS_LATE if s.has_haulers() else CLICKS_EARLY)
-		if trace and fmod(clock, 60.0) < DT - 0.001:
-			_trace()
-		think -= DT
-		if think <= 0.0:
-			think = THINK
-			_decide()
-		while clicks >= 1.0:
-			clicks -= 1.0
-			_click()
-	return {"won": s.won, "seconds": clock, "log": log}
+	clock += DT
+	_log_research()
+	clicks += DT * (CLICKS_LATE if s.has_haulers() else CLICKS_EARLY)
+	if trace and fmod(clock, 60.0) < DT - 0.001:
+		_trace()
+	think -= DT
+	if think <= 0.0:
+		think = THINK
+		_decide()
+	while clicks >= 1.0:
+		clicks -= 1.0
+		_click()
 
 
 func _log_research() -> void:
 	for tech in s.researched:
 		if not known.has(tech):
 			known[tech] = true
-			log.append("%5.0f s  %s  (Kith %d)" % [clock, Data.TECHS[tech]["name"], s.kith.size()])
+			lines.append("%5.0f s  %s  (Kith %d)" % [clock, Data.TECHS[tech]["name"], s.kith.size()])
 
 
 func _trace() -> void:
@@ -78,7 +90,7 @@ func _trace() -> void:
 		for id in cost:
 			if s.inv.get(id, 0) < cost[id]:
 				missing[id] = "%d/%d" % [s.inv.get(id, 0), cost[id]]
-	log.append(
+	lines.append(
 		(
 			"%5.0f s  .. next %s missing %s  Kith %d, workers %d, clicks %s"
 			% [clock, next, missing, s.kith.size(), _workers(), clicked]
@@ -523,7 +535,7 @@ func _place_best(type: String, score: Callable) -> bool:
 				best_score = v
 	if best.x < 0 or not s.place(type, best):
 		return false
-	log.append("%5.0f s    + %s at %s" % [clock, Data.BUILDINGS[type]["name"], best])
+	lines.append("%5.0f s    + %s at %s" % [clock, Data.BUILDINGS[type]["name"], best])
 	return true
 
 

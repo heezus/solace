@@ -133,13 +133,13 @@ func _on_open() -> void:
 	if not visible:
 		return
 	refresh()
-	var ready := Research.ready_list(state)
-	if ready.is_empty():
+	var ready_now := Research.ready_list(state)
+	if ready_now.is_empty():
 		return
 	var c := Vector2.ZERO
-	for tech in ready:
+	for tech in ready_now:
 		c += board.card_rect(tech).get_center()
-	c /= ready.size()
+	c /= ready_now.size()
 	await get_tree().process_frame
 	scroll.scroll_horizontal = int(c.x - scroll.size.x / 2.0)
 	scroll.scroll_vertical = int(c.y - scroll.size.y / 2.0)
@@ -149,22 +149,22 @@ func refresh() -> void:
 	if not visible:
 		return
 	var done := state.researched.size()
-	var ready := Research.ready_list(state)
-	var hidden := Data.TECHS.size() - Rules.visible_techs(state.shard_seen).size()
+	var ready_now := Research.ready_list(state)
+	var hidden_n := Data.TECHS.size() - Rules.visible_techs(state.shard_seen).size()
 	counter.text = (
 		"%d of %d researched  ·  %d ready%s"
-		% [done, Data.TECHS.size(), ready.size(), ("  ·  %d hidden" % hidden) if hidden > 0 else ""]
+		% [done, Data.TECHS.size(), ready_now.size(), ("  ·  %d hidden" % hidden_n) if hidden_n > 0 else ""]
 	)
-	var key := "%s|%s|%s" % [state.research_queue, ready, state.research_goal]
+	var key := "%s|%s|%s" % [state.research_queue, ready_now, state.research_goal]
 	if key != rows_key:
 		rows_key = key
 		_fill_row(queue_row, "QUEUE", state.research_queue, "Click a far tech to queue its chain")
-		_fill_row(ready_row, "READY TO RESEARCH", ready, "Nothing yet: gather more")
+		_fill_row(ready_row, "READY TO RESEARCH", ready_now, "Nothing yet: gather more")
 	shown = board.hovered if board.hovered != "" else selected
 	if shown != "" and not state.tech_visible(shown):
 		shown = ""
 	if shown == "":
-		_show_frontier(ready)
+		_show_frontier(ready_now)
 	else:
 		_show_tech(shown)
 	board.queue_redraw()
@@ -202,10 +202,10 @@ func _fill_row(row: HBoxContainer, caption: String, techs: Array, empty: String)
 		row.add_child(clear)
 
 
-func _show_frontier(ready: Array) -> void:
+func _show_frontier(ready_now: Array) -> void:
 	strip["title"].text = "Frontier"
 	strip["title"].add_theme_color_override("font_color", TechBoard.GOLD)
-	var names: Array = ready.map(func(t): return Data.TECHS[t]["name"])
+	var names: Array = ready_now.map(func(t): return Data.TECHS[t]["name"])
 	strip["desc"].text = "Ready now: " + (", ".join(names) if not names.is_empty() else "nothing yet")
 	strip["cost"].text = "Hover a card to see its whole chain in gold. Click one to research it, or to queue the way there."
 	strip["links"].text = ""

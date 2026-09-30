@@ -112,9 +112,9 @@ func _draw() -> void:
 		draw_rect(band, Color(0, 0, 0, 0.14 if i % 2 == 0 else 0.07))
 		var col: Color = Data.LANES[lane["id"]]["color"]
 		draw_rect(Rect2(band.position, Vector2(4, band.size.y)), col)
-		var name: String = Data.LANES[lane["id"]]["name"].to_upper()
+		var lane_name: String = Data.LANES[lane["id"]]["name"].to_upper()
 		var spaced := ""
-		for ch in name:
+		for ch in lane_name:
 			spaced += ch + " "
 		draw_string(font, Vector2(TechLayout.LEFT, lane["top"] - 10.0), spaced, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, col)
 	for t in Data.TIER_NAMES.size():
@@ -155,7 +155,7 @@ func _draw_edge(e: Dictionary, lit_pass: bool) -> void:
 ## "or" where either-or parents share one way in: only when both parents show.
 func _draw_or_pills() -> void:
 	for tech in lay["pills"]:
-		var shown: Array = Data.TECHS[tech]["requires_any"].filter(func(r): return state.tech_visible(r))
+		var shown: Array = Data.TECHS[tech]["requires_any"].filter(func(p): return state.tech_visible(p))
 		if shown.size() < 2:
 			continue
 		var c: Vector2 = lay["pills"][tech]
@@ -193,13 +193,13 @@ func _draw_card(tech: String) -> void:
 		_draw_gate(tech, r, a)
 		return
 	var done: bool = state.researched.has(tech)
-	var ready := state.can_research(tech)
+	var is_ready := state.can_research(tech)
 	var open := state.requirements_met(tech)
 	var bg := DONE_BG if done else (READY_BG if open else LOCKED_BG)
 	var box := StyleBoxFlat.new()
 	box.bg_color = Color(bg, a)
-	box.border_color = Color(GOLD if ready else Art.OUTLINE, a)
-	box.set_border_width_all(3 if ready or not t.get("side", false) else 2)
+	box.border_color = Color(GOLD if is_ready else Art.OUTLINE, a)
+	box.set_border_width_all(3 if is_ready or not t.get("side", false) else 2)
 	box.set_corner_radius_all(6)
 	draw_style_box(box, r)
 	var icon := Rect2(r.position + Vector2(9, 9), Vector2(44, 44))
@@ -237,12 +237,12 @@ func _draw_card(tech: String) -> void:
 		_draw_check(r.position + Vector2(r.size.x - 16, 13), a)
 	else:
 		_draw_cost(t["cost"], Vector2(x, r.position.y + 45), a)
-	if ready:
+	if is_ready:
 		draw_circle(r.position + Vector2(r.size.x - 12, 12), 4.0, Color(GOLD, a))
 	elif not open and not done:
 		_draw_lock(r.position + Vector2(r.size.x - 16, 8), a * 0.7)
 	var q := state.research_queue.find(tech)
-	if q >= 0 and not ready:
+	if q >= 0 and not is_ready:
 		Art.outlined_circle(self, r.position + Vector2(r.size.x - 14, r.size.y - 13), 8.0, Color(GOLD, a))
 		draw_string(
 			bold,
@@ -282,10 +282,10 @@ func _draw_lock(p: Vector2, a: float) -> void:
 ## Bronze Dawn: one tall card spanning every lane, listing what it needs and costs.
 func _draw_gate(tech: String, r: Rect2, a: float) -> void:
 	var t: Dictionary = Data.TECHS[tech]
-	var ready := state.can_research(tech)
+	var is_ready := state.can_research(tech)
 	var box := StyleBoxFlat.new()
 	box.bg_color = Color(GATE_BG, a)
-	box.border_color = Color(GOLD if ready else Art.OUTLINE, a)
+	box.border_color = Color(GOLD if is_ready else Art.OUTLINE, a)
 	box.set_border_width_all(3)
 	box.set_corner_radius_all(8)
 	draw_style_box(box, r)

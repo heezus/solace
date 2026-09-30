@@ -92,8 +92,8 @@ func setup(game: GameState) -> void:
 	parts["demolish"] = demolish
 
 
-func _wrapped(size: int) -> Label:
-	var l := Ui.label("", size)
+func _wrapped(font_size: int) -> Label:
+	var l := Ui.label("", font_size)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD
 	l.custom_minimum_size = Vector2(WIDTH - 60, 0)
 	return l

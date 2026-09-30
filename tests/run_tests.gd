@@ -59,17 +59,17 @@ func _init() -> void:
 ## A headless player (tests/autoplay.gd) plays the stone age on a few maps. It should reach Bronze Dawn
 ## in 8 to 25 simulated minutes; data.gd is tuned so it takes about 12 to 16.
 func test_pacing_bot() -> void:
-	for seed in [1, 2, 3]:
-		var r: Dictionary = Autoplay.new().play(seed, 30 * 60.0)
+	for map_seed in [1, 2, 3]:
+		var r: Dictionary = Autoplay.new().play(map_seed, 30 * 60.0)
 		var minutes: float = r["seconds"] / 60.0
 		print(
 			(
 				"Pacing bot, map %d: %s at %.1f simulated minutes"
-				% [seed, "Bronze Dawn" if r["won"] else "no win", minutes]
+				% [map_seed, "Bronze Dawn" if r["won"] else "no win", minutes]
 			)
 		)
-		check(r["won"], "the bot reaches Bronze Dawn on map %d" % seed)
-		check(minutes >= 8.0 and minutes <= 25.0, "map %d takes 8 to 25 minutes (%.1f)" % [seed, minutes])
+		check(r["won"], "the bot reaches Bronze Dawn on map %d" % map_seed)
+		check(minutes >= 8.0 and minutes <= 25.0, "map %d takes 8 to 25 minutes (%.1f)" % [map_seed, minutes])
 		if not r["won"]:
 			for line in r["log"]:
 				print("  ", line)

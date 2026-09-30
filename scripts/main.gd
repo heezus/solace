@@ -404,12 +404,12 @@ func click_hint(item: String) -> String:
 
 ## How far a Kith is from learning to gather `item` by watching you.
 func learn_text(item: String) -> String:
-	var name: String = Data.ITEMS[item]["name"]
+	var item_name: String = Data.ITEMS[item]["name"]
 	if state.knows(item):
-		return "%s knows how to gather %s: huts can gather it." % [state.learned[item], name]
+		return "%s knows how to gather %s: huts can gather it." % [state.learned[item], item_name]
 	return (
 		"Gathered by hand %d/%d. A %s is watching and will learn %s."
-		% [state.hand_counts.get(item, 0), Data.LEARN_CLICKS, Data.PEOPLE["one"], name]
+		% [state.hand_counts.get(item, 0), Data.LEARN_CLICKS, Data.PEOPLE["one"], item_name]
 	)
 
 
