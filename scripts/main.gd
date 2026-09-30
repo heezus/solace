@@ -19,6 +19,7 @@ const Hands = preload("res://scripts/hands.gd")
 
 const TILE := 32.0
 const MAP_ORIGIN := Vector2.ZERO  # the node's transform scales and centers the map
+const FIT_SETTLE_FRAMES := 3  # frames after a window resize while the bars settle to their new size
 const OUTLINE: Color = Art.OUTLINE
 const OUTLINE_W := 2.5
 const KITH := Color("e76f51")
@@ -30,6 +31,9 @@ const FOG := Color("2c3834")
 const LINE_TYPES := ["road", "bridge", "field"]  # laid by dragging
 const AURA_FILL := Color(0.55, 0.45, 0.6, 0.2)
 
+var fit_vp := Vector2.ZERO  # the window size the map was last fit to
+var fit_bars := Vector2.ZERO  # the top and bottom bar heights the fit uses
+var fit_settle := 0
 var state: GameState
 var placing := ""  # building type being placed, "" when not placing
 var hover := Vector2i(-1, -1)
@@ -95,16 +99,27 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 
-## Fit the map between the bars and left of the side panel, scaled and centered.
+## Fit the map between the bars and left of the side panel, scaled and centered. The fit follows the
+## window size only: the bars keep steady heights (see TopBar._fix_width), and at one window size the
+## fit uses the tallest each bar has been once the window settled, so a bar can never make the map
+## jump back and forth. The scale is kept to steps of 1/64.
 func _layout() -> void:
 	var vp := get_viewport_rect().size
-	var top := top_bar.size.y
-	var bottom := bottom_bar.size.y
+	if vp != fit_vp:
+		fit_vp = vp
+		fit_settle = FIT_SETTLE_FRAMES
+	if fit_settle > 0:
+		fit_settle -= 1
+		fit_bars = Vector2(top_bar.size.y, bottom_bar.size.y)
+	else:
+		fit_bars = fit_bars.max(Vector2(top_bar.size.y, bottom_bar.size.y))
+	var top := fit_bars.x
+	var bottom := fit_bars.y
 	side_panel.position = Vector2(vp.x - SIDE_W - 8, top + 8)
 	side_panel.size = Vector2(SIDE_W, maxf(vp.y - top - bottom - 16, 100))
 	var area := Rect2(8, top + 8, vp.x - SIDE_W - 24, vp.y - top - bottom - 16)
 	var map_size := Vector2(GameState.WIDTH, GameState.HEIGHT) * TILE
-	var k := maxf(minf(area.size.x / map_size.x, area.size.y / map_size.y), 0.1)
+	var k := maxf(floorf(minf(area.size.x / map_size.x, area.size.y / map_size.y) * 64.0) / 64.0, 0.1)
 	scale = Vector2(k, k)
 	position = (area.position + (area.size - map_size * k) / 2.0).round()
 	if building_panel.visible:

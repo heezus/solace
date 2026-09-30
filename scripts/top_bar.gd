@@ -46,6 +46,7 @@ func setup(game: GameState) -> void:
 	kv.add_child(kith_label)
 	kv.add_child(jobs_label)
 	kv.mouse_filter = Control.MOUSE_FILTER_PASS
+	_fix_width(kv, [kith_label, jobs_label], 176)
 	kv.tooltip_text = ""  # filled in refresh() with the job counts
 	h.add_child(kv)
 	h.add_child(VSeparator.new())
@@ -59,15 +60,17 @@ func setup(game: GameState) -> void:
 	food_bar.show_percentage = false
 	fv.add_child(food_bar)
 	fv.mouse_filter = Control.MOUSE_FILTER_PASS
+	_fix_width(fv, [food_label], 130)
 	fv.tooltip_text = "Every Kith eats food: Berries, then Fish, then any Flour research doesn't need."
 	h.add_child(fv)
 	tools_label = Ui.label("", 12)
 	tools_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_fix_width(tools_label, [tools_label], 104)
 	h.add_child(tools_label)
 	click_label = Ui.label("", 12)
 	click_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	click_label.add_theme_color_override("font_color", Ui.HIGHLIGHT)
-	click_label.custom_minimum_size = Vector2(118, 0)
+	_fix_width(click_label, [click_label], 150)
 	h.add_child(click_label)
 	h.add_child(VSeparator.new())
 
@@ -126,6 +129,7 @@ func _chip(id: String, width: float) -> PanelContainer:
 	var count := Ui.label("", 14)
 	var rate := Ui.label("", 10)
 	rate.add_theme_font_size_override("font_size", 10)
+	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	v.add_child(count)
 	v.add_child(rate)
 	h.add_child(v)
@@ -133,8 +137,20 @@ func _chip(id: String, width: float) -> PanelContainer:
 	box.tooltip_text = Data.ITEMS[id]["name"]
 	box.mouse_entered.connect(_show_flow.bind(id))
 	box.mouse_exited.connect(_hide_flow.bind(id))
+	_fix_width(box, [count, rate], width)
 	chips[id] = {"box": box, "count": count, "rate": rate}
 	return box
+
+
+## Keep `c` at a fixed width whatever its labels say (they clip with an ellipsis), so the bar's goods
+## wrap the same way all game and the bar's height, and so the map's scale, never changes on its own.
+static func _fix_width(c: Control, labels: Array, width: float) -> void:
+	c.custom_minimum_size.x = width
+	for l in labels:
+		l.clip_text = true
+		l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		if l != c:
+			l.custom_minimum_size.x = 0
 
 
 ## "+0.60", "−0.25" or "0" for a per-second rate.
@@ -188,7 +204,7 @@ func refresh(paused: bool, speed: int) -> void:
 	food_bar.max_value = maxf(state.kith.size() * 2.0 + Data.BIRTH_FOOD, 1.0)
 	food_bar.value = minf(food, food_bar.max_value)
 	food_bar.modulate = Ui.BAD if fr < -0.005 else Ui.HIGHLIGHT
-	tools_label.visible = state.seen.has("flint_tools")
+	tools_label.modulate.a = 1.0 if state.seen.has("flint_tools") else 0.0  # keeps its place: see _fix_width()
 	var held := Hands.tools_held(state)
 	tools_label.text = "Tools %d/%d Kith" % [held, state.kith.size()]
 	tools_label.tooltip_text = (
@@ -201,7 +217,9 @@ func refresh(paused: bool, speed: int) -> void:
 		var c: Dictionary = chips[id]
 		var n: int = state.inv.get(id, 0)
 		var r := state.flows.rate(id)
-		c["box"].visible = state.seen.has(id)
+		# An unseen good keeps its place in the bar (hidden, not removed), so the goods never re-wrap.
+		c["box"].modulate.a = 1.0 if state.seen.has(id) else 0.0
+		c["box"].mouse_filter = Control.MOUSE_FILTER_PASS if state.seen.has(id) else Control.MOUSE_FILTER_IGNORE
 		c["count"].text = str(n)
 		c["count"].modulate = Color(1, 1, 1, 0.4 if n == 0 and absf(r) < 0.005 else 1.0)
 		c["rate"].text = rate_text(r)

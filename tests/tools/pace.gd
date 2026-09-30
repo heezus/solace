@@ -26,7 +26,9 @@ func _init() -> void:
 			print("   ranks ", bot.s.ranks, " kith %d" % bot.s.kith.size())
 			var counts := {}
 			for b in bot.s.buildings:
-				var key: String = b["type"] + ("/" + "+".join(b["gather_items"]) if b["type"] == "gatherers_hut" else "")
+				var key: String = (
+					b["type"] + ("/" + "+".join(b["gather_items"]) if b["type"] == "gatherers_hut" else "")
+				)
 				counts[key] = counts.get(key, 0) + 1
 			print("   buildings ", counts)
 	var total := 0.0

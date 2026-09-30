@@ -50,3 +50,8 @@ jobs:
           sudo apt-get update -q && sudo apt-get install -yq xvfb
           tests/tools/run_checked.sh xvfb-run -a -s "-screen 0 1280x800x24" \
             ./godot --rendering-driver opengl3 --audio-driver Dummy --path . -s tests/tools/play_pass.gd
+
+      - name: Map scale holds steady over a long run (changes only with the window)
+        run: |
+          tests/tools/run_checked.sh xvfb-run -a -s "-screen 0 1280x800x24" \
+            ./godot --rendering-driver opengl3 --audio-driver Dummy --path . -s tests/tools/layout_pass.gd
