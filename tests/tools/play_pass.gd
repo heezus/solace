@@ -17,6 +17,7 @@ const MAX_FRAMES := 4000
 
 var main: Node
 var frame := 0
+var game_time := 0.0  # seconds the game has been given: the sum of the frames' deltas (see _wait_for)
 var steps: Array = []  # Callables, one run per frame after the scene is up
 var bot: Autoplay
 var problems: Array = []
@@ -31,8 +32,9 @@ func _init() -> void:
 	root.add_child(main)
 
 
-func _process(_delta: float) -> bool:
+func _process(delta: float) -> bool:
 	frame += 1
+	game_time += delta
 	if frame == 3:
 		_script()
 	if frame > 3 and not steps.is_empty():
@@ -125,15 +127,17 @@ func _expect(ok: bool, problem: String) -> void:
 		problems.append(problem)
 
 
-## Hold the script until `cond` is true, for up to `ms` real milliseconds.
+## Hold the script until `cond` is true, for up to `ms` milliseconds of game time. Holds, cooldowns and
+## the rest of the game run on frame deltas, and on a slow or busy machine Godot smooths and caps
+## those, so the game runs slower than the wall clock: wall-clock limits here made CI flaky.
 func _wait_for(cond: Callable, problem: String, ms: int) -> void:
-	var until := [0]
+	var until := [-1.0]
 	var poll := func(self_ref: Callable) -> void:
-		if until[0] == 0:
-			until[0] = Time.get_ticks_msec() + ms
+		if until[0] < 0.0:
+			until[0] = game_time + ms / 1000.0
 		if cond.call():
 			return
-		if Time.get_ticks_msec() > until[0]:
+		if game_time > until[0]:
 			problems.append(problem)
 			return
 		steps.push_front(func(): self_ref.call(self_ref))
@@ -386,7 +390,7 @@ func _hold_checks() -> void:
 	_then(
 		func():
 			probe["stone"] = s.hand_counts.get("stone", 0)
-			probe["t0"] = Time.get_ticks_msec()
+			probe["t0"] = game_time
 			_hold_on(_screen_of(rock))
 	)
 	_then(func(): _expect(main.holding, "pressing on a rock didn't start a hold"), 5)
@@ -394,7 +398,7 @@ func _hold_checks() -> void:
 	_wait_for(func(): return s.hand_counts.get("stone", 0) > probe["stone"], "holding on a rock never paid out", 5000)
 	_then(
 		func():
-			var secs: float = (Time.get_ticks_msec() - probe["t0"]) / 1000.0
+			var secs: float = game_time - probe["t0"]  # game time, like the hold itself, not the wall clock
 			probe["first"] = secs
 			_expect(secs >= need - 0.1 and secs <= need + 0.6, "the first Stone took %.2f s, not %.1f s" % [secs, need])
 	)
@@ -497,7 +501,8 @@ func _board_click_through() -> void:
 func _road_drag() -> void:
 	var s = main.state
 	s.researched["haulers"] = true
-	s.inv["stone"] = maxi(s.inv.get("stone", 0), 40)
+	for id in Data.BUILDINGS["road"]["cost"]:  # whatever a Road costs, enough for the drag whatever else is held
+		s.inv[id] = maxi(s.inv.get(id, 0), 40)
 	var start := Vector2i(-1, -1)
 	for y in range(2, s.HEIGHT - 2):
 		for x in range(2, s.WIDTH - 6):
