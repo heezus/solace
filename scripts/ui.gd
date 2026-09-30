@@ -172,8 +172,8 @@ static func growth_note(s) -> String:
 		return "Starving: no food"
 	if n >= s.town.housing():
 		return "No room: build a Dwelling"
-	if s.economy.food_total() < n * 2 + Data.BIRTH_FOOD:
-		return "Needs %d spare food to grow" % int(n * 2 + Data.BIRTH_FOOD)
+	if not s.people.food_ready_for_birth():
+		return Data.GROW_NOTE_FOOD
 	return ""
 
 

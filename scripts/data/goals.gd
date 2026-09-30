@@ -45,7 +45,7 @@ const GOALS := [
 		"text":
 		"Place a hut right beside Berry Bushes, or click a hut to switch it to Berries: a hut works one resource"
 	},
-	{"id": "dwelling", "text": "Build a Dwelling. Kith grow when there's room and spare food", "building": "dwelling"},
+	{"id": "dwelling", "text": "Build a Dwelling. Kith grow when there's room and steady food", "building": "dwelling"},
 	{"id": "charcoal", "text": "Research Fire, then build a Charcoal Pit", "building": "charcoal_pit"},
 	{"id": "twine", "text": "Research Cordage, then build a Twine Post", "building": "twine_post"},
 	{"id": "haulers", "text": "Research Paths & Haulers: it unlocks Roads and lets idle Kith haul", "tech": "haulers"},

@@ -306,7 +306,7 @@ func test_rates_count_making_and_using() -> void:
 	s2.tech_tree.researched["haulers"] = true
 	t.place_free(s2, "gatherers_hut", s2.world.camp_pos + Vector2i(-2, 0))
 	t.road_link(s2, s2.world.camp_pos + Vector2i(-2, 0))
-	for i in 120:
+	for i in 240:  # two minutes: the starting food credit is eaten first, then whole berries come off the stockpile
 		s2.tick(0.5)
 	t.check(s2.economy.flows.rate("wood") > 0.0, "a working hut makes wood (%.2f/s)" % s2.economy.flows.rate("wood"))
 	t.check(s2.economy.flows.rate("berries") < 0.0, "the Kith eat berries (%.2f/s)" % s2.economy.flows.rate("berries"))

@@ -244,7 +244,7 @@ func refresh(paused: bool, speed: int) -> void:
 		jobs += 1 if Buildings.needs_worker(b) and not b["paused"] else 0
 	kith_label.text = "%s %d / %d" % [Data.PEOPLE["many"], state.people.kith.size(), state.town.housing()]
 	kith_label.get_parent().tooltip_text = (
-		"%s\n%s work buildings and haul goods. Each building needs one. They grow with spare food and room."
+		"%s\n%s work buildings and haul goods. Each building needs one. They grow when there is room and steady food."
 		% [state.people.job_counts(), Data.PEOPLE["many"]]
 	)
 	var note := Ui.growth_note(state)

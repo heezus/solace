@@ -131,7 +131,15 @@ func _link(k: Kith, j: int, i: int) -> void:
 ## Tick the population `seconds` whole seconds.
 func _grow_for(k: Kith, seconds: int, fed: bool = true) -> void:
 	for i in seconds:
+		_steady()  # food coming in steadily, as a birth needs (tests/growth_tests.gd tests the rule)
 		k.grow(1.0, fed)
+
+
+## A window of berries from a hut, more than anyone here eats, and an eating rate for the people there are.
+func _steady() -> void:
+	_eco.flows.hist = []
+	for _n in Data.RATE_WINDOW:
+		_eco.flows.hist.append({"berries|gatherers_hut": 1.0})
 
 
 # --- Population --------------------------------------------------------------
@@ -733,6 +741,7 @@ func test_sim_ticks_through_the_block() -> void:
 	s.tick(0.1)
 	t.check(s.people.kith[0]["job"] == "haul", "the first tick hands out jobs")
 	for i in int(Data.GROW_TIME) + 1:
+		t.steady_income(s)
 		s.tick(1.0)
 	t.check(s.people.kith.size() == Data.KITH_START + 1, "and grows the camp")
 	t.check(s.events.has(Data.BORN_EVENT % Data.PEOPLE["one"]), "the block's message reaches Sim.events")

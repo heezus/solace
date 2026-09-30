@@ -32,9 +32,13 @@ const START_BERRIES := 10
 const FOOD_WARN_SECONDS := 60.0
 const FOOD_CLEAR_SECONDS := 120.0
 const KITH_START := 3
-## A new Kith is born every GROW_TIME seconds while there is room and food to spare. Birth costs BIRTH_FOOD.
+## A new Kith is born every GROW_TIME seconds while there is room and steady food. Birth costs BIRTH_FOOD.
 const GROW_TIME := 12.0
 const BIRTH_FOOD := 5.0
+## A birth also needs this much food in the stockpile for each person already there, and food coming in
+## steadily (Economy.food_is_steady): what the buildings and the player's hands bring over the last
+## RATE_WINDOW seconds must cover what everyone eats.
+const BIRTH_RESERVE := 2.0
 ## After this long with no food, one Kith leaves.
 const STARVE_TIME := 20.0
 ## Tiles per second on open ground. Roads double it; forest and rocks halve it.

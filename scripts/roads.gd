@@ -8,7 +8,7 @@ extends RefCounted
 ## from its Pathing. It is not part of either block, because the networks also depend on the buildings.
 ##
 ## The networks are cached in s.town.road_net and rebuilt when s.town.road_rev changes (place and demolish bump
-## it): {"rev", "depots", "net": road tile -> network id, "depot_nets": depot pos -> [ids] (each depot's
+## it): {"rev", "depots", "posts", "net": road tile -> network id, "depot_nets": depot pos -> [ids] (each depot's
 ## own doorstep id first), "link": building pos -> [network id, depot pos], "grid": an AStarGrid2D where
 ## only road tiles are open}.
 
@@ -33,6 +33,12 @@ static func automated(s, b: Dictionary) -> bool:
 static func depot_of(s, b: Dictionary) -> Vector2i:
 	var l: Array = _cache(s)["link"].get(b["pos"], [])
 	return l[1] if not l.is_empty() else Vector2i(-1, -1)
+
+
+## The depots that road-linked workshops and huts depend on (each building's `depot_of`), in depot order: where
+## idle haulers should wait, so every depot with work has haulers and not only the Hearth.
+static func posts(s) -> Array:
+	return _cache(s)["posts"]
 
 
 ## Network ids touching the depot at p ([] when no road reaches it).
@@ -174,9 +180,16 @@ static func _build(s) -> Dictionary:
 	for p in s.world.roads:
 		grid.set_point_solid(p, false)
 		grid.set_point_weight_scale(p, s.pathing.walk_cost(p))
+	var waiting_posts: Array = []
+	for depot in all_depots:
+		for b in link:
+			if link[b][1] == depot:
+				waiting_posts.append(depot)
+				break
 	return {
 		"rev": s.town.road_rev,
 		"depots": all_depots,
+		"posts": waiting_posts,
 		"paved": s.tech_tree.researched.has("paved_roads"),
 		"net": net,
 		"depot_nets": at_depot,

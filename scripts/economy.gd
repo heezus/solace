@@ -103,6 +103,25 @@ func food_income() -> float:
 	return total
 
 
+## Food made per second, in food units, over the whole flow window (Data.RATE_WINDOW seconds, so a stretch
+## with little history counts as little): everything but eating, that is huts, haulers, fields, the Fishing
+## Weir, the Grindstone and the player's hands while they are gathering. A stockpile is not income.
+func food_supply() -> float:
+	var total := 0.0
+	for id in Data.FOOD_VALUE:
+		var by_source := flows.parts_over(id, float(Data.RATE_WINDOW))
+		for source in by_source:
+			if source != Data.FLOW_EAT_SOURCE and by_source[source] > 0.0:
+				total += by_source[source] * food_value(id)
+	return total
+
+
+## True when the food coming in over the window at least covers what the people eat right now: the
+## rule that lets the population grow (a big stockpile alone never does).
+func food_is_steady() -> bool:
+	return food_supply() - food_use >= 0.0
+
+
 ## How long the food lasts, in seconds: the stockpile plus the credit already taken from it, against what
 ## the Kith eat less what the buildings bring in. INF when the food is not going down.
 func seconds_of_food() -> float:

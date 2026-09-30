@@ -251,6 +251,7 @@ func test_kith_messages_reach_the_player() -> void:
 	s.economy.inv["berries"] = 500
 	s.events.clear()
 	for i in int(Data.GROW_TIME * 10.0) + 20:
+		t.steady_income(s)
 		s.tick(0.1)
 		if m.count("born") > 0:
 			break
