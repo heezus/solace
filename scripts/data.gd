@@ -46,13 +46,28 @@ const EAT_ORDER := ["berries", "fish", "flour"]
 ## Display names for the people the player leads. Engine code formats its messages with these, so a
 ## later faction (13-three-perspectives.md) only swaps data.
 const PEOPLE := {"one": "Kith", "many": "Kith"}
-## Short earthy names, given in turn to each Kith who learns a job by watching you.
+## Short earthy names, given in turn to each Kith as they're born (a second round adds " II").
 ## The event a birth sends to the UI, formatted with PEOPLE["one"].
 const BORN_EVENT := "A %s was born"
 const PEOPLE_NAMES := ["Aro", "Tam", "Esk", "Bru", "Olla", "Fen", "Rook", "Moss", "Sef", "Tarn", "Wren", "Hask"]
 
 ## Major story moments, by stable id, recorded in GameState.story_events so a future profile save can
 ## keep them across runs.
+## Job titles (07-glossary.md, "Kith jobs"). They are labels only: a Kith's title comes from the building
+## it works at (BUILDINGS `job`), a hut's from what it gathers most (HUT_JOBS), or from hauling or idling.
+## `craft` names the skill in the toast when a Kith learns it by watching you.
+const HUT_JOBS := {
+	"wood": {"title": "Woodcutter", "craft": "woodcutting"},
+	"stone": {"title": "Quarrier", "craft": "quarrying"},
+	"flint": {"title": "Knapper", "craft": "knapping"},
+	"berries": {"title": "Forager", "craft": "foraging"},
+	"fiber": {"title": "Thatcher", "craft": "thatching"},
+	"grain": {"title": "Reaper", "craft": "reaping"},
+	"clay": {"title": "Digger", "craft": "digging"},
+}
+const JOB_HAULER := "Hauler"
+const JOB_IDLE := "Idle"
+
 const STORY_EVENTS := {
 	"first_lesson": "A Kith learned a job by watching",
 	"first_trip": "A hut sent its first Kith out for a bundle",
@@ -226,7 +241,7 @@ const TECHS := {
 		"cost": {"flint": 5, "stone": 10},
 		"rank": {"item": "flint"},
 		"desc":
-		"Shape flint. Craft Flint Tools: you gather twice as much by hand, and each worker holding one works 50% faster.",
+		"Shape flint. Craft Flint Tools: a harvest by hand takes 0.7s, and each Kith holding one works 50% faster.",
 	},
 	"cordage":
 	{
@@ -736,6 +751,7 @@ const BUILDINGS := {
 	{
 		"name": "Field",
 		"kind": "field",
+		"job": "Reaper",
 		"tech": "farming",
 		"cost": {"fiber": 3, "grain": 1},
 		"color": Color("d4b44a"),
@@ -754,6 +770,7 @@ const BUILDINGS := {
 	{
 		"name": "Charcoal Pit",
 		"kind": "processor",
+		"job": "Collier",
 		"tech": "fire",
 		"cost": {"wood": 5, "stone": 5},
 		"in": {"wood": 2},
@@ -766,6 +783,7 @@ const BUILDINGS := {
 	{
 		"name": "Twine Post",
 		"kind": "processor",
+		"job": "Roper",
 		"tech": "cordage",
 		"cost": {"wood": 8},
 		"in": {"fiber": 2},
@@ -789,6 +807,7 @@ const BUILDINGS := {
 	{
 		"name": "Kiln",
 		"kind": "processor",
+		"job": "Potter",
 		"tech": "pottery",
 		"cost": {"stone": 10, "clay": 10},
 		"in": {"clay": 1, "charcoal": 1},
@@ -812,6 +831,7 @@ const BUILDINGS := {
 	{
 		"name": "Grindstone",
 		"kind": "processor",
+		"job": "Miller",
 		"tech": "grindstone",
 		"cost": {"stone": 20, "brick": 5},
 		"in": {"grain": 2},
@@ -825,6 +845,7 @@ const BUILDINGS := {
 	{
 		"name": "Fishing Weir",
 		"kind": "processor",
+		"job": "Fisher",
 		"tech": "nets",
 		"cost": {"wood": 15, "rope": 5},
 		"in": {},

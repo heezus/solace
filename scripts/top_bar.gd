@@ -10,6 +10,7 @@ const GameState = preload("res://scripts/game_state.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Hands = preload("res://scripts/hands.gd")
+const Workers = preload("res://scripts/workers.gd")
 
 const RAW := ["wood", "stone", "flint", "fiber", "clay", "berries", "grain", "fish"]
 const LOSS := Color("ff9aa9")
@@ -45,7 +46,7 @@ func setup(game: GameState) -> void:
 	kv.add_child(kith_label)
 	kv.add_child(jobs_label)
 	kv.mouse_filter = Control.MOUSE_FILTER_PASS
-	kv.tooltip_text = "Kith work buildings and haul goods. Each building needs one. They grow with spare food and room."
+	kv.tooltip_text = ""  # filled in refresh() with the job counts
 	h.add_child(kv)
 	h.add_child(VSeparator.new())
 
@@ -164,7 +165,11 @@ func refresh(paused: bool, speed: int) -> void:
 	var jobs := 0
 	for b in state.buildings:
 		jobs += 1 if state.needs_worker(b) and not b["paused"] else 0
-	kith_label.text = "Kith %d / %d" % [state.kith.size(), state.housing()]
+	kith_label.text = "%s %d / %d" % [Data.PEOPLE["many"], state.kith.size(), state.housing()]
+	kith_label.get_parent().tooltip_text = (
+		"%s\n%s work buildings and haul goods. Each building needs one. They grow with spare food and room."
+		% [Workers.job_counts(state), Data.PEOPLE["many"]]
+	)
 	var note := Ui.growth_note(state)
 	kith_label.add_theme_color_override("font_color", Ui.HIGHLIGHT if note != "" else Ui.GOOD)
 	jobs_label.text = "Jobs %d / %d  ·  %d %s" % [workers, jobs, idle, "hauling" if state.has_haulers() else "idle"]

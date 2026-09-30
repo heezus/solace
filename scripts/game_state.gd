@@ -42,6 +42,7 @@ var harvest_tile := Vector2i(-1, -1)
 var harvest_held := 0.0
 var harvest_frac := 0.0
 var rushes := 0  # buildings rushed so far
+var born := 0  # Kith named so far, for the next name
 var learned: Dictionary = {}  # item -> name of the Kith who learned to gather it by watching you
 var ranks: Dictionary = {}  # tech -> rank bought on its card (2 or 3); a researched tech is rank 1
 ## Stable ids from Data.STORY_EVENTS, in the order they happened (for a future profile save).
@@ -661,8 +662,18 @@ func _add_kith() -> void:
 		"seen": Vector2i(-99, -99),  # the tile they last lifted the fog around
 		"tool": 0,  # jobs left on the Flint Tool they hold, 0 for none
 		"trip": false,  # a hut worker out on a clicked trip, carrying the bundle to the stockpile
+		"name": _next_name(),
 	}
 	kith.append(k)
+
+
+## The next name from Data.PEOPLE_NAMES, with " II", " III"... once each name is taken.
+func _next_name() -> String:
+	var names: Array = Data.PEOPLE_NAMES
+	var n: int = born
+	born += 1
+	var round_no := int(float(n) / names.size()) + 1
+	return names[n % names.size()] + ("" if round_no == 1 else " " + Data.RANK_NAMES[mini(round_no, 3)])
 
 
 func housing() -> int:
@@ -867,12 +878,15 @@ func _tick_building(b: Dictionary, delta: float, fed: bool) -> void:
 		b["status"] = def.get("status", def["desc"])
 		return
 	if b["paused"]:
-		_set_status(b, "Paused: its worker is free for other jobs", "Paused")
+		_set_status(b, "Paused: its %s is free for other jobs" % Workers.building_job(self, b), "Paused")
 		return
 	if b["worker"] < 0:
 		_set_status(
 			b,
-			"No worker: more %s needed (they grow with food and Dwellings)" % Data.PEOPLE["many"],
+			(
+				"No %s yet: more %s needed (they grow with food and Dwellings)"
+				% [Workers.building_job(self, b), Data.PEOPLE["many"]]
+			),
 			"Idle: no free %s" % Data.PEOPLE["one"]
 		)
 		return
@@ -886,7 +900,7 @@ func _tick_building(b: Dictionary, delta: float, fed: bool) -> void:
 		_set_status(b, "No power: build a Water Wheel nearby", "No power")
 		return
 	if not _worker_home(b):
-		b["status"] = "Worker walking here"
+		b["status"] = "%s walking here" % Workers.title_of(self, kith[b["worker"]])
 		return
 	if not _wants_to_work(b):
 		_idle_reason(b, def)

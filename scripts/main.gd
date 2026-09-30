@@ -392,6 +392,22 @@ func _hover_text() -> String:
 		return "Point at the map to see what's there."
 	if not state.fog.is_revealed(hover):
 		return "Unexplored. Build nearby to see it."
+	var who := _kith_here(hover)
+	return (who + "\n\n" if who != "" else "") + _tile_text()
+
+
+## "Aro the Woodcutter, Tam the Hauler" for the Kith standing on or walking through tile p.
+func _kith_here(p: Vector2i) -> String:
+	var names: Array = []
+	for k in state.kith:
+		var at: Vector2 = k["pos"]
+		if Vector2i(roundi(at.x), roundi(at.y)) == p:
+			names.append(Workers.title_of(state, k))
+	return ", ".join(names)
+
+
+## What's on the hovered tile: a building, a road, a resource or open ground.
+func _tile_text() -> String:
 	if state.building_at.has(hover):
 		var b: Dictionary = state.buildings[state.building_at[hover]]
 		var def: Dictionary = Data.BUILDINGS[b["type"]]

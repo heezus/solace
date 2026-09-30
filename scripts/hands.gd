@@ -66,9 +66,10 @@ static func teach(s, item: String) -> void:
 	s.hand_counts[item] = s.hand_counts.get(item, 0) + 1
 	if s.knows(item) or s.hand_counts[item] < Data.LEARN_CLICKS:
 		return
-	var who: String = Data.PEOPLE_NAMES[s.learned.size() % Data.PEOPLE_NAMES.size()]
+	var who: String = s.kith[s.learned.size() % s.kith.size()]["name"] if not s.kith.is_empty() else "A Kith"
 	s.learned[item] = who
-	s.events.append("%s can gather %s now" % [who, Data.ITEMS[item]["name"]])
+	var job: Dictionary = Data.HUT_JOBS.get(item, {"title": "Gatherer", "craft": "gathering"})
+	s.events.append("%s learned %s. %s the %s" % [who, job["craft"], who, job["title"]])
 	s.record_story("first_lesson")
 
 

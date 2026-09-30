@@ -27,6 +27,7 @@ func run(runner) -> void:
 	test_rank_costs_and_effects()
 	# test_tier_costs_scale()
 	test_story_events()
+	test_job_titles()
 
 
 ## A camp with a hut next to the forest west of the Hearth, the whole map in sight and food to spare.
@@ -56,7 +57,8 @@ func test_learning_at_ten_clicks() -> void:
 	t.check(s.knows("wood"), "the 10th click teaches a Kith to gather Wood")
 	var first: String = Data.PEOPLE_NAMES[0]
 	t.check(s.learned["wood"] == first, "the first learner is " + first)
-	t.check(s.events.has("%s can gather Wood now" % first), "and the toast says so: %s" % [s.events])
+	var toast := "%s learned woodcutting. %s the Woodcutter" % [first, first]
+	t.check(s.events.has(toast), "and the toast says so: %s" % [s.events])
 	s.events.clear()
 	s.gather_by_hand(tree)
 	t.check(s.events.is_empty(), "no second lesson for Wood")
@@ -306,3 +308,44 @@ func test_story_events() -> void:
 	for id in s.story_events:
 		t.check(Data.STORY_EVENTS.has(id), id + " is a stable id listed in Data.STORY_EVENTS")
 		t.check(id == id.to_lower() and not id.contains(" "), id + " is snake_case")
+
+
+## Job titles are labels from data (07-glossary.md): each worker building resolves to one.
+func test_job_titles() -> void:
+	var s: GameState = t.fresh()
+	s.inv["berries"] = 200
+	for type in Data.BUILDINGS:
+		var def: Dictionary = Data.BUILDINGS[type]
+		if def["kind"] in ["processor", "gatherer"]:
+			var b := {"type": type, "gather_items": []}
+			var job := Workers.building_job(s, b)
+			t.check(job != "" and job != Data.JOB_IDLE, "%s's worker has a job title (%s)" % [type, job])
+	for tile in Data.TILES:
+		var item: String = Data.TILES[tile]["yields"]
+		if item != "":
+			t.check(Data.HUT_JOBS.has(item), "a hut gathering %s has a job title" % item)
+			var b := {"type": "gatherers_hut", "gather_items": [item, item, "fiber"]}
+			t.check(
+				Workers.building_job(s, b) == Data.HUT_JOBS[item]["title"],
+				"a hut takes the title of what it gathers most"
+			)
+	var mixed := {"type": "gatherers_hut", "gather_items": ["stone", "stone", "wood"]}
+	s.learned["wood"] = "Aro"
+	t.check(Workers.building_job(s, mixed) == "Woodcutter", "counting only what the Kith know, once they know some")
+	var names := {}
+	for k in s.kith:
+		names[k["name"]] = true
+		t.check(Workers.job_of(s, k) == Data.JOB_IDLE, "a new Kith is Idle")
+	t.check(names.size() == s.kith.size(), "every Kith has their own name: %s" % [names.keys()])
+	var p: Vector2i = t.find_grass(s, false)
+	s.inv["clay"] = 20
+	t.check(t.place_free(s, "kiln", p), "place a kiln")
+	s.researched["haulers"] = true
+	s.tick(0.1)
+	var kiln: Dictionary = s.buildings[s.building_at[p]]
+	t.check(Workers.title_of(s, s.kith[kiln["worker"]]).ends_with(" the Potter"), "the Kiln's worker is its Potter")
+	var counts := Workers.job_counts(s)
+	t.check(counts.contains("1 Potter") and counts.contains("Haulers"), "the top bar counts jobs: " + counts)
+	for i in Data.PEOPLE_NAMES.size() + 1:
+		s._add_kith()
+	t.check(s.kith[-1]["name"].ends_with(" II"), "names come round again with II: " + s.kith[-1]["name"])

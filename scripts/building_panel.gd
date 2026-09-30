@@ -222,18 +222,20 @@ static func click_text(s: GameState, b: Dictionary) -> String:
 	return "Click to rush while it's working"
 
 
-## "Worker: 1 Kith · Flint Tool, 32 jobs left".
+## "Worker: Aro the Woodcutter · Flint Tool, 32 jobs left".
 static func worker_text(s: GameState, b: Dictionary) -> String:
+	var job := Workers.building_job(s, b)
 	if b["paused"]:
-		return "Worker: none while paused"
+		return "Worker: no %s while paused" % job
 	if b["worker"] < 0:
-		return "Worker: none yet · waiting for a free Kith"
+		return "Worker: no %s yet · waiting for a free %s" % [job, Data.PEOPLE["one"]]
 	var k: Dictionary = s.kith[b["worker"]]
+	var who := "Worker: " + Workers.title_of(s, k)
 	if k["tool"] > 0:
-		return "Worker: 1 Kith · Flint Tool, %d jobs left" % k["tool"]
+		return who + " · Flint Tool, %d jobs left" % k["tool"]
 	if Hands.recipe_unlocked(s, "flint_tools"):
-		return "Worker: 1 Kith · no tool (craft Flint Tools: +50% speed)"
-	return "Worker: 1 Kith"
+		return who + " · no tool (craft Flint Tools: +50% speed)"
+	return who
 
 
 ## "To Hearth · 11 tiles · 22 s a trip", or "" for the Hearth itself.

@@ -109,6 +109,57 @@ static func knows_any(s, p: Vector2i) -> bool:
 	return false
 
 
+# --- Job titles ----------------------------------------------------------------
+
+
+## The job title of whoever works building b: the building's `job`, or for a hut the title of what it
+## gathers most (among what the Kith know, once they know any of it).
+static func building_job(s, b: Dictionary) -> String:
+	var def: Dictionary = Data.BUILDINGS[b["type"]]
+	if def.has("job"):
+		return def["job"]
+	if def["kind"] != "gatherer":
+		return ""
+	var counts := {}
+	for item in b["gather_items"]:
+		counts[item] = counts.get(item, 0) + (100 if s.knows(item) else 1)
+	var best := "fiber"
+	for item in counts:
+		if counts[item] > counts.get(best, 0):
+			best = item
+	return Data.HUT_JOBS[best]["title"]
+
+
+## A Kith's job title: from their building, Hauler, or Idle.
+static func job_of(s, k: Dictionary) -> String:
+	match k["job"]:
+		"work":
+			return building_job(s, s.buildings[k["building"]])
+		"haul":
+			return Data.JOB_HAULER
+	return Data.JOB_IDLE
+
+
+## "Aro the Woodcutter".
+static func title_of(s, k: Dictionary) -> String:
+	return "%s the %s" % [k["name"], job_of(s, k)]
+
+
+## "3 Woodcutters, 1 Potter, 2 Haulers": how many Kith have each job, most first.
+static func job_counts(s) -> String:
+	var counts := {}
+	for k in s.kith:
+		var job := job_of(s, k)
+		counts[job] = counts.get(job, 0) + 1
+	var jobs: Array = counts.keys()
+	jobs.sort_custom(func(a, b): return counts[a] > counts[b] or (counts[a] == counts[b] and a < b))
+	var parts: Array = []
+	for job in jobs:
+		var many: String = job if counts[job] == 1 or job == Data.JOB_IDLE else job + "s"
+		parts.append("%d %s" % [counts[job], many])
+	return ", ".join(parts)
+
+
 # --- Clicking buildings ------------------------------------------------------
 
 

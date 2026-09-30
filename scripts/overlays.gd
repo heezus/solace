@@ -7,6 +7,7 @@ const Data = preload("res://scripts/data.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Rules = preload("res://scripts/rules.gd")
+const Workers = preload("res://scripts/workers.gd")
 
 const TILE := 32.0
 const OUTLINE: Color = Art.OUTLINE
@@ -38,7 +39,8 @@ static func demolish_text(s, p: Vector2i) -> String:
 		% [def["name"], ("get back " + Ui.cost_text(refund)) if not refund.is_empty() else "nothing back"]
 	)
 	if s.building_at.has(p) and s.buildings[s.building_at[p]]["worker"] >= 0:
-		text += " · its Kith goes idle"
+		var b: Dictionary = s.buildings[s.building_at[p]]
+		text += " · %s goes idle" % Workers.title_of(s, s.kith[b["worker"]])
 	return text
 
 
