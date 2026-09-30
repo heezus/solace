@@ -87,7 +87,10 @@ const PACE_WORK := "About %s s of work a trip, plus the walk."
 const PACE_MAKES := "Makes about %s %s a minute."  # "15", "Rope"
 const PACE_BOOST := "Sped up by %s."  # "Flint Tools (+50%)"
 const PACE_TIP := "Exact numbers: %s"
-const TRIPS_HINT := "Click the hut to send its %s for a bundle: until a road links it, it works only when you click it. Trips waiting: %d of %d."  # one
+const TRIPS_HINT := (
+	"Click the hut to send its %s for a bundle: until a road links it, it works only when you click it."
+	+ " Trips waiting: %d of %d."
+)  # one
 const RUSH_HINT := "Click to finish this cycle now (then %d s to recover)."
 const RUSH_WAIT := "Click to finish a cycle early while it's working."
 const RUSH_COOL := "Rush ready in %d s."
