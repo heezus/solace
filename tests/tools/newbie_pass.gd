@@ -169,8 +169,16 @@ func _gather_until(item: String, cond: Callable, limit: float) -> bool:
 	_move(_screen_of(tile))
 	_button(_screen_of(tile), MOUSE_BUTTON_LEFT, true)
 	var until := game_time + limit
+	var probed := false
 	while game_time < until and not cond.call():
 		await process_frame
+		if not probed and game_time > until - limit + 6.0:
+			probed = true
+			var st = main.state
+			_say(
+				"probe %s: tile %s at %s, holding=%s, frac=%.2f, harvest_tile=%s, hand_counts=%s, hover=%s"
+				% [item, st.tile_at(tile), tile, main.holding, st.harvest_frac, st.harvest_tile, st.hand_counts, main.hover]
+			)
 		if main.state.tile_at(tile) != TILE_OF[item] or not main.holding:
 			# tile ran out: hop to the next nearest one, as a player would
 			_button(_screen_of(tile), MOUSE_BUTTON_LEFT, false)
