@@ -88,8 +88,12 @@ func goal_met(s, g: Dictionary) -> bool:
 				if b["focus"] == "berries":
 					return true
 		"road":
+			# a road tile that really links a building (Paths & Haulers unlocks roads); standing beside the
+			# Hearth is not a road
+			if not s.tech_tree.researched.has("haulers"):
+				return false
 			for b in s.town.buildings:
-				if Buildings.needs_worker(b) and Roads.linked(s, b):
+				if Buildings.needs_worker(b) and Roads.road_linked(s, b):
 					return true
 		"grind":
 			for b in s.town.buildings:

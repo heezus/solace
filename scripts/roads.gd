@@ -24,6 +24,17 @@ static func linked(s, b: Dictionary) -> bool:
 	return _cache(s)["link"].has(b["pos"])
 
 
+## True when a road tile that was laid touches b and its network reaches a depot. Standing right beside a
+## depot links a building too (linked), but that is not a road: the "Lay a Road" goal asks for this.
+static func road_linked(s, b: Dictionary) -> bool:
+	var c := _cache(s)
+	for n in SIDES:
+		var q: Vector2i = b["pos"] + n
+		if c["net"].has(q) and _net_has_depot(c, c["net"][q]):
+			return true
+	return false
+
+
 ## True while b runs on its own with haulers: Paths & Haulers is in and a road links it.
 static func automated(s, b: Dictionary) -> bool:
 	return s.tech_tree.researched.has("haulers") and linked(s, b)
