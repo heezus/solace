@@ -21,6 +21,7 @@ var jobs_label: Label
 var food_label: Label
 var food_bar: ProgressBar
 var tools_label: Label
+var click_label: Label
 var chips := {}  # item -> {"box", "count", "rate"}
 var flow_panel: PanelContainer
 var flow_box: VBoxContainer
@@ -61,6 +62,11 @@ func setup(game: GameState) -> void:
 	tools_label = Ui.label("", 12)
 	tools_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	h.add_child(tools_label)
+	click_label = Ui.label("", 12)
+	click_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	click_label.add_theme_color_override("font_color", Ui.HIGHLIGHT)
+	click_label.custom_minimum_size = Vector2(118, 0)
+	h.add_child(click_label)
 	h.add_child(VSeparator.new())
 
 	var goods := HFlowContainer.new()
@@ -200,6 +206,11 @@ func refresh(paused: bool, speed: int) -> void:
 		speed_buttons[v].button_pressed = paused if v == 0 else (not paused and v == speed)
 	if flow_item != "":
 		_fill_flow(flow_item)
+
+
+## What a click on the hovered resource tile gives, e.g. "Click: +4 Wood"; "" when not over one.
+func set_click_hint(text: String) -> void:
+	click_label.text = text
 
 
 func _ring() -> StyleBoxFlat:

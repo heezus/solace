@@ -11,6 +11,9 @@ const Goals = preload("res://scripts/goals.gd")
 const Rules = preload("res://scripts/rules.gd")
 const Research = preload("res://scripts/research.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
+const Ranks = preload("res://scripts/ranks.gd")
+const Hands = preload("res://scripts/hands.gd")
+const Workers = preload("res://scripts/workers.gd")
 
 const WIDTH := 36
 const HEIGHT := 22
@@ -33,6 +36,11 @@ var roads: Dictionary = {}  # Vector2i -> true
 var fields: Dictionary = {}  # Vector2i -> true, grain tiles the Kith sowed
 var hand_tools := false  # you've made a Flint Tool, so hand gathering is doubled for good
 var shard_seen := false  # the player has clicked the Strange Stone, revealing hidden techs
+var hand_counts: Dictionary = {}  # item -> times gathered by hand
+var learned: Dictionary = {}  # item -> name of the Kith who learned to gather it by watching you
+var ranks: Dictionary = {}  # tech -> rank bought on its card (2 or 3); a researched tech is rank 1
+## Stable ids from Data.STORY_EVENTS, in the order they happened (for a future profile save).
+var story_events: Array = []
 ## The Kith, each a person on the map:
 ## {pos: Vector2 (tile coords), path: Array of Vector2i, job: "" | "work" | "haul", building: int,
 ##  phase: String, timer: float, carry: Dictionary, task: Dictionary}
@@ -102,14 +110,21 @@ func add(id: String, amount: int) -> void:
 	seen[id] = true
 
 
-## By hand: x2 once you've made a Flint Tool (you keep one for yourself), times the item's Yield bonuses
-## that aren't tied to a kind of building (Foraging, Stone Axe).
-func _hand_yield(item: String) -> int:
-	var parts: Array = []
-	for bonus in Bonuses.active(self, {"type": "camp", "pos": camp_pos, "worker": -1}, item):
-		if bonus["group"] == "yield" and not Data.BONUSES[bonus["id"]].has("kinds"):
-			parts.append(bonus)
-	return roundi((2 if hand_tools else 1) * Bonuses.total(parts, "yield"))
+## What one click on a resource tile gives: base x tool x rank (Hands.click_yield).
+func click_yield(item: String) -> int:
+	return Hands.click_yield(self, item)
+
+
+## True once a Kith has learned to gather `item` by watching you (Data.LEARN_CLICKS clicks).
+func knows(item: String) -> bool:
+	return learned.has(item)
+
+
+## Note a story moment once, by its id in Data.STORY_EVENTS.
+func record_story(id: String) -> void:
+	assert(Data.STORY_EVENTS.has(id), "unknown story event " + id)
+	if id not in story_events:
+		story_events.append(id)
 
 
 ## How many Kith hold a Flint Tool.
@@ -168,15 +183,17 @@ func gather_by_hand(p: Vector2i) -> String:
 	var tile := tile_at(p)
 	if tile == "shard":
 		shard_seen = true
+		record_story("shard_found")
 		return Data.SHARD_TEXT
 	if tile == "":
 		return ""
 	var item: String = Data.TILES[tile]["yields"]
 	if item == "":
 		return ""
-	var n := _hand_yield(item)
+	var n := click_yield(item)
 	add(item, n)
 	flows.add(item, n, "hand")
+	Hands.teach(self, item)
 	return "+%d %s" % [n, Data.ITEMS[item]["name"]]
 
 
@@ -220,35 +237,18 @@ func research(tech: String) -> bool:
 		for b in buildings:
 			fog.reveal(b["pos"], _sight(Data.SIGHT_BUILDING))
 	events.append("Discovered %s" % Data.TECHS[tech]["name"])
+	if tech == "haulers":
+		record_story("haulers")
+		for b in buildings:
+			b["trips"] = 0  # huts loop on their own from now on
 	if tech == "bronze_dawn":
 		won = true
+		record_story("bronze_dawn")
 	return true
 
 
 func has_haulers() -> bool:
 	return researched.has("haulers")
-
-
-# --- Crafting ----------------------------------------------------------------
-
-
-func recipe_unlocked(recipe: String) -> bool:
-	return researched.has(Data.RECIPES[recipe]["tech"])
-
-
-func craft(recipe: String) -> bool:
-	var r: Dictionary = Data.RECIPES[recipe]
-	if not recipe_unlocked(recipe) or not can_afford(r["in"]):
-		return false
-	_pay(r["in"])
-	for id in r["in"]:
-		flows.add(id, -r["in"][id], "craft")
-	for id in r["out"]:
-		add(id, r["out"][id])
-		flows.add(id, r["out"][id], "craft")
-	if r["out"].has("flint_tools"):
-		hand_tools = true
-	return true
 
 
 # --- Buildings ---------------------------------------------------------------
@@ -401,6 +401,7 @@ func _release_worker(b: Dictionary) -> void:
 	k["phase"] = ""
 	k["timer"] = 0.0
 	k["path"] = []
+	k["trip"] = false
 	b["worker"] = -1
 
 
@@ -429,6 +430,8 @@ func _place_building(type: String, p: Vector2i) -> void:
 		"field_extra": 0.0,  # Calendar's part-item bonus from Fields, paid out once it reaches 1
 		"paused": false,
 		"alert": "",  # a short warning for the pill under the building, "" when all is well
+		"trips": 0,  # hut trips queued by clicking it, before Paths & Haulers (the one under way counts)
+		"rush_cd": 0.0,  # seconds until it can be rushed again
 	}
 	if Data.BUILDINGS[type]["kind"] == "gatherer":
 		for t in gather_tiles(p):
@@ -495,11 +498,16 @@ func _harvest_time(b: Dictionary, tile: Vector2i) -> float:
 	return t
 
 
-## How much one harvest of `tile` brings back: the Yield group for the item (Stone Axe on Wood, Ochre on
-## Clay, Foraging on Berries). Calendar adds a quarter to Fields, paid out as whole items as the
-## building's share builds up.
+## A hut's bundle of `item`, before any Calendar share.
+func _bundle_size(b: Dictionary, item: String) -> int:
+	return roundi(Data.BUNDLE * click_yield(item) * Bonuses.building_yield(self, b, item))
+
+
+## How much one harvest of `tile` brings back: a bundle, Data.BUNDLE times your click yield for the item
+## (so tools and ranks count), times the Yield bonuses only huts get (Ochre on Clay). Calendar adds a
+## quarter to Fields, paid out as whole items as the building's share builds up.
 func _harvest_amount(b: Dictionary, tile: Vector2i, item: String) -> int:
-	var n := roundi(Bonuses.yield_mult(self, b, item))
+	var n := _bundle_size(b, item)
 	if fields.has(tile) and researched.has("calendar"):
 		b["field_extra"] = b.get("field_extra", 0.0) + n * Data.CALENDAR_FIELD_BONUS
 		if b["field_extra"] >= 1.0:
@@ -632,6 +640,7 @@ func _add_kith() -> void:
 		"task": {},
 		"seen": Vector2i(-99, -99),  # the tile they last lifted the fog around
 		"tool": 0,  # jobs left on the Flint Tool they hold, 0 for none
+		"trip": false,  # a hut worker out on a clicked trip, carrying the bundle to the stockpile
 	}
 	kith.append(k)
 
@@ -687,7 +696,7 @@ func _drop_task(k: Dictionary) -> void:
 		add(id, k["carry"][id])
 	k["carry"] = {}
 	var t: Dictionary = k["task"]
-	if not t.is_empty():
+	if t.has("kind"):
 		var b: Dictionary = buildings[t["building"]]
 		if t["kind"] == "pickup":
 			b["claimed"] = false
@@ -709,7 +718,7 @@ func _remove_kith() -> void:
 	for b in buildings:
 		if b["worker"] > gone:
 			b["worker"] -= 1
-	events.append("A Kith left in search of food")
+	events.append("A %s left in search of food" % Data.PEOPLE["one"])
 
 
 func _grow(delta: float, fed: bool) -> void:
@@ -729,7 +738,7 @@ func _grow(delta: float, fed: bool) -> void:
 		grow_timer = 0.0
 		_eat(Data.BIRTH_FOOD)
 		_add_kith()
-		events.append("A Kith was born")
+		events.append(Data.BORN_EVENT % Data.PEOPLE["one"])
 
 
 # --- Simulation --------------------------------------------------------------
@@ -752,7 +761,7 @@ func tick(delta: float) -> void:
 		for k in kith:
 			match k["job"]:
 				"work":
-					_tick_worker(k, delta)
+					Workers.tick(self, k, delta)
 				"haul":
 					Haulers.tick(self, k, delta)
 				_:
@@ -764,6 +773,7 @@ func tick(delta: float) -> void:
 			fog.reveal(here, _sight(Data.SIGHT_KITH))
 	for b in buildings:
 		b["unreachable"] = maxf(b["unreachable"] - delta, 0.0)
+		b["rush_cd"] = maxf(b["rush_cd"] - delta, 0.0)
 		_tick_building(b, delta, fed)
 
 
@@ -786,60 +796,6 @@ func _next_food() -> String:
 		if inv.get(id, 0) > keep:
 			return id
 	return ""
-
-
-## A worker walks to their building. Hut workers then walk out to each resource tile and carry it home.
-func _tick_worker(k: Dictionary, delta: float) -> void:
-	var b: Dictionary = buildings[k["building"]]
-	var def: Dictionary = Data.BUILDINGS[b["type"]]
-	match k["phase"]:
-		"to_site":
-			if k["path"].is_empty() and _tile_of(k) != b["pos"] and not _walk_to(k, b["pos"]):
-				b["unreachable"] = 1.0
-				return
-			if _step(k, delta):
-				k["phase"] = "home"
-		"home":
-			if def["kind"] != "gatherer" or buffered(b["out"]) >= Data.BUFFER_CAP:
-				return
-			var target := _next_gather_tile(k, b)
-			if target == b["pos"]:
-				k["phase"] = "harvest"  # nothing reachable: cut grass by the hut
-			else:
-				k["task"] = {"tile": target}
-				k["phase"] = "to_tile"
-		"to_tile":
-			if _step(k, delta):
-				k["phase"] = "harvest"
-		"harvest":
-			var tile: Vector2i = k["task"].get("tile", b["pos"])
-			k["timer"] += delta
-			if k["timer"] >= _harvest_time(b, tile):
-				k["timer"] = 0.0
-				var item: String = Data.TILES[tile_at(tile)]["yields"] if tile != b["pos"] else "fiber"
-				k["carry"] = {item: _harvest_amount(b, tile, item)}
-				_wear(b)
-				k["task"] = {}
-				_walk_to(k, b["pos"])
-				k["phase"] = "to_home"
-		"to_home":
-			if _step(k, delta):
-				for id in k["carry"]:
-					b["out"][id] = b["out"].get(id, 0) + k["carry"][id]
-					flows.add(id, k["carry"][id], b["type"])
-				k["carry"] = {}
-				k["phase"] = "home"
-
-
-## The next tile in the hut's rotation the worker can reach, or the hut itself if none.
-func _next_gather_tile(k: Dictionary, b: Dictionary) -> Vector2i:
-	var tiles := gather_tiles(b["pos"])
-	for _attempt in tiles.size():
-		var t: Vector2i = tiles[b["gather_index"] % tiles.size()]
-		b["gather_index"] += 1
-		if _walk_to(k, t):
-			return t
-	return b["pos"]
 
 
 ## The Camp or Storehouse closest to p.
@@ -894,7 +850,11 @@ func _tick_building(b: Dictionary, delta: float, fed: bool) -> void:
 		_set_status(b, "Paused: its worker is free for other jobs", "Paused")
 		return
 	if b["worker"] < 0:
-		_set_status(b, "No worker: more Kith needed (they grow with food and Dwellings)", "Idle: no free Kith")
+		_set_status(
+			b,
+			"No worker: more %s needed (they grow with food and Dwellings)" % Data.PEOPLE["many"],
+			"Idle: no free %s" % Data.PEOPLE["one"]
+		)
 		return
 	if not fed:
 		_set_status(b, "Hungry: bring food (berries, fish or flour)", "Hungry: no food")
@@ -918,6 +878,15 @@ func _tick_building(b: Dictionary, delta: float, fed: bool) -> void:
 				b["status"] = "Walking out to gather"
 			"to_home":
 				b["status"] = "Carrying %s home" % Data.ITEMS[k["carry"].keys()[0]]["name"]
+			"to_depot":
+				b["status"] = "Carrying %s to the stockpile" % Data.ITEMS[k["carry"].keys()[0]]["name"]
+			"home":
+				if not Workers.knows_any(self, b["pos"]):
+					b["status"] = "Knows nothing here yet: gather by hand %dx to teach it" % Data.LEARN_CLICKS
+				elif not has_haulers() and b["trips"] <= 0:
+					b["status"] = "Waiting: click to send a trip"
+				else:
+					b["status"] = "Working"
 			_:
 				b["status"] = "Working"
 		return
@@ -925,6 +894,12 @@ func _tick_building(b: Dictionary, delta: float, fed: bool) -> void:
 	b["progress"] += delta
 	if b["progress"] < _work_time(b):
 		return
+	_finish_cycle(b)
+
+
+## A workshop's cycle is done: it uses its inputs and makes its goods.
+func _finish_cycle(b: Dictionary) -> void:
+	var def: Dictionary = Data.BUILDINGS[b["type"]]
 	b["progress"] = 0.0
 	_wear(b)
 	for id in def["in"]:

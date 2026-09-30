@@ -14,6 +14,8 @@ const BuildingPanel = preload("res://scripts/building_panel.gd")
 const Overlays = preload("res://scripts/overlays.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const Rules = preload("res://scripts/rules.gd")
+const Workers = preload("res://scripts/workers.gd")
+const Hands = preload("res://scripts/hands.gd")
 
 const TILE := 32.0
 const MAP_ORIGIN := Vector2.ZERO  # the node's transform scales and centers the map
@@ -65,7 +67,7 @@ func _process(delta: float) -> void:
 		for i in speed:
 			state.tick(delta)
 	for e in state.events:
-		if e == "A Kith was born":
+		if e == Data.BORN_EVENT % Data.PEOPLE["one"]:
 			var at := Overlays.center(state.camp_pos) - Vector2(0, 12)
 			popups.append({"pos": at, "text": "+1 Kith", "t": 0.0, "col": KITH.lightened(0.3)})
 			_toast("New Kith arrive at the Hearth while food lasts", 2.5)
@@ -195,9 +197,9 @@ func _click_tile(p: Vector2i) -> void:
 			_toast(err, 2.0)
 		return
 	if state.building_at.has(p):
-		var i: int = state.building_at[p]
-		if not state.has_haulers():
-			state.haul(i)
+		var note := Workers.click(state, state.building_at[p])
+		if note != "":
+			popups.append({"pos": _tile_center(p), "text": note, "t": 0.0})
 		building_panel.select(p)
 		return
 	building_panel.select(Vector2i(-1, -1))
@@ -244,7 +246,7 @@ func _build_ui() -> void:
 	layer.add_child(bottom_bar)
 	bottom_bar.setup(state)
 	bottom_bar.build_picked.connect(func(type): placing = "" if placing == type else type)
-	bottom_bar.craft_picked.connect(func(r): state.craft(r))
+	bottom_bar.craft_picked.connect(func(r): Hands.craft(state, r))
 	bottom_bar.tech_pressed.connect(func(): tech_panel.visible = not tech_panel.visible)
 	bottom_bar.demolish_pressed.connect(func(): placing = "" if placing == "demolish" else "demolish")
 
@@ -342,6 +344,8 @@ func _refresh_ui() -> void:
 		goal_labels[1].visible = true
 		goal_labels[1].text = "All goals done."
 	info_label.text = _hover_text()
+	var item := _hover_item()
+	top_bar.set_click_hint(click_hint(item) if item != "" else "")
 
 
 func _hover_text() -> String:
@@ -375,7 +379,8 @@ func _hover_text() -> String:
 			s += "\nHolding " + Ui.cost_text(b["out"])
 		if def["kind"] == "gatherer":
 			s += "\n\n" + BuildingPanel.gather_text(state, state.gather_tiles(hover))
-		return s + "\n\nClick for its panel."
+		var click := BuildingPanel.click_text(state, b)
+		return s + "\n\n" + (click + "\n" if click != "" else "") + "Click for its panel."
 	var t: Dictionary = Data.TILES[state.tile_at(hover)]
 	if state.roads.has(hover):
 		if state.tile_at(hover) == "river":
@@ -383,11 +388,38 @@ func _hover_text() -> String:
 		return "Road on %s. Kith walk twice as fast here." % t["name"]
 	var hint := Overlays.blocked_hint(state, hover)
 	if t["yields"] != "":
-		var s := "%s\nClick to gather %s." % [t["name"], Data.ITEMS[t["yields"]]["name"]]
-		if Data.FOOD_VALUE.has(t["yields"]):
-			s += " It's food: running buildings eat it."
+		var item: String = t["yields"]
+		var s := "%s\n%s." % [t["name"], click_hint(item)]
+		if Data.FOOD_VALUE.has(item):
+			s += " It's food: the %s eat it." % Data.PEOPLE["many"]
+		s += "\n" + learn_text(item)
 		return s + ("\n" + hint + "." if hint != "" else "")
 	return t["name"] + ("\n" + hint + "." if hint != "" else "")
+
+
+## "Click: +4 Wood".
+func click_hint(item: String) -> String:
+	return "Click: +%d %s" % [state.click_yield(item), Data.ITEMS[item]["name"]]
+
+
+## How far a Kith is from learning to gather `item` by watching you.
+func learn_text(item: String) -> String:
+	var name: String = Data.ITEMS[item]["name"]
+	if state.knows(item):
+		return "%s knows how to gather %s: huts can gather it." % [state.learned[item], name]
+	return (
+		"Gathered by hand %d/%d. A %s is watching and will learn %s."
+		% [state.hand_counts.get(item, 0), Data.LEARN_CLICKS, Data.PEOPLE["one"], name]
+	)
+
+
+## The tile under the mouse gives this when clicked, or "" if it isn't a resource you can see.
+func _hover_item() -> String:
+	if placing != "" or not state.in_bounds(hover) or not state.fog.is_revealed(hover):
+		return ""
+	if state.building_at.has(hover) or state.roads.has(hover) or state.tile_at(hover) == "":
+		return ""
+	return Data.TILES[state.tile_at(hover)]["yields"]
 
 
 func _progress(cost: Dictionary, limit: int) -> String:
@@ -491,6 +523,13 @@ func _draw() -> void:
 		)
 	elif state.in_bounds(hover):
 		draw_rect(_tile_rect(hover).grow(-1), Color(1, 1, 1, 0.8), false, 2.0)
+		var item := _hover_item()
+		if item != "":
+			var hr := _tile_rect(hover)
+			var tag := click_hint(item)
+			if not state.knows(item):
+				tag += "  ·  taught %d/%d" % [state.hand_counts.get(item, 0), Data.LEARN_CLICKS]
+			Art.pill(self, Vector2(hr.get_center().x, hr.end.y + 4), tag, Color.WHITE, OUTLINE, 12)
 
 	if paused:
 		Art.pill(self, Vector2(GameState.WIDTH * TILE / 2.0, 8), "Paused · Space to resume", GOAL_COLOR, OUTLINE, 16)
@@ -569,10 +608,37 @@ func _draw_building(b: Dictionary) -> void:
 			11,
 			OUTLINE
 		)
+	_draw_trips(b, r)
+	_draw_rush(b, r)
 	if b["status"].begins_with("Hungry") or b["status"].begins_with("No power"):
 		draw_string(
 			ThemeDB.fallback_font, r.position + Vector2(-2, 10), "!", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color("ef476f")
 		)
+
+
+## Before Paths & Haulers, a hut shows its trip queue as pips along the top: gold for each queued trip.
+func _draw_trips(b: Dictionary, r: Rect2) -> void:
+	if Data.BUILDINGS[b["type"]]["kind"] != "gatherer" or state.has_haulers():
+		return
+	for n in Data.TRIP_QUEUE:
+		var c := r.position + Vector2(r.size.x / 2.0 + (n - (Data.TRIP_QUEUE - 1) / 2.0) * 8.0, -3.0)
+		draw_circle(c, 3.6, OUTLINE)
+		draw_circle(c, 2.4, GOAL_COLOR if n < b["trips"] else Color(1, 1, 1, 0.35))
+
+
+## A rushed building shows its cooldown as a shrinking wedge in its top-left corner.
+func _draw_rush(b: Dictionary, r: Rect2) -> void:
+	if b["rush_cd"] <= 0.0:
+		return
+	var c := r.position + Vector2(5, 5)
+	var frac: float = b["rush_cd"] / Data.RUSH_COOLDOWN
+	draw_circle(c, 5.5, OUTLINE)
+	draw_circle(c, 4.0, Color(1, 1, 1, 0.3))
+	var pts := PackedVector2Array([c])
+	for n in 13:
+		pts.append(c + Vector2.from_angle(-PI / 2.0 + TAU * frac * n / 12.0) * 4.0)
+	if frac > 0.02:
+		draw_colored_polygon(pts, GOAL_COLOR)
 
 
 ## Each Kith is a small figure; haulers and hut workers show what they carry.

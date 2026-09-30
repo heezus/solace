@@ -10,6 +10,7 @@ const Data = preload("res://scripts/data.gd")
 const GameState = preload("res://scripts/game_state.gd")
 const Research = preload("res://scripts/research.gd")
 const Rules = preload("res://scripts/rules.gd")
+const Hands = preload("res://scripts/hands.gd")
 
 const DT := 0.1
 const THINK := 1.0  # seconds between decisions
@@ -104,7 +105,7 @@ func _short() -> Dictionary:
 	for type in _workshops_due():
 		_want(want, Data.BUILDINGS[type]["cost"], 1)
 	var tools: int = _workers() + 1 - s.tools_held() - s.inv.get("flint_tools", 0)
-	if s.recipe_unlocked("flint_tools") and tools > 0:
+	if Hands.recipe_unlocked(s, "flint_tools") and tools > 0:
 		_want(want, Data.RECIPES["flint_tools"]["in"], mini(tools, 2))
 	for made in ["flour", "brick", "charcoal", "rope"]:
 		var n: int = want.get(made, 0) - s.inv.get(made, 0)
@@ -198,8 +199,8 @@ func _click() -> void:
 			if s.buffered(b["out"]) >= 5 or hungry:
 				s.haul(i)
 				return
-	if s.recipe_unlocked("flint_tools") and s.tools_held() + s.inv.get("flint_tools", 0) < _workers() + 1:
-		if s.inv.get("flint", 0) >= 2 and s.inv.get("wood", 0) >= 2 and s.craft("flint_tools"):
+	if Hands.recipe_unlocked(s, "flint_tools") and s.tools_held() + s.inv.get("flint_tools", 0) < _workers() + 1:
+		if s.inv.get("flint", 0) >= 2 and s.inv.get("wood", 0) >= 2 and Hands.craft(s, "flint_tools"):
 			return
 	var item := _next_click()
 	# Kith are born only with food to spare, so keep some while there's room for them.

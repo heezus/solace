@@ -11,6 +11,8 @@ const GameState = preload("res://scripts/game_state.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
+const Workers = preload("res://scripts/workers.gd")
+const Hands = preload("res://scripts/hands.gd")
 
 const WIDTH := 252.0
 const INSET := Color("1b3a47")
@@ -52,7 +54,7 @@ func setup(game: GameState) -> void:
 	close.pressed.connect(func(): closed.emit())
 	head.add_child(close)
 
-	for key in ["desc", "recipe", "worker", "math"]:
+	for key in ["desc", "recipe", "worker", "math", "click"]:
 		parts[key] = _wrapped(12)
 		v.add_child(parts[key])
 	parts["math"].add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
@@ -160,6 +162,9 @@ func refresh() -> void:
 	parts["worker"].visible = state.needs_worker(b)
 	parts["math"].text = Bonuses.text(state, b)
 	parts["math"].visible = state.needs_worker(b) and parts["math"].text != ""
+	parts["click"].text = click_text(state, b)
+	parts["click"].visible = parts["click"].text != ""
+	parts["click"].add_theme_color_override("font_color", Ui.HIGHLIGHT)
 	var held := state.buffered(b["out"])
 	parts["holding"].visible = state.needs_worker(b)
 	parts["bar"].visible = state.needs_worker(b)
@@ -197,6 +202,26 @@ static func recipe_text(s: GameState, b: Dictionary) -> String:
 	return ""
 
 
+## What clicking the building does now: send a trip (before Paths & Haulers), or rush it.
+static func click_text(s: GameState, b: Dictionary) -> String:
+	if not s.needs_worker(b):
+		return ""
+	var kind: String = Data.BUILDINGS[b["type"]]["kind"]
+	if kind == "gatherer" and not s.has_haulers():
+		var pips := ""
+		for n in Data.TRIP_QUEUE:
+			pips += "●" if n < b["trips"] else "○"
+		return (
+			"Trips %s  ·  click the hut to send its %s for a bundle (up to %d queued)"
+			% [pips, Data.PEOPLE["one"], Data.TRIP_QUEUE]
+		)
+	if b["rush_cd"] > 0.0:
+		return "Rush ready in %d s" % ceili(b["rush_cd"])
+	if Workers.can_rush(s, b):
+		return "Click to rush: finish this cycle now (then %d s to recover)" % int(Data.RUSH_COOLDOWN)
+	return "Click to rush while it's working"
+
+
 ## "Worker: 1 Kith · Flint Tool, 32 jobs left".
 static func worker_text(s: GameState, b: Dictionary) -> String:
 	if b["paused"]:
@@ -206,7 +231,7 @@ static func worker_text(s: GameState, b: Dictionary) -> String:
 	var k: Dictionary = s.kith[b["worker"]]
 	if k["tool"] > 0:
 		return "Worker: 1 Kith · Flint Tool, %d jobs left" % k["tool"]
-	if s.recipe_unlocked("flint_tools"):
+	if Hands.recipe_unlocked(s, "flint_tools"):
 		return "Worker: 1 Kith · no tool (craft Flint Tools: +50% speed)"
 	return "Worker: 1 Kith"
 
@@ -234,5 +259,6 @@ static func gather_text(s: GameState, tiles: Array) -> String:
 		counts[item] = counts.get(item, 0) + 1
 	var out: Array = []
 	for id in counts:
-		out.append("%s x%d" % [Data.ITEMS[id]["name"], counts[id]])
+		var known := "" if s.knows(id) else " not yet learned (gather by hand %dx)" % Data.LEARN_CLICKS
+		out.append("%s x%d%s" % [Data.ITEMS[id]["name"], counts[id], known])
 	return "Gathers from the %d highlighted tiles (within %d), taking turns: %s." % [tiles.size(), r, ", ".join(out)]

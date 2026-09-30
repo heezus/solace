@@ -9,8 +9,10 @@ const TechLayout = preload("res://scripts/tech_layout.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Goals = preload("res://scripts/goals.gd")
 const Rules = preload("res://scripts/rules.gd")
+const Hands = preload("res://scripts/hands.gd")
 const ConventionTests = preload("res://tests/convention_tests.gd")
 const BonusTests = preload("res://tests/bonus_tests.gd")
+const ArcTests = preload("res://tests/arc_tests.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
 
 var failures := 0
@@ -48,6 +50,7 @@ func _init() -> void:
 	test_fishing_weir_makes_fish()
 	ConventionTests.new().run(self)
 	BonusTests.new().run(self)
+	ArcTests.new().run(self)
 	test_pacing_bot()
 	print("FAILED: %d" % failures if failures > 0 else "ALL TESTS PASSED")
 	quit(1 if failures > 0 else 0)
@@ -133,7 +136,7 @@ func test_hand_gathering_and_tools() -> void:
 	s.researched["knapping"] = true
 	s.inv["flint"] = 2
 	s.inv["wood"] = 2
-	check(s.craft("flint_tools"), "can craft flint tools")
+	check(Hands.craft(s, "flint_tools"), "can craft flint tools")
 	check(s.inv["wood"] == 0, "crafting spent the wood")
 	check(s.inv["flint_tools"] == 1, "have flint tools")
 	s.gather_by_hand(tree)
@@ -167,13 +170,19 @@ func test_every_tech_is_reachable() -> void:
 func test_gatherer_fills_until_hauled() -> void:
 	var s := fresh()
 	give(s, 100)
+	s.learned["wood"] = "Aro"
 	s.researched["gatherers_hut"] = true
+	s.researched["haulers"] = true
 	var p := s.camp_pos + Vector2i(-2, 0)
 	check(s.place("gatherers_hut", p), "place hut next to forest")
 	for i in 400:
 		s.tick(0.5)
+		for k in s.kith:
+			if k["job"] == "haul":
+				k["job"] = "idle"  # nobody free to haul, so the hut fills up
 	var b: Dictionary = s.buildings[s.building_at[p]]
-	check(s.buffered(b["out"]) == Data.BUFFER_CAP, "hut stops when full")
+	check(s.buffered(b["out"]) >= Data.BUFFER_CAP, "hut stops when full")
+	check(s.buffered(b["out"]) < Data.BUFFER_CAP + Data.BUNDLE, "and brings back no more after that")
 	var before: int = s.inv["wood"]
 	s.haul(s.building_at[p])
 	check(s.buffered(b["out"]) == 0, "hauling empties the hut")
@@ -609,9 +618,9 @@ func test_lore_and_side_branch_effects() -> void:
 	var hut: Dictionary = s.buildings[s.building_at[p]]
 	var base := s._work_time(hut)
 	var clay := find_tile(s, "clay")
-	check(s._harvest_amount(hut, clay, "clay") == 1, "one clay per harvest")
+	check(s._harvest_amount(hut, clay, "clay") == Data.BUNDLE, "a bundle of clay per harvest")
 	s.researched["ochre"] = true
-	check(s._harvest_amount(hut, clay, "clay") == 2, "Ochre: huts bring back twice the Clay")
+	check(s._harvest_amount(hut, clay, "clay") == Data.BUNDLE * 2, "Ochre: huts bring back twice the Clay")
 	check(is_equal_approx(s.work_speed(hut), 1.0), "Ochre doesn't touch speed")
 	check(place_free(s, "standing_stone", p + Vector2i(0, 2)), "place a Standing Stone 2 tiles off")
 	check(is_equal_approx(s.work_speed(hut), 1.0), "2 tiles off is too far for a Standing Stone")
@@ -620,21 +629,21 @@ func test_lore_and_side_branch_effects() -> void:
 	check(is_equal_approx(s._work_time(hut), base / 2.0), "and the cycle takes half as long")
 
 	var tree := find_tile(s, "tree")
-	check(s._harvest_amount(hut, tree, "wood") == 1, "one wood per harvest")
+	check(s._harvest_amount(hut, tree, "wood") == Data.BUNDLE, "a bundle of wood per harvest")
 	s.researched["stone_axe"] = true
-	check(s._harvest_amount(hut, tree, "wood") == 2, "Stone Axe: huts gather Wood twice as fast")
+	check(s._harvest_amount(hut, tree, "wood") == Data.BUNDLE * 3, "Stone Axe: huts bring back three times the Wood")
 
 	var field := find_grass(s, true)
 	check(place_free(s, "field", field), "sow a field by the river")
 	var total := 0
 	for i in 4:
 		total += s._harvest_amount(hut, field, "grain")
-	check(total == 4, "four harvests of a Field give 4 grain")
+	check(total == 4 * Data.BUNDLE, "four harvests of a Field give four bundles")
 	s.researched["calendar"] = true
 	total = 0
 	for i in 4:
 		total += s._harvest_amount(hut, field, "grain")
-	check(total == 5, "Calendar: Fields yield 25% more")
+	check(total == 5 * Data.BUNDLE, "Calendar: Fields yield 25% more")
 
 	var dry := find_grass(s, false)
 	place_free(s, "field", dry)

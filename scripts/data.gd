@@ -42,6 +42,48 @@ const FOOD_VALUE := {"berries": 1.0, "fish": 2.0, "flour": 3.0}
 ## The order the Kith eat in. Flour comes last, and only what research doesn't need.
 const EAT_ORDER := ["berries", "fish", "flour"]
 
+# --- The people ----------------------------------------------------------------
+## Display names for the people the player leads. Engine code formats its messages with these, so a
+## later faction (13-three-perspectives.md) only swaps data.
+const PEOPLE := {"one": "Kith", "many": "Kith"}
+## Short earthy names, given in turn to each Kith who learns a job by watching you.
+## The event a birth sends to the UI, formatted with PEOPLE["one"].
+const BORN_EVENT := "A %s was born"
+const PEOPLE_NAMES := ["Aro", "Tam", "Esk", "Bru", "Olla", "Fen", "Rook", "Moss", "Sef", "Tarn", "Wren", "Hask"]
+
+## Major story moments, by stable id, recorded in GameState.story_events so a future profile save can
+## keep them across runs.
+const STORY_EVENTS := {
+	"first_lesson": "A Kith learned a job by watching",
+	"first_trip": "A hut sent its first Kith out for a bundle",
+	"shard_found": "The Strange Stone was found",
+	"haulers": "The Kith began to carry for each other",
+	"bronze_dawn": "The stone age ended",
+}
+
+# --- From Hands to Haulers (14-hands-to-haulers.md) --------------------------------
+## Gather a resource by hand this many times and a watching Kith learns it: huts may then gather it.
+const LEARN_CLICKS := 10
+## A hut trip brings back a bundle: this many times your click yield for that resource.
+const BUNDLE := 3
+## Trips a hut can have queued before Paths & Haulers (the one under way counts).
+const TRIP_QUEUE := 3
+## Clicking a working building finishes its cycle now, then it can't be rushed for this long.
+const RUSH_COOLDOWN := 5.0
+## Click yield is base x tool x rank. Tools multiply it; the best one that applies counts.
+## `crafted` needs a Flint Tool made once, `tech` a researched tech (Bronze Tools is era 2's slot),
+## `item` limits it to one resource.
+const CLICK_TOOLS := {
+	"flint_tools": {"name": "Flint Tools", "mult": 2, "crafted": true},
+	"stone_axe": {"name": "Stone Axe", "mult": 3, "tech": "stone_axe", "item": "wood"},
+	"bronze_tools": {"name": "Bronze Tools", "mult": 4, "tech": "bronze_tools"},
+}
+## Ranks I to III: rank I is the tech, ranks II and III are optional buys on its card.
+const MAX_RANK := 3
+## Each rank costs this many times the one before it (rank I is the tech's own cost).
+const RANK_COST_STEP := 2.5
+const RANK_NAMES := ["", "I", "II", "III"]
+
 # --- The Kith (population) ---------------------------------------------------
 
 ## Food each Kith eats per second.
@@ -102,6 +144,9 @@ const SHARD_TEXT := (
 ## `requires` must all be researched; `requires_any` (optional) needs just one of its techs.
 ## `effect` marks a tech whose bonus GameState applies while it is researched.
 ## `hidden` techs stay out of the tree until the player has clicked the Strange Stone.
+## `rank` gives a tech optional ranks II and III, bought on its card (never needed for Bronze Dawn):
+## {"item": id} adds 1 to that item's click base per rank, {"building": type} is +25% Speed there
+## (BONUSES "rank_<type>").
 ## The board is laid out from these keys alone (scripts/tech_layout.gd): `lane` ("gate" for the full-height
 ## Bronze Dawn column), `tier` and `slot` place the card, and lines are routed automatically. An optional
 ## `via` dictionary steers a line that skips tiers: {parent: lane id} runs it along the channel just below
@@ -127,14 +172,20 @@ const STORYTELLING_GROW := 0.75  # grow time multiplier
 
 ## Work multipliers (scripts/bonuses.gd). "speed" shortens work cycles, "yield" multiplies each harvest.
 ## They add within a group and multiply across groups. Optional keys: `tech` (needs it researched),
-## `kinds` (building kinds it applies to), `item` (only harvests of that item).
+## `kinds` (building kinds it applies to), `types` (building types), `item` (only harvests of that item),
+## `rank_of` (a tech's ranks: `add` per rank bought beyond I).
+## The Stone Axe is a click tool (CLICK_TOOLS): huts get it through their bundle, which is based on a click.
 ## "tools" applies while the worker holds a Flint Tool, "standing_stone" next to a Standing Stone.
 const BONUSES := {
 	"tools": {"name": "Flint Tools", "group": "speed", "add": 0.5, "kinds": ["gatherer", "processor"]},
 	"standing_stone": {"name": "Standing Stone", "group": "speed", "add": 1.0, "kinds": ["gatherer", "processor"]},
 	"foraging": {"name": "Foraging", "group": "yield", "add": 1.0, "tech": "foraging", "item": "berries"},
-	"stone_axe": {"name": "Stone Axe", "group": "yield", "add": 1.0, "tech": "stone_axe", "item": "wood"},
 	"ochre": {"name": "Ochre", "group": "yield", "add": 1.0, "tech": "ochre", "item": "clay", "kinds": ["gatherer"]},
+	# Ranks II and III on workshop techs: +25% Speed each, at that workshop only (`rank_of`, `types`).
+	"rank_twine_post":
+	{"name": "Cordage", "group": "speed", "add": 0.25, "rank_of": "cordage", "types": ["twine_post"]},
+	"rank_charcoal_pit": {"name": "Fire", "group": "speed", "add": 0.25, "rank_of": "fire", "types": ["charcoal_pit"]},
+	"rank_kiln": {"name": "Pottery", "group": "speed", "add": 0.25, "rank_of": "pottery", "types": ["kiln"]},
 }
 ## A Flint Tool lasts this many jobs (harvests or work cycles) in a worker's hands.
 const TOOL_JOBS := 40
@@ -155,6 +206,7 @@ const TECHS := {
 		"icon": "gatherers_hut",
 		"requires": [],
 		"cost": {"berries": 5, "fiber": 10},
+		"rank": {"item": "berries"},
 		"desc": "Know the good bushes. Berries gather twice as fast, by hand and by hut.",
 	},
 	"knapping":
@@ -169,6 +221,7 @@ const TECHS := {
 		"icon": "@flint",
 		"requires": [],
 		"cost": {"flint": 5, "stone": 10},
+		"rank": {"item": "flint"},
 		"desc":
 		"Shape flint. Craft Flint Tools: you gather twice as much by hand, and each worker holding one works 50% faster.",
 	},
@@ -184,6 +237,7 @@ const TECHS := {
 		"icon": "twine_post",
 		"requires": [],
 		"cost": {"fiber": 15},
+		"rank": {"building": "twine_post"},
 		"desc": "Twist fiber into rope, by hand or at a Twine Post.",
 	},
 	"fire":
@@ -198,6 +252,7 @@ const TECHS := {
 		"icon": "hearth",
 		"requires": [],
 		"cost": {"wood": 10, "stone": 5},
+		"rank": {"building": "charcoal_pit"},
 		"desc": "Tame flame. Smoulder wood into charcoal in a Charcoal Pit.",
 	},
 	"storytelling":
@@ -255,6 +310,7 @@ const TECHS := {
 		"icon": "quarry",
 		"requires": ["knapping", "fire"],
 		"cost": {"stone": 25, "charcoal": 5},
+		"rank": {"item": "stone"},
 		"desc": "Dress and fit stone. Needed for millstones, paved roads and megaliths.",
 	},
 	"shelter":
@@ -285,6 +341,7 @@ const TECHS := {
 		"icon": "kiln",
 		"requires": ["fire"],
 		"cost": {"clay": 20, "charcoal": 10},
+		"rank": {"building": "kiln"},
 		"desc": "Fire clay. Unlocks the Kiln (clay + charcoal into brick).",
 	},
 	"ochre":
@@ -300,6 +357,7 @@ const TECHS := {
 		"side": true,
 		"requires": ["storytelling", "foraging"],
 		"cost": {"clay": 10, "berries": 10},
+		"rank": {"item": "clay"},
 		"effect": "ochre",
 		"desc": "Know the red earth. Gatherer's Huts bring back twice the Clay per trip.",
 	},
@@ -348,6 +406,7 @@ const TECHS := {
 		"icon": "field",
 		"requires": ["gatherers_hut", "stone_axe"],
 		"cost": {"grain": 20, "wood": 20},
+		"rank": {"item": "grain"},
 		"desc": "Sow wild grain. Plant Fields of grain on open grassland.",
 	},
 	"haulers":
@@ -438,6 +497,7 @@ const TECHS := {
 		"icon": "@axe",
 		"requires": ["knapping", "cordage"],
 		"cost": {"flint": 10, "wood": 15},
+		"rank": {"item": "wood"},
 		"effect": "stone_axe",
 		"desc": "Haft a flint head with cord. Wood x2 per harvest, by hand and from huts. Clears land for Farming.",
 	},

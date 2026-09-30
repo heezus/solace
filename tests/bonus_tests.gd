@@ -5,6 +5,7 @@ extends RefCounted
 const Data = preload("res://scripts/data.gd")
 const GameState = preload("res://scripts/game_state.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
+const Hands = preload("res://scripts/hands.gd")
 
 var t  # the runner, tests/run_tests.gd
 
@@ -40,9 +41,12 @@ func test_bonuses_add_within_and_multiply_across() -> void:
 	t.check(is_equal_approx(s.work_speed(hut), 2.5), "tool and Standing Stone add: x2.5, not x3")
 	var tree: Vector2i = t.find_tile(s, "tree")
 	s.researched["stone_axe"] = true
-	t.check(s._harvest_amount(hut, tree, "wood") == 2, "Stone Axe is a Yield bonus: x2 Wood per trip")
+	t.check(
+		s._harvest_amount(hut, tree, "wood") == Data.BUNDLE * 3,
+		"Stone Axe is a click tool: x3 Wood, so a bundle is %d Wood" % (Data.BUNDLE * 3)
+	)
 	var cycles := 60.0 / Data.BUILDINGS["gatherers_hut"]["time"]
-	t.check(is_equal_approx(60.0 / s._work_time(hut), cycles * 2.5), "speed x2.5 and yield x2 multiply: 5x the Wood")
+	t.check(is_equal_approx(60.0 / s._work_time(hut), cycles * 2.5), "speed x2.5 and the bundle multiply")
 	var text := Bonuses.text(s, hut)
 	t.check(text.contains("x Speed 2.5"), "the panel shows the speed math: " + text)
 	t.check(text.contains("Flint Tools +50%") and text.contains("Standing Stone +100%"), "and names each bonus")
@@ -101,14 +105,14 @@ func test_hand_gathering_keeps_its_tools() -> void:
 	s.researched["knapping"] = true
 	s.inv["flint"] = 2
 	s.inv["wood"] = 2
-	s.craft("flint_tools")
+	Hands.craft(s, "flint_tools")
 	s.inv["flint_tools"] = 0  # the Kith took every spare
 	s.inv["wood"] = 0
 	s.gather_by_hand(tree)
 	t.check(s.inv["wood"] == 2, "you keep a tool for yourself: hand gathering stays x2")
 	s.researched["stone_axe"] = true
 	s.gather_by_hand(tree)
-	t.check(s.inv["wood"] == 6, "Stone Axe stacks on top: 4 Wood a click")
+	t.check(s.inv["wood"] == 5, "the Stone Axe is the better tool for Wood: 3 a click, not 2 x 3")
 	s.researched["ochre"] = true
 	var clay: Vector2i = t.find_tile(s, "clay")
 	s.fog.reveal_all()
@@ -123,4 +127,5 @@ func test_bonus_table_is_well_formed() -> void:
 		t.check(b["group"] in ["speed", "yield"], "%s is a Speed or Yield bonus" % id)
 		t.check(b["add"] > 0.0, "%s adds something" % id)
 		t.check(not b.has("tech") or Data.TECHS.has(b["tech"]), "%s names a real tech" % id)
+		t.check(not b.has("rank_of") or Data.TECHS[b["rank_of"]].has("rank"), "%s is a ranked tech's bonus" % id)
 		t.check(not b.has("item") or Data.ITEMS.has(b["item"]), "%s names a real item" % id)
