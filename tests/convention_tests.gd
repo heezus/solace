@@ -31,6 +31,7 @@ func run(runner) -> void:
 	test_build_tabs_cover_every_building()
 	test_building_panel_texts()
 	test_tree_gates_every_building()
+	test_data_facade_exports_every_domain_constant()
 
 
 func test_demolish_refunds_half() -> void:
@@ -403,3 +404,25 @@ func test_tree_gates_every_building() -> void:
 	for tech in Data.TECHS:
 		var w := font.get_string_size(Data.TECHS[tech]["unlock"], HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x
 		t.check(w <= TechLayout.CARD_W - 70.0, "%s's summary fits its card (%d px)" % [tech, w])
+
+
+## scripts/data.gd is a facade over the domain files in scripts/data/: every constant they define is
+## re-exported under the same name with the same value, and no two files define the same name.
+func test_data_facade_exports_every_domain_constant() -> void:
+	var facade_script: Script = Data
+	var facade: Dictionary = facade_script.get_script_constant_map()
+	var owner_of := {}
+	var files := Array(DirAccess.get_files_at("res://scripts/data"))
+	files = files.filter(func(f): return f.ends_with(".gd"))
+	t.check(files.size() >= 7, "the data domain files are in scripts/data/ (%d)" % files.size())
+	for f in files:
+		var domain_script: Script = load("res://scripts/data/" + f)
+		var domain: Dictionary = domain_script.get_script_constant_map()
+		for name in domain:
+			t.check(not owner_of.has(name), "%s is defined once (in %s and %s)" % [name, owner_of.get(name, ""), f])
+			owner_of[name] = f
+			t.check(facade.has(name), "Data re-exports %s from data/%s" % [name, f])
+			t.check(facade.get(name) == domain[name], "Data.%s is data/%s's value" % [name, f])
+	for name in facade:
+		if not name.begins_with("Data"):  # the preloaded domain scripts themselves
+			t.check(owner_of.has(name), "Data.%s comes from a file in scripts/data/" % name)

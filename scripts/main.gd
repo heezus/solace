@@ -64,7 +64,7 @@ func _ready() -> void:
 	state = GameState.new()
 	state.generate(randi())
 	_build_ui()
-	_toast("The Kith make camp. Follow the goals on the right. Press T for the tech tree.", 6.0)
+	_toast(Data.CAMP_TOAST % Data.PEOPLE["many"], 6.0)
 
 
 func _process(delta: float) -> void:
@@ -75,8 +75,10 @@ func _process(delta: float) -> void:
 	for e in state.events:
 		if e == Data.BORN_EVENT % Data.PEOPLE["one"]:
 			var at := Overlays.center(state.camp_pos) - Vector2(0, 12)
-			popups.append({"pos": at, "text": "+1 Kith", "t": 0.0, "col": KITH.lightened(0.3)})
-			_toast("New Kith arrive at the Hearth while food lasts", 2.5)
+			popups.append(
+				{"pos": at, "text": Data.BORN_POPUP % Data.PEOPLE["one"], "t": 0.0, "col": KITH.lightened(0.3)}
+			)
+			_toast(Data.BORN_TOAST % Data.PEOPLE["many"], 2.5)
 		else:
 			_toast(e, 3.0)
 	state.events.clear()
@@ -459,8 +461,8 @@ func _tile_text() -> String:
 	var t: Dictionary = Data.TILES[state.tile_at(hover)]
 	if state.roads.has(hover):
 		if state.tile_at(hover) == "river":
-			return "Wooden Bridge. Kith and haulers cross the river here."
-		return "Road on %s. Kith walk twice as fast here." % t["name"]
+			return Data.BRIDGE_HINT % Data.PEOPLE["many"]
+		return Data.ROAD_HINT % [t["name"], Data.PEOPLE["many"]]
 	var hint := Overlays.blocked_hint(state, hover)
 	if t["yields"] != "":
 		var item: String = t["yields"]
