@@ -152,6 +152,7 @@ func refresh() -> void:
 	parts["name"].text = def["name"]
 	var status: Label = parts["status"]
 	status.text = b["status"]
+	status.visible = b["status"] != def["desc"]  # a building with no status of its own says its blurb: show it once
 	var col := Color.WHITE
 	if b["alert"] != "":
 		col = Color("ff9aa9")

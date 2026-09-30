@@ -97,7 +97,7 @@ func setup(game: Sim) -> void:
 	dh.add_child(dv)
 	strip["title"] = Ui.label("", 16)
 	dv.add_child(strip["title"])
-	for key in ["desc", "cost", "links", "route"]:
+	for key in ["desc", "cost", "warn", "links", "route"]:
 		var l := Ui.label("", 12)
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD
 		dv.add_child(l)
@@ -193,6 +193,7 @@ func _fill_row(row: HBoxContainer, caption: String, techs: Array, empty: String)
 		style.set_border_width_all(2)
 		b.add_theme_stylebox_override("normal", style)
 		b.pressed.connect(_on_card.bind(tech))
+		b.tooltip_text = _chip_tip(tech)
 		row.add_child(b)
 	if caption == "QUEUE" and state.tech_tree.goal != "":
 		var clear := Ui.button("Clear")
@@ -204,12 +205,23 @@ func _fill_row(row: HBoxContainer, caption: String, techs: Array, empty: String)
 		row.add_child(clear)
 
 
+## A queue or ready chip's tooltip: the cost, what the building will cost after, and a heads-up when paying leaves too little.
+func _chip_tip(tech: String) -> String:
+	var lines: Array = ["Cost: " + Ui.cost_text(Data.TECHS[tech]["cost"])]
+	if Ui.then_builds_text(tech) != "":
+		lines.append(Ui.then_builds_text(tech))
+		if state.tech_tree.can_research(tech) and Ui.build_warning(state.economy.inv, tech) != "":
+			lines.append(Ui.build_warning(state.economy.inv, tech))
+	return "\n".join(lines)
+
+
 func _show_frontier(ready_now: Array) -> void:
 	strip["title"].text = "Frontier"
 	strip["title"].add_theme_color_override("font_color", TechBoard.GOLD)
 	var names: Array = ready_now.map(func(t): return Data.TECHS[t]["name"])
 	strip["desc"].text = "Ready now: " + (", ".join(names) if not names.is_empty() else "nothing yet")
 	strip["cost"].text = "Hover a card to see its whole chain in gold. Click one to research it, or to queue the way there."
+	strip["warn"].visible = false
 	strip["links"].text = ""
 	strip["route"].text = ""
 	strip["button"].visible = false
@@ -231,6 +243,15 @@ func _show_tech(tech: String) -> void:
 	strip["title"].add_theme_color_override("font_color", Color.WHITE)
 	strip["desc"].text = t["desc"]
 	strip["cost"].text = "Cost: " + Ui.progress_text(state.economy.inv, t["cost"], 99)
+	var researched: bool = state.tech_tree.researched.has(tech)
+	if not researched and Ui.then_builds_text(tech) != "":
+		strip["cost"].text += "     " + Ui.then_builds_text(tech)
+	var warn := (
+		"" if researched or not state.tech_tree.can_research(tech) else Ui.build_warning(state.economy.inv, tech)
+	)
+	strip["warn"].text = warn
+	strip["warn"].visible = warn != ""
+	strip["warn"].add_theme_color_override("font_color", Ui.HIGHLIGHT)
 	if Ranks.has_ranks(tech):
 		var r := Ranks.rank(state, tech)
 		strip["cost"].text += (

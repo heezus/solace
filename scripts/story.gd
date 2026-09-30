@@ -71,6 +71,8 @@ func goal_met(s, g: Dictionary) -> bool:
 	match g["id"]:
 		"learn_wood":
 			return s.people.knows("wood")
+		"learn_berries":
+			return s.people.knows("berries")
 		"learn_stone":
 			return s.people.knows("stone") and s.people.knows("flint")
 		"flax":

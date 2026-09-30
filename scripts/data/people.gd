@@ -10,6 +10,8 @@ const PEOPLE := {"one": "Kith", "many": "Kith"}
 const BORN_EVENT := "A %s was born"
 ## The event when one leaves in search of food, formatted with PEOPLE["one"].
 const LEFT_EVENT := "A %s left in search of food"
+## The early warning, sent once when food is about to run out (formatted with PEOPLE["many"]).
+const FOOD_LOW_EVENT := "Food is running low. Hold the mouse on Berry Bushes to gather more, and the %s stay fed"
 ## Short earthy names, given in turn to each Kith as they're born (a second round adds " II").
 const PEOPLE_NAMES := ["Aro", "Tam", "Esk", "Bru", "Olla", "Fen", "Rook", "Moss", "Sef", "Tarn", "Wren", "Hask"]
 
@@ -37,6 +39,8 @@ const NAMELESS := "A %s"  # one: who learns a job when no one is named
 const BRIDGE_HINT := "Wooden Bridge. %s and haulers cross the river here."  # many
 const ROAD_HINT := "Road on %s. %s walk twice as fast here."  # tile name, many
 const FOOD_TIP := "Every %s eats food: Berries, then Fish, then any Flour research doesn't need."  # one
+## The Food readout while the warning is up, formatted with the time left ("45 s").
+const FOOD_LOW_TEXT := "Low: %s left. Gather berries!"
 const STARVING_TEXT := "Food: none! The %s have stopped working"  # many
 const TOOLS_LABEL := "Tools %d/%d %s"  # held, people, many
 const TOOLS_TIP := "%s holding a Flint Tool work 50%% faster. Each tool lasts %d jobs; spares in the stockpile: %d."  # many
