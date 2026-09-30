@@ -486,7 +486,7 @@ func test_the_bot_wins_on_time_through_restores() -> void:
 	var game := Sim.new()
 	game.generate(3)
 	bot.attach(game)
-	var points := [250.0, 550.0, 800.0]
+	var points := [250.0, 500.0, 700.0]
 	var restored := 0
 	while bot.clock < 30 * 60.0 and not bot.s.won:
 		if not points.is_empty() and bot.clock >= points[0]:
