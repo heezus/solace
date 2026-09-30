@@ -4,13 +4,13 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 const Fog = preload("res://scripts/fog.gd")
+const Buildings = preload("res://scripts/buildings.gd")
 const Economy = preload("res://scripts/economy.gd")
 const Flows = preload("res://scripts/flows.gd")
 const World = preload("res://scripts/world.gd")
 const Pathing = preload("res://scripts/pathing.gd")
 const Haulers = preload("res://scripts/haulers.gd")
 const Goals = preload("res://scripts/goals.gd")
-const Rules = preload("res://scripts/rules.gd")
 const Research = preload("res://scripts/research.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const Ranks = preload("res://scripts/ranks.gd")
@@ -22,12 +22,8 @@ const WIDTH := World.WIDTH
 const HEIGHT := World.HEIGHT
 const NEIGHBORS := World.NEIGHBORS
 
-var buildings: Array = []  # each: {type, pos, progress, inbuf, out, status, gather_items, gather_index, worker, ...}
-var building_at: Dictionary = {}  # Vector2i -> index into buildings
 var won := false
 var goals_done: Dictionary = {}
-var road_rev := 0  # bumped whenever roads or buildings change, so Roads rebuilds its networks
-var road_net: Dictionary = {}  # Roads' cache of the road networks and which buildings they link
 var hand_tools := false  # you've made a Flint Tool, so hand gathering is doubled for good
 var shard_seen := false  # the player has clicked the Strange Stone, revealing hidden techs
 var hand_counts: Dictionary = {}  # item -> times harvested by hand
@@ -55,6 +51,9 @@ var pathing := Pathing.new(world, _has_tech)  # the walking grid and A*; it read
 var economy := Economy.new(tech_set)  # stockpile, food and flows; it reads the techs but never writes them
 ## Techs: what is researched, requirements, the goal and the queue. It pays through `economy`.
 var tech_tree := Research.new(economy, tech_set, _hidden_shown)
+## The buildings that stand on the map, the rules for placing and tearing them down, power and housing.
+## It builds through `world` and `economy`, asks `tech_tree` what is unlocked and reads the fog.
+var town := Buildings.new(world, economy, tech_tree, fog.is_revealed)
 
 # Pass-throughs to the World and Pathing blocks, for callers not yet moved to `world` and `pathing`.
 var tiles: Array:  # flat array of tile ids, index = y * WIDTH + x
@@ -79,6 +78,24 @@ var fields: Dictionary:  # Vector2i -> true, grain tiles the Kith sowed
 var astar: AStarGrid2D:
 	get:
 		return pathing.astar
+
+# Pass-throughs to the Buildings block, for callers not yet moved to `town`.
+var buildings: Array:  # each: {type, pos, progress, inbuf, out, status, gather_items, gather_index, worker, ...}
+	get:
+		return town.buildings
+var building_at: Dictionary:  # Vector2i -> index into buildings
+	get:
+		return town.building_at
+var road_rev: int:  # bumped whenever roads or buildings change, so Roads rebuilds its networks
+	get:
+		return town.road_rev
+	set(value):
+		town.road_rev = value
+var road_net: Dictionary:  # Roads' cache of the road networks and which buildings they link
+	get:
+		return town.road_net
+	set(value):
+		town.road_net = value
 
 # Pass-throughs to the Research block, for callers not yet moved to `tech_tree`.
 var researched: Dictionary:
@@ -122,7 +139,7 @@ var flows: Flows:
 func generate(seed_value: int) -> void:
 	world.generate(seed_value)
 	fog.setup(world.width, world.height)
-	_place_building("camp", world.camp_pos)
+	town.add_building("camp", world.camp_pos)
 	pathing.build()
 	fog.reveal(world.camp_pos, Data.SIGHT_START)
 	kith.clear()
@@ -224,7 +241,7 @@ func _wear(b: Dictionary) -> void:
 
 
 func hut_radius() -> int:
-	return Data.BUILDINGS["gatherers_hut"]["radius"] + (1 if researched.has("scouting") else 0)
+	return town.hut_radius()
 
 
 func food_value(id: String) -> float:
@@ -319,69 +336,31 @@ func has_haulers() -> bool:
 
 
 func building_unlocked(type: String) -> bool:
-	var tech: String = Data.BUILDINGS[type]["tech"]
-	return tech == "" or researched.has(tech)
+	return town.unlocked(type)
 
 
 ## Returns "" if the building can go here, otherwise the reason it can't.
 func placement_error(type: String, p: Vector2i) -> String:
-	var def: Dictionary = Data.BUILDINGS[type]
-	if not building_unlocked(type):
-		return "Not discovered yet"
-	if not in_bounds(p):
-		return "Off the map"
-	if not fog.is_revealed(p):
-		return "Unexplored: build or walk closer to see it"
-	if building_at.has(p) or roads.has(p):
-		return "Something is already there"
-	if def["kind"] == "road":
-		if tile_at(p) == "river":
-			return "Roads can't cross the river: build a Wooden Bridge"
-		if tile_at(p) not in ["grass", "rock", "tree"]:
-			return "Roads go on grassland or through Forest, or cut a pass through Rocks"
-		return "" if can_afford(Rules.cost_at(type, tile_at(p))) else "Not enough materials"
-	if def["kind"] == "bridge":
-		if tile_at(p) != "river":
-			return "Bridges go on river tiles"
-		return "" if can_afford(def["cost"]) else "Not enough materials"
-	if def["kind"] == "field":
-		if tile_at(p) != "grass":
-			return "Fields go on open grassland"
-		return "" if can_afford(def["cost"]) else "Not enough materials"
-	if not Data.TILES[tile_at(p)]["buildable"]:
-		return "Build on open grassland"
-	if def.get("needs_river", false) and not touches_river(p):
-		return "Must touch the river"
-	if def.get("needs_shard", false) and not world.touches(p, "shard"):
-		return "Must go next to the Strange Stone"
-	if def.get("near_hearth", false) and not _near_hearth(p):
-		return "Must be within %d tiles of the Hearth" % int(Data.HEARTH_RADIUS)
-	if not can_afford(def["cost"]):
-		return "Not enough materials"
-	return ""
+	return town.placement_error(type, p)
 
 
+## Build at p and set off what that does elsewhere: the fog lifts and the walking grid updates.
 func place(type: String, p: Vector2i) -> bool:
-	if placement_error(type, p) != "":
+	var done := town.place(type, p)
+	if done.is_empty():
 		return false
-	_pay(Rules.cost_at(type, tile_at(p)))
-	road_rev += 1
-	var kind: String = Data.BUILDINGS[type]["kind"]
+	var cleared: String = done["cleared"]
+	if cleared == "rock":
+		events.append("Cut a pass through the rocks")
+	elif cleared == "tree":
+		events.append("Felled the trees for a road")
+	var kind: String = done["kind"]
 	if kind in ["road", "bridge"]:
-		if tile_at(p) == "rock":
-			world.set_tile(p, "grass")  # a mountain pass: the rock is cut away
-			events.append("Cut a pass through the rocks")
-		elif tile_at(p) == "tree":
-			world.set_tile(p, "grass")  # the trees are felled for the road
-			events.append("Felled the trees for a road")
-		world.add_road(p)  # a bridge is a road over the river
 		pathing.update_cell(p)
 		fog.reveal(p, _sight(Data.SIGHT_KITH))
 	elif kind == "field":
-		world.add_field(p)
 		pathing.update_cell(p)
 	else:
-		_place_building(type, p)
 		fog.reveal(p, _sight(Data.SIGHT_BUILDING))
 	return true
 
@@ -395,41 +374,25 @@ func place_line(type: String, line: Array) -> int:
 	return n
 
 
-func _near_hearth(p: Vector2i) -> bool:
-	return Vector2(p).distance_to(Vector2(camp_pos)) <= Data.HEARTH_RADIUS
-
-
 ## The type of whatever the player built at p (a building, road, bridge or field), or "".
 func built_type(p: Vector2i) -> String:
-	if building_at.has(p):
-		return buildings[building_at[p]]["type"]
-	if roads.has(p):
-		return "bridge" if tile_at(p) == "river" else "road"
-	if fields.has(p):
-		return "field"
-	return ""
+	return town.built_type(p)
 
 
 ## Tear down what stands at p for half its cost back. Its worker goes idle; whatever it held
 ## goes to the stockpile. The Hearth stays. Returns the refund, or {} if nothing was torn down.
 func demolish(p: Vector2i) -> Dictionary:
-	var type := built_type(p)
-	if type == "" or Data.BUILDINGS[type]["kind"] == "camp":
+	var done := town.demolish(p)
+	if done.is_empty():
 		return {}
-	var refund := Rules.refund_of(type)
-	for id in refund:
-		add(id, refund[id])
-	road_rev += 1
-	if roads.has(p):
-		world.remove_road(p)
-		pathing.update_cell(p)
-	elif fields.has(p):
-		world.remove_field(p)
-		pathing.update_cell(p)
+	var index: int = done["index"]
+	if index < 0:
+		pathing.update_cell(p)  # a road or field went
 	else:
-		_remove_building(building_at[p])
+		_remove_building(index)
+	var type: String = done["type"]
 	events.append("Tore down the %s" % Data.BUILDINGS[type]["name"])
-	return refund
+	return done["refund"]
 
 
 func _remove_building(i: int) -> void:
@@ -443,10 +406,7 @@ func _remove_building(i: int) -> void:
 		if not k["task"].is_empty() and k["task"].get("building", -1) == i:
 			_drop_task(k)
 			k["path"] = []
-	buildings.remove_at(i)
-	building_at.clear()
-	for j in buildings.size():
-		building_at[buildings[j]["pos"]] = j
+	town.remove_at(i)
 	for k in kith:
 		if k["job"] == "work" and k["building"] > i:
 			k["building"] -= 1
@@ -474,42 +434,14 @@ func _release_worker(b: Dictionary) -> void:
 
 ## A paused building frees its worker and gets no deliveries until it's resumed.
 func set_paused(i: int, on: bool) -> void:
-	var b: Dictionary = buildings[i]
-	b["paused"] = on
+	town.set_paused(i, on)
 	if on:
-		_release_worker(b)
-
-
-func _place_building(type: String, p: Vector2i) -> void:
-	var b := {
-		"type": type,
-		"pos": p,
-		"progress": 0.0,
-		"inbuf": {},
-		"out": {},
-		"status": "",
-		"gather_items": [],
-		"gather_index": 0,
-		"worker": -1,  # index into kith, or -1
-		"claimed": false,  # a hauler is on its way to empty it
-		"incoming": {},  # inputs haulers are carrying here
-		"unreachable": 0.0,  # seconds left to show "can't reach"
-		"field_extra": 0.0,  # Calendar's part-item bonus from Fields, paid out once it reaches 1
-		"paused": false,
-		"alert": "",  # a short warning for the pill under the building, "" when all is well
-		"trips": 0,  # hut trips queued by clicking it, before Paths & Haulers (the one under way counts)
-		"rush_cd": 0.0,  # seconds until it can be rushed again
-	}
-	if Data.BUILDINGS[type]["kind"] == "gatherer":
-		for t in gather_tiles(p):
-			b["gather_items"].append(Data.TILES[tile_at(t)]["yields"])
-	building_at[p] = buildings.size()
-	buildings.append(b)
+		_release_worker(buildings[i])
 
 
 ## Resource tiles a Gatherer's Hut at p would work.
 func gather_tiles(p: Vector2i) -> Array:
-	return world.gather_tiles(p, hut_radius())
+	return town.gather_tiles(p)
 
 
 func touches_river(p: Vector2i) -> bool:
@@ -517,17 +449,7 @@ func touches_river(p: Vector2i) -> bool:
 
 
 func is_powered(p: Vector2i) -> bool:
-	return _in_range_of("power", p)
-
-
-## True if p is within the radius of any building of this kind.
-func _in_range_of(kind: String, p: Vector2i) -> bool:
-	for b in buildings:
-		var def: Dictionary = Data.BUILDINGS[b["type"]]
-		var bp: Vector2i = b["pos"]
-		if def["kind"] == kind and Vector2(bp).distance_to(Vector2(p)) <= def["radius"]:
-			return true
-	return false
+	return town.is_powered(p)
 
 
 ## How fast a building's worker works: the Speed group (a Flint Tool in hand, a Standing Stone next door).
@@ -576,10 +498,7 @@ func progress_frac(b: Dictionary) -> float:
 
 
 func buffered(dict: Dictionary) -> int:
-	var total := 0
-	for id in dict:
-		total += dict[id]
-	return total
+	return Buildings.buffered(dict)
 
 
 ## Carry by hand: empty the building's output and load its inputs from the stockpile.
@@ -678,16 +597,11 @@ func _next_name() -> String:
 
 
 func housing() -> int:
-	var total := 0
-	for b in buildings:
-		total += Data.BUILDINGS[b["type"]].get("housing", 0)
-		if b["type"] == "dwelling" and researched.has("shelter"):
-			total += 2
-	return total
+	return town.housing()
 
 
 func needs_worker(b: Dictionary) -> bool:
-	return Data.BUILDINGS[b["type"]]["kind"] in ["gatherer", "processor"]
+	return Buildings.needs_worker(b)
 
 
 ## Staff buildings in the order they were built. Everyone else hauls (once researched) or waits at camp.
@@ -803,8 +717,7 @@ func tick(delta: float) -> void:
 			k["seen"] = here
 			fog.reveal(here, _sight(Data.SIGHT_KITH))
 	for b in buildings:
-		b["unreachable"] = maxf(b["unreachable"] - delta, 0.0)
-		b["rush_cd"] = maxf(b["rush_cd"] - delta, 0.0)
+		town.tick_timers(b, delta)
 		_tick_building(b, delta, fed)
 		if has_haulers() and needs_worker(b) and not b["paused"] and not Roads.linked(self, b):
 			var a: String = b["alert"]
@@ -834,21 +747,6 @@ func flour_reserve() -> int:
 	return economy.flour_reserve()
 
 
-func _wants_to_work(b: Dictionary) -> bool:
-	var def: Dictionary = Data.BUILDINGS[b["type"]]
-	match def["kind"]:
-		"gatherer":
-			return buffered(b["out"]) < Data.BUFFER_CAP
-		"processor":
-			if def.get("needs_power", false) and not is_powered(b["pos"]):
-				return false
-			for id in def["in"]:
-				if b["inbuf"].get(id, 0) < def["in"][id]:
-					return false
-			return buffered(b["out"]) < Data.BUFFER_CAP
-	return false
-
-
 ## Worker standing at their building, ready to work it.
 func _worker_home(b: Dictionary) -> bool:
 	return b["worker"] >= 0 and kith[b["worker"]]["phase"] != "to_site"
@@ -861,10 +759,10 @@ func _tick_building(b: Dictionary, delta: float, fed: bool) -> void:
 		b["status"] = def.get("status", def["desc"])
 		return
 	if b["paused"]:
-		_set_status(b, "Paused: its %s is free for other jobs" % Workers.building_job(self, b), "Paused")
+		town.set_status(b, "Paused: its %s is free for other jobs" % Workers.building_job(self, b), "Paused")
 		return
 	if b["worker"] < 0:
-		_set_status(
+		town.set_status(
 			b,
 			(
 				"No %s yet: more %s needed (they grow with food and Dwellings)"
@@ -874,18 +772,18 @@ func _tick_building(b: Dictionary, delta: float, fed: bool) -> void:
 		)
 		return
 	if not fed:
-		_set_status(b, "Hungry: bring food (berries, fish or flour)", "Hungry: no food")
+		town.set_status(b, "Hungry: bring food (berries, fish or flour)", "Hungry: no food")
 		return
 	if b["unreachable"] > 0.0:
-		_set_status(b, "Cut off by water: build a Wooden Bridge (Paths & Haulers)", "Cut off: needs a bridge")
+		town.set_status(b, "Cut off by water: build a Wooden Bridge (Paths & Haulers)", "Cut off: needs a bridge")
 		return
 	if def.get("needs_power", false) and not is_powered(b["pos"]):
-		_set_status(b, "No power: build a Water Wheel nearby", "No power")
+		town.set_status(b, "No power: build a Water Wheel nearby", "No power")
 		return
 	if not _worker_home(b):
 		b["status"] = "%s walking here" % Workers.title_of(self, kith[b["worker"]])
 		return
-	if not _wants_to_work(b):
+	if not town.wants_to_work(b):
 		Workers.idle_reason(self, b, def)
 		return
 	if def["kind"] == "gatherer":
@@ -927,11 +825,6 @@ func _finish_cycle(b: Dictionary) -> void:
 	for id in def["out"]:
 		b["out"][id] = b["out"].get(id, 0) + def["out"][id]
 		economy.note(id, def["out"][id], b["type"])
-
-
-func _set_status(b: Dictionary, status: String, alert: String) -> void:
-	b["status"] = status
-	b["alert"] = alert
 
 
 # --- Trips -------------------------------------------------------------------

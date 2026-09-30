@@ -43,7 +43,7 @@ static func _applies(s, b: Dictionary, id: String) -> bool:
 		"tools":
 			return b["worker"] >= 0 and s.kith[b["worker"]].get("tool", 0) > 0
 		"standing_stone":
-			return s._in_range_of("aura", b["pos"])
+			return s.town.in_range_of("aura", b["pos"])
 	return true
 
 

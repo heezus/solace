@@ -46,6 +46,11 @@ func missing_requirements(tech: String) -> int:
 	return n
 
 
+## True once `tech` is researched.
+func unlocked(tech: String) -> bool:
+	return researched.has(tech)
+
+
 func requirements_met(tech: String) -> bool:
 	return tech_visible(tech) and missing_requirements(tech) == 0
 
