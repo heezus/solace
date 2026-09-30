@@ -13,16 +13,22 @@ const Sim = preload("res://scripts/sim.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Hands = preload("res://scripts/hands.gd")
+const CardText = preload("res://scripts/card_text.gd")
 
-const BUTTON := Vector2(142, 50)
+const BUTTON := Vector2(156, 64)
+const TEXT_X := 42.0  # the title and state line start here, beside the 30 px icon
+const TEXT_W := 110.0
+const LOWER_Y := 37.0  # the price pips, or a locked card's reason, run along the bottom
 const LOCKED_BG := Color("1f3a47")
 const LOCKED_TEXT := Color("9fb4bf")
+const PULSE_SECONDS := 4.0  # how long a card and its tab glow after research unlocks it
 
 var state: Sim
 var tab := "Gathering"
 var tab_buttons := {}
 var build_buttons := {}  # type -> {"button", "name", "sub"}
 var craft_buttons := {}
+var pulses := {}  # building type or tab name -> seconds of glow left
 var tech_button: Button
 var demolish_button: Button
 var row: HBoxContainer
@@ -66,7 +72,7 @@ func setup(game: Sim) -> void:
 			build_buttons[type] = parts
 
 	h.add_child(VSeparator.new())
-	demolish_button = _big_button("Demolish", "Half back · X", Ui.BAD)
+	demolish_button = _big_button("Demolish (X)", "refunds half", Ui.BAD)
 	demolish_button.custom_minimum_size = Vector2(118, BUTTON.y)
 	demolish_button.pressed.connect(func(): demolish_pressed.emit())
 	h.add_child(demolish_button)
@@ -78,9 +84,10 @@ func setup(game: Sim) -> void:
 	for r in Data.RECIPES:
 		var b := Ui.button(Data.RECIPES[r]["name"])
 		b.custom_minimum_size = Vector2(110, 22)
-		b.icon = Ui.swatch_texture(
-			Data.ITEMS[r]["color"] if Data.ITEMS.has(r) else Ui.tech_color(Data.RECIPES[r]["tech"])
-		)
+		var sprite := Ui.item_sprite(r) if Data.ITEMS.has(r) else null
+		b.icon = sprite if sprite != null else Ui.swatch_texture(Ui.tech_color(Data.RECIPES[r]["tech"]))
+		b.expand_icon = true
+		b.add_theme_constant_override("icon_max_width", 18)
 		b.pressed.connect(func(): craft_picked.emit(r))
 		craft.add_child(b)
 		craft_buttons[r] = b
@@ -90,10 +97,46 @@ func setup(game: Sim) -> void:
 
 func _show_tab(tab_name: String) -> void:
 	tab = tab_name
+	_apply_visibility()
+
+
+## Show the current tab's cards, hide the cards of story buildings nothing has revealed yet, and hide a tab
+## with no card to show.
+func _apply_visibility() -> void:
 	for t in tab_buttons:
-		tab_buttons[t].button_pressed = t == tab_name
+		tab_buttons[t].button_pressed = t == tab
+		tab_buttons[t].visible = tab_shown(t)
 	for type in build_buttons:
-		build_buttons[type]["button"].visible = type in Data.BUILD_TABS[tab_name]
+		build_buttons[type]["button"].visible = type in Data.BUILD_TABS[tab] and CardText.shown(state, type)
+
+
+## Whether a tab has any card to show.
+func tab_shown(tab_name: String) -> bool:
+	return Data.BUILD_TABS[tab_name].any(func(type): return CardText.shown(state, type))
+
+
+## Research unlocked these buildings: their cards and tabs glow for a few seconds (see _process).
+func pulse_unlock(types: Array) -> void:
+	for type in types:
+		pulses[type] = PULSE_SECONDS
+		pulses[tab_of(type)] = PULSE_SECONDS
+
+
+## Whether the card of building `type`, or the tab named `type`, is glowing.
+func pulsing(type: String) -> bool:
+	return pulses.get(type, 0.0) > 0.0
+
+
+func _process(delta: float) -> void:
+	if pulses.is_empty():
+		return
+	for key in pulses.keys():
+		pulses[key] -= delta
+		var glow := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 1000.0 * 8.0) if pulses[key] > 0.0 else 0.0
+		var node: Control = build_buttons[key]["button"] if build_buttons.has(key) else tab_buttons[key]
+		node.modulate = Color.WHITE.lerp(Ui.HIGHLIGHT, 0.55 * glow)
+		if pulses[key] <= 0.0:
+			pulses.erase(key)
 
 
 func show_tab_of(type: String) -> void:
@@ -110,37 +153,47 @@ static func tab_of(type: String) -> String:
 	return ""
 
 
-## A fixed-size button: the sprite, the name in bold and a short second line.
+## A fixed-size card: the sprite, the name in bold, one short line saying what's missing, and along the
+## bottom the price as pips (or, on a locked card, the tech to discover). Nothing on it is ever cut off.
 func _build_button(type: String) -> Dictionary:
+	var def: Dictionary = Data.BUILDINGS[type]
 	var b := Button.new()
 	b.focus_mode = Control.FOCUS_NONE
 	b.custom_minimum_size = BUTTON
 	b.clip_contents = true
-	var h := HBoxContainer.new()
-	h.position = Vector2(6, 6)
-	h.add_theme_constant_override("separation", 6)
 	var icon := TextureRect.new()
-	icon.custom_minimum_size = Vector2(30, 30)
+	icon.position = Vector2(6, 5)
+	icon.size = Vector2(30, 30)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.texture = Art.building_sprite(type)
 	if icon.texture == null:
-		icon.texture = Ui.swatch_texture(Data.BUILDINGS[type]["color"])
-	h.add_child(icon)
-	var tv := VBoxContainer.new()
-	tv.add_theme_constant_override("separation", -2)
-	var title := Ui.label(Data.BUILDINGS[type]["name"], 12)
-	title.custom_minimum_size = Vector2(BUTTON.x - 50, 0)
-	title.clip_text = true
-	tv.add_child(title)
-	var sub := Ui.label("", 10)
-	sub.custom_minimum_size = Vector2(BUTTON.x - 50, 0)
-	sub.clip_text = true
-	tv.add_child(sub)
-	h.add_child(tv)
-	b.add_child(h)
-	Ui.ignore_mouse(h)
-	return {"button": b, "title": title, "sub": sub, "icon": icon}
+		icon.texture = Ui.swatch_texture(def["color"])
+	b.add_child(icon)
+	var title := _text(def["name"], 12, Vector2(TEXT_X, 4), Vector2(TEXT_W, 16))
+	b.add_child(title)
+	var sub := _text("", CardText.FONT_SIZE, Vector2(TEXT_X, 20), Vector2(TEXT_W, 14))
+	b.add_child(sub)
+	var pips := Ui.cost_pips(def["cost"], 20, 12)
+	pips.position = Vector2(6, LOWER_Y)
+	b.add_child(pips)
+	var why := _text("", CardText.FONT_SIZE, Vector2(6, LOWER_Y - 1), Vector2(BUTTON.x - 12, 26))
+	why.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	why.clip_text = false
+	b.add_child(why)
+	for c in [icon, title, sub, pips, why]:
+		Ui.ignore_mouse(c)
+	return {"button": b, "title": title, "sub": sub, "icon": icon, "pips": pips, "why": why}
+
+
+## A label at a fixed place and size on a card.
+static func _text(text: String, font_size: int, at: Vector2, extent: Vector2) -> Label:
+	var l := Ui.label(text, font_size)
+	l.position = at
+	l.size = extent
+	l.custom_minimum_size = extent
+	l.clip_text = true
+	return l
 
 
 func _big_button(title: String, sub: String, col: Color) -> Button:
@@ -157,14 +210,12 @@ func _big_button(title: String, sub: String, col: Color) -> Button:
 ## `placing` is the building type being placed, "demolish" for the Demolish tool, or "".
 func refresh(placing: String, ready_count: int) -> void:
 	tech_button.text = "Tech tree\n%d ready · T" % ready_count
+	_apply_visibility()
 	for type in build_buttons:
 		var parts: Dictionary = build_buttons[type]
 		var b: Button = parts["button"]
 		var def: Dictionary = Data.BUILDINGS[type]
-		var sub: Label = parts["sub"]
-		var title: Label = parts["title"]
 		var unlocked := state.town.unlocked(type)
-		var afford := state.economy.can_afford(def["cost"])
 		var style := Ui.panel_style(Ui.CARD if unlocked else LOCKED_BG, 4)
 		if placing == type:
 			style.bg_color = Ui.HIGHLIGHT
@@ -173,18 +224,18 @@ func refresh(placing: String, ready_count: int) -> void:
 		hover.bg_color = style.bg_color.lightened(0.1)
 		b.add_theme_stylebox_override("hover", hover)
 		b.add_theme_stylebox_override("pressed", style)
-		var text_col := Art.OUTLINE if placing == type else (Color.WHITE if unlocked else LOCKED_TEXT)
-		title.add_theme_color_override("font_color", text_col)
+		var on_gold: bool = placing == type
+		var text_col := Art.OUTLINE if on_gold else (Color.WHITE if unlocked else LOCKED_TEXT)
+		parts["title"].add_theme_color_override("font_color", text_col)
 		b.disabled = not unlocked
-		if not unlocked:
-			sub.text = "Needs " + Data.TECHS[def["tech"]]["name"]
-			sub.add_theme_color_override("font_color", LOCKED_TEXT)
-		elif placing == type:
-			sub.text = "Placing · right-click stops"
-			sub.add_theme_color_override("font_color", Art.OUTLINE)
-		else:
-			sub.text = _sub_text(type) if afford else "Need more"
-			sub.add_theme_color_override("font_color", Color(1, 1, 1, 0.75) if afford else Color("ff9aa9"))
+		var sub: Label = parts["sub"]
+		sub.text = CardText.state_line(state, type, placing, sub.size.x)
+		sub.add_theme_color_override("font_color", Art.OUTLINE if on_gold else Color(text_col, 0.85))
+		var why: Label = parts["why"]
+		why.text = CardText.locked_reason(type) if not unlocked else ""
+		why.add_theme_color_override("font_color", LOCKED_TEXT)
+		parts["pips"].visible = unlocked
+		Ui.update_pips(parts["pips"], def["cost"], state.economy.inv)
 		parts["icon"].modulate = Color(1, 1, 1, 1.0 if unlocked else 0.4)
 		b.tooltip_text = _tooltip(type)
 	var demo := Ui.panel_style(Ui.BAD if placing == "demolish" else Ui.BAD.darkened(0.55), 6)
@@ -195,25 +246,16 @@ func refresh(placing: String, ready_count: int) -> void:
 		b.disabled = not Hands.recipe_unlocked(state, r) or not state.economy.can_afford(rec["in"])
 		b.tooltip_text = "%s: %s into %s" % [rec["name"], Ui.cost_text(rec["in"]), Ui.cost_text(rec["out"])]
 		if not Hands.recipe_unlocked(state, r):
-			b.tooltip_text += "\nResearch %s first." % Data.TECHS[rec["tech"]]["name"]
-
-
-func _sub_text(type: String) -> String:
-	match Data.BUILDINGS[type]["kind"]:
-		"road", "field", "bridge":
-			return "Ready · drag to lay"
-	if Data.BUILDINGS[type]["tech"] == "":
-		return "Always available"
-	return "Ready"
+			b.tooltip_text += "\n%s first." % (Data.CARD_DISCOVER % Data.TECHS[rec["tech"]]["name"])
 
 
 func _tooltip(type: String) -> String:
 	var def: Dictionary = Data.BUILDINGS[type]
 	var s: String = def["name"] + "\n" + def["desc"]
 	if not def["cost"].is_empty():
-		s += "\nCost: " + Ui.progress_text(state.economy.inv, def["cost"], 99)
+		s += "\nPrice (have/need): " + Ui.progress_text(state.economy.inv, def["cost"], 99)
 	if def["tech"] == "":
-		s += "\nAlways available: no research needed."
+		s += "\nAlways available."
 	elif not state.town.unlocked(type):
-		s += "\nResearch %s to unlock it." % Data.TECHS[def["tech"]]["name"]
+		s += "\n%s to unlock it." % (Data.CARD_DISCOVER % Data.TECHS[def["tech"]]["name"])
 	return s

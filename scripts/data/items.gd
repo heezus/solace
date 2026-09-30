@@ -13,7 +13,7 @@ const ITEMS := {
 	"charcoal": {"name": "Charcoal", "color": Color("2b2d42")},
 	"brick": {"name": "Brick", "color": Color("b5543a")},
 	"flour": {"name": "Flour", "color": Color("f1e3c8")},
-	"flint_tools": {"name": "Flint Tools", "color": Color("6c757d")},
+	"flint_tools": {"name": "Flint Tools", "short": "Tools", "color": Color("6c757d")},
 	"fish": {"name": "Fish", "color": Color("5fa8d3")},
 }
 

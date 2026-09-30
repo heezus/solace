@@ -41,8 +41,14 @@ func rate(item: String) -> float:
 
 ## Per-second rate of `item` by source: {"gatherers_hut": 0.6, "twine_post": -0.75}.
 func parts(item: String) -> Dictionary:
+	return parts_over(item, float(hist.size()))
+
+
+## Per-second rate of `item` by source, the window's total spread over `span` seconds instead of over
+## the seconds recorded so far: a window that has only just begun counts as the little it is.
+func parts_over(item: String, span: float) -> Dictionary:
 	var out := {}
-	if hist.is_empty():
+	if hist.is_empty() or span <= 0.0:
 		return out
 	var prefix := item + "|"
 	for bucket in hist:
@@ -52,7 +58,7 @@ func parts(item: String) -> Dictionary:
 				var source := k.substr(prefix.length())
 				out[source] = out.get(source, 0.0) + bucket[key]
 	for source in out:
-		out[source] /= float(hist.size())
+		out[source] /= span
 	return out
 
 

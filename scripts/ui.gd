@@ -4,9 +4,11 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 const Art = preload("res://scripts/art.gd")
+const Rules = preload("res://scripts/rules.gd")
 
 const OUTLINE: Color = Art.OUTLINE
 const BAD := Color("ef476f")
+const SHORT := Color("ff6f61")  # a count the stockpile falls short of
 const GOOD := Color("9fe39f")  # the `positive` token
 const HIGHLIGHT := Color("ffd166")
 const PANEL := Color("1d3557")
@@ -54,7 +56,7 @@ static func swatch_texture(color: Color) -> ImageTexture:
 	return ImageTexture.create_from_image(img)
 
 
-## A colored square for an item, for chips and panels.
+## A colored square for an item: the stand-in when its sprite is missing.
 static func item_swatch(id: String, size: float) -> ColorRect:
 	var r := ColorRect.new()
 	r.color = Data.ITEMS[id]["color"]
@@ -62,6 +64,52 @@ static func item_swatch(id: String, size: float) -> ColorRect:
 	r.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	r.mouse_filter = Control.MOUSE_FILTER_PASS
 	return r
+
+
+## An item's sprite (art/sprites/item_<id>.svg), or null when there isn't one.
+static func item_sprite(id: String) -> Texture2D:
+	return Art.sprite("item_" + id)
+
+
+## An item's icon `size` px square: its sprite with nothing behind it, or the old colored square if the sprite is missing.
+static func item_icon(id: String, size: float) -> Control:
+	var tex := item_sprite(id)
+	if tex == null:
+		return item_swatch(id, size * 0.6)
+	var r := TextureRect.new()
+	r.texture = tex
+	r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	r.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	r.custom_minimum_size = Vector2(size, size)
+	r.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	r.mouse_filter = Control.MOUSE_FILTER_PASS
+	r.set_meta("item", id)
+	return r
+
+
+## A row of price pips, one per item in `cost`: its 20 px sprite and the amount (see update_pips).
+static func cost_pips(cost: Dictionary, icon_size: float, font_size: int) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	for id in cost:
+		var pip := HBoxContainer.new()
+		pip.add_theme_constant_override("separation", 1)
+		pip.add_child(item_icon(id, icon_size))
+		var l := label("", font_size)
+		l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		pip.add_child(l)
+		row.add_child(pip)
+	return row
+
+
+## Set each pip's amount: the price, red where the stockpile `inv` is short of it.
+static func update_pips(row: HBoxContainer, cost: Dictionary, inv: Dictionary) -> void:
+	var i := 0
+	for id in cost:
+		var l: Label = row.get_child(i).get_child(1)
+		l.text = str(cost[id])
+		l.add_theme_color_override("font_color", Color.WHITE if inv.get(id, 0) >= cost[id] else SHORT)
+		i += 1
 
 
 static func tech_color(tech: String) -> Color:
@@ -128,6 +176,33 @@ static func shortfall_text(inv: Dictionary, cost: Dictionary) -> String:
 	return "" if parts.is_empty() else "need " + ", ".join(parts)
 
 
+## What the buildings a tech unlocks cost to put up: "Then builds for: 10 Wood, 5 Stone", or with several
+## "Then builds Road for 2 Wood, Wooden Bridge for 10 Wood, 2 Rope". "" for a tech that unlocks no building.
+static func then_builds_text(tech: String) -> String:
+	var types := Rules.buildings_of(tech)
+	if types.size() == 1:
+		return "Then builds for: " + cost_text(Data.BUILDINGS[types[0]]["cost"])
+	var parts: Array = types.map(
+		func(t): return "%s for %s" % [Data.BUILDINGS[t]["name"], cost_text(Data.BUILDINGS[t]["cost"])]
+	)
+	return "" if parts.is_empty() else "Then builds " + ", ".join(parts)
+
+
+## A heads-up when paying for `tech` from the stockpile `inv` would leave too little for its first building
+## (researching and building both charge for materials), or "" when there's enough or no building.
+static func build_warning(inv: Dictionary, tech: String) -> String:
+	var types := Rules.buildings_of(tech)
+	if types.is_empty():
+		return ""
+	var short := shortfall_text(Rules.left_after(inv, Data.TECHS[tech]["cost"]), Data.BUILDINGS[types[0]]["cost"])
+	if short == "":
+		return ""
+	return (
+		"Heads up: after paying for this you couldn't build the %s yet (%s more)."
+		% [Data.BUILDINGS[types[0]]["name"], short.trim_prefix("need ")]
+	)
+
+
 ## Kith not staffing a building: they haul once Paths & Haulers is known, or wait at the Hearth.
 static func idle_kith(s) -> int:
 	var n := 0
@@ -141,11 +216,11 @@ static func idle_kith(s) -> int:
 static func growth_note(s) -> String:
 	var n: int = s.people.kith.size()
 	if s.economy.starving:
-		return "Starving: no food"
+		return Data.NOTE_STARVING
 	if n >= s.town.housing():
-		return "No room: build a Dwelling"
-	if s.economy.food_total() < n * 2 + Data.BIRTH_FOOD:
-		return "Needs %d spare food to grow" % int(n * 2 + Data.BIRTH_FOOD)
+		return Data.NOTE_NO_ROOM
+	if not s.people.food_ready_for_birth():
+		return Data.GROW_NOTE_FOOD
 	return ""
 
 

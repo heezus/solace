@@ -1,8 +1,9 @@
 extends PanelContainer
-## The research panel: a header with the counter and legend, the research queue and the techs ready now,
-## the scrolling research board, and a strip about the tech under the mouse (or the frontier).
-## Click a ready card to research it. Click any other card to make it the goal: the techs it still needs
-## are queued and researched as soon as each is affordable.
+## The tech panel: a header with the counter, the two views and the legend, the stock strip (what you have, so
+## nothing needs closing to check), the queue and the techs ready now, the scrolling board, and a strip about
+## the tech under the mouse. Click a ready card to discover it. Click any other card to make it the goal: the
+## techs it still needs are queued and discovered as soon as each is affordable.
+## It opens on "Next steps", a short grid of what is next, until the player picks the whole board.
 
 const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
@@ -12,6 +13,7 @@ const TechBoard = preload("res://scripts/tech_board.gd")
 const Ranks = preload("res://scripts/ranks.gd")
 
 const BG := Color("172c4a")
+const WHOLE_BOARD_FROM := 8  # techs discovered before the board opens on the whole board by default
 
 var state: Sim
 var board: TechBoard
@@ -19,6 +21,10 @@ var scroll: ScrollContainer
 var counter: Label
 var queue_row: HBoxContainer
 var ready_row: HBoxContainer
+var stock_row: HBoxContainer
+var stock_chips := {}  # item -> {"box", "count"}
+var view_buttons := {}
+var view_chosen := false  # the player picked a view: the panel keeps it from then on
 var strip := {}
 var shown := ""  # the tech in the strip, "" for the frontier
 var rows_key := ""  # what the queue and ready rows show, so they're only rebuilt when it changes
@@ -40,18 +46,27 @@ func setup(game: Sim) -> void:
 
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 14)
-	head.add_child(Ui.label("Research  ·  Stone Age", 22))
+	head.add_child(Ui.label(Data.BOARD_TITLE, 22))
 	counter = Ui.label("", 13)
 	counter.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	counter.add_theme_color_override("font_color", Color(1, 1, 1, 0.75))
 	head.add_child(counter)
+	for part in [["next", Data.VIEW_NEXT, Data.VIEW_NEXT_TIP], ["all", Data.VIEW_ALL, Data.VIEW_ALL_TIP]]:
+		var b := Ui.button(part[1])
+		b.toggle_mode = true
+		b.tooltip_text = part[2]
+		b.custom_minimum_size = Vector2(0, 26)
+		var which: String = part[0]
+		b.pressed.connect(func(): _pick_view(which))
+		head.add_child(b)
+		view_buttons[which] = b
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(spacer)
 	for part in [
-		["researched", TechBoard.MET],
-		["still needed", TechBoard.NEEDED],
-		["hover: its whole chain", TechBoard.GOLD],
+		[Data.LEGEND_DONE, TechBoard.MET],
+		[Data.LEGEND_NEEDED, TechBoard.NEEDED],
+		[Data.LEGEND_HOVER, TechBoard.GOLD],
 	]:
 		var l := Ui.label("— " + part[0], 12)
 		l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -64,6 +79,30 @@ func setup(game: Sim) -> void:
 	close.pressed.connect(func(): visible = false)
 	head.add_child(close)
 	v.add_child(head)
+
+	# What you have, so nothing needs closing to check what you can afford; one line says how the costs read.
+	stock_row = HBoxContainer.new()
+	stock_row.add_theme_constant_override("separation", 12)
+	var stock_cap := Ui.label(Data.STOCK_CAPTION, 11)
+	stock_cap.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
+	stock_row.add_child(stock_cap)
+	for id in Data.ITEM_ORDER:
+		var box := HBoxContainer.new()
+		box.add_theme_constant_override("separation", 3)
+		box.mouse_filter = Control.MOUSE_FILTER_PASS
+		box.tooltip_text = Data.ITEMS[id]["name"]
+		box.add_child(Ui.item_icon(id, 20))
+		var count := Ui.label("", 14)
+		count.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		box.add_child(count)
+		stock_row.add_child(box)
+		stock_chips[id] = {"box": box, "count": count}
+	var cost_note := Ui.label(Data.LEGEND_COST, 12)
+	cost_note.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
+	cost_note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cost_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	stock_row.add_child(cost_note)
+	v.add_child(stock_row)
 
 	var rows := HBoxContainer.new()
 	rows.add_theme_constant_override("separation", 24)
@@ -97,7 +136,7 @@ func setup(game: Sim) -> void:
 	dh.add_child(dv)
 	strip["title"] = Ui.label("", 16)
 	dv.add_child(strip["title"])
-	for key in ["desc", "cost", "links", "route"]:
+	for key in ["desc", "cost", "warn", "links", "route"]:
 		var l := Ui.label("", 12)
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD
 		dv.add_child(l)
@@ -130,11 +169,26 @@ func _on_action() -> void:
 	_on_card(shown)
 
 
-## Open scrolled to the frontier: the middle of the techs that are ready now.
+## The player picked a view: from then on the panel keeps it.
+func _pick_view(which: String) -> void:
+	view_chosen = true
+	board.set_view(which)
+	scroll.scroll_horizontal = 0
+	scroll.scroll_vertical = 0
+	refresh()
+
+
+## Open on Next steps (early on) or the whole board scrolled to the frontier: the middle of the techs ready now.
 func _on_open() -> void:
 	if not visible:
 		return
+	if not view_chosen:
+		board.set_view("next" if state.tech_tree.researched.size() < WHOLE_BOARD_FROM else "all")
 	refresh()
+	if board.view == "next":
+		scroll.scroll_horizontal = 0
+		scroll.scroll_vertical = 0
+		return
 	var ready_now := state.tech_tree.ready_list()
 	if ready_now.is_empty():
 		return
@@ -152,18 +206,22 @@ func refresh() -> void:
 		return
 	var done := state.tech_tree.researched.size()
 	var ready_now := state.tech_tree.ready_list()
-	var hidden_n := Data.TECHS.size() - Rules.visible_techs(state.shard_seen).size()
-	counter.text = (
-		"%d of %d researched  ·  %d ready%s"
-		% [done, Data.TECHS.size(), ready_now.size(), ("  ·  %d hidden" % hidden_n) if hidden_n > 0 else ""]
-	)
+	# The count leaves out a tech that is still hidden, so it doesn't give it away.
+	counter.text = Data.COUNTER % [done, Rules.visible_techs(state.shard_seen).size(), ready_now.size()]
+	for which in view_buttons:
+		view_buttons[which].button_pressed = which == board.view
+	for id in stock_chips:
+		var c: Dictionary = stock_chips[id]
+		c["box"].visible = state.economy.seen.has(id)
+		c["count"].text = str(state.economy.inv.get(id, 0))
+	board.update_view()
 	var key := "%s|%s|%s" % [state.tech_tree.queue, ready_now, state.tech_tree.goal]
 	if key != rows_key:
 		rows_key = key
-		_fill_row(queue_row, "QUEUE", state.tech_tree.queue, "Click a far tech to queue its chain")
-		_fill_row(ready_row, "READY TO RESEARCH", ready_now, "Nothing yet: gather more")
+		_fill_row(queue_row, Data.QUEUE_CAPTION, state.tech_tree.queue, Data.QUEUE_EMPTY)
+		_fill_row(ready_row, Data.READY_CAPTION, ready_now, Data.READY_EMPTY)
 	shown = board.hovered if board.hovered != "" else selected
-	if shown != "" and not state.tech_tree.tech_visible(shown):
+	if shown != "" and (not state.tech_tree.tech_visible(shown) or not board.shows(shown)):
 		shown = ""
 	if shown == "":
 		_show_frontier(ready_now)
@@ -193,8 +251,9 @@ func _fill_row(row: HBoxContainer, caption: String, techs: Array, empty: String)
 		style.set_border_width_all(2)
 		b.add_theme_stylebox_override("normal", style)
 		b.pressed.connect(_on_card.bind(tech))
+		b.tooltip_text = _chip_tip(tech)
 		row.add_child(b)
-	if caption == "QUEUE" and state.tech_tree.goal != "":
+	if caption == Data.QUEUE_CAPTION and state.tech_tree.goal != "":
 		var clear := Ui.button("Clear")
 		clear.pressed.connect(
 			func():
@@ -204,12 +263,23 @@ func _fill_row(row: HBoxContainer, caption: String, techs: Array, empty: String)
 		row.add_child(clear)
 
 
+## A queue or ready chip's tooltip: the cost, what the building will cost after, and a heads-up when paying leaves too little.
+func _chip_tip(tech: String) -> String:
+	var lines: Array = ["Cost: " + Ui.cost_text(Data.TECHS[tech]["cost"])]
+	if Ui.then_builds_text(tech) != "":
+		lines.append(Ui.then_builds_text(tech))
+		if state.tech_tree.can_research(tech) and Ui.build_warning(state.economy.inv, tech) != "":
+			lines.append(Ui.build_warning(state.economy.inv, tech))
+	return "\n".join(lines)
+
+
 func _show_frontier(ready_now: Array) -> void:
-	strip["title"].text = "Frontier"
-	strip["title"].add_theme_color_override("font_color", TechBoard.GOLD)
 	var names: Array = ready_now.map(func(t): return Data.TECHS[t]["name"])
-	strip["desc"].text = "Ready now: " + (", ".join(names) if not names.is_empty() else "nothing yet")
-	strip["cost"].text = "Hover a card to see its whole chain in gold. Click one to research it, or to queue the way there."
+	strip["title"].text = Data.STRIP_READY % ", ".join(names) if not names.is_empty() else Data.STRIP_NONE
+	strip["title"].add_theme_color_override("font_color", TechBoard.GOLD if not names.is_empty() else Color.WHITE)
+	strip["desc"].text = Data.STRIP_HELP
+	strip["cost"].text = Data.RANK_HELP
+	strip["warn"].visible = false
 	strip["links"].text = ""
 	strip["route"].text = ""
 	strip["button"].visible = false
@@ -218,24 +288,32 @@ func _show_frontier(ready_now: Array) -> void:
 func _show_tech(tech: String) -> void:
 	var t: Dictionary = Data.TECHS[tech]
 	var lane: String = Data.LANES[t["lane"]]["name"] if Data.LANES.has(t["lane"]) else "Gate"
-	var state_text := "researched"
+	var state_text := Data.STATE_DONE
 	if not state.tech_tree.researched.has(tech):
 		if state.tech_tree.can_research(tech):
-			state_text = "ready"
+			state_text = Data.STATE_READY
 		elif state.tech_tree.requirements_met(tech):
-			state_text = "gather more"
+			state_text = Data.STATE_MORE
 		else:
-			state_text = "locked"
-	var side := "  ·  side branch" if t.get("side", false) else ""
+			state_text = Data.STATE_LOCKED
+	var side := "  ·  " + Data.TECH_OPTIONAL if t.get("side", false) else ""
 	strip["title"].text = "%s  ·  %s  ·  %s%s" % [t["name"], lane, state_text, side]
 	strip["title"].add_theme_color_override("font_color", Color.WHITE)
 	strip["desc"].text = t["desc"]
-	strip["cost"].text = "Cost: " + Ui.progress_text(state.economy.inv, t["cost"], 99)
+	strip["cost"].text = "Cost (have/need): " + Ui.progress_text(state.economy.inv, t["cost"], 99)
+	var researched: bool = state.tech_tree.researched.has(tech)
+	if not researched and Ui.then_builds_text(tech) != "":
+		strip["cost"].text += "     " + Ui.then_builds_text(tech)
+	var warn := (
+		"" if researched or not state.tech_tree.can_research(tech) else Ui.build_warning(state.economy.inv, tech)
+	)
+	strip["warn"].text = warn
+	strip["warn"].visible = warn != ""
+	strip["warn"].add_theme_color_override("font_color", Ui.HIGHLIGHT)
 	if Ranks.has_ranks(tech):
 		var r := Ranks.rank(state, tech)
 		strip["cost"].text += (
-			"     RANK %s of III · ranks II and III: %s each, optional"
-			% [Data.RANK_NAMES[maxi(r, 1)] if r > 0 else "-", Ranks.effect_text(tech)]
+			"     " + Data.RANK_LINE % [Ranks.effect_text(tech), Data.RANK_NAMES[r] if r > 0 else Data.RANK_NONE]
 		)
 		if not Ranks.next_cost(state, tech).is_empty():
 			strip["cost"].text += (" · next: " + Ui.progress_text(state.economy.inv, Ranks.next_cost(state, tech), 99))
@@ -254,9 +332,9 @@ func _show_tech(tech: String) -> void:
 	var b: Button = strip["button"]
 	b.visible = not state.tech_tree.researched.has(tech) or not Ranks.next_cost(state, tech).is_empty()
 	b.disabled = false
-	b.text = "Research " + t["name"] if state.tech_tree.can_research(tech) else "Queue the way there"
+	b.text = Data.DISCOVER_BUTTON % t["name"] if state.tech_tree.can_research(tech) else Data.QUEUE_BUTTON
 	if state.tech_tree.goal == tech:
-		b.text = "Queued"
+		b.text = Data.QUEUED
 	if state.tech_tree.researched.has(tech) and b.visible:
 		b.text = "Buy rank %s" % Data.RANK_NAMES[Ranks.rank(state, tech) + 1]
 		b.disabled = not Ranks.can_buy(state, tech)

@@ -68,6 +68,7 @@ func _init() -> void:
 	people.trip_started.connect(story.on_trip_started)
 	shard_found.connect(story.on_shard_found)
 	people.announce.connect(_announce)
+	economy.food_low.connect(_on_food_low)
 
 
 # --- Map ---------------------------------------------------------------------
@@ -159,7 +160,7 @@ func _tech_done(tech: String) -> void:
 	if tech == "scouting":
 		for b in town.buildings:
 			fog.reveal(b["pos"], _sight(Data.SIGHT_BUILDING))
-	events.append("Discovered %s" % Data.TECHS[tech]["name"])
+	events.append(Data.DISCOVERED_EVENT % Data.TECHS[tech]["name"])
 	if tech == "haulers":
 		for b in town.buildings:
 			b["trips"] = 0  # huts loop on their own from now on
@@ -170,6 +171,11 @@ func _tech_done(tech: String) -> void:
 ## Connected to Kith.announce: tell the player something (the UI shows and clears `events`).
 func _announce(message: String) -> void:
 	events.append(message)
+
+
+## Connected to Economy.food_low: the early warning, before anyone leaves.
+func _on_food_low() -> void:
+	events.append(Data.FOOD_LOW_EVENT % Data.PEOPLE["many"])
 
 
 ## Read-only view for the Research block: are hidden techs on show yet?

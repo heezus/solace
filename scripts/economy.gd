@@ -3,6 +3,9 @@ extends RefCounted
 ## It stands alone: it never reaches into another block. What it needs from outside comes in at
 ## construction (the researched techs, a read-only view) or as an argument (how many mouths to feed).
 ## Sim owns one, reached as `sim.economy`.
+## Signal: food_low fires once when the food would run out within Data.FOOD_WARN_SECONDS (see `low`).
+
+signal food_low
 
 const Data = preload("res://scripts/data.gd")
 const Codec = preload("res://scripts/save_codec.gd")
@@ -12,6 +15,9 @@ var inv: Dictionary = {}  # item id -> count
 var seen: Dictionary = {}  # items ever held, so the top bar keeps showing them
 var food_credit := 5.0  # food already eaten but not yet used up: eating takes whole items
 var starving := false  # the last feed found no food to eat
+## The early warning is up: food_low has fired and the food hasn't yet recovered to last Data.FOOD_CLEAR_SECONDS.
+## Not saved: a loaded game works it out again on its first feed.
+var low := false
 var food_use := 0.0  # food eaten per second right now
 var flows := Flows.new()  # what made and used each item lately
 var _techs: Dictionary  # researched tech ids (a view of the Research block's set, never written here)
@@ -21,7 +27,7 @@ func _init(researched: Dictionary = {}) -> void:
 	_techs = researched
 	for id in Data.ITEM_ORDER:
 		inv[id] = 0
-	inv["berries"] = 10
+	inv["berries"] = Data.START_BERRIES
 	for id in ["wood", "stone", "flint", "berries"]:
 		seen[id] = true
 
@@ -81,7 +87,60 @@ func feed(mouths: int, delta: float) -> bool:
 	food_use = mouths * Data.FOOD_PER_KITH_PER_SEC * (0.75 if _techs.has("preservation") else 1.0)
 	var fed := eat(food_use * delta)
 	starving = not fed
+	_watch_food()
 	return fed
+
+
+## Food made per second by anything but the player's own hands (huts, the Fishing Weir, the Grindstone), in
+## food units, over the flow window. The player answers a warning by gathering, so that doesn't count here.
+func food_income() -> float:
+	var total := 0.0
+	for id in Data.FOOD_VALUE:
+		var by_source := flows.parts(id)
+		for source in by_source:
+			if source != "hand" and by_source[source] > 0.0:
+				total += by_source[source] * food_value(id)
+	return total
+
+
+## Food made per second, in food units, over the whole flow window (Data.RATE_WINDOW seconds, so a stretch
+## with little history counts as little): everything but eating, that is huts, haulers, fields, the Fishing
+## Weir, the Grindstone and the player's hands while they are gathering. A stockpile is not income.
+func food_supply() -> float:
+	var total := 0.0
+	for id in Data.FOOD_VALUE:
+		var by_source := flows.parts_over(id, float(Data.RATE_WINDOW))
+		for source in by_source:
+			if source != Data.FLOW_EAT_SOURCE and by_source[source] > 0.0:
+				total += by_source[source] * food_value(id)
+	return total
+
+
+## True when the food coming in over the window at least covers what the people eat right now: the
+## rule that lets the population grow (a big stockpile alone never does).
+func food_is_steady() -> bool:
+	return food_supply() - food_use >= 0.0
+
+
+## How long the food lasts, in seconds: the stockpile plus the credit already taken from it, against what
+## the Kith eat less what the buildings bring in. INF when the food is not going down.
+func seconds_of_food() -> float:
+	return _runway(food_use - food_income())
+
+
+func _runway(drain: float) -> float:
+	return (food_total() + food_credit) / drain if drain > 0.0 else INF
+
+
+## Raise the early warning when the food is about to run out; lower it once it would last longer again.
+## (The buildings' income is only worked out when the food is short: it walks the flow window.)
+func _watch_food() -> void:
+	var gross := _runway(food_use)
+	if not low and gross < Data.FOOD_WARN_SECONDS and seconds_of_food() < Data.FOOD_WARN_SECONDS:
+		low = true
+		food_low.emit()
+	elif low and (gross >= Data.FOOD_CLEAR_SECONDS or seconds_of_food() >= Data.FOOD_CLEAR_SECONDS):
+		low = false
 
 
 ## Eat `need` food units, taking whole items in eating order as the credit runs out.

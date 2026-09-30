@@ -66,7 +66,7 @@ func test_learning_at_ten_clicks() -> void:
 	t.check(s.people.knows("wood"), "the 10th click teaches a Kith to gather Wood")
 	var first: String = Data.PEOPLE_NAMES[0]
 	t.check(s.people.learned_by["wood"] == first, "the first learner is " + first)
-	var toast := "%s learned woodcutting. %s the Woodcutter" % [first, first]
+	var toast: String = Data.LEARNED_LINE % [first, Data.HUT_JOBS["wood"]["craft"], "Woodcutter"]
 	t.check(s.events.has(toast), "and the toast says so: %s" % [s.events])
 	s.events.clear()
 	s.gather_by_hand(tree)
@@ -352,19 +352,19 @@ func test_job_titles() -> void:
 	for type in Data.BUILDINGS:
 		var def: Dictionary = Data.BUILDINGS[type]
 		if def["kind"] in ["processor", "gatherer"]:
-			var b := {"type": type, "gather_items": []}
+			var b := {"type": type, "gather_items": [], "focus": ""}
 			var job := s.people.building_job(b)
 			t.check(job != "" and job != Data.JOB_IDLE, "%s's worker has a job title (%s)" % [type, job])
 	for tile in Data.TILES:
 		var item: String = Data.TILES[tile]["yields"]
 		if item != "":
 			t.check(Data.HUT_JOBS.has(item), "a hut gathering %s has a job title" % item)
-			var b := {"type": "gatherers_hut", "gather_items": [item, item, "fiber"]}
+			var b := {"type": "gatherers_hut", "gather_items": [item, item, "fiber"], "focus": ""}
 			t.check(
 				s.people.building_job(b) == Data.HUT_JOBS[item]["title"],
 				"a hut takes the title of what it gathers most"
 			)
-	var mixed := {"type": "gatherers_hut", "gather_items": ["stone", "stone", "wood"]}
+	var mixed := {"type": "gatherers_hut", "gather_items": ["stone", "stone", "wood"], "focus": ""}
 	s.people.learned_by["wood"] = "Aro"
 	t.check(s.people.building_job(mixed) == "Woodcutter", "counting only what the Kith know, once they know some")
 	var names := {}

@@ -10,6 +10,7 @@ const Monitor = preload("res://tests/monitor.gd")
 const Rules = preload("res://scripts/rules.gd")
 const RunSave = preload("res://scripts/run_save.gd")
 const Story = preload("res://scripts/story.gd")
+const Roads = preload("res://scripts/roads.gd")
 
 var t  # the runner, tests/run_tests.gd
 
@@ -32,6 +33,8 @@ func run(runner) -> void:
 	test_story_order_matches_the_moments()
 	test_kith_messages_reach_the_player()
 	test_a_hidden_tech_waits_for_the_stone()
+	test_the_road_goal_needs_a_road()
+	test_the_goal_order_researches_before_it_lays()
 
 
 func test_record_is_once_and_ordered() -> void:
@@ -251,6 +254,7 @@ func test_kith_messages_reach_the_player() -> void:
 	s.economy.inv["berries"] = 500
 	s.events.clear()
 	for i in int(Data.GROW_TIME * 10.0) + 20:
+		t.steady_income(s)
 		s.tick(0.1)
 		if m.count("born") > 0:
 			break
@@ -265,3 +269,55 @@ func test_a_hidden_tech_waits_for_the_stone() -> void:
 	t.check(not s.tech_tree.tech_visible("star_lore"), "hidden before the Strange Stone")
 	s.gather_by_hand(s.world.shard_pos)
 	t.check(s.tech_tree.tech_visible("star_lore"), "visible after: the signal did not replace the flag")
+
+
+## The playtest of 2026-09-30 showed "Lay a Road from a hut to the Hearth" as Done while "Research Paths & Haulers"
+## (which unlocks roads) was the current goal: a hut standing beside the Hearth counted as linked.
+func test_the_road_goal_needs_a_road() -> void:
+	var s: Sim = t.fresh()
+	var camp := s.world.camp_pos
+	for dx in range(-1, 4):
+		for dy in range(-2, 3):
+			s.world.set_tile(camp + Vector2i(dx, dy), "grass")
+	var goal: Dictionary = {}
+	for g in Data.GOALS:
+		if g["id"] == "road":
+			goal = g
+	t.check(t.place_free(s, "gatherers_hut", camp + Vector2i(1, 0)), "a hut right beside the Hearth")
+	var hut: Dictionary = s.town.buildings[s.town.building_at[camp + Vector2i(1, 0)]]
+	t.check(Roads.linked(s, hut), "it counts as linked to the Hearth with no road")
+	t.check(not Roads.road_linked(s, hut), "but no road laid it")
+	t.check(not s.story.goal_met(s, goal), "so the road goal is not met")
+	s.story.update(s)
+	t.check(not s.story.goals_done.has("road"), "and is not marked done, before Paths & Haulers or after")
+	s.tech_tree.researched["haulers"] = true
+	s.story.update(s)
+	t.check(not s.story.goals_done.has("road"), "even with Paths & Haulers in, until a road is laid")
+	t.check(t.place_free(s, "gatherers_hut", camp + Vector2i(3, 0)), "a second hut, two tiles from the Hearth")
+	var far: Dictionary = s.town.buildings[s.town.building_at[camp + Vector2i(3, 0)]]
+	t.check(not Roads.linked(s, far), "not linked at all")
+	t.check(t.place_free(s, "road", camp + Vector2i(3, 1)), "a road tile that touches only the hut")
+	t.check(not Roads.road_linked(s, far) and not s.story.goal_met(s, goal), "does not reach the Hearth: not met")
+	t.check(t.place_free(s, "road", camp + Vector2i(2, 1)), "one more along the row")
+	t.check(t.place_free(s, "road", camp + Vector2i(1, 1)), "and one under the first hut")
+	t.check(not s.story.goal_met(s, goal), "still short of the Hearth")
+	t.check(t.place_free(s, "road", camp + Vector2i(0, 1)), "the one at the Hearth's foot joins them up")
+	t.check(Roads.road_linked(s, far) and Roads.linked(s, far), "now a road links the far hut to the Hearth")
+	t.check(s.story.goal_met(s, goal), "and the road goal is met")
+	s.story.update(s)
+	t.check(s.story.goals_done.has("road"), "and marked done")
+
+
+func test_the_goal_order_researches_before_it_lays() -> void:
+	var ids: Array = Data.GOALS.map(func(g): return g["id"])
+	t.check(ids.find("haulers") >= 0 and ids.find("haulers") < ids.find("road"), "research Haulers, then lay a road")
+	var s: Sim = t.fresh()
+	s.story.update(s)
+	var done_early := false
+	for id in ["haulers", "road"]:
+		done_early = done_early or s.story.goals_done.has(id)
+	t.check(not done_early, "neither is done at the start")
+	var stable := ["learn_wood", "learn_berries", "learn_stone", "flax", "knapping", "tools", "hut_tech", "hut"]
+	stable += ["trip", "berries", "dwelling", "charcoal", "twine", "haulers", "road", "rush", "kiln", "wheel"]
+	stable += ["grind", "storehouse", "calendar", "bronze"]
+	t.check(ids == stable, "the goal ids and their order are the stable ones a save keeps")

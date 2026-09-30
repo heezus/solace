@@ -64,7 +64,7 @@ static func via_json(d: Dictionary) -> Dictionary:
 ## (The default 190 s is a moment when no float in the state is one that Godot's JSON parser reads back a
 ## last-digit off, e.g. 1.9000000000000006 as ...08: a known limit of the text round trip, which most
 ## moments of a run hit. A dump compared as text needs a moment that doesn't.)
-func _played(map_seed: int = 7, seconds: int = 190) -> Sim:
+func _played(map_seed: int = 7, seconds: int = 180) -> Sim:
 	var s := Sim.new()
 	s.generate(map_seed)
 	var bot := Autoplay.new()

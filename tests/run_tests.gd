@@ -24,6 +24,11 @@ const StoryTests = preload("res://tests/story_tests.gd")
 const SaveTests = preload("res://tests/save_tests.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
 const GoldenTests = preload("res://tests/golden_tests.gd")
+const NewcomerTests = preload("res://tests/newcomer_tests.gd")
+const UiTests = preload("res://tests/ui_tests.gd")
+const HutFocusTests = preload("res://tests/hut_focus_tests.gd")
+const GrowthTests = preload("res://tests/growth_tests.gd")
+const HaulerTests = preload("res://tests/hauler_tests.gd")
 const World = preload("res://scripts/world.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const Buildings = preload("res://scripts/buildings.gd")
@@ -74,6 +79,11 @@ func _init() -> void:
 	StoryTests.new().run(self)
 	ArcTests.new().run(self)
 	SaveTests.new().run(self)
+	HutFocusTests.new().run(self)
+	GrowthTests.new().run(self)
+	HaulerTests.new().run(self)
+	NewcomerTests.new().run(self)
+	UiTests.new().run(self)
 	if not "fast" in OS.get_cmdline_user_args():  # `-- fast` skips the bot's slow runs while iterating
 		test_pacing_bot()
 		SaveTests.new().run_system(self)
@@ -351,20 +361,24 @@ func test_goals_advance_in_order() -> void:
 	for i in Data.LEARN_CLICKS:
 		s.gather_by_hand(find_tile(s, "tree"))
 	s.tick(0.1)
-	check(s.story.current_goal() == 1, "Wood learned, next Stone and Flint")
+	check(s.story.current_goal() == 1, "Wood learned, next the Berry Bushes: the Kith eat")
+	for i in Data.LEARN_CLICKS:
+		s.gather_by_hand(find_tile(s, "berry"))
+	s.tick(0.1)
+	check(s.story.current_goal() == 2, "Berries learned, next Stone and Flint")
 	for tile in ["rock", "gravel"]:
 		for i in Data.LEARN_CLICKS:
 			s.gather_by_hand(find_tile(s, tile))
 	s.tick(0.1)
-	check(s.story.current_goal() == 2, "then find the flax")
+	check(s.story.current_goal() == 3, "then find the flax")
 	s.gather_by_hand(find_tile(s, "flax"))
 	s.tick(0.1)
-	check(s.story.current_goal() == 3, "then Knapping")
+	check(s.story.current_goal() == 4, "then Knapping")
 	s.economy.inv["flint"] = 5
 	s.economy.inv["stone"] = 10
 	s.research("knapping")
 	s.tick(0.1)
-	check(s.story.current_goal() == 4, "knapping done, next is flint tools")
+	check(s.story.current_goal() == 5, "knapping done, next is flint tools")
 	check(s.story.goals_done.has("learn_wood"), "earlier goals stay done")
 	var ids: Array = Data.GOALS.map(func(g): return g["id"])
 	check(
@@ -397,6 +411,13 @@ func test_shortfall_text() -> void:
 	s.economy.inv["stone"] = 10
 	s.economy.inv["clay"] = 10
 	check(Ui.shortfall_text(s.economy.inv, {"stone": 10, "clay": 10}) == "", "no shortfall when affordable")
+
+
+## Food coming in steadily: a full window of berries from a hut, more than any camp of ours eats.
+func steady_income(s: Sim) -> void:
+	s.economy.flows.hist = []
+	for _n in Data.RATE_WINDOW:
+		s.economy.flows.hist.append({"berries|gatherers_hut": 1.0})
 
 
 func place_free(s: Sim, type: String, p: Vector2i) -> bool:
@@ -432,11 +453,13 @@ func test_population_grows_with_food_and_room() -> void:
 	var s := fresh()
 	s.economy.inv["berries"] = 200
 	for i in int(Data.GROW_TIME * 2 + 2):
+		steady_income(s)
 		s.tick(1.0)
 	check(s.people.kith.size() == s.town.housing(), "grows until the Camp is full")
 	check(Ui.growth_note(s).begins_with("No room"), "says it needs room")
 	place_free(s, "dwelling", s.world.camp_pos + Vector2i(0, 2))
 	for i in int(Data.GROW_TIME + 2):
+		steady_income(s)
 		s.tick(1.0)
 	check(s.people.kith.size() == s.town.housing() - 2, "a Dwelling makes room for more")
 

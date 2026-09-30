@@ -24,10 +24,21 @@ const HAND_TOOLS := {
 
 ## Food each Kith eats per second.
 const FOOD_PER_KITH_PER_SEC := 0.02
+## Berries in the stockpile at the start. Three Kith eat about 3.6 a minute; the second goal has the player
+## hand-gather more, and the food warning (below) comes before the pantry is bare.
+const START_BERRIES := 10
+## The food warning goes up (a toast, and the Food readout flashes red) when the stockpile would run out within
+## this many seconds at the current eating rate, and comes down again once it would last FOOD_CLEAR_SECONDS.
+const FOOD_WARN_SECONDS := 60.0
+const FOOD_CLEAR_SECONDS := 120.0
 const KITH_START := 3
-## A new Kith is born every GROW_TIME seconds while there is room and food to spare. Birth costs BIRTH_FOOD.
+## A new Kith is born every GROW_TIME seconds while there is room and steady food. Birth costs BIRTH_FOOD.
 const GROW_TIME := 12.0
 const BIRTH_FOOD := 5.0
+## A birth also needs this much food in the stockpile for each person already there, and food coming in
+## steadily (Economy.food_is_steady): what the buildings and the player's hands bring over the last
+## RATE_WINDOW seconds must cover what everyone eats.
+const BIRTH_RESERVE := 2.0
 ## After this long with no food, one Kith leaves.
 const STARVE_TIME := 20.0
 ## Tiles per second on open ground. Roads double it; forest and rocks halve it.

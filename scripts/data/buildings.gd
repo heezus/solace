@@ -2,6 +2,7 @@ extends RefCounted
 ## Every building, the build bar's tabs and order. Read through the `Data` facade (scripts/data.gd).
 
 ## kind: "camp" | "house" | "road" | "bridge" | "field" | "depot" | "gatherer" | "processor" | "power" | "aura" | "cairn"
+## `story` buildings stay off the build bar until their tech is on the board and reachable (nothing to spoil early).
 ## Processors turn `in` into `out` every `time` seconds (a processor with no `in` just makes `out`).
 ## Buildings without a worker show `status`, or `desc` if they have none.
 const BUILDINGS := {
@@ -24,7 +25,7 @@ const BUILDINGS := {
 		"housing": 3,
 		"near_hearth": true,
 		"color": Color("e9c46a"),
-		"desc": "Room for 3 more Kith. Must be within 6 tiles of the Hearth. They grow when there is spare food.",
+		"desc": "Room for 3 more Kith. Must be within 6 tiles of the Hearth. They grow while food keeps coming in.",
 	},
 	"road":
 	{
@@ -103,7 +104,7 @@ const BUILDINGS := {
 		"radius": 2,
 		"time": 3.0,
 		"color": Color("f4a261"),
-		"desc": "Gathers from resource tiles within 2 tiles.",
+		"desc": "Works one resource within 2 tiles: the one it stands next to. Click it to change.",
 	},
 	"kiln":
 	{
@@ -162,6 +163,7 @@ const BUILDINGS := {
 		"name": "Standing Stone",
 		"kind": "aura",
 		"tech": "megaliths",
+		"story": true,
 		"cost": {"stone": 30},
 		"radius": 1.5,
 		"color": Color("6c5b7b"),
@@ -172,6 +174,7 @@ const BUILDINGS := {
 		"name": "Shard Cairn",
 		"kind": "cairn",
 		"tech": "star_lore",
+		"story": true,
 		"cost": {"stone": 12},
 		"needs_shard": true,
 		"color": Color("caf0f8"),

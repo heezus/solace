@@ -26,7 +26,7 @@ const LANES := {
 }
 const LANE_ORDER := ["fiber", "stone", "land", "hearth", "lore"]
 ## Column captions on the research board, one per tier; the last is the gate's column.
-const TIER_NAMES := ["TIER I  ·  ROOTS", "TIER II", "TIER III", "TIER IV", "TIER V", "THE GATE"]
+const TIER_NAMES := ["TIER I", "TIER II", "TIER III", "TIER IV", "TIER V", "THE GATE"]
 
 ## How many techs the research queue lines up at once.
 const QUEUE_SLOTS := 5
@@ -112,7 +112,7 @@ const TECHS := {
 		"requires": [],
 		"cost": {"berries": 10, "fiber": 10},
 		"effect": "storytelling",
-		"desc": "Tales around the fire hold the camp together. New Kith are born 25% faster.",
+		"desc": "Tales around the fire hold the Hearth together. New Kith are born 25% faster.",
 	},
 	"gatherers_hut":
 	{

@@ -14,6 +14,7 @@ const ALERT := Color("ef476f")
 const KITH := Color("e76f51")
 const FOG := Color("2c3834")
 const RUBBLE_TIME := 0.9
+const PILL_FONT := 10
 
 
 static func rect(p: Vector2i) -> Rect2:
@@ -134,17 +135,46 @@ static func flow_arrows(ci: CanvasItem, s, b: Dictionary, time: float) -> void:
 		flow_arrow(ci, here, depot, Data.ITEMS[id]["color"], "%d %s" % [def["out"][id], Data.ITEMS[id]["name"]], time)
 
 
-## Blocked buildings get an alert pill under their tile, with a small pointer up to it.
+## The word on an alert's pill: "Hungry: no food" says "Hungry", "Idle: no free Kith" says "Idle". The whole
+## alert is still in the building's status, in its card and on hover.
+static func pill_text(alert: String) -> String:
+	return alert.split(":")[0]
+
+
+## Blocked buildings get a short alert pill under their tile, with a small pointer up to it. Neighbours never
+## overlap: a pill that would land on another goes a row lower (or above the tile), and none leaves the map.
 static func status_pills(ci: CanvasItem, s) -> void:
+	var font := ThemeDB.fallback_font
+	var map := Rect2(Vector2.ZERO, Vector2(s.world.width, s.world.height) * TILE)
+	var placed: Array = []
 	for b in s.town.buildings:
 		if b["alert"] == "":
 			continue
+		var text := pill_text(b["alert"])
 		var r := rect(b["pos"])
-		var at := Vector2(r.get_center().x, r.end.y + 5.0)
-		ci.draw_colored_polygon(
-			PackedVector2Array([at + Vector2(0, -5), at + Vector2(-5, 1), at + Vector2(5, 1)]), OUTLINE
+		var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, PILL_FONT).x + 12.0
+		var h := PILL_FONT + 8.0
+		var x := clampf(r.get_center().x - w / 2.0, map.position.x + 2.0, map.end.x - w - 2.0)
+		var pill := Rect2(x, r.end.y + 5.0, w, h)
+		for row in range(4):  # below the tile, then a row lower, then above it
+			var y: float = r.end.y + 5.0 + row * (h + 2.0) if row < 3 else r.position.y - 5.0 - h
+			var tries := Rect2(x, y, w, h)
+			if map.encloses(tries) and not placed.any(func(o): return o.grow(1.0).intersects(tries)):
+				pill = tries
+				break
+		placed.append(pill)
+		var below := pill.position.y > r.end.y
+		var edge := Vector2(r.get_center().x, r.end.y if below else r.position.y)
+		var tip := Vector2(
+			clampf(edge.x, pill.position.x + 8.0, pill.end.x - 8.0), pill.position.y if below else pill.end.y
 		)
-		Art.pill(ci, at, b["alert"], ALERT, OUTLINE, 10)
+		if edge.distance_to(tip) > 8.0:
+			ci.draw_line(edge, tip, OUTLINE, 2.0)
+		var dir := 1.0 if below else -1.0
+		ci.draw_colored_polygon(
+			PackedVector2Array([tip + Vector2(0, -5 * dir), tip + Vector2(-5, dir), tip + Vector2(5, dir)]), OUTLINE
+		)
+		Art.pill(ci, Vector2(pill.get_center().x, pill.position.y), text, ALERT, OUTLINE, PILL_FONT)
 
 
 ## The settlement: a dashed Kith-colored ring 6 tiles around the Hearth. Faint while playing,

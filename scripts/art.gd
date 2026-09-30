@@ -2,6 +2,8 @@ extends RefCounted
 ## Flat, bold-outlined vector art: map features, building shapes and tech-tree arrows.
 ## Static helpers that draw onto whichever CanvasItem is passed in, during its draw.
 
+const Data = preload("res://scripts/data.gd")
+
 const OUTLINE := Color("1b1b1f")
 ## The pale-cyan light of the Strange Stone and its cairn.
 const STONE_GLOW := Color(0.6, 0.95, 1.0)
@@ -27,6 +29,17 @@ static func sprite(name: String) -> Texture2D:
 			tex = load(path) as Texture2D
 		_sprites[name] = tex
 	return _sprites[name]
+
+
+## An item's sprite drawn in `r` at alpha `a`, or the old colored square when it has none.
+static func item_icon(ci: CanvasItem, id: String, r: Rect2, a: float) -> void:
+	var tex := sprite("item_" + id)
+	if tex != null:
+		ci.draw_texture_rect(tex, r, false, Color(1, 1, 1, a))
+		return
+	var box := r.grow(-r.size.x * 0.2)
+	ci.draw_rect(box, Color(Data.ITEMS[id]["color"], a))
+	ci.draw_rect(box, Color(OUTLINE, a), false, 1.0)
 
 
 ## A rounded pill with centered text, e.g. a status under a building. `at` is the pill's top center.

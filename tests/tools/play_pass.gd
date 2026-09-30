@@ -116,6 +116,12 @@ func _click_control(c: Control) -> void:
 	_click(c.get_global_rect().get_center())
 
 
+## Click a control that may be hidden for now (a tab whose buildings are all still to be discovered).
+func _click_visible(c: Control) -> void:
+	if c.is_visible_in_tree():
+		_click_control(c)
+
+
 ## Press the left button at `at` and keep it down.
 func _hold_on(at: Vector2) -> void:
 	_move(at)
@@ -148,7 +154,7 @@ func _wait_for(cond: Callable, problem: String, ms: int) -> void:
 ## each click must switch the tab at once, and none may reach the map.
 func _rapid_tabs() -> void:
 	var s = main.state
-	var names: Array = main.bottom_bar.tab_buttons.keys()
+	var names: Array = main.bottom_bar.tab_buttons.keys().filter(func(t): return main.bottom_bar.tab_buttons[t].visible)
 	var stone: int = s.hand_counts.get("stone", 0)
 	for i in 3:
 		for tab_name in names:
@@ -246,7 +252,7 @@ func _script() -> void:
 				s.economy.inv[id] = maxi(s.economy.inv[id], 40)
 	)
 	for tab in main.bottom_bar.tab_buttons:
-		_then(func(): _click_control(main.bottom_bar.tab_buttons[tab]))
+		_then(func(): _click_visible(main.bottom_bar.tab_buttons[tab]))
 		for type in Data.BUILD_TABS[tab]:
 			_then(func(): _move(main.bottom_bar.build_buttons[type]["button"].get_global_rect().get_center()))
 	for r in main.bottom_bar.craft_buttons:
@@ -272,6 +278,7 @@ func _script() -> void:
 		5000
 	)
 	_then(func(): _first_click_checks())
+	_then(func(): _first_click_panel())
 	# A workshop: place, click, pause, resume.
 	_then(func(): _key(KEY_ESCAPE))
 	_then(func(): _click_control(main.bottom_bar.tab_buttons["Workshops"]))
@@ -292,6 +299,7 @@ func _script() -> void:
 	# The research board: open, hover and click cards, close.
 	_then(func(): _key(KEY_T), 3)
 	_then(func(): _tech_board(), 5)
+	_then(func(): _tech_board_all(), 5)
 	_then(
 		func():
 			_click_card("calendar")
@@ -343,11 +351,23 @@ func _tech_board() -> void:
 		problems.append("T didn't open the research board")
 		return
 	var board = panel.board
+	_expect(board.view == "next", "the board didn't open on Next steps")
+	_expect(panel.stock_row.visible, "the stock strip isn't shown while the board is open")
+	for tech in board.grid:
+		_move(board.get_global_transform() * board.card_rect(tech).get_center())
+	panel._pick_view("all")
+
+
+## The whole board, once its view has been laid out: hover every card and scroll to the Calendar.
+func _tech_board_all() -> void:
+	var panel = main.tech_panel
+	var board = panel.board
 	for tech in Data.TECH_ORDER:
 		var r: Rect2 = board.card_rect(tech)
 		var at: Vector2 = board.get_global_transform() * r.get_center()
 		_move(at)
 	panel.scroll.scroll_horizontal = int(board.card_rect("calendar").position.x - 200.0)
+	panel.scroll.scroll_vertical = int(board.card_rect("calendar").position.y - 100.0)
 
 
 func _show_rank(tech: String) -> void:
@@ -440,12 +460,26 @@ func _first_click_checks() -> void:
 			break
 	var panel = main.building_panel
 	_expect(panel.visible, "clicking a hut didn't open its panel at once")
+
+
+## The docked panel lays out on the next frame, so its buttons are clicked on a frame of their own.
+func _first_click_panel() -> void:
+	var s = main.state
+	var panel = main.building_panel
 	if panel.visible and panel.parts["pause"].visible:
 		var b: Dictionary = panel.selected()
 		var was: bool = b["paused"]
 		var counts: Dictionary = s.hand_counts.duplicate()
-		_click_control(panel.parts["pause"])
-		_expect(b["paused"] != was, "the panel's Pause needed more than one click")
+		var pause: Button = panel.parts["pause"]
+		_click_control(pause)
+		var hit: Control = main.get_viewport().gui_get_hovered_control()
+		_expect(
+			b["paused"] != was,
+			(
+				"the panel's Pause needed more than one click (button %s, panel %s, over %s, frame %d)"
+				% [pause.get_global_rect(), panel.get_global_rect(), hit, frame]
+			)
+		)
 		_click_control(panel.parts["pause"])
 		_expect(s.hand_counts == counts, "a panel click harvested the tile under it")
 
