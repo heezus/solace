@@ -193,8 +193,8 @@ static func _lane_index(tech: String) -> int:
 	return Data.LANE_ORDER.find(Data.TECHS[tech]["lane"])
 
 
-## The channel a skipping line runs along: the one beside the source lane, toward the target,
-## or the nearest one with a free track.
+## The channel a skipping line runs along: the target's `via` hint if it names one, else the one
+## beside the source lane, toward the target, or the nearest one with a free track.
 static func _pick_channel(
 	lay: Dictionary, tracks: Dictionary, e: Dictionary, yo: float, yi: float, ax: float, tb: int
 ) -> int:
@@ -211,6 +211,10 @@ static func _pick_channel(
 			cands.append(c)
 	else:
 		cands = [la + 1, la]
+	var hint := via_channel(e["to"], e["from"])
+	if hint >= 0:
+		cands.erase(hint)
+		cands.push_front(hint)
 	var first: int = cands[0]
 	var rest: Array = []
 	for c in lay["channels"].size():
@@ -225,6 +229,18 @@ static func _pick_channel(
 		if _free_track(lay, tracks, "c%d" % c, _channel_tracks(lay, c), ax + 8.0, x_end) >= 0:
 			return c
 	return first
+
+
+## The channel a tech's `via` hint (Data.TECHS) names for the line from `parent`, or -1 for none.
+## "top" is the channel above the first lane; a lane id is the channel just below that lane.
+static func via_channel(tech: String, parent: String) -> int:
+	var via: String = Data.TECHS[tech].get("via", {}).get(parent, "")
+	if via == "":
+		return -1
+	if via == "top":
+		return 0
+	var lane := Data.LANE_ORDER.find(via)
+	return lane + 1 if lane >= 0 else -1
 
 
 static func _channel_tracks(lay: Dictionary, c: int) -> int:

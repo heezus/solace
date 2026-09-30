@@ -102,6 +102,10 @@ const SHARD_TEXT := (
 ## `requires` must all be researched; `requires_any` (optional) needs just one of its techs.
 ## `effect` marks a tech whose bonus GameState applies while it is researched.
 ## `hidden` techs stay out of the tree until the player has clicked the Strange Stone.
+## The board is laid out from these keys alone (scripts/tech_layout.gd): `lane` ("gate" for the full-height
+## Bronze Dawn column), `tier` and `slot` place the card, and lines are routed automatically. An optional
+## `via` dictionary steers a line that skips tiers: {parent: lane id} runs it along the channel just below
+## that lane ("top" for the channel above the first lane), e.g. "via": {"masonry": "fiber"}.
 
 ## The research board's bands, top to bottom. Bronze Dawn sits alone in the "gate" column.
 const LANES := {

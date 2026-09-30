@@ -25,6 +25,7 @@ func run(runner) -> void:
 	test_rates_count_making_and_using()
 	test_research_board_lines_stay_in_channels()
 	test_research_queue()
+	test_board_layout_is_data()
 	test_side_branches_are_marked()
 	test_build_tabs_cover_every_building()
 	test_building_panel_texts()
@@ -256,6 +257,16 @@ func _runs_overlap(s1: Array, s2: Array) -> bool:
 	if a1.y == b1.y and a2.y == b2.y and absf(a1.y - a2.y) < 2.5:
 		return minf(maxf(a1.x, b1.x), maxf(a2.x, b2.x)) - maxf(minf(a1.x, b1.x), minf(a2.x, b2.x)) > 0.5
 	return false
+
+
+## The research board is laid out from Data.TECHS alone, so a new tree is a data edit.
+func test_board_layout_is_data() -> void:
+	for tech in Data.TECHS:
+		var d: Dictionary = Data.TECHS[tech]
+		t.check(d["lane"] == "gate" or Data.LANES.has(d["lane"]), tech + " sits in a real lane")
+		for parent in d.get("via", {}):
+			t.check(parent in d["requires"] + d.get("requires_any", []), tech + ": via names one of its parents")
+			t.check(TechLayout.via_channel(tech, parent) >= 0, tech + ": via names a real channel")
 
 
 ## Clicking a far tech makes it the goal: its missing chain is queued (a few at a time)
