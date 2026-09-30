@@ -9,6 +9,7 @@ const Economy = preload("res://scripts/economy.gd")
 const GameState = preload("res://scripts/game_state.gd")
 const Monitor = preload("res://tests/monitor.gd")
 const Research = preload("res://scripts/research.gd")
+const RunSave = preload("res://scripts/run_save.gd")
 
 var t  # the runner, tests/run_tests.gd
 var _shard := false  # stands in for "the Strange Stone has been clicked"
@@ -35,6 +36,7 @@ func run(runner) -> void:
 	test_tech_researched_signal()
 	test_tick_signals_each_tech_in_order()
 	test_research_stands_alone()
+	test_to_dict_and_from_dict()
 	test_game_state_passes_through()
 	test_game_state_runs_the_effects()
 	test_game_state_queue_ticks()
@@ -278,6 +280,35 @@ func test_ready_list_is_in_tree_order() -> void:
 	t.check(in_order, "in tree order")
 	r.research("cordage")
 	t.check("cordage" not in r.ready_list(), "a researched tech drops out")
+
+
+## The researched techs (in order), the goal and the queue survive a dict and a JSON round trip, and the set
+## the Economy shares is refilled in place.
+func test_to_dict_and_from_dict() -> void:
+	var a := _block({"fiber": 50, "berries": 50})
+	t.check(a.research("foraging") and a.research("cordage"), "set up: two techs researched")
+	a.set_goal("gatherers_hut")
+	t.check(not a.queue.is_empty(), "and a goal with a queue")
+	var d := a.to_dict()
+	t.check(d["researched"] == ["foraging", "cordage"], "the techs are written in the order they were researched")
+	var b := _block()
+	var shared := _techs
+	b.from_dict(d)
+	t.check(RunSave.to_json(b.to_dict()) == RunSave.to_json(d), "a Research restored from a dict writes the same dict")
+	t.check(
+		b.researched.keys() == ["foraging", "cordage"] and b.goal == a.goal and b.queue == a.queue,
+		"same techs, goal and queue"
+	)
+	t.check(is_same(b.researched, shared) and shared.has("cordage"), "the shared researched set is refilled in place")
+	var c := _block()
+	c.from_dict(RunSave.from_json(RunSave.to_json(d)))
+	t.check(RunSave.to_json(c.to_dict()) == RunSave.to_json(d), "the same after a trip through JSON text")
+	var m := Monitor.new()
+	m.watch(c, "tech_researched")
+	c.from_dict(d)
+	t.check(m.count() == 0, "restoring announces nothing")
+	c.from_dict({})
+	t.check(_techs.is_empty() and c.goal == "" and c.queue.is_empty(), "an empty dict clears it")
 
 
 func test_research_stands_alone() -> void:

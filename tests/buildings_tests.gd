@@ -13,6 +13,7 @@ const Fog = preload("res://scripts/fog.gd")
 const GameState = preload("res://scripts/game_state.gd")
 const Monitor = preload("res://tests/monitor.gd")
 const Research = preload("res://scripts/research.gd")
+const RunSave = preload("res://scripts/run_save.gd")
 const Rules = preload("res://scripts/rules.gd")
 const World = preload("res://scripts/world.gd")
 
@@ -56,6 +57,7 @@ func run(runner) -> void:
 	test_haul_by_hand()
 	test_static_helpers()
 	test_buildings_stand_alone()
+	test_to_dict_and_from_dict()
 	test_game_state_passes_through()
 	test_game_state_place_runs_the_effects()
 	test_game_state_demolish_frees_the_worker()
@@ -500,6 +502,43 @@ func test_static_helpers() -> void:
 		not Buildings.needs_worker({"type": "camp"}) and not Buildings.needs_worker({"type": "water_wheel"}),
 		"others don't"
 	)
+
+
+## The list of buildings (every field of each, in build order) and the road revision survive a dict and a JSON
+## round trip; the index is rebuilt and the road cache is dropped.
+func test_to_dict_and_from_dict() -> void:
+	var a := _block(_rich(), ["haulers", "farming", "gatherers_hut"])
+	t.check(not a.place("gatherers_hut", Vector2i(3, 3)).is_empty(), "set up: a hut")
+	a.place("dwelling", Vector2i(3, 5))
+	a.place("road", Vector2i(3, 4))
+	a.place("field", Vector2i(5, 2))
+	a.buildings[1]["worker"] = 2
+	a.buildings[1]["out"] = {"wood": 3, "stone": 1}
+	a.buildings[1]["inbuf"] = {"rope": 2}
+	a.buildings[1]["incoming"] = {"rope": 4}
+	a.buildings[1]["rush_cd"] = 1.25
+	a.buildings[1]["field_extra"] = 0.4
+	a.buildings[1]["status"] = "Working"
+	a.buildings[2]["paused"] = true
+	a.buildings[2]["claimed"] = true
+	a.road_net = {"rev": a.road_rev}
+	var d := a.to_dict()
+	var b := _block()
+	b.from_dict(d)
+	t.check(RunSave.to_json(b.to_dict()) == RunSave.to_json(d), "a Buildings restored from a dict writes the same dict")
+	t.check(b.buildings == a.buildings, "every field of every building comes back")
+	t.check(b.building_at == a.building_at and b.building_at[Vector2i(3, 5)] == 2, "the index is rebuilt")
+	t.check(b.road_rev == a.road_rev and b.road_net.is_empty(), "the road revision is kept and the cache dropped")
+	var c := _block()
+	c.from_dict(RunSave.from_json(RunSave.to_json(d)))
+	t.check(RunSave.to_json(c.to_dict()) == RunSave.to_json(d), "the same after a trip through JSON text")
+	t.check(c.buildings[1]["worker"] is int and c.buildings[1]["out"]["wood"] is int, "ints are ints again")
+	t.check(
+		c.buildings[1]["pos"] is Vector2i and c.buildings[1]["out"].keys() == ["wood", "stone"],
+		"positions and goods order"
+	)
+	c.from_dict({})
+	t.check(c.buildings.is_empty() and c.building_at.is_empty() and c.road_rev == 0, "an empty dict clears it")
 
 
 func test_buildings_stand_alone() -> void:

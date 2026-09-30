@@ -20,6 +20,7 @@ const BuildingsTests = preload("res://tests/buildings_tests.gd")
 const KithTests = preload("res://tests/kith_tests.gd")
 const ArcTests = preload("res://tests/arc_tests.gd")
 const StoryTests = preload("res://tests/story_tests.gd")
+const SaveTests = preload("res://tests/save_tests.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
 const GoldenTests = preload("res://tests/golden_tests.gd")
 
@@ -66,8 +67,10 @@ func _init() -> void:
 	KithTests.new().run(self)
 	StoryTests.new().run(self)
 	ArcTests.new().run(self)
+	SaveTests.new().run(self)
 	if not "fast" in OS.get_cmdline_user_args():  # `-- fast` skips the bot's slow runs while iterating
 		test_pacing_bot()
+		SaveTests.new().run_system(self)
 	print("FAILED: %d" % failures if failures > 0 else "ALL TESTS PASSED")
 	quit(1 if failures > 0 else 0)
 

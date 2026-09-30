@@ -10,6 +10,7 @@ extends RefCounted
 
 signal recorded(id: String)
 
+const Codec = preload("res://scripts/save_codec.gd")
 const Data = preload("res://scripts/data.gd")
 const Roads = preload("res://scripts/roads.gd")
 
@@ -107,3 +108,17 @@ func _has_building(s, type: String) -> bool:
 		if b["type"] == type:
 			return true
 	return false
+
+
+# --- Save --------------------------------------------------------------------
+
+
+## The story ids in order and the goals met so far, as JSON-safe values.
+func to_dict() -> Dictionary:
+	return {"events": events.duplicate(), "goals_done": Codec.keys(goals_done)}
+
+
+## Restore what to_dict wrote. `recorded` is not emitted: these moments already happened in the saved run.
+func from_dict(d: Dictionary) -> void:
+	events = Codec.strings(d.get("events", []))
+	goals_done = Codec.to_set(d.get("goals_done", []))

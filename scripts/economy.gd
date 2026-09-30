@@ -5,6 +5,7 @@ extends RefCounted
 ## GameState owns one and passes its old stockpile methods through to it.
 
 const Data = preload("res://scripts/data.gd")
+const Codec = preload("res://scripts/save_codec.gd")
 const Flows = preload("res://scripts/flows.gd")
 
 var inv: Dictionary = {}  # item id -> count
@@ -136,3 +137,34 @@ func rate(item: String) -> float:
 ## Per-second rate of `item` by source.
 func parts(item: String) -> Dictionary:
 	return flows.parts(item)
+
+
+# --- Save --------------------------------------------------------------------
+
+
+## Everything the block holds as JSON-safe values (the researched techs are the Research block's, not written).
+func to_dict() -> Dictionary:
+	return {
+		"inv": Codec.int_dict(inv),
+		"seen": Codec.keys(seen),
+		"food_credit": food_credit,
+		"starving": starving,
+		"food_use": food_use,
+		"flows": flows.to_dict(),
+	}
+
+
+## Restore what to_dict wrote, in place (other blocks may hold `inv` and `seen`). An item the save doesn't
+## list counts as none, so a save from before an item was added still loads.
+func from_dict(d: Dictionary) -> void:
+	inv.clear()
+	inv.merge(Codec.int_dict(d.get("inv", {})))
+	for id in Data.ITEM_ORDER:
+		if not inv.has(id):
+			inv[id] = 0
+	seen.clear()
+	seen.merge(Codec.to_set(d.get("seen", [])))
+	food_credit = float(d.get("food_credit", 0.0))
+	starving = bool(d.get("starving", false))
+	food_use = float(d.get("food_use", 0.0))
+	flows.from_dict(d.get("flows", {}))

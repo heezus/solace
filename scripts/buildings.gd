@@ -17,11 +17,14 @@ extends RefCounted
 signal built(type: String, pos: Vector2i)
 signal demolished(type: String, pos: Vector2i)
 
+const Codec = preload("res://scripts/save_codec.gd")
 const Data = preload("res://scripts/data.gd")
 const Economy = preload("res://scripts/economy.gd")
 const Research = preload("res://scripts/research.gd")
 const Rules = preload("res://scripts/rules.gd")
 const World = preload("res://scripts/world.gd")
+
+const _POINTS := ["pos"]  # the building entries that are tile positions (saved as [x, y])
 
 ## each: {type, pos, progress, inbuf, out, status, gather_items, gather_index, worker, ...}
 var buildings: Array = []
@@ -293,3 +296,47 @@ func wants_to_work(b: Dictionary) -> bool:
 func tick_timers(b: Dictionary, delta: float) -> void:
 	b["unreachable"] = maxf(b["unreachable"] - delta, 0.0)
 	b["rush_cd"] = maxf(b["rush_cd"] - delta, 0.0)
+
+
+# --- Save --------------------------------------------------------------------
+
+
+## Every building in the order it was built, and the road revision, as JSON-safe values. The road network
+## cache (`road_net`) is not saved: Roads rebuilds it from the roads and buildings when it is next asked.
+func to_dict() -> Dictionary:
+	var list: Array = []
+	for b in buildings:
+		list.append(_building_to_dict(b))
+	return {"buildings": list, "road_rev": road_rev}
+
+
+## Restore what to_dict wrote, in place, and rebuild `building_at`. The road cache is dropped.
+func from_dict(d: Dictionary) -> void:
+	buildings.clear()
+	building_at.clear()
+	for saved in d.get("buildings", []):
+		var b := _building_from_dict(saved)
+		building_at[b["pos"]] = buildings.size()
+		buildings.append(b)
+	road_rev = int(d.get("road_rev", 0))
+	road_net = {}
+
+
+static func _building_to_dict(b: Dictionary) -> Dictionary:
+	var out := Codec.with_points(b, _POINTS)
+	for key in ["inbuf", "out", "incoming"]:
+		out[key] = Codec.int_dict(b[key])
+	out["gather_items"] = Codec.strings(b["gather_items"])
+	return out
+
+
+static func _building_from_dict(d: Dictionary) -> Dictionary:
+	var b := Codec.from_points(d, _POINTS)
+	for key in ["inbuf", "out", "incoming"]:
+		b[key] = Codec.int_dict(d[key])
+	b["gather_items"] = Codec.strings(d["gather_items"])
+	for key in ["progress", "unreachable", "field_extra", "rush_cd"]:
+		b[key] = float(d[key])
+	for key in ["gather_index", "worker", "trips"]:
+		b[key] = int(d[key])
+	return b

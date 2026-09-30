@@ -8,6 +8,7 @@ const Data = preload("res://scripts/data.gd")
 const GameState = preload("res://scripts/game_state.gd")
 const Monitor = preload("res://tests/monitor.gd")
 const Rules = preload("res://scripts/rules.gd")
+const RunSave = preload("res://scripts/run_save.gd")
 const Story = preload("res://scripts/story.gd")
 
 var t  # the runner, tests/run_tests.gd
@@ -21,6 +22,7 @@ func run(runner) -> void:
 	test_current_goal_follows_goals_done()
 	test_goals_stay_done()
 	test_story_needs_no_other_block()
+	test_to_dict_and_from_dict()
 	test_game_state_passes_through()
 	test_researching_haulers_records_once()
 	test_bronze_dawn_is_recorded_and_wins()
@@ -104,6 +106,29 @@ func test_goals_stay_done() -> void:
 	var before: int = s.goals_done.size()
 	s.story.update(s)
 	t.check(s.goals_done.size() == before, "updating again adds nothing")
+
+
+## The story ids (in order) and the goals met survive a dict and a JSON round trip, without a signal.
+func test_to_dict_and_from_dict() -> void:
+	var a := Story.new()
+	a.record("shard_found")
+	a.record("first_lesson")
+	a.goals_done["learn_wood"] = true
+	a.goals_done["road"] = true
+	var d := a.to_dict()
+	var b := Story.new()
+	var m := Monitor.new()
+	m.watch(b, "recorded")
+	b.from_dict(d)
+	t.check(RunSave.to_json(b.to_dict()) == RunSave.to_json(d), "a Story restored from a dict writes the same dict")
+	t.check(b.events == ["shard_found", "first_lesson"] and b.goals_done == a.goals_done, "same story and goals")
+	t.check(m.count() == 0, "restoring records nothing new")
+	var c := Story.new()
+	c.from_dict(RunSave.from_json(RunSave.to_json(d)))
+	t.check(RunSave.to_json(c.to_dict()) == RunSave.to_json(d), "the same after a trip through JSON text")
+	t.check(c.current_goal() == a.current_goal(), "and the checklist stands where it did")
+	c.record("shard_found")
+	t.check(c.events.size() == 2, "a restored moment is not recorded twice")
 
 
 func test_story_needs_no_other_block() -> void:
