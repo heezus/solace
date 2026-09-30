@@ -457,13 +457,11 @@ func _place_building(type: String, p: Vector2i) -> void:
 	if Data.BUILDINGS[type]["kind"] == "gatherer":
 		for t in gather_tiles(p):
 			b["gather_items"].append(Data.TILES[tile_at(t)]["yields"])
-		if b["gather_items"].is_empty():
-			b["gather_items"].append("fiber")  # nothing else nearby: it cuts grass
 	building_at[p] = buildings.size()
 	buildings.append(b)
 
 
-## Resource tiles a Gatherer's Hut at p would work (grass only if there is nothing else).
+## Resource tiles a Gatherer's Hut at p would work.
 func gather_tiles(p: Vector2i) -> Array:
 	var r := hut_radius()
 	var found: Array = []

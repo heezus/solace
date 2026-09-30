@@ -8,7 +8,7 @@ const ITEMS := {
 	"wood": {"name": "Wood", "color": Color("8b5a2b")},
 	"stone": {"name": "Stone", "color": Color("9aa0a6")},
 	"flint": {"name": "Flint", "color": Color("4a4e69")},
-	"fiber": {"name": "Fiber", "color": Color("a7c957")},
+	"fiber": {"name": "Fiber", "color": Color("a7c957"), "desc": "Cut from wild flax"},
 	"clay": {"name": "Clay", "color": Color("c8553d")},
 	"berries": {"name": "Berries", "color": Color("d62246")},
 	"grain": {"name": "Grain", "color": Color("e9c46a")},
@@ -138,7 +138,8 @@ const RATE_WINDOW := 30
 # --- Map tiles ---------------------------------------------------------------
 
 const TILES := {
-	"grass": {"name": "Grassland", "yields": "fiber", "color": Color("7cb342"), "buildable": true},
+	"grass": {"name": "Grassland", "yields": "", "color": Color("7cb342"), "buildable": true},
+	"flax": {"name": "Wild Flax", "yields": "fiber", "color": Color("7cb342"), "buildable": false},
 	"tree": {"name": "Forest", "yields": "wood", "color": Color("2e7d32"), "buildable": false},
 	"rock": {"name": "Rocks", "yields": "stone", "color": Color("8d8d8d"), "buildable": false},
 	"gravel": {"name": "Riverbed Gravel", "yields": "flint", "color": Color("b0a18a"), "buildable": false},
@@ -914,6 +915,7 @@ const BUFFER_CAP := 10
 const GOALS := [
 	{"id": "learn_wood", "text": "Hold the mouse on trees to gather Wood, until a Kith learns it (10 harvests)"},
 	{"id": "learn_stone", "text": "Gather Stone and Flint by hand until they're learned too"},
+	{"id": "flax", "text": "Find Wild Flax (little blue flowers) and gather it: all Fiber comes from flax"},
 	{"id": "knapping", "text": "Press T and research Knapping", "tech": "knapping"},
 	{"id": "tools", "text": "Craft Flint Tools: each harvest takes 0.7s instead of 1s"},
 	{"id": "hut_tech", "text": "Research Gatherer's Hut", "tech": "gatherers_hut"},

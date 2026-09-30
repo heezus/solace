@@ -506,7 +506,7 @@ func _draw() -> void:
 			var t := state.tile_at(p)
 			var base: Color = (
 				Data.TILES["grass"]["color"]
-				if t in ["tree", "rock", "berry", "grain", "shard"]
+				if t in ["tree", "rock", "berry", "grain", "flax", "shard"]
 				else Data.TILES[t]["color"]
 			)
 			if (x + y) % 2 == 0:

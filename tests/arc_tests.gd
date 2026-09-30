@@ -11,6 +11,7 @@ const BuildingPanel = preload("res://scripts/building_panel.gd")
 const Ranks = preload("res://scripts/ranks.gd")
 const Workers = preload("res://scripts/workers.gd")
 const Hands = preload("res://scripts/hands.gd")
+const MapGen = preload("res://scripts/map_gen.gd")
 
 var t  # the runner, tests/run_tests.gd
 
@@ -28,6 +29,8 @@ func run(runner) -> void:
 	test_tier_costs_scale()
 	test_story_events()
 	test_job_titles()
+	test_fiber_comes_from_flax()
+	test_flax_near_every_hearth()
 
 
 ## A camp with a hut next to the forest west of the Hearth, the whole map in sight and food to spare.
@@ -350,3 +353,65 @@ func test_job_titles() -> void:
 	for i in Data.PEOPLE_NAMES.size() + 1:
 		s._add_kith()
 	t.check(s.kith[-1]["name"].ends_with(" II"), "names come round again with II: " + s.kith[-1]["name"])
+
+
+## Fiber comes only from wild flax: bare grass gives nothing by hand or to a hut, and a hut by the
+## flax cuts it once a Kith has learned it (its worker is the Thatcher).
+func test_fiber_comes_from_flax() -> void:
+	var s: GameState = t.fresh()
+	s.inv["berries"] = 200
+	t.check(Data.TILES["grass"]["yields"] == "" and Data.TILES["flax"]["yields"] == "fiber", "flax yields Fiber")
+	t.check(not Data.TILES["flax"]["buildable"], "flax can't be built on")
+	var grass: Vector2i = t.find_grass(s, false)
+	t.check(Hands.item_at(s, grass) == "", "bare grass gives nothing by hand")
+	for i in 30:
+		t.check(s.hold_harvest(grass, 0.1) == "", "holding on grass never pays out")
+	t.check(s.inv.get("fiber", 0) == 0, "no Fiber from grass")
+	var flax: Vector2i = s.camp_pos + MapGen.FLAX_PATCH[0]
+	t.check(s.tile_at(flax) == "flax", "the Hearth's flax patch is there")
+	for i in Data.LEARN_CLICKS:
+		s.gather_by_hand(flax)
+	t.check(s.knows("fiber"), "10 harvests of flax teach it")
+	# A hut with only grass in range has nothing to gather: clear a patch of ground for one.
+	var open: Vector2i = s.camp_pos + Vector2i(0, 6)
+	for dy in range(-2, 3):
+		for dx in range(-2, 3):
+			s._set_tile(open + Vector2i(dx, dy), "grass")
+	s._build_walk_grid()
+	t.place_free(s, "gatherers_hut", open)
+	var bare: Dictionary = s.buildings[s.building_at[open]]
+	t.check(bare["gather_items"].is_empty(), "a hut on bare grass lists nothing to gather")
+	t.check(not Workers.knows_any(s, open), "and knows nothing it could gather there")
+	# A hut next to the flax cuts it.
+	var by := flax + Vector2i(1, 1)
+	if s.placement_error("gatherers_hut", by) != "":
+		by = flax + Vector2i(0, 2)
+	t.check(t.place_free(s, "gatherers_hut", by), "a hut by the flax")
+	var hut: Dictionary = s.buildings[s.building_at[by]]
+	t.check("fiber" in hut["gather_items"], "it will gather Fiber")
+	s.inv["fiber"] = 0
+	s.researched["haulers"] = true
+	run_for(s, 90.0)
+	t.check(s.inv.get("fiber", 0) + hut["out"].get("fiber", 0) > 0, "the hut brings in Fiber from the flax")
+	t.check(bare["out"].is_empty() and bare["status"] != "Working", "the bare-grass hut brings nothing")
+
+
+## Every map has wild flax within a hut's reach of the Hearth, in sight from the start, and more
+## patches out on the grassland.
+func test_flax_near_every_hearth() -> void:
+	for map_seed in [1, 2, 3, 4, 5, 6, 7, 8, 42, 1234, 99991]:
+		var s := GameState.new()
+		s.generate(map_seed)
+		var near := 0
+		var total := 0
+		for y in GameState.HEIGHT:
+			for x in GameState.WIDTH:
+				var p := Vector2i(x, y)
+				if s.tile_at(p) != "flax":
+					continue
+				total += 1
+				var d: Vector2i = (p - s.camp_pos).abs()
+				if maxi(d.x, d.y) <= 4 and s.fog.is_revealed(p) and s.trip_info(p)["ok"]:
+					near += 1
+		t.check(near >= 2, "map %d: flax in sight and reach of the Hearth (%d tiles)" % [map_seed, near])
+		t.check(total >= near + 4, "map %d: more flax patches out on the grassland (%d tiles)" % [map_seed, total])

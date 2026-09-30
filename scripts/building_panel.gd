@@ -254,7 +254,7 @@ static func trip_text(s: GameState, p: Vector2i) -> String:
 static func gather_text(s: GameState, tiles: Array) -> String:
 	var r := s.hut_radius()
 	if tiles.is_empty():
-		return "No resources within %d tiles: it will cut grass for Fiber." % r
+		return "No resources within %d tiles: it would have nothing to gather (bare grass gives nothing)." % r
 	var counts := {}
 	for p in tiles:
 		var item: String = Data.TILES[s.tile_at(p)]["yields"]

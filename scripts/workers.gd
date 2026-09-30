@@ -29,11 +29,8 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 			k["trip"] = not s.has_haulers()
 			if k["trip"]:
 				s.record_story("first_trip")
-			if target == b["pos"]:
-				k["phase"] = "harvest"  # nothing reachable: cut grass by the hut
-			else:
-				k["task"] = {"tile": target}
-				k["phase"] = "to_tile"
+			k["task"] = {"tile": target}
+			k["phase"] = "to_tile"
 		"to_tile":
 			if s._step(k, delta):
 				k["phase"] = "harvest"
@@ -68,9 +65,9 @@ static func _finish_harvest(s, k: Dictionary, b: Dictionary, tile: Vector2i) -> 
 		k["phase"] = "to_home"
 
 
-## What a hut gathers at `tile` (the hut's own tile means cutting grass for Fiber).
-static func tile_item(s, b: Dictionary, tile: Vector2i) -> String:
-	return Data.TILES[s.tile_at(tile)]["yields"] if tile != b["pos"] else "fiber"
+## What a hut gathers at `tile`.
+static func tile_item(s, _b: Dictionary, tile: Vector2i) -> String:
+	return Data.TILES[s.tile_at(tile)]["yields"]
 
 
 ## Put down what a hut worker carries: into the stockpile at the end of a trip, else into the hut.
@@ -87,8 +84,8 @@ static func _deliver(s, k: Dictionary, b: Dictionary) -> void:
 	k["trip"] = false
 
 
-## The next tile in the hut's rotation that the Kith know how to gather and can reach. Falls back to
-## the hut itself (cutting grass) once Fiber is known, and Vector2i(-1, -1) when there's nothing.
+## The next tile in the hut's rotation that the Kith know how to gather and can reach, or
+## Vector2i(-1, -1) when there's nothing (bare grass gives nothing: Fiber comes from flax).
 static func next_gather_tile(s, k: Dictionary, b: Dictionary) -> Vector2i:
 	var tiles: Array = s.gather_tiles(b["pos"]).filter(func(t): return s.knows(Data.TILES[s.tile_at(t)]["yields"]))
 	for _attempt in tiles.size():
@@ -96,13 +93,11 @@ static func next_gather_tile(s, k: Dictionary, b: Dictionary) -> Vector2i:
 		b["gather_index"] += 1
 		if s._walk_to(k, t):
 			return t
-	return b["pos"] if s.knows("fiber") else Vector2i(-1, -1)
+	return Vector2i(-1, -1)
 
 
 ## True if a hut at p would find something the Kith know how to gather.
 static func knows_any(s, p: Vector2i) -> bool:
-	if s.knows("fiber"):
-		return true
 	for t in s.gather_tiles(p):
 		if s.knows(Data.TILES[s.tile_at(t)]["yields"]):
 			return true

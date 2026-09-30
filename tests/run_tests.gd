@@ -276,12 +276,15 @@ func test_goals_advance_in_order() -> void:
 		for i in Data.LEARN_CLICKS:
 			s.gather_by_hand(find_tile(s, tile))
 	s.tick(0.1)
-	check(Goals.current_goal(s) == 2, "then Knapping")
+	check(Goals.current_goal(s) == 2, "then find the flax")
+	s.gather_by_hand(find_tile(s, "flax"))
+	s.tick(0.1)
+	check(Goals.current_goal(s) == 3, "then Knapping")
 	s.inv["flint"] = 5
 	s.inv["stone"] = 10
 	s.research("knapping")
 	s.tick(0.1)
-	check(Goals.current_goal(s) == 3, "knapping done, next is flint tools")
+	check(Goals.current_goal(s) == 4, "knapping done, next is flint tools")
 	check(s.goals_done.has("learn_wood"), "earlier goals stay done")
 	var ids: Array = Data.GOALS.map(func(g): return g["id"])
 	check(

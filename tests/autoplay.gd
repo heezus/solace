@@ -25,7 +25,7 @@ const RAW_TILE := {
 	"wood": "tree",
 	"stone": "rock",
 	"flint": "gravel",
-	"fiber": "grass",
+	"fiber": "flax",
 	"clay": "clay",
 	"berries": "berry",
 	"grain": "grain",
@@ -361,7 +361,7 @@ func _count(type: String) -> int:
 	return n
 
 
-## Huts that gather mostly `item` (open-grass huts, for Fiber): each counts for its share of `item`.
+## Huts that gather `item`: each counts for its share of `item` among what it gathers.
 func _huts_for(item: String) -> float:
 	var n := 0.0
 	for b in s.buildings:
@@ -458,8 +458,7 @@ func _explore(short: Dictionary) -> bool:
 	return false
 
 
-## No good hut spot in sight for `item`: push the fog back toward the nearest unseen tile of it (for
-## Fiber, the nearest stretch of open grass).
+## No good hut spot in sight for `item`: push the fog back toward the nearest unseen tile of it.
 func _explore_for(item: String) -> bool:
 	var best := Vector2i(-1, -1)
 	var best_d := INF
@@ -467,8 +466,6 @@ func _explore_for(item: String) -> bool:
 		for x in GameState.WIDTH:
 			var p := Vector2i(x, y)
 			if s.fog.is_revealed(p) or s.tile_at(p) != RAW_TILE[item] or not reach.has(p):
-				continue
-			if item == "fiber" and not s.gather_tiles(p).is_empty():
 				continue
 			var d := Vector2(p).distance_to(Vector2(s.camp_pos))
 			if d < best_d:
@@ -563,7 +560,7 @@ func _place_near_hearth(type: String) -> bool:
 	return _place_best(type, func(p): return -Vector2(p).distance_to(Vector2(s.camp_pos)))
 
 
-## A hut where `item` is thickest in its range and little else is (open grass for Fiber). Once there
+## A hut where `item` is thickest in its range and little else is. Once there
 ## is some hut for it, only a spot where it's at least a third of the range is worth a Kith.
 func _place_hut(item: String, have := 0.0) -> bool:
 	var tile: String = RAW_TILE[item]
@@ -577,8 +574,6 @@ func _place_hut(item: String, have := 0.0) -> bool:
 					mine += 1
 				else:
 					other += 1
-			if item == "fiber":
-				return -INF if mine + other > 0 else -Vector2(p).distance_to(Vector2(s.camp_pos))
 			if mine == 0 or (have > 0.0 and mine < 3 and mine * 2 < other):
 				return -INF
 			return mine * 3.0 - other * 2.0 - Vector2(p).distance_to(Vector2(s.camp_pos))

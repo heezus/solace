@@ -22,6 +22,8 @@ static func goal_met(s, g: Dictionary) -> bool:
 			return s.knows("wood")
 		"learn_stone":
 			return s.knows("stone") and s.knows("flint")
+		"flax":
+			return s.hand_counts.get("fiber", 0) > 0 or s.knows("fiber")
 		"trip":
 			return "first_trip" in s.story_events or s.has_haulers()
 		"rush":

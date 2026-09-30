@@ -134,7 +134,7 @@ func _chip(id: String, width: float) -> PanelContainer:
 	v.add_child(rate)
 	h.add_child(v)
 	Ui.ignore_mouse(h)
-	box.tooltip_text = Data.ITEMS[id]["name"]
+	box.tooltip_text = item_tip(id)
 	box.mouse_entered.connect(_show_flow.bind(id))
 	box.mouse_exited.connect(_hide_flow.bind(id))
 	_fix_width(box, [count, rate], width)
@@ -151,6 +151,12 @@ static func _fix_width(c: Control, labels: Array, width: float) -> void:
 		l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		if l != c:
 			l.custom_minimum_size.x = 0
+
+
+## A good's name, and where it comes from when that isn't plain ("Fiber: cut from wild flax").
+static func item_tip(id: String) -> String:
+	var item: Dictionary = Data.ITEMS[id]
+	return item["name"] + ("\n" + item["desc"] if item.has("desc") else "")
 
 
 ## "+0.60", "−0.25" or "0" for a per-second rate.
@@ -224,7 +230,7 @@ func refresh(paused: bool, speed: int) -> void:
 		c["count"].modulate = Color(1, 1, 1, 0.4 if n == 0 and absf(r) < 0.005 else 1.0)
 		c["rate"].text = rate_text(r)
 		c["rate"].add_theme_color_override("font_color", rate_color(r))
-		c["box"].tooltip_text = "" if flow_item == id else Data.ITEMS[id]["name"]
+		c["box"].tooltip_text = "" if flow_item == id else item_tip(id)
 		if flow_item == id:
 			c["box"].add_theme_stylebox_override("panel", _ring())
 		else:
@@ -369,8 +375,6 @@ func _user_name(source: String, id: String) -> String:
 
 ## Where more of a good comes from, for the fix line.
 static func _how_to_make(id: String) -> String:
-	if id == "fiber":
-		return "a Gatherer's Hut on open grass"
 	for tile in Data.TILES:
 		if Data.TILES[tile]["yields"] == id:
 			return "another Gatherer's Hut near %s" % Data.TILES[tile]["name"]
