@@ -64,7 +64,7 @@ static func tools_held(s) -> int:
 ## Count a harvest toward teaching `item`; at Data.LEARN_CLICKS the next Kith in Data.PEOPLE_NAMES learns it.
 static func teach(s, item: String) -> void:
 	s.hand_counts[item] = s.hand_counts.get(item, 0) + 1
-	if s.knows(item) or s.hand_counts[item] < Data.LEARN_CLICKS:
+	if s.people.knows(item) or s.hand_counts[item] < Data.LEARN_CLICKS:
 		return
 	var who: String = (
 		s.kith[s.learned.size() % s.kith.size()]["name"]

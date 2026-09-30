@@ -5,6 +5,7 @@ extends RefCounted
 ## sends a trip, or rushes it. Static, and works on the GameState passed in.
 
 const Data = preload("res://scripts/data.gd")
+const Kith = preload("res://scripts/kith.gd")
 const Roads = preload("res://scripts/roads.gd")
 
 
@@ -14,10 +15,10 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
 	match k["phase"]:
 		"to_site":
-			if k["path"].is_empty() and s._tile_of(k) != b["pos"] and not s._walk_to(k, b["pos"]):
+			if k["path"].is_empty() and Kith.tile_of(k) != b["pos"] and not s.people.walk_to(k, b["pos"]):
 				b["unreachable"] = 1.0
 				return
-			if s._step(k, delta):
+			if s.people.step(k, delta):
 				k["phase"] = "home"
 		"home":
 			if def["kind"] != "gatherer" or s.buffered(b["out"]) >= Data.BUFFER_CAP:
@@ -33,7 +34,7 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 			k["task"] = {"tile": target}
 			k["phase"] = "to_tile"
 		"to_tile":
-			if s._step(k, delta):
+			if s.people.step(k, delta):
 				k["phase"] = "harvest"
 		"harvest":
 			var tile: Vector2i = k["task"].get("tile", b["pos"])
@@ -41,13 +42,13 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 			if k["timer"] >= s._harvest_time(b, tile):
 				_finish_harvest(s, k, b, tile)
 		"to_home":
-			if s._step(k, delta):
+			if s.people.step(k, delta):
 				_deliver(s, k, b)
 				k["phase"] = "home"
 		"to_depot":
-			if s._step(k, delta):
+			if s.people.step(k, delta):
 				_deliver(s, k, b)
-				s._walk_to(k, b["pos"])
+				s.people.walk_to(k, b["pos"])
 				k["phase"] = "to_site"
 
 
@@ -57,17 +58,17 @@ static func _finish_harvest(s, k: Dictionary, b: Dictionary, tile: Vector2i) -> 
 	var item := tile_item(s, b, tile)
 	if item == "":  # the tile changed while they worked (a road cut through it): nothing to bring
 		k["task"] = {}
-		s._walk_to(k, b["pos"])
+		s.people.walk_to(k, b["pos"])
 		k["phase"] = "to_home"
 		return
 	k["carry"] = {item: s._harvest_amount(b, tile, item)}
-	s._wear(b)
+	s.people.wear(b)
 	k["task"] = {}
-	if k["trip"] and s._walk_to(k, s._nearest_depot(b["pos"])):
+	if k["trip"] and s.people.walk_to(k, s.people.nearest_depot(b["pos"])):
 		k["phase"] = "to_depot"
 	else:
 		k["trip"] = false  # no way to the stockpile: leave it in the hut for a click to collect
-		s._walk_to(k, b["pos"])
+		s.people.walk_to(k, b["pos"])
 		k["phase"] = "to_home"
 
 
@@ -93,72 +94,15 @@ static func _deliver(s, k: Dictionary, b: Dictionary) -> void:
 ## The next tile in the hut's rotation that the Kith know how to gather and can reach, or
 ## Vector2i(-1, -1) when there's nothing (bare grass gives nothing: Fiber comes from flax).
 static func next_gather_tile(s, k: Dictionary, b: Dictionary) -> Vector2i:
-	var tiles: Array = s.gather_tiles(b["pos"]).filter(func(t): return s.knows(Data.TILES[s.tile_at(t)]["yields"]))
+	var tiles: Array = s.gather_tiles(b["pos"]).filter(
+		func(t): return s.people.knows(Data.TILES[s.tile_at(t)]["yields"])
+	)
 	for _attempt in tiles.size():
 		var t: Vector2i = tiles[b["gather_index"] % tiles.size()]
 		b["gather_index"] += 1
-		if s._walk_to(k, t):
+		if s.people.walk_to(k, t):
 			return t
 	return Vector2i(-1, -1)
-
-
-## True if a hut at p would find something the Kith know how to gather.
-static func knows_any(s, p: Vector2i) -> bool:
-	for t in s.gather_tiles(p):
-		if s.knows(Data.TILES[s.tile_at(t)]["yields"]):
-			return true
-	return false
-
-
-# --- Job titles ----------------------------------------------------------------
-
-
-## The job title of whoever works building b: the building's `job`, or for a hut the title of what it
-## gathers most (among what the Kith know, once they know any of it).
-static func building_job(s, b: Dictionary) -> String:
-	var def: Dictionary = Data.BUILDINGS[b["type"]]
-	if def.has("job"):
-		return def["job"]
-	if def["kind"] != "gatherer":
-		return ""
-	var counts := {}
-	for item in b["gather_items"]:
-		counts[item] = counts.get(item, 0) + (100 if s.knows(item) else 1)
-	var best := "fiber"
-	for item in counts:
-		if counts[item] > counts.get(best, 0):
-			best = item
-	return Data.HUT_JOBS[best]["title"]
-
-
-## A Kith's job title: from their building, Hauler, or Idle.
-static func job_of(s, k: Dictionary) -> String:
-	match k["job"]:
-		"work":
-			return building_job(s, s.buildings[k["building"]])
-		"haul":
-			return Data.JOB_HAULER
-	return Data.JOB_IDLE
-
-
-## "Aro the Woodcutter".
-static func title_of(s, k: Dictionary) -> String:
-	return "%s the %s" % [k["name"], job_of(s, k)]
-
-
-## "3 Woodcutters, 1 Potter, 2 Haulers": how many Kith have each job, most first.
-static func job_counts(s) -> String:
-	var counts := {}
-	for k in s.kith:
-		var job := job_of(s, k)
-		counts[job] = counts.get(job, 0) + 1
-	var jobs: Array = counts.keys()
-	jobs.sort_custom(func(a, b): return counts[a] > counts[b] or (counts[a] == counts[b] and a < b))
-	var parts: Array = []
-	for job in jobs:
-		var many: String = job if counts[job] == 1 or job == Data.JOB_IDLE else job + "s"
-		parts.append("%d %s" % [counts[job], many])
-	return ", ".join(parts)
 
 
 # --- Clicking buildings ------------------------------------------------------
@@ -187,7 +131,7 @@ static func click(s, i: int) -> String:
 ## Queue one trip at hut i (up to Data.TRIP_QUEUE). Returns what happened, for the map.
 static func dispatch(s, i: int) -> String:
 	var b: Dictionary = s.buildings[i]
-	if not knows_any(s, b["pos"]):
+	if not s.people.knows_any(b["pos"]):
 		return "Nothing learned yet: gather by hand %dx" % Data.LEARN_CLICKS
 	if b["trips"] >= Data.TRIP_QUEUE:
 		return "Trips full (%d)" % Data.TRIP_QUEUE
@@ -224,7 +168,7 @@ static func rush(s, i: int) -> bool:
 		var item := tile_item(s, b, tile)
 		if item != "":  # "" when a road felled or cut the tile away under them: nothing to bring
 			k["carry"] = {item: s._harvest_amount(b, tile, item)}
-			s._wear(b)
+			s.people.wear(b)
 	_deliver(s, k, b)
 	k["task"] = {}
 	k["path"] = []

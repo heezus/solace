@@ -56,11 +56,11 @@ func test_learning_at_ten_clicks() -> void:
 	var tree: Vector2i = t.find_tile(s, "tree")
 	for i in Data.LEARN_CLICKS - 1:
 		s.gather_by_hand(tree)
-	t.check(not s.knows("wood"), "9 clicks: nobody has learned Wood yet")
+	t.check(not s.people.knows("wood"), "9 clicks: nobody has learned Wood yet")
 	t.check(s.hand_counts["wood"] == Data.LEARN_CLICKS - 1, "hand clicks are counted per resource")
 	s.events.clear()
 	s.gather_by_hand(tree)
-	t.check(s.knows("wood"), "the 10th click teaches a Kith to gather Wood")
+	t.check(s.people.knows("wood"), "the 10th click teaches a Kith to gather Wood")
 	var first: String = Data.PEOPLE_NAMES[0]
 	t.check(s.learned["wood"] == first, "the first learner is " + first)
 	var toast := "%s learned woodcutting. %s the Woodcutter" % [first, first]
@@ -72,14 +72,14 @@ func test_learning_at_ten_clicks() -> void:
 	for i in Data.LEARN_CLICKS:
 		s.gather_by_hand(rock)
 	t.check(s.learned["stone"] == Data.PEOPLE_NAMES[1], "each resource is learned on its own, by the next Kith")
-	t.check(not s.knows("flint"), "Flint is still unknown")
+	t.check(not s.people.knows("flint"), "Flint is still unknown")
 
 
 func test_huts_gather_only_what_is_learned() -> void:
 	var r := hut_camp()
 	var s: GameState = r[0]
 	var b: Dictionary = s.buildings[r[1]]
-	t.check(not Workers.knows_any(s, b["pos"]), "a new camp knows no jobs")
+	t.check(not s.people.knows_any(b["pos"]), "a new camp knows no jobs")
 	t.check(Workers.dispatch(s, r[1]).begins_with("Nothing learned"), "so a hut can't send a trip yet")
 	t.check(b["trips"] == 0, "and nothing is queued")
 	var preview := BuildingPanel.gather_text(s, s.gather_tiles(b["pos"]))
@@ -87,7 +87,7 @@ func test_huts_gather_only_what_is_learned() -> void:
 	s.learned["wood"] = "Aro"
 	preview = BuildingPanel.gather_text(s, s.gather_tiles(b["pos"]))
 	t.check(preview.contains("Wood x") and not preview.contains("Wood x1 (not"), "Wood is learned: " + preview)
-	t.check(Workers.knows_any(s, b["pos"]), "the hut knows Wood now")
+	t.check(s.people.knows_any(b["pos"]), "the hut knows Wood now")
 	var k: Dictionary = s.kith[b["worker"]]
 	for i in 12:
 		var tile := Workers.next_gather_tile(s, k, b)
@@ -239,7 +239,7 @@ func test_hold_to_harvest() -> void:
 	t.check(s.hold_harvest(s.camp_pos, 5.0) == "", "the Hearth isn't a resource")
 	for i in Data.LEARN_CLICKS:
 		s.hold_harvest(rock, 0.7)
-	t.check(s.knows("stone"), "learning takes %d harvests" % Data.LEARN_CLICKS)
+	t.check(s.people.knows("stone"), "learning takes %d harvests" % Data.LEARN_CLICKS)
 
 
 func test_rank_costs_and_effects() -> void:
@@ -340,7 +340,7 @@ func test_job_titles() -> void:
 		var def: Dictionary = Data.BUILDINGS[type]
 		if def["kind"] in ["processor", "gatherer"]:
 			var b := {"type": type, "gather_items": []}
-			var job := Workers.building_job(s, b)
+			var job := s.people.building_job(b)
 			t.check(job != "" and job != Data.JOB_IDLE, "%s's worker has a job title (%s)" % [type, job])
 	for tile in Data.TILES:
 		var item: String = Data.TILES[tile]["yields"]
@@ -348,16 +348,16 @@ func test_job_titles() -> void:
 			t.check(Data.HUT_JOBS.has(item), "a hut gathering %s has a job title" % item)
 			var b := {"type": "gatherers_hut", "gather_items": [item, item, "fiber"]}
 			t.check(
-				Workers.building_job(s, b) == Data.HUT_JOBS[item]["title"],
+				s.people.building_job(b) == Data.HUT_JOBS[item]["title"],
 				"a hut takes the title of what it gathers most"
 			)
 	var mixed := {"type": "gatherers_hut", "gather_items": ["stone", "stone", "wood"]}
 	s.learned["wood"] = "Aro"
-	t.check(Workers.building_job(s, mixed) == "Woodcutter", "counting only what the Kith know, once they know some")
+	t.check(s.people.building_job(mixed) == "Woodcutter", "counting only what the Kith know, once they know some")
 	var names := {}
 	for k in s.kith:
 		names[k["name"]] = true
-		t.check(Workers.job_of(s, k) == Data.JOB_IDLE, "a new Kith is Idle")
+		t.check(s.people.job_of(k) == Data.JOB_IDLE, "a new Kith is Idle")
 	t.check(names.size() == s.kith.size(), "every Kith has their own name: %s" % [names.keys()])
 	var p: Vector2i = t.find_grass(s, false)
 	s.inv["clay"] = 20
@@ -365,11 +365,11 @@ func test_job_titles() -> void:
 	s.researched["haulers"] = true
 	s.tick(0.1)
 	var kiln: Dictionary = s.buildings[s.building_at[p]]
-	t.check(Workers.title_of(s, s.kith[kiln["worker"]]).ends_with(" the Potter"), "the Kiln's worker is its Potter")
-	var counts := Workers.job_counts(s)
+	t.check(s.people.title_of(s.kith[kiln["worker"]]).ends_with(" the Potter"), "the Kiln's worker is its Potter")
+	var counts := s.people.job_counts()
 	t.check(counts.contains("1 Potter") and counts.contains("Haulers"), "the top bar counts jobs: " + counts)
 	for i in Data.PEOPLE_NAMES.size() + 1:
-		s._add_kith()
+		s.people.add_kith()
 	t.check(s.kith[-1]["name"].ends_with(" II"), "names come round again with II: " + s.kith[-1]["name"])
 
 
@@ -389,7 +389,7 @@ func test_fiber_comes_from_flax() -> void:
 	t.check(s.tile_at(flax) == "flax", "the Hearth's flax patch is there")
 	for i in Data.LEARN_CLICKS:
 		s.gather_by_hand(flax)
-	t.check(s.knows("fiber"), "10 harvests of flax teach it")
+	t.check(s.people.knows("fiber"), "10 harvests of flax teach it")
 	# A hut with only grass in range has nothing to gather: clear a patch of ground for one.
 	var open: Vector2i = s.camp_pos + Vector2i(0, 6)
 	for dy in range(-2, 3):
@@ -399,7 +399,7 @@ func test_fiber_comes_from_flax() -> void:
 	t.place_free(s, "gatherers_hut", open)
 	var bare: Dictionary = s.buildings[s.building_at[open]]
 	t.check(bare["gather_items"].is_empty(), "a hut on bare grass lists nothing to gather")
-	t.check(not Workers.knows_any(s, open), "and knows nothing it could gather there")
+	t.check(not s.people.knows_any(open), "and knows nothing it could gather there")
 	# A hut next to the flax cuts it.
 	var by := flax + Vector2i(1, 1)
 	if s.placement_error("gatherers_hut", by) != "":
@@ -431,7 +431,7 @@ func test_flax_near_every_hearth() -> void:
 					continue
 				total += 1
 				var d: Vector2i = (p - s.camp_pos).abs()
-				if maxi(d.x, d.y) <= 4 and s.fog.is_revealed(p) and s.trip_info(p)["ok"]:
+				if maxi(d.x, d.y) <= 4 and s.fog.is_revealed(p) and s.people.trip_info(p)["ok"]:
 					near += 1
 		t.check(near >= 2, "map %d: flax in sight and reach of the Hearth (%d tiles)" % [map_seed, near])
 		t.check(total >= near + 4, "map %d: more flax patches out on the grassland (%d tiles)" % [map_seed, total])

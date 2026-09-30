@@ -13,6 +13,7 @@ extends RefCounted
 ## only road tiles are open}.
 
 const Data = preload("res://scripts/data.gd")
+const Kith = preload("res://scripts/kith.gd")
 
 const SIDES := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
@@ -60,7 +61,7 @@ static func _find_depots(s) -> Array:
 ## Walk Kith k to `to` along roads only (its own tile and `to` may be off the road: a depot or a
 ## building beside it). Returns false if the roads don't join them.
 static func walk(s, k: Dictionary, to: Vector2i) -> bool:
-	var from: Vector2i = s._tile_of(k)
+	var from: Vector2i = Kith.tile_of(k)
 	if from == to:
 		k["path"] = []
 		return true

@@ -18,6 +18,7 @@ const ResearchTests = preload("res://tests/research_tests.gd")
 const WorldTests = preload("res://tests/world_tests.gd")
 const PathingTests = preload("res://tests/pathing_tests.gd")
 const BuildingsTests = preload("res://tests/buildings_tests.gd")
+const KithTests = preload("res://tests/kith_tests.gd")
 const ArcTests = preload("res://tests/arc_tests.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
 const GoldenTests = preload("res://tests/golden_tests.gd")
@@ -62,6 +63,7 @@ func _init() -> void:
 	WorldTests.new().run(self)
 	PathingTests.new().run(self)
 	BuildingsTests.new().run(self)
+	KithTests.new().run(self)
 	ArcTests.new().run(self)
 	if not "fast" in OS.get_cmdline_user_args():  # `-- fast` skips the bot's slow runs while iterating
 		test_pacing_bot()
@@ -303,10 +305,10 @@ func test_flour_is_kept_for_research() -> void:
 	s.inv["flour"] = keep
 	s.food_credit = 0.0
 	check(keep > 0 and s.flour_reserve() == keep, "flour that research needs is reserved")
-	check(not s._eat(1.0), "reserved flour is not eaten")
+	check(not s.economy.eat(1.0), "reserved flour is not eaten")
 	check(s.inv["flour"] == keep, "flour untouched")
 	s.inv["flour"] = keep + 1
-	check(s._eat(1.0), "flour above the reserve is eaten")
+	check(s.economy.eat(1.0), "flour above the reserve is eaten")
 	check(s.inv["flour"] == keep, "only the spare flour was eaten")
 	for tech in Data.TECHS:
 		s.researched[tech] = true
@@ -428,7 +430,7 @@ func haul_rate(dist_x: int) -> int:
 	s.fog.setup(GameState.WIDTH, GameState.HEIGHT)
 	s.fog.reveal_all()
 	for i in Data.KITH_START:
-		s._add_kith()
+		s.people.add_kith()
 	s.inv["berries"] = 500
 	s.inv["wood"] = 500
 	s.researched["haulers"] = true
@@ -679,9 +681,9 @@ func test_calendar_gates_bronze_dawn() -> void:
 
 func test_lore_and_side_branch_effects() -> void:
 	var s := fresh()
-	check(s._grow_time() == Data.GROW_TIME, "normal grow time")
+	check(s.people.grow_time() == Data.GROW_TIME, "normal grow time")
 	s.researched["storytelling"] = true
-	check(s._grow_time() == Data.GROW_TIME * 0.75, "Storytelling: Kith born 25% faster")
+	check(s.people.grow_time() == Data.GROW_TIME * 0.75, "Storytelling: Kith born 25% faster")
 
 	var p := s.camp_pos + Vector2i(-2, 0)
 	place_free(s, "gatherers_hut", p)

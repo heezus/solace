@@ -10,7 +10,6 @@ const GameState = preload("res://scripts/game_state.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Hands = preload("res://scripts/hands.gd")
-const Workers = preload("res://scripts/workers.gd")
 
 const RAW := ["wood", "stone", "flint", "fiber", "clay", "berries", "grain", "fish"]
 const LOSS := Color("ff9aa9")
@@ -190,7 +189,7 @@ func refresh(paused: bool, speed: int) -> void:
 	kith_label.text = "%s %d / %d" % [Data.PEOPLE["many"], state.kith.size(), state.housing()]
 	kith_label.get_parent().tooltip_text = (
 		"%s\n%s work buildings and haul goods. Each building needs one. They grow with spare food and room."
-		% [Workers.job_counts(state), Data.PEOPLE["many"]]
+		% [state.people.job_counts(), Data.PEOPLE["many"]]
 	)
 	var note := Ui.growth_note(state)
 	kith_label.add_theme_color_override("font_color", Ui.HIGHLIGHT if note != "" else Ui.GOOD)

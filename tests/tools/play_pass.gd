@@ -217,7 +217,7 @@ func _script() -> void:
 	_then(func(): _click(_screen_of(_nearest("tree"))))
 	_then(func(): _expect(s.hand_counts.is_empty(), "a quick click harvested something"), 30)
 	_then(func(): _hold_on(_screen_of(_nearest("tree"))))
-	_wait_for(func(): return s.knows("wood"), "holding on a tree didn't teach Wood", 20000)
+	_wait_for(func(): return s.people.knows("wood"), "holding on a tree didn't teach Wood", 20000)
 	_then(func(): _button(_screen_of(_nearest("tree")), MOUSE_BUTTON_LEFT, false))
 	_then(func(): _expect(not main.holding and s.harvest_frac == 0.0, "letting go didn't empty the ring"))
 	# The hold ring through the real input path: timing, letting go early, moving, holding on.

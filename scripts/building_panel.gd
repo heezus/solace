@@ -225,13 +225,13 @@ static func click_text(s: GameState, b: Dictionary) -> String:
 
 ## "Worker: Aro the Woodcutter · Flint Tool, 32 jobs left".
 static func worker_text(s: GameState, b: Dictionary) -> String:
-	var job := Workers.building_job(s, b)
+	var job := s.people.building_job(b)
 	if b["paused"]:
 		return "Worker: no %s while paused" % job
 	if b["worker"] < 0:
 		return "Worker: no %s yet · waiting for a free %s" % [job, Data.PEOPLE["one"]]
 	var k: Dictionary = s.kith[b["worker"]]
-	var who := "Worker: " + Workers.title_of(s, k)
+	var who := "Worker: " + s.people.title_of(k)
 	if k["tool"] > 0:
 		return who + " · Flint Tool, %d jobs left" % k["tool"]
 	if Hands.recipe_unlocked(s, "flint_tools"):
@@ -241,7 +241,7 @@ static func worker_text(s: GameState, b: Dictionary) -> String:
 
 ## "To Hearth · 11 tiles · 22 s a trip", or "" for the Hearth itself.
 static func trip_text(s: GameState, p: Vector2i) -> String:
-	var info := s.trip_info(p)
+	var info := s.people.trip_info(p)
 	var depot: Vector2i = info["depot"]
 	var where := "Hearth" if depot == s.camp_pos else "Storehouse"
 	if not info["ok"]:
@@ -262,6 +262,6 @@ static func gather_text(s: GameState, tiles: Array) -> String:
 		counts[item] = counts.get(item, 0) + 1
 	var out: Array = []
 	for id in counts:
-		var known := "" if s.knows(id) else " not yet learned (gather by hand %dx)" % Data.LEARN_CLICKS
+		var known := "" if s.people.knows(id) else " not yet learned (gather by hand %dx)" % Data.LEARN_CLICKS
 		out.append("%s x%d%s" % [Data.ITEMS[id]["name"], counts[id], known])
 	return "Gathers from the %d highlighted tiles (within %d), taking turns: %s." % [tiles.size(), r, ", ".join(out)]
