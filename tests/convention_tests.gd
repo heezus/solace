@@ -8,6 +8,8 @@ const Rules = preload("res://scripts/rules.gd")
 const Research = preload("res://scripts/research.gd")
 const TechLayout = preload("res://scripts/tech_layout.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
+const BuildingPanel = preload("res://scripts/building_panel.gd")
+const Overlays = preload("res://scripts/overlays.gd")
 
 var t  # the runner, tests/run_tests.gd
 
@@ -24,6 +26,7 @@ func run(runner) -> void:
 	test_research_queue()
 	test_side_branches_are_marked()
 	test_build_tabs_cover_every_building()
+	test_building_panel_texts()
 
 
 func test_demolish_refunds_half() -> void:
@@ -272,3 +275,25 @@ func test_build_tabs_cover_every_building() -> void:
 	for tab in Data.BUILD_TABS:
 		for type in Data.BUILD_TABS[tab]:
 			t.check(type in Data.BUILD_ORDER, type + " in the " + tab + " tab is a real building")
+
+
+func test_building_panel_texts() -> void:
+	var s: GameState = t.fresh()
+	s.inv["berries"] = 100
+	var p := s.camp_pos + Vector2i(-2, 0)
+	t.place_free(s, "gatherers_hut", p)
+	s.tick(0.1)
+	var hut: Dictionary = s.buildings[s.building_at[p]]
+	var trip := BuildingPanel.trip_text(s, p)
+	t.check(trip.begins_with("To Hearth · 2 tiles"), "the trip line names the Hearth and the distance: " + trip)
+	t.check(BuildingPanel.trip_text(s, s.camp_pos) == "", "the Hearth has no trip line")
+	t.check(BuildingPanel.recipe_text(s, hut).begins_with("Gathers from"), "a hut lists what it gathers")
+	t.check(BuildingPanel.worker_text(s, hut).begins_with("Worker: 1 Kith"), "and its worker")
+	var q := s.camp_pos + Vector2i(2, 0)
+	t.place_free(s, "twine_post", q)
+	var post: Dictionary = s.buildings[s.building_at[q]]
+	var recipe := BuildingPanel.recipe_text(s, post)
+	t.check(recipe.contains("→") and recipe.contains("Rope"), "a workshop shows its recipe: " + recipe)
+	t.check(Overlays.demolish_text(s, p).contains("get back"), "demolish hover names the refund")
+	t.check(Overlays.demolish_text(s, p).contains("goes idle"), "and that its Kith goes idle")
+	t.check(Overlays.demolish_text(s, s.camp_pos).begins_with("The Hearth stays"), "the Hearth can't be demolished")

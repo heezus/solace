@@ -10,6 +10,9 @@ const TechPanel = preload("res://scripts/tech_panel.gd")
 const BuildBar = preload("res://scripts/build_bar.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
 const Research = preload("res://scripts/research.gd")
+const BuildingPanel = preload("res://scripts/building_panel.gd")
+const Overlays = preload("res://scripts/overlays.gd")
+const Bonuses = preload("res://scripts/bonuses.gd")
 
 const TILE := 32.0
 const MAP_ORIGIN := Vector2.ZERO  # the node's transform scales and centers the map
@@ -28,6 +31,7 @@ var placing := ""  # building type being placed, "" when not placing
 var hover := Vector2i(-1, -1)
 var time := 0.0
 var popups: Array = []  # {pos: Vector2, text: String, t: float}
+var rubble: Array = []  # {pos: Vector2i, t: float}, torn-down buildings fading out
 
 var goal_labels: Array = []
 var goal_header: Label
@@ -38,6 +42,7 @@ var top_bar: TopBar
 var bottom_bar: BuildBar
 var side_panel: PanelContainer
 var tech_panel: TechPanel
+var building_panel: BuildingPanel
 var win_overlay: Control
 var ui_refresh := 0.0
 
@@ -60,6 +65,9 @@ func _process(delta: float) -> void:
 	for p in popups:
 		p["t"] += delta
 	popups = popups.filter(func(p): return p["t"] < 1.2)
+	for r in rubble:
+		r["t"] += delta
+	rubble = rubble.filter(func(r): return r["t"] < Overlays.RUBBLE_TIME)
 	toast_time -= delta
 	toast_label.modulate.a = clampf(toast_time, 0.0, 1.0)
 	_layout()
@@ -83,6 +91,16 @@ func _layout() -> void:
 	var k := maxf(minf(area.size.x / map_size.x, area.size.y / map_size.y), 0.1)
 	scale = Vector2(k, k)
 	position = (area.position + (area.size - map_size * k) / 2.0).round()
+	if building_panel.visible:
+		# Beside the selected building, kept on screen.
+		var at := position + Overlays.center(building_panel.pos) * k
+		var panel := building_panel.size
+		var x := at.x + TILE * k * 0.7
+		if x + panel.x > vp.x - SIDE_W - 16:
+			x = at.x - TILE * k * 0.7 - panel.x
+		building_panel.position = Vector2(
+			clampf(x, 8, vp.x - panel.x - 8), clampf(at.y - panel.y / 2.0, top + 8, vp.y - bottom - panel.y - 8)
+		)
 
 
 # --- Input -------------------------------------------------------------------
@@ -101,15 +119,19 @@ func _unhandled_input(event: InputEvent) -> void:
 		var p := _tile_under()
 		if event.button_index == MOUSE_BUTTON_RIGHT:
 			placing = ""
+			building_panel.select(Vector2i(-1, -1))
 		elif event.button_index == MOUSE_BUTTON_LEFT and state.in_bounds(p):
 			_click_tile(p)
 	elif event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:
 			KEY_T:
 				tech_panel.visible = not tech_panel.visible
+			KEY_X:
+				placing = "" if placing == "demolish" else "demolish"
 			KEY_ESCAPE:
 				placing = ""
 				tech_panel.visible = false
+				building_panel.select(Vector2i(-1, -1))
 
 
 func _tile_under() -> Vector2i:
@@ -134,7 +156,9 @@ func _click_tile(p: Vector2i) -> void:
 		var i: int = state.building_at[p]
 		if not state.has_haulers():
 			state.haul(i)
+		building_panel.select(p)
 		return
+	building_panel.select(Vector2i(-1, -1))
 	var first_look := not state.shard_seen
 	var msg := state.gather_by_hand(p)
 	if msg == Data.SHARD_TEXT:
@@ -152,6 +176,9 @@ func _demolish(p: Vector2i) -> void:
 		_toast("The Hearth stays: it's the heart of the settlement.", 2.0)
 		return
 	var refund := state.demolish(p)
+	rubble.append({"pos": p, "t": 0.0})
+	if building_panel.pos == p:
+		building_panel.select(Vector2i(-1, -1))
 	popups.append(
 		{"pos": _tile_center(p), "text": "+" + Ui.cost_text(refund) if not refund.is_empty() else "Cleared", "t": 0.0}
 	)
@@ -179,6 +206,12 @@ func _build_ui() -> void:
 	bottom_bar.demolish_pressed.connect(func(): placing = "" if placing == "demolish" else "demolish")
 
 	_build_side_panel(layer)
+
+	building_panel = BuildingPanel.new()
+	layer.add_child(building_panel)
+	building_panel.setup(state)
+	building_panel.demolish_pressed.connect(_demolish)
+	building_panel.closed.connect(func(): building_panel.select(Vector2i(-1, -1)))
 
 	# Toasts, centered under the top bar.
 	toast_label = Ui.label("", 17)
@@ -248,6 +281,7 @@ func _refresh_ui() -> void:
 	top_bar.refresh(false, 1.0)
 	bottom_bar.refresh(placing, Research.ready_list(state).size())
 	tech_panel.refresh()
+	building_panel.refresh()
 
 	var cur := Goals.current_goal(state)
 	goal_header.text = "Goals (%d/%d)" % [mini(cur, Data.GOALS.size()), Data.GOALS.size()]
@@ -281,7 +315,7 @@ func _hover_text() -> String:
 			if err != "":
 				s += "\n\nCan't build here: " + err + "."
 			if placing == "gatherers_hut":
-				s += "\n\n" + _gather_text(state.gather_tiles(hover))
+				s += "\n\n" + BuildingPanel.gather_text(state, state.gather_tiles(hover))
 		return s
 	if not state.in_bounds(hover):
 		return "Point at the map to see what's there."
@@ -292,15 +326,13 @@ func _hover_text() -> String:
 		var def: Dictionary = Data.BUILDINGS[b["type"]]
 		var s: String = def["name"] + "\n" + def["desc"] + "\n\nStatus: " + b["status"]
 		if state.needs_worker(b):
-			s += "\nWorker: " + ("yes" if b["worker"] >= 0 else "none, grow more Kith")
-			var speed := state.work_speed(b)
-			if speed > 1.0:
-				s += "\nWorks %d%% faster (Ochre, Standing Stones)" % roundi((speed - 1.0) * 100.0)
+			s += "\n" + BuildingPanel.worker_text(state, b)
+			s += "\n" + Bonuses.text(state, b)
 		if state.buffered(b["out"]) > 0:
 			s += "\nHolding " + Ui.cost_text(b["out"])
 		if def["kind"] == "gatherer":
-			s += "\n\n" + _gather_text(state.gather_tiles(hover))
-		return s
+			s += "\n\n" + BuildingPanel.gather_text(state, state.gather_tiles(hover))
+		return s + "\n\nClick for its panel."
 	var t: Dictionary = Data.TILES[state.tile_at(hover)]
 	if state.roads.has(hover):
 		return "Road on %s. Kith walk twice as fast here." % t["name"]
@@ -310,21 +342,6 @@ func _hover_text() -> String:
 			s += " It's food: running buildings eat it."
 		return s
 	return t["name"]
-
-
-## "Works 5 tiles within 2: Wood x3, Stone x2", for a hut's highlighted tiles.
-func _gather_text(tiles: Array) -> String:
-	var r := state.hut_radius()
-	if tiles.is_empty():
-		return "No resources within %d tiles: it will cut grass for Fiber." % r
-	var counts := {}
-	for p in tiles:
-		var item: String = Data.TILES[state.tile_at(p)]["yields"]
-		counts[item] = counts.get(item, 0) + 1
-	var parts: Array = []
-	for id in counts:
-		parts.append("%s x%d" % [Data.ITEMS[id]["name"], counts[id]])
-	return "Gathers from the %d highlighted tiles (within %d), taking turns: %s." % [tiles.size(), r, ", ".join(parts)]
 
 
 func _progress(cost: Dictionary, limit: int) -> String:
@@ -390,13 +407,20 @@ func _draw() -> void:
 	_draw_aura_ranges(hovered_type)
 	for b in state.buildings:
 		_draw_building(b)
+	Overlays.rubble(self, rubble)
+	var sel := building_panel.selected()
+	if not sel.is_empty():
+		draw_rect(_tile_rect(sel["pos"]).grow(1), GOAL_COLOR, false, 3.0)
+		if sel["type"] == "gatherers_hut" and placing == "":
+			_draw_gather_range(sel["pos"])
+		Overlays.flow_arrows(self, state, sel, time)
 	_draw_kith()
 	_draw_fog()
+	Overlays.status_pills(self, state)
 
 	# Placement ghost.
 	if placing == "demolish" and state.in_bounds(hover):
-		draw_rect(_tile_rect(hover), Color(BAD, 0.35))
-		draw_rect(_tile_rect(hover), BAD, false, 3.0)
+		Overlays.demolish_hover(self, state, hover)
 	elif placing != "" and state.in_bounds(hover):
 		var ok := state.placement_error(placing, hover) == ""
 		var c := Color(0.3, 1, 0.4, 0.45) if ok else Color(1, 0.25, 0.25, 0.45)
