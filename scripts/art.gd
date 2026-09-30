@@ -5,6 +5,126 @@ extends RefCounted
 const OUTLINE := Color("1b1b1f")
 ## The pale-cyan light of the Strange Stone and its cairn.
 const STONE_GLOW := Color(0.6, 0.95, 1.0)
+const SPRITE_DIR := "res://art/sprites/"
+
+## Buildings whose sprite has another name.
+const SPRITE_OF := {"camp": "hearth", "road": "tile_path", "bridge": "tile_bridge_wood"}
+
+static var _sprites := {}
+
+
+static func building_sprite(type: String) -> Texture2D:
+	return sprite(SPRITE_OF.get(type, type))
+
+
+## The imported SVG sprite `name` from art/sprites, or null if it isn't there
+## (callers then draw the shapes themselves).
+static func sprite(name: String) -> Texture2D:
+	if not _sprites.has(name):
+		var path := SPRITE_DIR + name + ".svg"
+		var tex: Texture2D = null
+		if ResourceLoader.exists(path):
+			tex = load(path) as Texture2D
+		_sprites[name] = tex
+	return _sprites[name]
+
+
+## A rounded pill with centered text, e.g. a status under a building. `at` is the pill's top center.
+static func pill(ci: CanvasItem, at: Vector2, text: String, bg: Color, fg: Color, size: int) -> Rect2:
+	var font := ThemeDB.fallback_font
+	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x + 12.0
+	var h := size + 8.0
+	var r := Rect2(at - Vector2(w / 2.0, 0), Vector2(w, h))
+	var box := StyleBoxFlat.new()
+	box.bg_color = bg
+	box.border_color = OUTLINE
+	box.set_border_width_all(2)
+	box.set_corner_radius_all(int(h / 2.0))
+	ci.draw_style_box(box, r)
+	ci.draw_string(font, r.position + Vector2(6, size + 2.0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, fg)
+	return r
+
+
+## Text with a dark outline, readable over the map.
+static func outlined_text(ci: CanvasItem, pos: Vector2, text: String, size: int, col: Color) -> void:
+	var font := ThemeDB.fallback_font
+	ci.draw_string_outline(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 4, OUTLINE)
+	ci.draw_string(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
+
+
+## A dashed circle, `on` long dashes with `off` gaps.
+static func dashed_circle(
+	ci: CanvasItem, c: Vector2, radius: float, col: Color, width: float, on: float, off: float
+) -> void:
+	var steps := maxi(int(TAU * radius / 4.0), 24)
+	var pts := PackedVector2Array()
+	for i in steps + 1:
+		pts.append(c + Vector2.from_angle(TAU * i / steps) * radius)
+	for part in dash_pattern(pts, on, off, 0.0):
+		ci.draw_polyline(part, col, width, true)
+
+
+## A dashed rectangle outline.
+static func dashed_rect(ci: CanvasItem, r: Rect2, col: Color, width: float, on: float, off: float) -> void:
+	var pts := PackedVector2Array(
+		[r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y), r.position]
+	)
+	for part in dash_pattern(pts, on, off, 0.0):
+		ci.draw_polyline(part, col, width)
+
+
+## A small tech icon in `r`: its sprite, or a few shapes for the "@" icons and missing sprites.
+static func tech_icon(ci: CanvasItem, icon: String, r: Rect2, time: float) -> void:
+	var c := r.get_center()
+	var k := r.size.x / 32.0
+	if not icon.begins_with("@"):
+		var tex := sprite(icon)
+		if tex != null:
+			ci.draw_texture_rect(tex, r, false)
+			return
+	ci.draw_set_transform(c, 0.0, Vector2(k, k))
+	match icon:
+		"@flint":
+			outlined_poly(
+				ci,
+				PackedVector2Array([Vector2(-9, 8), Vector2(-4, -10), Vector2(6, -6), Vector2(10, 7), Vector2(0, 11)]),
+				Color("4a4e69")
+			)
+			ci.draw_line(Vector2(-2, -6), Vector2(3, 6), Color("9aa0c0"), 1.5)
+		"@clay", "@rock":
+			ci.draw_rect(Rect2(-14, -14, 28, 28), Color("7cb342"))
+			feature(ci, icon.substr(1), Vector2.ZERO, Vector2i.ZERO, time)
+		"@irrigation", "@calendar":
+			ci.draw_rect(Rect2(-14, -14, 28, 28), Color("3a86c8") if icon == "@irrigation" else Color("14213d"))
+			if icon == "@calendar":
+				for p in [Vector2(-9, -9), Vector2(8, -10), Vector2(10, 6)]:
+					ci.draw_circle(p, 1.2, Color.WHITE)
+				outlined_circle(ci, Vector2(-6, 6), 5.0, Color("f1e3c8"))
+			else:
+				ci.draw_rect(Rect2(-8, -8, 16, 16), Color("8a6a44"))
+				for x in [-5, 0, 5]:
+					ci.draw_line(Vector2(x, 5), Vector2(x, -5), Color("f2c14e"), 2.0)
+		"@axe":
+			# A wooden haft with a flint head lashed on with cord.
+			ci.draw_line(Vector2(-9, 12), Vector2(6, -9), OUTLINE, 6.0)
+			ci.draw_line(Vector2(-9, 12), Vector2(6, -9), Color("a47148"), 3.0)
+			outlined_poly(
+				ci,
+				PackedVector2Array([Vector2(1, -13), Vector2(12, -11), Vector2(13, 0), Vector2(5, -3)]),
+				Color("4a4e69")
+			)
+			ci.draw_line(Vector2(1, -8), Vector2(6, -4), Color("e9c46a"), 2.0)
+		"@bread":
+			var loaf := PackedVector2Array()
+			for i in 16:
+				var a := PI + PI * i / 15.0
+				loaf.append(Vector2(cos(a) * 11.0, sin(a) * 8.0 + 4.0))
+			outlined_poly(ci, loaf, Color("d4a373"))
+			for x in [-5, 0, 5]:
+				ci.draw_line(Vector2(x - 2, -1), Vector2(x + 2, -3), Color("8d5a3b"), 1.5)
+		_:
+			outlined_circle(ci, Vector2.ZERO, 10.0, Color("9aa0a6"))
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 ## A map tile's feature (tree, rock, river ripple...) centered on c.
@@ -150,6 +270,67 @@ static func outlined_poly(ci: CanvasItem, pts: PackedVector2Array, color: Color)
 
 
 # --- Tech tree arrows ----------------------------------------------------------
+
+
+## An orthogonal polyline with its corners rounded off (radius r, or less where segments are short).
+static func rounded(pts: PackedVector2Array, r: float) -> PackedVector2Array:
+	if pts.size() < 3:
+		return pts
+	var out := PackedVector2Array([pts[0]])
+	for i in range(1, pts.size() - 1):
+		var a := pts[i - 1]
+		var b := pts[i]
+		var c := pts[i + 1]
+		var rr := minf(r, minf(a.distance_to(b), b.distance_to(c)) / 2.0)
+		if rr < 0.5:
+			out.append(b)
+			continue
+		var p0 := b + (a - b).normalized() * rr
+		var p1 := b + (c - b).normalized() * rr
+		for j in 7:
+			var t := j / 6.0
+			out.append(p0.lerp(b, t).lerp(b.lerp(p1, t), t))
+	out.append(pts[pts.size() - 1])
+	return out
+
+
+## Cuts a polyline into `on`-long dashes with `off` gaps, starting `offset` into the pattern.
+static func dash_pattern(pts: PackedVector2Array, on: float, off: float, offset: float) -> Array:
+	var out: Array = []
+	var period := on + off
+	var pos := fposmod(offset, period)
+	var cur := PackedVector2Array()
+	for i in range(1, pts.size()):
+		var a := pts[i - 1]
+		var b := pts[i]
+		var seg := a.distance_to(b)
+		var d := 0.0
+		while d < seg:
+			var phase := fposmod(pos + d, period)
+			var drawing := phase < on
+			var left := (on - phase) if drawing else (period - phase)
+			var step := minf(left, seg - d)
+			if drawing:
+				if cur.is_empty():
+					cur.append(a.lerp(b, d / seg))
+				cur.append(a.lerp(b, (d + step) / seg))
+			elif cur.size() > 1:
+				out.append(cur)
+				cur = PackedVector2Array()
+			else:
+				cur = PackedVector2Array()
+			d += step
+		pos += seg
+	if cur.size() > 1:
+		out.append(cur)
+	return out
+
+
+## A small unoutlined arrowhead pointing right, its tip at b.
+static func small_head(ci: CanvasItem, b: Vector2, col: Color, size: float) -> void:
+	ci.draw_colored_polygon(
+		PackedVector2Array([b, b + Vector2(-size, -size * 0.6), b + Vector2(-size, size * 0.6)]), col
+	)
 
 
 ## An S-curve from a to b that leaves and arrives horizontally.

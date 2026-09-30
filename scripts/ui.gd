@@ -1,0 +1,156 @@
+extends RefCounted
+## Static UI helpers shared by the HUD, the building panel and the tech tree.
+## Everything is built in code, so these keep the look in one place.
+
+const Data = preload("res://scripts/data.gd")
+const Art = preload("res://scripts/art.gd")
+
+const OUTLINE: Color = Art.OUTLINE
+const BAD := Color("ef476f")
+const GOOD := Color("9fe39f")  # the `positive` token
+const HIGHLIGHT := Color("ffd166")
+const PANEL := Color("1d3557")
+const BAR := Color("264653")
+const CARD := Color("32607f")
+
+
+static func label(text: String, size: int) -> Label:
+	var l := Label.new()
+	l.text = text
+	l.add_theme_font_size_override("font_size", size)
+	return l
+
+
+## A small caption, used for "Build:" and similar headings.
+static func heading(text: String) -> Label:
+	var l := label(text, 13)
+	l.add_theme_color_override("font_color", Color("a8dadc"))
+	return l
+
+
+static func button(text: String) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.focus_mode = Control.FOCUS_NONE
+	b.add_theme_font_size_override("font_size", 13)
+	return b
+
+
+static func panel_style(color: Color, margin: int = 8) -> StyleBoxFlat:
+	var s := StyleBoxFlat.new()
+	s.bg_color = color
+	s.border_color = OUTLINE
+	s.set_border_width_all(3)
+	s.set_corner_radius_all(6)
+	s.set_content_margin_all(margin)
+	return s
+
+
+## A small outlined color square, used as a button icon.
+static func swatch_texture(color: Color) -> ImageTexture:
+	var img := Image.create(12, 12, false, Image.FORMAT_RGBA8)
+	img.fill(OUTLINE)
+	img.fill_rect(Rect2i(2, 2, 8, 8), color)
+	return ImageTexture.create_from_image(img)
+
+
+## A colored square for an item, for chips and panels.
+static func item_swatch(id: String, size: float) -> ColorRect:
+	var r := ColorRect.new()
+	r.color = Data.ITEMS[id]["color"]
+	r.custom_minimum_size = Vector2(size, size)
+	r.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	r.mouse_filter = Control.MOUSE_FILTER_PASS
+	return r
+
+
+static func tech_color(tech: String) -> Color:
+	return Data.TECHS[tech]["color"] if Data.TECHS.has(tech) else Color("e76f51")
+
+
+## "10 Wood, 5 Stone".
+static func cost_text(cost: Dictionary) -> String:
+	var parts: Array = []
+	for id in cost:
+		parts.append("%d %s" % [cost[id], Data.ITEMS[id]["name"]])
+	return ", ".join(parts)
+
+
+## "Wood 5/20, Stone 10/10": what you have toward each cost. Shows at most `limit` entries.
+static func progress_text(inv: Dictionary, cost: Dictionary, limit: int) -> String:
+	var parts: Array = []
+	for id in cost:
+		var have: int = inv.get(id, 0)
+		var need: int = cost[id]
+		parts.append("%s %d/%d" % [Data.ITEMS[id]["name"], mini(have, need), need])
+	if parts.size() > limit:
+		return ", ".join(parts.slice(0, limit)) + ", ..."
+	return ", ".join(parts)
+
+
+## "+12/min" or "-3/min", rounded; "0/min" when flat.
+static func rate_text(per_min: float) -> String:
+	var n := roundi(per_min)
+	if n == 0:
+		return "0/min"
+	return ("+%d/min" if n > 0 else "%d/min") % n
+
+
+static func rate_color(per_min: float) -> Color:
+	if roundi(per_min) == 0:
+		return Color(1, 1, 1, 0.5)
+	return GOOD if per_min > 0.0 else BAD
+
+
+## A tech's colored square with its two-letter code.
+static func badge(tech: String) -> PanelContainer:
+	var p := PanelContainer.new()
+	var s := panel_style(tech_color(tech), 2)
+	s.set_border_width_all(2)
+	s.set_corner_radius_all(4)
+	p.add_theme_stylebox_override("panel", s)
+	p.custom_minimum_size = Vector2(26, 22)
+	var l := label(Data.TECHS[tech]["abbr"], 12)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.add_theme_color_override("font_outline_color", OUTLINE)
+	l.add_theme_constant_override("outline_size", 4)
+	p.add_child(l)
+	return p
+
+
+## "need 10 Clay, 3 Rope" for whatever the stockpile is short of, or "" if affordable.
+static func shortfall_text(inv: Dictionary, cost: Dictionary) -> String:
+	var parts: Array = []
+	for id in cost:
+		var short: int = cost[id] - inv.get(id, 0)
+		if short > 0:
+			parts.append("%d %s" % [short, Data.ITEMS[id]["name"]])
+	return "" if parts.is_empty() else "need " + ", ".join(parts)
+
+
+## Kith not staffing a building: they haul once Paths & Haulers is known, or wait at the Hearth.
+static func idle_kith(s) -> int:
+	var n := 0
+	for k in s.kith:
+		if k["job"] != "work":
+			n += 1
+	return n
+
+
+## Why the population isn't growing, or "" when it is.
+static func growth_note(s) -> String:
+	var n: int = s.kith.size()
+	if s.starving:
+		return "Starving: no food"
+	if n >= s.housing():
+		return "No room: build a Dwelling"
+	if s.food_total() < n * 2 + Data.BIRTH_FOOD:
+		return "Needs %d spare food to grow" % int(n * 2 + Data.BIRTH_FOOD)
+	return ""
+
+
+static func ignore_mouse(n: Node) -> void:
+	if n is Control:
+		n.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for c in n.get_children():
+		ignore_mouse(c)

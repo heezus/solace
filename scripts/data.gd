@@ -56,8 +56,24 @@ const STARVE_TIME := 20.0
 const KITH_SPEED := 2.0
 ## Items a hauler carries per trip.
 const CARRY := 5
-## Path cost of each tile kind. Rivers are impassable without a road (bridge), or slow once Rafts are known.
+## Path cost of each tile kind. Rivers are impassable without a Wooden Bridge, or slow once Rafts are known.
 const WALK_COST := {"tree": 2.0, "rock": 2.0, "road": 0.5, "river": 4.0}
+
+## A Road laid on Rocks cuts a mountain pass: it costs this instead, and the rock is cleared.
+const PASS_COST := {"stone": 3}
+
+## Dwellings must stand within this many tiles of the Hearth (the Camp), where the Kith are born.
+const HEARTH_RADIUS := 6.0
+
+# --- Fog of war ----------------------------------------------------------------
+## How far each thing lets the Kith see, in tiles. Scouting adds SCOUTING_SIGHT to buildings and Kith.
+const SIGHT_START := 6
+const SIGHT_BUILDING := 3
+const SIGHT_KITH := 2
+const SCOUTING_SIGHT := 2
+
+## Rates in the top bar are averaged over this many seconds.
+const RATE_WINDOW := 30
 
 # --- Map tiles ---------------------------------------------------------------
 
@@ -80,15 +96,48 @@ const SHARD_TEXT := (
 
 # --- Tech tree ---------------------------------------------------------------
 ## A web, not a line: every node past the roots needs another node.
-## `pos` is the node's place in the tech tree view: x = column (tier), y = row. Row 7 is the Lore lane.
+## On the research board, `tier` is the column, `lane` the band (LANES) and `slot` the row within the band.
+## `unlock` is the card's one-line summary, `icon` a sprite in art/sprites ("@name" for a drawn one),
+## and `side` marks an optional branch that Bronze Dawn doesn't need.
 ## `requires` must all be researched; `requires_any` (optional) needs just one of its techs.
 ## `effect` marks a tech whose bonus GameState applies while it is researched.
 ## `hidden` techs stay out of the tree until the player has clicked the Strange Stone.
+## The board is laid out from these keys alone (scripts/tech_layout.gd): `lane` ("gate" for the full-height
+## Bronze Dawn column), `tier` and `slot` place the card, and lines are routed automatically. An optional
+## `via` dictionary steers a line that skips tiers: {parent: lane id} runs it along the channel just below
+## that lane ("top" for the channel above the first lane), e.g. "via": {"masonry": "fiber"}.
+
+## The research board's bands, top to bottom. Bronze Dawn sits alone in the "gate" column.
+const LANES := {
+	"hearth": {"name": "Hearth", "color": Color("ff7b39")},
+	"stone": {"name": "Stone", "color": Color("c0c6cc")},
+	"fiber": {"name": "Fiber", "color": Color("e9c46a")},
+	"land": {"name": "Land", "color": Color("90be6d")},
+	"lore": {"name": "Lore", "color": Color("b8b8ff")},
+}
+const LANE_ORDER := ["fiber", "stone", "land", "hearth", "lore"]
+## Column captions on the research board, one per tier; the last is the gate's column.
+const TIER_NAMES := ["TIER I  ·  ROOTS", "TIER II", "TIER III", "TIER IV", "TIER V", "THE GATE"]
+
+## How many techs the research queue lines up at once.
+const QUEUE_SLOTS := 5
 
 ## Tech bonuses GameState applies.
 const STORYTELLING_GROW := 0.75  # grow time multiplier
-const OCHRE_SPEED := 1.1  # Gatherer's Hut workers
-const STANDING_STONE_SPEED := 1.15  # buildings in a Standing Stone's radius
+
+## Work multipliers (scripts/bonuses.gd). "speed" shortens work cycles, "yield" multiplies each harvest.
+## They add within a group and multiply across groups. Optional keys: `tech` (needs it researched),
+## `kinds` (building kinds it applies to), `item` (only harvests of that item).
+## "tools" applies while the worker holds a Flint Tool, "standing_stone" next to a Standing Stone.
+const BONUSES := {
+	"tools": {"name": "Flint Tools", "group": "speed", "add": 0.5, "kinds": ["gatherer", "processor"]},
+	"standing_stone": {"name": "Standing Stone", "group": "speed", "add": 1.0, "kinds": ["gatherer", "processor"]},
+	"foraging": {"name": "Foraging", "group": "yield", "add": 1.0, "tech": "foraging", "item": "berries"},
+	"stone_axe": {"name": "Stone Axe", "group": "yield", "add": 1.0, "tech": "stone_axe", "item": "wood"},
+	"ochre": {"name": "Ochre", "group": "yield", "add": 1.0, "tech": "ochre", "item": "clay", "kinds": ["gatherer"]},
+}
+## A Flint Tool lasts this many jobs (harvests or work cycles) in a worker's hands.
+const TOOL_JOBS := 40
 const CALENDAR_FIELD_BONUS := 0.25  # extra yield from Fields
 const SMOKED_BERRY_FOOD := 2.0
 const BAKED_FLOUR_FOOD := 5.0
@@ -99,7 +148,11 @@ const TECHS := {
 		"abbr": "Fo",
 		"color": Color("d62246"),
 		"name": "Foraging",
-		"pos": Vector2(0, 0),
+		"lane": "land",
+		"tier": 0,
+		"slot": 0,
+		"unlock": "Berries x2",
+		"icon": "gatherers_hut",
 		"requires": [],
 		"cost": {"berries": 5, "fiber": 10},
 		"desc": "Know the good bushes. Berries gather twice as fast, by hand and by hut.",
@@ -109,17 +162,26 @@ const TECHS := {
 		"abbr": "Kn",
 		"color": Color("6c757d"),
 		"name": "Knapping",
-		"pos": Vector2(0, 1.5),
+		"lane": "stone",
+		"tier": 0,
+		"slot": 0,
+		"unlock": "Flint Tools",
+		"icon": "@flint",
 		"requires": [],
 		"cost": {"flint": 5, "stone": 10},
-		"desc": "Shape flint. Craft Flint Tools to gather twice as much by hand.",
+		"desc":
+		"Shape flint. Craft Flint Tools: you gather twice as much by hand, and each worker holding one works 50% faster.",
 	},
 	"cordage":
 	{
 		"abbr": "Co",
 		"color": Color("bc8a5f"),
 		"name": "Cordage",
-		"pos": Vector2(0, 3),
+		"lane": "fiber",
+		"tier": 0,
+		"slot": 0,
+		"unlock": "Rope, Twine Post",
+		"icon": "twine_post",
 		"requires": [],
 		"cost": {"fiber": 15},
 		"desc": "Twist fiber into rope, by hand or at a Twine Post.",
@@ -129,7 +191,11 @@ const TECHS := {
 		"abbr": "Fi",
 		"color": Color("e85d04"),
 		"name": "Fire",
-		"pos": Vector2(0, 4.5),
+		"lane": "hearth",
+		"tier": 0,
+		"slot": 0,
+		"unlock": "Charcoal Pit",
+		"icon": "hearth",
 		"requires": [],
 		"cost": {"wood": 10, "stone": 5},
 		"desc": "Tame flame. Smoulder wood into charcoal in a Charcoal Pit.",
@@ -139,7 +205,11 @@ const TECHS := {
 		"abbr": "St",
 		"color": Color("7b2cbf"),
 		"name": "Storytelling",
-		"pos": Vector2(0, 7),
+		"lane": "lore",
+		"tier": 0,
+		"slot": 0,
+		"unlock": "Kith born faster",
+		"icon": "kith",
 		"requires": [],
 		"cost": {"berries": 10, "fiber": 10},
 		"effect": "storytelling",
@@ -150,8 +220,12 @@ const TECHS := {
 		"abbr": "GH",
 		"color": Color("f4a261"),
 		"name": "Gatherer's Hut",
-		"pos": Vector2(1, 0),
-		"requires": ["knapping"],
+		"lane": "land",
+		"tier": 1,
+		"slot": 0,
+		"unlock": "Gatherer's Hut",
+		"icon": "gatherers_hut",
+		"requires": ["knapping", "foraging"],
 		"cost": {"wood": 20, "stone": 10},
 		"desc": "Your first self-running building. Its worker walks out to nearby resources.",
 	},
@@ -160,9 +234,13 @@ const TECHS := {
 		"abbr": "WW",
 		"color": Color("2a9d8f"),
 		"name": "Water Wheel",
-		"pos": Vector2(1, 1),
-		"requires": ["cordage", "knapping"],
-		"cost": {"rope": 10, "wood": 40, "stone": 20},
+		"lane": "stone",
+		"tier": 2,
+		"slot": 0,
+		"unlock": "Water Wheel",
+		"icon": "water_wheel",
+		"requires": ["stone_axe", "masonry"],
+		"cost": {"rope": 10, "wood": 40, "stone": 10},
 		"desc": "Harness the river. Powers machines within 3 tiles.",
 	},
 	"masonry":
@@ -170,9 +248,13 @@ const TECHS := {
 		"abbr": "Ma",
 		"color": Color("9aa0a6"),
 		"name": "Masonry",
-		"pos": Vector2(1, 2),
+		"lane": "stone",
+		"tier": 1,
+		"slot": 1,
+		"unlock": "Dressed stone",
+		"icon": "quarry",
 		"requires": ["knapping", "fire"],
-		"cost": {"stone": 40, "charcoal": 5},
+		"cost": {"stone": 25, "charcoal": 5},
 		"desc": "Dress and fit stone. Needed for millstones, paved roads and megaliths.",
 	},
 	"shelter":
@@ -180,8 +262,13 @@ const TECHS := {
 		"abbr": "Sh",
 		"color": Color("a3b18a"),
 		"name": "Thatched Roofs",
-		"pos": Vector2(1, 3),
-		"requires": ["cordage", "fire"],
+		"lane": "land",
+		"tier": 1,
+		"slot": 1,
+		"unlock": "Dwellings house 5",
+		"icon": "dwelling",
+		"side": true,
+		"requires": ["cordage", "foraging"],
 		"cost": {"fiber": 30, "rope": 5, "wood": 20},
 		"effect": "shelter",
 		"desc": "Warm, dry homes. Each Dwelling houses 5 Kith instead of 3.",
@@ -191,7 +278,11 @@ const TECHS := {
 		"abbr": "Po",
 		"color": Color("c8553d"),
 		"name": "Pottery",
-		"pos": Vector2(1, 4),
+		"lane": "hearth",
+		"tier": 1,
+		"slot": 0,
+		"unlock": "Kiln",
+		"icon": "kiln",
 		"requires": ["fire"],
 		"cost": {"clay": 20, "charcoal": 10},
 		"desc": "Fire clay. Unlocks the Kiln (clay + charcoal into brick).",
@@ -201,18 +292,28 @@ const TECHS := {
 		"abbr": "Oc",
 		"color": Color("cc7722"),
 		"name": "Ochre",
-		"pos": Vector2(1, 5),
+		"lane": "lore",
+		"tier": 1,
+		"slot": 0,
+		"unlock": "Clay x2",
+		"icon": "@clay",
+		"side": true,
 		"requires": ["storytelling", "foraging"],
 		"cost": {"clay": 10, "berries": 10},
 		"effect": "ochre",
-		"desc": "Red earth for painting the huts. Gatherer's Hut workers harvest 10% faster.",
+		"desc": "Know the red earth. Gatherer's Huts bring back twice the Clay per trip.",
 	},
 	"star_lore":
 	{
 		"abbr": "SL",
 		"color": Color("caf0f8"),
 		"name": "Star Lore",
-		"pos": Vector2(1, 6),
+		"lane": "lore",
+		"tier": 1,
+		"slot": 1,
+		"unlock": "Shard Cairn",
+		"icon": "shard_cairn",
+		"side": true,
 		"requires": ["storytelling"],
 		"cost": {"stone": 20, "flint": 10},
 		"effect": "star_lore",
@@ -224,8 +325,13 @@ const TECHS := {
 		"abbr": "Sc",
 		"color": Color("90be6d"),
 		"name": "Scouting",
-		"pos": Vector2(2, 0),
-		"requires": ["gatherers_hut", "foraging"],
+		"lane": "land",
+		"tier": 2,
+		"slot": 1,
+		"unlock": "Wider reach",
+		"icon": "watchtower",
+		"side": true,
+		"requires": ["gatherers_hut", "storytelling"],
 		"cost": {"berries": 20, "wood": 20},
 		"effect": "scouting",
 		"desc": "Know the land. Gatherer's Huts reach 3 tiles instead of 2.",
@@ -235,8 +341,12 @@ const TECHS := {
 		"abbr": "Fa",
 		"color": Color("e9d8a6"),
 		"name": "Farming",
-		"pos": Vector2(2, 1),
-		"requires": ["foraging", "gatherers_hut"],
+		"lane": "land",
+		"tier": 2,
+		"slot": 0,
+		"unlock": "Field",
+		"icon": "field",
+		"requires": ["gatherers_hut", "stone_axe"],
 		"cost": {"grain": 20, "wood": 20},
 		"desc": "Sow wild grain. Plant Fields of grain on open grassland.",
 	},
@@ -245,17 +355,27 @@ const TECHS := {
 		"abbr": "PH",
 		"color": Color("b388eb"),
 		"name": "Paths & Haulers",
-		"pos": Vector2(2, 2),
+		"lane": "fiber",
+		"tier": 2,
+		"slot": 1,
+		"unlock": "Haulers, Road, Bridge",
+		"icon": "hauler",
 		"requires": ["cordage", "gatherers_hut"],
 		"cost": {"rope": 10, "wood": 30},
-		"desc": "Idle Kith carry goods between buildings and the stockpile. Unlocks Roads and Storehouses.",
+		"desc":
+		"Idle Kith carry goods between buildings and the stockpile. Unlocks Roads, Wooden Bridges and Storehouses.",
 	},
 	"nets":
 	{
 		"abbr": "Ne",
 		"color": Color("0077b6"),
 		"name": "Nets",
-		"pos": Vector2(2, 3),
+		"lane": "fiber",
+		"tier": 1,
+		"slot": 0,
+		"unlock": "Fishing Weir",
+		"icon": "fishing_weir",
+		"side": true,
 		"requires": ["cordage", "foraging"],
 		"cost": {"rope": 10, "fiber": 20},
 		"desc": "Knot rope into nets. Build a Fishing Weir on the river bank: Fish are worth 2 food.",
@@ -265,9 +385,13 @@ const TECHS := {
 		"abbr": "Gr",
 		"color": Color("adb5bd"),
 		"name": "Grindstone",
-		"pos": Vector2(2, 4),
-		"requires": ["water_wheel", "masonry", "pottery"],
-		"cost": {"stone": 30, "brick": 10},
+		"lane": "stone",
+		"tier": 3,
+		"slot": 1,
+		"unlock": "Grindstone",
+		"icon": "grindstone",
+		"requires": ["water_wheel", "farming"],
+		"cost": {"stone": 20, "brick": 10},
 		"desc": "A powered millstone. Grinds grain into flour, the best food.",
 	},
 	"smoking":
@@ -275,7 +399,12 @@ const TECHS := {
 		"abbr": "Sm",
 		"color": Color("7f5539"),
 		"name": "Smoking",
-		"pos": Vector2(2, 5.25),
+		"lane": "hearth",
+		"tier": 1,
+		"slot": 1,
+		"unlock": "Berries worth 2",
+		"icon": "smokehouse",
+		"side": true,
 		"requires": ["fire", "foraging"],
 		"cost": {"wood": 20, "berries": 15},
 		"effect": "smoking",
@@ -286,29 +415,43 @@ const TECHS := {
 		"abbr": "Me",
 		"color": Color("6c5b7b"),
 		"name": "Megaliths",
-		"pos": Vector2(2, 6.5),
+		"lane": "lore",
+		"tier": 2,
+		"slot": 0,
+		"unlock": "Standing Stone",
+		"icon": "standing_stone",
+		"side": true,
 		"requires": ["masonry"],
 		"requires_any": ["storytelling", "star_lore"],
 		"cost": {"stone": 50, "rope": 10},
-		"desc": "Raise great stones. Buildings within 3 tiles of a Standing Stone work 15% faster.",
+		"desc": "Raise great stones. Buildings right next to a Standing Stone work twice as fast.",
 	},
 	"stone_axe":
 	{
 		"abbr": "SA",
 		"color": Color("606c38"),
 		"name": "Stone Axe",
-		"pos": Vector2(3, 0),
-		"requires": ["knapping", "gatherers_hut"],
-		"cost": {"flint": 15, "wood": 20},
+		"lane": "stone",
+		"tier": 1,
+		"slot": 0,
+		"unlock": "Wood x2",
+		"icon": "@axe",
+		"requires": ["knapping", "cordage"],
+		"cost": {"flint": 10, "wood": 15},
 		"effect": "stone_axe",
-		"desc": "Haft a ground stone head. Gatherer's Huts gather Wood twice as fast.",
+		"desc": "Haft a flint head with cord. Wood x2 per harvest, by hand and from huts. Clears land for Farming.",
 	},
 	"irrigation":
 	{
 		"abbr": "Ir",
 		"color": Color("00b4d8"),
 		"name": "Irrigation",
-		"pos": Vector2(3, 1),
+		"lane": "land",
+		"tier": 3,
+		"slot": 0,
+		"unlock": "River Fields x2",
+		"icon": "@irrigation",
+		"side": true,
 		"requires": ["water_wheel", "farming"],
 		"cost": {"clay": 20, "stone": 20},
 		"effect": "irrigation",
@@ -319,7 +462,11 @@ const TECHS := {
 		"abbr": "Pr",
 		"color": Color("f28482"),
 		"name": "Preservation",
-		"pos": Vector2(3, 2),
+		"lane": "land",
+		"tier": 3,
+		"slot": 1,
+		"unlock": "Kith eat less",
+		"icon": "granary",
 		"requires": ["farming", "pottery"],
 		"cost": {"clay": 20, "berries": 20},
 		"effect": "preservation",
@@ -330,8 +477,13 @@ const TECHS := {
 		"abbr": "CP",
 		"color": Color("cdb4db"),
 		"name": "Carrying Poles",
-		"pos": Vector2(3, 3),
-		"requires": ["haulers"],
+		"lane": "fiber",
+		"tier": 3,
+		"slot": 0,
+		"unlock": "Carry 10",
+		"icon": "hauler_pack",
+		"side": true,
+		"requires": ["haulers", "stone_axe"],
 		"cost": {"rope": 15, "wood": 20},
 		"effect": "carrying_poles",
 		"desc": "Haulers carry 10 at a time instead of 5.",
@@ -341,9 +493,13 @@ const TECHS := {
 		"abbr": "PR",
 		"color": Color("8d99ae"),
 		"name": "Paved Roads",
-		"pos": Vector2(3, 4),
+		"lane": "stone",
+		"tier": 3,
+		"slot": 0,
+		"unlock": "Roads 4x",
+		"icon": "tile_road",
 		"requires": ["haulers", "masonry"],
-		"cost": {"stone": 60, "rope": 10},
+		"cost": {"stone": 40, "rope": 10},
 		"effect": "paved_roads",
 		"desc": "Roads are 4x faster than open ground, up from 2x.",
 	},
@@ -352,19 +508,28 @@ const TECHS := {
 		"abbr": "Ba",
 		"color": Color("f1e3c8"),
 		"name": "Baking",
-		"pos": Vector2(3, 5),
-		"requires": ["grindstone", "fire"],
+		"lane": "hearth",
+		"tier": 4,
+		"slot": 0,
+		"unlock": "Flour worth 5",
+		"icon": "@bread",
+		"requires": ["grindstone", "pottery"],
 		"cost": {"flour": 10, "charcoal": 20},
 		"effect": "baking",
-		"desc": "Bake flour into bread. Flour is worth 5 food, up from 3.",
+		"desc": "Bake flour into bread in a clay oven. Flour is worth 5 food, up from 3.",
 	},
 	"rafts":
 	{
 		"abbr": "Ra",
 		"color": Color("57cc99"),
 		"name": "Rafts",
-		"pos": Vector2(3, 6),
-		"requires": ["nets", "haulers"],
+		"lane": "fiber",
+		"tier": 2,
+		"slot": 0,
+		"unlock": "Cross rivers",
+		"icon": "raft",
+		"side": true,
+		"requires": ["nets", "stone_axe"],
 		"cost": {"wood": 40, "rope": 15},
 		"effect": "rafts",
 		"desc": "Lash logs together. Kith can cross the river without a bridge, slowly.",
@@ -374,7 +539,11 @@ const TECHS := {
 		"abbr": "Ca",
 		"color": Color("f15bb5"),
 		"name": "Calendar",
-		"pos": Vector2(3, 7),
+		"lane": "lore",
+		"tier": 3,
+		"slot": 0,
+		"unlock": "Fields +25%",
+		"icon": "@calendar",
 		"requires": ["farming"],
 		"requires_any": ["megaliths", "storytelling"],
 		"cost": {"grain": 30, "stone": 20},
@@ -386,68 +555,72 @@ const TECHS := {
 		"abbr": "BD",
 		"color": Color("cd7f32"),
 		"name": "Bronze Dawn",
-		"pos": Vector2(4, 4.5),
+		"lane": "gate",
+		"tier": 5,
+		"slot": 0,
+		"unlock": "The next era",
+		"icon": "item_bronze",
 		"requires": ["preservation", "paved_roads", "baking", "calendar"],
-		"cost": {"brick": 40, "flour": 30, "rope": 40, "stone": 100},
+		"cost": {"brick": 30, "flour": 20, "rope": 30, "stone": 60},
 		"desc": "The stone age ends. The next era begins.",
 	},
 }
 
 ## Order for lists and tests (roots first, then by column).
 const TECH_ORDER := [
-	"foraging",
-	"knapping",
 	"cordage",
+	"knapping",
+	"foraging",
 	"fire",
 	"storytelling",
-	"gatherers_hut",
-	"water_wheel",
+	"nets",
+	"stone_axe",
 	"masonry",
+	"gatherers_hut",
 	"shelter",
 	"pottery",
+	"smoking",
 	"ochre",
 	"star_lore",
-	"scouting",
-	"farming",
+	"rafts",
 	"haulers",
-	"nets",
-	"grindstone",
-	"smoking",
+	"water_wheel",
+	"farming",
+	"scouting",
 	"megaliths",
-	"stone_axe",
-	"irrigation",
-	"preservation",
 	"carrying_poles",
 	"paved_roads",
-	"baking",
-	"rafts",
+	"grindstone",
+	"irrigation",
+	"preservation",
 	"calendar",
+	"baking",
 	"bronze_dawn",
 ]
 
 # --- Hand crafting -----------------------------------------------------------
 
 const RECIPES := {
-	"rope": {"name": "Rope", "tech": "cordage", "in": {"fiber": 3}, "out": {"rope": 1}},
+	"rope": {"name": "Rope", "tech": "cordage", "in": {"fiber": 2}, "out": {"rope": 1}},
 	"flint_tools":
 	{"name": "Flint Tools", "tech": "knapping", "in": {"flint": 2, "wood": 2}, "out": {"flint_tools": 1}},
 }
 
 # --- Buildings ---------------------------------------------------------------
-## kind: "camp" | "house" | "road" | "field" | "depot" | "gatherer" | "processor" | "power" | "aura" | "cairn"
+## kind: "camp" | "house" | "road" | "bridge" | "field" | "depot" | "gatherer" | "processor" | "power" | "aura" | "cairn"
 ## Processors turn `in` into `out` every `time` seconds (a processor with no `in` just makes `out`).
 ## Buildings without a worker show `status`, or `desc` if they have none.
 
 const BUILDINGS := {
 	"camp":
 	{
-		"name": "Camp",
+		"name": "Hearth",
 		"kind": "camp",
 		"tech": "",
 		"cost": {},
 		"housing": 4,
 		"color": Color("e76f51"),
-		"desc": "The Kith's home and stockpile. Houses 4.",
+		"desc": "The Kith's home fire and stockpile. Kith are born here. Houses 4.",
 	},
 	"dwelling":
 	{
@@ -456,8 +629,9 @@ const BUILDINGS := {
 		"tech": "",
 		"cost": {"wood": 12, "fiber": 6},
 		"housing": 3,
+		"near_hearth": true,
 		"color": Color("e9c46a"),
-		"desc": "Room for 3 more Kith. They grow when there is spare food.",
+		"desc": "Room for 3 more Kith. Must be within 6 tiles of the Hearth. They grow when there is spare food.",
 	},
 	"road":
 	{
@@ -465,8 +639,21 @@ const BUILDINGS := {
 		"kind": "road",
 		"tech": "haulers",
 		"cost": {"stone": 1},
-		"color": Color("c9a66b"),
-		"desc": "Kith walk twice as fast on roads. Lay one across the river to bridge it. Drag to paint.",
+		"color": Color("c8a36a"),
+		"desc":
+		(
+			"Kith walk twice as fast on roads. On Rocks, a Road cuts a pass for 3 Stone."
+			+ " Roads can't cross the river: build a Wooden Bridge. Drag to lay."
+		),
+	},
+	"bridge":
+	{
+		"name": "Wooden Bridge",
+		"kind": "bridge",
+		"tech": "haulers",
+		"cost": {"wood": 10, "rope": 2},
+		"color": Color("f4a261"),
+		"desc": "Goes on a river tile. The Kith cross it at road speed. Drag to span the river.",
 	},
 	"field":
 	{
@@ -504,7 +691,7 @@ const BUILDINGS := {
 		"kind": "processor",
 		"tech": "cordage",
 		"cost": {"wood": 8},
-		"in": {"fiber": 3},
+		"in": {"fiber": 2},
 		"out": {"rope": 1},
 		"time": 4.0,
 		"color": Color("bc8a5f"),
@@ -527,7 +714,7 @@ const BUILDINGS := {
 		"kind": "processor",
 		"tech": "pottery",
 		"cost": {"stone": 10, "clay": 10},
-		"in": {"clay": 2, "charcoal": 1},
+		"in": {"clay": 1, "charcoal": 1},
 		"out": {"brick": 1},
 		"time": 5.0,
 		"color": Color("9c3d2e"),
@@ -576,9 +763,9 @@ const BUILDINGS := {
 		"kind": "aura",
 		"tech": "megaliths",
 		"cost": {"stone": 30},
-		"radius": 3,
+		"radius": 1.5,
 		"color": Color("6c5b7b"),
-		"desc": "Buildings within 3 tiles work 15% faster.",
+		"desc": "Buildings right next to it (diagonals too) work twice as fast.",
 	},
 	"shard_cairn":
 	{
@@ -593,9 +780,19 @@ const BUILDINGS := {
 	},
 }
 
+## The build bar's tabs, in order. Craft by hand has its own small group beside them.
+const BUILD_TABS := {
+	"Homes": ["dwelling"],
+	"Gathering": ["gatherers_hut", "field", "fishing_weir"],
+	"Workshops": ["charcoal_pit", "twine_post", "kiln", "water_wheel", "grindstone"],
+	"Logistics": ["road", "bridge", "storehouse"],
+	"Lore": ["standing_stone", "shard_cairn"],
+}
+
 const BUILD_ORDER := [
 	"dwelling",
 	"road",
+	"bridge",
 	"field",
 	"storehouse",
 	"charcoal_pit",
@@ -629,7 +826,11 @@ const GOALS := [
 	{"id": "haulers", "text": "Research Paths & Haulers: idle Kith carry goods for you", "tech": "haulers"},
 	{"id": "road", "text": "Lay Roads out to far buildings. Kith walk twice as fast"},
 	{"id": "kiln", "text": "Research Pottery, then build a Kiln", "building": "kiln"},
-	{"id": "wheel", "text": "Research Water Wheel and build one on the river", "building": "water_wheel"},
+	{
+		"id": "wheel",
+		"text": "Research Water Wheel (Stone Axe, Masonry) and build one on the river",
+		"building": "water_wheel"
+	},
 	{"id": "grind", "text": "Build a Grindstone within 3 tiles of the wheel"},
 	{"id": "calendar", "text": "Research Calendar: Farming, plus Storytelling or Megaliths", "tech": "calendar"},
 	{"id": "bronze", "text": "Research Bronze Dawn", "tech": "bronze_dawn"},
