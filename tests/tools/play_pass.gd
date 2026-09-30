@@ -457,8 +457,16 @@ func _first_click_panel() -> void:
 		var b: Dictionary = panel.selected()
 		var was: bool = b["paused"]
 		var counts: Dictionary = s.hand_counts.duplicate()
-		_click_control(panel.parts["pause"])
-		_expect(b["paused"] != was, "the panel's Pause needed more than one click")
+		var pause: Button = panel.parts["pause"]
+		_click_control(pause)
+		var hit: Control = main.get_viewport().gui_get_hovered_control()
+		_expect(
+			b["paused"] != was,
+			(
+				"the panel's Pause needed more than one click (button %s, panel %s, over %s, frame %d)"
+				% [pause.get_global_rect(), panel.get_global_rect(), hit, frame]
+			)
+		)
 		_click_control(panel.parts["pause"])
 		_expect(s.hand_counts == counts, "a panel click harvested the tile under it")
 
