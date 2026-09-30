@@ -203,6 +203,31 @@ func _open_board_and_click(tech: String) -> void:
 	await _wait(0.3)
 
 
+var _last_spot := Vector2i(-1, -1)
+
+
+func _place_near(type: String, tile: String, label: String) -> void:
+	var s = main.state
+	_click_control(main.bottom_bar.tab_buttons["Gathering"])
+	_click_control(main.bottom_bar.build_buttons[type]["button"])
+	var near := _nearest(tile)
+	var spot := Vector2i(-1, -1)
+	for r in range(1, 4):
+		for dy in range(-r, r + 1):
+			for dx in range(-r, r + 1):
+				var p: Vector2i = near + Vector2i(dx, dy)
+				if spot.x < 0 and s.placement_error(type, p) == "":
+					spot = p
+	_last_spot = spot
+	_move(_screen_of(spot))
+	await _shot(label + "_preview")
+	_click(_screen_of(spot))
+	await _wait(1.0)
+	_key(KEY_ESCAPE)
+	await _shot(label + "_placed")
+	_say("%s placed=%s" % [label, s.building_at.has(spot)])
+
+
 func _write_log() -> void:
 	var f := FileAccess.open(out_dir + "/log.txt", FileAccess.WRITE)
 	if f:
@@ -298,31 +323,33 @@ func _run() -> void:
 		await _open_board_and_click(tech)
 		_say("%s researched=%s" % [tech, s.researched.has(tech)])
 
-	# Place a hut beside the trees, as the goal says.
+	# Place a hut beside the trees, as the goal says. Researching it ate the wood and stone, so refill first.
 	if s.researched.has("gatherers_hut"):
-		_click_control(main.bottom_bar.tab_buttons["Gathering"])
-		_click_control(main.bottom_bar.build_buttons["gatherers_hut"]["button"])
-		var spot := Vector2i(-1, -1)
-		var near := _nearest("tree")
-		for r in range(1, 4):
-			for dy in range(-r, r + 1):
-				for dx in range(-r, r + 1):
-					var p: Vector2i = near + Vector2i(dx, dy)
-					if spot.x < 0 and s.placement_error("gatherers_hut", p) == "":
-						spot = p
-		_move(_screen_of(spot))
-		await _shot("placing_hut_preview")
-		_click(_screen_of(spot))
-		await _wait(1.0)
-		await _shot("hut_placed")
+		var hut_cost: Dictionary = Data.BUILDINGS["gatherers_hut"]["cost"]
+		_say("hut costs %s, have %s" % [hut_cost, s.inv])
+		for item in hut_cost:
+			var need2: int = hut_cost[item]
+			await _gather_until(item, func(): return s.inv.get(item, 0) >= need2, 120.0)
+		await _place_near("gatherers_hut", "tree", "hut1")
 		for i in 3:
-			_click(_screen_of(spot))
+			_click(_screen_of(_last_spot))
 			await _wait(0.3)
-		await _wait(8.0)
-		await _shot("hut_trip_running")
+		await _wait(6.0)
+		await _shot("hut1_trip_running")
+		# Berries: learn them by hand, then a second hut beside the bushes.
+		ok = await _gather_until("berries", func(): return s.people.knows("berries"), 90.0)
+		_say("berries learned=%s" % ok)
+		for item in hut_cost:
+			var need3: int = hut_cost[item]
+			await _gather_until(item, func(): return s.inv.get(item, 0) >= need3, 120.0)
+		await _place_near("gatherers_hut", "berry", "hut2_berries")
+		_click(_screen_of(_last_spot))
+		await _wait(0.5)
 		_key(KEY_3)
-		await _wait(20.0)
-		await _shot("hut_after_20s_fast")
+		await _wait(30.0)
+		await _shot("both_huts_30s_at_3x")
+		await _wait(30.0)
+		await _shot("both_huts_60s_at_3x")
 	else:
 		_say("never got the Gatherer's Hut tech")
 	_say("end of newbie pass")
