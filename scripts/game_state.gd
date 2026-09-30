@@ -22,7 +22,6 @@ const HEIGHT := 22
 const NEIGHBORS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
 var tiles: Array = []  # flat array of tile ids, index = y * WIDTH + x
-var researched: Dictionary = {}
 var buildings: Array = []  # each: {type, pos, progress, inbuf, out, status, gather_items, gather_index, worker, ...}
 var building_at: Dictionary = {}  # Vector2i -> index into buildings
 var camp_pos := Vector2i.ZERO
@@ -55,9 +54,21 @@ var starve_timer := 0.0
 var astar := AStarGrid2D.new()
 var events: Array = []  # messages for the UI to show and clear
 var fog := Fog.new()
-var research_goal := ""  # the tech the research queue is working toward, "" for none
-var research_queue: Array = []  # the next techs on the way there, researched as soon as affordable
-var economy := Economy.new(researched)  # stockpile, food and flows; it reads `researched` but never writes it
+var tech_set: Dictionary = {}  # the researched techs, built first: Economy and Research both hold this one set (use `researched`)
+var economy := Economy.new(tech_set)  # stockpile, food and flows; it reads the techs but never writes them
+## Techs: what is researched, requirements, the goal and the queue. It pays through `economy`.
+var tech_tree := Research.new(economy, tech_set, _hidden_shown)
+
+# Pass-throughs to the Research block, for callers not yet moved to `tech_tree`.
+var researched: Dictionary:
+	get:
+		return tech_tree.researched
+var research_goal: String:  # the tech the research queue is working toward, "" for none
+	get:
+		return tech_tree.goal
+var research_queue: Array:  # the next techs on the way there, researched as soon as affordable
+	get:
+		return tech_tree.queue
 
 # Pass-throughs to the Economy block, for callers not yet moved to `economy`.
 var inv: Dictionary:
@@ -228,35 +239,31 @@ func gather_by_hand(p: Vector2i) -> String:
 
 ## Hidden techs (Star Lore) only show once the Strange Stone has been clicked.
 func tech_visible(tech: String) -> bool:
-	return shard_seen or not Data.TECHS[tech].get("hidden", false)
+	return tech_tree.tech_visible(tech)
 
 
 ## How many requirements are still open. A `requires_any` list counts as one.
 func missing_requirements(tech: String) -> int:
-	var t: Dictionary = Data.TECHS[tech]
-	var n := 0
-	for r in t["requires"]:
-		if not researched.has(r):
-			n += 1
-	var any: Array = t.get("requires_any", [])
-	if not any.is_empty() and not any.any(func(r): return researched.has(r)):
-		n += 1
-	return n
+	return tech_tree.missing_requirements(tech)
 
 
 func requirements_met(tech: String) -> bool:
-	return tech_visible(tech) and missing_requirements(tech) == 0
+	return tech_tree.requirements_met(tech)
 
 
 func can_research(tech: String) -> bool:
-	return not researched.has(tech) and requirements_met(tech) and can_afford(Data.TECHS[tech]["cost"])
+	return tech_tree.can_research(tech)
 
 
 func research(tech: String) -> bool:
-	if not can_research(tech):
+	if not tech_tree.research(tech):
 		return false
-	_pay(Data.TECHS[tech]["cost"])
-	researched[tech] = true
+	_tech_done(tech)
+	return true
+
+
+## What a finished tech sets off in the rest of the game (Research only reports that it finished).
+func _tech_done(tech: String) -> void:
 	if tech in ["paved_roads", "rafts"]:
 		_refresh_walk_grid()
 	if tech == "scouting":
@@ -270,7 +277,11 @@ func research(tech: String) -> bool:
 	if tech == "bronze_dawn":
 		won = true
 		record_story("bronze_dawn")
-	return true
+
+
+## Read-only view for the Research block: are hidden techs on show yet?
+func _hidden_shown() -> bool:
+	return shard_seen
 
 
 func has_haulers() -> bool:
@@ -784,7 +795,8 @@ func tick(delta: float) -> void:
 	if won:
 		return
 	economy.advance(delta)
-	Research.tick(self)
+	for tech in tech_tree.tick():
+		_tech_done(tech)
 	_assign_jobs()
 	var fed := economy.feed(kith.size(), delta)
 	_grow(delta, fed)

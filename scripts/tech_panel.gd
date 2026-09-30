@@ -8,7 +8,6 @@ const Data = preload("res://scripts/data.gd")
 const GameState = preload("res://scripts/game_state.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Rules = preload("res://scripts/rules.gd")
-const Research = preload("res://scripts/research.gd")
 const TechBoard = preload("res://scripts/tech_board.gd")
 const Ranks = preload("res://scripts/ranks.gd")
 
@@ -117,11 +116,11 @@ func _on_card(tech: String) -> void:
 	selected = tech
 	if state.can_research(tech):
 		state.research(tech)
-		Research.refill(state)
+		state.tech_tree.refill()
 	elif state.researched.has(tech):
 		Ranks.buy(state, tech)  # a researched card with ranks buys the next one, when affordable
 	else:
-		Research.set_goal(state, tech)
+		state.tech_tree.set_goal(tech)
 	refresh()
 
 
@@ -136,7 +135,7 @@ func _on_open() -> void:
 	if not visible:
 		return
 	refresh()
-	var ready_now := Research.ready_list(state)
+	var ready_now := state.tech_tree.ready_list()
 	if ready_now.is_empty():
 		return
 	var c := Vector2.ZERO
@@ -152,7 +151,7 @@ func refresh() -> void:
 	if not visible:
 		return
 	var done := state.researched.size()
-	var ready_now := Research.ready_list(state)
+	var ready_now := state.tech_tree.ready_list()
 	var hidden_n := Data.TECHS.size() - Rules.visible_techs(state.shard_seen).size()
 	counter.text = (
 		"%d of %d researched  ·  %d ready%s"
@@ -199,7 +198,7 @@ func _fill_row(row: HBoxContainer, caption: String, techs: Array, empty: String)
 		var clear := Ui.button("Clear")
 		clear.pressed.connect(
 			func():
-				Research.clear(state)
+				state.tech_tree.clear()
 				refresh()
 		)
 		row.add_child(clear)

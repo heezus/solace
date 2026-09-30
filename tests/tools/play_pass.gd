@@ -10,7 +10,6 @@ const Data = preload("res://scripts/data.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
 const Ranks = preload("res://scripts/ranks.gd")
 const Hands = preload("res://scripts/hands.gd")
-const Research = preload("res://scripts/research.gd")
 
 const BOT_STEPS_PER_FRAME := 40
 const MAX_FRAMES := 4000
@@ -473,7 +472,7 @@ func _board_click_through() -> void:
 			_expect(s.hand_counts == probe["counts"], "holding on the research board harvested the map under it")
 			_expect(s.buildings.size() == probe["built"], "a board click placed or tore down a building")
 			_expect(not main.holding, "the board press started a hold on the map")
-			var ready: Array = Research.ready_list(s)
+			var ready: Array = s.tech_tree.ready_list()
 			if not ready.is_empty():
 				var tech: String = ready[0]
 				var board = panel.board

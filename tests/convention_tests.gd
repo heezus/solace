@@ -5,7 +5,6 @@ extends RefCounted
 const Data = preload("res://scripts/data.gd")
 const GameState = preload("res://scripts/game_state.gd")
 const Rules = preload("res://scripts/rules.gd")
-const Research = preload("res://scripts/research.gd")
 const TechLayout = preload("res://scripts/tech_layout.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
@@ -288,7 +287,7 @@ func test_board_layout_is_data() -> void:
 ## and researched as each becomes affordable.
 func test_research_queue() -> void:
 	var s: GameState = t.fresh()
-	Research.set_goal(s, "grindstone")
+	s.tech_tree.set_goal("grindstone")
 	t.check(s.research_goal == "grindstone", "the goal is set")
 	t.check(s.research_queue.size() <= Data.QUEUE_SLOTS and s.research_queue.size() >= 3, "a few techs are queued")
 	t.check(s.research_queue[0] in ["cordage", "knapping", "fire"], "roots come first")
@@ -307,7 +306,7 @@ func test_research_queue() -> void:
 	var route := Rules.route_to("calendar", s2.researched, Rules.visible_techs(false))
 	t.check(route[route.size() - 1] == "calendar", "a route ends at its goal")
 	t.check("storytelling" in route and "megaliths" not in route, "an either-or takes the shorter branch")
-	t.check(Research.ready_list(s2).is_empty(), "nothing is ready with an empty stockpile")
+	t.check(s2.tech_tree.ready_list().is_empty(), "nothing is ready with an empty stockpile")
 
 
 ## Side branches are exactly the techs Bronze Dawn doesn't need.
