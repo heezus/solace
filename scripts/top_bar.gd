@@ -165,7 +165,15 @@ func refresh(paused: bool, speed: float) -> void:
 	food_bar.max_value = maxf(state.kith.size() * 2.0 + Data.BIRTH_FOOD, 1.0)
 	food_bar.value = minf(food, food_bar.max_value)
 	food_bar.modulate = Ui.BAD if fr < -0.005 else Ui.HIGHLIGHT
-	tools_label.text = ""
+	tools_label.visible = state.seen.has("flint_tools")
+	var held := state.tools_held()
+	tools_label.text = "Tools %d/%d Kith" % [held, state.kith.size()]
+	tools_label.tooltip_text = (
+		"Kith holding a Flint Tool work 50%% faster. Each tool lasts %d jobs; spares in the stockpile: %d."
+		% [Data.TOOL_JOBS, state.inv.get("flint_tools", 0)]
+	)
+	tools_label.mouse_filter = Control.MOUSE_FILTER_STOP
+	tools_label.add_theme_color_override("font_color", Ui.GOOD if held >= state.kith.size() else Color.WHITE)
 	for id in chips:
 		var c: Dictionary = chips[id]
 		var n: int = state.inv.get(id, 0)

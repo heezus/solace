@@ -115,8 +115,20 @@ const QUEUE_SLOTS := 5
 
 ## Tech bonuses GameState applies.
 const STORYTELLING_GROW := 0.75  # grow time multiplier
-const OCHRE_SPEED := 1.1  # Gatherer's Hut workers
-const STANDING_STONE_SPEED := 1.15  # buildings in a Standing Stone's radius
+
+## Work multipliers (scripts/bonuses.gd). "speed" shortens work cycles, "yield" multiplies each harvest.
+## They add within a group and multiply across groups. Optional keys: `tech` (needs it researched),
+## `kinds` (building kinds it applies to), `item` (only harvests of that item).
+## "tools" applies while the worker holds a Flint Tool, "standing_stone" next to a Standing Stone.
+const BONUSES := {
+	"tools": {"name": "Flint Tools", "group": "speed", "add": 0.5, "kinds": ["gatherer", "processor"]},
+	"standing_stone": {"name": "Standing Stone", "group": "speed", "add": 1.0, "kinds": ["gatherer", "processor"]},
+	"foraging": {"name": "Foraging", "group": "yield", "add": 1.0, "tech": "foraging", "item": "berries"},
+	"stone_axe": {"name": "Stone Axe", "group": "yield", "add": 1.0, "tech": "stone_axe", "item": "wood"},
+	"ochre": {"name": "Ochre", "group": "yield", "add": 1.0, "tech": "ochre", "item": "clay", "kinds": ["gatherer"]},
+}
+## A Flint Tool lasts this many jobs (harvests or work cycles) in a worker's hands.
+const TOOL_JOBS := 40
 const CALENDAR_FIELD_BONUS := 0.25  # extra yield from Fields
 const SMOKED_BERRY_FOOD := 2.0
 const BAKED_FLOUR_FOOD := 5.0
@@ -148,7 +160,8 @@ const TECHS := {
 		"icon": "@flint",
 		"requires": [],
 		"cost": {"flint": 5, "stone": 10},
-		"desc": "Shape flint. Craft Flint Tools to gather twice as much by hand.",
+		"desc":
+		"Shape flint. Craft Flint Tools: you gather twice as much by hand, and each worker holding one works 50% faster.",
 	},
 	"cordage":
 	{
@@ -273,13 +286,13 @@ const TECHS := {
 		"lane": "lore",
 		"tier": 1,
 		"slot": 0,
-		"unlock": "Hut boost",
+		"unlock": "Clay x2",
 		"icon": "@clay",
 		"side": true,
 		"requires": ["storytelling", "foraging"],
 		"cost": {"clay": 10, "berries": 10},
 		"effect": "ochre",
-		"desc": "Red earth for painting the huts. Gatherer's Hut workers harvest 10% faster.",
+		"desc": "Know the red earth. Gatherer's Huts bring back twice the Clay per trip.",
 	},
 	"star_lore":
 	{
@@ -402,7 +415,7 @@ const TECHS := {
 		"requires": ["masonry"],
 		"requires_any": ["storytelling", "star_lore"],
 		"cost": {"stone": 50, "rope": 10},
-		"desc": "Raise great stones. Buildings within 3 tiles of a Standing Stone work 15% faster.",
+		"desc": "Raise great stones. Buildings right next to a Standing Stone work twice as fast.",
 	},
 	"stone_axe":
 	{
@@ -738,9 +751,9 @@ const BUILDINGS := {
 		"kind": "aura",
 		"tech": "megaliths",
 		"cost": {"stone": 30},
-		"radius": 3,
+		"radius": 1.5,
 		"color": Color("6c5b7b"),
-		"desc": "Buildings within 3 tiles work 15% faster.",
+		"desc": "Buildings right next to it (diagonals too) work twice as fast.",
 	},
 	"shard_cairn":
 	{

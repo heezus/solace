@@ -10,6 +10,7 @@ const Haulers = preload("res://scripts/haulers.gd")
 const Goals = preload("res://scripts/goals.gd")
 const Rules = preload("res://scripts/rules.gd")
 const Research = preload("res://scripts/research.gd")
+const Bonuses = preload("res://scripts/bonuses.gd")
 
 const WIDTH := 36
 const HEIGHT := 22
@@ -30,6 +31,7 @@ var seen: Dictionary = {}  # items the player has ever held, so the top bar keep
 var goals_done: Dictionary = {}
 var roads: Dictionary = {}  # Vector2i -> true
 var fields: Dictionary = {}  # Vector2i -> true, grain tiles the Kith sowed
+var hand_tools := false  # you've made a Flint Tool, so hand gathering is doubled for good
 var shard_seen := false  # the player has clicked the Strange Stone, revealing hidden techs
 ## The Kith, each a person on the map:
 ## {pos: Vector2 (tile coords), path: Array of Vector2i, job: "" | "work" | "haul", building: int,
@@ -100,13 +102,43 @@ func add(id: String, amount: int) -> void:
 	seen[id] = true
 
 
-func _hand_yield() -> int:
-	return 2 if inv.get("flint_tools", 0) > 0 else 1
+## By hand: x2 once you've made a Flint Tool (you keep one for yourself), times the item's Yield bonuses
+## that aren't tied to a kind of building (Foraging, Stone Axe).
+func _hand_yield(item: String) -> int:
+	var parts: Array = []
+	for bonus in Bonuses.active(self, {"type": "camp", "pos": camp_pos, "worker": -1}, item):
+		if bonus["group"] == "yield" and not Data.BONUSES[bonus["id"]].has("kinds"):
+			parts.append(bonus)
+	return roundi((2 if hand_tools else 1) * Bonuses.total(parts, "yield"))
 
 
-## Foraging doubles berries, whoever gathers them.
-func _gather_mult(item: String) -> int:
-	return 2 if item == "berries" and researched.has("foraging") else 1
+## How many Kith hold a Flint Tool.
+func tools_held() -> int:
+	var n := 0
+	for k in kith:
+		if k["tool"] > 0:
+			n += 1
+	return n
+
+
+## A worker without a tool takes one from the stockpile.
+func _equip(k: Dictionary) -> void:
+	if k["tool"] <= 0 and inv.get("flint_tools", 0) > 0:
+		inv["flint_tools"] -= 1
+		flows.add("flint_tools", -1, "kith")
+		k["tool"] = Data.TOOL_JOBS
+
+
+## One job done: the worker's tool wears a little, and they pick up a new one when it breaks.
+func _wear(b: Dictionary) -> void:
+	if b["worker"] < 0:
+		return
+	var k: Dictionary = kith[b["worker"]]
+	if k["tool"] > 0:
+		k["tool"] -= 1
+		if k["tool"] == 0:
+			events.append("A Flint Tool wore out")
+	_equip(k)
 
 
 func hut_radius() -> int:
@@ -142,7 +174,7 @@ func gather_by_hand(p: Vector2i) -> String:
 	var item: String = Data.TILES[tile]["yields"]
 	if item == "":
 		return ""
-	var n := _hand_yield() * _gather_mult(item)
+	var n := _hand_yield(item)
 	add(item, n)
 	flows.add(item, n, "hand")
 	return "+%d %s" % [n, Data.ITEMS[item]["name"]]
@@ -214,6 +246,8 @@ func craft(recipe: String) -> bool:
 	for id in r["out"]:
 		add(id, r["out"][id])
 		flows.add(id, r["out"][id], "craft")
+	if r["out"].has("flint_tools"):
+		hand_tools = true
 	return true
 
 
@@ -440,14 +474,9 @@ func _in_range_of(kind: String, p: Vector2i) -> bool:
 	return false
 
 
-## How fast a building's worker works: Ochre speeds huts, a Standing Stone speeds everything near it.
+## How fast a building's worker works: the Speed group (a Flint Tool in hand, a Standing Stone next door).
 func work_speed(b: Dictionary) -> float:
-	var speed := 1.0
-	if Data.BUILDINGS[b["type"]]["kind"] == "gatherer" and researched.has("ochre"):
-		speed *= Data.OCHRE_SPEED
-	if _in_range_of("aura", b["pos"]):
-		speed *= Data.STANDING_STONE_SPEED
-	return speed
+	return Bonuses.speed(self, b)
 
 
 ## Seconds for one work cycle at this building.
@@ -463,12 +492,11 @@ func _harvest_time(b: Dictionary, tile: Vector2i) -> float:
 	return t
 
 
-## How much one harvest of `tile` brings back. Stone Axe doubles Wood; Calendar adds a quarter
-## to Fields, paid out as whole items as the building's share builds up.
+## How much one harvest of `tile` brings back: the Yield group for the item (Stone Axe on Wood, Ochre on
+## Clay, Foraging on Berries). Calendar adds a quarter to Fields, paid out as whole items as the
+## building's share builds up.
 func _harvest_amount(b: Dictionary, tile: Vector2i, item: String) -> int:
-	var n := _gather_mult(item)
-	if item == "wood" and researched.has("stone_axe"):
-		n *= 2
+	var n := roundi(Bonuses.yield_mult(self, b, item))
 	if fields.has(tile) and researched.has("calendar"):
 		b["field_extra"] = b.get("field_extra", 0.0) + n * Data.CALENDAR_FIELD_BONUS
 		if b["field_extra"] >= 1.0:
@@ -600,6 +628,7 @@ func _add_kith() -> void:
 		"carry": {},
 		"task": {},
 		"seen": Vector2i(-99, -99),  # the tile they last lifted the fog around
+		"tool": 0,  # jobs left on the Flint Tool they hold, 0 for none
 	}
 	kith.append(k)
 
@@ -641,6 +670,7 @@ func _assign_jobs() -> void:
 		k["building"] = i
 		k["phase"] = "to_site"
 		b["worker"] = pick
+		_equip(k)
 		_walk_to(k, b["pos"])
 	for k in kith:
 		if k["job"] == "" and has_haulers():
@@ -785,6 +815,7 @@ func _tick_worker(k: Dictionary, delta: float) -> void:
 				k["timer"] = 0.0
 				var item: String = Data.TILES[tile_at(tile)]["yields"] if tile != b["pos"] else "fiber"
 				k["carry"] = {item: _harvest_amount(b, tile, item)}
+				_wear(b)
 				k["task"] = {}
 				_walk_to(k, b["pos"])
 				k["phase"] = "to_home"
@@ -892,6 +923,7 @@ func _tick_building(b: Dictionary, delta: float, fed: bool) -> void:
 	if b["progress"] < _work_time(b):
 		return
 	b["progress"] = 0.0
+	_wear(b)
 	for id in def["in"]:
 		b["inbuf"][id] -= def["in"][id]
 		flows.add(id, -def["in"][id], b["type"])

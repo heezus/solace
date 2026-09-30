@@ -9,6 +9,7 @@ const TechLayout = preload("res://scripts/tech_layout.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Goals = preload("res://scripts/goals.gd")
 const ConventionTests = preload("res://tests/convention_tests.gd")
+const BonusTests = preload("res://tests/bonus_tests.gd")
 
 var failures := 0
 
@@ -43,6 +44,7 @@ func _init() -> void:
 	test_lore_and_side_branch_effects()
 	test_fishing_weir_makes_fish()
 	ConventionTests.new().run(self)
+	BonusTests.new().run(self)
 	print("FAILED: %d" % failures if failures > 0 else "ALL TESTS PASSED")
 	quit(1 if failures > 0 else 0)
 
@@ -530,11 +532,16 @@ func test_lore_and_side_branch_effects() -> void:
 	place_free(s, "gatherers_hut", p)
 	var hut: Dictionary = s.buildings[s.building_at[p]]
 	var base := s._work_time(hut)
+	var clay := find_tile(s, "clay")
+	check(s._harvest_amount(hut, clay, "clay") == 1, "one clay per harvest")
 	s.researched["ochre"] = true
-	check(is_equal_approx(s.work_speed(hut), 1.1), "Ochre: huts harvest 10% faster")
-	check(s._work_time(hut) < base, "Ochre shortens the harvest")
-	check(place_free(s, "standing_stone", p + Vector2i(0, 2)), "place a Standing Stone near the hut")
-	check(is_equal_approx(s.work_speed(hut), 1.1 * 1.15), "Standing Stone: 15% faster within 3 tiles")
+	check(s._harvest_amount(hut, clay, "clay") == 2, "Ochre: huts bring back twice the Clay")
+	check(is_equal_approx(s.work_speed(hut), 1.0), "Ochre doesn't touch speed")
+	check(place_free(s, "standing_stone", p + Vector2i(0, 2)), "place a Standing Stone 2 tiles off")
+	check(is_equal_approx(s.work_speed(hut), 1.0), "2 tiles off is too far for a Standing Stone")
+	check(place_free(s, "standing_stone", p + Vector2i(1, 1)), "place a Standing Stone right next to the hut")
+	check(is_equal_approx(s.work_speed(hut), 2.0), "Standing Stone: twice as fast next to it")
+	check(is_equal_approx(s._work_time(hut), base / 2.0), "and the cycle takes half as long")
 
 	var tree := find_tile(s, "tree")
 	check(s._harvest_amount(hut, tree, "wood") == 1, "one wood per harvest")
