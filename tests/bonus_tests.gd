@@ -63,7 +63,7 @@ func test_workers_take_tools() -> void:
 	t.check(Hands.tools_held(s) == 0, "nobody holds a tool")
 	s.inv["flint_tools"] = 2
 	var k: Dictionary = s.kith[hut["worker"]]
-	s._wear(hut)  # one job done: the worker picks up a tool on the way back
+	s.people.wear(hut)  # one job done: the worker picks up a tool on the way back
 	t.check(k["tool"] == Data.TOOL_JOBS, "the worker takes a tool good for %d jobs" % Data.TOOL_JOBS)
 	t.check(s.inv["flint_tools"] == 1, "from the stockpile")
 	t.check(Hands.tools_held(s) == 1, "one Kith holds a tool")
@@ -89,13 +89,13 @@ func test_tools_wear_out() -> void:
 	var k: Dictionary = s.kith[hut["worker"]]
 	t.check(k["tool"] == Data.TOOL_JOBS, "equipped on taking the job")
 	for i in Data.TOOL_JOBS - 1:
-		s._wear(hut)
+		s.people.wear(hut)
 	t.check(k["tool"] == 1, "each job wears the tool")
-	s._wear(hut)
+	s.people.wear(hut)
 	t.check(k["tool"] == 0, "worn out after %d jobs" % Data.TOOL_JOBS)
 	t.check(is_equal_approx(s.work_speed(hut), 1.0), "back to normal speed")
 	s.inv["flint_tools"] = 1
-	s._wear(hut)
+	s.people.wear(hut)
 	t.check(k["tool"] == Data.TOOL_JOBS, "a new tool from the stockpile after the next job")
 
 

@@ -5,6 +5,7 @@ extends RefCounted
 ## comes back along it. Static, and works on the GameState passed in.
 
 const Data = preload("res://scripts/data.gd")
+const Kith = preload("res://scripts/kith.gd")
 const Roads = preload("res://scripts/roads.gd")
 
 
@@ -16,15 +17,15 @@ static func carry_cap(s) -> int:
 static func tick(s, k: Dictionary, delta: float) -> void:
 	if k["task"].is_empty():
 		if k["path"].is_empty():
-			var here: Vector2i = s._tile_of(k)
+			var here: Vector2i = Kith.tile_of(k)
 			var home := _home_depot(s, here)
 			if here == home and _find_task(s, k):
 				return
 			if here != home:
-				s._walk_to(k, home)  # off duty: back to a depot on the roads, across country
-		s._step(k, delta)
+				s.people.walk_to(k, home)  # off duty: back to a depot on the roads, across country
+		s.people.step(k, delta)
 		return
-	if not s._step(k, delta):
+	if not s.people.step(k, delta):
 		return
 	var t: Dictionary = k["task"]
 	var b: Dictionary = s.buildings[t["building"]]
@@ -42,7 +43,7 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 			b["claimed"] = false
 			k["task"] = {"kind": "dropoff", "building": t["building"]}
 			if not Roads.walk(s, k, t["depot"]):
-				s._drop_task(k)  # the road was torn up: the goods go straight to the stockpile
+				s.people.drop_task(k)  # the road was torn up: the goods go straight to the stockpile
 				return
 			k["phase"] = "to_depot"
 		"to_depot":
@@ -61,7 +62,7 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 			k["carry"] = {t["item"]: n}
 			if not Roads.walk(s, k, b["pos"]):
 				b["unreachable"] = 2.0
-				s._drop_task(k)
+				s.people.drop_task(k)
 				return
 			k["phase"] = "to_drop"
 		"to_drop":
@@ -91,7 +92,7 @@ static func _home_depot(s, here: Vector2i) -> Vector2i:
 ## (a workshop with nothing to work, or one full up) counts as a third as far, so busy huts near the
 ## stockpile don't starve the far ones.
 static func _find_task(s, k: Dictionary) -> bool:
-	var here: Vector2i = s._tile_of(k)
+	var here: Vector2i = Kith.tile_of(k)
 	var nets := Roads.depot_nets(s, here)
 	if nets.is_empty():
 		return false

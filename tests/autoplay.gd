@@ -247,7 +247,7 @@ func _click() -> bool:
 		var def: Dictionary = Data.BUILDINGS[b["type"]]
 		if not Roads.automated(s, b):
 			if def["kind"] == "gatherer" and b["worker"] >= 0 and b["trips"] < Data.TRIP_QUEUE:
-				if Workers.knows_any(s, b["pos"]):
+				if s.people.knows_any(b["pos"]):
 					Workers.click(s, i)
 					clicked["trip"] = clicked.get("trip", 0) + 1
 					return true
@@ -338,7 +338,7 @@ func _place_storehouse() -> bool:
 	for b in s.buildings:
 		if not s.needs_worker(b):
 			continue
-		var depot: Vector2i = s._nearest_depot(b["pos"])
+		var depot: Vector2i = s.people.nearest_depot(b["pos"])
 		if Vector2(depot).distance_to(Vector2(b["pos"])) > 6.0:
 			var at: Vector2i = b["pos"]
 			var near := func(p):

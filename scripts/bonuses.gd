@@ -98,7 +98,7 @@ static func text(s, b: Dictionary) -> String:
 		line += ", plus walking"
 		var seen := {}
 		for item in b["gather_items"]:
-			if seen.has(item) or not s.knows(item):
+			if seen.has(item) or not s.people.knows(item):
 				continue
 			seen[item] = true
 			var n: int = s._bundle_size(b, item)

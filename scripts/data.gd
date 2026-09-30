@@ -24,6 +24,7 @@ const RECIPES := DataItems.RECIPES
 # --- People: data/people.gd ---
 const PEOPLE := DataPeople.PEOPLE
 const BORN_EVENT := DataPeople.BORN_EVENT
+const LEFT_EVENT := DataPeople.LEFT_EVENT
 const PEOPLE_NAMES := DataPeople.PEOPLE_NAMES
 const HUT_JOBS := DataPeople.HUT_JOBS
 const JOB_HAULER := DataPeople.JOB_HAULER
@@ -90,6 +91,7 @@ const SIGHT_KITH := DataTuning.SIGHT_KITH
 const SCOUTING_SIGHT := DataTuning.SCOUTING_SIGHT
 const RATE_WINDOW := DataTuning.RATE_WINDOW
 const FLOW_EAT_SOURCE := DataTuning.FLOW_EAT_SOURCE
+const FLOW_TOOL_SOURCE := DataTuning.FLOW_TOOL_SOURCE
 const STORYTELLING_GROW := DataTuning.STORYTELLING_GROW
 const BONUSES := DataTuning.BONUSES
 const TOOL_JOBS := DataTuning.TOOL_JOBS

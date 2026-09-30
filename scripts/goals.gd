@@ -20,11 +20,11 @@ static func goal_met(s, g: Dictionary) -> bool:
 		return _has_building(s, g["building"])
 	match g["id"]:
 		"learn_wood":
-			return s.knows("wood")
+			return s.people.knows("wood")
 		"learn_stone":
-			return s.knows("stone") and s.knows("flint")
+			return s.people.knows("stone") and s.people.knows("flint")
 		"flax":
-			return s.hand_counts.get("fiber", 0) > 0 or s.knows("fiber")
+			return s.hand_counts.get("fiber", 0) > 0 or s.people.knows("fiber")
 		"trip":
 			return "first_trip" in s.story_events or s.has_haulers()
 		"rush":

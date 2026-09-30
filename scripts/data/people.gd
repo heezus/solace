@@ -8,6 +8,8 @@ const PEOPLE := {"one": "Kith", "many": "Kith"}
 
 ## The event a birth sends to the UI, formatted with PEOPLE["one"].
 const BORN_EVENT := "A %s was born"
+## The event when one leaves in search of food, formatted with PEOPLE["one"].
+const LEFT_EVENT := "A %s left in search of food"
 ## Short earthy names, given in turn to each Kith as they're born (a second round adds " II").
 const PEOPLE_NAMES := ["Aro", "Tam", "Esk", "Bru", "Olla", "Fen", "Rook", "Moss", "Sef", "Tarn", "Wren", "Hask"]
 

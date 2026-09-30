@@ -241,6 +241,22 @@ static func needs_worker(b: Dictionary) -> bool:
 	return Data.BUILDINGS[b["type"]]["kind"] in ["gatherer", "processor"]
 
 
+## Carry by hand: empty the building's output into the stockpile and load its inputs from the stockpile.
+func haul(index: int) -> void:
+	var b: Dictionary = buildings[index]
+	for id in b["out"]:
+		_economy.add(id, b["out"][id])
+	b["out"].clear()
+	var def: Dictionary = Data.BUILDINGS[b["type"]]
+	if def["kind"] == "processor":
+		for id in def["in"]:
+			var want: int = def["in"][id] * 2 - b["inbuf"].get(id, 0)
+			var take: int = mini(want, _economy.inv.get(id, 0))
+			if take > 0:
+				_economy.pay({id: take})
+				b["inbuf"][id] = b["inbuf"].get(id, 0) + take
+
+
 ## How many items a building's input or output buffer holds in all.
 static func buffered(dict: Dictionary) -> int:
 	var total := 0

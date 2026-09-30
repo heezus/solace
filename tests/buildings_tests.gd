@@ -51,6 +51,7 @@ func run(runner) -> void:
 	test_housing()
 	test_hut_radius_and_gathering()
 	test_wants_to_work()
+	test_haul_by_hand()
 	test_static_helpers()
 	test_buildings_stand_alone()
 	test_game_state_passes_through()
@@ -437,6 +438,27 @@ func test_wants_to_work() -> void:
 	b.place("water_wheel", Vector2i(6, 3))
 	t.check(b.wants_to_work(mill), "and works beside a wheel")
 	t.check(not b.wants_to_work(b.buildings[0]), "the Hearth has no work")
+
+
+func test_haul_by_hand() -> void:
+	var b := _block({"wood": 3})
+	var pit := b.buildings.size()
+	b.add_building("charcoal_pit", Vector2i(4, 4))
+	var pb: Dictionary = b.buildings[pit]
+	pb["out"] = {"charcoal": 2}
+	b.haul(pit)
+	t.check(pb["out"].is_empty() and _eco.inv["charcoal"] == 2, "hauling empties the output into the stockpile")
+	t.check(pb["inbuf"]["wood"] == 3 and _eco.inv["wood"] == 0, "and loads what the stockpile has of the inputs")
+	_eco.inv["wood"] = 10
+	b.haul(pit)
+	t.check(pb["inbuf"]["wood"] == 4 and _eco.inv["wood"] == 9, "up to two cycles' worth")
+	b.haul(pit)
+	t.check(pb["inbuf"]["wood"] == 4 and _eco.inv["wood"] == 9, "and no more")
+	b.add_building("gatherers_hut", Vector2i(4, 2))
+	var hut: Dictionary = b.buildings[b.buildings.size() - 1]
+	hut["out"] = {"wood": 4}
+	b.haul(b.buildings.size() - 1)
+	t.check(hut["out"].is_empty() and _eco.inv["wood"] == 13 and hut["inbuf"].is_empty(), "a hut is only emptied")
 
 
 func test_static_helpers() -> void:

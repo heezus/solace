@@ -345,7 +345,7 @@ func test_game_state_passes_through() -> void:
 	s.inv["fish"] = 0
 	s.inv["flour"] = 0
 	s.food_credit = 0.0
-	t.check(not s._eat(1.0) and s.starving, "eating with no food fails, and the flag stays as set")
+	t.check(not s.economy.eat(1.0) and s.starving, "eating with no food fails, and the flag stays as set")
 	s.inv["berries"] = 3
 	t.check(is_equal_approx(s.food_total(), 3.0) and s.food_value("berries") == 1.0, "food queries agree")
 	s.researched["smoking"] = true

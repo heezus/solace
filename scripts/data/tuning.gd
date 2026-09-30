@@ -48,6 +48,8 @@ const SCOUTING_SIGHT := 2
 const RATE_WINDOW := 30
 ## The flow source that eating is noted under (the top bar's hover panel shows it as "Eaten by ...").
 const FLOW_EAT_SOURCE := "kith"
+## The flow source a worker taking a Flint Tool from the stockpile is noted under.
+const FLOW_TOOL_SOURCE := "kith"
 
 ## Tech bonuses GameState applies.
 const STORYTELLING_GROW := 0.75  # grow time multiplier

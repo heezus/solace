@@ -429,7 +429,7 @@ func _kith_here(p: Vector2i) -> String:
 	for k in state.kith:
 		var at: Vector2 = k["pos"]
 		if Vector2i(roundi(at.x), roundi(at.y)) == p:
-			names.append(Workers.title_of(state, k))
+			names.append(state.people.title_of(k))
 	return ", ".join(names)
 
 
@@ -482,7 +482,7 @@ func hold_hint(item: String) -> String:
 ## How far a Kith is from learning to gather `item` by watching you.
 func learn_text(item: String) -> String:
 	var item_name: String = Data.ITEMS[item]["name"]
-	if state.knows(item):
+	if state.people.knows(item):
 		return "%s knows how to gather %s: huts can gather it." % [state.learned[item], item_name]
 	return (
 		"Harvested by hand %d/%d. A %s is watching and will learn %s."
@@ -606,7 +606,7 @@ func _draw() -> void:
 		if item != "":
 			var hr := _tile_rect(hover)
 			var tag := hold_hint(item)
-			if not state.knows(item):
+			if not state.people.knows(item):
 				tag += "  ·  taught %d/%d" % [state.hand_counts.get(item, 0), Data.LEARN_CLICKS]
 			Art.pill(self, Vector2(hr.get_center().x, hr.end.y + 4), tag, Color.WHITE, OUTLINE, 12)
 

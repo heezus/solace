@@ -5,6 +5,7 @@ extends RefCounted
 ## pass-throughs and that placing a road updates the grid. Run from tests/run_tests.gd, which owns check().
 
 const Data = preload("res://scripts/data.gd")
+const Kith = preload("res://scripts/kith.gd")
 const GameState = preload("res://scripts/game_state.gd")
 const Pathing = preload("res://scripts/pathing.gd")
 const World = preload("res://scripts/world.gd")
@@ -317,10 +318,10 @@ func test_kith_walk_around_water() -> void:
 	var s: GameState = t.fresh()
 	var k: Dictionary = s.kith[0]
 	var river: Vector2i = t.find_tile(s, "river")
-	t.check(not s._walk_to(k, river), "a Kith can't walk into the river")
+	t.check(not s.people.walk_to(k, river), "a Kith can't walk into the river")
 	var bank := river + Vector2i(-1, 0)
-	t.check(s._walk_to(k, bank), "but can walk to its bank")
+	t.check(s.people.walk_to(k, bank), "but can walk to its bank")
 	t.check(not k["path"].is_empty() and k["path"][k["path"].size() - 1] == bank, "along a path that ends there")
-	t.check(not k["path"].has(s._tile_of(k)), "which doesn't list the tile they stand on")
-	var trip: Dictionary = s.trip_info(bank)
+	t.check(not k["path"].has(Kith.tile_of(k)), "which doesn't list the tile they stand on")
+	var trip: Dictionary = s.people.trip_info(bank)
 	t.check(trip["ok"] and trip["tiles"] > 0 and trip["seconds"] > 0.0, "trip_info walks the same grid")

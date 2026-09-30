@@ -7,7 +7,6 @@ const Data = preload("res://scripts/data.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Rules = preload("res://scripts/rules.gd")
-const Workers = preload("res://scripts/workers.gd")
 
 const TILE := 32.0
 const OUTLINE: Color = Art.OUTLINE
@@ -40,7 +39,7 @@ static func demolish_text(s, p: Vector2i) -> String:
 	)
 	if s.building_at.has(p) and s.buildings[s.building_at[p]]["worker"] >= 0:
 		var b: Dictionary = s.buildings[s.building_at[p]]
-		text += " · %s goes idle" % Workers.title_of(s, s.kith[b["worker"]])
+		text += " · %s goes idle" % s.people.title_of(s.kith[b["worker"]])
 	return text
 
 
@@ -116,7 +115,7 @@ static func flow_arrows(ci: CanvasItem, s, b: Dictionary, time: float) -> void:
 	if def["kind"] != "processor":
 		return
 	var here := center(b["pos"])
-	var depot := center(s._nearest_depot(b["pos"]))
+	var depot := center(s.people.nearest_depot(b["pos"]))
 	if here.distance_to(depot) < TILE:
 		return
 	var k := 0
