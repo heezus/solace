@@ -53,6 +53,7 @@ var rubble: Array = []  # {pos: Vector2i, t: float}, torn-down buildings fading 
 var messages := Messages.new()
 var toasts: ToastStack
 var msg_log: MessageLog
+var told := {}  # warm lines already said (see _watch_flavor)
 var was_starving := false
 var top_bar: TopBar
 var bottom_bar: BuildBar
@@ -108,6 +109,7 @@ func _process(delta: float) -> void:
 		r["t"] += delta
 	rubble = rubble.filter(func(r): return r["t"] < Overlays.RUBBLE_TIME)
 	_watch_food()
+	_watch_flavor()
 	messages.advance(delta)
 	_layout()
 	hover = _tile_under()
@@ -386,6 +388,17 @@ func _watch_food() -> void:
 	was_starving = eco.starving
 	if not eco.low and not eco.starving:
 		messages.resolve("food")
+
+
+## Say each warm line once, when its first moment comes (the story ids it waits for are in Data.FLAVOR_STORY).
+func _watch_flavor() -> void:
+	for id in Data.FLAVOR_STORY:
+		if state.story.events.has(id) and not told.has(id):
+			told[id] = true
+			_toast(Data.FLAVOR_STORY[id], 5.0)
+	if not told.has("stock") and state.economy.inv.get(Data.FLAVOR_STOCK_ITEM, 0) >= Data.FLAVOR_STOCK_AMOUNT:
+		told["stock"] = true
+		_toast(Data.FLAVOR_STOCK, 5.0)
 
 
 ## A discovery that unlocks buildings: their cards and tab glow, and a toast says where to find them.

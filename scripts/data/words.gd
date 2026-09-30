@@ -16,7 +16,28 @@ const CARD_DISCOVER := "Discover %s"  # a tech's name
 
 # --- The tech board (scripts/tech_panel.gd, scripts/tech_board.gd). One verb for techs: Discover. ---
 const BOARD_TITLE := "Tech tree  ·  Stone Age"
+# --- A few warm lines at the first moments (scripts/main.gd shows each once) ---
+## Story id (Data.STORY_EVENTS) -> the line said when it first happens.
+const FLAVOR_STORY := {
+	"first_lesson": "The first lesson is learned. What one Kith knows, the Hearth will soon know.",
+	"first_trip": "The first hut is at work. The Hearth grows stronger.",
+}
+const FLAVOR_STOCK_ITEM := "berries"
+const FLAVOR_STOCK_AMOUNT := 20
+const FLAVOR_STOCK := "A good stock of berries. Nobody goes to sleep hungry tonight."
+
+# --- The top-left readout (scripts/top_bar.gd, scripts/ui.gd) ---
+const KITH_LABEL := "%s %d  ·  homes for %d"  # people (many), how many, housing
+const JOBS_LABEL := "Jobs filled %d of %d  ·  %d %s"  # working, jobs, the rest, IDLE_WORD or HAUL_WORD
+const JOBS_TIP := "%s\n%s work buildings and haul goods. Each building is one job and needs one. They grow with spare food and room."
+const IDLE_WORD := "idle"
+const HAUL_WORD := "hauling"
+const NOTE_STARVING := "Starving: no food"
+const NOTE_NO_ROOM := "No room: build a Dwelling"
+const NOTE_NEEDS_FOOD := "Needs %d spare food to grow"
+
 const TECH_DONE := "Discovered"
+const DISCOVERED_EVENT := "Discovered %s"  # a tech's name: the one verb for research, in toast, log, goals and cards
 const TECH_OPTIONAL := "optional"
 const HIDDEN_CARD_HINT := "Click the Strange Stone"
 const NEXT_NONE := "Nothing new to discover right now. Gather more, or look at the whole board."

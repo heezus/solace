@@ -160,7 +160,7 @@ func _tech_done(tech: String) -> void:
 	if tech == "scouting":
 		for b in town.buildings:
 			fog.reveal(b["pos"], _sight(Data.SIGHT_BUILDING))
-	events.append("Discovered %s" % Data.TECHS[tech]["name"])
+	events.append(Data.DISCOVERED_EVENT % Data.TECHS[tech]["name"])
 	if tech == "haulers":
 		for b in town.buildings:
 			b["trips"] = 0  # huts loop on their own from now on

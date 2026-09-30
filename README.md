@@ -28,14 +28,14 @@ This is the **first playable**: the stone age loop with a lite tech tree, ending
   Knapping lets you craft Flint Tools, which shorten the hold. A harvest yields base x tool x rank, and ranks II and III
   on a tech's card raise it further.
 - The **Kith** are your people, and each one is on the map. Every building needs one Kith to work it.
-  They eat food (berries, or flour at 3x value). They grow when there is spare food and room: the Camp houses 4, each **Dwelling** 3. If the food runs out, they stop working, and after a while one leaves.
+  They eat food (berries, or flour at 3x value). They grow when there is spare food and room: the Hearth houses 4, each **Dwelling** 3. If the food runs out, they stop working, and after a while one leaves.
 - A **Gatherer's Hut** sends its worker out to the resource tiles within 2 tiles and back, so a hut surrounded by resources is faster.
-- Fiber comes from **wild flax**, never bare grass. There is always a patch near the Camp.
-- **Paths & Haulers** turns idle Kith into haulers. They serve only buildings a **Road** links to the Camp or a **Storehouse**, and walk the roads only. A linked hut loops on its own; an unlinked one shows "Needs road" and still needs clicks.
+- Fiber comes from **wild flax**, never bare grass. There is always a patch near the Hearth.
+- **Paths & Haulers** turns idle Kith into haulers. They serve only buildings a **Road** links to the Hearth or a **Storehouse**, and walk the roads only. A linked hut loops on its own; an unlinked one shows "Needs road" and still needs clicks.
 - **Roads** (2 Wood a tile) double walking speed. They fell forest, cut passes through rocks for 3 Stone, and a road across the river is a bridge. Click or drag to lay them.
-- Flour that research still needs is never eaten.
+- Flour that a discovery still needs is never eaten.
 - The **Water Wheel** must touch the river and powers machines within 3 tiles. The **Grindstone** needs power.
-- Research **Bronze Dawn** to end the stone age.
+- Discover **Bronze Dawn** to end the stone age.
 - Somewhere on the map is a strange, glowing stone.
 
 ## Project layout
