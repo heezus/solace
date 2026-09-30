@@ -5,6 +5,7 @@ extends SceneTree
 ## Run under a display: xvfb-run godot --rendering-driver opengl3 --path . -s tests/tools/newbie_pass.gd
 
 const Data = preload("res://scripts/data.gd")
+const World = preload("res://scripts/world.gd")
 
 const TILE_OF := {
 	"wood": "tree", "stone": "rock", "flint": "gravel", "fiber": "flax", "berries": "berry", "clay": "clay"
@@ -16,7 +17,7 @@ var shot_n := 0
 var out_dir := "user://newbie"
 var log_lines: Array = []
 var capped := false
-const WALL_CAP_MS := 420000
+const WALL_CAP_MS := 780000
 
 
 func _init() -> void:
@@ -122,9 +123,9 @@ func _screen_text() -> String:
 			goals.append(g.text)
 	var inv := []
 	var s = main.state
-	for id in s.inv:
-		if s.inv[id] > 0:
-			inv.append("%s %d" % [id, s.inv[id]])
+	for id in s.economy.inv:
+		if s.economy.inv[id] > 0:
+			inv.append("%s %d" % [id, s.economy.inv[id]])
 	return (
 		"GOALS: %s\n    INFO: %s\n    TOAST: %s\n    HAVE: %s\n    KITH: %d, learned: %s"
 		% [
@@ -132,8 +133,8 @@ func _screen_text() -> String:
 			main.info_label.text.replace("\n", " / "),
 			main.toast_label.text if main.toast_label.visible else "",
 			", ".join(inv),
-			s.kith.size() if "kith" in s else -1,
-			", ".join(s.learned.keys()),
+			s.people.kith.size(),
+			", ".join(s.people.learned_by.keys()),
 		]
 	)
 
@@ -151,11 +152,11 @@ func _shot(name: String) -> void:
 func _nearest(tile: String) -> Vector2i:
 	var s = main.state
 	var best := Vector2i(-1, -1)
-	for y in s.HEIGHT:
-		for x in s.WIDTH:
+	for y in World.HEIGHT:
+		for x in World.WIDTH:
 			var p := Vector2i(x, y)
-			if s.tile_at(p) == tile and s.fog.is_revealed(p) and not s.building_at.has(p):
-				if best.x < 0 or Vector2(p).distance_to(Vector2(s.camp_pos)) < Vector2(best).distance_to(Vector2(s.camp_pos)):
+			if s.world.tile_at(p) == tile and s.fog.is_revealed(p) and not s.town.building_at.has(p):
+				if best.x < 0 or Vector2(p).distance_to(Vector2(s.world.camp_pos)) < Vector2(best).distance_to(Vector2(s.world.camp_pos)):
 					best = p
 	return best
 
@@ -177,9 +178,9 @@ func _gather_until(item: String, cond: Callable, limit: float) -> bool:
 			var st = main.state
 			_say(
 				"probe %s: tile %s at %s, holding=%s, frac=%.2f, harvest_tile=%s, hand_counts=%s, hover=%s"
-				% [item, st.tile_at(tile), tile, main.holding, st.harvest_frac, st.harvest_tile, st.hand_counts, main.hover]
+				% [item, st.world.tile_at(tile), tile, main.holding, st.harvest_frac, st.harvest_tile, st.hand_counts, main.hover]
 			)
-		if main.state.tile_at(tile) != TILE_OF[item] or not main.holding:
+		if main.state.world.tile_at(tile) != TILE_OF[item] or not main.holding:
 			# tile ran out: hop to the next nearest one, as a player would
 			_button(_screen_of(tile), MOUSE_BUTTON_LEFT, false)
 			tile = _nearest(TILE_OF[item])
@@ -214,17 +215,17 @@ func _open_board_and_click(tech: String) -> void:
 var _last_spot := Vector2i(-1, -1)
 
 
-func _place_near(type: String, tile: String, label: String) -> void:
+func _place_near(type: String, tile: String, label: String, tab := "Gathering") -> void:
 	var s = main.state
-	_click_control(main.bottom_bar.tab_buttons["Gathering"])
+	_click_control(main.bottom_bar.tab_buttons[tab])
 	_click_control(main.bottom_bar.build_buttons[type]["button"])
-	var near := _nearest(tile)
+	var near: Vector2i = s.world.camp_pos if tile == "" else _nearest(tile)
 	var spot := Vector2i(-1, -1)
-	for r in range(1, 4):
+	for r in range(1, 6):
 		for dy in range(-r, r + 1):
 			for dx in range(-r, r + 1):
 				var p: Vector2i = near + Vector2i(dx, dy)
-				if spot.x < 0 and s.placement_error(type, p) == "":
+				if spot.x < 0 and s.town.placement_error(type, p) == "":
 					spot = p
 	_last_spot = spot
 	_move(_screen_of(spot))
@@ -233,7 +234,31 @@ func _place_near(type: String, tile: String, label: String) -> void:
 	await _wait(1.0)
 	_key(KEY_ESCAPE)
 	await _shot(label + "_placed")
-	_say("%s placed=%s" % [label, s.building_at.has(spot)])
+	_say("%s placed=%s" % [label, s.town.building_at.has(spot)])
+
+
+func _afford_by_hand(cost: Dictionary, label: String) -> bool:
+	var s = main.state
+	for item in cost:
+		var need: int = cost[item]
+		if s.economy.inv.get(item, 0) < need:
+			if not TILE_OF.has(item):
+				_say("%s needs %d %s, which can't be hand-gathered (have %d)" % [label, need, item, s.economy.inv.get(item, 0)])
+				return false
+			await _gather_until(item, func(): return s.economy.inv.get(item, 0) >= need, 120.0)
+	return true
+
+
+func _kith_check(label: String) -> void:
+	var s = main.state
+	var rows: Array = []
+	var on_map := 0
+	for k in s.people.kith:
+		var pos: Vector2 = k["pos"]
+		if pos.x >= 0 and pos.y >= 0 and pos.x < World.WIDTH and pos.y < World.HEIGHT:
+			on_map += 1
+		rows.append("%s@(%.1f,%.1f) job=%s" % [k.get("name", "?"), pos.x, pos.y, k.get("job", "")])
+	_say("KITH %s: %d on map: %s" % [label, on_map, "; ".join(rows)])
 
 
 func _write_log() -> void:
@@ -261,7 +286,7 @@ func _run() -> void:
 	await _shot("quick_click_tree")
 
 	_say("click the Hearth")
-	_click(_screen_of(s.camp_pos))
+	_click(_screen_of(s.world.camp_pos))
 	await _wait(0.5)
 	await _shot("click_hearth")
 
@@ -275,7 +300,7 @@ func _run() -> void:
 	_click_control(main.bottom_bar.build_buttons["gatherers_hut"]["button"])
 	await _wait(0.3)
 	_say("clicked Gatherer's Hut before researching it; placing = '%s'" % main.placing)
-	_move(_screen_of(s.camp_pos + Vector2i(2, 2)))
+	_move(_screen_of(s.world.camp_pos + Vector2i(2, 2)))
 	await _shot("locked_hut_click")
 	_key(KEY_ESCAPE)
 
@@ -304,18 +329,18 @@ func _run() -> void:
 		await _shot("no_flax_visible")
 	else:
 		t0 = game_time
-		ok = await _gather_until("fiber", func(): return s.people.knows("fiber") or s.inv.get("fiber", 0) >= 10, 120.0)
+		ok = await _gather_until("fiber", func(): return s.people.knows("fiber") or s.economy.inv.get("fiber", 0) >= 10, 120.0)
 		_say("fiber learned/have=%s after %.0fs" % [ok, game_time - t0])
 		await _shot("fiber_gathered")
 
 	# Research Knapping, craft Flint Tools.
-	if not s.can_research("knapping"):
+	if not s.tech_tree.can_research("knapping"):
 		_say("cannot afford Knapping yet: %s" % [Data.TECHS["knapping"]["cost"]])
 		for item in Data.TECHS["knapping"]["cost"]:
 			var need: int = Data.TECHS["knapping"]["cost"][item]
-			await _gather_until(item, func(): return s.inv.get(item, 0) >= need, 120.0)
+			await _gather_until(item, func(): return s.economy.inv.get(item, 0) >= need, 120.0)
 	await _open_board_and_click("knapping")
-	_say("knapping researched=%s" % s.researched.has("knapping"))
+	_say("knapping researched=%s" % s.tech_tree.researched.has("knapping"))
 	for r in main.bottom_bar.craft_buttons:
 		_click_control(main.bottom_bar.craft_buttons[r])
 	await _wait(0.5)
@@ -326,18 +351,18 @@ func _run() -> void:
 		var cost: Dictionary = Data.TECHS[tech]["cost"]
 		for item in cost:
 			var need: int = cost[item]
-			if s.inv.get(item, 0) < need and TILE_OF.has(item):
-				await _gather_until(item, func(): return s.inv.get(item, 0) >= need, 150.0)
+			if s.economy.inv.get(item, 0) < need and TILE_OF.has(item):
+				await _gather_until(item, func(): return s.economy.inv.get(item, 0) >= need, 150.0)
 		await _open_board_and_click(tech)
-		_say("%s researched=%s" % [tech, s.researched.has(tech)])
+		_say("%s researched=%s" % [tech, s.tech_tree.researched.has(tech)])
 
 	# Place a hut beside the trees, as the goal says. Researching it ate the wood and stone, so refill first.
-	if s.researched.has("gatherers_hut"):
+	if s.tech_tree.researched.has("gatherers_hut"):
 		var hut_cost: Dictionary = Data.BUILDINGS["gatherers_hut"]["cost"]
-		_say("hut costs %s, have %s" % [hut_cost, s.inv])
+		_say("hut costs %s, have %s" % [hut_cost, s.economy.inv])
 		for item in hut_cost:
 			var need2: int = hut_cost[item]
-			await _gather_until(item, func(): return s.inv.get(item, 0) >= need2, 120.0)
+			await _gather_until(item, func(): return s.economy.inv.get(item, 0) >= need2, 120.0)
 		await _place_near("gatherers_hut", "tree", "hut1")
 		for i in 3:
 			_click(_screen_of(_last_spot))
@@ -350,7 +375,7 @@ func _run() -> void:
 		_say("berries learned=%s" % ok)
 		for item in hut_cost:
 			var need3: int = hut_cost[item]
-			await _gather_until(item, func(): return s.inv.get(item, 0) >= need3, 120.0)
+			await _gather_until(item, func(): return s.economy.inv.get(item, 0) >= need3, 120.0)
 		await _place_near("gatherers_hut", "berry", "hut2_berries")
 		_click(_screen_of(_last_spot))
 		await _wait(0.5)
@@ -359,6 +384,31 @@ func _run() -> void:
 		await _shot("both_huts_30s_at_3x")
 		await _wait(30.0)
 		await _shot("both_huts_60s_at_3x")
+		# Watch the Kith at normal speed: are they visible, do they move?
+		_key(KEY_1)
+		for i in 4:
+			_kith_check("t%d" % i)
+			await _shot("kith_watch_%d" % i)
+			await _wait(1.5)
+		_key(KEY_3)
+		# A Dwelling: room for more Kith.
+		var dw: Dictionary = Data.BUILDINGS["dwelling"]["cost"]
+		if await _afford_by_hand(dw, "Dwelling"):
+			await _place_near("dwelling", "", "dwelling", "Homes")
+		await _wait(20.0)
+		await _shot("after_dwelling")
+		# Fire, then a Charcoal Pit; Cordage, then a Twine Post.
+		for pair in [["fire", "charcoal_pit"], ["cordage", "twine_post"]]:
+			var tech: String = pair[0]
+			var bld: String = pair[1]
+			if await _afford_by_hand(Data.TECHS[tech]["cost"], tech):
+				await _open_board_and_click(tech)
+				_say("%s researched=%s" % [tech, s.tech_tree.researched.has(tech)])
+			if s.tech_tree.researched.has(tech) and await _afford_by_hand(Data.BUILDINGS[bld]["cost"], bld):
+				await _place_near(bld, "", bld, "Workshops")
+		await _wait(30.0)
+		await _shot("workshops_30s_later")
+		_kith_check("end")
 	else:
 		_say("never got the Gatherer's Hut tech")
 	_say("end of newbie pass")
