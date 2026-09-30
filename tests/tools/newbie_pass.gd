@@ -15,6 +15,8 @@ var game_time := 0.0
 var shot_n := 0
 var out_dir := "user://newbie"
 var log_lines: Array = []
+var capped := false
+const WALL_CAP_MS := 420000
 
 
 func _init() -> void:
@@ -25,12 +27,22 @@ func _init() -> void:
 	DirAccess.make_dir_recursive_absolute(out_dir)
 	main = (load(ProjectSettings.get_setting("application/run/main_scene")) as PackedScene).instantiate()
 	root.add_child(main)
+	_say("start")
 	_run()
 
 
 func _process(delta: float) -> bool:
 	game_time += delta
+	if not capped and Time.get_ticks_msec() > WALL_CAP_MS:
+		capped = true
+		_finish_capped()
 	return false
+
+
+func _finish_capped() -> void:
+	_say("WALL-CLOCK CAP HIT: the pass was still running")
+	await _shot("wall_cap")
+	quit(0)
 
 
 # --- helpers ---------------------------------------------------------------------------------------
@@ -40,6 +52,7 @@ func _say(text: String) -> void:
 	var line := "[%6.1fs] %s" % [game_time, text]
 	print(line)
 	log_lines.append(line)
+	_write_log()
 
 
 func _wait(sec: float) -> void:
@@ -192,8 +205,9 @@ func _open_board_and_click(tech: String) -> void:
 
 func _write_log() -> void:
 	var f := FileAccess.open(out_dir + "/log.txt", FileAccess.WRITE)
-	f.store_string("\n".join(log_lines) + "\n")
-	f.close()
+	if f:
+		f.store_string("\n".join(log_lines) + "\n")
+		f.close()
 
 
 # --- the newcomer's session ------------------------------------------------------------------------

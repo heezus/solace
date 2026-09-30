@@ -10,6 +10,7 @@ on:
 jobs:
   newbie:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       GODOT_VERSION: 4.7.2
       NEWBIE_OUT: ${{ github.workspace }}/newbie-out
@@ -26,7 +27,7 @@ jobs:
         run: |
           sudo apt-get update -q && sudo apt-get install -yq xvfb
           mkdir -p "$NEWBIE_OUT"
-          xvfb-run -a -s "-screen 0 1280x800x24" \
+          timeout 500 xvfb-run -a -s "-screen 0 1280x800x24" \
             ./godot --rendering-driver opengl3 --audio-driver Dummy --path . -s tests/tools/newbie_pass.gd 2>&1 | tee "$NEWBIE_OUT/godot-output.txt"
       - uses: actions/upload-artifact@v4
         if: always()
