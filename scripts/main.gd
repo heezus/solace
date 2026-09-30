@@ -8,6 +8,7 @@ const Ui = preload("res://scripts/ui.gd")
 const Goals = preload("res://scripts/goals.gd")
 const TechPanel = preload("res://scripts/tech_panel.gd")
 const BuildBar = preload("res://scripts/build_bar.gd")
+const TopBar = preload("res://scripts/top_bar.gd")
 const Research = preload("res://scripts/research.gd")
 
 const TILE := 32.0
@@ -28,16 +29,12 @@ var hover := Vector2i(-1, -1)
 var time := 0.0
 var popups: Array = []  # {pos: Vector2, text: String, t: float}
 
-var item_boxes := {}
-var item_labels := {}
-var food_label: Label
-var kith_label: Label
 var goal_labels: Array = []
 var goal_header: Label
 var info_label: Label
 var toast_label: Label
 var toast_time := 0.0
-var top_bar: PanelContainer
+var top_bar: TopBar
 var bottom_bar: BuildBar
 var side_panel: PanelContainer
 var tech_panel: TechPanel
@@ -167,39 +164,10 @@ func _build_ui() -> void:
 	var layer := CanvasLayer.new()
 	add_child(layer)
 
-	# Top bar: the stockpile and food.
-	top_bar = PanelContainer.new()
-	top_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	top_bar.add_theme_stylebox_override("panel", Ui.panel_style(Color("264653")))
+	# Top bar: Kith, food, and every good with its rate.
+	top_bar = TopBar.new()
 	layer.add_child(top_bar)
-	var items := HFlowContainer.new()
-	items.add_theme_constant_override("h_separation", 14)
-	top_bar.add_child(items)
-	kith_label = Ui.label("", 15)
-	kith_label.mouse_filter = Control.MOUSE_FILTER_PASS
-	items.add_child(kith_label)
-	food_label = Ui.label("", 15)
-	food_label.mouse_filter = Control.MOUSE_FILTER_PASS
-	food_label.tooltip_text = "Every Kith eats food: Berries, Fish and Flour. Hover one to see what it's worth."
-	items.add_child(food_label)
-	items.add_child(VSeparator.new())
-	for id in Data.ITEM_ORDER:
-		var box := HBoxContainer.new()
-		box.add_theme_constant_override("separation", 5)
-		box.mouse_filter = Control.MOUSE_FILTER_PASS
-		box.tooltip_text = _item_tooltip(id)
-		var swatch := ColorRect.new()
-		swatch.color = Data.ITEMS[id]["color"]
-		swatch.custom_minimum_size = Vector2(12, 12)
-		swatch.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		swatch.mouse_filter = Control.MOUSE_FILTER_PASS
-		box.add_child(swatch)
-		var l := Ui.label("", 15)
-		l.mouse_filter = Control.MOUSE_FILTER_PASS
-		box.add_child(l)
-		items.add_child(box)
-		item_boxes[id] = box
-		item_labels[id] = l
+	top_bar.setup(state)
 
 	# Bottom bar: tabs of fixed-size build buttons, Demolish and Craft.
 	bottom_bar = BuildBar.new()
@@ -277,39 +245,7 @@ func _build_win_overlay(layer: CanvasLayer) -> void:
 
 
 func _refresh_ui() -> void:
-	for id in item_labels:
-		var n: int = state.inv.get(id, 0)
-		item_boxes[id].visible = state.seen.has(id)
-		item_labels[id].text = "%s %d" % [Data.ITEMS[id]["name"], n]
-		item_boxes[id].tooltip_text = _item_tooltip(id)
-		var zero_color := BAD if Data.FOOD_VALUE.has(id) else Color(1, 1, 1, 0.45)
-		item_labels[id].add_theme_color_override("font_color", zero_color if n == 0 else Color.WHITE)
-	var note := Ui.growth_note(state)
-	var idle := Ui.idle_kith(state)
-	kith_label.text = (
-		"Kith %d/%d%s%s"
-		% [
-			state.kith.size(),
-			state.housing(),
-			(", %d %s" % [idle, "hauling" if state.has_haulers() else "idle"]) if idle > 0 else "",
-			"  (" + note + ")" if note != "" else "  (growing)",
-		]
-	)
-	kith_label.tooltip_text = "Kith work buildings and haul goods. Each building needs one. They grow with spare food and room."
-	kith_label.add_theme_color_override("font_color", GOAL_COLOR if note != "" else GOOD)
-	if state.starving and state.food_use > 0.0:
-		food_label.text = "Food: none! The Kith have stopped working"
-		food_label.add_theme_color_override("font_color", BAD)
-	else:
-		var s := "Food %d" % int(state.food_total())
-		if state.food_use > 0.0:
-			s += " (-%.2f/s)" % state.food_use
-		var reserve := state.flour_reserve()
-		if reserve > 0 and state.inv.get("flour", 0) > 0:
-			s += "  [%d Flour kept for research]" % mini(reserve, state.inv["flour"])
-		food_label.text = s
-		food_label.add_theme_color_override("font_color", GOAL_COLOR if state.food_total() < 5 else Color.WHITE)
-
+	top_bar.refresh(false, 1.0)
 	bottom_bar.refresh(placing, Research.ready_list(state).size())
 	tech_panel.refresh()
 
@@ -389,13 +325,6 @@ func _gather_text(tiles: Array) -> String:
 	for id in counts:
 		parts.append("%s x%d" % [Data.ITEMS[id]["name"], counts[id]])
 	return "Gathers from the %d highlighted tiles (within %d), taking turns: %s." % [tiles.size(), r, ", ".join(parts)]
-
-
-func _item_tooltip(id: String) -> String:
-	var s: String = Data.ITEMS[id]["name"]
-	if Data.FOOD_VALUE.has(id):
-		s += ": food worth %d. The Kith eat it." % int(state.food_value(id))
-	return s
 
 
 func _progress(cost: Dictionary, limit: int) -> String:

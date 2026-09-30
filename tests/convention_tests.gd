@@ -7,6 +7,7 @@ const GameState = preload("res://scripts/game_state.gd")
 const Rules = preload("res://scripts/rules.gd")
 const Research = preload("res://scripts/research.gd")
 const TechLayout = preload("res://scripts/tech_layout.gd")
+const TopBar = preload("res://scripts/top_bar.gd")
 
 var t  # the runner, tests/run_tests.gd
 
@@ -170,6 +171,11 @@ func test_rates_count_making_and_using() -> void:
 	t.check(s2.flows.rate("wood") > 0.0, "a working hut makes wood (%.2f/s)" % s2.flows.rate("wood"))
 	t.check(s2.flows.rate("berries") < 0.0, "the Kith eat berries (%.2f/s)" % s2.flows.rate("berries"))
 	t.check(s2.flows.parts("berries").has("kith"), "eating shows up as its own source")
+	t.check(TopBar.rate_text(0.6) == "+0.60" and TopBar.rate_text(-0.25) == "−0.25", "rates read +0.60 and −0.25")
+	t.check(
+		TopBar.rate_text(0.0) == "0" and TopBar.rate_color(-1.0) != TopBar.rate_color(1.0),
+		"flat is 0; loss and gain differ"
+	)
 
 
 ## Every line runs in the gutters and channels: none passes under a card, none shares a track with another,
