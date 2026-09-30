@@ -11,6 +11,7 @@ const Goals = preload("res://scripts/goals.gd")
 const Rules = preload("res://scripts/rules.gd")
 const ConventionTests = preload("res://tests/convention_tests.gd")
 const BonusTests = preload("res://tests/bonus_tests.gd")
+const Autoplay = preload("res://tests/autoplay.gd")
 
 var failures := 0
 
@@ -47,8 +48,28 @@ func _init() -> void:
 	test_fishing_weir_makes_fish()
 	ConventionTests.new().run(self)
 	BonusTests.new().run(self)
+	test_pacing_bot()
 	print("FAILED: %d" % failures if failures > 0 else "ALL TESTS PASSED")
 	quit(1 if failures > 0 else 0)
+
+
+## A headless player (tests/autoplay.gd) plays the stone age on a few maps. It should reach Bronze Dawn
+## in 8 to 25 simulated minutes; data.gd is tuned so it takes about 12 to 16.
+func test_pacing_bot() -> void:
+	for seed in [1, 2, 3]:
+		var r: Dictionary = Autoplay.new().play(seed, 30 * 60.0)
+		var minutes: float = r["seconds"] / 60.0
+		print(
+			(
+				"Pacing bot, map %d: %s at %.1f simulated minutes"
+				% [seed, "Bronze Dawn" if r["won"] else "no win", minutes]
+			)
+		)
+		check(r["won"], "the bot reaches Bronze Dawn on map %d" % seed)
+		check(minutes >= 8.0 and minutes <= 25.0, "map %d takes 8 to 25 minutes (%.1f)" % [seed, minutes])
+		if not r["won"]:
+			for line in r["log"]:
+				print("  ", line)
 
 
 func check(cond: bool, what: String) -> void:

@@ -240,7 +240,7 @@ const TECHS := {
 		"unlock": "Water Wheel",
 		"icon": "water_wheel",
 		"requires": ["stone_axe", "masonry"],
-		"cost": {"rope": 10, "wood": 40, "stone": 20},
+		"cost": {"rope": 10, "wood": 40, "stone": 10},
 		"desc": "Harness the river. Powers machines within 3 tiles.",
 	},
 	"masonry":
@@ -254,7 +254,7 @@ const TECHS := {
 		"unlock": "Dressed stone",
 		"icon": "quarry",
 		"requires": ["knapping", "fire"],
-		"cost": {"stone": 40, "charcoal": 5},
+		"cost": {"stone": 25, "charcoal": 5},
 		"desc": "Dress and fit stone. Needed for millstones, paved roads and megaliths.",
 	},
 	"shelter":
@@ -391,7 +391,7 @@ const TECHS := {
 		"unlock": "Grindstone",
 		"icon": "grindstone",
 		"requires": ["water_wheel", "farming"],
-		"cost": {"stone": 30, "brick": 10},
+		"cost": {"stone": 20, "brick": 10},
 		"desc": "A powered millstone. Grinds grain into flour, the best food.",
 	},
 	"smoking":
@@ -437,7 +437,7 @@ const TECHS := {
 		"unlock": "Wood x2",
 		"icon": "@axe",
 		"requires": ["knapping", "cordage"],
-		"cost": {"flint": 15, "wood": 20},
+		"cost": {"flint": 10, "wood": 15},
 		"effect": "stone_axe",
 		"desc": "Haft a flint head with cord. Wood x2 per harvest, by hand and from huts. Clears land for Farming.",
 	},
@@ -499,7 +499,7 @@ const TECHS := {
 		"unlock": "Roads 4x",
 		"icon": "tile_road",
 		"requires": ["haulers", "masonry"],
-		"cost": {"stone": 60, "rope": 10},
+		"cost": {"stone": 40, "rope": 10},
 		"effect": "paved_roads",
 		"desc": "Roads are 4x faster than open ground, up from 2x.",
 	},
@@ -561,7 +561,7 @@ const TECHS := {
 		"unlock": "The next era",
 		"icon": "item_bronze",
 		"requires": ["preservation", "paved_roads", "baking", "calendar"],
-		"cost": {"brick": 40, "flour": 30, "rope": 40, "stone": 100},
+		"cost": {"brick": 30, "flour": 20, "rope": 30, "stone": 60},
 		"desc": "The stone age ends. The next era begins.",
 	},
 }
@@ -601,7 +601,7 @@ const TECH_ORDER := [
 # --- Hand crafting -----------------------------------------------------------
 
 const RECIPES := {
-	"rope": {"name": "Rope", "tech": "cordage", "in": {"fiber": 3}, "out": {"rope": 1}},
+	"rope": {"name": "Rope", "tech": "cordage", "in": {"fiber": 2}, "out": {"rope": 1}},
 	"flint_tools":
 	{"name": "Flint Tools", "tech": "knapping", "in": {"flint": 2, "wood": 2}, "out": {"flint_tools": 1}},
 }
@@ -691,7 +691,7 @@ const BUILDINGS := {
 		"kind": "processor",
 		"tech": "cordage",
 		"cost": {"wood": 8},
-		"in": {"fiber": 3},
+		"in": {"fiber": 2},
 		"out": {"rope": 1},
 		"time": 4.0,
 		"color": Color("bc8a5f"),
@@ -714,7 +714,7 @@ const BUILDINGS := {
 		"kind": "processor",
 		"tech": "pottery",
 		"cost": {"stone": 10, "clay": 10},
-		"in": {"clay": 2, "charcoal": 1},
+		"in": {"clay": 1, "charcoal": 1},
 		"out": {"brick": 1},
 		"time": 5.0,
 		"color": Color("9c3d2e"),
