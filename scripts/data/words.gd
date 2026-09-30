@@ -14,8 +14,39 @@ const CARD_NEED_MORE := "Need %s +%d more"  # "4 Wood", how many other items are
 const CARD_NEED_ITEMS := "Need more"  # when even the short form doesn't fit
 const CARD_DISCOVER := "Discover %s"  # a tech's name
 
-# --- The tech board (scripts/tech_panel.gd, scripts/tech_board.gd) ---
+# --- The tech board (scripts/tech_panel.gd, scripts/tech_board.gd). One verb for techs: Discover. ---
+const BOARD_TITLE := "Tech tree  ·  Stone Age"
 const TECH_DONE := "Discovered"
+const TECH_OPTIONAL := "optional"
+const HIDDEN_CARD_HINT := "Click the Strange Stone"
+const NEXT_NONE := "Nothing new to discover right now. Gather more, or look at the whole board."
+const VIEW_NEXT := "Next steps"
+const VIEW_ALL := "Whole board"
+const VIEW_NEXT_TIP := "Just what you can discover next"
+const VIEW_ALL_TIP := "Every tech, and the lines between them"
+const QUEUE_CAPTION := "QUEUE"
+const QUEUE_EMPTY := "Click a far tech to queue its chain"
+const READY_CAPTION := "READY TO DISCOVER"
+const READY_EMPTY := "Nothing yet: gather more"
+const LEGEND_DONE := "discovered"
+const LEGEND_NEEDED := "still needed"
+const LEGEND_HOVER := "hover: what it needs and unlocks"
+const LEGEND_COST := "costs: you have / it needs"
+const STOCK_CAPTION := "YOU HAVE"
+const STRIP_READY := "Ready now: %s"  # names
+const STRIP_NONE := "Nothing is ready yet: gather what the cards need"
+const STRIP_HELP := "Hover a card to see what it needs and what it unlocks. Click one to discover it, or to queue the way there."
+const RANK_HELP := "Some techs have optional ranks II and III: click a discovered card to buy the next one."
+const RANK_LINE := "Optional upgrades: ranks II and III each give %s. You have rank %s."  # effect, "I" or "none yet"
+const RANK_NONE := "none yet"
+const COUNTER := "%d of %d discovered  ·  %d ready"
+const DISCOVER_BUTTON := "Discover %s"
+const QUEUED := "Queued"
+const QUEUE_BUTTON := "Queue the way there"
+const STATE_DONE := "discovered"
+const STATE_READY := "ready"
+const STATE_MORE := "gather more"
+const STATE_LOCKED := "locked"
 
 # --- Messages (scripts/main.gd, scripts/messages.gd) ---
 const UNLOCKED_TOAST := "%s unlocked: %s tab"  # "Gatherer's Hut", "Gathering"
