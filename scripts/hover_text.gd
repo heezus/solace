@@ -42,8 +42,8 @@ static func _placing_text(m) -> String:
 		if err != "":
 			t += "\n\nCan't build here: " + err + "."
 		if m.placing == "gatherers_hut":
-			var tiles: Array = s.town.gather_tiles(m.hover)
-			t += "\n\n" + BuildingPanel.gather_text(s, tiles, s.town.default_focus(m.hover))
+			var tiles: Array = s.town.tiles_of(m.hover, s.town.default_focus(m.hover))
+			t += "\n\n" + BuildingPanel.gather_text(s, tiles)
 			if not tiles.is_empty():
 				t += "\nIt will work the resource nearest it: click the hut afterwards to change."
 		if s.tech_tree.researched.has("haulers") and def["kind"] in ["gatherer", "processor"]:

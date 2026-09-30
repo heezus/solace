@@ -238,7 +238,14 @@ func test_job_and_bundle_follow_the_focus() -> void:
 	s.town.set_focus(s.town.building_at[p], "berries")
 	t.check(s.people.building_job(b) == Data.HUT_JOBS["berries"]["title"], "on Berries a Forager, though two are near")
 	var line := BuildingPanel.recipe_text(s, b)
-	t.check(line.contains("It works only Berries"), "the hut's range line names what it works: " + line)
+	t.check(
+		line.contains("Berries x2") and not line.contains("Wood"), "the range line names only what it works: " + line
+	)
+	t.check(
+		BuildingPanel.pace_text(s, b).contains("brings back 3 Berries."),
+		"and so does the trip line: " + BuildingPanel.pace_text(s, b)
+	)
+	t.check(not BuildingPanel.pace_text(s, b).contains("Wood"), "with no word of Wood")
 
 
 func test_the_panel_line_and_the_range_text() -> void:
@@ -270,9 +277,13 @@ func test_the_panel_line_and_the_range_text() -> void:
 	hearth.show_for(s.town.buildings[0])
 	t.check(not hearth.visible, "the Hearth has no focus line")
 	hearth.free()
+	s.town.set_focus(s.town.building_at[p], "berries")
+	var tiles := s.town.tiles_of(p, "berries")
+	t.check(BuildingPanel.gather_text(s, tiles).contains("Berries x1"), "the hover text lists the focus tiles only")
+	t.check(s.town.tiles_of(p, s.town.focus_at(p)) == tiles, "and the map highlights those same tiles")
 	t.check(
-		BuildingPanel.gather_text(s, s.town.gather_tiles(p), "berries").ends_with("It works only Berries."),
-		"the hover text says what the hut works"
+		s.town.focus_at(p + Vector2i(1, 1)) == s.town.default_focus(p + Vector2i(1, 1)),
+		"a spot with no hut shows the default"
 	)
 
 

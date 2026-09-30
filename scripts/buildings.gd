@@ -201,8 +201,17 @@ func default_focus(p: Vector2i) -> String:
 
 ## The tiles in reach of hut `b` that hold its focus: the only ones it walks out to.
 func focus_tiles(b: Dictionary) -> Array:
-	var item: String = b["focus"]
-	return gather_tiles(b["pos"]).filter(func(t): return item != "" and Data.TILES[_world.tile_at(t)]["yields"] == item)
+	return tiles_of(b["pos"], b["focus"])
+
+
+## The tiles in reach of a hut at p that hold `item` ("" gives none).
+func tiles_of(p: Vector2i, item: String) -> Array:
+	return gather_tiles(p).filter(func(t): return item != "" and Data.TILES[_world.tile_at(t)]["yields"] == item)
+
+
+## What the hut at p works, or what a new one there would: the tiles to show for its range.
+func focus_at(p: Vector2i) -> String:
+	return buildings[building_at[p]]["focus"] if building_at.has(p) else default_focus(p)
 
 
 ## Set hut i to work `item`. False when that isn't something in its reach.
