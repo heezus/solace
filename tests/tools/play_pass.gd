@@ -278,6 +278,7 @@ func _script() -> void:
 		5000
 	)
 	_then(func(): _first_click_checks())
+	_then(func(): _first_click_panel())
 	# A workshop: place, click, pause, resume.
 	_then(func(): _key(KEY_ESCAPE))
 	_then(func(): _click_control(main.bottom_bar.tab_buttons["Workshops"]))
@@ -459,6 +460,12 @@ func _first_click_checks() -> void:
 			break
 	var panel = main.building_panel
 	_expect(panel.visible, "clicking a hut didn't open its panel at once")
+
+
+## The docked panel lays out on the next frame, so its buttons are clicked on a frame of their own.
+func _first_click_panel() -> void:
+	var s = main.state
+	var panel = main.building_panel
 	if panel.visible and panel.parts["pause"].visible:
 		var b: Dictionary = panel.selected()
 		var was: bool = b["paused"]
