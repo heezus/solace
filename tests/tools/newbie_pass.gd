@@ -214,8 +214,8 @@ func _write_log() -> void:
 
 
 func _run() -> void:
-	var s = main.state
 	await _wait(1.0)
+	var s = main.state
 	await _shot("first_look")
 	await _wait(4.0)
 	await _shot("after_4s_doing_nothing")
