@@ -122,9 +122,9 @@ func _hud_checks() -> void:
 			var eco = main.state.economy
 			saved = {"inv": eco.inv.duplicate(), "seen": eco.seen.duplicate(), "flows": eco.flows.to_dict()}
 		30, 33, 36, 39, 42:
-			_stress_case((frame - 30) / 3)
+			_stress_case(floori((frame - 30) / 3.0))
 		32, 35, 38, 41:
-			_check_stable("stress case %d" % ((frame - 32) / 3))
+			_check_stable("stress case %d" % floori((frame - 32) / 3.0))
 			main.ui_refresh = 0.0
 		44:
 			_check_stable("stress case 4")
