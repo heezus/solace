@@ -19,6 +19,7 @@ func run(runner) -> void:
 	t = runner
 	test_the_goals_start_with_food()
 	test_a_newcomer_following_the_goals_stays_fed()
+	test_a_newcomer_who_clicks_only_one_berry_hut_stays_fed()
 	test_an_idle_player_is_warned_before_anyone_leaves()
 
 
@@ -37,44 +38,80 @@ func test_the_goals_start_with_food() -> void:
 ## The newcomer follows the goals for ten minutes: nobody leaves, and if the food ever ran low the warning came.
 func test_a_newcomer_following_the_goals_stays_fed() -> void:
 	for map_seed in [1, 4, 8]:
-		var bot := Newcomer.new()
-		bot.play(map_seed, MINUTES * 60.0)
+		var bot := _play("literal", map_seed)
 		var goals: int = bot.s.story.current_goal()
-		print(
-			(
-				"Newcomer, map %d: %d Kith of %d after %.0f min, goal %d of %d, food %d (least %.1f), warned at %.0f s"
-				% [
-					map_seed,
-					bot.s.people.kith.size(),
-					Data.KITH_START,
-					bot.clock / 60.0,
-					goals,
-					Data.GOALS.size(),
-					int(bot.s.economy.food_total()),
-					bot.min_food,
-					bot.warned_at
-				]
-			)
-		)
-		t.check(
-			bot.left == 0 and bot.min_kith >= Data.KITH_START,
-			"map %d: every %s stays for %d minutes" % [map_seed, Data.PEOPLE["one"], int(MINUTES)]
-		)
 		t.check(goals >= 10, "map %d: the newcomer got through the opening goals (%d done)" % [map_seed, goals])
 		t.check(bot.s.story.goals_done.has("berries"), "map %d: and placed a hut by the Berry Bushes" % map_seed)
-		t.check(bot.min_food > 0.0, "map %d: the Food never hit zero (least %.1f)" % [map_seed, bot.min_food])
-		_check_the_food_hut(bot, map_seed)
-		if bot.warned_at >= 0.0:
-			t.check(bot.left_at < 0.0 or bot.warned_at < bot.left_at, "map %d: the food warning came first" % map_seed)
+		_check_the_food_hut(bot, map_seed, _last_berry_hut(bot))
 
 
-## The hut the newcomer put by the Berry Bushes worked berries and nothing else: over the whole run its worker
-## brought out well over two minutes' worth of bundles, and every one was berries.
-func _check_the_food_hut(bot, map_seed: int) -> void:
+## Found by playtest 3: a player who puts up two huts by the bushes but clicks only the first, and does nothing else
+## (the warning is ignored too), still keeps everyone fed. An unlinked hut only works when clicked, so this is the
+## worst case the rules have to carry.
+func test_a_newcomer_who_clicks_only_one_berry_hut_stays_fed() -> void:
+	for map_seed in [1, 4, 8]:
+		var bot := _play("one_hut", map_seed)
+		var huts := 0
+		for b in bot.s.town.buildings:
+			huts += 1 if b["focus"] == "berries" else 0
+		t.check(huts >= 2, "map %d: two huts work the Berry Bushes (%d)" % [map_seed, huts])
+		_check_the_food_hut(bot, map_seed, _first_berry_hut(bot))
+
+
+## Play one map for ten minutes with the bot in `mode`, and check that nobody left and the Food never hit zero.
+func _play(mode: String, map_seed: int) -> Newcomer:
+	var bot := Newcomer.new()
+	bot.mode = mode
+	bot.play(map_seed, MINUTES * 60.0)
+	print(
+		(
+			"Newcomer %s, map %d: %d Kith of %d after %.0f min, goal %d of %d, food %d (least %.1f), %d trips, warned at %.0f s"
+			% [
+				mode,
+				map_seed,
+				bot.s.people.kith.size(),
+				Data.KITH_START,
+				bot.clock / 60.0,
+				bot.s.story.current_goal(),
+				Data.GOALS.size(),
+				int(bot.s.economy.food_total()),
+				bot.min_food,
+				bot.trips_sent,
+				bot.warned_at
+			]
+		)
+	)
+	t.check(
+		bot.left == 0 and bot.min_kith >= Data.KITH_START,
+		"%s, map %d: every %s stays for %d minutes" % [mode, map_seed, Data.PEOPLE["one"], int(MINUTES)]
+	)
+	t.check(bot.min_food > 0.0, "%s, map %d: the Food never hit zero (least %.1f)" % [mode, map_seed, bot.min_food])
+	if bot.warned_at >= 0.0:
+		t.check(
+			bot.left_at < 0.0 or bot.warned_at < bot.left_at,
+			"%s, map %d: the food warning came first" % [mode, map_seed]
+		)
+	return bot
+
+
+func _first_berry_hut(bot) -> Vector2i:
+	for b in bot.s.town.buildings:
+		if b["focus"] == "berries":
+			return b["pos"]
+	return Vector2i(-1, -1)
+
+
+func _last_berry_hut(bot) -> Vector2i:
 	var hut := Vector2i(-1, -1)
 	for b in bot.s.town.buildings:
 		if b["focus"] == "berries":
 			hut = b["pos"]
+	return hut
+
+
+## The hut the newcomer keeps clicking by the Berry Bushes worked berries and nothing else: over the whole run its
+## worker brought out well over two minutes' worth of bundles, and every one was berries.
+func _check_the_food_hut(bot, map_seed: int, hut: Vector2i) -> void:
 	t.check(hut.x >= 0, "map %d: a hut is set to Berries" % map_seed)
 	var got: Dictionary = bot.gathered.get(hut, {})
 	var total := 0

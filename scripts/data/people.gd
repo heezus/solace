@@ -13,7 +13,7 @@ const LEFT_EVENT := "A %s left in search of food"
 ## The note beside the population count while food stops a birth (a birth needs food coming in steadily).
 const GROW_NOTE_FOOD := "Needs steady food to grow"
 ## The early warning, sent once when food is about to run out (formatted with PEOPLE["many"]).
-const FOOD_LOW_EVENT := "Food is running low. Hold the mouse on Berry Bushes to gather more, and the %s stay fed"
+const FOOD_LOW_EVENT := "Food is running low. Click your berry hut to send a trip, or hold the mouse on Berry Bushes, and the %s stay fed"
 ## Short earthy names, given in turn to each Kith as they're born (a second round adds " II").
 const PEOPLE_NAMES := ["Aro", "Tam", "Esk", "Bru", "Olla", "Fen", "Rook", "Moss", "Sef", "Tarn", "Wren", "Hask"]
 

@@ -578,6 +578,8 @@ func _draw_building(b: Dictionary) -> void:
 	Art.building(self, b["type"], c, working, time)
 	if def["kind"] == "gatherer":
 		HutFocus.draw_marker(self, r, b["focus"])
+		if HutFocus.wants_click(state, b):
+			HutFocus.draw_click_badge(self, r, time)
 
 	# Progress bar and held output.
 	if def.has("time") and working:

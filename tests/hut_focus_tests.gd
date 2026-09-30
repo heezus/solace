@@ -25,6 +25,7 @@ func run(runner) -> void:
 	test_the_berries_goal_needs_a_hut_on_berries()
 	test_job_and_bundle_follow_the_focus()
 	test_the_panel_line_and_the_range_text()
+	test_an_unlinked_hut_waiting_for_a_click_says_so()
 	test_the_focus_survives_a_save()
 	test_an_old_save_gets_a_default_focus()
 
@@ -218,8 +219,8 @@ func test_the_berries_goal_needs_a_hut_on_berries() -> void:
 	s.town.set_focus(s.town.building_at[p], "berries")
 	t.check(s.story.goal_met(s, goal), "set on the berries it does")
 	t.check(
-		String(goal["text"]).contains("Berry Bushes") and String(goal["text"]).contains("one resource"),
-		"and the goal says a hut works one resource, and how to switch it"
+		String(goal["text"]).contains("Berry Bushes") and String(goal["text"]).contains("only works when you click it"),
+		"and the goal says a hut works only when you click it"
 	)
 
 
@@ -285,6 +286,43 @@ func test_the_panel_line_and_the_range_text() -> void:
 		s.town.focus_at(p + Vector2i(1, 1)) == s.town.default_focus(p + Vector2i(1, 1)),
 		"a spot with no hut shows the default"
 	)
+
+
+## Found by playtest 3: a newcomer clicked hut 1 and never hut 2, because nothing said an unlinked hut only works
+## when clicked. A hut that waits for a click shows a badge, and the goals, hut card and food warning say so.
+func test_an_unlinked_hut_waiting_for_a_click_says_so() -> void:
+	var a := _arena()
+	var s: Sim = a[0]
+	var p: Vector2i = a[1]
+	_put(s, p + Vector2i(0, 1), "berry")
+	s.people.learned_by["berries"] = "Aro"
+	s.place("gatherers_hut", p)
+	s.tick(0.1)
+	var i: int = s.town.building_at[p]
+	var b: Dictionary = s.town.buildings[i]
+	t.check(b["worker"] >= 0 and b["trips"] == 0, "a new hut has its Kith and no trip waiting")
+	t.check(HutFocus.wants_click(s, b), "so it asks for a click")
+	t.check(not HutFocus.wants_click(s, s.town.buildings[0]), "and the Hearth does not")
+	b["trips"] = 2
+	t.check(not HutFocus.wants_click(s, b), "a hut with trips queued does not")
+	b["trips"] = 0
+	b["paused"] = true
+	t.check(not HutFocus.wants_click(s, b), "nor does a paused hut")
+	b["paused"] = false
+	b["out"] = {"berries": Data.BUFFER_CAP}
+	t.check(not HutFocus.wants_click(s, b), "nor a hut whose output is full")
+	b["out"] = {}
+	s.people.learned_by.erase("berries")
+	t.check(not HutFocus.wants_click(s, b), "nor one whose focus its Kith have not learned")
+	var goal_text := ""
+	for g in Data.GOALS:
+		if g["id"] in ["hut", "trip", "berries"]:
+			t.check(String(g["text"]).to_lower().contains("click"), "the %s goal says to click the hut" % g["id"])
+			goal_text += String(g["text"])
+	t.check(not goal_text.contains("keeps coming"), "and none of them promises it keeps working")
+	t.check(Data.FOOD_LOW_EVENT.contains("Click your berry hut to send a trip"), "the food warning names the click")
+	t.check(Data.TRIPS_HINT.contains("only when you click it"), "the hut card says it works only when clicked")
+	t.check(Data.BUILDINGS["gatherers_hut"]["desc"].contains("only when you click it"), "as does its description")
 
 
 func test_the_focus_survives_a_save() -> void:
