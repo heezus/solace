@@ -85,7 +85,7 @@ func goal_met(s, g: Dictionary) -> bool:
 			return s.hand_tools
 		"berries":
 			for b in s.town.buildings:
-				if "berries" in b["gather_items"]:
+				if b["focus"] == "berries":
 					return true
 		"road":
 			for b in s.town.buildings:

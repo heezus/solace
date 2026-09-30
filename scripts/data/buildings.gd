@@ -103,7 +103,7 @@ const BUILDINGS := {
 		"radius": 2,
 		"time": 3.0,
 		"color": Color("f4a261"),
-		"desc": "Gathers from resource tiles within 2 tiles.",
+		"desc": "Works one resource within 2 tiles: the one it stands next to. Click it to change.",
 	},
 	"kiln":
 	{

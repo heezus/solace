@@ -18,6 +18,7 @@ const Hands = preload("res://scripts/hands.gd")
 const World = preload("res://scripts/world.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Work = preload("res://scripts/work.gd")
+const HutFocus = preload("res://scripts/hut_focus.gd")
 
 const TILE := 32.0
 const MAP_ORIGIN := Vector2.ZERO  # the node's transform scales and centers the map
@@ -429,7 +430,10 @@ func _hover_text() -> String:
 			if err != "":
 				s += "\n\nCan't build here: " + err + "."
 			if placing == "gatherers_hut":
-				s += "\n\n" + BuildingPanel.gather_text(state, state.town.gather_tiles(hover))
+				var tiles := state.town.gather_tiles(hover)
+				s += "\n\n" + BuildingPanel.gather_text(state, tiles, state.town.default_focus(hover))
+				if not tiles.is_empty():
+					s += "\nIt will work the resource nearest it: click the hut afterwards to change."
 			if (
 				state.tech_tree.researched.has("haulers")
 				and Data.BUILDINGS[placing]["kind"] in ["gatherer", "processor"]
@@ -481,7 +485,7 @@ func _tile_text() -> String:
 		if Buildings.buffered(b["out"]) > 0:
 			s += "\nHolding " + Ui.cost_text(b["out"])
 		if def["kind"] == "gatherer":
-			s += "\n\n" + BuildingPanel.gather_text(state, state.town.gather_tiles(hover))
+			s += "\n\n" + BuildingPanel.gather_text(state, state.town.gather_tiles(hover), b["focus"])
 		if state.tech_tree.researched.has("haulers") and Buildings.needs_worker(b):
 			s += (
 				"\n"
@@ -713,6 +717,8 @@ func _draw_building(b: Dictionary) -> void:
 	draw_rect(r, OUTLINE, false, OUTLINE_W)
 
 	Art.building(self, b["type"], c, working, time)
+	if def["kind"] == "gatherer":
+		HutFocus.draw_marker(self, r, b["focus"])
 
 	# Progress bar and held output.
 	if def.has("time") and working:

@@ -592,6 +592,7 @@ func test_job_titles() -> void:
 	var pit: Dictionary = _town.buildings[_put("charcoal_pit", Vector2i(3, 6))]
 	var hut: Dictionary = _town.buildings[_put("gatherers_hut", Vector2i(3, 2))]
 	hut["gather_items"] = ["wood", "wood", "stone"]
+	hut["focus"] = ""  # a hut with no focus is named for what is most in its reach
 	t.check(k.building_job(camp) == "", "the Hearth has no job")
 	t.check(k.building_job(pit) == Data.BUILDINGS["charcoal_pit"]["job"], "a workshop names its own job")
 	t.check(k.building_job(hut) == Data.HUT_JOBS["wood"]["title"], "a hut is named for what it gathers most")

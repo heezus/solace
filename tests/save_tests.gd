@@ -61,7 +61,7 @@ static func via_json(d: Dictionary) -> Dictionary:
 
 
 ## A new game on `map_seed` with a few things done, so the save has something in every block.
-func _played(map_seed: int = 7, seconds: int = 200) -> Sim:
+func _played(map_seed: int = 7, seconds: int = 180) -> Sim:
 	var s := Sim.new()
 	s.generate(map_seed)
 	var bot := Autoplay.new()

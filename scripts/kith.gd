@@ -167,6 +167,11 @@ func knows_any(p: Vector2i) -> bool:
 	return false
 
 
+## True if hut `b` can work its focus: the people know how to gather it and some of it is in reach.
+func knows_focus(b: Dictionary) -> bool:
+	return b["focus"] != "" and knows(b["focus"]) and not _town.focus_tiles(b).is_empty()
+
+
 # --- Jobs --------------------------------------------------------------------
 
 
@@ -287,13 +292,15 @@ func wear(b: Dictionary) -> void:
 
 
 ## The job title of whoever works building b: the building's `job`, or for a hut the title of what it
-## gathers most (among what the people know, once they know any of it).
+## gathers (its focus; a hut with none is named for what is most in its reach among what the people know).
 func building_job(b: Dictionary) -> String:
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
 	if def.has("job"):
 		return def["job"]
 	if def["kind"] != "gatherer":
 		return ""
+	if b["focus"] != "":
+		return Data.HUT_JOBS[b["focus"]]["title"]
 	var counts := {}
 	for item in b["gather_items"]:
 		counts[item] = counts.get(item, 0) + (100 if knows(item) else 1)
