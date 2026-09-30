@@ -61,7 +61,7 @@ func setup(game: GameState) -> void:
 	fv.add_child(food_bar)
 	fv.mouse_filter = Control.MOUSE_FILTER_PASS
 	_fix_width(fv, [food_label], 130)
-	fv.tooltip_text = "Every Kith eats food: Berries, then Fish, then any Flour research doesn't need."
+	fv.tooltip_text = Data.FOOD_TIP % Data.PEOPLE["one"]
 	h.add_child(fv)
 	tools_label = Ui.label("", 12)
 	tools_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -204,7 +204,7 @@ func refresh(paused: bool, speed: int) -> void:
 		var left := food / -fr
 		s += "  ·  " + (("%d min left" % int(left / 60.0)) if left >= 60.0 else ("%d s left" % int(left)))
 	if state.starving:
-		s = "Food: none! The Kith have stopped working"
+		s = Data.STARVING_TEXT % Data.PEOPLE["many"]
 	food_label.text = s
 	food_label.add_theme_color_override("font_color", Ui.BAD if fr < -0.005 or state.starving else Color.WHITE)
 	food_bar.max_value = maxf(state.kith.size() * 2.0 + Data.BIRTH_FOOD, 1.0)
@@ -212,11 +212,8 @@ func refresh(paused: bool, speed: int) -> void:
 	food_bar.modulate = Ui.BAD if fr < -0.005 else Ui.HIGHLIGHT
 	tools_label.modulate.a = 1.0 if state.seen.has("flint_tools") else 0.0  # keeps its place: see _fix_width()
 	var held := Hands.tools_held(state)
-	tools_label.text = "Tools %d/%d Kith" % [held, state.kith.size()]
-	tools_label.tooltip_text = (
-		"Kith holding a Flint Tool work 50%% faster. Each tool lasts %d jobs; spares in the stockpile: %d."
-		% [Data.TOOL_JOBS, state.inv.get("flint_tools", 0)]
-	)
+	tools_label.text = Data.TOOLS_LABEL % [held, state.kith.size(), Data.PEOPLE["many"]]
+	tools_label.tooltip_text = Data.TOOLS_TIP % [Data.PEOPLE["many"], Data.TOOL_JOBS, state.inv.get("flint_tools", 0)]
 	tools_label.mouse_filter = Control.MOUSE_FILTER_STOP
 	tools_label.add_theme_color_override("font_color", Ui.GOOD if held >= state.kith.size() else Color.WHITE)
 	for id in chips:
@@ -301,11 +298,13 @@ func _fill_flow(id: String) -> void:
 	for source in outs:
 		_flow_row(_user_name(source, id), parts[source])
 	if Data.FOOD_VALUE.has(id):
-		_flow_note("Food worth %s each. The Kith eat it." % str(state.food_value(id)), Color(1, 1, 1, 0.7))
+		_flow_note(Data.FOOD_NOTE % [str(state.food_value(id)), Data.PEOPLE["many"]], Color(1, 1, 1, 0.7))
 	if net < -0.005 and not outs.is_empty():
 		var have: int = state.inv.get(id, 0)
 		var left := have / -net
-		var then := "the Kith go hungry" if outs[0] == "kith" else "the %s stops" % _type_name(outs[0])
+		var then := (
+			Data.HUNGRY_THEN % Data.PEOPLE["many"] if outs[0] == "kith" else "the %s stops" % _type_name(outs[0])
+		)
 		_flow_note("Runs out in %s. Then %s." % [_duration(left), then], LOSS)
 		var fix := "Fix: " + _how_to_make(id)
 		if outs[0] != "kith" and outs[0] != "craft":
@@ -364,7 +363,7 @@ func _maker_name(source: String, id: String) -> String:
 func _user_name(source: String, id: String) -> String:
 	match source:
 		"kith":
-			return "Eaten by the Kith"
+			return Data.EATEN_BY % Data.PEOPLE["many"]
 		"craft":
 			return "Crafting by hand"
 	var def: Dictionary = Data.BUILDINGS.get(source, {})
