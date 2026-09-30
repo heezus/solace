@@ -15,6 +15,8 @@ const ConventionTests = preload("res://tests/convention_tests.gd")
 const BonusTests = preload("res://tests/bonus_tests.gd")
 const EconomyTests = preload("res://tests/economy_tests.gd")
 const ResearchTests = preload("res://tests/research_tests.gd")
+const WorldTests = preload("res://tests/world_tests.gd")
+const PathingTests = preload("res://tests/pathing_tests.gd")
 const ArcTests = preload("res://tests/arc_tests.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
 const GoldenTests = preload("res://tests/golden_tests.gd")
@@ -56,6 +58,8 @@ func _init() -> void:
 	BonusTests.new().run(self)
 	EconomyTests.new().run(self)
 	ResearchTests.new().run(self)
+	WorldTests.new().run(self)
+	PathingTests.new().run(self)
 	ArcTests.new().run(self)
 	if not "fast" in OS.get_cmdline_user_args():  # `-- fast` skips the bot's slow runs while iterating
 		test_pacing_bot()
@@ -138,7 +142,7 @@ func road_link(s: GameState, p: Vector2i) -> void:
 	var at: Vector2i = from.get(s.camp_pos, p)
 	while at != p:
 		s.roads[at] = true
-		s._update_walk_cell(at)
+		s.pathing.update_cell(at)
 		at = from[at]
 	s.road_rev += 1
 
@@ -418,7 +422,7 @@ func haul_rate(dist_x: int) -> int:
 	s.tiles.fill("grass")
 	s.camp_pos = Vector2i(1, 10)
 	s._place_building("camp", s.camp_pos)
-	s._build_walk_grid()
+	s.pathing.build()
 	s.fog.setup(GameState.WIDTH, GameState.HEIGHT)
 	s.fog.reveal_all()
 	for i in Data.KITH_START:
@@ -567,7 +571,7 @@ func test_tech_effects() -> void:
 	var slow := s.walk_cost(road)
 	s.research("paved_roads")
 	s.researched["paved_roads"] = true
-	s._update_walk_cell(road)
+	s.pathing.update_cell(road)
 	check(s.walk_cost(road) < slow, "paved roads are faster")
 	var grass := find_grass(s, false)
 	check(place_free(s, "field", grass), "sow a field")

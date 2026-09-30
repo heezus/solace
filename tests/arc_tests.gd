@@ -181,7 +181,7 @@ func test_rush_and_its_cooldown() -> void:
 	run_for(s2, Data.RUSH_COOLDOWN + 1.5)
 	if k["phase"] in ["to_tile", "harvest"]:
 		var tile: Vector2i = k["task"].get("tile", hut["pos"])
-		s2._set_tile(tile, "grass")
+		s2.world.set_tile(tile, "grass")
 		t.check(Workers.rush(s2, r[1]), "rush a worker whose tree is gone")
 		t.check(not s2.inv.has("") and not hut["out"].has(""), "nothing with no name is stored")
 	else:
@@ -394,8 +394,8 @@ func test_fiber_comes_from_flax() -> void:
 	var open: Vector2i = s.camp_pos + Vector2i(0, 6)
 	for dy in range(-2, 3):
 		for dx in range(-2, 3):
-			s._set_tile(open + Vector2i(dx, dy), "grass")
-	s._build_walk_grid()
+			s.world.set_tile(open + Vector2i(dx, dy), "grass")
+	s.pathing.build()
 	t.place_free(s, "gatherers_hut", open)
 	var bare: Dictionary = s.buildings[s.building_at[open]]
 	t.check(bare["gather_items"].is_empty(), "a hut on bare grass lists nothing to gather")
@@ -475,7 +475,7 @@ func test_haulers_need_roads() -> void:
 	var store := open_spot(s2, 6)
 	var pit2: Vector2i = store + Vector2i(2, 0)
 	for q in [store + Vector2i(1, 0), pit2]:
-		s2._set_tile(q, "grass")
+		s2.world.set_tile(q, "grass")
 	t.check(t.place_free(s2, "storehouse", store) and t.place_free(s2, "charcoal_pit", pit2), "a Storehouse and a pit")
 	s2.roads[store + Vector2i(1, 0)] = true
 	s2.road_rev += 1

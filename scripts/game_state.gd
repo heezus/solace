@@ -6,7 +6,8 @@ const Data = preload("res://scripts/data.gd")
 const Fog = preload("res://scripts/fog.gd")
 const Economy = preload("res://scripts/economy.gd")
 const Flows = preload("res://scripts/flows.gd")
-const MapGen = preload("res://scripts/map_gen.gd")
+const World = preload("res://scripts/world.gd")
+const Pathing = preload("res://scripts/pathing.gd")
 const Haulers = preload("res://scripts/haulers.gd")
 const Goals = preload("res://scripts/goals.gd")
 const Rules = preload("res://scripts/rules.gd")
@@ -17,21 +18,16 @@ const Hands = preload("res://scripts/hands.gd")
 const Workers = preload("res://scripts/workers.gd")
 const Roads = preload("res://scripts/roads.gd")
 
-const WIDTH := 36
-const HEIGHT := 22
-const NEIGHBORS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+const WIDTH := World.WIDTH
+const HEIGHT := World.HEIGHT
+const NEIGHBORS := World.NEIGHBORS
 
-var tiles: Array = []  # flat array of tile ids, index = y * WIDTH + x
 var buildings: Array = []  # each: {type, pos, progress, inbuf, out, status, gather_items, gather_index, worker, ...}
 var building_at: Dictionary = {}  # Vector2i -> index into buildings
-var camp_pos := Vector2i.ZERO
-var shard_pos := Vector2i(-1, -1)
 var won := false
 var goals_done: Dictionary = {}
-var roads: Dictionary = {}  # Vector2i -> true
 var road_rev := 0  # bumped whenever roads or buildings change, so Roads rebuilds its networks
 var road_net: Dictionary = {}  # Roads' cache of the road networks and which buildings they link
-var fields: Dictionary = {}  # Vector2i -> true, grain tiles the Kith sowed
 var hand_tools := false  # you've made a Flint Tool, so hand gathering is doubled for good
 var shard_seen := false  # the player has clicked the Strange Stone, revealing hidden techs
 var hand_counts: Dictionary = {}  # item -> times harvested by hand
@@ -51,13 +47,38 @@ var story_events: Array = []
 var kith: Array = []
 var grow_timer := 0.0
 var starve_timer := 0.0
-var astar := AStarGrid2D.new()
 var events: Array = []  # messages for the UI to show and clear
 var fog := Fog.new()
 var tech_set: Dictionary = {}  # the researched techs, built first: Economy and Research both hold this one set (use `researched`)
+var world := World.new()  # the map: tiles, camp and shard positions, roads and fields
+var pathing := Pathing.new(world, _has_tech)  # the walking grid and A*; it reads `world` and the techs
 var economy := Economy.new(tech_set)  # stockpile, food and flows; it reads the techs but never writes them
 ## Techs: what is researched, requirements, the goal and the queue. It pays through `economy`.
 var tech_tree := Research.new(economy, tech_set, _hidden_shown)
+
+# Pass-throughs to the World and Pathing blocks, for callers not yet moved to `world` and `pathing`.
+var tiles: Array:  # flat array of tile ids, index = y * WIDTH + x
+	get:
+		return world.tiles
+var camp_pos: Vector2i:
+	get:
+		return world.camp_pos
+	set(value):
+		world.camp_pos = value
+var shard_pos: Vector2i:
+	get:
+		return world.shard_pos
+	set(value):
+		world.shard_pos = value
+var roads: Dictionary:  # Vector2i -> true
+	get:
+		return world.roads
+var fields: Dictionary:  # Vector2i -> true, grain tiles the Kith sowed
+	get:
+		return world.fields
+var astar: AStarGrid2D:
+	get:
+		return pathing.astar
 
 # Pass-throughs to the Research block, for callers not yet moved to `tech_tree`.
 var researched: Dictionary:
@@ -97,23 +118,24 @@ var flows: Flows:
 # --- Map ---------------------------------------------------------------------
 
 
+## Make a new map and set the camp up on it: the Hearth, the first sight of the land and the first Kith.
 func generate(seed_value: int) -> void:
-	MapGen.generate(self, seed_value, WIDTH, HEIGHT)
-
-
-func _set_tile(p: Vector2i, tile: String) -> void:
-	if in_bounds(p):
-		tiles[p.y * WIDTH + p.x] = tile
+	world.generate(seed_value)
+	fog.setup(world.width, world.height)
+	_place_building("camp", world.camp_pos)
+	pathing.build()
+	fog.reveal(world.camp_pos, Data.SIGHT_START)
+	kith.clear()
+	for i in Data.KITH_START:
+		_add_kith()
 
 
 func in_bounds(p: Vector2i) -> bool:
-	return p.x >= 0 and p.y >= 0 and p.x < WIDTH and p.y < HEIGHT
+	return world.in_bounds(p)
 
 
 func tile_at(p: Vector2i) -> String:
-	if not in_bounds(p):
-		return ""
-	return tiles[p.y * WIDTH + p.x]
+	return world.tile_at(p)
 
 
 ## How far something sees: Scouting adds to buildings and Kith alike.
@@ -265,7 +287,7 @@ func research(tech: String) -> bool:
 ## What a finished tech sets off in the rest of the game (Research only reports that it finished).
 func _tech_done(tech: String) -> void:
 	if tech in ["paved_roads", "rafts"]:
-		_refresh_walk_grid()
+		pathing.refresh()
 	if tech == "scouting":
 		for b in buildings:
 			fog.reveal(b["pos"], _sight(Data.SIGHT_BUILDING))
@@ -282,6 +304,11 @@ func _tech_done(tech: String) -> void:
 ## Read-only view for the Research block: are hidden techs on show yet?
 func _hidden_shown() -> bool:
 	return shard_seen
+
+
+## Read-only view for the Pathing block: is this tech researched?
+func _has_tech(tech: String) -> bool:
+	return researched.has(tech)
 
 
 func has_haulers() -> bool:
@@ -325,7 +352,7 @@ func placement_error(type: String, p: Vector2i) -> String:
 		return "Build on open grassland"
 	if def.get("needs_river", false) and not touches_river(p):
 		return "Must touch the river"
-	if def.get("needs_shard", false) and not _touches(p, "shard"):
+	if def.get("needs_shard", false) and not world.touches(p, "shard"):
 		return "Must go next to the Strange Stone"
 	if def.get("near_hearth", false) and not _near_hearth(p):
 		return "Must be within %d tiles of the Hearth" % int(Data.HEARTH_RADIUS)
@@ -342,18 +369,17 @@ func place(type: String, p: Vector2i) -> bool:
 	var kind: String = Data.BUILDINGS[type]["kind"]
 	if kind in ["road", "bridge"]:
 		if tile_at(p) == "rock":
-			_set_tile(p, "grass")  # a mountain pass: the rock is cut away
+			world.set_tile(p, "grass")  # a mountain pass: the rock is cut away
 			events.append("Cut a pass through the rocks")
 		elif tile_at(p) == "tree":
-			_set_tile(p, "grass")  # the trees are felled for the road
+			world.set_tile(p, "grass")  # the trees are felled for the road
 			events.append("Felled the trees for a road")
-		roads[p] = true  # a bridge is a road over the river
-		_update_walk_cell(p)
+		world.add_road(p)  # a bridge is a road over the river
+		pathing.update_cell(p)
 		fog.reveal(p, _sight(Data.SIGHT_KITH))
 	elif kind == "field":
-		_set_tile(p, "grain")
-		fields[p] = true
-		_update_walk_cell(p)
+		world.add_field(p)
+		pathing.update_cell(p)
 	else:
 		_place_building(type, p)
 		fog.reveal(p, _sight(Data.SIGHT_BUILDING))
@@ -395,12 +421,11 @@ func demolish(p: Vector2i) -> Dictionary:
 		add(id, refund[id])
 	road_rev += 1
 	if roads.has(p):
-		roads.erase(p)
-		_update_walk_cell(p)
+		world.remove_road(p)
+		pathing.update_cell(p)
 	elif fields.has(p):
-		fields.erase(p)
-		_set_tile(p, "grass")
-		_update_walk_cell(p)
+		world.remove_field(p)
+		pathing.update_cell(p)
 	else:
 		_remove_building(building_at[p])
 	events.append("Tore down the %s" % Data.BUILDINGS[type]["name"])
@@ -484,26 +509,11 @@ func _place_building(type: String, p: Vector2i) -> void:
 
 ## Resource tiles a Gatherer's Hut at p would work.
 func gather_tiles(p: Vector2i) -> Array:
-	var r := hut_radius()
-	var found: Array = []
-	for dy in range(-r, r + 1):
-		for dx in range(-r, r + 1):
-			var t := tile_at(p + Vector2i(dx, dy))
-			if t != "" and t != "grass" and Data.TILES[t]["yields"] != "":
-				found.append(p + Vector2i(dx, dy))
-	return found
+	return world.gather_tiles(p, hut_radius())
 
 
 func touches_river(p: Vector2i) -> bool:
-	return _touches(p, "river")
-
-
-## True if a tile beside p (not diagonal) is `tile`.
-func _touches(p: Vector2i, tile: String) -> bool:
-	for n in NEIGHBORS:
-		if tile_at(p + n) == tile:
-			return true
-	return false
+	return world.touches_river(p)
 
 
 func is_powered(p: Vector2i) -> bool:
@@ -595,31 +605,9 @@ func food_total() -> float:
 # --- Walking -----------------------------------------------------------------
 
 
-func _build_walk_grid() -> void:
-	astar.region = Rect2i(0, 0, WIDTH, HEIGHT)
-	astar.cell_size = Vector2.ONE
-	astar.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_ONLY_IF_NO_OBSTACLES
-	astar.update()
-	_refresh_walk_grid()
-
-
-func _refresh_walk_grid() -> void:
-	for y in HEIGHT:
-		for x in WIDTH:
-			_update_walk_cell(Vector2i(x, y))
-
-
-func _update_walk_cell(p: Vector2i) -> void:
-	var t := tile_at(p)
-	astar.set_point_solid(p, t == "river" and not roads.has(p) and not researched.has("rafts"))
-	astar.set_point_weight_scale(p, walk_cost(p))
-
-
 ## Relative time to cross a tile: roads are fast, forest and rocks are slow, rafting a river slower.
 func walk_cost(p: Vector2i) -> float:
-	if roads.has(p):
-		return Data.WALK_COST["road"] / (2.0 if researched.has("paved_roads") else 1.0)
-	return Data.WALK_COST.get(tile_at(p), 1.0)
+	return pathing.walk_cost(p)
 
 
 func _tile_of(k: Dictionary) -> Vector2i:
@@ -633,10 +621,7 @@ func _walk_to(k: Dictionary, to: Vector2i) -> bool:
 	if from == to:
 		k["path"] = []
 		return true
-	if astar.is_point_solid(from):
-		astar.set_point_solid(from, false)  # standing on a tile that was just blocked: allow stepping off
-	var path := astar.get_id_path(from, to)
-	_update_walk_cell(from)
+	var path := pathing.path(from, to)  # the start counts as open: a Kith on a just-blocked tile may step off
 	if path.is_empty():
 		return false
 	path.remove_at(0)
@@ -649,7 +634,7 @@ func _step(k: Dictionary, delta: float) -> bool:
 	var budget := delta
 	while budget > 0.0 and not k["path"].is_empty():
 		var next: Vector2i = k["path"][0]
-		var speed: float = Data.KITH_SPEED / walk_cost(next)
+		var speed: float = Data.KITH_SPEED / pathing.walk_cost(next)
 		var pos: Vector2 = k["pos"]
 		var dist := pos.distance_to(Vector2(next))
 		if dist <= speed * budget:
@@ -958,13 +943,10 @@ func trip_info(p: Vector2i) -> Dictionary:
 	var depot := _nearest_depot(p)
 	if depot == p:
 		return {"ok": true, "tiles": 0, "seconds": 0.0, "depot": depot}
-	var was := astar.is_point_solid(p)
-	astar.set_point_solid(p, false)
-	var path := astar.get_id_path(p, depot)
-	astar.set_point_solid(p, was)
+	var path := pathing.path(p, depot)
 	if path.is_empty():
 		return {"ok": false, "tiles": 0, "seconds": 0.0, "depot": depot}
 	var secs := 0.0
 	for i in range(1, path.size()):
-		secs += Vector2(path[i - 1]).distance_to(Vector2(path[i])) * walk_cost(path[i]) / Data.KITH_SPEED
+		secs += Vector2(path[i - 1]).distance_to(Vector2(path[i])) * pathing.walk_cost(path[i]) / Data.KITH_SPEED
 	return {"ok": true, "tiles": path.size() - 1, "seconds": secs * 2.0, "depot": depot}
