@@ -49,6 +49,11 @@ func setup(game: Sim, width: float) -> void:
 	building_panel = BuildingPanel.new()
 	inner.add_child(building_panel)
 	building_panel.setup(game)
+	# Collect, Pause and Demolish sit under the scrolling area, so a tall card never pushes them off the panel.
+	var buttons: Control = building_panel.parts["buttons"]
+	buttons.get_parent().remove_child(buttons)
+	v.add_child(buttons)
+	buttons.visible = building_panel.visible
 	info_label = Ui.label("", 14)
 	info_label.autowrap_mode = TextServer.AUTOWRAP_WORD
 	info_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL

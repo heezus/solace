@@ -80,9 +80,12 @@ func setup(game: Sim) -> void:
 	trip.add_child(parts["trip"])
 	v.add_child(trip)
 
+	# The buttons are docked under the scrolling Info area (SidePanel moves them there), so they never scroll out of reach.
 	var buttons := HBoxContainer.new()
 	buttons.add_theme_constant_override("separation", 6)
 	v.add_child(buttons)
+	parts["buttons"] = buttons
+	visibility_changed.connect(_sync_buttons)
 	var collect := _button("Collect", Ui.HIGHLIGHT, Ui.HIGHLIGHT)
 	collect.add_theme_color_override("font_color", Art.OUTLINE)
 	collect.pressed.connect(_on_collect)
@@ -96,6 +99,11 @@ func setup(game: Sim) -> void:
 	demolish.pressed.connect(func(): demolish_pressed.emit(pos))
 	buttons.add_child(demolish)
 	parts["demolish"] = demolish
+
+
+## The button row follows the card: shown while a building is selected, wherever it was docked.
+func _sync_buttons() -> void:
+	parts["buttons"].visible = visible
 
 
 func _wrapped(font_size: int) -> Label:
