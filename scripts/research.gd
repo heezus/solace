@@ -5,11 +5,12 @@ extends RefCounted
 ## handed in at construction, and whether hidden techs are on show comes in as a read-only callable.
 ## What happens in the world when a tech completes (a new road speed, the fog, a win) is not decided
 ## here: research() and tick() only report which techs were completed, and their owner reacts.
-## GameState owns one and passes its old tech methods through to it.
+## Sim owns one, reached as `sim.tech_tree`.
 ## Signal: tech_researched(id) fires once for each tech as it completes (Story and the owner listen).
 
 signal tech_researched(id: String)
 
+const Codec = preload("res://scripts/save_codec.gd")
 const Data = preload("res://scripts/data.gd")
 const Economy = preload("res://scripts/economy.gd")
 const Rules = preload("res://scripts/rules.gd")
@@ -118,3 +119,20 @@ func tick() -> Array:
 ## Techs that can be researched right now, in tree order.
 func ready_list() -> Array:
 	return Data.TECH_ORDER.filter(func(t): return can_research(t))
+
+
+# --- Save --------------------------------------------------------------------
+
+
+## The researched techs (in the order they were researched), the goal and the queue, as JSON-safe values.
+func to_dict() -> Dictionary:
+	return {"researched": Codec.keys(researched), "goal": goal, "queue": queue.duplicate()}
+
+
+## Restore what to_dict wrote. The researched set is refilled in place, since the Economy reads the same one.
+## Nothing is emitted: the techs were already announced in the run that was saved.
+func from_dict(d: Dictionary) -> void:
+	researched.clear()
+	researched.merge(Codec.to_set(d.get("researched", [])))
+	goal = String(d.get("goal", ""))
+	queue = Codec.strings(d.get("queue", []))

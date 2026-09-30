@@ -6,11 +6,12 @@ signal card_clicked(tech: String)
 signal hover_changed(tech: String)
 
 const Data = preload("res://scripts/data.gd")
-const GameState = preload("res://scripts/game_state.gd")
+const Sim = preload("res://scripts/sim.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const TechLayout = preload("res://scripts/tech_layout.gd")
 const Ranks = preload("res://scripts/ranks.gd")
+const Rules = preload("res://scripts/rules.gd")
 
 const MET := Color("d3e2ef")
 const NEEDED := Color("5f7d9c")
@@ -23,7 +24,7 @@ const HIDDEN_EDGE := Color("8fb3c9")
 const GATE := Color("e3a857")
 const GATE_BG := Color("3a2f1f")
 
-var state: GameState
+var state: Sim
 var lay: Dictionary
 var hovered := ""
 var chain := {}  # techs lit by the hover: the hovered one, its ancestors and descendants
@@ -31,7 +32,7 @@ var bold: Font
 var pan_from := Vector2(-1, -1)
 
 
-func setup(game: GameState) -> void:
+func setup(game: Sim) -> void:
 	state = game
 	lay = TechLayout.build()
 	custom_minimum_size = lay["size"]
@@ -100,7 +101,7 @@ func _walk(tech: String, up: bool) -> void:
 	for e in lay["edges"]:
 		var near: String = e["to"] if up else e["from"]
 		var far: String = e["from"] if up else e["to"]
-		if near == tech and state.tech_visible(far) and not chain.has(far):
+		if near == tech and state.tech_tree.tech_visible(far) and not chain.has(far):
 			chain[far] = true
 			_walk(far, up)
 
@@ -130,7 +131,7 @@ func _draw() -> void:
 
 
 func _edge_visible(e: Dictionary) -> bool:
-	return state.tech_visible(e["from"]) and state.tech_visible(e["to"])
+	return state.tech_tree.tech_visible(e["from"]) and state.tech_tree.tech_visible(e["to"])
 
 
 ## Lines under the hover chain are drawn last, in gold, over the rest.
@@ -140,7 +141,7 @@ func _draw_edge(e: Dictionary, lit_pass: bool) -> void:
 	var lit: bool = not chain.is_empty() and chain.has(e["from"]) and chain.has(e["to"])
 	if lit != lit_pass:
 		return
-	var met: bool = state.researched.has(e["from"])
+	var met: bool = state.tech_tree.researched.has(e["from"])
 	var col := MET if met else NEEDED
 	var w := 2.5 if met else 2.0
 	if lit:
@@ -156,7 +157,7 @@ func _draw_edge(e: Dictionary, lit_pass: bool) -> void:
 ## "or" where either-or parents share one way in: only when both parents show.
 func _draw_or_pills() -> void:
 	for tech in lay["pills"]:
-		var shown: Array = Data.TECHS[tech]["requires_any"].filter(func(p): return state.tech_visible(p))
+		var shown: Array = Data.TECHS[tech]["requires_any"].filter(func(p): return state.tech_tree.tech_visible(p))
 		if shown.size() < 2:
 			continue
 		var c: Vector2 = lay["pills"][tech]
@@ -177,7 +178,7 @@ func _draw_card(tech: String) -> void:
 	var t: Dictionary = Data.TECHS[tech]
 	var dim := not chain.is_empty() and not chain.has(tech)
 	var a := 0.25 if dim else 1.0
-	if not state.tech_visible(tech):
+	if not state.tech_tree.tech_visible(tech):
 		Art.dashed_rect(self, r, Color(HIDDEN_EDGE, a), 2.0, 6.0, 4.0)
 		draw_string(bold, r.position + Vector2(16, 28), "? ? ?", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1, 1, 1, a))
 		draw_string(
@@ -193,9 +194,9 @@ func _draw_card(tech: String) -> void:
 	if t["lane"] == "gate":
 		_draw_gate(tech, r, a)
 		return
-	var done: bool = state.researched.has(tech)
-	var is_ready := state.can_research(tech)
-	var open := state.requirements_met(tech)
+	var done: bool = state.tech_tree.researched.has(tech)
+	var is_ready := state.tech_tree.can_research(tech)
+	var open := state.tech_tree.requirements_met(tech)
 	var bg := DONE_BG if done else (READY_BG if open else LOCKED_BG)
 	var box := StyleBoxFlat.new()
 	box.bg_color = Color(bg, a)
@@ -214,11 +215,13 @@ func _draw_card(tech: String) -> void:
 	var text := Color(1, 1, 1, a) if open or done else Color(LOCKED_TEXT, a)
 	var x := r.position.x + 62.0
 	draw_string(bold, Vector2(x, r.position.y + 21), t["name"], HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 70.0, 13, text)
+	var builds := Rules.buildings_of(tech)
+	var shows_build := not done and not builds.is_empty()  # a second cost row: what the building costs after
 	var unlock: String = t["unlock"] + ("  ·  side branch" if t.get("side", false) else "")
 	var sub := Color(text, text.a * 0.8)
 	draw_string(
 		ThemeDB.fallback_font,
-		Vector2(x, r.position.y + 37),
+		Vector2(x, r.position.y + (32 if shows_build else 37)),
 		unlock,
 		HORIZONTAL_ALIGNMENT_LEFT,
 		r.size.x - 70.0,
@@ -246,14 +249,16 @@ func _draw_card(tech: String) -> void:
 		)
 		_draw_check(r.position + Vector2(r.size.x - 16, 13), a)
 	else:
-		_draw_cost(t["cost"], Vector2(x, r.position.y + 45), a)
+		_draw_cost(t["cost"], Vector2(x, r.position.y + (36 if shows_build else 45)), a)
+		if shows_build:
+			_draw_build_cost(tech, builds[0], Vector2(x, r.position.y + 46), a)
 	if is_ready:
 		draw_circle(r.position + Vector2(r.size.x - 12, 12), 4.0, Color(GOLD, a))
 	elif not open and not done:
 		_draw_lock(r.position + Vector2(r.size.x - 16, 8), a * 0.7)
 	if Ranks.has_ranks(tech):
 		_draw_rank_pips(tech, r, a)
-	var q := state.research_queue.find(tech)
+	var q := state.tech_tree.queue.find(tech)
 	if q >= 0 and not is_ready:
 		Art.outlined_circle(self, r.position + Vector2(r.size.x - 14, r.size.y - 13), 8.0, Color(GOLD, a))
 		draw_string(
@@ -268,10 +273,11 @@ func _draw_card(tech: String) -> void:
 
 
 ## Cost as colored squares with have/need counts: red where the stockpile is short.
-func _draw_cost(cost: Dictionary, at: Vector2, a: float) -> void:
+func _draw_cost(cost: Dictionary, at: Vector2, a: float, stock: Dictionary = {}) -> void:
 	var x := at.x
+	var held: Dictionary = stock if not stock.is_empty() else state.economy.inv
 	for id in cost:
-		var have: int = state.inv.get(id, 0)
+		var have: int = held.get(id, 0)
 		var need: int = cost[id]
 		draw_rect(Rect2(x, at.y + 1, 8, 8), Color(Data.ITEMS[id]["color"], a))
 		draw_rect(Rect2(x, at.y + 1, 8, 8), Color(Art.OUTLINE, a), false, 1.0)
@@ -279,6 +285,18 @@ func _draw_cost(cost: Dictionary, at: Vector2, a: float) -> void:
 		var col := Color(1, 1, 1, 0.85 * a) if have >= need else Color(Color("ff9aa9"), a)
 		draw_string(ThemeDB.fallback_font, Vector2(x + 11, at.y + 9), s, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, col)
 		x += 15.0 + ThemeDB.fallback_font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x + 6.0
+
+
+## "Builds:" and what the tech's first building costs, in the same colored squares. A count is red where paying
+## for the tech would leave the stockpile short of it (shown as what you'd have left over the cost).
+func _draw_build_cost(tech: String, type: String, at: Vector2, a: float) -> void:
+	var label := "builds:"
+	draw_string(
+		ThemeDB.fallback_font, Vector2(at.x, at.y + 9), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(1, 1, 1, 0.6 * a)
+	)
+	var w := ThemeDB.fallback_font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 9).x
+	var left := Rules.left_after(state.economy.inv, Data.TECHS[tech]["cost"])
+	_draw_cost(Data.BUILDINGS[type]["cost"], Vector2(at.x + w + 5.0, at.y), a, left)
 
 
 ## Ranks I to III as three small diamonds under the icon, gold for each rank held.
@@ -307,7 +325,7 @@ func _draw_lock(p: Vector2, a: float) -> void:
 ## Bronze Dawn: one tall card spanning every lane, listing what it needs and costs.
 func _draw_gate(tech: String, r: Rect2, a: float) -> void:
 	var t: Dictionary = Data.TECHS[tech]
-	var is_ready := state.can_research(tech)
+	var is_ready := state.tech_tree.can_research(tech)
 	var box := StyleBoxFlat.new()
 	box.bg_color = Color(GATE_BG, a)
 	box.border_color = Color(GOLD if is_ready else Art.OUTLINE, a)
@@ -323,7 +341,7 @@ func _draw_gate(tech: String, r: Rect2, a: float) -> void:
 	)
 	y += 22
 	var needs: Array = t["requires"]
-	var left := needs.filter(func(n): return not state.researched.has(n)).size()
+	var left := needs.filter(func(n): return not state.tech_tree.researched.has(n)).size()
 	var head := "NEEDS ALL %d" % needs.size() if left > 0 else "ALL MET"
 	draw_string(
 		ThemeDB.fallback_font,
@@ -336,7 +354,7 @@ func _draw_gate(tech: String, r: Rect2, a: float) -> void:
 	)
 	for n in needs:
 		y += 16
-		var col := Color(Ui.GOOD, a) if state.researched.has(n) else Color(LOCKED_TEXT, a)
+		var col := Color(Ui.GOOD, a) if state.tech_tree.researched.has(n) else Color(LOCKED_TEXT, a)
 		draw_string(
 			ThemeDB.fallback_font,
 			Vector2(r.position.x + 12, y),
@@ -358,7 +376,7 @@ func _draw_gate(tech: String, r: Rect2, a: float) -> void:
 	)
 	for id in t["cost"]:
 		y += 16
-		var have: int = state.inv.get(id, 0)
+		var have: int = state.economy.inv.get(id, 0)
 		var need: int = t["cost"][id]
 		var col := Color(1, 1, 1, a) if have >= need else Color(Color("ff9aa9"), a)
 		var line := "%s %d/%d" % [Data.ITEMS[id]["name"], mini(have, need), need]

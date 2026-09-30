@@ -35,3 +35,25 @@ func count() -> int:
 	for v in cells:
 		n += v
 	return n
+
+
+# --- Save --------------------------------------------------------------------
+
+
+## The size and one character a tile, "1" where the fog has lifted and "0" where it hasn't, row by row.
+func to_dict() -> Dictionary:
+	var text := ""
+	for v in cells:
+		text += "1" if v == 1 else "0"
+	return {"width": width, "height": height, "cells": text}
+
+
+## Restore what to_dict wrote. A save whose cells don't fit its size comes back fully fogged.
+func from_dict(d: Dictionary) -> void:
+	setup(int(d.get("width", 0)), int(d.get("height", 0)))
+	var text := String(d.get("cells", ""))
+	if text.length() != cells.size():
+		return
+	for i in cells.size():
+		if text[i] == "1":
+			cells[i] = 1

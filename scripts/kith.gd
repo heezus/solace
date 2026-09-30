@@ -15,8 +15,8 @@ extends RefCounted
 ##   born(name) and left(name): a birth, and a Kith who leaves in search of food (not the starting people)
 ##   learned(item, name): someone learned to gather `item` by watching the player
 ##   trip_started: a hut worker set out on a trip the player clicked
-## GameState owns one (`people`) and passes the old `kith`, `born` and `learned` variables through to it
-## (here they are `births` and `learned_by`, since a signal has the name).
+## Sim owns one, reached as `sim.people` (the list is `people.kith`, the name count `births` and what they
+## learned `learned_by`; a signal has the name `learned`).
 
 signal announce(message: String)
 signal born(name: String)
@@ -25,11 +25,14 @@ signal learned(item: String, name: String)
 signal trip_started
 
 const Buildings = preload("res://scripts/buildings.gd")
+const Codec = preload("res://scripts/save_codec.gd")
 const Data = preload("res://scripts/data.gd")
 const Economy = preload("res://scripts/economy.gd")
 const Pathing = preload("res://scripts/pathing.gd")
 const Research = preload("res://scripts/research.gd")
 const World = preload("res://scripts/world.gd")
+
+const _TASK_POINTS := ["tile", "depot"]  # the task entries that are tile positions (saved as [x, y])
 
 ## The people, each: {pos: Vector2 (tile coords), path: Array of Vector2i, job: "" | "work" | "haul",
 ##  building: int, phase: String, timer: float, carry: Dictionary, task: Dictionary, name: String,
@@ -401,3 +404,65 @@ func trip_info(p: Vector2i) -> Dictionary:
 	for i in range(1, path.size()):
 		secs += Vector2(path[i - 1]).distance_to(Vector2(path[i])) * _pathing.walk_cost(path[i]) / Data.KITH_SPEED
 	return {"ok": true, "tiles": path.size() - 1, "seconds": secs * 2.0, "depot": depot}
+
+
+# --- Save --------------------------------------------------------------------
+
+
+## The people in order, who has learned what, the birth count and the two timers, as JSON-safe values.
+func to_dict() -> Dictionary:
+	var list: Array = []
+	for k in kith:
+		list.append(_person_to_dict(k))
+	return {
+		"kith": list,
+		"learned_by": learned_by.duplicate(),
+		"births": births,
+		"grow_timer": grow_timer,
+		"starve_timer": starve_timer,
+	}
+
+
+## Restore what to_dict wrote, in place. Nothing is emitted: `born` and `learned` already fired in the saved run.
+func from_dict(d: Dictionary) -> void:
+	kith.clear()
+	for saved in d.get("kith", []):
+		kith.append(_person_from_dict(saved))
+	learned_by.clear()
+	for item in d.get("learned_by", {}):
+		learned_by[String(item)] = String(d["learned_by"][item])
+	births = int(d.get("births", 0))
+	grow_timer = float(d.get("grow_timer", 0.0))
+	starve_timer = float(d.get("starve_timer", 0.0))
+
+
+static func _person_to_dict(k: Dictionary) -> Dictionary:
+	var out := k.duplicate(true)
+	out["pos"] = Codec.vec2(k["pos"])
+	out["path"] = Codec.vec_list(k["path"])
+	out["seen"] = Codec.vec(k["seen"])
+	out["task"] = Codec.with_points(k["task"], _TASK_POINTS)
+	out["carry"] = Codec.int_dict(k["carry"])
+	return out
+
+
+static func _person_from_dict(d: Dictionary) -> Dictionary:
+	var k := d.duplicate(true)
+	k["pos"] = Codec.to_vec2(d["pos"])
+	k["path"] = Codec.to_vec_list(d["path"])
+	k["seen"] = Codec.to_vec(d["seen"])
+	k["task"] = Codec.from_points(d["task"], _TASK_POINTS)
+	k["carry"] = Codec.int_dict(d["carry"])
+	for key in ["building", "tool"]:
+		k[key] = int(d[key])
+	k["timer"] = float(d["timer"])
+	k["task"] = _int_task(k["task"])
+	return k
+
+
+## A task's counts are ints again after a JSON round trip (the positions are already Vector2i).
+static func _int_task(t: Dictionary) -> Dictionary:
+	for key in ["building", "amount"]:
+		if t.has(key):
+			t[key] = int(t[key])
+	return t

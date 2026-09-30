@@ -4,6 +4,7 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 const Art = preload("res://scripts/art.gd")
+const Rules = preload("res://scripts/rules.gd")
 
 const OUTLINE: Color = Art.OUTLINE
 const BAD := Color("ef476f")
@@ -128,10 +129,37 @@ static func shortfall_text(inv: Dictionary, cost: Dictionary) -> String:
 	return "" if parts.is_empty() else "need " + ", ".join(parts)
 
 
+## What the buildings a tech unlocks cost to put up: "Then builds for: 10 Wood, 5 Stone", or with several
+## "Then builds Road for 2 Wood, Wooden Bridge for 10 Wood, 2 Rope". "" for a tech that unlocks no building.
+static func then_builds_text(tech: String) -> String:
+	var types := Rules.buildings_of(tech)
+	if types.size() == 1:
+		return "Then builds for: " + cost_text(Data.BUILDINGS[types[0]]["cost"])
+	var parts: Array = types.map(
+		func(t): return "%s for %s" % [Data.BUILDINGS[t]["name"], cost_text(Data.BUILDINGS[t]["cost"])]
+	)
+	return "" if parts.is_empty() else "Then builds " + ", ".join(parts)
+
+
+## A heads-up when paying for `tech` from the stockpile `inv` would leave too little for its first building
+## (researching and building both charge for materials), or "" when there's enough or no building.
+static func build_warning(inv: Dictionary, tech: String) -> String:
+	var types := Rules.buildings_of(tech)
+	if types.is_empty():
+		return ""
+	var short := shortfall_text(Rules.left_after(inv, Data.TECHS[tech]["cost"]), Data.BUILDINGS[types[0]]["cost"])
+	if short == "":
+		return ""
+	return (
+		"Heads up: after paying for this you couldn't build the %s yet (%s more)."
+		% [Data.BUILDINGS[types[0]]["name"], short.trim_prefix("need ")]
+	)
+
+
 ## Kith not staffing a building: they haul once Paths & Haulers is known, or wait at the Hearth.
 static func idle_kith(s) -> int:
 	var n := 0
-	for k in s.kith:
+	for k in s.people.kith:
 		if k["job"] != "work":
 			n += 1
 	return n
@@ -139,12 +167,12 @@ static func idle_kith(s) -> int:
 
 ## Why the population isn't growing, or "" when it is.
 static func growth_note(s) -> String:
-	var n: int = s.kith.size()
-	if s.starving:
+	var n: int = s.people.kith.size()
+	if s.economy.starving:
 		return "Starving: no food"
-	if n >= s.housing():
+	if n >= s.town.housing():
 		return "No room: build a Dwelling"
-	if s.food_total() < n * 2 + Data.BIRTH_FOOD:
+	if s.economy.food_total() < n * 2 + Data.BIRTH_FOOD:
 		return "Needs %d spare food to grow" % int(n * 2 + Data.BIRTH_FOOD)
 	return ""
 

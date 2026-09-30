@@ -24,6 +24,13 @@ const HAND_TOOLS := {
 
 ## Food each Kith eats per second.
 const FOOD_PER_KITH_PER_SEC := 0.02
+## Berries in the stockpile at the start. Three Kith eat about 3.6 a minute; the second goal has the player
+## hand-gather more, and the food warning (below) comes before the pantry is bare.
+const START_BERRIES := 10
+## The food warning goes up (a toast, and the Food readout flashes red) when the stockpile would run out within
+## this many seconds at the current eating rate, and comes down again once it would last FOOD_CLEAR_SECONDS.
+const FOOD_WARN_SECONDS := 60.0
+const FOOD_CLEAR_SECONDS := 120.0
 const KITH_START := 3
 ## A new Kith is born every GROW_TIME seconds while there is room and food to spare. Birth costs BIRTH_FOOD.
 const GROW_TIME := 12.0
@@ -51,7 +58,7 @@ const FLOW_EAT_SOURCE := "kith"
 ## The flow source a worker taking a Flint Tool from the stockpile is noted under.
 const FLOW_TOOL_SOURCE := "kith"
 
-## Tech bonuses GameState applies.
+## Tech bonuses Sim applies.
 const STORYTELLING_GROW := 0.75  # grow time multiplier
 
 ## Work multipliers (scripts/bonuses.gd). "speed" shortens work cycles, "yield" multiplies each harvest.

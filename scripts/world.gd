@@ -3,8 +3,9 @@ extends RefCounted
 ## fields laid on it. It stands alone: it reads Data and nothing else, and never reaches into another
 ## block. Fog (which tiles have been seen) is its own block and is not held here. What a tile costs to
 ## walk over is the Pathing block's business, and what may be built on it is decided by the caller.
-## GameState owns one and passes its old map methods and variables through to it.
+## Sim owns one, reached as `sim.world`.
 
+const Codec = preload("res://scripts/save_codec.gd")
 const Data = preload("res://scripts/data.gd")
 const MapGen = preload("res://scripts/map_gen.gd")
 
@@ -105,3 +106,34 @@ func add_field(p: Vector2i) -> void:
 func remove_field(p: Vector2i) -> void:
 	fields.erase(p)
 	set_tile(p, "grass")
+
+
+# --- Save --------------------------------------------------------------------
+
+
+## The map as JSON-safe values: its size, the tiles, the camp and shard positions, the roads and the fields
+## (each in the order they were laid).
+func to_dict() -> Dictionary:
+	return {
+		"width": width,
+		"height": height,
+		"tiles": tiles.duplicate(),
+		"camp_pos": Codec.vec(camp_pos),
+		"shard_pos": Codec.vec(shard_pos),
+		"roads": Codec.vec_keys(roads),
+		"fields": Codec.vec_keys(fields),
+	}
+
+
+## Restore what to_dict wrote, in place. A save whose tile list doesn't fit its size leaves open grass.
+func from_dict(d: Dictionary) -> void:
+	width = int(d.get("width", width))
+	height = int(d.get("height", height))
+	reset()
+	var saved: Array = d.get("tiles", [])
+	if saved.size() == width * height:
+		tiles = Codec.strings(saved)
+	camp_pos = Codec.to_vec(d.get("camp_pos", [0, 0]))
+	shard_pos = Codec.to_vec(d.get("shard_pos", [-1, -1]))
+	roads = Codec.to_vec_set(d.get("roads", []))
+	fields = Codec.to_vec_set(d.get("fields", []))

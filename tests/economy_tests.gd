@@ -1,12 +1,13 @@
 extends RefCounted
 ## Unit testbench for the Economy block (scripts/economy.gd): stockpile, food and eating, item flows.
 ## Economy is built alone, with a hand-set stockpile and a hand-set set of researched techs; no map,
-## no Kith and no GameState. The last test checks GameState's pass-throughs still reach the same block.
+## no Kith and no Sim. The last test checks that the Sim's blocks share its techs.
 ## Run from tests/run_tests.gd, which owns check() and the helpers.
 
 const Data = preload("res://scripts/data.gd")
 const Economy = preload("res://scripts/economy.gd")
-const GameState = preload("res://scripts/game_state.gd")
+const Sim = preload("res://scripts/sim.gd")
+const RunSave = preload("res://scripts/run_save.gd")
 
 var t  # the runner, tests/run_tests.gd
 
@@ -26,11 +27,13 @@ func run(runner) -> void:
 	test_flour_reserve()
 	test_feed_sets_use_and_starving()
 	test_preservation_cuts_food_use()
+	test_the_food_warning_comes_before_the_food_is_gone()
 	test_flows_and_rates()
 	test_eating_shows_up_as_a_flow()
 	test_flow_window_forgets()
 	test_economy_stands_alone()
-	test_game_state_passes_through()
+	test_to_dict_and_from_dict()
+	test_sim_shares_the_techs_with_the_economy()
 
 
 ## An Economy with every count zeroed, so a test sets exactly the stock it needs.
@@ -56,7 +59,9 @@ func test_a_new_stockpile() -> void:
 	var e := Economy.new()
 	for id in Data.ITEM_ORDER:
 		t.check(e.inv.has(id), "every item has a slot: " + id)
-	t.check(e.inv["berries"] == 10, "the camp starts with 10 berries")
+	t.check(
+		e.inv["berries"] == Data.START_BERRIES and Data.START_BERRIES >= 10, "the camp starts with 10 berries or more"
+	)
 	t.check(e.inv["wood"] == 0 and e.inv["stone"] == 0, "and nothing else")
 	t.check(
 		e.seen.has("berries") and e.seen.has("wood") and e.seen.has("stone") and e.seen.has("flint"),
@@ -252,6 +257,54 @@ func test_feed_sets_use_and_starving() -> void:
 	t.check(not e.starving, "and the flag goes down")
 
 
+## The early warning: food_low fires once when the stockpile would run out within Data.FOOD_WARN_SECONDS,
+## well before anyone starves, and the `low` flag comes down only when the food would last much longer.
+func test_the_food_warning_comes_before_the_food_is_gone() -> void:
+	var e := _empty()
+	var fired := [0]
+	e.food_low.connect(func(): fired[0] += 1)
+	var mouths := 3
+	var per_sec := mouths * Data.FOOD_PER_KITH_PER_SEC
+	e.inv["berries"] = ceili(per_sec * Data.FOOD_WARN_SECONDS) + 5
+	e.food_credit = 0.0
+	t.check(e.seconds_of_food() == INF, "before anyone has eaten, the food lasts for ever")
+	e.feed(mouths, 0.1)
+	t.check(fired[0] == 0 and not e.low, "plenty of food: no warning")
+	t.check(e.seconds_of_food() > Data.FOOD_WARN_SECONDS, "it lasts longer than the warning time")
+	var seconds := 0.0
+	while not e.low and not e.starving and seconds < 1000.0:
+		e.feed(mouths, 1.0)
+		seconds += 1.0
+	t.check(e.low and fired[0] == 1, "the warning goes up, once")
+	t.check(not e.starving and e.inv["berries"] > 0, "while there is still food to eat")
+	t.check(e.seconds_of_food() < Data.FOOD_WARN_SECONDS, "about a minute before it is gone")
+	for i in 5:
+		e.feed(mouths, 1.0)
+	t.check(fired[0] == 1, "it does not fire again while it stays low")
+	e.inv["berries"] += ceili(per_sec * Data.FOOD_CLEAR_SECONDS)
+	e.feed(mouths, 0.1)
+	t.check(not e.low, "it comes down once the food would last well past the warning time")
+	e.inv["berries"] = 0
+	e.food_credit = 0.0
+	e.feed(mouths, 1.0)
+	t.check(e.low and fired[0] == 2, "and it goes up again the next time food runs short")
+	t.check(e.feed(0, 1.0) and e.seconds_of_food() == INF, "with nobody to feed there is never a shortage")
+	# Food a building brings in counts against the drain; the player's own gathering (an answer to the warning) doesn't.
+	e.inv["berries"] = 2
+	e.food_credit = 0.0
+	e.feed(mouths, 1.0)
+	t.check(e.low, "two berries for three mouths is a shortage")
+	e.flows.add("berries", 40.0, "hand")
+	e.advance(1.0)
+	e.feed(mouths, 0.1)
+	t.check(e.low and e.food_income() == 0.0, "gathering by hand doesn't end the warning by itself")
+	e.flows.add("berries", 40.0, "gatherers_hut")
+	e.advance(1.0)
+	e.feed(mouths, 0.1)
+	t.check(e.food_income() > per_sec and not e.low, "but a hut bringing in more than they eat does")
+	t.check(e.seconds_of_food() == INF, "then the food isn't running out")
+
+
 func test_preservation_cuts_food_use() -> void:
 	var techs := {}
 	var e := _empty(techs)
@@ -308,6 +361,42 @@ func test_flow_window_forgets() -> void:
 	t.check(e.parts("wood").is_empty(), "sources too")
 
 
+## The stockpile, what was ever held, the food credit and the flow window survive a dict and a JSON round trip.
+func test_to_dict_and_from_dict() -> void:
+	var a := _empty()
+	a.add("wood", 7)
+	a.add("clay", 2)
+	a.inv["berries"] = 12
+	a.food_credit = 0.35
+	a.feed(3, 0.5)
+	a.note("wood", 6, "gatherers_hut")
+	a.advance(1.5)
+	a.note("wood", -1, "craft")
+	var d := a.to_dict()
+	var b := Economy.new({})
+	b.from_dict(d)
+	t.check(RunSave.to_json(b.to_dict()) == RunSave.to_json(d), "an Economy restored from a dict writes the same dict")
+	t.check(
+		b.inv == a.inv and b.seen == a.seen and b.food_credit == a.food_credit,
+		"the stock, the seen items and the credit"
+	)
+	t.check(b.starving == a.starving and b.food_use == a.food_use, "and the eating state")
+	t.check(is_equal_approx(b.rate("wood"), a.rate("wood")) and b.parts("wood") == a.parts("wood"), "and the rates")
+	var c := Economy.new({})
+	c.from_dict(RunSave.from_json(RunSave.to_json(d)))
+	t.check(RunSave.to_json(c.to_dict()) == RunSave.to_json(d), "the same after a trip through JSON text")
+	t.check(c.inv["wood"] is int and c.inv.keys() == a.inv.keys(), "counts are ints again, in the same order")
+	c.advance(1.0)
+	b.advance(1.0)
+	t.check(c.flows.hist == b.flows.hist, "the flow window carries on the same")
+	var held := c.inv
+	c.from_dict({})
+	t.check(
+		is_same(held, c.inv) and c.inv["wood"] == 0 and c.inv.size() == Data.ITEM_ORDER.size(),
+		"a partial dict loads in place"
+	)
+
+
 func test_economy_stands_alone() -> void:
 	var techs := {"baking": true}
 	var e := _empty(techs)
@@ -328,28 +417,26 @@ func test_economy_stands_alone() -> void:
 	)
 
 
-func test_game_state_passes_through() -> void:
-	var s := GameState.new()
-	t.check(s.inv == s.economy.inv, "GameState.inv is the Economy's stockpile")
-	s.inv["wood"] = 9
-	t.check(s.economy.inv["wood"] == 9 and s.can_afford({"wood": 9}), "a write through it lands there")
-	s.add("clay", 2)
-	t.check(s.economy.inv["clay"] == 2 and s.seen.has("clay") and s.economy.seen.has("clay"), "add reaches the block")
-	s._pay({"wood": 4})
+func test_sim_shares_the_techs_with_the_economy() -> void:
+	var s := Sim.new()
+	s.economy.inv["wood"] = 9
+	t.check(s.economy.can_afford({"wood": 9}), "a write to the stockpile is what can_afford reads")
+	s.economy.add("clay", 2)
+	t.check(s.economy.inv["clay"] == 2 and s.economy.seen.has("clay"), "add reaches the stockpile")
+	s.economy.pay({"wood": 4})
 	t.check(s.economy.inv["wood"] == 5, "so does paying")
-	s.food_credit = 1.25
-	t.check(is_equal_approx(s.economy.food_credit, 1.25), "food_credit reads and writes through")
-	s.starving = true
-	t.check(s.economy.starving, "so does starving")
-	s.inv["berries"] = 0
-	s.inv["fish"] = 0
-	s.inv["flour"] = 0
-	s.food_credit = 0.0
-	t.check(not s.economy.eat(1.0) and s.starving, "eating with no food fails, and the flag stays as set")
-	s.inv["berries"] = 3
-	t.check(is_equal_approx(s.food_total(), 3.0) and s.food_value("berries") == 1.0, "food queries agree")
-	s.researched["smoking"] = true
-	t.check(s.economy.food_value("berries") == Data.SMOKED_BERRY_FOOD, "the block sees GameState's researched techs")
+	s.economy.starving = true
+	s.economy.inv["berries"] = 0
+	s.economy.inv["fish"] = 0
+	s.economy.inv["flour"] = 0
+	s.economy.food_credit = 0.0
+	t.check(not s.economy.eat(1.0) and s.economy.starving, "eating with no food fails, and the flag stays as set")
+	s.economy.inv["berries"] = 3
+	t.check(
+		is_equal_approx(s.economy.food_total(), 3.0) and s.economy.food_value("berries") == 1.0, "food queries agree"
+	)
+	s.tech_tree.researched["smoking"] = true
+	t.check(s.economy.food_value("berries") == Data.SMOKED_BERRY_FOOD, "the block sees the researched techs")
 	s.economy.note("wood", 2, "hand")
-	s.flows.advance(1.0)
-	t.check(is_equal_approx(s.flows.rate("wood"), 2.0) and s.flows == s.economy.flows, "flows are the block's flows")
+	s.economy.flows.advance(1.0)
+	t.check(is_equal_approx(s.economy.flows.rate("wood"), 2.0), "flows are the block's flows")

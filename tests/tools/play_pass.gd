@@ -10,6 +10,7 @@ const Data = preload("res://scripts/data.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
 const Ranks = preload("res://scripts/ranks.gd")
 const Hands = preload("res://scripts/hands.gd")
+const World = preload("res://scripts/world.gd")
 
 const BOT_STEPS_PER_FRAME := 40
 const MAX_FRAMES := 4000
@@ -177,13 +178,16 @@ func _then(f: Callable, wait := 1) -> void:
 func _nearest(tile: String) -> Vector2i:
 	var s = main.state
 	var best := Vector2i(-1, -1)
-	for y in s.HEIGHT:
-		for x in s.WIDTH:
+	for y in World.HEIGHT:
+		for x in World.WIDTH:
 			var p := Vector2i(x, y)
-			if s.tile_at(p) == tile and s.fog.is_revealed(p) and not s.building_at.has(p):
+			if s.world.tile_at(p) == tile and s.fog.is_revealed(p) and not s.town.building_at.has(p):
 				if (
 					best.x < 0
-					or Vector2(p).distance_to(Vector2(s.camp_pos)) < Vector2(best).distance_to(Vector2(s.camp_pos))
+					or (
+						Vector2(p).distance_to(Vector2(s.world.camp_pos))
+						< Vector2(best).distance_to(Vector2(s.world.camp_pos))
+					)
 				):
 					best = p
 	return best
@@ -196,7 +200,7 @@ func _grass_by(near: Vector2i) -> Vector2i:
 		for dy in range(-r, r + 1):
 			for dx in range(-r, r + 1):
 				var p: Vector2i = near + Vector2i(dx, dy)
-				if s.placement_error("gatherers_hut", p) == "":
+				if s.town.placement_error("gatherers_hut", p) == "":
 					return p
 	return Vector2i(-1, -1)
 
@@ -207,7 +211,7 @@ func _grass_by(near: Vector2i) -> Vector2i:
 func _script() -> void:
 	var s = main.state
 	# Look around: hover the Hearth, the fog, the river, every resource.
-	_then(func(): _move(_screen_of(s.camp_pos)))
+	_then(func(): _move(_screen_of(s.world.camp_pos)))
 	_then(func(): _move(_screen_of(Vector2i(0, 0))))
 	for tile in ["tree", "rock", "gravel", "berry", "grain", "river", "grass"]:
 		var p := _nearest(tile)
@@ -229,17 +233,17 @@ func _script() -> void:
 	_then(
 		func():
 			for item in ["stone", "flint", "berries", "fiber"]:
-				s.learned[item] = "Tester"
+				s.people.learned_by[item] = "Tester"
 	)
 	# Research the first techs and try every tab and build button, and both crafts.
 	_then(
 		func():
-			for id in s.inv:
-				s.inv[id] = maxi(s.inv[id], 40)
+			for id in s.economy.inv:
+				s.economy.inv[id] = maxi(s.economy.inv[id], 40)
 			for tech in ["knapping", "foraging", "cordage", "fire", "gatherers_hut", "storytelling"]:
 				s.research(tech)
-			for id in s.inv:
-				s.inv[id] = maxi(s.inv[id], 40)
+			for id in s.economy.inv:
+				s.economy.inv[id] = maxi(s.economy.inv[id], 40)
 	)
 	for tab in main.bottom_bar.tab_buttons:
 		_then(func(): _click_control(main.bottom_bar.tab_buttons[tab]))
@@ -272,7 +276,7 @@ func _script() -> void:
 	_then(func(): _key(KEY_ESCAPE))
 	_then(func(): _click_control(main.bottom_bar.tab_buttons["Workshops"]))
 	_then(func(): _click_control(main.bottom_bar.build_buttons["charcoal_pit"]["button"]))
-	_then(func(): _click(_screen_of(_grass_by(s.camp_pos + Vector2i(2, 2)))))
+	_then(func(): _click(_screen_of(_grass_by(s.world.camp_pos + Vector2i(2, 2)))))
 	_then(func(): _key(KEY_ESCAPE))
 	_then(func(): _click_building("charcoal_pit", 3), 5)
 	for key in ["pause", "pause", "collect"]:
@@ -316,7 +320,7 @@ func _script() -> void:
 
 ## Click the first building of `type` n times: that selects it, so its panel opens.
 func _click_building(type: String, n: int) -> void:
-	for b in main.state.buildings:
+	for b in main.state.town.buildings:
 		if b["type"] == type:
 			for i in n:
 				_click(_screen_of(b["pos"]))
@@ -349,7 +353,7 @@ func _tech_board() -> void:
 func _show_rank(tech: String) -> void:
 	var s = main.state
 	for item in Ranks.next_cost(s, tech):
-		s.inv[item] = s.inv.get(item, 0) + int(Ranks.next_cost(s, tech)[item])
+		s.economy.inv[item] = s.economy.inv.get(item, 0) + int(Ranks.next_cost(s, tech)[item])
 	var board = main.tech_panel.board
 	main.tech_panel.scroll.scroll_horizontal = int(board.card_rect(tech).position.x - 200.0)
 	main.tech_panel.scroll.scroll_vertical = int(board.card_rect(tech).position.y - 100.0)
@@ -362,7 +366,7 @@ func _click_card(tech: String) -> void:
 
 func _demolish_first_hut() -> void:
 	var s = main.state
-	for b in s.buildings:
+	for b in s.town.buildings:
 		if b["type"] == "gatherers_hut":
 			_move(_screen_of(b["pos"]))
 			_click(_screen_of(b["pos"]))
@@ -430,7 +434,7 @@ func _first_click_checks() -> void:
 	_expect(main.placing == "gatherers_hut", "the build button needed more than one click")
 	_click(Vector2(5, 300), MOUSE_BUTTON_RIGHT)
 	_expect(main.placing == "", "right-click didn't cancel placing")
-	for b in s.buildings:
+	for b in s.town.buildings:
 		if b["type"] == "gatherers_hut":
 			_click(_screen_of(b["pos"]))
 			break
@@ -458,7 +462,7 @@ func _board_click_through() -> void:
 				_key(KEY_T)
 			main.placing = ""
 			probe["counts"] = s.hand_counts.duplicate()
-			probe["built"] = s.buildings.size(),
+			probe["built"] = s.town.buildings.size(),
 		2
 	)
 	_then(
@@ -470,7 +474,7 @@ func _board_click_through() -> void:
 	_then(
 		func():
 			_expect(s.hand_counts == probe["counts"], "holding on the research board harvested the map under it")
-			_expect(s.buildings.size() == probe["built"], "a board click placed or tore down a building")
+			_expect(s.town.buildings.size() == probe["built"], "a board click placed or tore down a building")
 			_expect(not main.holding, "the board press started a hold on the map")
 			var ready: Array = s.tech_tree.ready_list()
 			if not ready.is_empty():
@@ -484,9 +488,9 @@ func _board_click_through() -> void:
 		func():
 			if probe.has("tech"):
 				for item in Data.TECHS[probe["tech"]]["cost"]:
-					s.inv[item] = maxi(s.inv.get(item, 0), Data.TECHS[probe["tech"]]["cost"][item])
+					s.economy.inv[item] = maxi(s.economy.inv.get(item, 0), Data.TECHS[probe["tech"]]["cost"][item])
 				_click_card(probe["tech"])
-				_expect(s.researched.has(probe["tech"]), "clicking a ready card didn't research it at once")
+				_expect(s.tech_tree.researched.has(probe["tech"]), "clicking a ready card didn't research it at once")
 			_key(KEY_T),
 		3
 	)
@@ -499,19 +503,19 @@ func _board_click_through() -> void:
 ## Place Road by dragging from one tile to another three to the side.
 func _road_drag() -> void:
 	var s = main.state
-	s.researched["haulers"] = true
+	s.tech_tree.researched["haulers"] = true
 	for id in Data.BUILDINGS["road"]["cost"]:  # whatever a Road costs, enough for the drag whatever else is held
-		s.inv[id] = maxi(s.inv.get(id, 0), 40)
+		s.economy.inv[id] = maxi(s.economy.inv.get(id, 0), 40)
 	var start := Vector2i(-1, -1)
-	for y in range(2, s.HEIGHT - 2):
-		for x in range(2, s.WIDTH - 6):
+	for y in range(2, World.HEIGHT - 2):
+		for x in range(2, World.WIDTH - 6):
 			var ok := start.x < 0
 			for i in 4:
-				ok = ok and s.placement_error("road", Vector2i(x + i, y)) == ""
+				ok = ok and s.town.placement_error("road", Vector2i(x + i, y)) == ""
 			if ok:
 				start = Vector2i(x, y)
 	probe["road_from"] = start
-	probe["roads"] = s.roads.size()
+	probe["roads"] = s.world.roads.size()
 	main.placing = "road"
 	_move(_screen_of(start))
 	_button(_screen_of(start), MOUSE_BUTTON_LEFT, true)
@@ -523,7 +527,8 @@ func _road_drag_check() -> void:
 	_move(_screen_of(end))
 	_button(_screen_of(end), MOUSE_BUTTON_LEFT, false)
 	_expect(
-		s.roads.size() == probe["roads"] + 4, "dragging Road laid %d tiles, not 4" % (s.roads.size() - probe["roads"])
+		s.world.roads.size() == probe["roads"] + 4,
+		"dragging Road laid %d tiles, not 4" % (s.world.roads.size() - probe["roads"])
 	)
 	_click(_screen_of(end + Vector2i(0, 1)), MOUSE_BUTTON_RIGHT)
 	_expect(main.placing == "", "right-click didn't stop laying Road")

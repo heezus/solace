@@ -7,23 +7,25 @@ signal demolish_pressed(p: Vector2i)
 signal closed
 
 const Data = preload("res://scripts/data.gd")
-const GameState = preload("res://scripts/game_state.gd")
+const Sim = preload("res://scripts/sim.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const Workers = preload("res://scripts/workers.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Hands = preload("res://scripts/hands.gd")
+const Buildings = preload("res://scripts/buildings.gd")
+const Work = preload("res://scripts/work.gd")
 
 const WIDTH := 252.0
 const INSET := Color("1b3a47")
 
-var state: GameState
+var state: Sim
 var pos := Vector2i(-1, -1)  # the selected building's tile
 var parts := {}
 
 
-func setup(game: GameState) -> void:
+func setup(game: Sim) -> void:
 	state = game
 	visible = false
 	add_theme_stylebox_override("panel", Ui.panel_style(Ui.PANEL, 10))
@@ -116,26 +118,26 @@ func _button(text: String, bg: Color, border: Color) -> Button:
 
 func select(p: Vector2i) -> void:
 	pos = p
-	visible = state.building_at.has(p)
+	visible = state.town.building_at.has(p)
 	refresh()
 
 
 func selected() -> Dictionary:
-	if not visible or not state.building_at.has(pos):
+	if not visible or not state.town.building_at.has(pos):
 		return {}
-	return state.buildings[state.building_at[pos]]
+	return state.town.buildings[state.town.building_at[pos]]
 
 
 func _on_collect() -> void:
-	if state.building_at.has(pos):
-		state.haul(state.building_at[pos])
+	if state.town.building_at.has(pos):
+		state.town.haul(state.town.building_at[pos])
 		refresh()
 
 
 func _on_pause() -> void:
-	if state.building_at.has(pos):
-		var i: int = state.building_at[pos]
-		state.set_paused(i, not state.buildings[i]["paused"])
+	if state.town.building_at.has(pos):
+		var i: int = state.town.building_at[pos]
+		state.set_paused(i, not state.town.buildings[i]["paused"])
 		refresh()
 
 
@@ -150,6 +152,7 @@ func refresh() -> void:
 	parts["name"].text = def["name"]
 	var status: Label = parts["status"]
 	status.text = b["status"]
+	status.visible = b["status"] != def["desc"]  # a building with no status of its own says its blurb: show it once
 	var col := Color.WHITE
 	if b["alert"] != "":
 		col = Color("ff9aa9")
@@ -160,15 +163,15 @@ func refresh() -> void:
 	parts["recipe"].text = recipe_text(state, b)
 	parts["recipe"].visible = parts["recipe"].text != ""
 	parts["worker"].text = worker_text(state, b)
-	parts["worker"].visible = state.needs_worker(b)
-	parts["math"].text = Bonuses.text(state, b)
-	parts["math"].visible = state.needs_worker(b) and parts["math"].text != ""
+	parts["worker"].visible = Buildings.needs_worker(b)
+	parts["math"].text = Work.text(state, b)
+	parts["math"].visible = Buildings.needs_worker(b) and parts["math"].text != ""
 	parts["click"].text = click_text(state, b)
 	parts["click"].visible = parts["click"].text != ""
 	parts["click"].add_theme_color_override("font_color", Ui.HIGHLIGHT)
-	var held := state.buffered(b["out"])
-	parts["holding"].visible = state.needs_worker(b)
-	parts["bar"].visible = state.needs_worker(b)
+	var held := Buildings.buffered(b["out"])
+	parts["holding"].visible = Buildings.needs_worker(b)
+	parts["bar"].visible = Buildings.needs_worker(b)
 	parts["holding"].text = (
 		"Holding %d / %d%s" % [held, Data.BUFFER_CAP, (": " + Ui.cost_text(b["out"])) if held > 0 else ""]
 	)
@@ -180,7 +183,7 @@ func refresh() -> void:
 	collect.visible = held > 0
 	collect.text = "Collect %d" % held
 	var pause: Button = parts["pause"]
-	pause.visible = state.needs_worker(b)
+	pause.visible = Buildings.needs_worker(b)
 	pause.text = "Resume" if b["paused"] else "Pause"
 	var demolish: Button = parts["demolish"]
 	demolish.disabled = def["kind"] == "camp"
@@ -192,20 +195,20 @@ func refresh() -> void:
 
 
 ## "3 Fiber → 1 Rope / 4 s" for a workshop, what's in reach for a hut.
-static func recipe_text(s: GameState, b: Dictionary) -> String:
+static func recipe_text(s: Sim, b: Dictionary) -> String:
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
 	match def["kind"]:
 		"processor":
 			var ins := Ui.cost_text(def["in"]) if not def["in"].is_empty() else "nothing"
-			return "%s → %s / %s s" % [ins, Ui.cost_text(def["out"]), str(snappedf(s._work_time(b), 0.1))]
+			return "%s → %s / %s s" % [ins, Ui.cost_text(def["out"]), str(snappedf(Work.time(s, b), 0.1))]
 		"gatherer":
-			return gather_text(s, s.gather_tiles(b["pos"]))
+			return gather_text(s, s.town.gather_tiles(b["pos"]))
 	return ""
 
 
 ## What clicking the building does now: send a trip (before Paths & Haulers, or with no road link), or rush it.
-static func click_text(s: GameState, b: Dictionary) -> String:
-	if not s.needs_worker(b):
+static func click_text(s: Sim, b: Dictionary) -> String:
+	if not Buildings.needs_worker(b):
 		return ""
 	var kind: String = Data.BUILDINGS[b["type"]]["kind"]
 	if kind == "gatherer" and not Roads.automated(s, b):
@@ -224,13 +227,13 @@ static func click_text(s: GameState, b: Dictionary) -> String:
 
 
 ## "Worker: Aro the Woodcutter · Flint Tool, 32 jobs left".
-static func worker_text(s: GameState, b: Dictionary) -> String:
+static func worker_text(s: Sim, b: Dictionary) -> String:
 	var job := s.people.building_job(b)
 	if b["paused"]:
 		return "Worker: no %s while paused" % job
 	if b["worker"] < 0:
 		return "Worker: no %s yet · waiting for a free %s" % [job, Data.PEOPLE["one"]]
-	var k: Dictionary = s.kith[b["worker"]]
+	var k: Dictionary = s.people.kith[b["worker"]]
 	var who := "Worker: " + s.people.title_of(k)
 	if k["tool"] > 0:
 		return who + " · Flint Tool, %d jobs left" % k["tool"]
@@ -240,10 +243,10 @@ static func worker_text(s: GameState, b: Dictionary) -> String:
 
 
 ## "To Hearth · 11 tiles · 22 s a trip", or "" for the Hearth itself.
-static func trip_text(s: GameState, p: Vector2i) -> String:
+static func trip_text(s: Sim, p: Vector2i) -> String:
 	var info := s.people.trip_info(p)
 	var depot: Vector2i = info["depot"]
-	var where := "Hearth" if depot == s.camp_pos else "Storehouse"
+	var where := "Hearth" if depot == s.world.camp_pos else "Storehouse"
 	if not info["ok"]:
 		return "No way to the %s: build a road or bridge" % where
 	if info["tiles"] == 0:
@@ -252,13 +255,13 @@ static func trip_text(s: GameState, p: Vector2i) -> String:
 
 
 ## "Gathers from the 5 highlighted tiles (within 2), taking turns: Wood x3, Stone x2."
-static func gather_text(s: GameState, tiles: Array) -> String:
-	var r := s.hut_radius()
+static func gather_text(s: Sim, tiles: Array) -> String:
+	var r := s.town.hut_radius()
 	if tiles.is_empty():
 		return "No resources within %d tiles: it would have nothing to gather (bare grass gives nothing)." % r
 	var counts := {}
 	for p in tiles:
-		var item: String = Data.TILES[s.tile_at(p)]["yields"]
+		var item: String = Data.TILES[s.world.tile_at(p)]["yields"]
 		counts[item] = counts.get(item, 0) + 1
 	var out: Array = []
 	for id in counts:

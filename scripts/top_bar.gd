@@ -1,36 +1,46 @@
 extends PanelContainer
-## The top bar: Kith and jobs, food with its time left, and a fixed-width chip per good showing the
-## count and the net rate per second (green up, red down). Hovering a chip drops a panel explaining
-## where that good comes from and where it goes.
+## The top bar: Kith and jobs, food with its time left (flashing red when it is about to run out), and a
+## fixed-width chip per good in two rows, RAW and MADE, each showing the good's name, its count and its net
+## rate per second (green up, red down). Hovering a chip drops a panel explaining where that good comes
+## from and where it goes. No line in the bar is ever cut short: long ones wrap onto a second line.
 
 signal speed_picked(value: int)  # 0 toggles pause
 
 const Data = preload("res://scripts/data.gd")
-const GameState = preload("res://scripts/game_state.gd")
+const Sim = preload("res://scripts/sim.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Hands = preload("res://scripts/hands.gd")
+const Buildings = preload("res://scripts/buildings.gd")
 
 const RAW := ["wood", "stone", "flint", "fiber", "clay", "berries", "grain", "fish"]
 const LOSS := Color("ff9aa9")
 const FLAT := Color("9fb4bf")
 const MINUS := "−"
+const CHIP_W := 62.0
+const ROW_H := 40.0  # a row of chips keeps this height whether or not its goods have appeared yet
+const CAPTION_W := 40.0
+const FOOD_W := 190.0
 
-var state: GameState
+var state: Sim
 var kith_label: Label
 var jobs_label: Label
+var note_label: Label  # why the Kith aren't growing: wraps, never cut short
+var food_box: PanelContainer  # rings red and flashes while the food is about to run out
 var food_label: Label
+var food_sub: Label
 var food_bar: ProgressBar
 var tools_label: Label
 var click_label: Label
-var chips := {}  # item -> {"box", "count", "rate"}
+var pulse := 0.0
+var chips := {}  # item -> {"box", "title", "count", "rate"}
 var flow_panel: PanelContainer
 var flow_box: VBoxContainer
 var flow_item := ""
 var speed_buttons := {}
 
 
-func setup(game: GameState) -> void:
+func setup(game: Sim) -> void:
 	state = game
 	add_theme_stylebox_override("panel", Ui.panel_style(Ui.BAR, 6))
 	set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
@@ -42,64 +52,87 @@ func setup(game: GameState) -> void:
 	kv.add_theme_constant_override("separation", -2)
 	kith_label = Ui.label("", 15)
 	jobs_label = Ui.label("", 10)
+	note_label = Ui.label("", 10)
+	note_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	note_label.max_lines_visible = 2  # the block never grows the bar: two lines at most
 	kv.add_child(kith_label)
 	kv.add_child(jobs_label)
+	kv.add_child(note_label)
 	kv.mouse_filter = Control.MOUSE_FILTER_PASS
 	_fix_width(kv, [kith_label, jobs_label], 176)
+	note_label.custom_minimum_size.x = 176
 	kv.tooltip_text = ""  # filled in refresh() with the job counts
 	h.add_child(kv)
 	h.add_child(VSeparator.new())
 
+	food_box = PanelContainer.new()
+	food_box.add_theme_stylebox_override("panel", _outline(Color(0, 0, 0, 0)))
 	var fv := VBoxContainer.new()
-	fv.add_theme_constant_override("separation", 2)
+	fv.add_theme_constant_override("separation", 0)
 	food_label = Ui.label("", 14)
 	fv.add_child(food_label)
+	food_sub = Ui.label("", 10)
+	food_sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	fv.add_child(food_sub)
 	food_bar = ProgressBar.new()
 	food_bar.custom_minimum_size = Vector2(110, 6)
 	food_bar.show_percentage = false
 	fv.add_child(food_bar)
-	fv.mouse_filter = Control.MOUSE_FILTER_PASS
-	_fix_width(fv, [food_label], 130)
-	fv.tooltip_text = Data.FOOD_TIP % Data.PEOPLE["one"]
-	h.add_child(fv)
-	tools_label = Ui.label("", 12)
-	tools_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_fix_width(tools_label, [tools_label], 104)
-	h.add_child(tools_label)
-	click_label = Ui.label("", 12)
-	click_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	click_label.add_theme_color_override("font_color", Ui.HIGHLIGHT)
-	_fix_width(click_label, [click_label], 150)
-	h.add_child(click_label)
+	food_box.add_child(fv)
+	food_box.mouse_filter = Control.MOUSE_FILTER_PASS
+	_fix_width(food_box, [food_label], FOOD_W)
+	food_sub.custom_minimum_size.x = FOOD_W - 4.0
+	food_box.tooltip_text = Data.FOOD_TIP % Data.PEOPLE["one"]
+	h.add_child(food_box)
 	h.add_child(VSeparator.new())
 
-	var goods := HFlowContainer.new()
+	# The goods, in two rows that never wrap: RAW, and MADE with the tool count at its end.
+	var goods := VBoxContainer.new()
+	goods.add_theme_constant_override("separation", 2)
 	goods.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	goods.add_theme_constant_override("h_separation", 4)
-	goods.add_theme_constant_override("v_separation", 2)
+	goods.clip_contents = true  # a narrow window clips the end of a row; it never pushes the buttons off screen
+	goods.custom_minimum_size.x = 0.0
 	h.add_child(goods)
 	for group in [["RAW", RAW], ["MADE", Data.ITEM_ORDER.filter(func(i): return i not in RAW)]]:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 3)
+		row.custom_minimum_size = Vector2(0, ROW_H)
 		var cap := Ui.label(group[0], 9)
 		cap.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
 		cap.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		goods.add_child(cap)
+		cap.custom_minimum_size.x = CAPTION_W
+		row.add_child(cap)
 		for id in group[1]:
-			goods.add_child(_chip(id, 70.0 if group[0] == "RAW" else 62.0))
-	var note := Ui.label("per sec", 9)
-	note.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
-	note.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	h.add_child(note)
+			row.add_child(_chip(id, CHIP_W))
+		if group[0] == "MADE":
+			tools_label = Ui.label("", 12)
+			tools_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			_fix_width(tools_label, [tools_label], 120)
+			row.add_child(tools_label)
+		goods.add_child(row)
 	h.add_child(VSeparator.new())
+
+	# Speed buttons, with what a click on the tile under the mouse gives below them.
+	var right := VBoxContainer.new()
+	right.add_theme_constant_override("separation", 4)
+	h.add_child(right)
+	var speeds := HBoxContainer.new()
+	speeds.add_theme_constant_override("separation", 4)
+	right.add_child(speeds)
 	for part in [["Pause", 0], ["1x", 1], ["2x", 2], ["3x", 3]]:
 		var b := Ui.button(part[0])
 		b.toggle_mode = true
 		b.custom_minimum_size = Vector2(52 if part[1] == 0 else 32, 26)
-		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		b.tooltip_text = "Pause or resume (Space)" if part[1] == 0 else "Speed x%d (key %d)" % [part[1], part[1]]
 		var v: int = part[1]
 		b.pressed.connect(func(): speed_picked.emit(v))
-		h.add_child(b)
+		speeds.add_child(b)
 		speed_buttons[v] = b
+	click_label = Ui.label("", 12)
+	click_label.add_theme_color_override("font_color", Ui.HIGHLIGHT)
+	click_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_fix_width(click_label, [click_label], 170)
+	right.add_child(click_label)
 
 	flow_panel = PanelContainer.new()
 	flow_panel.top_level = true
@@ -113,22 +146,25 @@ func setup(game: GameState) -> void:
 	flow_panel.add_child(flow_box)
 
 
-## A fixed-width chip: the item's color square, the count and the net rate under it.
+## A fixed-width chip: the item's color square, its name, the count and the net rate under it.
 func _chip(id: String, width: float) -> PanelContainer:
 	var box := PanelContainer.new()
 	box.custom_minimum_size = Vector2(width, 0)
 	box.mouse_filter = Control.MOUSE_FILTER_PASS
-	box.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	box.add_theme_stylebox_override("panel", _outline(Color(0, 0, 0, 0)))
 	var h := HBoxContainer.new()
-	h.add_theme_constant_override("separation", 4)
+	h.add_theme_constant_override("separation", 3)
 	box.add_child(h)
-	h.add_child(Ui.item_swatch(id, 14.0))
+	h.add_child(Ui.item_swatch(id, 12.0))
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", -3)
+	var item: Dictionary = Data.ITEMS[id]
+	var title := Ui.label(item.get("short", item["name"]), 9)
+	title.add_theme_color_override("font_color", Color(1, 1, 1, 0.65))
 	var count := Ui.label("", 14)
 	var rate := Ui.label("", 10)
-	rate.add_theme_font_size_override("font_size", 10)
 	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	v.add_child(title)
 	v.add_child(count)
 	v.add_child(rate)
 	h.add_child(v)
@@ -136,9 +172,20 @@ func _chip(id: String, width: float) -> PanelContainer:
 	box.tooltip_text = item_tip(id)
 	box.mouse_entered.connect(_show_flow.bind(id))
 	box.mouse_exited.connect(_hide_flow.bind(id))
-	_fix_width(box, [count, rate], width)
-	chips[id] = {"box": box, "count": count, "rate": rate}
+	_fix_width(box, [title, count, rate], width)
+	chips[id] = {"box": box, "title": title, "count": count, "rate": rate}
 	return box
+
+
+## A panel style that keeps the same margins whether or not its outline shows, so a ring never moves anything.
+static func _outline(color: Color) -> StyleBoxFlat:
+	var s := StyleBoxFlat.new()
+	s.draw_center = false
+	s.border_color = color
+	s.set_border_width_all(2)
+	s.set_corner_radius_all(4)
+	s.set_content_margin_all(2)
+	return s
 
 
 ## Keep `c` at a fixed width whatever its labels say (they clip with an ellipsis), so the bar's goods
@@ -156,6 +203,15 @@ static func _fix_width(c: Control, labels: Array, width: float) -> void:
 static func item_tip(id: String) -> String:
 	var item: Dictionary = Data.ITEMS[id]
 	return item["name"] + ("\n" + item["desc"] if item.has("desc") else "")
+
+
+## A chip's tooltip: the name, the count and the rate, then where the good comes from when that isn't plain.
+static func chip_tip(id: String, count: int, per_sec: float) -> String:
+	var item: Dictionary = Data.ITEMS[id]
+	return (
+		"%s: %d, %s per second" % [item["name"], count, rate_text(per_sec)]
+		+ ("\n" + item["desc"] if item.has("desc") else "")
+	)
 
 
 ## "+0.60", "−0.25" or "0" for a per-second rate.
@@ -176,79 +232,95 @@ static func rate_color(per_sec: float) -> Color:
 func food_rate() -> float:
 	var total := 0.0
 	for id in Data.FOOD_VALUE:
-		total += state.flows.rate(id) * state.food_value(id)
+		total += state.economy.flows.rate(id) * state.economy.food_value(id)
 	return total
 
 
 func refresh(paused: bool, speed: int) -> void:
 	var idle := Ui.idle_kith(state)
-	var workers := state.kith.size() - idle
+	var workers := state.people.kith.size() - idle
 	var jobs := 0
-	for b in state.buildings:
-		jobs += 1 if state.needs_worker(b) and not b["paused"] else 0
-	kith_label.text = "%s %d / %d" % [Data.PEOPLE["many"], state.kith.size(), state.housing()]
+	for b in state.town.buildings:
+		jobs += 1 if Buildings.needs_worker(b) and not b["paused"] else 0
+	kith_label.text = "%s %d / %d" % [Data.PEOPLE["many"], state.people.kith.size(), state.town.housing()]
 	kith_label.get_parent().tooltip_text = (
 		"%s\n%s work buildings and haul goods. Each building needs one. They grow with spare food and room."
 		% [state.people.job_counts(), Data.PEOPLE["many"]]
 	)
 	var note := Ui.growth_note(state)
 	kith_label.add_theme_color_override("font_color", Ui.HIGHLIGHT if note != "" else Ui.GOOD)
-	jobs_label.text = "Jobs %d / %d  ·  %d %s" % [workers, jobs, idle, "hauling" if state.has_haulers() else "idle"]
-	if note != "":
-		jobs_label.text += "  ·  " + note
-	var food := state.food_total()
-	var fr := food_rate()
-	var s := "Food %d  ·  %s/s" % [int(food), rate_text(fr)]
-	if fr < -0.005:
-		var left := food / -fr
-		s += "  ·  " + (("%d min left" % int(left / 60.0)) if left >= 60.0 else ("%d s left" % int(left)))
-	if state.starving:
-		s = Data.STARVING_TEXT % Data.PEOPLE["many"]
-	food_label.text = s
-	food_label.add_theme_color_override("font_color", Ui.BAD if fr < -0.005 or state.starving else Color.WHITE)
-	food_bar.max_value = maxf(state.kith.size() * 2.0 + Data.BIRTH_FOOD, 1.0)
-	food_bar.value = minf(food, food_bar.max_value)
-	food_bar.modulate = Ui.BAD if fr < -0.005 else Ui.HIGHLIGHT
-	tools_label.modulate.a = 1.0 if state.seen.has("flint_tools") else 0.0  # keeps its place: see _fix_width()
+	jobs_label.text = (
+		"Jobs %d / %d  ·  %d %s"
+		% [workers, jobs, idle, "hauling" if state.tech_tree.researched.has("haulers") else "idle"]
+	)
+	note_label.text = note
+	note_label.visible = note != ""
+	note_label.add_theme_color_override("font_color", Ui.BAD if state.economy.starving else Ui.HIGHLIGHT)
+	_refresh_food()
+	var have_tools: bool = state.economy.seen.has("flint_tools")
+	tools_label.visible = have_tools
 	var held := Hands.tools_held(state)
-	tools_label.text = Data.TOOLS_LABEL % [held, state.kith.size(), Data.PEOPLE["many"]]
-	tools_label.tooltip_text = Data.TOOLS_TIP % [Data.PEOPLE["many"], Data.TOOL_JOBS, state.inv.get("flint_tools", 0)]
+	tools_label.text = Data.TOOLS_LABEL % [held, state.people.kith.size(), Data.PEOPLE["many"]]
+	tools_label.tooltip_text = (
+		Data.TOOLS_TIP % [Data.PEOPLE["many"], Data.TOOL_JOBS, state.economy.inv.get("flint_tools", 0)]
+	)
 	tools_label.mouse_filter = Control.MOUSE_FILTER_STOP
-	tools_label.add_theme_color_override("font_color", Ui.GOOD if held >= state.kith.size() else Color.WHITE)
+	tools_label.add_theme_color_override("font_color", Ui.GOOD if held >= state.people.kith.size() else Color.WHITE)
 	for id in chips:
 		var c: Dictionary = chips[id]
-		var n: int = state.inv.get(id, 0)
-		var r := state.flows.rate(id)
-		# An unseen good keeps its place in the bar (hidden, not removed), so the goods never re-wrap.
-		c["box"].modulate.a = 1.0 if state.seen.has(id) else 0.0
-		c["box"].mouse_filter = Control.MOUSE_FILTER_PASS if state.seen.has(id) else Control.MOUSE_FILTER_IGNORE
+		var n: int = state.economy.inv.get(id, 0)
+		var r := state.economy.flows.rate(id)
+		# A good shows once the stockpile has held it. The rows never wrap, so the bar keeps its height.
+		c["box"].visible = state.economy.seen.has(id)
 		c["count"].text = str(n)
 		c["count"].modulate = Color(1, 1, 1, 0.4 if n == 0 and absf(r) < 0.005 else 1.0)
-		c["rate"].text = rate_text(r)
+		c["rate"].text = rate_text(r) + "/s"
 		c["rate"].add_theme_color_override("font_color", rate_color(r))
-		c["box"].tooltip_text = "" if flow_item == id else item_tip(id)
-		if flow_item == id:
-			c["box"].add_theme_stylebox_override("panel", _ring())
-		else:
-			c["box"].add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+		c["box"].tooltip_text = "" if flow_item == id else chip_tip(id, n, r)
+		c["box"].add_theme_stylebox_override("panel", _outline(Ui.HIGHLIGHT if flow_item == id else Color(0, 0, 0, 0)))
 	for v in speed_buttons:
 		speed_buttons[v].button_pressed = paused if v == 0 else (not paused and v == speed)
 	if flow_item != "":
 		_fill_flow(flow_item)
 
 
+## The Food readout: the count, then what is happening to it. While it is about to run out (Data.FOOD_WARN_SECONDS)
+## or already has, the block rings red and flashes (see _process) and says what to do about it.
+func _refresh_food() -> void:
+	var eco := state.economy
+	var food := eco.food_total()
+	var fr := food_rate()
+	food_label.text = "Food %d" % int(food)
+	var sub := "%s/s" % rate_text(fr)
+	if fr < -0.005:
+		sub += "  ·  " + _duration(food / -fr, true) + " left"
+	if eco.starving:
+		sub = Data.STARVING_TEXT % Data.PEOPLE["many"]
+	elif eco.low:
+		sub = Data.FOOD_LOW_TEXT % _duration(minf(eco.seconds_of_food(), 3600.0), true)
+	food_sub.text = sub
+	var alarm := eco.low or eco.starving
+	food_label.add_theme_color_override("font_color", Ui.BAD if alarm else Color.WHITE)
+	food_sub.add_theme_color_override("font_color", Ui.BAD if alarm else rate_color(fr))
+	food_box.add_theme_stylebox_override("panel", _outline(Ui.BAD if alarm else Color(0, 0, 0, 0)))
+	if not alarm:
+		food_box.modulate.a = 1.0
+	food_bar.max_value = maxf(state.people.kith.size() * 2.0 + Data.BIRTH_FOOD, 1.0)
+	food_bar.value = minf(food, food_bar.max_value)
+	food_bar.modulate = Ui.BAD if alarm or fr < -0.005 else Ui.HIGHLIGHT
+
+
+## The flash: the Food block pulses while the food is low or gone.
+func _process(delta: float) -> void:
+	if state == null or not (state.economy.low or state.economy.starving):
+		return
+	pulse += delta
+	food_box.modulate.a = 0.65 + 0.35 * sin(pulse * 7.0)
+
+
 ## What a click on the hovered resource tile gives, e.g. "Click: +4 Wood"; "" when not over one.
 func set_click_hint(text: String) -> void:
 	click_label.text = text
-
-
-func _ring() -> StyleBoxFlat:
-	var s := StyleBoxFlat.new()
-	s.draw_center = false
-	s.border_color = Ui.HIGHLIGHT
-	s.set_border_width_all(2)
-	s.set_corner_radius_all(4)
-	return s
 
 
 func _show_flow(id: String) -> void:
@@ -272,11 +344,11 @@ func _fill_flow(id: String) -> void:
 	for c in flow_box.get_children():
 		flow_box.remove_child(c)
 		c.queue_free()
-	var net := state.flows.rate(id)
-	var head := Ui.label("%s  %d   %s/s" % [Data.ITEMS[id]["name"], state.inv.get(id, 0), rate_text(net)], 14)
+	var net := state.economy.flows.rate(id)
+	var head := Ui.label("%s  %d   %s/s" % [Data.ITEMS[id]["name"], state.economy.inv.get(id, 0), rate_text(net)], 14)
 	head.add_theme_color_override("font_color", rate_color(net) if absf(net) >= 0.005 else Color.WHITE)
 	flow_box.add_child(head)
-	var parts := state.flows.parts(id)
+	var parts := state.economy.flows.parts(id)
 	var ins: Array = []
 	var outs: Array = []
 	for source in parts:
@@ -297,9 +369,9 @@ func _fill_flow(id: String) -> void:
 	for source in outs:
 		_flow_row(_user_name(source, id), parts[source])
 	if Data.FOOD_VALUE.has(id):
-		_flow_note(Data.FOOD_NOTE % [str(state.food_value(id)), Data.PEOPLE["many"]], Color(1, 1, 1, 0.7))
+		_flow_note(Data.FOOD_NOTE % [str(state.economy.food_value(id)), Data.PEOPLE["many"]], Color(1, 1, 1, 0.7))
 	if net < -0.005 and not outs.is_empty():
-		var have: int = state.inv.get(id, 0)
+		var have: int = state.economy.inv.get(id, 0)
 		var left := have / -net
 		var then := (
 			Data.HUNGRY_THEN % Data.PEOPLE["many"] if outs[0] == "kith" else "the %s stops" % _type_name(outs[0])
@@ -351,7 +423,7 @@ func _maker_name(source: String, id: String) -> String:
 		"craft":
 			return "Crafted by hand"
 	var n := 0
-	for b in state.buildings:
+	for b in state.town.buildings:
 		if b["type"] == source and (id in b["gather_items"] or Data.BUILDINGS[source].get("out", {}).has(id)):
 			n += 1
 	var title := _type_name(source)
@@ -382,7 +454,9 @@ static func _how_to_make(id: String) -> String:
 	return "make more"
 
 
-static func _duration(seconds: float) -> String:
+static func _duration(seconds: float, short := false) -> String:
+	if short:  # "2 min", "45 s"
+		return ("%d min" % int(seconds / 60.0)) if seconds >= 60.0 else ("%d s" % int(seconds))
 	var s := int(seconds)
 	if s < 60:
 		return "%d s" % s

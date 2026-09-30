@@ -3,6 +3,7 @@ extends RefCounted
 ## over a sliding window. The top bar shows the net rate; its hover panel lists the sources.
 
 const Data = preload("res://scripts/data.gd")
+const Codec = preload("res://scripts/save_codec.gd")
 
 var hist: Array = []  # one Dictionary per finished second: "item|source" -> amount (negative when used)
 var now: Dictionary = {}
@@ -53,3 +54,23 @@ func parts(item: String) -> Dictionary:
 	for source in out:
 		out[source] /= float(hist.size())
 	return out
+
+
+# --- Save --------------------------------------------------------------------
+
+
+## The window as JSON-safe values: the finished seconds, the one under way and the clock.
+func to_dict() -> Dictionary:
+	var past: Array = []
+	for bucket in hist:
+		past.append(Codec.float_dict(bucket))
+	return {"hist": past, "now": Codec.float_dict(now), "clock": clock}
+
+
+## Restore the window written by to_dict. Nothing is emitted or checked.
+func from_dict(d: Dictionary) -> void:
+	hist = []
+	for bucket in d.get("hist", []):
+		hist.append(Codec.float_dict(bucket))
+	now = Codec.float_dict(d.get("now", {}))
+	clock = float(d.get("clock", 0.0))
