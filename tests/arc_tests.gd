@@ -188,6 +188,10 @@ func test_rush_and_its_cooldown() -> void:
 
 	# A road felled the tree the worker was out at: a rush brings nothing, not an item with no name.
 	run_for(s2, Data.RUSH_COOLDOWN + 1.5)
+	for i in 100:  # how long a trip takes depends on where the nearest trees are: wait until the worker is out
+		if k["phase"] in ["to_tile", "harvest"]:
+			break
+		run_for(s2, 0.1)
 	if k["phase"] in ["to_tile", "harvest"]:
 		var tile: Vector2i = k["task"].get("tile", hut["pos"])
 		s2.world.set_tile(tile, "grass")
