@@ -104,7 +104,8 @@ const BUILDINGS := {
 		"radius": 2,
 		"time": 3.0,
 		"color": Color("f4a261"),
-		"desc": "Works one resource within 2 tiles, the one it stands next to. Until a road links it, it works only when you click it.",
+		"desc":
+		"Works one resource within 2 tiles, the one it stands next to. Until a road links it, it works only when you click it.",
 	},
 	"kiln":
 	{
