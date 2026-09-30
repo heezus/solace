@@ -112,7 +112,7 @@ const TECHS := {
 		"requires": [],
 		"cost": {"berries": 10, "fiber": 10},
 		"effect": "storytelling",
-		"desc": "Tales around the fire hold the camp together. New Kith are born 25% faster.",
+		"desc": "Tales around the fire hold the Hearth together. New Kith are born 25% faster.",
 	},
 	"gatherers_hut":
 	{

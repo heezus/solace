@@ -299,6 +299,7 @@ func _script() -> void:
 	# The research board: open, hover and click cards, close.
 	_then(func(): _key(KEY_T), 3)
 	_then(func(): _tech_board(), 5)
+	_then(func(): _tech_board_all(), 5)
 	_then(
 		func():
 			_click_card("calendar")
@@ -350,11 +351,23 @@ func _tech_board() -> void:
 		problems.append("T didn't open the research board")
 		return
 	var board = panel.board
+	_expect(board.view == "next", "the board didn't open on Next steps")
+	_expect(panel.stock_row.visible, "the stock strip isn't shown while the board is open")
+	for tech in board.grid:
+		_move(board.get_global_transform() * board.card_rect(tech).get_center())
+	panel._pick_view("all")
+
+
+## The whole board, once its view has been laid out: hover every card and scroll to the Calendar.
+func _tech_board_all() -> void:
+	var panel = main.tech_panel
+	var board = panel.board
 	for tech in Data.TECH_ORDER:
 		var r: Rect2 = board.card_rect(tech)
 		var at: Vector2 = board.get_global_transform() * r.get_center()
 		_move(at)
 	panel.scroll.scroll_horizontal = int(board.card_rect("calendar").position.x - 200.0)
+	panel.scroll.scroll_vertical = int(board.card_rect("calendar").position.y - 100.0)
 
 
 func _show_rank(tech: String) -> void:

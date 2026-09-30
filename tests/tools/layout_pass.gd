@@ -170,6 +170,14 @@ func _hud_checks() -> void:
 		58:
 			_check_log_opens()
 			main.msg_log.visible = false
+			main.tech_panel.view_chosen = false
+			main.tech_panel.visible = true
+		60:
+			_check_board_open()
+			main.tech_panel._pick_view("all")
+		62:
+			_check_board_hover()
+			main.tech_panel.visible = false
 			frozen = false
 	if frame > 5 and frame % 5 == 0:
 		_check_fit("at frame %d" % frame)
@@ -437,6 +445,41 @@ func _check_log_opens() -> void:
 		found = found or l.text == "Discovered a thing"
 	if not found:
 		problems.append("the newest message isn't in the log")
+
+
+## The research board on first open: the Next steps view, the stock strip showing, all inside the window.
+func _check_board_open() -> void:
+	hud_checks += 1
+	var panel = main.tech_panel
+	if panel.board.view != "next" and panel.state.tech_tree.researched.size() < panel.WHOLE_BOARD_FROM:
+		problems.append("the board didn't open on Next steps")
+	if not panel.stock_row.visible or panel.stock_row.get_global_rect().size.y < 8.0:
+		problems.append("the stock strip isn't visible while the board is open")
+	if not Rect2(Vector2.ZERO, main.get_viewport_rect().size).encloses(panel.get_global_rect()):
+		problems.append("the research board runs off the window (%s)" % panel.get_global_rect())
+	for l in _labels(panel.stock_row):
+		if l.get_global_rect().size.x + 1.0 < l.get_minimum_size().x:
+			problems.append("stock strip text is cut off: %s" % l.text)
+
+
+## Hovering a tech lights it and its direct neighbours only, never the chain beyond.
+func _check_board_hover() -> void:
+	hud_checks += 1
+	var board = main.tech_panel.board
+	var probe_tech := "knapping"
+	board._set_hover(probe_tech)
+	var direct := {probe_tech: true}
+	for e in board.lay["edges"]:
+		if e["to"] == probe_tech:
+			direct[e["from"]] = true
+		elif e["from"] == probe_tech:
+			direct[e["to"]] = true
+	for tech in board.chain:
+		if not direct.has(tech):
+			problems.append("hovering %s also lit %s, which isn't one step away" % [probe_tech, tech])
+	if board.chain.size() < 2:
+		problems.append("hovering %s lit nothing around it" % probe_tech)
+	board._set_hover("")
 
 
 func _labels(node: Node) -> Array:

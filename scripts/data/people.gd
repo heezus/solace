@@ -21,26 +21,28 @@ const PEOPLE_NAMES := ["Aro", "Tam", "Esk", "Bru", "Olla", "Fen", "Rook", "Moss"
 ## it works at (BUILDINGS `job`), a hut's from what it gathers most (HUT_JOBS), or from hauling or idling.
 ## `craft` names the skill in the toast when a Kith learns it by watching you.
 const HUT_JOBS := {
-	"wood": {"title": "Woodcutter", "craft": "woodcutting"},
-	"stone": {"title": "Quarrier", "craft": "quarrying"},
-	"flint": {"title": "Knapper", "craft": "knapping"},
-	"berries": {"title": "Forager", "craft": "foraging"},
-	"fiber": {"title": "Thatcher", "craft": "thatching"},
-	"grain": {"title": "Reaper", "craft": "reaping"},
-	"clay": {"title": "Digger", "craft": "digging"},
+	"wood": {"title": "Woodcutter", "craft": "to chop wood"},
+	"stone": {"title": "Quarrier", "craft": "to quarry stone"},
+	"flint": {"title": "Knapper", "craft": "to gather flint"},
+	"berries": {"title": "Forager", "craft": "to pick berries"},
+	"fiber": {"title": "Thatcher", "craft": "to cut flax"},
+	"grain": {"title": "Reaper", "craft": "to reap grain"},
+	"clay": {"title": "Digger", "craft": "to dig clay"},
 }
+const JOB_ANY := {"title": "Gatherer", "craft": "to gather"}  # for an item with no entry above
 const JOB_HAULER := "Hauler"
 const JOB_IDLE := "Idle"
 
 ## Messages and labels that name the people. Each is formatted with PEOPLE["one"] or PEOPLE["many"]
 ## (the noun they use is noted beside it).
-const CAMP_TOAST := "The %s make camp. Follow the goals on the right. Press T for the tech tree."  # many
+const CAMP_TOAST := "The %s gather at the Hearth, hopeful. Hold the mouse on a tree to begin: the goals are on the right."  # many
+const LEARNED_LINE := "%s learned %s and is now the %s."  # name, "to chop wood", job title
 const BORN_POPUP := "+1 %s"  # one
 const BORN_TOAST := "New %s arrive at the Hearth while food lasts"  # many
 const NAMELESS := "A %s"  # one: who learns a job when no one is named
 const BRIDGE_HINT := "Wooden Bridge. %s and haulers cross the river here."  # many
 const ROAD_HINT := "Road on %s. %s walk twice as fast here."  # tile name, many
-const FOOD_TIP := "Every %s eats food: Berries, then Fish, then any Flour research doesn't need."  # one
+const FOOD_TIP := "Every %s eats food: Berries, then Fish, then any Flour that isn't in use."  # one
 ## The Food readout while the warning is up, formatted with the time left ("45 s").
 const FOOD_LOW_TEXT := "Low: %s left. Gather berries!"
 const STARVING_TEXT := "Food: none! The %s have stopped working"  # many

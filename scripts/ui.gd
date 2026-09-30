@@ -216,9 +216,9 @@ static func idle_kith(s) -> int:
 static func growth_note(s) -> String:
 	var n: int = s.people.kith.size()
 	if s.economy.starving:
-		return "Starving: no food"
+		return Data.NOTE_STARVING
 	if n >= s.town.housing():
-		return "No room: build a Dwelling"
+		return Data.NOTE_NO_ROOM
 	if not s.people.food_ready_for_birth():
 		return Data.GROW_NOTE_FOOD
 	return ""
