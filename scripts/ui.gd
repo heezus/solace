@@ -8,6 +8,7 @@ const Rules = preload("res://scripts/rules.gd")
 
 const OUTLINE: Color = Art.OUTLINE
 const BAD := Color("ef476f")
+const SHORT := Color("ff6f61")  # a count the stockpile falls short of
 const GOOD := Color("9fe39f")  # the `positive` token
 const HIGHLIGHT := Color("ffd166")
 const PANEL := Color("1d3557")
@@ -55,7 +56,7 @@ static func swatch_texture(color: Color) -> ImageTexture:
 	return ImageTexture.create_from_image(img)
 
 
-## A colored square for an item, for chips and panels.
+## A colored square for an item: the stand-in when its sprite is missing.
 static func item_swatch(id: String, size: float) -> ColorRect:
 	var r := ColorRect.new()
 	r.color = Data.ITEMS[id]["color"]
@@ -63,6 +64,52 @@ static func item_swatch(id: String, size: float) -> ColorRect:
 	r.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	r.mouse_filter = Control.MOUSE_FILTER_PASS
 	return r
+
+
+## An item's sprite (art/sprites/item_<id>.svg), or null when there isn't one.
+static func item_sprite(id: String) -> Texture2D:
+	return Art.sprite("item_" + id)
+
+
+## An item's icon `size` px square: its sprite with nothing behind it, or the old colored square if the sprite is missing.
+static func item_icon(id: String, size: float) -> Control:
+	var tex := item_sprite(id)
+	if tex == null:
+		return item_swatch(id, size * 0.6)
+	var r := TextureRect.new()
+	r.texture = tex
+	r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	r.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	r.custom_minimum_size = Vector2(size, size)
+	r.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	r.mouse_filter = Control.MOUSE_FILTER_PASS
+	r.set_meta("item", id)
+	return r
+
+
+## A row of price pips, one per item in `cost`: its 20 px sprite and the amount (see update_pips).
+static func cost_pips(cost: Dictionary, icon_size: float, font_size: int) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	for id in cost:
+		var pip := HBoxContainer.new()
+		pip.add_theme_constant_override("separation", 1)
+		pip.add_child(item_icon(id, icon_size))
+		var l := label("", font_size)
+		l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		pip.add_child(l)
+		row.add_child(pip)
+	return row
+
+
+## Set each pip's amount: the price, red where the stockpile `inv` is short of it.
+static func update_pips(row: HBoxContainer, cost: Dictionary, inv: Dictionary) -> void:
+	var i := 0
+	for id in cost:
+		var l: Label = row.get_child(i).get_child(1)
+		l.text = str(cost[id])
+		l.add_theme_color_override("font_color", Color.WHITE if inv.get(id, 0) >= cost[id] else SHORT)
+		i += 1
 
 
 static func tech_color(tech: String) -> Color:

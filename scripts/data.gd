@@ -11,6 +11,7 @@ const DataTechs = preload("res://scripts/data/techs.gd")
 const DataBuildings = preload("res://scripts/data/buildings.gd")
 const DataGoals = preload("res://scripts/data/goals.gd")
 const DataTuning = preload("res://scripts/data/tuning.gd")
+const DataWords = preload("res://scripts/data/words.gd")
 
 # --- Items: data/items.gd ---
 const ITEMS := DataItems.ITEMS
@@ -104,3 +105,35 @@ const STORYTELLING_GROW := DataTuning.STORYTELLING_GROW
 const BONUSES := DataTuning.BONUSES
 const TOOL_JOBS := DataTuning.TOOL_JOBS
 const CALENDAR_FIELD_BONUS := DataTuning.CALENDAR_FIELD_BONUS
+
+# --- Words: data/words.gd ---
+const CARD_READY := DataWords.CARD_READY
+const CARD_DRAG := DataWords.CARD_DRAG
+const CARD_PLACING := DataWords.CARD_PLACING
+const CARD_LOCKED := DataWords.CARD_LOCKED
+const CARD_NEED := DataWords.CARD_NEED
+const CARD_NEED_MORE := DataWords.CARD_NEED_MORE
+const CARD_NEED_ITEMS := DataWords.CARD_NEED_ITEMS
+const CARD_DISCOVER := DataWords.CARD_DISCOVER
+const TECH_DONE := DataWords.TECH_DONE
+const UNLOCKED_TOAST := DataWords.UNLOCKED_TOAST
+const LOG_BUTTON := DataWords.LOG_BUTTON
+const LOG_TIP := DataWords.LOG_TIP
+const WORKER_HERE := DataWords.WORKER_HERE
+const WORKER_TOOL := DataWords.WORKER_TOOL
+const WORKER_NO_TOOL := DataWords.WORKER_NO_TOOL
+const WORKER_NONE := DataWords.WORKER_NONE
+const WORKER_PAUSED := DataWords.WORKER_PAUSED
+const PACE_TRIP := DataWords.PACE_TRIP
+const PACE_WORK := DataWords.PACE_WORK
+const PACE_MAKES := DataWords.PACE_MAKES
+const PACE_BOOST := DataWords.PACE_BOOST
+const PACE_TIP := DataWords.PACE_TIP
+const TRIPS_HINT := DataWords.TRIPS_HINT
+const RUSH_HINT := DataWords.RUSH_HINT
+const RUSH_WAIT := DataWords.RUSH_WAIT
+const RUSH_COOL := DataWords.RUSH_COOL
+const HOLDING := DataWords.HOLDING
+const CLOSE_TIP := DataWords.CLOSE_TIP
+const SELECT_HINT := DataWords.SELECT_HINT
+const UNEXPLORED_INFO := DataWords.UNEXPLORED_INFO

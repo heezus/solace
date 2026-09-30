@@ -26,7 +26,7 @@ const LANES := {
 }
 const LANE_ORDER := ["fiber", "stone", "land", "hearth", "lore"]
 ## Column captions on the research board, one per tier; the last is the gate's column.
-const TIER_NAMES := ["TIER I  ·  ROOTS", "TIER II", "TIER III", "TIER IV", "TIER V", "THE GATE"]
+const TIER_NAMES := ["TIER I", "TIER II", "TIER III", "TIER IV", "TIER V", "THE GATE"]
 
 ## How many techs the research queue lines up at once.
 const QUEUE_SLOTS := 5
