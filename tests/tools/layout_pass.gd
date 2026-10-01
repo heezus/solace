@@ -115,6 +115,7 @@ func _hud_checks() -> void:
 			main.messages.push("A third that stays until it is clicked", 0.0, true)
 			main.messages.push("A fourth: " + WALL, 30.0)
 		12:
+			_check_min_text("with toasts up")
 			_check_toast_and_chips()
 			main.messages.active.clear()
 			main.messages.changed.emit()
@@ -181,6 +182,7 @@ func _hud_checks() -> void:
 			main.tech_panel.view_chosen = false
 			main.tech_panel.visible = true
 		60:
+			_check_min_text("with the research board open")
 			_check_board_open()
 			main.tech_panel._pick_view("all")
 		62:
@@ -528,6 +530,24 @@ func _check_board_hover() -> void:
 	if board.chain.size() < 2:
 		problems.append("hovering %s lit nothing around it" % probe_tech)
 	board._set_hover("")
+
+
+## No label or button on screen is set smaller than 14 px.
+func _check_min_text(when: String) -> void:
+	hud_checks += 1
+	for c in _texts(main):
+		var size: int = c.get_theme_font_size("font_size")
+		if size < 14:
+			problems.append('%s: "%s" is %d px (the minimum is 14)' % [when, c.text, size])
+
+
+func _texts(node: Node) -> Array:
+	var out: Array = []
+	if (node is Label or node is Button) and node.is_visible_in_tree() and node.text != "":
+		out.append(node)
+	for c in node.get_children():
+		out += _texts(c)
+	return out
 
 
 func _labels(node: Node) -> Array:
