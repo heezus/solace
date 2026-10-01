@@ -183,6 +183,7 @@ func _build_button(type: String) -> Dictionary:
 	var why := _text("", CardText.FONT_SIZE, Vector2(6, WHY_Y), Vector2(BUTTON.x - 12, 36))
 	why.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	why.clip_text = false
+	why.add_theme_constant_override("line_spacing", -4)
 	b.add_child(why)
 	for c in [icon, title, sub, pips, why]:
 		Ui.ignore_mouse(c)
