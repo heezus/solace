@@ -259,10 +259,10 @@ func test_every_skill_text_says_what_they_gather() -> void:
 		t.check(learned.size() == 1, "%s: one 'learned' toast (%d)" % [item, learned.size()])
 		texts += s.events
 		texts.append(HoverText.learn_text(s, item))
-		var log = Messages.new()
+		var queue = Messages.new()
 		for e in s.events:
-			log.push(e, 1.0)
-		for entry in log.history:
+			queue.push(e, 1.0)
+		for entry in queue.history:
 			texts.append(String(entry["text"]))
 		t.check(String(learned[0]).contains(" learned to "), "%s: the toast says what they do: %s" % [item, learned[0]])
 		for text in texts:
