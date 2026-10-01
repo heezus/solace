@@ -11,6 +11,7 @@ const CARD_PLACING := "Placing"
 const CARD_LOCKED := "Locked"
 const CARD_NEED := "Need %s"  # "4 Wood, 2 Rope"
 const CARD_NEED_MORE := "Need %s +%d more"  # "4 Wood", how many other items are short
+const DEMOLISH_TIP := "Demolish (X). Refunds half."
 const CAMERA_HINT := "Arrow keys or WASD move the map, the mouse wheel zooms, Home looks at the Hearth."
 const CARD_NEED_PLUS := "Need %s +%d"  # the same, shorter
 const CARD_NEED_ITEMS := "Need more"  # when even the short form doesn't fit

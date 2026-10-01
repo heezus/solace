@@ -22,6 +22,7 @@ const LOWER_Y := 41.0  # the price pips run along the bottom
 const WHY_Y := 22.0  # a locked card has no state line: its reason (two lines at most) starts here
 const LOCKED_BG: Color = Ui.CARD_LOCKED
 const LOCKED_TEXT: Color = Ui.TEXT_DIM
+const DEMOLISH_SIZE := 40.0
 const PULSE_SECONDS := 4.0  # how long a card and its tab glow after research unlocks it
 
 var state: Sim
@@ -44,7 +45,7 @@ func setup(game: Sim) -> void:
 	h.add_theme_constant_override("separation", 10)
 	add_child(h)
 
-	tech_button = _big_button("Tech tree", "T", Ui.tech_color("storytelling"))
+	tech_button = _tech_button()
 	tech_button.pressed.connect(func(): tech_pressed.emit())
 	h.add_child(tech_button)
 	h.add_child(VSeparator.new())
@@ -73,11 +74,6 @@ func setup(game: Sim) -> void:
 			build_buttons[type] = parts
 
 	h.add_child(VSeparator.new())
-	demolish_button = _big_button("Demolish (X)", "refunds half", Ui.BAD)
-	demolish_button.custom_minimum_size = Vector2(118, BUTTON.y)
-	demolish_button.pressed.connect(func(): demolish_pressed.emit())
-	h.add_child(demolish_button)
-	h.add_child(VSeparator.new())
 
 	var craft := VBoxContainer.new()
 	craft.add_theme_constant_override("separation", 4)
@@ -93,6 +89,12 @@ func setup(game: Sim) -> void:
 		craft.add_child(b)
 		craft_buttons[r] = b
 	h.add_child(craft)
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	h.add_child(spacer)
+	demolish_button = _demolish_button()  # the far right: small, ghost style, red only while it is the tool in use
+	demolish_button.pressed.connect(func(): demolish_pressed.emit())
+	h.add_child(demolish_button)
 	_show_tab(tab)
 
 
@@ -197,14 +199,34 @@ static func _text(text: String, font_size: int, at: Vector2, extent: Vector2) ->
 	return l
 
 
-func _big_button(title: String, sub: String, col: Color) -> Button:
-	var b := Ui.button(title + "\n" + sub)
-	b.custom_minimum_size = Vector2(104, BUTTON.y)
-	var style := Ui.panel_style(col.darkened(0.35), 6)
+## The Tech tree button: Kith orange, filled, and the only filled button on screen.
+func _tech_button() -> Button:
+	var b := Ui.button("Tech tree\nT")
+	b.custom_minimum_size = Vector2(112, BUTTON.y)
+	b.add_theme_font_size_override("font_size", Ui.LABEL_TEXT)
+	var style := Ui.panel_style(Ui.KITH, 6)
 	b.add_theme_stylebox_override("normal", style)
+	b.add_theme_stylebox_override("pressed", style)
 	var hover := style.duplicate()
-	hover.bg_color = col.darkened(0.2)
+	hover.bg_color = Ui.KITH.lightened(0.12)
+	hover.border_color = Ui.HIGHLIGHT
 	b.add_theme_stylebox_override("hover", hover)
+	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		b.add_theme_color_override(key, Ui.LINE)  # dark cocoa text: cream would not read on orange
+	return b
+
+
+## The Demolish tool: a 40x40 icon button (a hammer with a small X) in the ghost card style.
+func _demolish_button() -> Button:
+	var b := Button.new()
+	b.focus_mode = Control.FOCUS_NONE
+	b.custom_minimum_size = Vector2(DEMOLISH_SIZE, DEMOLISH_SIZE)
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	b.icon = Art.sprite("demolish_tool")
+	b.expand_icon = true
+	b.add_theme_constant_override("icon_max_width", 28)
+	b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	b.tooltip_text = Data.DEMOLISH_TIP
 	return b
 
 
@@ -240,8 +262,11 @@ func refresh(placing: String, ready_count: int) -> void:
 		Ui.update_pips(parts["pips"], def["cost"], state.economy.inv)
 		parts["icon"].modulate = Color(1, 1, 1, 1.0 if unlocked else 0.4)
 		b.tooltip_text = _tooltip(type)
-	var demo := Ui.panel_style(Ui.BAD if placing == "demolish" else Ui.BAD.darkened(0.55), 6)
+	var demo := Ui.panel_style(Ui.BAD if placing == "demolish" else Ui.CARD, 4)
 	demolish_button.add_theme_stylebox_override("normal", demo)
+	var demo_hover := demo.duplicate()
+	demo_hover.border_color = Ui.HIGHLIGHT
+	demolish_button.add_theme_stylebox_override("hover", demo_hover)
 	for r in craft_buttons:
 		var b: Button = craft_buttons[r]
 		var rec: Dictionary = Data.RECIPES[r]
