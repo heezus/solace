@@ -54,9 +54,9 @@ const BIRTH_FOOD := 5.0
 ## steadily (Economy.food_is_steady): what the buildings bring (not hand-gathering) over the last
 ## RATE_WINDOW seconds must cover what everyone eats.
 const BIRTH_RESERVE := 2.0
-## ...and it must have covered them for this long without a break. Longer than RATE_WINDOW on purpose: one delivery
+## ...and it must have covered them for this long (a short dip costs as much as it lasted). Longer than RATE_WINDOW on purpose: one delivery
 ## stays in the window for RATE_WINDOW seconds, so a single trip can never pass for steady food.
-const STEADY_SECONDS := 45.0
+const STEADY_SECONDS := 35.0
 ## After this long with no food, one Kith leaves.
 const STARVE_TIME := 20.0
 ## Tiles per second on open ground. Roads double it; forest and rocks halve it.

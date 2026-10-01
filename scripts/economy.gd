@@ -134,7 +134,8 @@ static func _not_income(source: String) -> bool:
 
 ## The rule that lets the population grow, and the note beside the Kith count says the same thing: the food the
 ## buildings make over the whole flow window (Data.RATE_WINDOW seconds, all of it elapsed) has covered what
-## everyone eats for Data.STEADY_SECONDS without a break. A big stockpile never does, a burst of hand-gathering
+## everyone eats for Data.STEADY_SECONDS (counting up while it does and down while it does not, so a short dip in
+## a long run of output does not start it all again, but output that is covered only half the time never gets there). A big stockpile never does, a burst of hand-gathering
 ## doesn't, and neither does a single trip: its bundle stays in the window for only RATE_WINDOW seconds.
 func food_is_steady() -> bool:
 	return steady_held >= Data.STEADY_SECONDS
@@ -152,7 +153,9 @@ func _watch_steady(delta: float) -> void:
 	if second != _steady_second:
 		_steady_second = second
 		_steady_ok = food_covers_eating()
-	steady_held = snappedf(steady_held + delta, 0.01) if _steady_ok else 0.0
+	steady_held = snappedf(
+		clampf(steady_held + (delta if _steady_ok else -delta), 0.0, Data.STEADY_SECONDS * 2.0), 0.01
+	)
 
 
 ## How long the food lasts, in seconds: the stockpile plus the credit already taken from it, against what
