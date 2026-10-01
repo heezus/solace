@@ -9,6 +9,7 @@ const Messages = preload("res://scripts/messages.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
 const Overlays = preload("res://scripts/overlays.gd")
 const KithArt = preload("res://scripts/kith_art.gd")
+const SidePanel = preload("res://scripts/side_panel.gd")
 const HoverText = preload("res://scripts/hover_text.gd")
 
 const CARD_TEXT_W := 110.0  # the width of a card's state line (BuildBar.TEXT_W)
@@ -28,6 +29,7 @@ func run(runner) -> void:
 	test_status_pills_are_short()
 	test_every_kith_has_a_place_on_the_map()
 	test_words_are_plain()
+	test_the_goal_list_shows_the_current_goal_and_the_next()
 	test_every_skill_text_says_what_they_gather()
 
 
@@ -263,3 +265,31 @@ func test_every_skill_text_says_what_they_gather() -> void:
 		for text in texts:
 			for w in words:
 				t.check(not String(text).to_lower().contains(w), "%s: '%s' names a tech (%s)" % [item, text, w])
+
+
+## Playtest 4: done goals stayed in the list and pushed the current one down. The panel shows the current goal and the
+## next one, the done ones are a count in the header.
+func test_the_goal_list_shows_the_current_goal_and_the_next() -> void:
+	var s = t.fresh()
+	var panel := SidePanel.new()
+	panel.setup(s, 300.0)
+	panel.refresh_goals(s)
+	t.check(panel.goal_header.text == "Goals 0/%d" % Data.GOALS.size(), "the header counts: " + panel.goal_header.text)
+	for n in 9:
+		s.story.goals_done[Data.GOALS[n]["id"]] = true
+	panel.refresh_goals(s)
+	var shown: Array = panel.goal_labels.filter(func(l): return l.visible).map(func(l): return l.text)
+	t.check(shown.size() == 2, "two goals show: %s" % [shown])
+	t.check(
+		shown[0] == "> " + Data.GOALS[9]["text"] and shown[1] == "  " + Data.GOALS[10]["text"],
+		"the current one, then the next"
+	)
+	t.check(not " ".join(shown).contains("Done"), "no done goal is listed")
+	t.check(panel.goal_header.text == "Goals 9/%d" % Data.GOALS.size(), "and the header says 9 are done")
+	t.check(panel.goal_header.tooltip_text.count("Done: ") == 9, "hovering it lists them")
+	panel.building_panel.visible = true
+	panel.refresh_goals(s)
+	t.check(
+		panel.goal_labels.filter(func(l): return l.visible).size() == 1, "with a card open, only the current goal shows"
+	)
+	panel.free()
