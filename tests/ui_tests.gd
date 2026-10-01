@@ -9,6 +9,8 @@ const Messages = preload("res://scripts/messages.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
 const Overlays = preload("res://scripts/overlays.gd")
 const KithArt = preload("res://scripts/kith_art.gd")
+const TopBar = preload("res://scripts/top_bar.gd")
+const Ui = preload("res://scripts/ui.gd")
 const SidePanel = preload("res://scripts/side_panel.gd")
 const HoverText = preload("res://scripts/hover_text.gd")
 
@@ -29,6 +31,7 @@ func run(runner) -> void:
 	test_status_pills_are_short()
 	test_every_kith_has_a_place_on_the_map()
 	test_words_are_plain()
+	test_the_food_flash_stays_legible()
 	test_the_goal_list_shows_the_current_goal_and_the_next()
 	test_every_skill_text_says_what_they_gather()
 
@@ -293,3 +296,20 @@ func test_the_goal_list_shows_the_current_goal_and_the_next() -> void:
 		panel.goal_labels.filter(func(l): return l.visible).size() == 1, "with a card open, only the current goal shows"
 	)
 	panel.free()
+
+
+## Playtest 4: at the dim point of its flash the Food box's "Low: 18 s left" was nearly invisible. Only the ring flashes
+## now; the words keep their colour at full strength, and read at 4.5 to 1 or better on the bar at every phase.
+func test_the_food_flash_stays_legible() -> void:
+	t.check(Ui.contrast(Color.WHITE, Color.BLACK) > 20.9, "the contrast measure: white on black is 21")
+	t.check(
+		Ui.contrast(Ui.BAD, Ui.BAR) < 4.5, "the plain red was too dim on the bar (%.1f)" % Ui.contrast(Ui.BAD, Ui.BAR)
+	)
+	t.check(
+		Ui.contrast(TopBar.ALARM_TEXT, Ui.BAR) >= 4.5,
+		"the alarm text reads on the bar: %.1f" % Ui.contrast(TopBar.ALARM_TEXT, Ui.BAR)
+	)
+	var least := 99.0
+	for n in 32:
+		least = minf(least, Ui.contrast(TopBar.flash_ring(n * 0.1), Ui.BAR))
+	t.check(least >= 3.0, "the ring is visible at every phase of the flash (%.1f)" % least)
