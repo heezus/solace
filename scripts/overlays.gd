@@ -13,6 +13,8 @@ const OUTLINE: Color = Art.OUTLINE
 const ALERT: Color = Ui.BAD
 const KITH: Color = Ui.KITH
 const RUBBLE_TIME := 0.9
+const SIDES := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+const CORNERS := [Vector2i(1, 1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(-1, -1)]
 
 
 static func rect(p: Vector2i) -> Rect2:
@@ -162,6 +164,48 @@ static func alert_badges(ci: CanvasItem, s) -> void:
 		var px := roundi(14.0 * Art.ui_k)
 		var wide := font.get_string_size("!", HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
 		ci.draw_string(font, at + Vector2(-wide / 2.0, px * 0.36), "!", HORIZONTAL_ALIGNMENT_LEFT, -1, px, Ui.TEXT)
+
+
+## The edge of the lit land: each explored tile next to fog fades into the fog color over its own width, so the
+## border is one soft tile wide with no ragged rim. Nothing of the fogged land shows through.
+static func fog_edges(ci: CanvasItem, s, seen: Rect2i) -> void:
+	var fog: Color = Data.FOG
+	for y in range(seen.position.y, seen.end.y):
+		for x in range(seen.position.x, seen.end.x):
+			var p := Vector2i(x, y)
+			if not s.fog.is_revealed(p):
+				continue
+			var r := rect(p)
+			for d in SIDES:
+				if _fogged(s, p + d):
+					_fade_side(ci, r, d, fog)
+			for d in CORNERS:
+				if _fogged(s, p + d) and not _fogged(s, p + Vector2i(d.x, 0)) and not _fogged(s, p + Vector2i(0, d.y)):
+					var corner := r.get_center() + Vector2(d) * TILE * 0.5
+					var pts := PackedVector2Array(
+						[corner, corner - Vector2(d.x * TILE * 0.6, 0), corner - Vector2(0, d.y * TILE * 0.6)]
+					)
+					ci.draw_polygon(pts, PackedColorArray([fog, Color(fog, 0.0), Color(fog, 0.0)]))
+
+
+static func _fogged(s, p: Vector2i) -> bool:
+	return s.world.in_bounds(p) and not s.fog.is_revealed(p)
+
+
+## A strip across tile `r`, clear on the side away from the fog and solid fog color at the edge facing it.
+static func _fade_side(ci: CanvasItem, r: Rect2, toward: Vector2i, fog: Color) -> void:
+	var edge := r.get_center() + Vector2(toward) * TILE * 0.5
+	var across := Vector2(absf(toward.y), absf(toward.x)) * TILE * 0.5
+	var back := Vector2(toward) * TILE
+	var mid := Color(fog, 0.35)
+	var near := PackedVector2Array(
+		[edge - across, edge + across, edge + across - back * 0.5, edge - across - back * 0.5]
+	)
+	ci.draw_polygon(near, PackedColorArray([fog, fog, mid, mid]))
+	var far := PackedVector2Array(
+		[edge - across - back * 0.5, edge + across - back * 0.5, edge + across - back, edge - across - back]
+	)
+	ci.draw_polygon(far, PackedColorArray([mid, mid, Color(fog, 0.0), Color(fog, 0.0)]))
 
 
 ## The Hearth's reach: a 2 px dashed cream line at 40% opacity, labelled "Build range", drawn only while a Dwelling

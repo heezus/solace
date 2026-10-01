@@ -539,6 +539,11 @@ func _draw() -> void:
 	for y in range(seen.position.y, seen.end.y):
 		for x in range(seen.position.x, seen.end.x):
 			var p := Vector2i(x, y)
+			if not state.fog.is_revealed(p):
+				# Unexplored land is one flat color with a faint hatch: no terrain, no icons, nothing to give away.
+				draw_rect(_tile_rect(p), Data.FOG)
+				draw_texture_rect(Art.fog_hatch(int(TILE)), _tile_rect(p), false)
+				continue
 			var t := state.world.tile_at(p)
 			var base: Color = (
 				Data.TILES["grass"]["color"]
@@ -554,6 +559,8 @@ func _draw() -> void:
 	for y in range(seen.position.y, seen.end.y):
 		for x in range(seen.position.x, seen.end.x):
 			var p := Vector2i(x, y)
+			if not state.fog.is_revealed(p):
+				continue
 			Art.map_feature(self, state.world.tile_at(p), _tile_center(p), p, time, TILE / Art.DESIGN)
 
 	# Ranges: a hut's gathering tiles, power range for wheels, Standing Stone reach.
@@ -587,7 +594,7 @@ func _draw() -> void:
 			_draw_gather_range(sel["pos"])
 		Overlays.flow_arrows(self, state, sel, time)
 	KithArt.draw_all(self, state, time)
-	_draw_fog()
+	Overlays.fog_edges(self, state, seen)
 	Overlays.alert_badges(self, state)
 
 	# Placement ghost.
@@ -633,19 +640,6 @@ func _draw() -> void:
 		)
 		var col: Color = pop.get("col", Ui.TEXT)
 		draw_string(font, pos, pop["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(col, a))
-
-
-## Unexplored tiles: nearly opaque, with a softer edge next to explored ground.
-func _draw_fog() -> void:
-	for y in World.HEIGHT:
-		for x in World.WIDTH:
-			var p := Vector2i(x, y)
-			if state.fog.is_revealed(p):
-				continue
-			var edge := false
-			for n in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
-				edge = edge or state.fog.is_revealed(p + n)
-			draw_rect(_tile_rect(p), Color(Data.FOG, 0.55 if edge else 0.94))
 
 
 ## A Standing Stone's reach: under the cursor while placing one, around each one while hovering one.
@@ -773,7 +767,7 @@ func _draw_roads() -> void:
 	var k := TILE / Art.DESIGN
 	var seen := _visible_tiles()
 	for p in state.world.roads:
-		if not seen.has_point(p):
+		if not seen.has_point(p) or not state.fog.is_revealed(p):
 			continue
 		var c := _tile_center(p)
 		if state.world.tile_at(p) == "river":

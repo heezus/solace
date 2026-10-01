@@ -22,6 +22,7 @@ const DESIGN := 32.0
 static var ui_k := 1.0
 
 static var _sprites := {}
+static var _hatch: Texture2D = null
 
 
 static func building_sprite(type: String) -> Texture2D:
@@ -38,6 +39,20 @@ static func sprite(name: String) -> Texture2D:
 			tex = load(path) as Texture2D
 		_sprites[name] = tex
 	return _sprites[name]
+
+
+## A tile of unexplored land's very light diagonal hatch (a lines every 12 px, so it runs on across tiles).
+static func fog_hatch(tile_px: int) -> Texture2D:
+	if _hatch == null:
+		var img := Image.create(tile_px, tile_px, false, Image.FORMAT_RGBA8)
+		var period := maxi(int(tile_px / 4.0), 2)
+		for y in tile_px:
+			for x in tile_px:
+				var d := (x + y) % period
+				if d < 2:
+					img.set_pixel(x, y, Color(1.0, 0.92, 0.8, 0.05))
+		_hatch = ImageTexture.create_from_image(img)
+	return _hatch
 
 
 ## An item's sprite drawn in `r` at alpha `a`, or the old colored square when it has none.
