@@ -71,8 +71,11 @@ func _finish() -> void:
 # --- Input helpers -------------------------------------------------------------
 
 
+## Where tile p is on screen, after scrolling the map view to it if it is out of sight.
 func _screen_of(p: Vector2i) -> Vector2:
-	return main.position + (Vector2(p) + Vector2(0.5, 0.5)) * main.TILE * main.scale.x
+	if not main.view.grow(-main.TILE).has_point(main.screen_of(p)):
+		main.center_on(p)
+	return main.screen_of(p)
 
 
 ## Canvas coordinates (what Controls and the map use) to window coordinates (what input events carry).
@@ -489,7 +492,7 @@ func _first_click_panel() -> void:
 func _board_click_through() -> void:
 	var s = main.state
 	var panel = main.tech_panel
-	var over: Vector2 = _screen_of(_nearest("tree"))
+	var over := func() -> Vector2: return _screen_of(_nearest("tree"))  # looked up when used: the map may scroll
 	_then(
 		func():
 			if not panel.visible:
@@ -502,9 +505,9 @@ func _board_click_through() -> void:
 	_then(
 		func():
 			_expect(panel.visible, "T didn't open the research board")
-			_hold_on(over)
+			_hold_on(over.call())
 	)
-	_then(func(): _button(over, MOUSE_BUTTON_LEFT, false), 90)
+	_then(func(): _button(over.call(), MOUSE_BUTTON_LEFT, false), 90)
 	_then(
 		func():
 			_expect(s.hand_counts == probe["counts"], "holding on the research board harvested the map under it")
@@ -529,8 +532,8 @@ func _board_click_through() -> void:
 		3
 	)
 	# The same hold with the board shut does harvest, so the check above means something.
-	_then(func(): _hold_on(over), 2)
-	_then(func(): _button(over, MOUSE_BUTTON_LEFT, false), 90)
+	_then(func(): _hold_on(over.call()), 2)
+	_then(func(): _button(over.call(), MOUSE_BUTTON_LEFT, false), 90)
 	_then(func(): _expect(s.hand_counts != probe["counts"], "holding on the map with the board shut harvested nothing"))
 
 

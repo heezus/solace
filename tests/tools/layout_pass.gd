@@ -1,6 +1,7 @@
 extends SceneTree
-## The map's fit scale over a long run: the bot plays to Bronze Dawn with the UI refreshing every frame,
-## and the map's scale may change only when the window size does (the bars must keep steady heights).
+## The map view over a long run: the bot plays to Bronze Dawn with the UI refreshing every frame, and the map's
+## view (its place between the bars and the zoom) may change only when the window size does (the bars must keep
+## steady heights). The view runs edge to edge between the bars and up to the side panel, with the Hearth in it.
 ## It also checks the HUD's fit, at 1280x800 and after two resizes: the Info panel stays above the bottom bar
 ## even with a wall of text, a building's details are docked in the Info panel (nothing floats over the map),
 ## the top bar never runs past the window and none of its text is cut short (also with the food warning and
@@ -25,6 +26,7 @@ var frame := 0
 var last_vp := Vector2.ZERO
 var last_scale := Vector2.ZERO
 var last_pos := Vector2.ZERO
+var last_view := Rect2()
 var last_bars := Vector2.ZERO
 var problems: Array = []
 var changes := 0
@@ -79,6 +81,12 @@ func _check() -> void:
 					% [frame, last_scale.x, main.scale.x, last_bars, bars]
 				)
 			)
+	if main.view != last_view and last_view.size != Vector2.ZERO and vp == last_vp and refit_due == 0:
+		problems.append(
+			"frame %d: the map view went %s -> %s with the window unchanged" % [frame, last_view, main.view]
+		)
+	last_view = main.view
+	_check_view(frame)
 	if last_vp != Vector2.ZERO and vp != last_vp:
 		refit_due = frame + 2
 	if refit_due > 0 and (main.scale != last_scale or main.position != last_pos):
@@ -341,9 +349,48 @@ func _check_top_bar_text(when: String) -> void:
 			problems.append('%s: "%s" is cut short in the top bar' % [when, l.text])
 
 
-## The map's rectangle on screen.
+## The map view's rectangle on screen.
 func _map_rect() -> Rect2:
-	return Rect2(main.position, Vector2(World.WIDTH, World.HEIGHT) * main.TILE * main.scale.x)
+	return main.view
+
+
+## The view is flush: from the left edge to the side panel, from the top bar to the bottom bar, at least 21 tiles
+## wide at 1280 px; tiles are 32, 48 or 64 px; the map covers it (or is centred where smaller); the Hearth is in it
+## at the start.
+func _check_view(at_frame: int) -> void:
+	hud_checks += 1
+	var v: Rect2 = main.view
+	var top: Rect2 = main.top_bar.get_global_rect()
+	var bottom: Rect2 = main.bottom_bar.get_global_rect()
+	var side: Rect2 = main.side_panel.get_global_rect()
+	var vp: Vector2 = main.get_viewport_rect().size
+	var settled: bool = at_frame > 8 and main.fit_settle == 0 and main.fit_vp == vp  # not while a resize settles
+	if settled and not (is_equal_approx(v.position.x, 0.0) and absf(v.end.x - side.position.x) < 1.5):
+		problems.append(
+			"frame %d: the map view %s isn't flush with the window edge and the side panel %s" % [at_frame, v, side]
+		)
+	if settled and (absf(v.position.y - top.end.y) > 1.5 or absf(v.end.y - bottom.position.y) > 1.5):
+		problems.append("frame %d: the map view %s isn't flush between the bars (%s, %s)" % [at_frame, v, top, bottom])
+	var tile_px: float = main.TILE * main.scale.x
+	if tile_px < 31.9 or tile_px > 64.1:
+		problems.append("frame %d: tiles are %.1f px (want 32 to 64)" % [at_frame, tile_px])
+	var map := Rect2(main.position, Vector2(World.WIDTH, World.HEIGHT) * main.TILE * main.scale.x)
+	for axis in 2:
+		if (
+			map.size[axis] >= v.size[axis]
+			and (map.position[axis] > v.position[axis] + 1.0 or map.end[axis] < v.end[axis] - 1.0)
+		):
+			problems.append("frame %d: the map %s doesn't cover its view %s" % [at_frame, map, v])
+			break
+	if at_frame == 8 and not v.has_point(main.screen_of(main.state.world.camp_pos)):
+		problems.append("the Hearth isn't in the map view at the start")
+	if (
+		at_frame == 8
+		and v.size.x > 1015.0
+		and absf(main.get_viewport_rect().size.x - 1280.0) < 1.0
+		and v.size.x != 1016.0
+	):
+		problems.append("the map view is %.0f px wide at 1280 (want 1016)" % v.size.x)
 
 
 ## The selected building's card is docked in the side panel: not floating, inside its width, off the map.

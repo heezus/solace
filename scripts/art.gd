@@ -8,9 +8,18 @@ const OUTLINE := Color("1b1b1f")
 ## The pale-cyan light of the Strange Stone and its cairn.
 const STONE_GLOW := Color(0.6, 0.95, 1.0)
 const SPRITE_DIR := "res://art/sprites/"
+const FOREST: Color = Data.TILES["tree"]["color"]
 
 ## Buildings whose sprite has another name.
 const SPRITE_OF := {"camp": "hearth", "road": "tile_path", "bridge": "tile_bridge_wood"}
+
+## Map art is drawn in a 32-unit design space (`DESIGN`) and scaled up to the tile, so a 2-unit outline is 3 px at
+## 48 px tiles. Sprites are drawn at their native scale, never redrawn thin.
+const DESIGN := 32.0
+
+## One screen pixel in map units (1 / the map's zoom), set by the map each frame: text, pills and badges keep the
+## same size on screen whatever the zoom. 1.0 anywhere that draws at screen scale.
+static var ui_k := 1.0
 
 static var _sprites := {}
 
@@ -42,27 +51,31 @@ static func item_icon(ci: CanvasItem, id: String, r: Rect2, a: float) -> void:
 	ci.draw_rect(box, Color(OUTLINE, a), false, 1.0)
 
 
-## A rounded pill with centered text, e.g. a status under a building. `at` is the pill's top center.
+## A rounded pill with centered text, e.g. a hint by the cursor. `at` is the pill's top center and `size` the
+## text's size in screen px (it is scaled by `ui_k`, so it reads the same at every zoom).
 static func pill(ci: CanvasItem, at: Vector2, text: String, bg: Color, fg: Color, size: int) -> Rect2:
 	var font := ThemeDB.fallback_font
-	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x + 12.0
-	var h := size + 8.0
+	var k := ui_k
+	var px := maxi(roundi(size * k), 1)
+	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x + 14.0 * k
+	var h := px + 8.0 * k
 	var r := Rect2(at - Vector2(w / 2.0, 0), Vector2(w, h))
 	var box := StyleBoxFlat.new()
 	box.bg_color = bg
 	box.border_color = OUTLINE
-	box.set_border_width_all(2)
+	box.set_border_width_all(maxi(roundi(2.0 * k), 1))
 	box.set_corner_radius_all(int(h / 2.0))
 	ci.draw_style_box(box, r)
-	ci.draw_string(font, r.position + Vector2(6, size + 2.0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, fg)
+	ci.draw_string(font, r.position + Vector2(7.0 * k, px + 2.0 * k), text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, fg)
 	return r
 
 
-## Text with a dark outline, readable over the map.
+## Text with a dark outline, readable over the map; `size` is in screen px like `pill`.
 static func outlined_text(ci: CanvasItem, pos: Vector2, text: String, size: int, col: Color) -> void:
 	var font := ThemeDB.fallback_font
-	ci.draw_string_outline(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 4, OUTLINE)
-	ci.draw_string(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
+	var px := maxi(roundi(size * ui_k), 1)
+	ci.draw_string_outline(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, maxi(roundi(4.0 * ui_k), 1), OUTLINE)
+	ci.draw_string(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, col)
 
 
 ## A dashed circle, `on` long dashes with `off` gaps.
@@ -140,30 +153,62 @@ static func tech_icon(ci: CanvasItem, icon: String, r: Rect2, time: float) -> vo
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
-## A map tile's feature (tree, rock, river ripple...) centered on c.
+## A map tile's feature drawn at tile scale `k` (tile px / DESIGN), centered on c.
+static func map_feature(ci: CanvasItem, t: String, c: Vector2, p: Vector2i, time: float, k: float) -> void:
+	ci.draw_set_transform(c, 0.0, Vector2(k, k))
+	feature(ci, t, Vector2.ZERO, p, time)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## A map tile's feature (tree, rock, river ripple...) centered on c, in design units.
 static func feature(ci: CanvasItem, t: String, c: Vector2, p: Vector2i, time: float) -> void:
 	var jitter := Vector2(((p.x * 7 + p.y * 3) % 5) - 2, ((p.x * 3 + p.y * 5) % 5) - 2)
 	match t:
 		"tree":
-			ci.draw_rect(Rect2(c + Vector2(-2, 2), Vector2(4, 9)), Color("6d4c41"))
-			outlined_circle(ci, c + Vector2(0, -3) + jitter * 0.5, 10.0, Color("2e7d32"))
-			ci.draw_circle(c + Vector2(-3, -6) + jitter * 0.5, 3.0, Color("43a047"))
+			# A visible trunk under a canopy that fills about 0.9 tile.
+			var sway := jitter * 0.4
+			var trunk := Rect2(c + Vector2(-2.5, 3), Vector2(5, 11))
+			ci.draw_rect(trunk, Color("6d4c41"))
+			ci.draw_rect(trunk, OUTLINE, false, 1.5)
+			outlined_circle(ci, c + Vector2(0, -3) + sway, 14.0, FOREST)
+			ci.draw_circle(c + Vector2(-5, -8) + sway, 4.0, FOREST.lightened(0.18))
 		"rock":
 			var pts := PackedVector2Array(
-				[c + Vector2(-11, 8), c + Vector2(-8, -5), c + Vector2(0, -10), c + Vector2(9, -4), c + Vector2(11, 8)]
+				[
+					c + Vector2(-13, 9),
+					c + Vector2(-10, -5),
+					c + Vector2(0, -12),
+					c + Vector2(11, -5),
+					c + Vector2(13, 9)
+				]
 			)
 			outlined_poly(ci, pts, Color("9e9e9e"))
-			ci.draw_line(c + Vector2(-2, -6), c + Vector2(2, 4), Color("757575"), 2.0)
+			ci.draw_line(c + Vector2(-3, -7), c + Vector2(2, 5), Color("757575"), 2.0)
 		"gravel":
 			for i in 5:
 				ci.draw_circle(c + Vector2((i * 11) % 20 - 10, (i * 7) % 16 - 8), 2.5, Color("4a4e69"))
 		"clay":
-			ci.draw_circle(c + Vector2(-5, 3), 5.0, Color("a0522d"))
-			ci.draw_circle(c + Vector2(6, -3), 4.0, Color("a0522d"))
+			# A brown bank in the clay color, with darker lumps.
+			var bank := Data.TILES["clay"]["color"] as Color
+			var lump := PackedVector2Array()
+			for i in 14:
+				var a := TAU * i / 14.0
+				lump.append(c + Vector2(cos(a) * (12.0 + (i % 3)), sin(a) * (9.0 + (i % 2) * 1.5)))
+			outlined_poly(ci, lump, bank.darkened(0.12))
+			ci.draw_circle(c + Vector2(-5, 2), 3.5, bank.darkened(0.35))
+			ci.draw_circle(c + Vector2(5, -2), 3.0, bank.darkened(0.35))
+			ci.draw_circle(c + Vector2(1, 5), 2.2, bank.lightened(0.15))
 		"berry":
-			outlined_circle(ci, c + Vector2(0, 2), 10.0, Color("558b2f"))
-			for off in [Vector2(-4, -1), Vector2(3, 3), Vector2(4, -4), Vector2(-2, 6)]:
-				ci.draw_circle(c + off, 2.5, Color("d62246"))
+			# A low, round bush (no trunk), so it is never mistaken for a tree.
+			var bush := PackedVector2Array()
+			for i in 20:
+				var a := TAU * i / 20.0
+				bush.append(c + Vector2(cos(a) * 13.0, 4.0 + sin(a) * 9.0))
+			outlined_poly(ci, bush, Color("5d8c34"))
+			ci.draw_circle(c + Vector2(-5, 1), 3.5, Color("7aa64a"))
+			for off in [Vector2(-6, 3), Vector2(2, 7), Vector2(7, 2), Vector2(-1, 0), Vector2(8, 8)]:
+				ci.draw_circle(c + off, 2.8, Color("d62246"))
+				ci.draw_circle(c + off + Vector2(-0.8, -0.8), 0.9, Color("f4a0ab"))
 		"flax":
 			var tex := sprite("flax")
 			if tex != null:
@@ -178,10 +223,17 @@ static func feature(ci: CanvasItem, t: String, c: Vector2, p: Vector2i, time: fl
 				outlined_circle(ci, top, 2.5, Color("6d8fe0"))
 				ci.draw_circle(top, 1.0, Color("f2c14e"))
 		"grain":
-			for i in 4:
-				var x := -9 + i * 6
-				ci.draw_line(c + Vector2(x, 10), c + Vector2(x + 2, -8), Color("8d6e1f"), 2.0)
-				ci.draw_circle(c + Vector2(x + 2, -8), 2.5, Color("f2c14e"))
+			# Gold heads on slender stalks, as in the Field sprite.
+			for i in 5:
+				var x := -10 + i * 5
+				var base := c + Vector2(x, 12)
+				var tip := c + Vector2(x + (i % 2) * 2 - 1, -6 - (i % 3) * 2)
+				ci.draw_line(base, tip, Color("8d6e1f"), 2.0)
+				var head := PackedVector2Array()
+				for j in 10:
+					var a := TAU * j / 10.0
+					head.append(tip + Vector2(cos(a) * 2.6, sin(a) * 4.0 - 3.0))
+				outlined_poly(ci, head, Color("f2c14e"))
 		"river":
 			var w := sin(time * 2.0 + p.y * 0.9) * 3.0
 			ci.draw_line(c + Vector2(-10 + w, -4), c + Vector2(-2 + w, -4), Color(1, 1, 1, 0.5), 2.0)
@@ -195,92 +247,22 @@ static func feature(ci: CanvasItem, t: String, c: Vector2, p: Vector2i, time: fl
 			outlined_poly(ci, pts, Color("bdf4ff"))
 
 
-## A building's shapes, drawn over its base plate, centered on c.
-static func building(ci: CanvasItem, type: String, c: Vector2, working: bool, time: float) -> void:
-	match type:
-		"camp":
-			outlined_poly(
-				ci, PackedVector2Array([c + Vector2(-11, 9), c + Vector2(0, -11), c + Vector2(11, 9)]), Color("f4e1c1")
-			)
-			var flame := 3.0 + sin(time * 10.0) * 1.0
-			ci.draw_circle(c + Vector2(0, 5), flame, Color("ffb703"))
-		"charcoal_pit":
-			outlined_circle(ci, c + Vector2(0, 4), 9.0, Color("3d405b"))
-			if working:
-				for i in 3:
-					var t := fmod(time * 0.6 + i / 3.0, 1.0)
-					ci.draw_circle(
-						c + Vector2(sin(t * 6.0) * 3.0, -2 - t * 12), 2.0 + t * 2.0, Color(0.8, 0.8, 0.8, 1.0 - t)
-					)
-		"twine_post":
-			ci.draw_rect(Rect2(c + Vector2(-2, -11), Vector2(4, 20)), Color("6d4c41"))
-			outlined_circle(ci, c + Vector2(0, 2), 6.0, Color("bc8a5f"))
-		"gatherers_hut":
-			ci.draw_rect(Rect2(c + Vector2(-8, -1), Vector2(16, 10)), Color("f4a261"))
-			ci.draw_rect(Rect2(c + Vector2(-8, -1), Vector2(16, 10)), OUTLINE, false, 2.0)
-			outlined_poly(
-				ci, PackedVector2Array([c + Vector2(-11, 0), c + Vector2(0, -11), c + Vector2(11, 0)]), Color("e9c46a")
-			)
-		"kiln":
-			outlined_circle(ci, c + Vector2(0, 2), 10.0, Color("9c3d2e"))
-			ci.draw_circle(c + Vector2(0, 5), 4.0, Color("ffb703") if working else OUTLINE)
-		"dwelling":
-			ci.draw_rect(Rect2(c + Vector2(-9, -1), Vector2(18, 10)), Color("d4a373"))
-			ci.draw_rect(Rect2(c + Vector2(-9, -1), Vector2(18, 10)), OUTLINE, false, 2.0)
-			outlined_poly(
-				ci, PackedVector2Array([c + Vector2(-12, 0), c + Vector2(0, -10), c + Vector2(12, 0)]), Color("a8dadc")
-			)
-			ci.draw_rect(Rect2(c + Vector2(-2, 3), Vector2(4, 6)), OUTLINE)
-		"storehouse":
-			var box := Rect2(c + Vector2(-10, -8), Vector2(20, 17))
-			ci.draw_rect(box, Color("8d6e63"))
-			ci.draw_rect(box, OUTLINE, false, 2.0)
-			ci.draw_line(box.position, box.end, OUTLINE, 1.5)
-			ci.draw_line(box.position + Vector2(box.size.x, 0), box.position + Vector2(0, box.size.y), OUTLINE, 1.5)
-		"water_wheel", "grindstone":
-			var col := Color("2a9d8f") if type == "water_wheel" else Color("adb5bd")
-			var spinning: bool = type == "water_wheel" or working
-			var ang := time * 2.0 if spinning else 0.0
-			outlined_circle(ci, c, 11.0, col)
-			for i in 4:
-				var a := ang + i * PI / 4.0
-				ci.draw_line(c - Vector2.from_angle(a) * 10.0, c + Vector2.from_angle(a) * 10.0, OUTLINE, 2.0)
-			ci.draw_circle(c, 3.0, OUTLINE)
-		"fishing_weir":
-			var pool := Rect2(c + Vector2(-11, -3), Vector2(22, 12))
-			ci.draw_rect(pool, Color("3a86c8"))
-			ci.draw_rect(pool, OUTLINE, false, 2.0)
-			for i in 4:
-				ci.draw_line(c + Vector2(-9 + i * 6, -10), c + Vector2(-9 + i * 6, 9), Color("6d4c41"), 2.0)
-			if working:
-				var bob := sin(time * 4.0) * 2.0
-				outlined_poly(
-					ci,
-					PackedVector2Array([c + Vector2(-5, 3 + bob), c + Vector2(3, -1 + bob), c + Vector2(3, 7 + bob)]),
-					Color("5fa8d3")
-				)
-		"standing_stone":
-			outlined_poly(
-				ci,
-				PackedVector2Array(
-					[
-						c + Vector2(-6, 11),
-						c + Vector2(-7, -8),
-						c + Vector2(-2, -12),
-						c + Vector2(5, -9),
-						c + Vector2(6, 11)
-					]
-				),
-				Color("8d8d9a")
-			)
-			ci.draw_line(c + Vector2(-2, -6), c + Vector2(1, 4), Color("6c5b7b"), 2.0)
-		"shard_cairn":
-			ci.draw_circle(c, 13.0, Color(STONE_GLOW, 0.2 + 0.1 * sin(time * 2.0)))
-			ci.draw_arc(c, 8.0, 0, TAU, 24, OUTLINE, 8.5, true)
-			ci.draw_arc(c, 8.0, 0, TAU, 24, Color("9e9e9e"), 4.5, true)
-			for i in 6:
-				var a := i * TAU / 6.0
-				ci.draw_line(c + Vector2.from_angle(a) * 6.0, c + Vector2.from_angle(a) * 10.0, OUTLINE, 1.5)
+## A building drawn in `r` (a tile, or the Hearth's 2x2): its SVG sprite at native scale (the sprite brings its own
+## plate), or a plain plate in the building's color when it has none. `working` adds the charcoal pit's smoke.
+static func map_building(ci: CanvasItem, type: String, r: Rect2, working: bool, time: float) -> void:
+	var tex := building_sprite(type)
+	if tex != null:
+		ci.draw_texture_rect(tex, r, false)
+	else:
+		var plate := r.grow(-r.size.x * 0.06)
+		ci.draw_rect(plate, Data.BUILDINGS[type]["color"])
+		ci.draw_rect(plate, OUTLINE, false, r.size.x * 0.08)
+	if type == "charcoal_pit" and working:
+		var k := r.size.x / DESIGN
+		for i in 3:
+			var t := fmod(time * 0.6 + i / 3.0, 1.0)
+			var at := r.get_center() + Vector2(sin(t * 6.0) * 3.0, -2.0 - t * 12.0) * k
+			ci.draw_circle(at, (2.0 + t * 2.0) * k, Color(0.8, 0.8, 0.8, 1.0 - t))
 
 
 static func outlined_circle(ci: CanvasItem, c: Vector2, radius: float, color: Color) -> void:

@@ -20,6 +20,9 @@ func setup(game: Sim) -> void:
 	state = game
 	flat = true
 	alignment = HORIZONTAL_ALIGNMENT_LEFT
+	autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # wraps inside a narrow panel instead of widening it
+	size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	custom_minimum_size = Vector2(60, 0)
 	visible = false
 	add_theme_font_size_override("font_size", Ui.MIN_TEXT)
 	add_theme_color_override("font_color", Ui.TEXT)
@@ -60,13 +63,13 @@ static func label_text(s: Sim, b: Dictionary) -> String:
 	return line
 
 
-## The little square of the item's color at a hut's lower left corner: what it works, on the map.
+## The item's icon in a cocoa disc at a hut's lower left corner: what it works, on the map.
 static func draw_marker(ci: CanvasItem, r: Rect2, item: String) -> void:
 	if item == "":
 		return
-	var at := Rect2(r.position + Vector2(3, r.size.y - 16), Vector2(9, 9))
-	ci.draw_rect(at, Data.ITEMS[item]["color"])
-	ci.draw_rect(at, Color("1b2a33"), false, 1.5)
+	var c := r.position + Vector2(11, r.size.y - 11)
+	ci.draw_circle(c, 12.0, Ui.LINE)
+	Art.item_icon(ci, item, Rect2(c - Vector2(10, 10), Vector2(20, 20)), 1.0)
 
 
 ## True for a hut that is standing idle until someone clicks it: it has a worker who can work its focus, no road
@@ -85,6 +88,4 @@ static func wants_click(s: Sim, b: Dictionary) -> bool:
 ## A small pulsing "click" pill over a hut that is waiting for a click.
 static func draw_click_badge(ci: CanvasItem, r: Rect2, time: float) -> void:
 	var pulse := 0.55 + 0.45 * sin(time * 5.0)
-	Art.pill(
-		ci, Vector2(r.get_center().x, r.position.y - 26.0), "click", Color(1.0, 0.82, 0.4, pulse), Color("1b2a33"), 11
-	)
+	Art.pill(ci, Vector2(r.get_center().x, r.position.y - 30.0), "click", Color(Ui.HIGHLIGHT, pulse), Ui.LINE, 14)
