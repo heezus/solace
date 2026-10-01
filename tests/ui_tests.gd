@@ -9,6 +9,7 @@ const Messages = preload("res://scripts/messages.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
 const Overlays = preload("res://scripts/overlays.gd")
 const KithArt = preload("res://scripts/kith_art.gd")
+const HoverText = preload("res://scripts/hover_text.gd")
 
 const CARD_TEXT_W := 110.0  # the width of a card's state line (BuildBar.TEXT_W)
 
@@ -27,6 +28,7 @@ func run(runner) -> void:
 	test_status_pills_are_short()
 	test_every_kith_has_a_place_on_the_map()
 	test_words_are_plain()
+	test_every_skill_text_says_what_they_gather()
 
 
 func test_card_says_what_is_missing() -> void:
@@ -225,3 +227,39 @@ func test_words_are_plain() -> void:
 	var kith_label: String = Data.KITH_LABEL % ["Kith", 3, 4]
 	t.check(kith_label == "Kith 3  ·  homes for 4", "the Kith count says what the second number is: " + kith_label)
 	t.check(Data.JOBS_LABEL.begins_with("Jobs filled"), "the Jobs readout says what it counts")
+
+
+## Playtest 4 still saw "Esk learned knapping" and "Aro learned thatching" when gathering flint and flax, before those
+## techs exist. Every place that words what a Kith learned (the toast, the message log, the hover line, the hut card) must
+## name what they gather ("to gather flint"), never a tech.
+func test_every_skill_text_says_what_they_gather() -> void:
+	var words: Array = []
+	for id in Data.TECHS:
+		words.append(String(Data.TECHS[id]["name"]).to_lower())
+	words += ["knapping", "thatching"]
+	for item in Data.HUT_JOBS:
+		var s = t.fresh()
+		var tile := ""
+		for name in Data.TILES:
+			if Data.TILES[name]["yields"] == item:
+				tile = name
+		var p: Vector2i = t.find_tile(s, tile)
+		t.check(p.x >= 0, "a %s tile to harvest by hand" % item)
+		var texts: Array = []
+		s.events.clear()
+		for _n in Data.LEARN_CLICKS:
+			s.gather_by_hand(p)
+			texts.append(HoverText.learn_text(s, item))
+		var learned: Array = s.events.filter(func(e): return String(e).contains("learned"))
+		t.check(learned.size() == 1, "%s: one 'learned' toast (%d)" % [item, learned.size()])
+		texts += s.events
+		texts.append(HoverText.learn_text(s, item))
+		var log = Messages.new()
+		for e in s.events:
+			log.push(e, 1.0)
+		for entry in log.history:
+			texts.append(String(entry["text"]))
+		t.check(String(learned[0]).contains(" learned to "), "%s: the toast says what they do: %s" % [item, learned[0]])
+		for text in texts:
+			for w in words:
+				t.check(not String(text).to_lower().contains(w), "%s: '%s' names a tech (%s)" % [item, text, w])
