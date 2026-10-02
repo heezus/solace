@@ -24,11 +24,11 @@ func setup(queue: Messages) -> void:
 	v.add_theme_constant_override("separation", 6)
 	add_child(v)
 	var head := HBoxContainer.new()
-	var title := Ui.label("Messages", 16)
+	var title := Ui.label("Messages", Ui.LABEL_TEXT)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(title)
 	var close := Ui.button("x")
-	close.custom_minimum_size = Vector2(26, 26)
+	close.custom_minimum_size = Vector2(28, 28)
 	close.tooltip_text = "Close (L)"
 	close.pressed.connect(func(): visible = false)
 	head.add_child(close)
@@ -58,22 +58,22 @@ func refresh() -> void:
 		c.queue_free()
 	var entries := messages.recent(SHOWN)
 	if entries.is_empty():
-		var note := Ui.label("Nothing yet.", 13)
-		note.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
+		var note := Ui.label("Nothing yet.", Ui.MIN_TEXT)
+		note.add_theme_color_override("font_color", Ui.TEXT_DIM)
 		list.add_child(note)
 	for e in entries:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 8)
-		var at := Ui.label(Messages.clock_text(e["at"]), 12)
-		at.add_theme_color_override("font_color", Color(1, 1, 1, 0.55))
-		at.custom_minimum_size.x = 38.0
+		var at := Ui.label(Messages.clock_text(e["at"]), Ui.MIN_TEXT)
+		at.add_theme_color_override("font_color", Ui.TEXT_DIM)
+		at.custom_minimum_size.x = 46.0
 		at.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 		row.add_child(at)
-		var text := Ui.label(Messages.entry_text(e), 13)
+		var text := Ui.label(Messages.entry_text(e), Ui.MIN_TEXT)
 		text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		text.custom_minimum_size.x = 200.0
 		if e["sticky"]:
-			text.add_theme_color_override("font_color", Ui.HIGHLIGHT)
+			text.add_theme_color_override("font_color", Ui.SHORT)
 		row.add_child(text)
 		list.add_child(row)

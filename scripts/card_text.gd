@@ -5,7 +5,7 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 
-const FONT_SIZE := 10  # the state line's size on the card
+const FONT_SIZE := 14  # the state line's size on the card
 
 
 ## Whether the card for `type` is on the build bar. A `story` building stays off it until its tech is on the
@@ -46,6 +46,7 @@ static func state_line(s, type: String, placing: String, max_w: float) -> String
 	var options: Array = [Data.CARD_NEED % ", ".join(short)]
 	if short.size() > 1:
 		options.append(Data.CARD_NEED_MORE % [short[0], short.size() - 1])
+		options.append(Data.CARD_NEED_PLUS % [short[0], short.size() - 1])
 	for line in options:
 		if width(line) <= max_w:
 			return line

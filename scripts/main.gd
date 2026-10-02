@@ -26,17 +26,20 @@ const ToastStack = preload("res://scripts/toast_stack.gd")
 const MessageLog = preload("res://scripts/message_log.gd")
 const HutFocus = preload("res://scripts/hut_focus.gd")
 
-const TILE := 32.0
-const MAP_ORIGIN := Vector2.ZERO  # the node's transform scales and centers the map
+const TILE: float = Overlays.TILE
+const MAP_ORIGIN := Vector2.ZERO  # the node's transform pans and zooms the map
+const ZOOM_PX := [32.0, 48.0, 64.0]  # a tile's size on screen at each zoom step (scroll or pinch)
+const DEFAULT_ZOOM := 1
+const PAN_SPEED := 720.0  # screen px a second while an arrow key or WASD is held
+const FRAME_W := 4.0  # the cocoa frame round the map view
 const BANNER_SECONDS := 14.0  # how long the Bronze Dawn banner stays up
 const FIT_SETTLE_FRAMES := 3  # frames after a window resize while the bars settle to their new size
 const OUTLINE: Color = Art.OUTLINE
 const OUTLINE_W := 2.5
-const KITH := Color("e76f51")
-const SIDE_W := 290.0
-const BAD := Color("ef476f")
-const GOAL_COLOR := Color("ffd166")
-const FOG := Color("2c3834")
+const KITH: Color = Ui.KITH
+const SIDE_W := 264.0
+const BAD: Color = Ui.BAD
+const GOAL_COLOR: Color = Ui.HIGHLIGHT
 const LINE_TYPES := ["road", "bridge", "field"]  # laid by dragging
 const AURA_FILL := Color(0.55, 0.45, 0.6, 0.2)
 const NUDGE_TIME := 2.0  # seconds the "hold it down" hint stays after a click that let go too soon
@@ -44,6 +47,12 @@ const NUDGE_TIME := 2.0  # seconds the "hold it down" hint stays after a click t
 var fit_vp := Vector2.ZERO  # the window size the map was last fit to
 var fit_bars := Vector2.ZERO  # the top and bottom bar heights the fit uses
 var fit_settle := 0
+var zoom_step := DEFAULT_ZOOM
+var cam := Vector2.ZERO  # the map point (in map px at TILE) at the middle of the map view
+var view := Rect2()  # the map view on screen: between the bars, left of the side panel, edge to edge
+var panning := false  # the middle button is down: dragging pans
+var zoom_wait := 0.0  # seconds before a pinch may step the zoom again
+var frame: Panel
 var state: Sim
 var placing := ""  # building type being placed, "" when not placing
 var hover := Vector2i(-1, -1)
@@ -75,11 +84,14 @@ var nudge := {}
 
 
 func _ready() -> void:
+	Ui.apply_theme()
 	state = Sim.new()
 	state.generate(randi())
+	cam = Overlays.center(state.world.camp_pos)  # start looking at the Hearth
 	_build_ui()
 	state.tech_tree.tech_researched.connect(_on_tech_researched)
 	_toast(Data.CAMP_TOAST % Data.PEOPLE["many"], 6.0)
+	_toast(Data.CAMERA_HINT, 9.0)
 
 
 func _process(delta: float) -> void:
@@ -115,6 +127,8 @@ func _process(delta: float) -> void:
 	_watch_food()
 	_watch_flavor()
 	messages.advance(delta)
+	zoom_wait -= delta
+	_pan_with_keys(delta)
 	_layout()
 	hover = _tile_under()
 	_hold(delta)
@@ -125,10 +139,10 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 
-## Fit the map between the bars and left of the side panel, scaled and centered. The fit follows the
-## window size only: the bars keep steady heights (see TopBar._fix_width), and at one window size the
-## fit uses the tallest each bar has been once the window settled, so a bar can never make the map
-## jump back and forth. The scale is kept to steps of 1/64.
+## Lay the map out in its view: edge to edge between the bars and left of the side panel, at the current zoom,
+## looking at `cam` (kept so the map always covers the view, or centred where it is smaller). The bars keep
+## steady heights (see TopBar._fix_width), and at one window size the view uses the tallest each bar has been once
+## the window settled, so a bar can never make the map jump back and forth.
 func _layout() -> void:
 	var vp := get_viewport_rect().size
 	if vp != fit_vp:
@@ -141,23 +155,87 @@ func _layout() -> void:
 		fit_bars = fit_bars.max(Vector2(top_bar.size.y, bottom_bar.size.y))
 	var top := fit_bars.x
 	var bottom := fit_bars.y
-	toasts.size.x = maxf(vp.x - SIDE_W - 40.0, 100.0)
+	view = Rect2(0, top, maxf(vp.x - SIDE_W, 100.0), maxf(vp.y - top - bottom, 100.0))
+	frame.position = view.position
+	frame.size = view.size
+	toasts.size.x = maxf(view.size.x - 32.0, 100.0)
 	toasts.position = Vector2(16, top + 14)
 	msg_log.position = Vector2(16, vp.y - bottom - msg_log.size.y - 16)
-	side_panel.position = Vector2(vp.x - SIDE_W - 8, top + 8)
-	side_panel.size = Vector2(SIDE_W, maxf(vp.y - top - bottom - 16, 100))
-	var area := Rect2(8, top + 8, vp.x - SIDE_W - 24, vp.y - top - bottom - 16)
-	var map_size := Vector2(state.world.width, state.world.height) * TILE
-	var k := maxf(floorf(minf(area.size.x / map_size.x, area.size.y / map_size.y) * 64.0) / 64.0, 0.1)
+	side_panel.position = Vector2(view.end.x, top)
+	side_panel.size = Vector2(SIDE_W, view.size.y)
+	var k: float = ZOOM_PX[zoom_step] / TILE
 	scale = Vector2(k, k)
-	position = (area.position + (area.size - map_size * k) / 2.0).round()
+	var map_size := Vector2(state.world.width, state.world.height) * TILE
+	var half := view.size / (2.0 * k)
+	for axis in 2:
+		cam[axis] = (
+			map_size[axis] / 2.0
+			if half[axis] * 2.0 >= map_size[axis]
+			else clampf(cam[axis], half[axis], map_size[axis] - half[axis])
+		)
+	position = (view.get_center() - cam * k).round()
+	Art.ui_k = 1.0 / k
+	var rid := get_canvas_item()  # nothing is drawn outside the view
+	RenderingServer.canvas_item_set_clip(rid, true)
+	RenderingServer.canvas_item_set_custom_rect(rid, true, Rect2((view.position - position) / k, view.size / k))
+
+
+## Put tile p in the middle of the view.
+func center_on(p: Vector2i) -> void:
+	cam = Overlays.center(p)
+	_layout()
+
+
+## Where tile p's middle is on screen (canvas coordinates).
+func screen_of(p: Vector2i) -> Vector2:
+	return position + Overlays.center(p) * scale.x
+
+
+## Arrow keys or WASD move the view while held.
+func _pan_with_keys(delta: float) -> void:
+	var dir := Vector2(
+		(
+			float(Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT))
+			- float(Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT))
+		),
+		(
+			float(Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN))
+			- float(Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP))
+		)
+	)
+	if dir != Vector2.ZERO:
+		cam += dir.normalized() * PAN_SPEED * delta / scale.x
+
+
+## One zoom step in (+1) or out (-1), about the mouse when it is over the map, else about the middle of the view.
+func _zoom(dir: int) -> void:
+	var step := clampi(zoom_step + dir, 0, ZOOM_PX.size() - 1)
+	if step == zoom_step:
+		return
+	var at := get_global_mouse_position()
+	if not view.has_point(at):
+		at = view.get_center()
+	var anchor := (at - position) / scale.x  # the map point under `at`, which stays under it
+	zoom_step = step
+	cam = anchor - (at - view.get_center()) / (ZOOM_PX[step] / TILE)
+	_layout()
 
 
 # --- Input -------------------------------------------------------------------
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+	if event is InputEventMouseButton and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
+		if event.pressed:
+			_zoom(1 if event.button_index == MOUSE_BUTTON_WHEEL_UP else -1)
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_MIDDLE:
+		panning = event.pressed and view.has_point(get_global_mouse_position())
+	elif event is InputEventMouseMotion and panning:
+		cam -= event.relative / scale.x
+	elif event is InputEventMagnifyGesture and zoom_wait <= 0.0 and absf(event.factor - 1.0) > 0.04:
+		zoom_wait = 0.25
+		_zoom(1 if event.factor > 1.0 else -1)
+	elif event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		_stop_holding()
 		if drag_from.x >= 0:
 			_lay_line()
@@ -182,6 +260,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				_set_speed(event.keycode - KEY_0)
 			KEY_X:
 				placing = "" if placing == "demolish" else "demolish"
+			KEY_HOME:
+				center_on(state.world.camp_pos)
 			KEY_ESCAPE:
 				placing = ""
 				tech_panel.visible = false
@@ -216,6 +296,10 @@ func _lay_line() -> void:
 
 
 func _tile_under() -> Vector2i:
+	if not view.has_point(get_global_mouse_position()):
+		return Vector2i(-1, -1)  # over a bar or the side panel
+	if placing == "" and _over_hearth():
+		return state.world.camp_pos  # the whole drawing is the Hearth, to point at and click
 	var local := (get_local_mouse_position() - MAP_ORIGIN) / TILE
 	return Vector2i(floori(local.x), floori(local.y))
 
@@ -301,6 +385,16 @@ func _demolish(p: Vector2i) -> void:
 func _build_ui() -> void:
 	var layer := CanvasLayer.new()
 	add_child(layer)
+
+	# The cocoa frame round the map view, under everything else.
+	frame = Panel.new()
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var rim := StyleBoxFlat.new()
+	rim.draw_center = false
+	rim.border_color = Ui.LINE
+	rim.set_border_width_all(int(FRAME_W))
+	frame.add_theme_stylebox_override("panel", rim)
+	layer.add_child(frame)
 
 	# Top bar: Kith, food, and every good with its rate.
 	top_bar = TopBar.new()
@@ -417,29 +511,48 @@ func _tile_center(p: Vector2i) -> Vector2:
 	return MAP_ORIGIN + (Vector2(p) + Vector2(0.5, 0.5)) * TILE
 
 
+## The tiles the view can see (a tile's margin included), kept on the map.
+func _visible_tiles() -> Rect2i:
+	var from := (view.position - position) / scale.x / TILE
+	var to := (view.end - position) / scale.x / TILE
+	var lo := Vector2i(
+		clampi(floori(from.x) - 1, 0, state.world.width - 1), clampi(floori(from.y) - 1, 0, state.world.height - 1)
+	)
+	var hi := Vector2i(
+		clampi(ceili(to.x) + 1, 0, state.world.width - 1), clampi(ceili(to.y) + 1, 0, state.world.height - 1)
+	)
+	return Rect2i(lo, hi - lo + Vector2i.ONE)
+
+
 func _draw() -> void:
+	var seen := _visible_tiles()
 	# Ground.
-	for y in state.world.height:
-		for x in state.world.width:
+	for y in range(seen.position.y, seen.end.y):
+		for x in range(seen.position.x, seen.end.x):
 			var p := Vector2i(x, y)
+			if not state.fog.is_revealed(p):
+				# Unexplored land is one flat color with a faint hatch: no terrain, no icons, nothing to give away.
+				draw_rect(_tile_rect(p), Data.FOG)
+				draw_texture_rect(Art.fog_hatch(int(TILE)), _tile_rect(p), false)
+				continue
 			var t := state.world.tile_at(p)
 			var base: Color = (
 				Data.TILES["grass"]["color"]
 				if t in ["tree", "rock", "berry", "grain", "flax", "shard"]
 				else Data.TILES[t]["color"]
 			)
-			if (x + y) % 2 == 0:
-				base = base.lightened(0.04)
+			if t == "grass" and (x + y) % 2 == 0:
+				base = Data.GRASS_ALT  # the checker: two grass shades, 4% apart
 			draw_rect(_tile_rect(p), base)
-	var map_rect := Rect2(MAP_ORIGIN, Vector2(state.world.width, state.world.height) * TILE)
-	draw_rect(map_rect, OUTLINE, false, 4.0)
 	_draw_roads()
 
 	# Features.
-	for y in state.world.height:
-		for x in state.world.width:
+	for y in range(seen.position.y, seen.end.y):
+		for x in range(seen.position.x, seen.end.x):
 			var p := Vector2i(x, y)
-			Art.feature(self, _feature_name(state.world.tile_at(p)), _tile_center(p), p, time)
+			if not state.fog.is_revealed(p):
+				continue
+			Art.map_feature(self, _feature_name(state.world.tile_at(p)), _tile_center(p), p, time, TILE / Art.DESIGN)
 
 	# Ranges: a hut's gathering tiles, power range for wheels, Standing Stone reach.
 	var hovered_type := ""
@@ -461,19 +574,19 @@ func _draw() -> void:
 					Color(0.16, 0.62, 0.56, 0.18)
 				)
 	_draw_aura_ranges(hovered_type)
-	Overlays.settlement_ring(self, state, placing == "dwelling")
+	Overlays.settlement_ring(self, state, placing == "dwelling", placing == "" and _over_hearth())
 	for b in state.town.buildings:
 		_draw_building(b)
 	Overlays.rubble(self, rubble)
 	var sel := building_panel.selected()
 	if not sel.is_empty():
-		draw_rect(_tile_rect(sel["pos"]).grow(1), GOAL_COLOR, false, 3.0)
+		draw_rect(Overlays.footprint(state, sel["pos"]).grow(1), GOAL_COLOR, false, 3.0)
 		if sel["type"] == "gatherers_hut" and placing == "":
 			_draw_gather_range(sel["pos"])
 		Overlays.flow_arrows(self, state, sel, time)
 	KithArt.draw_all(self, state, time)
-	_draw_fog()
-	Overlays.status_pills(self, state)
+	Overlays.fog_edges(self, state, seen)
+	Overlays.alert_badges(self, state)
 
 	# Placement ghost.
 	if placing == "demolish" and state.world.in_bounds(hover):
@@ -492,12 +605,12 @@ func _draw() -> void:
 	elif state.world.in_bounds(hover) and not state.fog.is_revealed(hover):
 		var fr := _tile_rect(hover)
 		Art.dashed_rect(self, fr.grow(-1), Color(1, 1, 1, 0.6), 2.0, 5.0, 4.0)
-		Art.pill(self, Vector2(fr.get_center().x, fr.end.y + 4), "Unexplored", Color.WHITE, OUTLINE, 12)
+		Art.pill(self, Vector2(fr.get_center().x, fr.end.y + 4), "Unexplored", Ui.TEXT, OUTLINE, 14)
 	elif state.world.in_bounds(hover) and state.fog.is_revealed(hover) and Overlays.blocked_hint(state, hover) != "":
 		draw_rect(_tile_rect(hover).grow(-1), Color(1, 1, 1, 0.8), false, 2.0)
 		var r := _tile_rect(hover)
 		Art.pill(
-			self, Vector2(r.get_center().x, r.end.y + 4), Overlays.blocked_hint(state, hover), Color.WHITE, OUTLINE, 12
+			self, Vector2(r.get_center().x, r.end.y + 4), Overlays.blocked_hint(state, hover), Ui.TEXT, OUTLINE, 14
 		)
 	elif state.world.in_bounds(hover):
 		draw_rect(_tile_rect(hover).grow(-1), Color(1, 1, 1, 0.8), false, 2.0)  # the Info panel says what it is
@@ -505,28 +618,19 @@ func _draw() -> void:
 	_draw_hold_ring()
 	_draw_nudge()
 	if paused:
-		Art.pill(self, Vector2(state.world.width * TILE / 2.0, 8), "Paused · Space to resume", GOAL_COLOR, OUTLINE, 16)
+		var top_mid := (Vector2(view.get_center().x, view.position.y + 12.0) - position) / scale.x
+		Art.pill(self, top_mid, "Paused · Space to resume", GOAL_COLOR, OUTLINE, 16)
 
 	var font := ThemeDB.fallback_font
 	for pop in popups:
-		var pos: Vector2 = pop["pos"] + Vector2(-20, -10 - pop["t"] * 30)
+		var pos: Vector2 = pop["pos"] + Vector2(-20, -10 - pop["t"] * 30) * Art.ui_k
 		var a: float = 1.0 - pop["t"] / 1.2
-		draw_string_outline(font, pos, pop["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, 5, Color(OUTLINE, a))
-		var col: Color = pop.get("col", Color.WHITE)
-		draw_string(font, pos, pop["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(col, a))
-
-
-## Unexplored tiles: nearly opaque, with a softer edge next to explored ground.
-func _draw_fog() -> void:
-	for y in state.world.height:
-		for x in state.world.width:
-			var p := Vector2i(x, y)
-			if state.fog.is_revealed(p):
-				continue
-			var edge := false
-			for n in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
-				edge = edge or state.fog.is_revealed(p + n)
-			draw_rect(_tile_rect(p), Color(FOG, 0.55 if edge else 0.94))
+		var px := roundi(16.0 * Art.ui_k)
+		draw_string_outline(
+			font, pos, pop["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, px, roundi(5.0 * Art.ui_k), Color(OUTLINE, a)
+		)
+		var col: Color = pop.get("col", Ui.TEXT)
+		draw_string(font, pos, pop["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(col, a))
 
 
 ## A Standing Stone's reach: under the cursor while placing one, around each one while hovering one.
@@ -540,12 +644,20 @@ func _draw_aura_ranges(hovered_type: String) -> void:
 				draw_circle(_tile_center(b["pos"]), radius, AURA_FILL)
 
 
+## Whether the mouse is over the Hearth's 2x2 drawing.
+func _over_hearth() -> bool:
+	return (
+		view.has_point(get_global_mouse_position())
+		and Overlays.footprint(state, state.world.camp_pos).has_point(get_local_mouse_position())
+	)
+
+
 ## Outline the hut's reach and light up the tiles of the one resource it works (or would start on).
 func _draw_gather_range(p: Vector2i) -> void:
 	var r := state.town.hut_radius()
 	var reach := Rect2(MAP_ORIGIN + Vector2(p - Vector2i(r, r)) * TILE, Vector2.ONE * (2 * r + 1) * TILE)
-	draw_rect(reach, Color(1, 0.82, 0.4, 0.12))
-	draw_rect(reach, GOAL_COLOR, false, 2.0)
+	draw_rect(reach, Color(GOAL_COLOR, 0.18))
+	Art.dashed_rect(self, reach, GOAL_COLOR, 2.0 * Art.ui_k, 10.0 * Art.ui_k, 6.0 * Art.ui_k)
 	for t in state.town.tiles_of(p, state.town.focus_at(p)):  # only what the hut works
 		draw_rect(_tile_rect(t).grow(-3), Color(1, 0.82, 0.4, 0.35))
 		draw_rect(_tile_rect(t).grow(-3), GOAL_COLOR, false, 2.0)
@@ -554,43 +666,32 @@ func _draw_gather_range(p: Vector2i) -> void:
 func _draw_building(b: Dictionary) -> void:
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
 	var p: Vector2i = b["pos"]
-	var r := _tile_rect(p).grow(-2)
-	var c := r.get_center()
+	var k := TILE / Art.DESIGN
+	var r := Overlays.footprint(state, p)  # a tile, or the Hearth's 2x2
 	var working: bool = b["status"] == "Working"
-
-	# Base plate in Kith color, like a unit on a game board.
-	draw_rect(r, KITH.darkened(0.15))
-	draw_rect(r, OUTLINE, false, OUTLINE_W)
-
-	Art.building(self, b["type"], c, working, time)
+	Art.map_building(self, b["type"], r, working, time)
+	var tile := _tile_rect(p).grow(-2.0 * k)
 	if def["kind"] == "gatherer":
-		HutFocus.draw_marker(self, r, b["focus"])
+		HutFocus.draw_marker(self, tile, b["focus"])
 		if HutFocus.wants_click(state, b):
-			HutFocus.draw_click_badge(self, r, time)
+			HutFocus.draw_click_badge(self, tile, time)
 
 	# Progress bar and held output.
 	if def.has("time") and working:
 		var frac := Work.progress_frac(state, b)
-		draw_rect(Rect2(r.position + Vector2(2, r.size.y - 5), Vector2((r.size.x - 4) * frac, 3)), Color("ffd166"))
+		draw_rect(Rect2(tile.position + Vector2(3, tile.size.y - 8), Vector2((tile.size.x - 6) * frac, 5)), GOAL_COLOR)
 	var held := Buildings.buffered(b["out"])
 	if held > 0:
-		var badge := r.position + Vector2(r.size.x - 2, 2)
-		Art.outlined_circle(self, badge, 7.0, Color("ffd166") if held < Data.BUFFER_CAP else Color("ef476f"))
-		draw_string(
-			ThemeDB.fallback_font,
-			badge + Vector2(-4 if held < 10 else -7, 4),
-			str(held),
-			HORIZONTAL_ALIGNMENT_LEFT,
-			-1,
-			11,
-			OUTLINE
-		)
-	_draw_trips(b, r)
-	_draw_rush(b, r)
-	if b["status"].begins_with("Hungry") or b["status"].begins_with("No power"):
-		draw_string(
-			ThemeDB.fallback_font, r.position + Vector2(-2, 10), "!", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color("ef476f")
-		)
+		var badge := tile.position + Vector2(tile.size.x - 3, 3)
+		var radius := 10.0 * Art.ui_k
+		Art.outlined_circle(self, badge, radius, GOAL_COLOR if held < Data.BUFFER_CAP else BAD)
+		var digits := str(held)
+		var px := roundi(14.0 * Art.ui_k)
+		var wide := ThemeDB.fallback_font.get_string_size(digits, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
+		var at := badge + Vector2(-wide / 2.0, px * 0.36)
+		draw_string(ThemeDB.fallback_font, at, digits, HORIZONTAL_ALIGNMENT_LEFT, -1, px, OUTLINE)
+	_draw_trips(b, tile)
+	_draw_rush(b, tile)
 
 
 ## Hold to harvest: an outline ring over the held tile, with a highlight arc filling clockwise from the top.
@@ -632,43 +733,44 @@ func _draw_trips(b: Dictionary, r: Rect2) -> void:
 	if Data.BUILDINGS[b["type"]]["kind"] != "gatherer" or Roads.automated(state, b):
 		return
 	for n in Data.TRIP_QUEUE:
-		var c := r.position + Vector2(r.size.x / 2.0 + (n - (Data.TRIP_QUEUE - 1) / 2.0) * 8.0, -3.0)
-		draw_circle(c, 3.6, OUTLINE)
-		draw_circle(c, 2.4, GOAL_COLOR if n < b["trips"] else Color(1, 1, 1, 0.35))
+		var c := r.position + Vector2(r.size.x / 2.0 + (n - (Data.TRIP_QUEUE - 1) / 2.0) * 12.0, -4.0)
+		draw_circle(c, 5.4, OUTLINE)
+		draw_circle(c, 3.6, GOAL_COLOR if n < b["trips"] else Color(Ui.TEXT, 0.4))
 
 
 ## A rushed building shows its cooldown as a shrinking wedge in its top-left corner.
 func _draw_rush(b: Dictionary, r: Rect2) -> void:
 	if b["rush_cd"] <= 0.0:
 		return
-	var c := r.position + Vector2(5, 5)
+	var c := r.position + Vector2(8, 8)
 	var frac: float = b["rush_cd"] / Data.RUSH_COOLDOWN
-	draw_circle(c, 5.5, OUTLINE)
-	draw_circle(c, 4.0, Color(1, 1, 1, 0.3))
+	draw_circle(c, 8.0, OUTLINE)
+	draw_circle(c, 6.0, Color(Ui.TEXT, 0.3))
 	var pts := PackedVector2Array([c])
 	for n in 13:
-		pts.append(c + Vector2.from_angle(-PI / 2.0 + TAU * frac * n / 12.0) * 4.0)
+		pts.append(c + Vector2.from_angle(-PI / 2.0 + TAU * frac * n / 12.0) * 6.0)
 	if frac > 0.02:
 		draw_colored_polygon(pts, GOAL_COLOR)
 
 
 func _draw_roads() -> void:
 	var dirt := Data.BUILDINGS["road"]["color"]
+	var k := TILE / Art.DESIGN
+	var seen := _visible_tiles()
 	for p in state.world.roads:
+		if not seen.has_point(p) or not state.fog.is_revealed(p):
+			continue
 		var c := _tile_center(p)
 		if state.world.tile_at(p) == "river":
 			var bridge := Art.sprite("tile_bridge_wood")
 			if bridge != null:
 				draw_texture_rect(bridge, _tile_rect(p), false)
 				continue
-			draw_rect(_tile_rect(p).grow_individual(0, -5, 0, -5), Color("8d6e63"))
-			for i in 4:
-				var x := _tile_rect(p).position.x + 4 + i * 8
-				draw_line(Vector2(x, c.y - 11), Vector2(x, c.y + 11), OUTLINE, 1.5)
+			draw_rect(_tile_rect(p).grow_individual(0, -5 * k, 0, -5 * k), Color("8d6e63"))
 			continue
-		draw_circle(c, 8.0, dirt)
+		draw_circle(c, 8.0 * k, dirt)
 		for n in World.NEIGHBORS:
 			if state.world.roads.has(p + n) or state.town.building_at.has(p + n):
 				var half := Vector2(n) * TILE * 0.5
-				var w := Vector2(absf(n.y), absf(n.x)) * 8.0
+				var w := Vector2(absf(n.y), absf(n.x)) * 8.0 * k
 				draw_colored_polygon(PackedVector2Array([c - w, c + w, c + half + w, c + half - w]), dirt)

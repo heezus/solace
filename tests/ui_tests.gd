@@ -8,6 +8,7 @@ const CardText = preload("res://scripts/card_text.gd")
 const Messages = preload("res://scripts/messages.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
 const Overlays = preload("res://scripts/overlays.gd")
+const Art = preload("res://scripts/art.gd")
 const KithArt = preload("res://scripts/kith_art.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
 const Ui = preload("res://scripts/ui.gd")
@@ -17,7 +18,7 @@ const Workers = preload("res://scripts/workers.gd")
 const SidePanel = preload("res://scripts/side_panel.gd")
 const HoverText = preload("res://scripts/hover_text.gd")
 
-const CARD_TEXT_W := 110.0  # the width of a card's state line (BuildBar.TEXT_W)
+const CARD_TEXT_W := 124.0  # the width of a card's state line (BuildBar.TEXT_W)
 
 var t  # the runner, tests/run_tests.gd
 
@@ -32,7 +33,7 @@ func run(runner) -> void:
 	test_message_log_keeps_everything()
 	test_hut_panel_speaks_plainly()
 	test_status_pills_are_short()
-	test_a_row_of_buildings_gets_pills_that_never_overlap()
+	test_a_row_of_buildings_gets_alert_badges_that_never_overlap()
 	test_every_kith_has_a_place_on_the_map()
 	test_words_are_plain()
 	test_the_growth_note_says_what_to_do_in_each_state()
@@ -399,36 +400,36 @@ func test_a_building_waiting_for_kith_points_at_the_fix() -> void:
 	t.check(not b["status"].contains("steady"), "with steady food it says nothing about it: " + b["status"])
 
 
-## The pills of a row of adjacent buildings never overlap each other, a "click" badge or a building, and stay on the map
-## (playtest 5: "Needs Wood" and "Idle" stacked over each other and over the next building).
-static func pill_problems(s) -> Array:
+## What is wrong with the alert badges now on the map, at the current UI scale: a badge must sit inside its own tile (so
+## it never covers a neighbour), badges must not overlap each other, and a hut's "click" badge must clear every one.
+static func badge_problems(s) -> Array:
 	var problems: Array = []
-	var map := Rect2(Vector2.ZERO, Vector2(s.world.width, s.world.height) * Overlays.TILE)
-	var items: Array = Overlays.pill_layout(s)
+	var radius: float = 8.0 * Art.ui_k
 	var boxes: Array = []
 	for b in s.town.buildings:
-		boxes.append(["building %s" % [b["pos"]], Overlays.rect(b["pos"])])
-		if HutFocus.wants_click(s, b):
-			boxes.append(["click badge at %s" % [b["pos"]], HutFocus.badge_rect(Overlays.rect(b["pos"]))])
-	for i in items.size():
-		var r: Rect2 = items[i]["rect"]
-		if r.size.x <= 0.0:
+		if b["alert"] == "":
 			continue
-		var name := "the '%s' pill of building %d" % [items[i]["text"], items[i]["building"]]
-		if not map.encloses(r):
-			problems.append("%s leaves the map" % name)
+		var at: Vector2 = Overlays.alert_badge_at(b["pos"])
+		var box := Rect2(at - Vector2(radius, radius), Vector2(radius, radius) * 2.0)
+		if not Overlays.rect(b["pos"]).encloses(box):
+			problems.append("the badge of %s leaves its tile" % [b["pos"]])
 		for other in boxes:
-			if r.intersects(other[1]):
-				problems.append("%s covers %s" % [name, other[0]])
-		for j in range(i + 1, items.size()):
-			if items[j]["rect"].size.x > 0.0 and r.intersects(items[j]["rect"]):
-				problems.append(
-					"%s covers the '%s' pill of building %d" % [name, items[j]["text"], items[j]["building"]]
-				)
+			if box.intersects(other):
+				problems.append("the badge of %s covers another badge" % [b["pos"]])
+		boxes.append(box)
+	for b in s.town.buildings:
+		if HutFocus.wants_click(s, b):
+			var click: Rect2 = HutFocus.badge_rect(Overlays.rect(b["pos"]))
+			for box in boxes:
+				if click.intersects(box):
+					problems.append("the click badge of %s covers an alert badge" % [b["pos"]])
 	return problems
 
 
-func test_a_row_of_buildings_gets_pills_that_never_overlap() -> void:
+## A row of adjacent blocked buildings: each alert badge sits inside its own tile, so it never covers a neighbour or
+## another badge, and a hut's "click" badge floats above its tile, clear of every alert badge (playtest 5: pills stacked
+## over each other and over the next building; the new look has a badge instead of a pill).
+func test_a_row_of_buildings_gets_alert_badges_that_never_overlap() -> void:
 	var s = t.fresh()
 	s.tech_tree.researched["cordage"] = true
 	s.tech_tree.researched["fire"] = true
@@ -453,13 +454,12 @@ func test_a_row_of_buildings_gets_pills_that_never_overlap() -> void:
 			s.place("twine_post" if k % 2 == 0 else "charcoal_pit", spot + Vector2i(k, 0)), "building %d goes down" % k
 		)
 		s.town.buildings[s.town.building_at[spot + Vector2i(k, 0)]]["alert"] = alerts[k]
-	var problems := pill_problems(s)
-	t.check(problems.is_empty(), "no pill overlaps a pill, a badge or a building: %s" % [problems])
-	var shown := 0
-	for item in Overlays.pill_layout(s):
-		shown += 1 if item["rect"].size.x > 0.0 else 0
-	t.check(shown >= 4, "and most of them still have a pill (%d of 6)" % shown)
 	var hut := spot + Vector2i(0, 2)
 	t.place_free(s, "gatherers_hut", hut)
 	s.people.learned_by["wood"] = "Aro"
-	t.check(pill_problems(s).is_empty(), "also with huts and their click badges around: %s" % [pill_problems(s)])
+	var keep: float = Art.ui_k
+	for k in [1.0, 1.5, 0.75]:
+		Art.ui_k = k
+		var problems := badge_problems(s)
+		t.check(problems.is_empty(), "at ui scale %.2f: %s" % [k, problems])
+	Art.ui_k = keep

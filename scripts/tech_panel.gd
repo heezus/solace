@@ -12,7 +12,7 @@ const Rules = preload("res://scripts/rules.gd")
 const TechBoard = preload("res://scripts/tech_board.gd")
 const Ranks = preload("res://scripts/ranks.gd")
 
-const BG := Color("172c4a")
+const BG := Ui.PANEL
 const WHOLE_BOARD_FROM := 8  # techs discovered before the board opens on the whole board by default
 
 var state: Sim
@@ -47,8 +47,8 @@ func setup(game: Sim) -> void:
 	v.add_theme_constant_override("separation", 8)
 	add_child(v)
 
-	var head := HBoxContainer.new()
-	head.add_theme_constant_override("separation", 14)
+	var head := HFlowContainer.new()  # wraps onto a second line in a narrow window
+	head.add_theme_constant_override("h_separation", 14)
 	title = Ui.label(Data.BOARD_TITLE % Data.ERAS[1]["name"], 22)
 	head.add_child(title)
 	for e in Data.ERAS:  # a tab per era
@@ -59,9 +59,9 @@ func setup(game: Sim) -> void:
 		tab.pressed.connect(func(): _pick_era(which))
 		head.add_child(tab)
 		era_buttons[e] = tab
-	counter = Ui.label("", 13)
+	counter = Ui.label("", Ui.MIN_TEXT)
 	counter.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	counter.add_theme_color_override("font_color", Color(1, 1, 1, 0.75))
+	counter.add_theme_color_override("font_color", Ui.TEXT_DIM)
 	head.add_child(counter)
 	for part in [["next", Data.VIEW_NEXT, Data.VIEW_NEXT_TIP], ["all", Data.VIEW_ALL, Data.VIEW_ALL_TIP]]:
 		var b := Ui.button(part[1])
@@ -72,19 +72,16 @@ func setup(game: Sim) -> void:
 		b.pressed.connect(func(): _pick_view(which))
 		head.add_child(b)
 		view_buttons[which] = b
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	head.add_child(spacer)
 	for part in [
 		[Data.LEGEND_DONE, TechBoard.MET],
 		[Data.LEGEND_NEEDED, TechBoard.NEEDED],
 		[Data.LEGEND_HOVER, TechBoard.GOLD],
 	]:
-		var l := Ui.label("— " + part[0], 12)
+		var l := Ui.label("— " + part[0], Ui.MIN_TEXT)
 		l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		l.add_theme_color_override("font_color", part[1])
 		head.add_child(l)
-	var or_note := Ui.label("or = either parent", 12)
+	var or_note := Ui.label("or = either parent", Ui.MIN_TEXT)
 	or_note.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	head.add_child(or_note)
 	var close := Ui.button("Close (T)")
@@ -95,8 +92,8 @@ func setup(game: Sim) -> void:
 	# What you have, so nothing needs closing to check what you can afford; one line says how the costs read.
 	stock_row = HBoxContainer.new()
 	stock_row.add_theme_constant_override("separation", 12)
-	var stock_cap := Ui.label(Data.STOCK_CAPTION, 11)
-	stock_cap.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
+	var stock_cap := Ui.label(Data.STOCK_CAPTION, Ui.MIN_TEXT)
+	stock_cap.add_theme_color_override("font_color", Ui.TEXT_DIM)
 	stock_row.add_child(stock_cap)
 	for id in Data.ITEM_ORDER:
 		var box := HBoxContainer.new()
@@ -109,8 +106,8 @@ func setup(game: Sim) -> void:
 		box.add_child(count)
 		stock_row.add_child(box)
 		stock_chips[id] = {"box": box, "count": count}
-	var cost_note := Ui.label(Data.LEGEND_COST, 12)
-	cost_note.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
+	var cost_note := Ui.label(Data.LEGEND_COST, Ui.MIN_TEXT)
+	cost_note.add_theme_color_override("font_color", Ui.TEXT_DIM)
 	cost_note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	cost_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	stock_row.add_child(cost_note)
@@ -149,7 +146,7 @@ func setup(game: Sim) -> void:
 	strip["title"] = Ui.label("", 16)
 	dv.add_child(strip["title"])
 	for key in ["desc", "cost", "warn", "links", "route"]:
-		var l := Ui.label("", 12)
+		var l := Ui.label("", Ui.MIN_TEXT)
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD
 		dv.add_child(l)
 		strip[key] = l
@@ -276,12 +273,12 @@ func _fill_row(row: HBoxContainer, caption: String, techs: Array, empty: String)
 	for c in row.get_children():
 		row.remove_child(c)
 		c.queue_free()
-	var cap := Ui.label(caption, 11)
-	cap.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
+	var cap := Ui.label(caption, Ui.MIN_TEXT)
+	cap.add_theme_color_override("font_color", Ui.TEXT_DIM)
 	row.add_child(cap)
 	if techs.is_empty():
-		var hint := Ui.label(empty, 12)
-		hint.add_theme_color_override("font_color", Color(1, 1, 1, 0.5))
+		var hint := Ui.label(empty, Ui.MIN_TEXT)
+		hint.add_theme_color_override("font_color", Ui.TEXT_DIM)
 		row.add_child(hint)
 		return
 	for tech in techs:
@@ -318,7 +315,7 @@ func _chip_tip(tech: String) -> String:
 func _show_frontier(ready_now: Array) -> void:
 	var names: Array = ready_now.map(func(t): return Data.TECHS[t]["name"])
 	strip["title"].text = Data.STRIP_READY % ", ".join(names) if not names.is_empty() else Data.STRIP_NONE
-	strip["title"].add_theme_color_override("font_color", TechBoard.GOLD if not names.is_empty() else Color.WHITE)
+	strip["title"].add_theme_color_override("font_color", TechBoard.GOLD if not names.is_empty() else Ui.TEXT)
 	strip["desc"].text = Data.STRIP_HELP
 	strip["cost"].text = Data.RANK_HELP
 	strip["warn"].visible = false
@@ -342,7 +339,7 @@ func _show_tech(tech: String) -> void:
 			state_text = Data.STATE_LOCKED
 	var side := "  ·  " + Data.TECH_OPTIONAL if t.get("side", false) else ""
 	strip["title"].text = "%s  ·  %s  ·  %s%s" % [t["name"], lane, state_text, side]
-	strip["title"].add_theme_color_override("font_color", Color.WHITE)
+	strip["title"].add_theme_color_override("font_color", Ui.TEXT)
 	strip["desc"].text = t["desc"]
 	var unbuilt := not Rules.tech_enabled(tech)
 	strip["cost"].text = (
@@ -360,7 +357,7 @@ func _show_tech(tech: String) -> void:
 	)
 	strip["warn"].text = warn
 	strip["warn"].visible = warn != ""
-	strip["warn"].add_theme_color_override("font_color", Ui.HIGHLIGHT)
+	strip["warn"].add_theme_color_override("font_color", Ui.SHORT)
 	if Ranks.has_ranks(tech):
 		var r := Ranks.rank(state, tech)
 		strip["cost"].text += (

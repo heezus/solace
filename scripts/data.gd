@@ -60,6 +60,8 @@ const EATEN_BY := DataPeople.EATEN_BY
 
 # --- Tiles: data/tiles.gd ---
 const TILES := DataTiles.TILES
+const GRASS_ALT := DataTiles.GRASS_ALT
+const FOG := DataTiles.FOG
 const SHARD_TEXT := DataTiles.SHARD_TEXT
 const WALK_COST := DataTiles.WALK_COST
 const PASS_COST := DataTiles.PASS_COST
@@ -153,6 +155,9 @@ const CARD_PLACING := DataWords.CARD_PLACING
 const CARD_LOCKED := DataWords.CARD_LOCKED
 const CARD_NEED := DataWords.CARD_NEED
 const CARD_NEED_MORE := DataWords.CARD_NEED_MORE
+const CARD_NEED_PLUS := DataWords.CARD_NEED_PLUS
+const CAMERA_HINT := DataWords.CAMERA_HINT
+const DEMOLISH_TIP := DataWords.DEMOLISH_TIP
 const CARD_NEED_ITEMS := DataWords.CARD_NEED_ITEMS
 const CARD_DISCOVER := DataWords.CARD_DISCOVER
 const KITH_LABEL := DataWords.KITH_LABEL
