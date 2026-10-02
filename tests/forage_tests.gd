@@ -156,6 +156,23 @@ func test_no_bush_in_reach_means_no_foraging() -> void:
 	t.check(s.economy.famine and _foragers(s) == 0, "a famine with nothing to forage: nobody goes out")
 
 
+## `v` with every float rounded to six places, all the way down.
+static func _rounded(v: Variant) -> Variant:
+	if typeof(v) == TYPE_FLOAT:
+		return snappedf(v, 0.000001)
+	if typeof(v) == TYPE_DICTIONARY:
+		var out := {}
+		for k in v:
+			out[k] = _rounded(v[k])
+		return out
+	if typeof(v) == TYPE_ARRAY:
+		var out: Array = []
+		for x in v:
+			out.append(_rounded(x))
+		return out
+	return v
+
+
 func test_a_forager_survives_a_save() -> void:
 	var s := _camp(5)
 	var d: Dictionary = {}
@@ -167,7 +184,8 @@ func test_a_forager_survives_a_save() -> void:
 	t.check(not d.is_empty(), "a Kith was carrying foraged berries home")
 	var copy := Sim.new()
 	t.check(RunSave.restore(copy, RunSave.from_json(RunSave.to_json(d))), "the save loads")
-	t.check(RunSave.to_json(RunSave.dump(copy)) == RunSave.to_json(d), "and writes back the same")
+	# Godot's JSON parser reads some 17-digit floats a last digit off, so compare to the micro, not the bit.
+	t.check(RunSave.to_json(_rounded(RunSave.dump(copy))) == RunSave.to_json(_rounded(d)), "and writes back the same")
 	var before: int = copy.economy.inv["berries"]
 	for _n in 600:
 		copy.tick(0.1)
@@ -188,10 +206,10 @@ func test_a_forager_can_be_given_a_job() -> void:
 	t.check(_foragers(s) == 3, "all three are out foraging")
 	s.tech_tree.researched["cordage"] = true
 	t.give(s, 100)
-	t.place_free(s, "twine_post", s.world.camp_pos + Vector2i(0, 3))
+	t.place_free(s, "twine_post", s.world.camp_pos + Vector2i(0, 2))
 	for _n in 20:
 		s.tick(0.1)
-	var worker: int = s.town.buildings[s.town.building_at[s.world.camp_pos + Vector2i(0, 3)]]["worker"]
+	var worker: int = s.town.buildings[s.town.building_at[s.world.camp_pos + Vector2i(0, 2)]]["worker"]
 	t.check(worker >= 0 and s.people.kith[worker]["job"] == "work", "one of them took the new building")
 	t.check(not String(s.people.kith[worker]["phase"]).begins_with("forage"), "and stopped foraging")
 	s.tech_tree.researched["haulers"] = true
