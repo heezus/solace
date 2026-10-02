@@ -533,6 +533,16 @@ func _diag(tag: String) -> void:
 		roads += 1
 		east_road_x = maxi(east_road_x, p.x)
 	_say("DIAG %s: world %dx%d stone_width=%d camp=%s grown=%s copper=%d (seen %d) tin=%d (seen %d) roads=%d east-most road x=%d bridge_unlocked=%s" % [tag, s.world.width, s.world.height, s.world.stone_width, s.world.camp_pos, s.world.is_grown(), cu.size(), cu_seen, tin.size(), tin_seen, roads, east_road_x, str(s.town.unlocked("bridge"))])
+	for y in s.world.height:
+		var row := ""
+		for x in range(24, s.world.width):
+			var q := Vector2i(x, y)
+			var tt: String = s.world.tile_at(q)
+			var c: String = {"river": "~", "grass": ".", "copper_hills": "C", "tin_stream": "T", "tree": "t", "rock": "r"}.get(tt, "?")
+			if s.world.roads.has(q):
+				c = "="
+			row += c if s.fog.is_revealed(q) else c.to_lower().replace("=", "+").replace("~", "-")
+		_say("MAP y=%02d x=24.. %s" % [y, row])
 	if not cu.is_empty():
 		_say("DIAG copper nearest tile %s" % str(cu[0]))
 	if not tin.is_empty():
