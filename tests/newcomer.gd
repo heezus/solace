@@ -5,6 +5,8 @@ extends RefCounted
 ##   "literal"  follows the goal text to the letter: a hut beside the Berry Bushes, then one click on it for a trip.
 ##              After that it reacts only to the food warning, as the toast says: click the berry hut for a trip (or,
 ##              with no berry hut, hold the mouse on Berry Bushes). Otherwise it idles.
+##   "once"     playtest 4's clumsy newcomer: follows the goals and clicks each hut exactly once (the first trip goal,
+##              and the berry hut it has just placed), then never clicks a hut again. It ignores the food warning.
 ##   "one_hut"  two huts on Berry Bushes, and it keeps clicking only the first whenever its trips run out. The other
 ##              is never clicked, the warning is ignored, and it does nothing else.
 ## The `idler` variant does nothing at all. It records what every hut's worker carries out (`gathered`) and the
@@ -45,6 +47,10 @@ var think := 0.0
 var warned_at := -1.0  # when the food warning first came, -1 if it never did
 var left_at := -1.0  # when the first Kith left, -1 if none did
 var left := 0  # how many left
+var zeros := 0  # how many times the food ran out (went from something to nothing)
+var recovered_at := -1.0  # when the warning came down again after coming up, -1 if it has not
+var foraging_steps := 0  # steps in which some Kith was out foraging in a famine
+var runway_at_warning := -1.0  # seconds of food left when the warning came
 var min_kith := 0  # the fewest Kith alive at any time
 var min_food := INF  # the least food (in food units) the stockpile ever held
 var gathered := {}  # hut tile -> {item: how many its worker carried out}, counted once per bundle picked up
@@ -54,6 +60,7 @@ var reading := 0.0  # seconds still spent reading the panel: hands off the mouse
 var _reading_for := ""  # what the player last read: a goal id, or "warning"
 var _carrying := {}  # hut tile -> its worker was carrying something at the last step
 var _click_new_hut := false  # the goal said to click the berry hut it just placed
+var _at_zero := false
 
 
 func play(map_seed: int, seconds: float) -> void:
@@ -62,6 +69,12 @@ func play(map_seed: int, seconds: float) -> void:
 	attach(game)
 	while clock < seconds:
 		step()
+
+
+func attach_game(map_seed: int) -> void:
+	var game := Sim.new()
+	game.generate(map_seed)
+	attach(game)
 
 
 func attach(game: Sim) -> void:
@@ -75,6 +88,7 @@ func step() -> void:
 	for e in s.events:
 		if e == Data.FOOD_LOW_EVENT % Data.PEOPLE["many"] and warned_at < 0.0:
 			warned_at = clock
+			runway_at_warning = s.economy.seconds_of_food()
 		elif e == Data.LEFT_EVENT % Data.PEOPLE["one"]:
 			left += 1
 			if left_at < 0.0:
@@ -83,7 +97,16 @@ func step() -> void:
 	clock += DT
 	min_kith = mini(min_kith, s.people.kith.size())
 	min_food = minf(min_food, s.economy.food_total())
+	if s.economy.food_total() <= 0.0 and not _at_zero:
+		zeros += 1
+	_at_zero = s.economy.food_total() <= 0.0
+	if warned_at >= 0.0 and recovered_at < 0.0 and not s.economy.low:
+		recovered_at = clock
 	_watch_huts()
+	for k in s.people.kith:
+		if String(k["phase"]).begins_with("forage"):
+			foraging_steps += 1
+			break
 	if idler:
 		return
 	think -= DT
