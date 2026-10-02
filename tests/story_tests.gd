@@ -22,6 +22,7 @@ func run(runner) -> void:
 	test_listeners_record_their_moment()
 	test_current_goal_follows_goals_done()
 	test_goals_stay_done()
+	test_goals_count_out_of_order()
 	test_story_needs_no_other_block()
 	test_to_dict_and_from_dict()
 	test_sim_owns_a_live_story()
@@ -77,6 +78,26 @@ func test_listeners_record_their_moment() -> void:
 	t.check(
 		story.events == ["haulers", "first_lesson", "first_trip", "shard_found", "bronze_dawn"], "one listener each"
 	)
+
+
+func test_goals_count_out_of_order() -> void:
+	var s: Sim = t.fresh()
+	var camp := s.world.camp_pos
+	for dx in range(-1, 4):
+		for dy in range(-2, 3):
+			s.world.set_tile(camp + Vector2i(dx, dy), "grass")
+	t.check(s.story.done_count() == 0, "nothing done at the start")
+	t.check(t.place_free(s, "gatherers_hut", camp + Vector2i(1, 0)), "a hut, with the berries goals skipped")
+	t.check(t.place_free(s, "dwelling", camp + Vector2i(-1, 0)), "and a Dwelling")
+	s.story.update(s)
+	t.check(not s.story.goals_done.has("learn_berries"), "the berry lesson was never learned")
+	t.check(s.story.goals_done.has("hut") and s.story.goals_done.has("dwelling"), "later goals still count")
+	t.check(s.story.done_count() == s.story.goals_done.size(), "the header counts every done goal")
+	t.check(s.story.done_count() >= 2, "so it reads at least 2 of 22, not 0")
+	t.check(s.story.current_goal() == 0, "the pointer is the first goal not done")
+	s.story.goals_done["learn_wood"] = true
+	t.check(s.story.current_goal() == 1, "and skips the done ones before it")
+	t.check(s.story.done_count() == s.story.goals_done.size(), "the count follows")
 
 
 func test_current_goal_follows_goals_done() -> void:

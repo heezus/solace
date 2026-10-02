@@ -76,7 +76,7 @@ func setup(game: Sim, width: float) -> void:
 func refresh_goals(s: Sim) -> void:
 	var cur := s.story.current_goal()
 	var total := Data.GOALS.size()
-	goal_header.text = Data.GOALS_HEADER % [mini(cur, total), total]
+	goal_header.text = Data.GOALS_HEADER % [s.story.done_count(), total]
 	var done: Array = []
 	for g in Data.GOALS:
 		if s.story.goals_done.has(g["id"]):
