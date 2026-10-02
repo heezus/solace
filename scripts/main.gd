@@ -120,7 +120,7 @@ func _process(delta: float) -> void:
 	state.events.clear()
 	if state.won and not banner_shown:
 		banner_shown = true  # the stone age ends with a banner, and the game goes on
-		messages.push(Data.ERA_BANNER_TITLE + "  ·  " + Data.ERA_BANNER_TEXT.replace("\n", " "), BANNER_SECONDS)
+		messages.push(Data.ERA_BANNER_TITLE + "  ·  " + Data.ERA_BANNER_TEXT, BANNER_SECONDS)
 	messages.keep_counts = state.tech_tree.researched.has("tally_sticks")
 	for p in popups:
 		p["t"] += delta
@@ -169,6 +169,7 @@ func _layout() -> void:
 	toasts.size = Vector2(maxf(view.size.x - 32.0, 100.0), maxf(view.size.y - 28.0, 100.0))
 	toasts.position = Vector2(16, top + 14)  # stacked from the bottom edge up, so the lit area stays in view
 	msg_log.position = Vector2(16, vp.y - bottom - msg_log.size.y - 16)
+	era_card.place(view)
 	side_panel.position = Vector2(view.end.x, top)
 	side_panel.size = Vector2(SIDE_W, view.size.y)
 	var k: float = ZOOM_PX[zoom_step] / TILE
@@ -285,8 +286,10 @@ func _unhandled_input(event: InputEvent) -> void:
 				building_panel.select(Vector2i(-1, -1))
 
 
-## 0 toggles pause; 1, 2 or 3 sets the speed and unpauses.
+## 0 toggles pause; 1, 2 or 3 sets the speed and unpauses. The game waits while the end card is up.
 func _set_speed(v: int) -> void:
+	if era_card.visible:
+		return
 	if v == 0:
 		paused = not paused
 	else:

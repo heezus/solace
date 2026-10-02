@@ -138,9 +138,69 @@ func _era_two_checks() -> void:
 		frozen = false
 	if frame == dawn_frame + 70:
 		_check_east_pointer()
+	match frame - dawn_frame:
+		90:
+			frozen = true
+			main.paused = true
+			main.era_card.open()  # the Falling Star's card, as the story opens it
+		92:
+			_check_end_card("at the shrunk window")
+		93:
+			root.size = Vector2i(1280, 800)
+		97:
+			_check_end_card("at 1280x800")
+			_shot("end_card")
+			main.era_card.close()
+			main.paused = false
+			main.ui_refresh = 0.0
+		98:
+			_check_third_row("at 1280x800")
+			_shot("third_row")
+			frozen = false
 	if frame > dawn_frame + 6 and frame % 25 == 0:
 		_check_top_bar_text("in the second era, frame %d" % frame)
 		_check_fit("in the second era, frame %d" % frame)
+
+
+## The Falling Star's card sits in the middle of the dimmed map view (not the top left), clear of the top bar, the side
+## panel and the bottom bar, inside the window, with the Keep building button on it, and the game waits behind it.
+func _check_end_card(when: String) -> void:
+	hud_checks += 1
+	var card: Control = main.era_card
+	var panel: Control = null
+	var button: Button = null
+	for c in _all(card):
+		if c is PanelContainer:
+			panel = c
+		elif c is Button:
+			button = c
+	if panel == null or button == null or not card.visible:
+		problems.append("%s: the end card isn't up with its panel and button" % when)
+		return
+	var r: Rect2 = panel.get_global_rect()
+	var view: Rect2 = main.view
+	if r.size.x < 200.0 or r.size.y < 100.0:
+		problems.append("%s: the end card is only %s" % [when, r.size])
+	if r.get_center().distance_to(view.get_center()) > 2.0:
+		problems.append("%s: the end card (%s) isn't centred in the map view (%s)" % [when, r, view])
+	for part in ["top_bar", "bottom_bar", "side_panel"]:
+		var other: Rect2 = main.get(part).get_global_rect()
+		if r.intersects(other):
+			problems.append("%s: the end card (%s) covers the %s (%s)" % [when, r, part, other])
+	if not Rect2(Vector2.ZERO, main.get_viewport_rect().size).encloses(r):
+		problems.append("%s: the end card (%s) runs off the window" % [when, r])
+	if not r.encloses(button.get_global_rect()) or button.text != Data.ERA_END_BUTTON:
+		problems.append("%s: the Keep building button isn't on the card" % when)
+	if not main.paused:
+		problems.append("%s: the game isn't paused behind the end card" % when)
+	var readout := Rect2(main.top_bar.kith_label.get_global_position(), main.top_bar.kith_label.size)
+	if r.intersects(readout) or r.position.x < view.position.x or r.position.y < main.top_bar.get_global_rect().end.y:
+		problems.append("%s: the end card sits over the Kith readout" % when)
+
+
+## The second era's row of chips: placeholder, filled in with the chip fix.
+func _check_third_row(_when: String) -> void:
+	hud_checks += 1
 
 
 ## The research board after Bronze Dawn opens on the second era, with its tab, its 16 cards and the locked ones saying so.
@@ -863,6 +923,24 @@ func _texts(node: Node) -> Array:
 	for c in node.get_children():
 		out += _texts(c)
 	return out
+
+
+func _all(node: Node) -> Array:
+	var out: Array = [node]
+	for c in node.get_children():
+		out += _all(c)
+	return out
+
+
+## Save the window to $LAYOUT_SHOTS/<name>.png when that is set (a way to look at the HUD; the pass doesn't need it).
+func _shot(name: String) -> void:
+	var dir := OS.get_environment("LAYOUT_SHOTS")
+	if dir == "":
+		return
+	DirAccess.make_dir_recursive_absolute(dir)
+	var err := root.get_texture().get_image().save_png("%s/%s.png" % [dir, name])
+	if err != OK:
+		problems.append("couldn't save the screenshot %s (error %d)" % [name, err])
 
 
 func _labels(node: Node) -> Array:

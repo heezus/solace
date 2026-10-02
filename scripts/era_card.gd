@@ -1,5 +1,5 @@
 extends Control
-## The end of the era: a card over a dimmed map, shown once when The Falling Star is discovered. It is a cliffhanger,
+## The end of the era: a card, centred over a dimmed map view, shown once when The Falling Star is discovered. It is a cliffhanger,
 ## not the crash: the words are in Data (ERA_END_*), the button puts the card away, and the game goes on. The owner
 ## pauses while it is up and resumes on `closed`.
 ## Signal: closed fires when the player puts the card away.
@@ -14,14 +14,13 @@ const WIDTH := 460.0
 
 func setup() -> void:
 	visible = false
-	set_anchors_preset(Control.PRESET_FULL_RECT)
-	mouse_filter = Control.MOUSE_FILTER_STOP
+	mouse_filter = Control.MOUSE_FILTER_STOP  # the map behind it takes no clicks while it is up
 	var dim := ColorRect.new()
 	dim.color = Color(0.05, 0.06, 0.12, 0.72)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(dim)
 	var centre := CenterContainer.new()
-	centre.set_anchors_preset(Control.PRESET_FULL_RECT)
+	centre.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(centre)
 	var card := PanelContainer.new()
 	card.add_theme_stylebox_override("panel", Ui.panel_style(Ui.PANEL, 12))
@@ -48,6 +47,13 @@ func setup() -> void:
 	go.add_theme_font_size_override("font_size", 18)
 	go.pressed.connect(close)
 	v.add_child(go)
+
+
+## Lay the card over `area` (the map view): the dim covers just the map, the card sits in its middle, and the top bar
+## and the side panel stay clear. The owner calls this every frame, with the view.
+func place(area: Rect2) -> void:
+	position = area.position
+	size = area.size
 
 
 ## Put the card up.
