@@ -654,7 +654,11 @@ func _place_wheel() -> bool:
 	var bank := _nearest_bank()
 	if bank.x >= 0 and _explore_to(bank):
 		return true
-	return _count("water_wheel") == 0 and _tear_down_for("water_wheel", s.world.touches_river)
+	if _count("water_wheel") > 0:
+		return false
+	# No bank tile with room round it and nothing to explore: any free bank tile will do (a Grindstone then
+	# tears down a road beside it), else tear down a bank road.
+	return _place_near_hearth("water_wheel") or _tear_down_for("water_wheel", s.world.touches_river)
 
 
 ## The last resort, when the bank has no free site and nothing left to explore toward (the bot's own roads
