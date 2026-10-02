@@ -110,6 +110,15 @@ func current_goal() -> int:
 	return Data.GOALS.size()
 
 
+## How many goals are done, in any order: skipping one early goal never hides the later ones.
+func done_count() -> int:
+	var n := 0
+	for g in Data.GOALS:
+		if goals_done.has(g["id"]):
+			n += 1
+	return n
+
+
 func _has_building(s, type: String) -> bool:
 	for b in s.town.buildings:
 		if b["type"] == type:

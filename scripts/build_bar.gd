@@ -19,10 +19,11 @@ const BUTTON := Vector2(172, 64)
 const TEXT_X := 42.0  # the title and state line start here, beside the 30 px icon
 const TEXT_W := 124.0
 const LOWER_Y := 41.0  # the price pips run along the bottom
-const WHY_Y := 22.0  # a locked card has no state line: its reason (two lines at most) starts here
+const WHY_Y := 22.0  # a locked card has no state line or price: its reason (two lines at most) starts here
 const LOCKED_BG: Color = Ui.CARD_LOCKED
 const LOCKED_TEXT: Color = Ui.TEXT_DIM
 const DEMOLISH_SIZE := 40.0
+const DEMOLISH_W := 112.0  # the hammer and its one-word label
 const PULSE_SECONDS := 4.0  # how long a card and its tab glow after research unlocks it
 
 var state: Sim
@@ -180,7 +181,7 @@ func _build_button(type: String) -> Dictionary:
 	var pips := Ui.cost_pips(def["cost"], 20, Ui.MIN_TEXT)
 	pips.position = Vector2(6, LOWER_Y)
 	b.add_child(pips)
-	var why := _text("", CardText.FONT_SIZE, Vector2(6, WHY_Y), Vector2(BUTTON.x - 12, 36))
+	var why := _text("", CardText.FONT_SIZE, Vector2(TEXT_X, WHY_Y), Vector2(TEXT_W, 34))
 	why.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	why.clip_text = false
 	why.add_theme_constant_override("line_spacing", -4)
@@ -217,16 +218,18 @@ func _tech_button() -> Button:
 	return b
 
 
-## The Demolish tool: a 40x40 icon button (a hammer with a small X) in the ghost card style.
+## The Demolish tool: a small button, a hammer with a small X and its name, in the ghost card style.
 func _demolish_button() -> Button:
 	var b := Button.new()
 	b.focus_mode = Control.FOCUS_NONE
-	b.custom_minimum_size = Vector2(DEMOLISH_SIZE, DEMOLISH_SIZE)
+	b.custom_minimum_size = Vector2(DEMOLISH_W, DEMOLISH_SIZE)
+	b.text = Data.DEMOLISH_LABEL
+	b.add_theme_font_size_override("font_size", Ui.MIN_TEXT)
 	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	b.icon = Art.sprite("demolish_tool")
 	b.expand_icon = true
 	b.add_theme_constant_override("icon_max_width", 28)
-	b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	b.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	b.tooltip_text = Data.DEMOLISH_TIP
 	return b
 
@@ -257,7 +260,7 @@ func refresh(placing: String, ready_count: int) -> void:
 		var short := not CardText.shortfall(state.economy.inv, def["cost"]).is_empty()
 		sub.add_theme_color_override("font_color", Ui.SHORT if short and placing != type else Ui.TEXT_DIM)
 		var why: Label = parts["why"]
-		why.text = CardText.locked_reason(type) if not unlocked else ""
+		why.text = CardText.locked_reason(type, why.size.x) if not unlocked else ""
 		why.add_theme_color_override("font_color", LOCKED_TEXT)
 		parts["pips"].visible = unlocked
 		Ui.update_pips(parts["pips"], def["cost"], state.economy.inv)

@@ -1,7 +1,8 @@
 extends VBoxContainer
-## The toasts: each active message (scripts/messages.gd) is a small dark panel, stacked top to bottom under
-## the top bar, so two never draw on top of each other. A sticky one shows a small "click to dismiss" note and
-## goes when clicked; the others let the mouse through, so they never get in the way of holding on the map.
+## The toasts: each active message (scripts/messages.gd) is a small dark panel, stacked up from the bottom of the map
+## view (the lit area around the Hearth stays clear), so two never draw on top of each other. A sticky one shows a
+## small "click to dismiss" note and goes when clicked; the others let the mouse through, so they never get in
+## the way of holding on the map.
 
 const Ui = preload("res://scripts/ui.gd")
 const Messages = preload("res://scripts/messages.gd")
@@ -17,7 +18,7 @@ func setup(queue: Messages) -> void:
 	messages = queue
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_theme_constant_override("separation", 6)
-	alignment = BoxContainer.ALIGNMENT_BEGIN
+	alignment = BoxContainer.ALIGNMENT_END
 	queue.changed.connect(_rebuild)
 
 

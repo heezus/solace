@@ -14,6 +14,7 @@ const Buildings = preload("res://scripts/buildings.gd")
 
 const BADGE_TEXT := "click"
 const BADGE_FONT := 14
+const BADGE_GAP := 12.0  # world px between the "click" pill and the hut's top: clear of its roof and the trip dots
 
 var state: Sim
 var index := -1  # the hut's place in the building list, -1 for none
@@ -86,13 +87,24 @@ static func click_can_wait(s: Sim, b: Dictionary) -> bool:
 	)
 
 
+## True while a food hut's worker is out foraging by themselves (the famine fallback, scripts/forage.gd): somebody is
+## already covering for the hut, so it has no need to ask.
+static func _worker_forages(s, b: Dictionary) -> bool:
+	return (
+		Data.FOOD_VALUE.has(b["focus"])
+		and s.economy.famine
+		and String(s.people.kith[b["worker"]]["phase"]).begins_with("forage")
+	)
+
+
 ## True for a hut that is standing idle until someone clicks it: it has a worker who can work its focus, no road
 ## links it to run it on its own, and no trip is waiting. (An unlinked hut only works on clicked trips.) A food hut
-## stops asking while the food is comfortable (click_can_wait); the others always ask: their goods come only by click.
+## stops asking while the food is comfortable (click_can_wait) and while its worker is foraging for the Hearth in a
+## famine; the others always ask: their goods come only by click.
 static func wants_click(s: Sim, b: Dictionary) -> bool:
 	if Data.BUILDINGS[b["type"]]["kind"] != "gatherer" or b["worker"] < 0 or b["paused"]:
 		return false
-	if click_can_wait(s, b):
+	if click_can_wait(s, b) or _worker_forages(s, b):
 		return false
 	return (
 		not Roads.automated(s, b)
@@ -102,12 +114,14 @@ static func wants_click(s: Sim, b: Dictionary) -> bool:
 	)
 
 
-## Where the "click" badge goes over a hut's tile `r`: the box its pill covers (it floats just above the tile).
+## Where the "click" badge goes over a hut's tile `r`: the box its pill covers. It floats above the tile and the
+## row of trip dots (which stand up to 10 px above it), so it never hides the hut's roof or icon.
 static func badge_rect(r: Rect2) -> Rect2:
 	var k := Art.ui_k
 	var w := ThemeDB.fallback_font.get_string_size(BADGE_TEXT, HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(BADGE_FONT * k)).x
 	w += 14.0 * k
-	return Rect2(Vector2(r.get_center().x - w / 2.0, r.position.y - 28.0 * k), Vector2(w, (BADGE_FONT + 8.0) * k))
+	var h := (BADGE_FONT + 8.0) * k
+	return Rect2(Vector2(r.get_center().x - w / 2.0, r.position.y - BADGE_GAP - h), Vector2(w, h))
 
 
 ## A small pulsing "click" pill over a hut that is waiting for a click.
