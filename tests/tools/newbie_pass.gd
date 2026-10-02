@@ -17,6 +17,7 @@ var shot_n := 0
 var out_dir := "user://newbie"
 var log_lines: Array = []
 var capped := false
+var last_food_log := 0.0
 const WALL_CAP_MS := 780000
 
 
@@ -34,6 +35,10 @@ func _init() -> void:
 
 func _process(delta: float) -> bool:
 	game_time += delta
+	if game_time - last_food_log >= 10.0 and main.state != null:
+		last_food_log = game_time
+		var st = main.state
+		_say("FOOD berries=%d kith=%d speed=%s food_label='%s'" % [st.economy.inv.get("berries", 0), st.people.kith.size(), main.speed, main.top_bar.food_label.text.replace("\n", " / ")])
 	if not capped and Time.get_ticks_msec() > WALL_CAP_MS:
 		capped = true
 		_finish_capped()
