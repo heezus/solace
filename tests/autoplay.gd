@@ -147,7 +147,7 @@ func _short() -> Dictionary:
 	var want := {}
 	for tech in s.tech_tree.queue.slice(0, 3):
 		_want(want, Data.TECHS[tech]["cost"], 1)
-	if s.town.unlocked("gatherers_hut") and _workers() < s.people.kith.size():
+	if s.town.unlocked("gatherers_hut") and (_workers() < s.people.kith.size() or _no_food_hut()):
 		_want(want, Data.BUILDINGS["gatherers_hut"]["cost"], 1)
 	if _house_wanted():
 		_want(want, Data.BUILDINGS["dwelling"]["cost"], 1)
@@ -202,7 +202,7 @@ func _want(want: Dictionary, cost: Dictionary, times: int) -> void:
 ## (the most-missing raw good behind it), so the next tech comes as soon as it can.
 func _next_click() -> String:
 	var costs: Array = []
-	if s.town.unlocked("gatherers_hut") and _workers() + _haulers_wanted() < s.people.kith.size():
+	if s.town.unlocked("gatherers_hut") and (_workers() + _haulers_wanted() < s.people.kith.size() or _no_food_hut()):
 		costs.append(Data.BUILDINGS["gatherers_hut"]["cost"])
 	if _house_wanted():
 		costs.append(Data.BUILDINGS["dwelling"]["cost"])
@@ -370,6 +370,12 @@ func _count(type: String) -> int:
 	return n
 
 
+## No hut brings in food yet. Births need food the buildings make, so a start that spent its Kith on posts
+## and workshops before any hut would never grow: the first Berries hut goes up whether or not a hand is free.
+func _no_food_hut() -> bool:
+	return _huts_for("berries") < 1.0
+
+
 ## Huts set to gather `item` (a hut works one resource).
 func _huts_for(item: String) -> float:
 	var n := 0.0
@@ -405,7 +411,8 @@ func _decide() -> void:
 			return
 	var fed := s.economy.food_total() >= s.people.kith.size() * 2.0 + Data.BIRTH_FOOD
 	if s.town.unlocked("gatherers_hut") and _huts_for("berries") < 1 + int(s.people.kith.size() / 6.0):
-		if (not fed or _workers() + _haulers_wanted() < s.people.kith.size() + 1) and _place_hut("berries"):
+		var room_for_hut := _workers() + _haulers_wanted() < s.people.kith.size() + 1
+		if (not fed or room_for_hut or _no_food_hut()) and _place_hut("berries"):
 			return  # food comes first: more Kith are born only while there's food to spare
 	if _workers() + _haulers_wanted() >= s.people.kith.size() + 1:
 		return
