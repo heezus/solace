@@ -26,6 +26,7 @@ var t  # the runner, tests/run_tests.gd
 func run(runner) -> void:
 	t = runner
 	test_card_says_what_is_missing()
+	test_an_empty_tile_names_what_is_near()
 	test_card_line_always_fits()
 	test_story_cards_stay_hidden_until_revealed()
 	test_messages_stack_and_expire()
@@ -42,6 +43,27 @@ func run(runner) -> void:
 	test_the_food_flash_stays_legible()
 	test_the_goal_list_shows_the_current_goal_and_the_next()
 	test_every_skill_text_says_what_they_gather()
+
+
+## Playtest 6: an empty tile said only "Grassland". It now lists what can be gathered within a few tiles.
+func test_an_empty_tile_names_what_is_near() -> void:
+	var s = t.fresh()
+	var camp: Vector2i = s.world.camp_pos
+	var spot := camp + Vector2i(10, 10)
+	for dx in range(-4, 5):
+		for dy in range(-4, 5):
+			s.world.set_tile(spot + Vector2i(dx, dy), "grass")
+	t.check(HoverText._gatherable_near(s, spot).is_empty(), "nothing to gather around bare grass")
+	s.world.set_tile(spot + Vector2i(3, 0), "rock")
+	s.world.set_tile(spot + Vector2i(-1, 1), "tree")
+	s.world.set_tile(spot + Vector2i(4, 4), "berry")
+	t.check(
+		HoverText._gatherable_near(s, spot) == ["Forest", "Rocks"], "the near kinds, nearest first, none out of reach"
+	)
+	t.check(
+		Data.TILES["grass"].has("hint") and Data.TILES["grass"]["hint"].contains("build"),
+		"grass says it can be built on"
+	)
 
 
 func test_card_says_what_is_missing() -> void:

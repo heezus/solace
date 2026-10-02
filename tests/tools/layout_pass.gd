@@ -129,6 +129,7 @@ func _hud_checks() -> void:
 			_show_hearth_panel()
 		10:
 			_check_hearth_blurb_once()
+			_check_empty_tile_info()
 			_check_card_is_docked("the Hearth's card")
 			main.building_panel.select(Vector2i(-1, -1))
 			main._toast("A toast that must not cover the chips", 30.0)
@@ -403,6 +404,29 @@ func _check_card_buttons(what: String) -> void:
 func _show_hearth_panel() -> void:
 	main.building_panel.select(main.state.world.camp_pos)
 	main.ui_refresh = 0.0
+
+
+## An empty grass tile says more than its name: it can be built on, and what is close by to gather.
+func _check_empty_tile_info() -> void:
+	hud_checks += 1
+	var camp: Vector2i = main.state.world.camp_pos
+	var found := false
+	for dx in range(-6, 7):
+		for dy in range(-6, 7):
+			var p := camp + Vector2i(dx, dy)
+			if found or not main.state.world.in_bounds(p) or main.state.town.building_at.has(p):
+				continue
+			if main.state.world.tile_at(p) == "grass" and main.state.fog.is_revealed(p):
+				main.hover = p
+				found = true
+	if not found:
+		problems.append("no empty grass tile near the Hearth to check the Info text on")
+		return
+	var info: String = HoverText.text(main)
+	if not info.contains(Data.TILES["grass"]["hint"]):
+		problems.append("an empty tile's Info text says only: " + info.replace("\n", " / "))
+	if info.contains("%s") or info.length() <= Data.TILES["grass"]["name"].length() + 10:
+		problems.append("an empty tile's Info text is too thin: " + info)
 
 
 ## Clicking the Hearth: its blurb is on screen once, across its card and the Info panel.

@@ -63,6 +63,8 @@ const TILES := DataTiles.TILES
 const GRASS_ALT := DataTiles.GRASS_ALT
 const FOG := DataTiles.FOG
 const SHARD_TEXT := DataTiles.SHARD_TEXT
+const NEAR_TEXT := DataTiles.NEAR_TEXT
+const NEAR_RADIUS := DataTiles.NEAR_RADIUS
 const WALK_COST := DataTiles.WALK_COST
 const PASS_COST := DataTiles.PASS_COST
 

@@ -91,7 +91,30 @@ static func _tile_text(m) -> String:
 			out += " It's food: the %s eat it." % Data.PEOPLE["many"]
 		out += "\n" + learn_text(s, item)
 		return out + ("\n" + hint + "." if hint != "" else "")
-	return t["name"] + ("\n" + hint + "." if hint != "" else "")
+	var out: String = t["name"]
+	if t.has("hint"):
+		out += "\n" + t["hint"]
+		var near := _gatherable_near(s, p)
+		if not near.is_empty():
+			out += "\n" + Data.NEAR_TEXT % ", ".join(near)
+	return out + ("\n" + hint + "." if hint != "" else "")
+
+
+## The names of the things to gather within Data.NEAR_RADIUS tiles of p, nearest kind first, each once.
+static func _gatherable_near(s, p: Vector2i) -> Array:
+	var seen := {}
+	var names: Array = []
+	for r in range(1, Data.NEAR_RADIUS + 1):
+		for dx in range(-r, r + 1):
+			for dy in range(-r, r + 1):
+				var q := p + Vector2i(dx, dy)
+				if maxi(absi(dx), absi(dy)) != r or not s.world.in_bounds(q) or not s.fog.is_revealed(q):
+					continue
+				var kind: String = s.world.tile_at(q)
+				if kind != "" and Data.TILES[kind]["yields"] != "" and not seen.has(kind):
+					seen[kind] = true
+					names.append(Data.TILES[kind]["name"])
+	return names
 
 
 ## A hovered building in a few lines. The selected one has its card above, so it says nothing here.
