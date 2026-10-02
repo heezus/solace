@@ -12,6 +12,7 @@ const Data = preload("res://scripts/data.gd")
 const World = preload("res://scripts/world.gd")
 const HoverText = preload("res://scripts/hover_text.gd")
 const Hands = preload("res://scripts/hands.gd")
+const UiTests = preload("res://tests/ui_tests.gd")
 const Ui = preload("res://scripts/ui.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
@@ -37,6 +38,7 @@ var refit_due := 0  # the frame by which the map must have refit after a resize
 var hud_checks := 0  # how many HUD checks ran
 var base := {}  # the top bar's height and the map's place before the stress cases
 var saved := {}  # the stockpile as it was, put back after them
+var row_at: Array = []  # the buildings placed by hand for the pill check
 var frozen := false  # the bot's ticking is paused while a check sets the state by hand
 
 
@@ -204,12 +206,23 @@ func _hud_checks() -> void:
 			_check_board_hover()
 			main.tech_panel.visible = false
 			frozen = false
+		64:
+			frozen = true
+			_build_a_row_of_buildings()
+		66:
+			_check_pills("a row of six adjacent buildings, each blocked")
+			for p in row_at:
+				main.state.demolish(p)
+			row_at.clear()
+			frozen = false
 	if frame > 5 and frame % 5 == 0:
 		_check_fit("at frame %d" % frame)
 	if frame > 5 and frame % 20 == 0:
 		_check_build_cards("at frame %d" % frame)
 	if frame > 5 and frame % 25 == 0:
 		_check_top_bar_text("at frame %d" % frame)
+	if frame > 5 and frame % 10 == 0 and not frozen:
+		_check_pills("at frame %d" % frame)
 
 
 ## Playtest 4: the top bar grew 99 -> 104 px and the map shifted 2 px the first time the Tools chip showed. Craft a Flint
@@ -261,6 +274,44 @@ func _check_the_food_flash() -> void:
 		if Ui.contrast(ring, Ui.BAR) < 3.0:
 			problems.append("%s: the ring has a contrast of only %.1f" % [what, Ui.contrast(ring, Ui.BAR)])
 	tb.pulse = keep
+
+
+## Playtest 5: "Needs Wood" and "Idle" pills stacked over each other and over the next building in a row of adjacent
+## buildings. Place six side by side by hand, each with an alert, and the pills must not overlap (checked in _check_pills).
+func _build_a_row_of_buildings() -> void:
+	var s = main.state
+	s.tech_tree.researched["cordage"] = true
+	s.tech_tree.researched["fire"] = true
+	for id in s.economy.inv:
+		s.economy.inv[id] = maxi(s.economy.inv[id], 100)
+	var spot := Vector2i(-1, -1)
+	for dy in range(-9, 10):
+		for dx in range(-9, 10):
+			var p: Vector2i = s.world.camp_pos + Vector2i(dx, dy)
+			var ok := spot.x < 0
+			for k in 6:
+				ok = ok and s.town.placement_error("twine_post", p + Vector2i(k, 0)) == ""
+			if ok:
+				spot = p
+	if spot.x < 0:
+		problems.append("no room for a row of buildings for the pill check")
+		return
+	var alerts := [
+		"Needs Wood", "Idle: no free Kith", "Needs Wood", "Hungry: no food", "Needs road", "Idle: no free Kith"
+	]
+	for k in 6:
+		var p := spot + Vector2i(k, 0)
+		if s.place("twine_post" if k % 2 == 0 else "charcoal_pit", p):
+			row_at.append(p)
+			s.town.buildings[s.town.building_at[p]]["alert"] = alerts[k]
+	main.ui_refresh = 999.0
+
+
+## No alert pill overlaps another pill, a click badge or a building, and none leaves the map.
+func _check_pills(what: String) -> void:
+	hud_checks += 1
+	for line in UiTests.pill_problems(main.state).slice(0, 3):
+		problems.append("%s: %s" % [what, line])
 
 
 ## Long top-bar text, one case at a time: the food warning, starving, needs-room text, the longest hold hint,

@@ -181,7 +181,12 @@ func _watch_food() -> void:
 	if famine and (gross >= Data.FOOD_FORAGE_END_SECONDS or seconds_of_food() >= Data.FOOD_FORAGE_END_SECONDS):
 		famine = false
 		forage_told = false
-	elif not famine and low and gross < Data.FOOD_FAMINE_SECONDS and seconds_of_food() < Data.FOOD_FAMINE_SECONDS:
+	elif (
+		not famine
+		and (low or flows.clock >= Data.FORAGE_OPENING_SECONDS)
+		and gross < Data.FOOD_FAMINE_SECONDS
+		and seconds_of_food() < Data.FOOD_FAMINE_SECONDS
+	):
 		famine = true
 
 

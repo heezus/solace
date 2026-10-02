@@ -22,6 +22,7 @@ func run(runner) -> void:
 	test_a_newcomer_following_the_goals_stays_fed()
 	test_a_newcomer_who_clicks_only_one_berry_hut_stays_fed()
 	test_a_newcomer_who_clicks_each_hut_once_is_carried_by_the_famine_fallback()
+	test_a_clumsy_newcomer_with_far_berries_is_still_carried()
 	test_an_idle_player_is_warned_before_anyone_leaves()
 
 
@@ -132,28 +133,54 @@ func test_a_newcomer_who_clicks_each_hut_once_is_carried_by_the_famine_fallback(
 	for map_seed in [1, 4, 8]:
 		var bot := _play("once", map_seed)
 		t.check(bot.min_kith >= 3, "once, map %d: at least three Kith stay (least %d)" % [map_seed, bot.min_kith])
-		t.check(bot.zeros <= 1, "once, map %d: the food ran out %d times" % [map_seed, bot.zeros])
-		t.check(bot.warned_at >= 0.0, "once, map %d: the food warning came (at %.0f s)" % [map_seed, bot.warned_at])
+		t.check(bot.zeros == 0, "once, map %d: the food never ran out (%d times)" % [map_seed, bot.zeros])
+		t.check(bot.min_food >= 10.0, "once, map %d: and never fell below 10 (%.1f)" % [map_seed, bot.min_food])
 		t.check(bot.foraging_steps > 0, "once, map %d: idle Kith went foraging" % map_seed)
-		t.check(
-			bot.recovered_at >= 0.0 and not bot.s.economy.low,
-			"once, map %d: and the food recovered past the warning (at %.0f s)" % [map_seed, bot.recovered_at]
-		)
-		t.check(
-			bot.runway_at_warning <= Data.FOOD_WARN_SECONDS and bot.runway_at_warning > Data.FOOD_FAMINE_SECONDS,
-			"once, map %d: the warning came with %.0f s of food left" % [map_seed, bot.runway_at_warning]
-		)
+		t.check(not bot.s.economy.low, "once, map %d: and it ends with no warning up" % map_seed)
 
 
-## A player who never touches the mouse is warned with two minutes of food left, and the idle Kith forage, so
-## nobody leaves. With no bush in reach there is nothing to forage: then they do leave in the end, and the warning
-## comes well before the first one goes.
+## The same clumsy player on a map whose berries are all 8 or more tiles from the Hearth: the walk is longer, so the
+## rescue is slower, and the food must still never run out.
+func test_a_clumsy_newcomer_with_far_berries_is_still_carried() -> void:
+	for map_seed in [1, 4, 8]:
+		var game := Sim.new()
+		game.generate(map_seed)
+		var camp := game.world.camp_pos
+		var far := 0
+		for y in game.world.height:
+			for x in game.world.width:
+				var p := Vector2i(x, y)
+				if game.world.tile_at(p) == "berry":
+					if Vector2(p).distance_to(Vector2(camp)) < 8.0:
+						game.world.set_tile(p, "grass")
+					else:
+						far += 1
+		game.pathing.build()
+		game.fog.reveal_all()  # as if explored: the bushes are known
+		var bot := Newcomer.new()
+		bot.mode = "once"
+		bot.attach(game)
+		while bot.clock < MINUTES * 60.0:
+			bot.step()
+		print(
+			(
+				"Newcomer once, far berries (%d), map %d: %d Kith, least food %.1f"
+				% [far, map_seed, game.people.kith.size(), bot.min_food]
+			)
+		)
+		t.check(far > 0, "far map %d: there are berries 8 or more tiles away" % map_seed)
+		t.check(bot.min_kith >= 3 and bot.zeros == 0, "far map %d: nobody left and the food never ran out" % map_seed)
+		t.check(bot.min_food >= 10.0, "far map %d: least food %.1f" % [map_seed, bot.min_food])
+
+
+## A player who never touches the mouse is fed by the idle Kith, so nobody leaves. With no bush in reach there is
+## nothing to forage: then they do leave in the end, and the warning comes well before the first one goes.
 func test_an_idle_player_is_warned_before_anyone_leaves() -> void:
 	var bot := Newcomer.new()
 	bot.idler = true
 	bot.play(3, MINUTES * 60.0)
-	t.check(bot.warned_at >= 30.0, "an idle player is warned that the food is running low (at %.0f s)" % bot.warned_at)
-	t.check(bot.left == 0 and bot.min_food > 0.0, "and the idle %s forage, so nobody leaves" % Data.PEOPLE["many"])
+	t.check(bot.left == 0 and bot.min_food > 0.0, "the idle %s forage, so nobody leaves" % Data.PEOPLE["many"])
+	t.check(bot.foraging_steps > 0 and bot.min_food >= 6.0, "and the food stays up (least %.1f)" % bot.min_food)
 	var bare := Sim.new()
 	bare.generate(3)
 	var camp := bare.world.camp_pos

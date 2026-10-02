@@ -11,6 +11,7 @@ const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
+const GrowthNote = preload("res://scripts/growth_note.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 
@@ -66,7 +67,7 @@ func setup(game: Sim) -> void:
 	jobs_label = Ui.label("", 10)
 	note_label = Ui.label("", 10)
 	note_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	note_label.max_lines_visible = 2  # the block never grows the bar: two lines at most
+	note_label.max_lines_visible = 3  # the bar keeps its reserved height (BAR_H): three lines at most
 	kv.add_child(kith_label)
 	kv.add_child(jobs_label)
 	kv.add_child(note_label)
@@ -256,8 +257,11 @@ func refresh(paused: bool, speed: int) -> void:
 	for b in state.town.buildings:
 		jobs += 1 if Buildings.needs_worker(b) and not b["paused"] else 0
 	kith_label.text = Data.KITH_LABEL % [Data.PEOPLE["many"], state.people.kith.size(), state.town.housing()]
-	kith_label.get_parent().tooltip_text = Data.JOBS_TIP % [state.people.job_counts(), Data.PEOPLE["many"]]
 	var note := Ui.growth_note(state)
+	kith_label.get_parent().tooltip_text = (
+		Data.JOBS_TIP % [state.people.job_counts(), Data.PEOPLE["many"]]
+		+ ("\n\n" + GrowthNote.rule() if GrowthNote.food_is_the_blocker(state) else "")
+	)
 	kith_label.add_theme_color_override("font_color", Ui.HIGHLIGHT if note != "" else Ui.GOOD)
 	var rest: String = Data.HAUL_WORD if state.tech_tree.researched.has("haulers") else Data.IDLE_WORD
 	jobs_label.text = Data.JOBS_LABEL % [workers, jobs, idle, rest]
