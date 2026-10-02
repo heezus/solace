@@ -338,9 +338,9 @@ func test_the_growth_note_says_what_to_do_in_each_state() -> void:
 		"with haulers: a hut on a road: " + Ui.growth_note(s)
 	)
 	s.tech_tree.researched["gatherers_hut"] = true
-	t.check(t.place_free(s, "gatherers_hut", s.world.camp_pos + Vector2i(0, 3)), "a hut goes up")
-	s.town.set_focus(s.town.building_at[s.world.camp_pos + Vector2i(0, 3)], "berries")
-	t.road_link(s, s.world.camp_pos + Vector2i(0, 3))
+	t.check(t.place_free(s, "gatherers_hut", s.world.camp_pos + Vector2i(0, 2)), "a hut goes up")
+	s.town.set_focus(s.town.building_at[s.world.camp_pos + Vector2i(0, 2)], "berries")
+	t.road_link(s, s.world.camp_pos + Vector2i(0, 2))
 	t.check(
 		(
 			Ui.growth_note(s) == Data.GROW_NOTE_FOOD + ": " + Data.GROW_FIX_MORE
@@ -377,8 +377,8 @@ func test_a_building_waiting_for_kith_points_at_the_fix() -> void:
 	var s = t.fresh()
 	s.tech_tree.researched["cordage"] = true
 	s.economy.inv["berries"] = 100
-	t.place_free(s, "twine_post", s.world.camp_pos + Vector2i(0, 3))
-	var b: Dictionary = s.town.buildings[s.town.building_at[s.world.camp_pos + Vector2i(0, 3)]]
+	t.place_free(s, "twine_post", s.world.camp_pos + Vector2i(0, 2))
+	var b: Dictionary = s.town.buildings[s.town.building_at[s.world.camp_pos + Vector2i(0, 2)]]
 	b["worker"] = -1
 	s.people.found(0)
 	s.people.add_kith()

@@ -206,10 +206,10 @@ func test_a_forager_can_be_given_a_job() -> void:
 	t.check(_foragers(s) == 3, "all three are out foraging")
 	s.tech_tree.researched["cordage"] = true
 	t.give(s, 100)
-	t.place_free(s, "twine_post", s.world.camp_pos + Vector2i(0, 3))
+	t.place_free(s, "twine_post", s.world.camp_pos + Vector2i(0, 2))
 	for _n in 20:
 		s.tick(0.1)
-	var worker: int = s.town.buildings[s.town.building_at[s.world.camp_pos + Vector2i(0, 3)]]["worker"]
+	var worker: int = s.town.buildings[s.town.building_at[s.world.camp_pos + Vector2i(0, 2)]]["worker"]
 	t.check(worker >= 0 and s.people.kith[worker]["job"] == "work", "one of them took the new building")
 	t.check(not String(s.people.kith[worker]["phase"]).begins_with("forage"), "and stopped foraging")
 	s.tech_tree.researched["haulers"] = true
