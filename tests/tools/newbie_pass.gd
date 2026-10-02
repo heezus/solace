@@ -16,6 +16,7 @@ var game_time := 0.0
 var shot_n := 0
 var out_dir := "user://newbie"
 var log_lines: Array = []
+var mode := OS.get_environment("NEWBIE_MODE")  # "" or "no_berry_hut"
 var capped := false
 var last_food_log := 0.0
 const WALL_CAP_MS := 780000
@@ -419,32 +420,39 @@ func _run() -> void:
 		await _wait(6.0)
 		await _shot("hut1_trip_running")
 		main.building_panel.select(Vector2i(-1, -1))  # close the hut popup: it covers the bushes
-		# Berries: learn them by hand, then a second hut beside the bushes.
-		ok = await _gather_until("berries", func(): return s.people.knows("berries"), 90.0)
-		_say("berries learned=%s" % ok)
-		for item in hut_cost:
-			var need3: int = hut_cost[item]
-			await _gather_until(item, func(): return s.economy.inv.get(item, 0) >= need3, 120.0)
-		await _place_near("gatherers_hut", "berry", "hut2_berries")
-		_click(_screen_of(_last_spot))
-		await _wait(0.5)
-		var f = main.building_panel.parts["focus"]
-		_say("hut2 focus panel: visible=%s text='%s' hut focus=%s" % [f.visible, f.text, main.state.town.buildings[main.state.town.building_at[_last_spot]]["focus"]])
-		await _shot("hut2_selected_focus")
-		if f.visible and not f.disabled and main.state.town.buildings[main.state.town.building_at[_last_spot]]["focus"] != "berries":
-			for i in 4:
-				_click_control(f)
-				await _wait(0.3)
-				if main.state.town.buildings[main.state.town.building_at[_last_spot]]["focus"] == "berries":
-					break
-			_say("after clicking focus: '%s'" % f.text)
-			await _shot("hut2_focus_changed")
-		main.building_panel.select(Vector2i(-1, -1))
-		_key(KEY_3)
-		await _wait(30.0)
-		await _shot("both_huts_30s_at_3x")
-		await _wait(30.0)
-		await _shot("both_huts_60s_at_3x")
+		if mode != "no_berry_hut":
+			# Berries: learn them by hand, then a second hut beside the bushes.
+			ok = await _gather_until("berries", func(): return s.people.knows("berries"), 90.0)
+			_say("berries learned=%s" % ok)
+			for item in hut_cost:
+				var need3: int = hut_cost[item]
+				await _gather_until(item, func(): return s.economy.inv.get(item, 0) >= need3, 120.0)
+			await _place_near("gatherers_hut", "berry", "hut2_berries")
+			_click(_screen_of(_last_spot))
+			await _wait(0.5)
+			var f = main.building_panel.parts["focus"]
+			_say("hut2 focus panel: visible=%s text='%s' hut focus=%s" % [f.visible, f.text, main.state.town.buildings[main.state.town.building_at[_last_spot]]["focus"]])
+			await _shot("hut2_selected_focus")
+			if f.visible and not f.disabled and main.state.town.buildings[main.state.town.building_at[_last_spot]]["focus"] != "berries":
+				for i in 4:
+					_click_control(f)
+					await _wait(0.3)
+					if main.state.town.buildings[main.state.town.building_at[_last_spot]]["focus"] == "berries":
+						break
+				_say("after clicking focus: '%s'" % f.text)
+				await _shot("hut2_focus_changed")
+			main.building_panel.select(Vector2i(-1, -1))
+			_key(KEY_3)
+			await _wait(30.0)
+			await _shot("both_huts_30s_at_3x")
+			await _wait(30.0)
+			await _shot("both_huts_60s_at_3x")
+		else:
+			_say("MODE no_berry_hut: skipping berries and the second hut")
+			main.building_panel.select(Vector2i(-1, -1))
+			_key(KEY_3)
+			await _wait(30.0)
+			await _shot("no_berry_hut_30s")
 		# Watch the Kith at normal speed: are they visible, do they move?
 		_key(KEY_1)
 		for i in 4:
@@ -470,7 +478,7 @@ func _run() -> void:
 		await _wait(30.0)
 		await _shot("workshops_30s_later")
 		_kith_check("end")
-		await _wait(60.0)
+		await _wait(60.0 if mode == "" else 150.0)
 		await _shot("final_60s_more")
 		_kith_check("final")
 	else:
