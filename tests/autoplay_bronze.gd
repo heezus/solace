@@ -9,6 +9,8 @@ extends "res://tests/autoplay.gd"
 const MINES := 1  # Mines on Copper Hills the bot builds (the Tin Stream is dug by hand: the Crucible takes one tin)
 const COPPER_FIRST := 15  # Copper: Alloying costs 12, and a Crucible batch takes 3
 
+## Called once with the bot when Bronze Dawn is won, before the bot plays on: the state is then the stone age's last.
+var on_dawn: Callable
 var dawn_at := -1.0  # the clock when Bronze Dawn was won
 var bronze_at := -1.0  # the clock when the first Bronze was made
 
@@ -19,23 +21,56 @@ func play_bronze(map_seed: int, max_seconds: float) -> Dictionary:
 	attach(game)
 	while clock < max_seconds and not s.won:
 		step(true)
+	return _after_dawn(max_seconds)
+
+
+## Play on from a game that has just won Bronze Dawn (a run restored from a save made then), `at` seconds in.
+func play_from_dawn(game: Sim, at: float, max_seconds: float) -> Dictionary:
+	attach(game)
+	clock = at
+	for tech in s.tech_tree.researched:
+		known[tech] = true
+	return _after_dawn(max_seconds)
+
+
+## Start on the new era: Alloying is the goal. Called at the moment Bronze Dawn is won (by whatever steps the bot).
+func begin_era_two() -> void:
+	dawn_at = clock
+	if on_dawn.is_valid():
+		on_dawn.call(self)
+	_aim()
+	lines.append("%5.0f s  == Bronze Dawn: the land opens ==" % clock)
+
+
+## True once the first Bronze is made (and when, in `bronze_at`).
+func made_bronze() -> bool:
+	if bronze_at < 0.0 and s.economy.inv.get("bronze", 0) > 0:
+		bronze_at = clock
+	return bronze_at >= 0.0
+
+
+func _after_dawn(max_seconds: float) -> Dictionary:
 	if s.won:
-		dawn_at = clock
-		goal_tech = "alloying"
-		s.tech_tree.set_goal(goal_tech)
-		lines.append("%5.0f s  == Bronze Dawn: the land opens ==" % clock)
-		while clock < max_seconds and s.economy.inv.get("bronze", 0) == 0:
+		begin_era_two()
+		while clock < max_seconds and not made_bronze():
 			step(true)
-		if s.economy.inv.get("bronze", 0) > 0:
-			bronze_at = clock
 	var minutes := (bronze_at - dawn_at) / 60.0 if bronze_at >= 0.0 else -1.0
 	return {"won": s.won, "seconds": dawn_at, "bronze_seconds": bronze_at, "minutes": minutes, "log": lines}
+
+
+## The goal: Mining first (the Mine starts digging while Smelting is researched), then Alloying.
+func _aim() -> void:
+	var want := "alloying" if s.tech_tree.researched.has("mining") else "mining"
+	if want != goal_tech or s.tech_tree.goal == "":
+		goal_tech = want
+		s.tech_tree.set_goal(goal_tech)
 
 
 func _decide() -> void:
 	if not s.won:
 		super._decide()
 		return
+	_aim()
 	_flood_reach()
 	if _explore_ore() or _place_mine():
 		return

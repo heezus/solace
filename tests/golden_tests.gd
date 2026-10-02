@@ -12,9 +12,11 @@ const Sim = preload("res://scripts/sim.gd")
 const Data = preload("res://scripts/data.gd")
 
 const GOLDEN_PATH := "res://tests/golden.json"
+const BRONZE_PATH := "res://tests/golden_bronze.json"
 
 var t  # the runner, tests/run_tests.gd
 var golden: Dictionary = {}  # map seed (as a String) -> {"win_seconds": int, "state_hash": String}
+var bronze: Dictionary = {}  # map seed -> {"bronze_seconds": int, "state_hash": String}: the game when the first Bronze is made
 
 
 ## Load the golden values. False (and a failed check) when the file is missing or unreadable.
@@ -25,6 +27,11 @@ func load_golden(runner) -> bool:
 		t.check(false, "%s is missing or is not a JSON object" % GOLDEN_PATH)
 		return false
 	golden = parsed
+	var more = JSON.parse_string(FileAccess.get_file_as_string(BRONZE_PATH))
+	if typeof(more) != TYPE_DICTIONARY:
+		t.check(false, "%s is missing or is not a JSON object" % BRONZE_PATH)
+		return false
+	bronze = more
 	return true
 
 
@@ -47,6 +54,45 @@ func check_run(map_seed: int, bot) -> void:
 			(
 				"golden snapshot differs on map %d\n  want %s\n  got  %s\n  If this change is deliberate, replace the entry for map %d in %s with:\n%s"
 				% [map_seed, JSON.stringify(want), JSON.stringify(got), map_seed, GOLDEN_PATH, _entry(map_seed, got)]
+			)
+		)
+	)
+
+
+## Compare the game at the moment Bronze Dawn is won (the era-2 bot calls this) with tests/golden.json.
+func check_dawn(bot, map_seed: int) -> void:
+	check_run(map_seed, bot)
+
+
+## Compare the era-2 bot (tests/autoplay_bronze.gd) at its first Bronze with the second golden snapshot.
+func check_bronze(map_seed: int, bot) -> void:
+	var got := {
+		"bronze_seconds": roundi(bot.bronze_at) if bot.bronze_at >= 0.0 else -1, "state_hash": state_hash(bot.s)
+	}
+	var want: Dictionary = bronze.get(str(map_seed), {})
+	if want == got:
+		print(
+			(
+				"Golden (first Bronze), map %d: %d s, %s"
+				% [map_seed, got["bronze_seconds"], String(got["state_hash"]).left(12)]
+			)
+		)
+		return
+	(
+		t
+		. check(
+			false,
+			(
+				'golden snapshot of the first Bronze differs on map %d\n  want %s\n  got  %s\n  If this change is deliberate, replace the entry for map %d in %s with:\n  "%d": %s'
+				% [
+					map_seed,
+					JSON.stringify(want),
+					JSON.stringify(got),
+					map_seed,
+					BRONZE_PATH,
+					map_seed,
+					JSON.stringify(got)
+				]
 			)
 		)
 	)

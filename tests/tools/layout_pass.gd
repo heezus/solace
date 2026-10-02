@@ -17,15 +17,20 @@ const UiTests = preload("res://tests/ui_tests.gd")
 const Ui = preload("res://scripts/ui.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
+const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
 
 const BOT_STEPS_PER_FRAME := 20
 const MAX_FRAMES := 9000
+const ERA_FRAMES := 320  # frames played on after Bronze Dawn: the land grows, the era-2 bot digs, smelts and pours
 const RESIZE_AT := 400  # frame: the window is resized once, and the map must refit
 const SHRINK_AT := 450  # frame: and made smaller than the design size
 const WALL := "A long line of text that has to wrap onto several lines inside the Info panel. "
 
 var main: Node
-var bot: Autoplay
+var bot: AutoplayBronze
+var dawn_frame := -1  # the frame Bronze Dawn was won; the pass plays on from there into the era it opens
+var before_growth := {}  # the map view the frame before the land grew east
+var grown_frame := -1
 var frame := 0
 var last_vp := Vector2.ZERO
 var last_scale := Vector2.ZERO
@@ -55,11 +60,13 @@ func _process(_delta: float) -> bool:
 	frame += 1
 	if frame == 3:
 		main.paused = true
-		bot = Autoplay.new()
+		bot = AutoplayBronze.new()
 		bot.attach(main.state)
 	if frame > 3 and not frozen:
 		for i in BOT_STEPS_PER_FRAME:
-			if main.state.won:
+			if main.state.won and dawn_frame < 0:
+				_dawn()
+			if dawn_frame > 0 and (bot.made_bronze() or frame > dawn_frame + ERA_FRAMES):
 				break
 			main.state.tick(Autoplay.DT)
 			bot.step(false)
@@ -71,9 +78,85 @@ func _process(_delta: float) -> bool:
 	if frame > 5:
 		_check()
 	_hud_checks()
-	if main.state.won or frame > MAX_FRAMES:
+	if dawn_frame > 0:
+		_era_two_checks()
+	if (dawn_frame > 0 and (bot.made_bronze() or frame > dawn_frame + ERA_FRAMES)) or frame > MAX_FRAMES:
 		_finish()
 	return false
+
+
+## Bronze Dawn has just been won: the era begins, and the view of the map is noted to see it stays put as the land opens.
+func _dawn() -> void:
+	dawn_frame = frame
+	bot.begin_era_two()
+	before_growth = {"pos": main.position, "scale": main.scale, "view": main.view, "bars": last_bars}
+
+
+## What the first part of the next era must keep: the banner, the camera and the bars through the growth of the land
+## (the map doubles under fog, the view and the HUD must not move), and the board's second tab.
+func _era_two_checks() -> void:
+	var world = main.state.world
+	if grown_frame < 0 and world.is_grown():
+		grown_frame = frame
+		hud_checks += 1
+		if world.width != world.stone_width * 2:
+			problems.append("the land grew to %d columns, not twice %d" % [world.width, world.stone_width])
+	if grown_frame > 0 and frame in [grown_frame + 2, grown_frame + 40]:
+		hud_checks += 1
+		var now := {"pos": main.position, "scale": main.scale, "view": main.view}
+		for key in ["pos", "scale", "view"]:
+			if now[key] != before_growth[key]:
+				problems.append(
+					"the map's %s went %s -> %s as the land opened east" % [key, before_growth[key], now[key]]
+				)
+		var bars := Vector2(main.top_bar.size.y, main.bottom_bar.size.y)
+		if bars != before_growth["bars"]:
+			problems.append("the bars went %s -> %s as the land opened" % [before_growth["bars"], bars])
+	if frame == dawn_frame + 3:
+		hud_checks += 1
+		if (
+			not main.banner_shown
+			or not main.messages.history.any(func(m): return m["text"].begins_with(Data.ERA_BANNER_TITLE))
+		):
+			problems.append("Bronze Dawn showed no banner")
+		if "win_overlay" in main:
+			problems.append("a win overlay is still there: the game goes on after Bronze Dawn")
+	if frame == dawn_frame + 60:
+		frozen = true
+		main.tech_panel.era_chosen = false
+		main.tech_panel.view_chosen = false
+		main.tech_panel.visible = true
+	if frame == dawn_frame + 62:
+		_check_era_board()
+		main.tech_panel.visible = false
+		frozen = false
+	if frame > dawn_frame + 6 and frame % 25 == 0:
+		_check_top_bar_text("in the second era, frame %d" % frame)
+		_check_fit("in the second era, frame %d" % frame)
+
+
+## The research board after Bronze Dawn opens on the second era, with its tab, its 16 cards and the locked ones saying so.
+func _check_era_board() -> void:
+	hud_checks += 1
+	var panel = main.tech_panel
+	if panel.board.era != 2 or panel.era_buttons[2].disabled or not panel.era_buttons[2].button_pressed:
+		problems.append("the research board didn't open on the second era's tab after Bronze Dawn")
+	if not Rect2(Vector2.ZERO, main.get_viewport_rect().size).encloses(panel.get_global_rect()):
+		problems.append("the research board runs off the window (%s)" % panel.get_global_rect())
+	for e in panel.era_buttons:
+		var tab: Control = panel.era_buttons[e]
+		if tab.get_global_rect().size.x + 1.0 < tab.get_minimum_size().x:
+			problems.append("the era tab %s is cut off" % tab.text)
+	_check_min_text("with the second era's board open")
+	panel._pick_view("all")
+	var locked := 0
+	for tech in Data.TECH_ORDER:
+		if Data.TECHS[tech].get("era", 1) == 2 and not panel.board.shows(tech):
+			problems.append("%s has no card on the second board" % tech)
+		if Data.TECHS[tech].get("stage", 1) > Data.BUILT_STAGE:
+			locked += 1
+	if locked != 9:
+		problems.append("the second board has %d techs for the next update, not nine" % locked)
 
 
 func _check() -> void:
@@ -687,8 +770,12 @@ func _labels(node: Node) -> Array:
 
 
 func _finish() -> void:
-	if not main.state.won:
+	if dawn_frame < 0:
 		problems.append("the bot didn't reach Bronze Dawn in %d frames" % MAX_FRAMES)
+	elif not main.state.world.is_grown():
+		problems.append("the land didn't grow east after Bronze Dawn")
+	elif not bot.made_bronze():
+		problems.append("the era-2 bot made no Bronze in %d frames" % ERA_FRAMES)
 	for p in problems.slice(0, 20):
 		printerr("LAYOUT PROBLEM: " + p)
 	print(

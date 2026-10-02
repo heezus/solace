@@ -24,6 +24,7 @@ const StoryTests = preload("res://tests/story_tests.gd")
 const SaveTests = preload("res://tests/save_tests.gd")
 const EraTests = preload("res://tests/era_tests.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
+const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
 const GoldenTests = preload("res://tests/golden_tests.gd")
 const NewcomerTests = preload("res://tests/newcomer_tests.gd")
 const UiTests = preload("res://tests/ui_tests.gd")
@@ -95,26 +96,34 @@ func _init() -> void:
 	quit(1 if failures > 0 else 0)
 
 
-## A headless player (tests/autoplay.gd) plays the stone age on a few maps. It should reach Bronze Dawn
-## in 8 to 25 simulated minutes; data.gd is tuned so it takes about 12 to 16.
+## A headless player (tests/autoplay_bronze.gd) plays the stone age on a few maps. It should reach Bronze Dawn
+## in 8 to 25 simulated minutes; data.gd is tuned so it takes about 12 to 16. The game at that moment must match
+## tests/golden.json. It then plays on to its first Bronze, which should come 7 to 14 minutes later (the target is about
+## 8 to 12), and the game at that moment must match tests/golden_bronze.json.
 func test_pacing_bot() -> void:
 	var golden := GoldenTests.new()
 	var have_golden := golden.load_golden(self)
 	for map_seed in [1, 2, 3]:
-		var bot := Autoplay.new()
-		var r: Dictionary = bot.play(map_seed, 30 * 60.0)
+		var bot := AutoplayBronze.new()
 		if have_golden:
-			golden.check_run(map_seed, bot)  # win time and final state must match tests/golden.json
+			bot.on_dawn = golden.check_dawn.bind(map_seed)  # win time and state at Bronze Dawn: tests/golden.json
+		var r: Dictionary = bot.play_bronze(map_seed, 50 * 60.0)
+		if have_golden:
+			golden.check_bronze(map_seed, bot)  # and at the first Bronze: tests/golden_bronze.json
 		var minutes: float = r["seconds"] / 60.0
 		print(
 			(
-				"Pacing bot, map %d: %s at %.1f simulated minutes"
-				% [map_seed, "Bronze Dawn" if r["won"] else "no win", minutes]
+				"Pacing bot, map %d: %s at %.1f simulated minutes, first Bronze %.1f minutes later"
+				% [map_seed, "Bronze Dawn" if r["won"] else "no win", minutes, r["minutes"]]
 			)
 		)
 		check(r["won"], "the bot reaches Bronze Dawn on map %d" % map_seed)
 		check(minutes >= 8.0 and minutes <= 25.0, "map %d takes 8 to 25 minutes (%.1f)" % [map_seed, minutes])
-		if not r["won"]:
+		check(
+			r["minutes"] >= 7.0 and r["minutes"] <= 14.0,
+			"map %d: the first Bronze takes 7 to 14 minutes more (%.1f)" % [map_seed, r["minutes"]]
+		)
+		if not r["won"] or r["minutes"] < 0.0:
 			for line in r["log"]:
 				print("  ", line)
 

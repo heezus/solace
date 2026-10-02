@@ -593,8 +593,8 @@ func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
 			if idle != b["paused"]:
 				s.set_paused(i, idle)
 			continue
-		if def["kind"] != "processor":
-			continue
+		if def["kind"] != "processor" or def["out"].is_empty():
+			continue  # a Mine makes no stock of its own
 		var made: String = def["out"].keys()[0]
 		var surplus: bool = s.economy.inv.get(made, 0) >= later.get(made, 0) + 10 and not short.has(made)
 		for id in def["in"]:
