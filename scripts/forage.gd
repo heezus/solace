@@ -1,7 +1,7 @@
 extends RefCounted
-## The famine fallback. When the food warning is up and the stockpile would run out within Data.FOOD_FAMINE_SECONDS
-## (Economy.famine), every Kith with nothing to do goes out and picks berries by themselves: one who has no job,
-## and one whose hut is only waiting for a click. They walk to the nearest bush by the Hearth, pick for
+## The famine fallback. When the stockpile would run out within Data.FOOD_FAMINE_SECONDS (Economy.famine), every Kith
+## with nothing to do goes out and picks berries by themselves: one who has no job, and the worker of a hut that is
+## only waiting for a click. They walk to the nearest bush by the Hearth, pick for
 ## Data.FORAGE_TIME seconds, carry Data.FORAGE_YIELD berries to the nearest stockpile and go again, until the
 ## famine is over (the warning has come down, or their hut was clicked). It is a slow trickle: enough to keep the
 ## people fed, and it is noted under Data.FLOW_FORAGE_SOURCE, which is not food income, so it never makes anyone

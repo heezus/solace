@@ -16,7 +16,7 @@ var t  # the runner, tests/run_tests.gd
 
 func run(runner) -> void:
 	t = runner
-	test_the_famine_comes_with_the_warning_and_goes_well_after_it()
+	test_the_famine_comes_before_the_warning_and_goes_well_after_it()
 	test_foraged_food_is_not_income()
 	test_idle_kith_forage_and_the_food_recovers_without_growth()
 	test_a_waiting_hut_worker_forages_and_a_click_calls_them_back()
@@ -41,18 +41,19 @@ func _foragers(s: Sim) -> int:
 	return n
 
 
-func test_the_famine_comes_with_the_warning_and_goes_well_after_it() -> void:
+func test_the_famine_comes_before_the_warning_and_goes_well_after_it() -> void:
 	var e := Economy.new()
-	e.inv["berries"] = 12
-	e.food_credit = 0.0
 	var eat := 4 * Data.FOOD_PER_KITH_PER_SEC
-	t.check(e.feed(4, 0.1) and not e.low and not e.famine, "%.0f s of food: no warning yet" % (12.0 / eat))
-	e.inv["berries"] = int(eat * Data.FOOD_WARN_SECONDS) - 1
-	e.feed(4, 0.1)
-	t.check(e.low and not e.famine, "under the warning point: the warning is up, and no famine yet")
+	e.flows.clock = Data.FORAGE_OPENING_SECONDS + 1.0  # past the opening
+	e.inv["berries"] = int(eat * Data.FOOD_FORAGE_END_SECONDS) + 2
+	e.food_credit = 0.0
+	t.check(e.feed(4, 0.1) and not e.low and not e.famine, "plenty of food: no warning and no famine")
 	e.inv["berries"] = int(eat * Data.FOOD_FAMINE_SECONDS) - 1
 	e.feed(4, 0.1)
-	t.check(e.famine, "under the famine point: the famine is on")
+	t.check(e.famine and not e.low, "under the famine point the famine is on, before the warning")
+	e.inv["berries"] = int(eat * Data.FOOD_WARN_SECONDS) - 1
+	e.feed(4, 0.1)
+	t.check(e.low and e.famine, "under the warning point the warning is up as well")
 	e.inv["berries"] = int(eat * Data.FOOD_CLEAR_SECONDS) + 2
 	e.feed(4, 0.1)
 	t.check(not e.low and e.famine, "the warning comes down at its own point and the famine stays")
