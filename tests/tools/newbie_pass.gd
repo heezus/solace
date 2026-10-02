@@ -68,7 +68,9 @@ func _wait(sec: float) -> void:
 
 
 func _screen_of(p: Vector2i) -> Vector2:
-	return main.position + (Vector2(p) + Vector2(0.5, 0.5)) * main.TILE * main.scale.x
+	if not main.view.grow(-main.TILE).has_point(main.screen_of(p)):
+		main.center_on(p)
+	return main.screen_of(p)
 
 
 func _win(at: Vector2) -> Vector2:
@@ -109,6 +111,23 @@ func _click_control(c: Control) -> void:
 		_say("(could not click a hidden control)")
 		return
 	_click(c.get_global_rect().get_center())
+
+
+func _key_hold(code: Key, sec: float) -> void:
+	for pressed in [true, false]:
+		var e := InputEventKey.new()
+		e.keycode = code
+		e.physical_keycode = code
+		e.pressed = pressed
+		Input.parse_input_event(e)
+		Input.flush_buffered_events()
+		if pressed:
+			await _wait(sec)
+
+
+func _wheel(canvas_at: Vector2, up: bool) -> void:
+	_button(canvas_at, MOUSE_BUTTON_WHEEL_UP if up else MOUSE_BUTTON_WHEEL_DOWN, true)
+	_button(canvas_at, MOUSE_BUTTON_WHEEL_UP if up else MOUSE_BUTTON_WHEEL_DOWN, false)
 
 
 func _key(code: Key) -> void:
@@ -293,6 +312,22 @@ func _run() -> void:
 	await _shot("first_look")
 	await _wait(4.0)
 	await _shot("after_4s_doing_nothing")
+
+	# Discover the camera the way a newcomer would: arrow keys, wheel, Home.
+	await _key_hold(KEY_RIGHT, 1.0)
+	await _shot("camera_arrow_right")
+	await _key_hold(KEY_W, 1.0)
+	await _shot("camera_w_up")
+	for i in 3:
+		_wheel(Vector2(500, 400), false)
+		await _wait(0.2)
+	await _shot("camera_wheel_zoom_out")
+	for i in 3:
+		_wheel(Vector2(500, 400), true)
+		await _wait(0.2)
+	_key(KEY_HOME)
+	await _wait(0.6)
+	await _shot("camera_home")
 
 	# A newcomer clicks the thing that looks like a resource, once.
 	var tree := _nearest("tree")
