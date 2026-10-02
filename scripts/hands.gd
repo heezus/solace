@@ -22,11 +22,14 @@ static func harvest_yield(s, item: String) -> int:
 	return roundi((1 + Ranks.item_bonus(s, item)) * mult * Bonuses.total(parts, "yield"))
 
 
-## Seconds of holding for one harvest of `item`: Data.HOLD_TIME, or the shortest hold a tool gives.
+## Seconds of holding for one harvest of `item`: Data.HOLD_TIME, or the shortest hold a tool gives (ore takes
+## Data.HAND_HOLD, and a tool cuts it by the same share).
 static func hold_time(s, item: String) -> float:
 	var t_min := Data.HOLD_TIME
 	for t in _tools(s, item):
 		t_min = minf(t_min, t.get("hold", Data.HOLD_TIME))
+	if Data.HAND_HOLD.has(item):  # slow work (ore): the tools shorten it by the same share
+		return Data.HAND_HOLD[item] * t_min / Data.HOLD_TIME
 	return t_min
 
 
@@ -49,7 +52,10 @@ static func _tools(s, item: String) -> Array:
 static func item_at(s, p: Vector2i) -> String:
 	if not s.fog.is_revealed(p) or s.town.building_at.has(p) or s.world.roads.has(p) or s.world.tile_at(p) == "":
 		return ""
-	return Data.TILES[s.world.tile_at(p)]["yields"]
+	var tile: Dictionary = Data.TILES[s.world.tile_at(p)]
+	if tile.has("tech") and not s.tech_tree.researched.has(tile["tech"]):
+		return ""  # ore can't be dug before Prospecting
+	return tile["yields"]
 
 
 ## How many Kith hold a Flint Tool.
@@ -63,6 +69,8 @@ static func tools_held(s) -> int:
 
 ## Count a harvest toward teaching `item`; at Data.LEARN_CLICKS the next Kith in Data.PEOPLE_NAMES learns it.
 static func teach(s, item: String) -> void:
+	if Data.HAND_HOLD.has(item):
+		return  # ore isn't taught: a Mine digs it
 	s.hand_counts[item] = s.hand_counts.get(item, 0) + 1
 	if s.people.knows(item) or s.hand_counts[item] < Data.LEARN_CLICKS:
 		return

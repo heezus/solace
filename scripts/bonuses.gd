@@ -1,11 +1,13 @@
 extends RefCounted
-## Work multipliers. Every bonus is in one of two groups: Speed (shorter work cycles) and Yield (more
-## per harvest). Bonuses add within a group (+50% and +100% make +150%) and the groups multiply.
+## Work multipliers. Every bonus is in one of three groups: Speed (shorter work cycles), Yield (more
+## per harvest) and Output (more of each good a workshop makes a cycle). Bonuses add within a group (+50% and
+## +100% make +150%) and the groups multiply.
 ## Data.BONUSES lists them; new ones (Bronze Tools, later upgrades) plug in the same way.
 ## Static, and works on the Sim passed in.
 
 const Data = preload("res://scripts/data.gd")
 const Ranks = preload("res://scripts/ranks.gd")
+const Buildings = preload("res://scripts/buildings.gd")
 
 
 ## The bonuses at work on building b now, for `item` (yield bonuses name the item they apply to):
@@ -65,6 +67,11 @@ static func yield_mult(s, b: Dictionary, item: String) -> float:
 	return total(active(s, b, item), "yield")
 
 
+## How many times what a workshop makes each cycle: 1 plus the Output group (Kilns II doubles a Kiln's Brick).
+static func output(s, b: Dictionary) -> float:
+	return total(active(s, b, ""), "output")
+
+
 ## The Yield bonuses that only buildings get (those with `kinds`, like Ochre at huts). The others
 ## (Foraging) are already in the click yield a hut's bundle is based on.
 static func building_yield(s, b: Dictionary, item: String) -> float:
@@ -81,11 +88,12 @@ static func text(s, b: Dictionary) -> String:
 	var base: float = 60.0 / def["time"]
 	var unit := "jobs/min"
 	if def["kind"] == "processor":
+		var out := Buildings.recipe_out(b)
 		var made := 0
-		for id in def["out"]:
-			made += def["out"][id]
-		base *= made
-		unit = "%s/min" % Data.ITEMS[def["out"].keys()[0]]["name"]
+		for id in out:
+			made += out[id]
+		base *= made * output(s, b)
+		unit = "%s/min" % Data.ITEMS[out.keys()[0]]["name"]
 	var sp := total(parts, "speed")
 	var line := "%s %s" % [_num(base), unit]
 	if sp > 1.0:
@@ -96,6 +104,10 @@ static func text(s, b: Dictionary) -> String:
 		line += " x Speed %s (%s) = %s %s" % [_num(sp), ", ".join(names), _num(base * sp), unit]
 	if def["kind"] == "gatherer":
 		line += ", plus walking"
+	var more := output(s, b)
+	if def["kind"] == "processor" and more > 1.0:
+		var names: Array = parts.filter(func(p): return p["group"] == "output").map(func(p): return p["name"])
+		line += " (%s each cycle: %s)" % ["x" + _num(more), ", ".join(names)]
 	return line
 
 

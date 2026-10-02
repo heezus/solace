@@ -25,6 +25,9 @@ const Rules = preload("res://scripts/rules.gd")
 const World = preload("res://scripts/world.gd")
 
 const _POINTS := ["pos"]  # the building entries that are tile positions (saved as [x, y])
+## The entries of a building that hold the people at work in it, as indexes into the Kith list: the first, and for a
+## building with a `crew` of 2 (a Mine) the second. -1 for nobody.
+const CREW_SLOTS := ["worker", "mate"]
 
 ## each: {type, pos, progress, inbuf, out, status, gather_items, focus, gather_index, worker, ...}
 var buildings: Array = []
@@ -78,7 +81,10 @@ func placement_error(type: String, p: Vector2i) -> String:
 		if tile != "grass":
 			return "Fields go on open grassland"
 		return "" if _economy.can_afford(def["cost"]) else "Not enough materials"
-	if not Data.TILES[tile]["buildable"]:
+	if def.has("on_tiles"):
+		if tile not in def["on_tiles"]:
+			return "Must stand on " + " or ".join(def["on_tiles"].map(func(t): return Data.TILES[t]["name"]))
+	elif not Data.TILES[tile]["buildable"]:
 		return "Build on open grassland"
 	if def.get("needs_river", false) and not _world.touches_river(p):
 		return "Must touch the river"
@@ -144,6 +150,8 @@ func add_building(type: String, p: Vector2i) -> void:
 		"focus": "",  # the one item a Gatherer's Hut gathers, "" for none (see default_focus)
 		"gather_index": 0,
 		"worker": -1,  # index into kith, or -1
+		"mate": -1,  # the second person of a building that needs two (see CREW_SLOTS), or -1
+		"ore": "",  # what a Mine digs: the item its tile yields, "" for any other building
 		"claimed": false,  # a hauler is on its way to empty it
 		"incoming": {},  # inputs haulers are carrying here
 		"unreachable": 0.0,  # seconds left to show "can't reach"
@@ -153,6 +161,8 @@ func add_building(type: String, p: Vector2i) -> void:
 		"trips": 0,  # hut trips queued by clicking it, before Paths & Haulers (the one under way counts)
 		"rush_cd": 0.0,  # seconds until it can be rushed again
 	}
+	if Data.BUILDINGS[type].has("dig"):
+		b["ore"] = Data.TILES[_world.tile_at(p)]["yields"]
 	if Data.BUILDINGS[type]["kind"] == "gatherer":
 		for t in gather_tiles(p):
 			b["gather_items"].append(Data.TILES[_world.tile_at(t)]["yields"])
@@ -317,6 +327,32 @@ static func needs_worker(b: Dictionary) -> bool:
 	return Data.BUILDINGS[b["type"]]["kind"] in ["gatherer", "processor"]
 
 
+## How many people building `b` needs at work: 1, or its `crew`.
+static func crew_size(b: Dictionary) -> int:
+	return int(Data.BUILDINGS[b["type"]].get("crew", 1))
+
+
+## The CREW_SLOTS building `b` has, in order.
+static func crew_slots(b: Dictionary) -> Array:
+	return CREW_SLOTS.slice(0, crew_size(b))
+
+
+## True when every place at building `b` is taken.
+static func is_staffed(b: Dictionary) -> bool:
+	for slot in crew_slots(b):
+		if b[slot] < 0:
+			return false
+	return true
+
+
+## What a cycle at `b` makes: the building's `out`, or for a Mine its `dig` of the ore on its tile.
+static func recipe_out(b: Dictionary) -> Dictionary:
+	var def: Dictionary = Data.BUILDINGS[b["type"]]
+	if def.has("dig"):
+		return {b["ore"]: def["dig"]}
+	return def["out"]
+
+
 ## Carry by hand: empty the building's output into the stockpile and load its inputs from the stockpile.
 func haul(index: int) -> void:
 	var b: Dictionary = buildings[index]
@@ -408,4 +444,6 @@ static func _building_from_dict(d: Dictionary) -> Dictionary:
 		b[key] = float(d[key])
 	for key in ["gather_index", "worker", "trips"]:
 		b[key] = int(d[key])
+	b["mate"] = int(d.get("mate", -1))  # a save from before the Mine has no second place
+	b["ore"] = String(d.get("ore", ""))
 	return b

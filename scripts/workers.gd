@@ -154,7 +154,7 @@ static func teach_note(b: Dictionary) -> String:
 
 ## True while building b is partway through a cycle that a rush can finish.
 static func can_rush(s, b: Dictionary) -> bool:
-	if b["rush_cd"] > 0.0 or b["paused"] or b["worker"] < 0:
+	if b["rush_cd"] > 0.0 or b["paused"] or not Buildings.is_staffed(b):
 		return false
 	match Data.BUILDINGS[b["type"]]["kind"]:
 		"gatherer":
@@ -205,7 +205,7 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 	if b["paused"]:
 		s.town.set_status(b, "Paused: its %s is free for other jobs" % s.people.building_job(b), "Paused")
 		return
-	if b["worker"] < 0:
+	if not Buildings.is_staffed(b):
 		s.town.set_status(
 			b, GrowthNote.waiting_for_kith(s, s.people.building_job(b)), "Idle: no free %s" % Data.PEOPLE["one"]
 		)

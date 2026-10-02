@@ -13,6 +13,9 @@ const RUSH_COOLDOWN := 5.0
 ## Gathering by hand is a hold: a ring fills over the tile for HOLD_TIME seconds, then the harvest pops,
 ## and it repeats while you hold. A harvest's yield is base x tool x rank.
 const HOLD_TIME := 1.0
+## Ore is dug slowly by hand: seconds of holding for one harvest of these items (HOLD_TIME for everything else).
+## A hand tool's hold is a share of HOLD_TIME, so Flint Tools shorten these in the same proportion.
+const HAND_HOLD := {"copper_ore": 3.0, "tin": 4.0}
 ## Hand tools: the best one that applies counts for each part. `hold` shortens the hold (seconds),
 ## `mult` multiplies the yield. `crafted` needs a Flint Tool made once, `tech` a researched tech
 ## (Bronze Tools is era 2's slot), `item` limits it to one resource.
@@ -105,7 +108,10 @@ const BONUSES := {
 	{"name": "Cordage", "group": "speed", "add": 0.25, "rank_of": "cordage", "types": ["twine_post"]},
 	"rank_charcoal_pit": {"name": "Fire", "group": "speed", "add": 0.25, "rank_of": "fire", "types": ["charcoal_pit"]},
 	"rank_kiln": {"name": "Pottery", "group": "speed", "add": 0.25, "rank_of": "pottery", "types": ["kiln"]},
+	# Era 2: Kilns II doubles what a Kiln makes each cycle (group "output": more of each good a workshop makes).
+	"kilns_ii": {"name": "Kilns II", "group": "output", "add": 1.0, "tech": "kilns_ii", "types": ["kiln"]},
 }
 ## A Flint Tool lasts this many jobs (harvests or work cycles) in a worker's hands.
 const TOOL_JOBS := 40
 const CALENDAR_FIELD_BONUS := 0.25  # extra yield from Fields
+const PLOUGH_FIELD_BONUS := 0.5  # ...and the Plough's share, on top

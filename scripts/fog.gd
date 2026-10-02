@@ -13,6 +13,19 @@ func setup(w: int, h: int) -> void:
 	cells.fill(0)
 
 
+## Widen the map to `w` columns (the land grew east): what has been seen stays seen, and the new columns are fogged.
+func widen(w: int) -> void:
+	var old_w := width
+	var old_cells := cells
+	cells = PackedByteArray()
+	cells.resize(w * height)
+	cells.fill(0)
+	for y in height:
+		for x in mini(old_w, w):
+			cells[y * w + x] = old_cells[y * old_w + x]
+	width = w
+
+
 func is_revealed(p: Vector2i) -> bool:
 	return p.x >= 0 and p.y >= 0 and p.x < width and p.y < height and cells[p.y * width + p.x] == 1
 

@@ -17,15 +17,20 @@ const UiTests = preload("res://tests/ui_tests.gd")
 const Ui = preload("res://scripts/ui.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
+const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
 
 const BOT_STEPS_PER_FRAME := 20
 const MAX_FRAMES := 9000
+const ERA_FRAMES := 520  # frames played on after Bronze Dawn: the land grows, the era-2 bot digs, smelts and pours
 const RESIZE_AT := 400  # frame: the window is resized once, and the map must refit
 const SHRINK_AT := 450  # frame: and made smaller than the design size
 const WALL := "A long line of text that has to wrap onto several lines inside the Info panel. "
 
 var main: Node
-var bot: Autoplay
+var bot: AutoplayBronze
+var dawn_frame := -1  # the frame Bronze Dawn was won; the pass plays on from there into the era it opens
+var before_growth := {}  # the map view the frame before the land grew east
+var grown_frame := -1
 var frame := 0
 var last_vp := Vector2.ZERO
 var last_scale := Vector2.ZERO
@@ -55,11 +60,13 @@ func _process(_delta: float) -> bool:
 	frame += 1
 	if frame == 3:
 		main.paused = true
-		bot = Autoplay.new()
+		bot = AutoplayBronze.new()
 		bot.attach(main.state)
 	if frame > 3 and not frozen:
 		for i in BOT_STEPS_PER_FRAME:
-			if main.state.won:
+			if main.state.won and dawn_frame < 0:
+				_dawn()
+			if dawn_frame > 0 and (bot.made_bronze() or frame > dawn_frame + ERA_FRAMES):
 				break
 			main.state.tick(Autoplay.DT)
 			bot.step(false)
@@ -71,9 +78,85 @@ func _process(_delta: float) -> bool:
 	if frame > 5:
 		_check()
 	_hud_checks()
-	if main.state.won or frame > MAX_FRAMES:
+	if dawn_frame > 0:
+		_era_two_checks()
+	if (dawn_frame > 0 and (bot.made_bronze() or frame > dawn_frame + ERA_FRAMES)) or frame > MAX_FRAMES:
 		_finish()
 	return false
+
+
+## Bronze Dawn has just been won: the era begins, and the view of the map is noted to see it stays put as the land opens.
+func _dawn() -> void:
+	dawn_frame = frame
+	bot.begin_era_two()
+	before_growth = {"pos": main.position, "scale": main.scale, "view": main.view, "bars": last_bars}
+
+
+## What the first part of the next era must keep: the banner, the camera and the bars through the growth of the land
+## (the map doubles under fog, the view and the HUD must not move), and the board's second tab.
+func _era_two_checks() -> void:
+	var world = main.state.world
+	if grown_frame < 0 and world.is_grown():
+		grown_frame = frame
+		hud_checks += 1
+		if world.width != world.stone_width * 2:
+			problems.append("the land grew to %d columns, not twice %d" % [world.width, world.stone_width])
+	if grown_frame > 0 and frame in [grown_frame + 2, grown_frame + 40]:
+		hud_checks += 1
+		var now := {"pos": main.position, "scale": main.scale, "view": main.view}
+		for key in ["pos", "scale", "view"]:
+			if now[key] != before_growth[key]:
+				problems.append(
+					"the map's %s went %s -> %s as the land opened east" % [key, before_growth[key], now[key]]
+				)
+		var bars := Vector2(main.top_bar.size.y, main.bottom_bar.size.y)
+		if bars != before_growth["bars"]:
+			problems.append("the bars went %s -> %s as the land opened" % [before_growth["bars"], bars])
+	if frame == dawn_frame + 3:
+		hud_checks += 1
+		if (
+			not main.banner_shown
+			or not main.messages.history.any(func(m): return m["text"].begins_with(Data.ERA_BANNER_TITLE))
+		):
+			problems.append("Bronze Dawn showed no banner")
+		if "win_overlay" in main:
+			problems.append("a win overlay is still there: the game goes on after Bronze Dawn")
+	if frame == dawn_frame + 60:
+		frozen = true
+		main.tech_panel.era_chosen = false
+		main.tech_panel.view_chosen = false
+		main.tech_panel.visible = true
+	if frame == dawn_frame + 62:
+		_check_era_board()
+		main.tech_panel.visible = false
+		frozen = false
+	if frame > dawn_frame + 6 and frame % 25 == 0:
+		_check_top_bar_text("in the second era, frame %d" % frame)
+		_check_fit("in the second era, frame %d" % frame)
+
+
+## The research board after Bronze Dawn opens on the second era, with its tab, its 16 cards and the locked ones saying so.
+func _check_era_board() -> void:
+	hud_checks += 1
+	var panel = main.tech_panel
+	if panel.board.era != 2 or panel.era_buttons[2].disabled or not panel.era_buttons[2].button_pressed:
+		problems.append("the research board didn't open on the second era's tab after Bronze Dawn")
+	if not Rect2(Vector2.ZERO, main.get_viewport_rect().size).encloses(panel.get_global_rect()):
+		problems.append("the research board runs off the window (%s)" % panel.get_global_rect())
+	for e in panel.era_buttons:
+		var tab: Control = panel.era_buttons[e]
+		if tab.get_global_rect().size.x + 1.0 < tab.get_minimum_size().x:
+			problems.append("the era tab %s is cut off" % tab.text)
+	_check_min_text("with the second era's board open")
+	panel._pick_view("all")
+	var locked := 0
+	for tech in Data.TECH_ORDER:
+		if Data.TECHS[tech].get("era", 1) == 2 and not panel.board.shows(tech):
+			problems.append("%s has no card on the second board" % tech)
+		if Data.TECHS[tech].get("stage", 1) > Data.BUILT_STAGE:
+			locked += 1
+	if locked != 9:
+		problems.append("the second board has %d techs for the next update, not nine" % locked)
 
 
 func _check() -> void:
@@ -88,7 +171,8 @@ func _check() -> void:
 					% [frame, last_scale.x, main.scale.x, last_bars, bars]
 				)
 			)
-	if main.view != last_view and last_view.size != Vector2.ZERO and vp == last_vp and refit_due == 0:
+	var view_changed: bool = main.view != last_view
+	if view_changed and last_view.size != Vector2.ZERO and vp == last_vp and refit_due == 0:
 		problems.append(
 			"frame %d: the map view went %s -> %s with the window unchanged" % [frame, last_view, main.view]
 		)
@@ -110,7 +194,8 @@ func _check() -> void:
 		first_pos = main.position
 	if last_vp != Vector2.ZERO and vp != last_vp:
 		refit_due = frame + 2
-	if refit_due > 0 and (main.scale != last_scale or main.position != last_pos):
+	# Refit: the map moved or rescaled, or its view took the new window's size (a map held at its left edge stays put).
+	if refit_due > 0 and (main.scale != last_scale or main.position != last_pos or view_changed):
 		refit_due = 0
 	elif refit_due > 0 and frame > refit_due:
 		problems.append("frame %d: the window went to %s but the map didn't refit" % [frame, vp])
@@ -129,6 +214,7 @@ func _hud_checks() -> void:
 			_show_hearth_panel()
 		10:
 			_check_hearth_blurb_once()
+			_check_empty_tile_info()
 			_check_card_is_docked("the Hearth's card")
 			main.building_panel.select(Vector2i(-1, -1))
 			main._toast("A toast that must not cover the chips", 30.0)
@@ -293,7 +379,8 @@ func _build_a_row_of_buildings() -> void:
 	s.tech_tree.researched["cordage"] = true
 	s.tech_tree.researched["fire"] = true
 	for id in s.economy.inv:
-		s.economy.inv[id] = maxi(s.economy.inv[id], 100)
+		if int(Data.ITEMS[id].get("era", 1)) == 1:  # the second era's goods are the bot's to make
+			s.economy.inv[id] = maxi(s.economy.inv[id], 100)
 	var spot := Vector2i(-1, -1)
 	for dy in range(-9, 10):
 		for dx in range(-9, 10):
@@ -362,7 +449,8 @@ func _check_stable(what: String) -> void:
 func _show_hut_panel_with_a_wall_of_text() -> void:
 	var s = main.state
 	for id in s.economy.inv:
-		if not Data.FOOD_VALUE.has(id):  # food stays as it is: a big pantry with no income would stop the bot growing
+		# food stays as it is: a big pantry with no income would stop the bot growing
+		if not Data.FOOD_VALUE.has(id) and int(Data.ITEMS[id].get("era", 1)) == 1:
 			s.economy.inv[id] = maxi(s.economy.inv[id], 40)
 	s.research("gatherers_hut")
 	var at := Vector2i(-1, -1)
@@ -403,6 +491,29 @@ func _check_card_buttons(what: String) -> void:
 func _show_hearth_panel() -> void:
 	main.building_panel.select(main.state.world.camp_pos)
 	main.ui_refresh = 0.0
+
+
+## An empty grass tile says more than its name: it can be built on, and what is close by to gather.
+func _check_empty_tile_info() -> void:
+	hud_checks += 1
+	var camp: Vector2i = main.state.world.camp_pos
+	var found := false
+	for dx in range(-6, 7):
+		for dy in range(-6, 7):
+			var p := camp + Vector2i(dx, dy)
+			if found or not main.state.world.in_bounds(p) or main.state.town.building_at.has(p):
+				continue
+			if main.state.world.tile_at(p) == "grass" and main.state.fog.is_revealed(p):
+				main.hover = p
+				found = true
+	if not found:
+		problems.append("no empty grass tile near the Hearth to check the Info text on")
+		return
+	var info: String = HoverText.text(main)
+	if not info.contains(Data.TILES["grass"]["hint"]):
+		problems.append("an empty tile's Info text says only: " + info.replace("\n", " / "))
+	if info.contains("%s") or info.length() <= Data.TILES["grass"]["name"].length() + 10:
+		problems.append("an empty tile's Info text is too thin: " + info)
 
 
 ## Clicking the Hearth: its blurb is on screen once, across its card and the Info panel.
@@ -557,6 +668,28 @@ func _check_toast_stack() -> void:
 			problems.append("toast %d runs into the side panel (%s)" % [i, rects[i]])
 
 
+## A card's text rows never overlap each other or the sprite, and a missing-items line is plain (no "+1" codes).
+func _check_card_text_clear(when: String, type: String, parts: Dictionary, card: Control) -> void:
+	var boxes: Array = [Rect2(parts["icon"].position, parts["icon"].size)]
+	for key in ["title", "sub", "why"]:
+		var l: Label = parts[key]
+		if l.text == "":
+			continue
+		var font: Font = l.get_theme_font("font")
+		var fs: int = l.get_theme_font_size("font_size")
+		var text_w := minf(font.get_string_size(l.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, l.size.x)
+		var lines := l.get_line_count() if l.autowrap_mode != TextServer.AUTOWRAP_OFF else 1
+		var box := Rect2(l.position, Vector2(text_w, lines * fs))  # a line is about its font size tall
+		if key == "sub" and l.text.contains("+"):
+			problems.append('%s: the %s card line "%s" has a "+" code in it' % [when, type, l.text])
+		if not Rect2(Vector2.ZERO, card.size).grow(-2.0).encloses(box):
+			problems.append("%s: the %s text of the %s card touches the border" % [when, key, type])
+		for other in boxes:
+			if other.intersects(box):
+				problems.append("%s: the %s text of the %s card overlaps other text or the sprite" % [when, key, type])
+		boxes.append(box)
+
+
 ## Every build card's words fit it: no cut-off, at most two lines under a locked card, nothing with dots.
 func _check_build_cards(when: String) -> void:
 	hud_checks += 1
@@ -593,6 +726,7 @@ func _check_build_cards(when: String) -> void:
 						% [when, key, type, end, card.size]
 					)
 				)
+		_check_card_text_clear(when, type, parts, card)
 		if (
 			parts["pips"].visible
 			and not Rect2(Vector2.ZERO, card.size).encloses(Rect2(parts["pips"].position, parts["pips"].size))
@@ -687,8 +821,12 @@ func _labels(node: Node) -> Array:
 
 
 func _finish() -> void:
-	if not main.state.won:
+	if dawn_frame < 0:
 		problems.append("the bot didn't reach Bronze Dawn in %d frames" % MAX_FRAMES)
+	elif not main.state.world.is_grown():
+		problems.append("the land didn't grow east after Bronze Dawn")
+	elif not bot.made_bronze():
+		problems.append("the era-2 bot made no Bronze in %d frames" % ERA_FRAMES)
 	for p in problems.slice(0, 20):
 		printerr("LAYOUT PROBLEM: " + p)
 	print(

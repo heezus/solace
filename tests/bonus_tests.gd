@@ -127,7 +127,7 @@ func test_hand_gathering_keeps_its_tools() -> void:
 func test_bonus_table_is_well_formed() -> void:
 	for id in Data.BONUSES:
 		var b: Dictionary = Data.BONUSES[id]
-		t.check(b["group"] in ["speed", "yield"], "%s is a Speed or Yield bonus" % id)
+		t.check(b["group"] in ["speed", "yield", "output"], "%s is a Speed, Yield or Output bonus" % id)
 		t.check(b["add"] > 0.0, "%s adds something" % id)
 		t.check(not b.has("tech") or Data.TECHS.has(b["tech"]), "%s names a real tech" % id)
 		t.check(not b.has("rank_of") or Data.TECHS[b["rank_of"]].has("rank"), "%s is a ranked tech's bonus" % id)

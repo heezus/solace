@@ -5,13 +5,13 @@ extends RefCounted
 ## through its name (`sim.economy.inv`, `sim.world.tile_at(p)`). What stays here is what no single block
 ## can do: the commands that touch several blocks at once (`place`, `demolish`, `research`,
 ## `gather_by_hand`...), the few flags of the run itself, and the tick order:
-##   1. economy.advance the stockpile's clocks, then tech_tree.tick (each finished tech runs `_tech_done`)
+##   1. Land.grow_if_due (the tick after Bronze Dawn, the map doubles east), economy.advance the stockpile's clocks,
+##      then tech_tree.tick (each finished tech runs `_tech_done`)
 ##   2. people.assign_jobs, economy.feed and people.grow, then story.update (the checklist and the story moments)
 ##   3. every Kith takes a step (Forage in a famine, else Workers, Haulers or a plain walk), and what they now see is revealed
 ##   4. every building takes its turn (Workers.tick_building), then the "Needs road" alert
 ## The work cycle is in Work, Bonuses, Hands, Roads, Workers and Haulers: static modules that take the Sim.
-## The blocks never call each other to report: they emit signals, and _init below is the one place that
-## connects them (Story listens, the message queue listens).
+## The blocks never call each other to report: they emit signals, and _init connects them (Story listens, the message queue listens).
 
 ## The player clicked the Strange Stone (it reveals the hidden techs). Story listens.
 signal shard_found
@@ -30,6 +30,7 @@ const Hands = preload("res://scripts/hands.gd")
 const Workers = preload("res://scripts/workers.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Forage = preload("res://scripts/forage.gd")
+const Land = preload("res://scripts/land.gd")
 
 var won := false
 var hand_tools := false  # you've made a Flint Tool, so hand gathering is doubled for good
@@ -132,8 +133,8 @@ func gather_by_hand(p: Vector2i) -> String:
 	if tile == "":
 		return ""
 	var item: String = Data.TILES[tile]["yields"]
-	if item == "":
-		return ""
+	if item == "" or (Data.TILES[tile].has("tech") and not tech_tree.researched.has(Data.TILES[tile]["tech"])):
+		return ""  # nothing to gather, or ore before Prospecting
 	var n := Hands.harvest_yield(self, item)
 	economy.add(item, n)
 	economy.note(item, n, Data.FLOW_HAND_SOURCE)
@@ -164,7 +165,7 @@ func _tech_done(tech: String) -> void:
 		for b in town.buildings:
 			b["trips"] = 0  # huts loop on their own from now on
 	if tech == "bronze_dawn":
-		won = true
+		won = true  # the stone age is won; the game goes on (the land grows east on the next tick)
 
 
 ## Connected to Kith.announce: tell the player something (the UI shows and clears `events`).
@@ -259,8 +260,7 @@ func set_paused(i: int, on: bool) -> void:
 
 
 func tick(delta: float) -> void:
-	if won:
-		return
+	Land.grow_if_due(self)
 	economy.advance(delta)
 	for tech in tech_tree.tick():
 		_tech_done(tech)

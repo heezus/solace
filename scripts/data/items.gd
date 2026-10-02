@@ -15,6 +15,11 @@ const ITEMS := {
 	"flour": {"name": "Flour", "color": Color("f1e3c8")},
 	"flint_tools": {"name": "Flint Tools", "short": "Tools", "color": Color("6c757d")},
 	"fish": {"name": "Fish", "color": Color("5fa8d3")},
+	# Era 2 (Bronze Dawn). `era` marks an item the stone age never holds.
+	"copper_ore": {"name": "Copper Ore", "short": "Ore", "color": Color("a5683a"), "era": 2},
+	"tin": {"name": "Tin", "color": Color("c0c7cf"), "era": 2},
+	"copper": {"name": "Copper", "color": Color("b87333"), "era": 2},
+	"bronze": {"name": "Bronze", "color": Color("cd7f32"), "era": 2},
 }
 
 ## Order items appear in the top bar.
@@ -32,6 +37,10 @@ const ITEM_ORDER := [
 	"flour",
 	"flint_tools",
 	"fish",
+	"copper_ore",
+	"tin",
+	"copper",
+	"bronze",
 ]
 
 ## Food value of each edible item. The Kith eat from the stockpile.

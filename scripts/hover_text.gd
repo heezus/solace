@@ -76,11 +76,14 @@ static func _tile_text(m) -> String:
 	if s.town.building_at.has(p):
 		return _building_text(m)
 	var t: Dictionary = Data.TILES[s.world.tile_at(p)]
+	var plain: bool = t.has("tech") and not s.tech_tree.researched.has(t["tech"])  # ore not yet known
 	if s.world.roads.has(p):
 		if s.world.tile_at(p) == "river":
 			return Data.BRIDGE_HINT % Data.PEOPLE["many"]
 		return Data.ROAD_HINT % [t["name"], Data.PEOPLE["many"]]
 	var hint := Overlays.blocked_hint(s, p)
+	if plain:
+		return "%s\n%s" % [t["plain_name"], Data.ORE_PLAIN_HINT % Data.TECHS[t["tech"]]["name"]]
 	if t["yields"] != "":
 		var item: String = t["yields"]
 		var how := "Hold the mouse on it to gather."
@@ -89,9 +92,32 @@ static func _tile_text(m) -> String:
 		var out := "%s\n%s. %s" % [t["name"], hold_hint(s, item), how]
 		if Data.FOOD_VALUE.has(item):
 			out += " It's food: the %s eat it." % Data.PEOPLE["many"]
-		out += "\n" + learn_text(s, item)
+		out += "\n" + (Data.MINE_TIP if t.get("mine_only", false) else learn_text(s, item))
 		return out + ("\n" + hint + "." if hint != "" else "")
-	return t["name"] + ("\n" + hint + "." if hint != "" else "")
+	var info: String = t["name"]
+	if t.has("hint"):
+		info += "\n" + t["hint"]
+		var near := _gatherable_near(s, p)
+		if not near.is_empty():
+			info += "\n" + Data.NEAR_TEXT % ", ".join(near)
+	return info + ("\n" + hint + "." if hint != "" else "")
+
+
+## The names of the things to gather within Data.NEAR_RADIUS tiles of p, nearest kind first, each once.
+static func _gatherable_near(s, p: Vector2i) -> Array:
+	var seen := {}
+	var names: Array = []
+	for r in range(1, Data.NEAR_RADIUS + 1):
+		for dx in range(-r, r + 1):
+			for dy in range(-r, r + 1):
+				var q := p + Vector2i(dx, dy)
+				if maxi(absi(dx), absi(dy)) != r or not s.world.in_bounds(q) or not s.fog.is_revealed(q):
+					continue
+				var kind: String = s.world.tile_at(q)
+				if kind != "" and Data.TILES[kind]["yields"] != "" and not seen.has(kind):
+					seen[kind] = true
+					names.append(Data.TILES[kind]["name"])
+	return names
 
 
 ## A hovered building in a few lines. The selected one has its card above, so it says nothing here.
@@ -138,4 +164,4 @@ static func hover_item(m) -> String:
 		return ""
 	if s.town.building_at.has(m.hover) or s.world.roads.has(m.hover) or s.world.tile_at(m.hover) == "":
 		return ""
-	return Data.TILES[s.world.tile_at(m.hover)]["yields"]
+	return Hands.item_at(s, m.hover)

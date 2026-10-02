@@ -139,11 +139,15 @@ func _remove_kith() -> void:
 	var k: Dictionary = kith[gone]
 	drop_task(k)
 	if k["job"] == "work":
-		_town.buildings[k["building"]]["worker"] = -1
+		var home: Dictionary = _town.buildings[k["building"]]
+		for slot in Buildings.CREW_SLOTS:
+			if home[slot] == gone:
+				home[slot] = -1
 	kith.remove_at(gone)
 	for b in _town.buildings:
-		if b["worker"] > gone:
-			b["worker"] -= 1
+		for slot in Buildings.CREW_SLOTS:
+			if b[slot] > gone:
+				b[slot] -= 1
 	left.emit(k["name"])
 	announce.emit(Data.LEFT_EVENT % Data.PEOPLE["one"])
 
@@ -181,38 +185,50 @@ func knows_focus(b: Dictionary) -> bool:
 # --- Jobs --------------------------------------------------------------------
 
 
-## Staff buildings in the order they were built. Everyone else hauls (once researched) or waits at camp.
+## Staff buildings in the order they were built (a building that needs two gets both, one after the other).
+## Everyone else hauls (once researched) or waits at camp.
 func assign_jobs() -> void:
 	var buildings: Array = _town.buildings
+	var out_of_hands := false
 	for i in buildings.size():
 		var b: Dictionary = buildings[i]
-		if not Buildings.needs_worker(b) or b["worker"] >= 0 or b["paused"]:
+		if out_of_hands or not Buildings.needs_worker(b) or b["paused"]:
 			continue
-		var pick := -1
-		for j in kith.size():
-			if kith[j]["job"] == "":
-				pick = j
+		for slot in Buildings.crew_slots(b):
+			if b[slot] < 0 and not _staff(i, b, slot):
+				out_of_hands = true
 				break
-		if pick < 0:
-			for j in kith.size():
-				if kith[j]["job"] == "haul":
-					pick = j
-					break
-		if pick < 0:
-			break
-		var k: Dictionary = kith[pick]
-		drop_task(k)
-		k["job"] = "work"
-		k["building"] = i
-		k["phase"] = "to_site"
-		b["worker"] = pick
-		equip(k)
-		walk_to(k, b["pos"])
 	for k in kith:
 		if k["job"] == "" and _research.unlocked("haulers"):
 			drop_task(k)  # a forager hands in what they carry
 			k["job"] = "haul"
 			k["phase"] = ""
+
+
+## Send the first idle person (else the first hauler) to building `i`, to fill its place `slot`. False when
+## nobody is free.
+func _staff(i: int, b: Dictionary, slot: String) -> bool:
+	var pick := -1
+	for j in kith.size():
+		if kith[j]["job"] == "":
+			pick = j
+			break
+	if pick < 0:
+		for j in kith.size():
+			if kith[j]["job"] == "haul":
+				pick = j
+				break
+	if pick < 0:
+		return false
+	var k: Dictionary = kith[pick]
+	drop_task(k)
+	k["job"] = "work"
+	k["building"] = i
+	k["phase"] = "to_site"
+	b[slot] = pick
+	equip(k)
+	walk_to(k, b["pos"])
+	return true
 
 
 ## Put back whatever a hauler was carrying or had promised, so nothing is lost when plans change.
@@ -230,22 +246,23 @@ func drop_task(k: Dictionary) -> void:
 	k["task"] = {}
 
 
-## Send a building's worker off the job: they drop what they carry at the stockpile and go idle.
+## Send a building's workers off the job: they drop what they carry at the stockpile and go idle.
 func release_worker(b: Dictionary) -> void:
-	if b["worker"] < 0:
-		return
-	var k: Dictionary = kith[b["worker"]]
-	for id in k["carry"]:
-		_economy.add(id, k["carry"][id])
-	k["carry"] = {}
-	k["task"] = {}
-	k["job"] = ""
-	k["building"] = -1
-	k["phase"] = ""
-	k["timer"] = 0.0
-	k["path"] = []
-	k["trip"] = false
-	b["worker"] = -1
+	for slot in Buildings.CREW_SLOTS:
+		if b[slot] < 0:
+			continue
+		var k: Dictionary = kith[b[slot]]
+		for id in k["carry"]:
+			_economy.add(id, k["carry"][id])
+		k["carry"] = {}
+		k["task"] = {}
+		k["job"] = ""
+		k["building"] = -1
+		k["phase"] = ""
+		k["timer"] = 0.0
+		k["path"] = []
+		k["trip"] = false
+		b[slot] = -1
 
 
 ## Building `i` is about to be removed from the list: whoever was heading there for a pickup or a delivery
@@ -267,9 +284,12 @@ func shift_buildings_after(i: int) -> void:
 			k["task"]["building"] -= 1
 
 
-## Worker standing at their building, ready to work it.
+## Everyone the building needs is standing at it, ready to work it.
 func worker_home(b: Dictionary) -> bool:
-	return b["worker"] >= 0 and kith[b["worker"]]["phase"] != "to_site"
+	for slot in Buildings.crew_slots(b):
+		if b[slot] < 0 or kith[b[slot]]["phase"] == "to_site":
+			return false
+	return true
 
 
 # --- Tools -------------------------------------------------------------------

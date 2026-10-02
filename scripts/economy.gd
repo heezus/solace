@@ -10,6 +10,7 @@ signal food_low
 const Data = preload("res://scripts/data.gd")
 const Codec = preload("res://scripts/save_codec.gd")
 const Flows = preload("res://scripts/flows.gd")
+const Rules = preload("res://scripts/rules.gd")
 
 var inv: Dictionary = {}  # item id -> count
 var seen: Dictionary = {}  # items ever held, so the top bar keeps showing them
@@ -213,11 +214,12 @@ func _next_food() -> String:
 	return ""
 
 
-## Flour kept back for research, so eating doesn't take the Bronze Dawn cost.
+## Flour kept back for research, so eating doesn't take the Bronze Dawn cost. A tech that can't be researched yet
+## (its effect isn't built) keeps nothing back.
 func flour_reserve() -> int:
 	var keep := 0
 	for tech in Data.TECHS:
-		if not _techs.has(tech):
+		if not _techs.has(tech) and Rules.tech_enabled(tech):
 			keep += Data.TECHS[tech]["cost"].get("flour", 0)
 	return keep
 
