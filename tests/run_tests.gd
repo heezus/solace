@@ -39,6 +39,10 @@ const Bonuses = preload("res://scripts/bonuses.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Work = preload("res://scripts/work.gd")
 
+## A map whose road east runs into a river bend with gravel banks and a ridge of rocks: the era-2 bot used to stop dead
+## there (playtest 7), and now plans its road.
+const ERA_TWO_STALL_SEED := 12
+
 var failures := 0
 
 
@@ -107,12 +111,13 @@ func _init() -> void:
 func test_pacing_bot() -> void:
 	var golden := GoldenTests.new()
 	var have_golden := golden.load_golden(self)
-	for map_seed in [1, 2, 3]:
+	for map_seed in [1, 2, 3, ERA_TWO_STALL_SEED]:
+		var pinned: bool = have_golden and map_seed <= 3  # the seeds the golden files pin
 		var bot := AutoplayBronze.new()
-		if have_golden:
+		if pinned:
 			bot.on_dawn = golden.check_dawn.bind(map_seed)  # win time and state at Bronze Dawn: tests/golden.json
 		var r: Dictionary = bot.play_bronze(map_seed, 50 * 60.0)
-		if have_golden:
+		if pinned:
 			golden.check_bronze(map_seed, bot)  # and at the first Bronze: tests/golden_bronze.json
 		var minutes: float = r["seconds"] / 60.0
 		print(
