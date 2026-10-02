@@ -10,10 +10,11 @@ const CARD_DRAG := "Drag to lay"
 const CARD_PLACING := "Placing"
 const CARD_LOCKED := "Locked"
 const CARD_NEED := "Need %s"  # "4 Wood, 2 Rope"
-const CARD_NEED_MORE := "Need %s +%d more"  # "4 Wood", how many other items are short
-const DEMOLISH_TIP := "Demolish (X). Refunds half."
+const CARD_NEED_NAMES := "Need %s"  # "Wood, Stone": what is short, without the amounts (they are in the price)
+const CARD_NEED_COUNT := "Need %d items"  # how many kinds are short, when even the names do not fit
+const DEMOLISH_TIP := "Demolish: click a building to remove it (X). Refunds half."
+const DEMOLISH_LABEL := "Demolish"
 const CAMERA_HINT := "Arrows or WASD move the map, the wheel zooms, Home returns to the Hearth."
-const CARD_NEED_PLUS := "Need %s +%d"  # the same, shorter
 const CARD_NEED_ITEMS := "Need more"  # when even the short form doesn't fit
 const CARD_DISCOVER := "Discover %s"  # a tech's name
 

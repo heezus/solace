@@ -557,6 +557,27 @@ func _check_toast_stack() -> void:
 			problems.append("toast %d runs into the side panel (%s)" % [i, rects[i]])
 
 
+## A card's text rows never overlap each other or the sprite, and a missing-items line is plain (no "+1" codes).
+func _check_card_text_clear(when: String, type: String, parts: Dictionary, card: Control) -> void:
+	var boxes: Array = [Rect2(parts["icon"].position, parts["icon"].size)]
+	for key in ["title", "sub", "why"]:
+		var l: Label = parts[key]
+		if l.text == "":
+			continue
+		var font: Font = l.get_theme_font("font")
+		var fs: int = l.get_theme_font_size("font_size")
+		var text_w := minf(font.get_string_size(l.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, l.size.x)
+		var box := Rect2(l.position, Vector2(text_w, font.get_height(fs)))
+		if key == "sub" and l.text.contains("+"):
+			problems.append('%s: the %s card line "%s" has a "+" code in it' % [when, type, l.text])
+		if not Rect2(Vector2.ZERO, card.size).grow(-2.0).encloses(box):
+			problems.append("%s: the %s text of the %s card touches the border" % [when, key, type])
+		for other in boxes:
+			if other.intersects(box):
+				problems.append("%s: the %s text of the %s card overlaps other text or the sprite" % [when, key, type])
+		boxes.append(box)
+
+
 ## Every build card's words fit it: no cut-off, at most two lines under a locked card, nothing with dots.
 func _check_build_cards(when: String) -> void:
 	hud_checks += 1
@@ -593,6 +614,7 @@ func _check_build_cards(when: String) -> void:
 						% [when, key, type, end, card.size]
 					)
 				)
+		_check_card_text_clear(when, type, parts, card)
 		if (
 			parts["pips"].visible
 			and not Rect2(Vector2.ZERO, card.size).encloses(Rect2(parts["pips"].position, parts["pips"].size))

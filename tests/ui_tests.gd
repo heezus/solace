@@ -95,7 +95,19 @@ func test_card_line_always_fits() -> void:
 	var lines := {}
 	s.economy.inv["stone"] = 0
 	lines["two"] = CardText.state_line(s, "kiln", "", CARD_TEXT_W)
-	t.check(lines["two"].begins_with("Need 10 Stone"), "two items short still say what: " + lines["two"])
+	t.check(
+		lines["two"].begins_with("Need ") and lines["two"].contains("Stone"), "items short say what: " + lines["two"]
+	)
+	t.check(not lines["two"].contains("+"), "and never in a '+1' code: " + lines["two"])
+	s.economy.inv["wood"] = 9
+	var hut_cost: Dictionary = {"wood": 10, "stone": 5}
+	t.check(
+		CardText.short_names({"wood": 9}, hut_cost) == ["Wood", "Stone"], "the names of what is short, in cost order"
+	)
+	for type in Data.BUILDINGS:
+		var why: String = CardText.locked_reason(type, 100.0)
+		t.check(CardText.lines(why, 100.0) <= 2, "%s: the reason fits two lines: %s" % [type, why])
+		t.check(not why.contains("..."), "and never with dots: " + why)
 
 
 ## The Lore cards (Standing Stone, Shard Cairn) stay off the build bar until their tech is on the board and reachable.
