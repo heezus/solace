@@ -70,7 +70,11 @@ func check_bronze(map_seed: int, bot) -> void:
 		"bronze_seconds": roundi(bot.bronze_at) if bot.bronze_at >= 0.0 else -1, "state_hash": state_hash(bot.s)
 	}
 	var want: Dictionary = bronze.get(str(map_seed), {})
-	if want == got:
+	if (
+		not want.is_empty()
+		and int(want.get("bronze_seconds", -2)) == got["bronze_seconds"]
+		and want.get("state_hash") == got["state_hash"]
+	):
 		print(
 			(
 				"Golden (first Bronze), map %d: %d s, %s"
