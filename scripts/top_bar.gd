@@ -172,7 +172,11 @@ func _chip(id: String, width: float, one_line := false) -> PanelContainer:
 	box.add_child(h)
 	var icon := Ui.item_icon(id, ICON)
 	h.add_child(icon)
-	var v: BoxContainer = HBoxContainer.new() if one_line else VBoxContainer.new()
+	var v: BoxContainer
+	if one_line:
+		v = HBoxContainer.new()
+	else:
+		v = VBoxContainer.new()
 	v.add_theme_constant_override("separation", 6 if one_line else -8)
 	var count := Ui.label("", COUNT_SIZE)
 	var rate := Ui.label("", Ui.MIN_TEXT)
