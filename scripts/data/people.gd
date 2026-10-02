@@ -12,6 +12,19 @@ const BORN_EVENT := "A %s was born"
 const LEFT_EVENT := "A %s left in search of food"
 ## The note beside the population count while food stops a birth (a birth needs food coming in steadily).
 const GROW_NOTE_FOOD := "Needs steady food to grow"
+## ...and the fix, after the note's colon: before Paths & Haulers, after it with no hut on a road, and with one already.
+const GROW_FIX_NO_HAULERS := "research Paths & Haulers and link huts by road"
+const GROW_FIX_ROAD := "a hut on a road feeds the Hearth on its own"
+const GROW_FIX_MORE := "put more huts on roads"
+## The exact rule, for the tooltip: the hold in seconds, then the window in seconds.
+const GROW_RULE := (
+	"Steady food: what your huts, fields and workshops bring in (not your own hands, and not foraging) must cover what everyone eats, "
+	+ "for %d seconds in a row, counted over the last %d. A hut feeds the Hearth on its own once a road links it (Paths & Haulers)."
+)
+## A building whose worker has not come yet (formatted with the job title, then PEOPLE["many"]).
+## On a card that waits for Kith or a load while food stops them growing, formatted with the fix.
+const GROW_HINT := "Kith grow once the food is steady: %s"
+const NO_WORKER_STATUS := "No %s yet: more %s needed (they grow with food and Dwellings)"
 ## The early warning, sent once when food is about to run out (formatted with PEOPLE["many"]).
 const FOOD_LOW_EVENT := "Food is running low. Click your berry hut to send a trip, or hold the mouse on Berry Bushes, and the %s stay fed"
 ## Short earthy names, given in turn to each Kith as they're born (a second round adds " II").
@@ -45,6 +58,11 @@ const ROAD_HINT := "Road on %s. %s walk twice as fast here."  # tile name, many
 const FOOD_TIP := "Every %s eats food: Berries, then Fish, then any Flour that isn't in use."  # one
 ## The Food readout while the warning is up, formatted with the time left ("45 s").
 const FOOD_LOW_TEXT := "Low: %s left. Gather berries!"
+## The famine fallback (scripts/forage.gd): told once when idle people start foraging, what a waiting hut's card says while
+## its worker is out, and how the top bar's hover panel names that food.
+const FORAGE_EVENT := "Food is short: idle %s are out foraging for berries. It keeps them fed, not growing"  # many
+const FORAGE_STATUS := "Out foraging for berries while it waits for a click"
+const FORAGE_MAKER := "Foraged by idle %s"  # many
 const STARVING_TEXT := "Food: none! The %s have stopped working"  # many
 const TOOLS_LABEL := "Tools %d/%d %s"  # held, people, many
 const TOOLS_TIP := "%s holding a Flint Tool work 50%% faster. Each tool lasts %d jobs; spares in the stockpile: %d."  # many

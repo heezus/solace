@@ -12,6 +12,10 @@ extends SceneTree
 const Data = preload("res://scripts/data.gd")
 const World = preload("res://scripts/world.gd")
 const HoverText = preload("res://scripts/hover_text.gd")
+const Hands = preload("res://scripts/hands.gd")
+const UiTests = preload("res://tests/ui_tests.gd")
+const Ui = preload("res://scripts/ui.gd")
+const TopBar = preload("res://scripts/top_bar.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
 
 const BOT_STEPS_PER_FRAME := 20
@@ -30,10 +34,13 @@ var last_view := Rect2()
 var last_bars := Vector2.ZERO
 var problems: Array = []
 var changes := 0
+var first_bars := Vector2.ZERO  # the bars' heights and the map's place on frame 6: they must never change by themselves
+var first_pos := Vector2.ZERO
 var refit_due := 0  # the frame by which the map must have refit after a resize
 var hud_checks := 0  # how many HUD checks ran
 var base := {}  # the top bar's height and the map's place before the stress cases
 var saved := {}  # the stockpile as it was, put back after them
+var row_at: Array = []  # the buildings placed by hand for the pill check
 var frozen := false  # the bot's ticking is paused while a check sets the state by hand
 
 
@@ -87,6 +94,20 @@ func _check() -> void:
 		)
 	last_view = main.view
 	_check_view(frame)
+	if frame == 6:
+		if bars.x != main.top_bar.BAR_H:
+			problems.append("the top bar is %.0f tall, not the %.0f it reserves" % [bars.x, main.top_bar.BAR_H])
+		first_bars = bars
+		first_pos = main.position
+	elif frame < RESIZE_AT and first_bars != Vector2.ZERO and (bars != first_bars or main.position != first_pos):
+		problems.append(
+			(
+				"frame %d: the bars went %s -> %s and the map moved %s -> %s with the window unchanged"
+				% [frame, first_bars, bars, first_pos, main.position]
+			)
+		)
+		first_bars = bars  # report each shift once
+		first_pos = main.position
 	if last_vp != Vector2.ZERO and vp != last_vp:
 		refit_due = frame + 2
 	if refit_due > 0 and (main.scale != last_scale or main.position != last_pos):
@@ -120,6 +141,8 @@ func _hud_checks() -> void:
 			main.messages.active.clear()
 			main.messages.changed.emit()
 			main.state.economy.low = true
+		13:
+			_check_the_food_flash()
 		14:
 			_check_top_bar_text("with the food warning up")
 			main.state.economy.starving = true
@@ -128,6 +151,10 @@ func _hud_checks() -> void:
 			main.state.economy.starving = false
 			main.state.economy.low = false
 			frozen = false
+		18:
+			_craft_a_tool_and_show_every_chip()
+		20:
+			_check_unchanged("a Flint Tool crafted and every chip showing")
 		28:
 			frozen = true
 			base = {
@@ -189,12 +216,112 @@ func _hud_checks() -> void:
 			_check_board_hover()
 			main.tech_panel.visible = false
 			frozen = false
+		64:
+			frozen = true
+			_build_a_row_of_buildings()
+		66:
+			_check_pills("a row of six adjacent buildings, each blocked")
+			for p in row_at:
+				main.state.demolish(p)
+			row_at.clear()
+			frozen = false
 	if frame > 5 and frame % 5 == 0:
 		_check_fit("at frame %d" % frame)
 	if frame > 5 and frame % 20 == 0:
 		_check_build_cards("at frame %d" % frame)
 	if frame > 5 and frame % 25 == 0:
 		_check_top_bar_text("at frame %d" % frame)
+	if frame > 5 and frame % 10 == 0 and not frozen:
+		_check_pills("at frame %d" % frame)
+
+
+## Playtest 4: the top bar grew 99 -> 104 px and the map shifted 2 px the first time the Tools chip showed. Craft a Flint
+## Tool and show every chip: the bars' heights and the map's place must stay what they were on frame 6.
+func _craft_a_tool_and_show_every_chip() -> void:
+	var s = main.state
+	for id in ["flint", "wood", "stone"]:
+		s.economy.add(id, 20)
+	if not s.tech_tree.researched.has("knapping"):
+		s.research("knapping")
+	if not Hands.craft(s, "flint_tools"):
+		problems.append("couldn't craft a Flint Tool for the chip check")
+	for id in Data.ITEM_ORDER:
+		s.economy.seen[id] = true
+	main.ui_refresh = 0.0
+
+
+func _check_unchanged(what: String) -> void:
+	hud_checks += 1
+	var bars := Vector2(main.top_bar.size.y, main.bottom_bar.size.y)
+	if not main.top_bar.tools_label.visible:
+		problems.append("%s: the Tools chip is not showing" % what)
+	if bars != first_bars or main.position != first_pos:
+		problems.append(
+			(
+				"%s: the bars are %s (were %s) and the map is at %s (was %s)"
+				% [what, bars, first_bars, main.position, first_pos]
+			)
+		)
+
+
+## While the food warning is up the Food block's words stay readable at every phase of the flash (4.5 to 1 on the bar),
+## the block itself never fades, and its ring stays visible.
+func _check_the_food_flash() -> void:
+	hud_checks += 1
+	var tb = main.top_bar
+	var keep: float = tb.pulse
+	for n in 12:
+		tb.pulse = n * 0.2
+		tb._process(0.0)
+		var what := "the food flash at %.1f s" % tb.pulse
+		if tb.food_box.modulate.a < 1.0:
+			problems.append("%s: the Food block fades (alpha %.2f)" % [what, tb.food_box.modulate.a])
+		for label in [tb.food_label, tb.food_sub]:
+			var c: float = Ui.contrast(label.get_theme_color("font_color"), Ui.BAR)
+			if c < 4.5:
+				problems.append('%s: "%s" has a contrast of only %.1f' % [what, label.text, c])
+		var ring: Color = tb.food_box.get_theme_stylebox("panel").border_color
+		if Ui.contrast(ring, Ui.BAR) < 3.0:
+			problems.append("%s: the ring has a contrast of only %.1f" % [what, Ui.contrast(ring, Ui.BAR)])
+	tb.pulse = keep
+
+
+## Playtest 5: "Needs Wood" and "Idle" pills stacked over each other and over the next building in a row of adjacent
+## buildings. Place six side by side by hand, each with an alert, and the pills must not overlap (checked in _check_pills).
+func _build_a_row_of_buildings() -> void:
+	var s = main.state
+	s.tech_tree.researched["cordage"] = true
+	s.tech_tree.researched["fire"] = true
+	for id in s.economy.inv:
+		s.economy.inv[id] = maxi(s.economy.inv[id], 100)
+	var spot := Vector2i(-1, -1)
+	for dy in range(-9, 10):
+		for dx in range(-9, 10):
+			var p: Vector2i = s.world.camp_pos + Vector2i(dx, dy)
+			var ok := spot.x < 0
+			for k in 6:
+				ok = ok and s.town.placement_error("twine_post", p + Vector2i(k, 0)) == ""
+			if ok:
+				spot = p
+	if spot.x < 0:
+		problems.append("no room for a row of buildings for the pill check")
+		return
+	var alerts := [
+		"Needs Wood", "Idle: no free Kith", "Needs Wood", "Hungry: no food", "Needs road", "Idle: no free Kith"
+	]
+	for k in 6:
+		var p := spot + Vector2i(k, 0)
+		if s.place("twine_post" if k % 2 == 0 else "charcoal_pit", p):
+			row_at.append(p)
+			s.town.buildings[s.town.building_at[p]]["alert"] = alerts[k]
+	main.ui_refresh = 999.0
+
+
+## No alert pill overlaps another pill, a click badge or a building, and none leaves the map.
+func _check_pills(what: String) -> void:
+	hud_checks += 1
+	for line in UiTests.pill_problems(main.state).slice(0, 3):
+		problems.append("%s: %s" % [what, line])
 
 
 ## Long top-bar text, one case at a time: the food warning, starving, needs-room text, the longest hold hint,

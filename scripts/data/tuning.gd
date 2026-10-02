@@ -29,8 +29,22 @@ const FOOD_PER_KITH_PER_SEC := 0.02
 const START_BERRIES := 10
 ## The food warning goes up (a toast, and the Food readout flashes red) when the stockpile would run out within
 ## this many seconds at the current eating rate, and comes down again once it would last FOOD_CLEAR_SECONDS.
-const FOOD_WARN_SECONDS := 60.0
-const FOOD_CLEAR_SECONDS := 120.0
+const FOOD_WARN_SECONDS := 120.0
+const FOOD_CLEAR_SECONDS := 180.0
+## Famine: once the food would run out within this many seconds, Kith with nothing to do forage by themselves (see
+## scripts/forage.gd), until it would last FOOD_FORAGE_END_SECONDS. It starts with the warning, or from FORAGE_OPENING_SECONDS
+## into the game: the opening is the player's own, hand-gathering the starting berries.
+const FOOD_FAMINE_SECONDS := 200.0
+const FORAGE_OPENING_SECONDS := 120.0
+## ...and they stop once it would last this long (well past FOOD_CLEAR_SECONDS, so the famine does not flicker on and off).
+const FOOD_FORAGE_END_SECONDS := 300.0
+## A forager picks FORAGE_YIELD of FORAGE_ITEM, FORAGE_TIME seconds a pick, from a bush within FORAGE_RADIUS tiles of the
+## Hearth, and walks it to the nearest stockpile. A slow trickle beside a hut, enough to keep the people fed and never
+## enough to grow (foraged food is not steady income).
+const FORAGE_ITEM := "berries"
+const FORAGE_RADIUS := 16
+const FORAGE_TIME := 4.0
+const FORAGE_YIELD := 2
 ## Food in the stockpile under this counts as short: a new hut that could work food or something else at the same
 ## distance works the food.
 const FOOD_SHORT_STOCK := 30.0
@@ -42,6 +56,9 @@ const BIRTH_FOOD := 5.0
 ## steadily (Economy.food_is_steady): what the buildings bring (not hand-gathering) over the last
 ## RATE_WINDOW seconds must cover what everyone eats.
 const BIRTH_RESERVE := 2.0
+## ...and it must have covered them for this long (a short dip costs as much as it lasted). Longer than RATE_WINDOW on purpose: one delivery
+## stays in the window for RATE_WINDOW seconds, so a single trip can never pass for steady food.
+const STEADY_SECONDS := 35.0
 ## After this long with no food, one Kith leaves.
 const STARVE_TIME := 20.0
 ## Tiles per second on open ground. Roads double it; forest and rocks halve it.
@@ -64,6 +81,8 @@ const RATE_WINDOW := 30
 const FLOW_EAT_SOURCE := "kith"
 ## The flow source the player's own hand-gathering is noted under (it is not food income for growth).
 const FLOW_HAND_SOURCE := "hand"
+## The flow source idle Kith foraging in a famine are noted under (not food income, like the hand).
+const FLOW_FORAGE_SOURCE := "forage"
 ## The flow source a worker taking a Flint Tool from the stockpile is noted under.
 const FLOW_TOOL_SOURCE := "kith"
 

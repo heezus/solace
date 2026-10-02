@@ -8,7 +8,15 @@ const CardText = preload("res://scripts/card_text.gd")
 const Messages = preload("res://scripts/messages.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
 const Overlays = preload("res://scripts/overlays.gd")
+const Art = preload("res://scripts/art.gd")
 const KithArt = preload("res://scripts/kith_art.gd")
+const TopBar = preload("res://scripts/top_bar.gd")
+const Ui = preload("res://scripts/ui.gd")
+const HutFocus = preload("res://scripts/hut_focus.gd")
+const GrowthNote = preload("res://scripts/growth_note.gd")
+const Workers = preload("res://scripts/workers.gd")
+const SidePanel = preload("res://scripts/side_panel.gd")
+const HoverText = preload("res://scripts/hover_text.gd")
 
 const CARD_TEXT_W := 124.0  # the width of a card's state line (BuildBar.TEXT_W)
 
@@ -25,8 +33,14 @@ func run(runner) -> void:
 	test_message_log_keeps_everything()
 	test_hut_panel_speaks_plainly()
 	test_status_pills_are_short()
+	test_a_row_of_buildings_gets_alert_badges_that_never_overlap()
 	test_every_kith_has_a_place_on_the_map()
 	test_words_are_plain()
+	test_the_growth_note_says_what_to_do_in_each_state()
+	test_a_building_waiting_for_kith_points_at_the_fix()
+	test_the_food_flash_stays_legible()
+	test_the_goal_list_shows_the_current_goal_and_the_next()
+	test_every_skill_text_says_what_they_gather()
 
 
 func test_card_says_what_is_missing() -> void:
@@ -225,3 +239,217 @@ func test_words_are_plain() -> void:
 	var kith_label: String = Data.KITH_LABEL % ["Kith", 3, 4]
 	t.check(kith_label == "Kith 3  ·  homes for 4", "the Kith count says what the second number is: " + kith_label)
 	t.check(Data.JOBS_LABEL.begins_with("Jobs filled"), "the Jobs readout says what it counts")
+
+
+## Playtest 4 still saw "Esk learned knapping" and "Aro learned thatching" when gathering flint and flax, before those
+## techs exist. Every place that words what a Kith learned (the toast, the message log, the hover line, the hut card) must
+## name what they gather ("to gather flint"), never a tech.
+func test_every_skill_text_says_what_they_gather() -> void:
+	var words: Array = []
+	for id in Data.TECHS:
+		words.append(String(Data.TECHS[id]["name"]).to_lower())
+	words += ["knapping", "thatching"]
+	for item in Data.HUT_JOBS:
+		var s = t.fresh()
+		var tile := ""
+		for name in Data.TILES:
+			if Data.TILES[name]["yields"] == item:
+				tile = name
+		var p: Vector2i = t.find_tile(s, tile)
+		t.check(p.x >= 0, "a %s tile to harvest by hand" % item)
+		var texts: Array = []
+		s.events.clear()
+		for _n in Data.LEARN_CLICKS:
+			s.gather_by_hand(p)
+			texts.append(HoverText.learn_text(s, item))
+		var learned: Array = s.events.filter(func(e): return String(e).contains("learned"))
+		t.check(learned.size() == 1, "%s: one 'learned' toast (%d)" % [item, learned.size()])
+		texts += s.events
+		texts.append(HoverText.learn_text(s, item))
+		var queue = Messages.new()
+		for e in s.events:
+			queue.push(e, 1.0)
+		for entry in queue.history:
+			texts.append(String(entry["text"]))
+		t.check(String(learned[0]).contains(" learned to "), "%s: the toast says what they do: %s" % [item, learned[0]])
+		for text in texts:
+			for w in words:
+				t.check(not String(text).to_lower().contains(w), "%s: '%s' names a tech (%s)" % [item, text, w])
+
+
+## Playtest 4: done goals stayed in the list and pushed the current one down. The panel shows the current goal and the
+## next one, the done ones are a count in the header.
+func test_the_goal_list_shows_the_current_goal_and_the_next() -> void:
+	var s = t.fresh()
+	var panel := SidePanel.new()
+	panel.setup(s, 300.0)
+	panel.refresh_goals(s)
+	t.check(panel.goal_header.text == "Goals 0/%d" % Data.GOALS.size(), "the header counts: " + panel.goal_header.text)
+	for n in 9:
+		s.story.goals_done[Data.GOALS[n]["id"]] = true
+	panel.refresh_goals(s)
+	var shown: Array = panel.goal_labels.filter(func(l): return l.visible).map(func(l): return l.text)
+	t.check(shown.size() == 2, "two goals show: %s" % [shown])
+	t.check(
+		shown[0] == "> " + Data.GOALS[9]["text"] and shown[1] == "  " + Data.GOALS[10]["text"],
+		"the current one, then the next"
+	)
+	t.check(not " ".join(shown).contains("Done"), "no done goal is listed")
+	t.check(panel.goal_header.text == "Goals 9/%d" % Data.GOALS.size(), "and the header says 9 are done")
+	t.check(panel.goal_header.tooltip_text.count("Done: ") == 9, "hovering it lists them")
+	panel.building_panel.visible = true
+	panel.refresh_goals(s)
+	t.check(
+		panel.goal_labels.filter(func(l): return l.visible).size() == 1, "with a card open, only the current goal shows"
+	)
+	panel.free()
+
+
+## Playtest 4: at the dim point of its flash the Food box's "Low: 18 s left" was nearly invisible. Only the ring flashes
+## now; the words keep their colour at full strength, and read at 4.5 to 1 or better on the bar at every phase.
+func test_the_food_flash_stays_legible() -> void:
+	t.check(Ui.contrast(Color.WHITE, Color.BLACK) > 20.9, "the contrast measure: white on black is 21")
+	t.check(
+		Ui.contrast(Ui.BAD, Ui.BAR) < 4.5, "the plain red was too dim on the bar (%.1f)" % Ui.contrast(Ui.BAD, Ui.BAR)
+	)
+	t.check(
+		Ui.contrast(TopBar.ALARM_TEXT, Ui.BAR) >= 4.5,
+		"the alarm text reads on the bar: %.1f" % Ui.contrast(TopBar.ALARM_TEXT, Ui.BAR)
+	)
+	var least := 99.0
+	for n in 32:
+		least = minf(least, Ui.contrast(TopBar.flash_ring(n * 0.1), Ui.BAR))
+	t.check(least >= 3.0, "the ring is visible at every phase of the flash (%.1f)" % least)
+
+
+## Playtest 5: "Needs steady food to grow" explained nothing. The note now says what steady means and the fix for where
+## the player is: no room, no haulers yet, haulers but no hut on a road, a hut on a road. The tooltip has the exact rule.
+func test_the_growth_note_says_what_to_do_in_each_state() -> void:
+	var s = t.fresh()
+	s.economy.inv["berries"] = 100
+	t.check(Ui.growth_note(s).begins_with(Data.GROW_NOTE_FOOD + ": "), "food note: " + Ui.growth_note(s))
+	t.check(
+		Ui.growth_note(s).contains("Paths & Haulers") and Ui.growth_note(s).contains("road"),
+		"before Paths & Haulers: names them"
+	)
+	t.check(Ui.growth_note(s) == Data.GROW_NOTE_FOOD + ": " + Data.GROW_FIX_NO_HAULERS, "exactly the data text")
+	s.tech_tree.researched["haulers"] = true
+	t.check(
+		Ui.growth_note(s) == Data.GROW_NOTE_FOOD + ": " + Data.GROW_FIX_ROAD,
+		"with haulers: a hut on a road: " + Ui.growth_note(s)
+	)
+	s.tech_tree.researched["gatherers_hut"] = true
+	t.check(t.place_free(s, "gatherers_hut", s.world.camp_pos + Vector2i(0, 3)), "a hut goes up")
+	s.town.set_focus(s.town.building_at[s.world.camp_pos + Vector2i(0, 3)], "berries")
+	t.road_link(s, s.world.camp_pos + Vector2i(0, 3))
+	t.check(
+		(
+			Ui.growth_note(s) == Data.GROW_NOTE_FOOD + ": " + Data.GROW_FIX_MORE
+			or Ui.growth_note(s).contains(Data.GROW_FIX_MORE)
+		),
+		"with a hut on a road: more of them: " + Ui.growth_note(s)
+	)
+	t.check(Ui.growth_note(s) != "" and Ui.growth_note(s).length() < 100, "and it is short enough for the bar")
+	t.place_free(s, "dwelling", s.world.camp_pos + Vector2i(0, 2))
+	s.people.found(s.town.housing())
+	t.check(Ui.growth_note(s) == Data.NOTE_NO_ROOM, "no room: " + Ui.growth_note(s))
+	s.people.found(3)
+	s.economy.starving = true
+	t.check(Ui.growth_note(s) == Data.NOTE_STARVING, "starving comes first")
+	s.economy.starving = false
+	t.steady_income(s)
+	t.check(Ui.growth_note(s) == "", "steady food: no note")
+	var rule: String = GrowthNote.rule()
+	t.check(
+		rule.contains("%d" % int(Data.STEADY_SECONDS)) and rule.contains("%d" % Data.RATE_WINDOW),
+		"the tooltip gives the exact rule: " + rule
+	)
+	t.check(rule.contains("not your own hands"), "and says hand-gathering does not count")
+	var goal := ""
+	for g in Data.GOALS:
+		if g["id"] == "dwelling":
+			goal = g["text"]
+	t.check(goal.contains("steady food") and goal.contains("road"), "the Dwelling goal points at roads: " + goal)
+
+
+## Playtest 5: a Twine Post said "No Roper yet: more Kith needed (they grow with food and Dwellings)" with no way
+## forward. While food is what stops growth the status points at the same fix; otherwise it does not nag.
+func test_a_building_waiting_for_kith_points_at_the_fix() -> void:
+	var s = t.fresh()
+	s.tech_tree.researched["cordage"] = true
+	s.economy.inv["berries"] = 100
+	t.place_free(s, "twine_post", s.world.camp_pos + Vector2i(0, 3))
+	var b: Dictionary = s.town.buildings[s.town.building_at[s.world.camp_pos + Vector2i(0, 3)]]
+	b["worker"] = -1
+	s.people.found(0)
+	s.people.add_kith()
+	for k in s.people.kith:
+		k["job"] = "work"
+		k["building"] = 0
+	Workers.tick_building(s, b, 0.1, true)
+	t.check(
+		b["status"].begins_with("No ") and b["status"].contains(Data.GROW_FIX_NO_HAULERS),
+		"waiting for Kith: " + b["status"]
+	)
+	t.steady_income(s)
+	Workers.tick_building(s, b, 0.1, true)
+	t.check(not b["status"].contains("steady"), "with steady food it says nothing about it: " + b["status"])
+
+
+## A row of adjacent blocked buildings: each alert badge sits inside its own tile, so it never covers a neighbour or
+## another badge, and a hut's "click" badge floats above its tile, clear of every alert badge (playtest 5: pills stacked
+## over each other and over the next building; the new look has a badge instead of a pill).
+func test_a_row_of_buildings_gets_alert_badges_that_never_overlap() -> void:
+	var s = t.fresh()
+	s.tech_tree.researched["cordage"] = true
+	s.tech_tree.researched["fire"] = true
+	s.tech_tree.researched["gatherers_hut"] = true
+	t.give(s, 200)
+	var camp: Vector2i = s.world.camp_pos
+	var spot := Vector2i(-1, -1)
+	for dy in range(-8, 9):
+		for dx in range(-8, 9):
+			var p := camp + Vector2i(dx, dy)
+			var ok := spot.x < 0
+			for k in 6:
+				ok = ok and s.town.placement_error("twine_post", p + Vector2i(k, 0)) == ""
+			if ok:
+				spot = p
+	t.check(spot.x >= 0, "room for a row of buildings")
+	var alerts := [
+		"Needs Wood", "Idle: no free Kith", "Needs Wood", "Hungry: no food", "Needs road", "Idle: no free Kith"
+	]
+	for k in 6:
+		t.check(
+			s.place("twine_post" if k % 2 == 0 else "charcoal_pit", spot + Vector2i(k, 0)), "building %d goes down" % k
+		)
+		s.town.buildings[s.town.building_at[spot + Vector2i(k, 0)]]["alert"] = alerts[k]
+	var keep: float = Art.ui_k
+	for k in [1.0, 1.5, 0.75]:
+		Art.ui_k = k
+		var problems: Array = []
+		var radius := 8.0 * k
+		var circles: Array = []
+		for b in s.town.buildings:
+			if b["alert"] == "":
+				continue
+			var at: Vector2 = Overlays.alert_badge_at(b["pos"])
+			var box := Rect2(at - Vector2(radius, radius), Vector2(radius, radius) * 2.0)
+			if not Overlays.rect(b["pos"]).encloses(box):
+				problems.append("the badge of %s leaves its tile" % [b["pos"]])
+			for other in circles:
+				if box.intersects(other):
+					problems.append("the badge of %s covers another badge" % [b["pos"]])
+			circles.append(box)
+		var hut := spot + Vector2i(0, 2)
+		if not s.town.building_at.has(hut):
+			t.place_free(s, "gatherers_hut", hut)
+			s.people.learned_by["wood"] = "Aro"
+		for b in s.town.buildings:
+			if HutFocus.wants_click(s, b):
+				var click: Rect2 = HutFocus.badge_rect(Overlays.rect(b["pos"]))
+				for box in circles:
+					if click.intersects(box):
+						problems.append("the click badge of %s covers an alert badge" % [b["pos"]])
+		t.check(problems.is_empty(), "at ui scale %.2f: %s" % [k, problems])
+	Art.ui_k = keep

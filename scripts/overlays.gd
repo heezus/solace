@@ -149,15 +149,21 @@ static func pill_text(alert: String) -> String:
 	return alert.split(":")[0]
 
 
+## Where a blocked building's alert badge sits: its lower right corner, inside its own tile, so it never covers a
+## neighbour, another badge or a "click" badge (those float above the tile).
+static func alert_badge_at(p: Vector2i) -> Vector2:
+	return rect(p).end - Vector2(10.0, 10.0) * Art.ui_k
+
+
 ## Blocked buildings (hungry, no power, no road...) wear a 16 px alert-red badge on their lower right corner. No
-## text on the map: the words are in the Info panel while the mouse is over the building.
+## text on the map: the words are in the Info panel while the mouse is over the building. (Playtest 5 had pills
+## stacking over each other and over the next building; a badge inside its own tile cannot.)
 static func alert_badges(ci: CanvasItem, s) -> void:
 	var font := ThemeDB.fallback_font
 	for b in s.town.buildings:
 		if b["alert"] == "":
 			continue
-		var r := rect(b["pos"])
-		var at := r.end - Vector2(6.0, 6.0) * Art.ui_k
+		var at := alert_badge_at(b["pos"])
 		var radius := 8.0 * Art.ui_k
 		ci.draw_circle(at, radius, ALERT)
 		ci.draw_arc(at, radius, 0, TAU, 24, Ui.LINE, maxf(2.0 * Art.ui_k, 1.0), true)

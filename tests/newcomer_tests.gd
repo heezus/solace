@@ -7,10 +7,11 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 const Newcomer = preload("res://tests/newcomer.gd")
+const Sim = preload("res://scripts/sim.gd")
 
 const MINUTES := 10.0
 ## The warning must come at least this long before the first departure (the food warning time, less a margin).
-const LEAD := 45.0
+const LEAD := 100.0
 
 var t  # the runner, tests/run_tests.gd
 
@@ -20,6 +21,8 @@ func run(runner) -> void:
 	test_the_goals_start_with_food()
 	test_a_newcomer_following_the_goals_stays_fed()
 	test_a_newcomer_who_clicks_only_one_berry_hut_stays_fed()
+	test_a_newcomer_who_clicks_each_hut_once_is_carried_by_the_famine_fallback()
+	test_a_clumsy_newcomer_with_far_berries_is_still_carried()
 	test_an_idle_player_is_warned_before_anyone_leaves()
 
 
@@ -123,18 +126,79 @@ func _check_the_food_hut(bot, map_seed: int, hut: Vector2i) -> void:
 	t.check(share >= 0.9, "map %d: and mostly berries (%.0f%%)" % [map_seed, share * 100.0])
 
 
-## A player who never touches the mouse loses Kith in the end, but the warning comes well before the first one goes.
+## Playtest 4's clumsy newcomer clicks each hut exactly once and never again, and ignores the warning. The famine
+## fallback (idle Kith forage, scripts/forage.gd) keeps them fed: at most one run out of food, at least three
+## of them stay, and once the warning has come the food recovers past it.
+func test_a_newcomer_who_clicks_each_hut_once_is_carried_by_the_famine_fallback() -> void:
+	for map_seed in [1, 4, 8]:
+		var bot := _play("once", map_seed)
+		t.check(bot.min_kith >= 3, "once, map %d: at least three Kith stay (least %d)" % [map_seed, bot.min_kith])
+		t.check(bot.zeros == 0, "once, map %d: the food never ran out (%d times)" % [map_seed, bot.zeros])
+		t.check(bot.min_food >= 10.0, "once, map %d: and never fell below 10 (%.1f)" % [map_seed, bot.min_food])
+		t.check(bot.foraging_steps > 0, "once, map %d: idle Kith went foraging" % map_seed)
+		t.check(not bot.s.economy.low, "once, map %d: and it ends with no warning up" % map_seed)
+
+
+## The same clumsy player on a map whose berries are all 8 or more tiles from the Hearth: the walk is longer, so the
+## rescue is slower, and the food must still never run out.
+func test_a_clumsy_newcomer_with_far_berries_is_still_carried() -> void:
+	for map_seed in [1, 4, 8]:
+		var game := Sim.new()
+		game.generate(map_seed)
+		var camp := game.world.camp_pos
+		var far := 0
+		for y in game.world.height:
+			for x in game.world.width:
+				var p := Vector2i(x, y)
+				if game.world.tile_at(p) == "berry":
+					if Vector2(p).distance_to(Vector2(camp)) < 8.0:
+						game.world.set_tile(p, "grass")
+					else:
+						far += 1
+		game.pathing.build()
+		game.fog.reveal_all()  # as if explored: the bushes are known
+		var bot := Newcomer.new()
+		bot.mode = "once"
+		bot.attach(game)
+		while bot.clock < MINUTES * 60.0:
+			bot.step()
+		print(
+			(
+				"Newcomer once, far berries (%d), map %d: %d Kith, least food %.1f"
+				% [far, map_seed, game.people.kith.size(), bot.min_food]
+			)
+		)
+		t.check(far > 0, "far map %d: there are berries 8 or more tiles away" % map_seed)
+		t.check(bot.min_kith >= 3 and bot.zeros == 0, "far map %d: nobody left and the food never ran out" % map_seed)
+		t.check(bot.min_food >= 10.0, "far map %d: least food %.1f" % [map_seed, bot.min_food])
+
+
+## A player who never touches the mouse is fed by the idle Kith, so nobody leaves. With no bush in reach there is
+## nothing to forage: then they do leave in the end, and the warning comes well before the first one goes.
 func test_an_idle_player_is_warned_before_anyone_leaves() -> void:
 	var bot := Newcomer.new()
 	bot.idler = true
 	bot.play(3, MINUTES * 60.0)
-	t.check(bot.warned_at >= 0.0, "an idle player is warned that the food is running low (at %.0f s)" % bot.warned_at)
+	t.check(bot.left == 0 and bot.min_food > 0.0, "the idle %s forage, so nobody leaves" % Data.PEOPLE["many"])
+	t.check(bot.foraging_steps > 0 and bot.min_food >= 6.0, "and the food stays up (least %.1f)" % bot.min_food)
+	var bare := Sim.new()
+	bare.generate(3)
+	var camp := bare.world.camp_pos
+	for y in range(camp.y - Data.FORAGE_RADIUS - 2, camp.y + Data.FORAGE_RADIUS + 3):
+		for x in range(camp.x - Data.FORAGE_RADIUS - 2, camp.x + Data.FORAGE_RADIUS + 3):
+			if bare.world.tile_at(Vector2i(x, y)) == "berry":
+				bare.world.set_tile(Vector2i(x, y), "grass")
+	var starved := Newcomer.new()
+	starved.idler = true
+	starved.attach(bare)
+	while starved.clock < MINUTES * 60.0:
+		starved.step()
 	t.check(
-		bot.left_at >= 0.0,
-		"with nobody feeding them the %s do leave in the end (at %.0f s)" % [Data.PEOPLE["many"], bot.left_at]
+		starved.left_at >= 0.0,
+		"with no bushes to forage the %s do leave in the end (at %.0f s)" % [Data.PEOPLE["many"], starved.left_at]
 	)
 	t.check(
-		bot.left_at - bot.warned_at >= LEAD,
-		"and the warning comes %.0f s before the first one goes" % (bot.left_at - bot.warned_at)
+		starved.left_at - starved.warned_at >= LEAD,
+		"and the warning comes %.0f s before the first one goes" % (starved.left_at - starved.warned_at)
 	)
-	t.check(bot.warned_at >= 60.0, "not in the first minute, while the pantry is full")
+	t.check(starved.warned_at >= 30.0, "not at the very start, while the pantry is full")

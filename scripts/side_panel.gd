@@ -8,9 +8,8 @@ const Sim = preload("res://scripts/sim.gd")
 const Ui = preload("res://scripts/ui.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
 
-const GOOD: Color = Ui.GOOD
 const GOAL_COLOR: Color = Ui.HIGHLIGHT
-const GOALS_SHOWN := 4
+const GOALS_SHOWN := 2
 
 var goal_header: Label
 var goal_labels: Array = []
@@ -36,6 +35,7 @@ func setup(game: Sim, width: float) -> void:
 	v.add_theme_constant_override("separation", 6)
 	add_child(v)
 	goal_header = Ui.label("Goals", 18)
+	goal_header.mouse_filter = Control.MOUSE_FILTER_STOP
 	v.add_child(goal_header)
 	for i in GOALS_SHOWN:
 		var g := Ui.label("", 14)
@@ -70,24 +70,29 @@ func setup(game: Sim, width: float) -> void:
 	inner.add_child(info_label)
 
 
-## The checklist: the current goal in gold, done ones in green, the next few after it. While a building's card is
-## open only the current goal shows, so the card has room.
+## The checklist: only the current goal (in gold) and the one after it (dim). The done ones are behind the count in the
+## header ("Goals 9/22"; hover it to list them), so a long goal never pushes the current one down. While a building's
+## card is open only the current goal shows, so the card has room.
 func refresh_goals(s: Sim) -> void:
 	var cur := s.story.current_goal()
-	goal_header.text = "Goals (%d/%d)" % [mini(cur, Data.GOALS.size()), Data.GOALS.size()]
+	var total := Data.GOALS.size()
+	goal_header.text = Data.GOALS_HEADER % [mini(cur, total), total]
+	var done: Array = []
+	for g in Data.GOALS:
+		if s.story.goals_done.has(g["id"]):
+			done.append("Done: " + g["text"])
+	goal_header.tooltip_text = "\n".join(done)
 	for i in goal_labels.size():
-		var gi := cur - 1 + i
+		var gi := cur + i
 		var l: Label = goal_labels[i]
-		l.visible = gi >= 0 and gi < Data.GOALS.size() and (not building_panel.visible or gi == cur)
+		l.visible = gi < total and (not building_panel.visible or i == 0)
 		if not l.visible:
 			continue
-		var done: bool = s.story.goals_done.has(Data.GOALS[gi]["id"])
-		l.text = ("Done: " if done else ("> " if gi == cur else "  ")) + Data.GOALS[gi]["text"]
-		var col := GOOD if done else (GOAL_COLOR if gi == cur else Ui.TEXT)
-		l.add_theme_color_override("font_color", col)
-	if cur >= Data.GOALS.size():
-		goal_labels[1].visible = true
-		goal_labels[1].text = "All goals done."
+		l.text = ("> " if i == 0 else "  ") + Data.GOALS[gi]["text"]
+		l.add_theme_color_override("font_color", GOAL_COLOR if i == 0 else Ui.TEXT_DIM)
+	if cur >= total:
+		goal_labels[0].visible = true
+		goal_labels[0].text = Data.GOALS_ALL_DONE
 
 
 ## Show `text` under the card; a card that doesn't fit scrolls (the bar only shows when it must).

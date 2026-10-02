@@ -12,16 +12,26 @@ const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
+const GrowthNote = preload("res://scripts/growth_note.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 
 const FIRST_ROW := 7  # goods in the first row; the rest are in the second
 const LOSS := Ui.SHORT  # `alert`, lifted to read on cocoa
+## The Food readout's text while the warning is up: light enough to read on the bar (over 4.5 to 1) at every moment.
+const ALARM_TEXT := Ui.SHORT
+## The ring around it flashes between these two; it is the only thing that flashes, so the words never dim.
+const FLASH_FROM := Ui.SHORT
+const FLASH_TO := Ui.TEXT
+const FLASH_SPEED := 7.0
 const FLAT := Ui.TEXT_DIM
 const MINUS := "−"
 const CHIP_W := 80.0
 const ICON := 24.0  # a good's sprite, with nothing behind it
 const ROW_H := 42.0  # a row of chips keeps this height whether or not its goods have appeared yet
+## The bar is never shorter than its two rows of chips and the panel's margins: it is reserved from the first frame,
+## so a chip, a note or a long line appearing later can never make it (or the map under it) grow.
+const BAR_H := ROW_H * 2.0 + 10.0
 const FOOD_W := 190.0
 const COUNT_SIZE := 18  # numbers are 18
 const KITH_W := 216.0  # the Kith block, wide enough for "Jobs filled 19 of 19  ·  25 hauling"
@@ -48,6 +58,7 @@ func setup(game: Sim) -> void:
 	state = game
 	add_theme_stylebox_override("panel", Ui.bar_style(Ui.BAR, true))
 	set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	custom_minimum_size.y = BAR_H
 	var h := HBoxContainer.new()
 	h.add_theme_constant_override("separation", 10)
 	add_child(h)
@@ -58,7 +69,7 @@ func setup(game: Sim) -> void:
 	jobs_label = Ui.label("", Ui.MIN_TEXT)
 	note_label = Ui.label("", Ui.MIN_TEXT)
 	note_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	note_label.max_lines_visible = 2  # the block never grows the bar: two lines at most
+	note_label.max_lines_visible = 3  # the bar keeps its reserved height (BAR_H): three lines at most
 	kv.add_child(kith_label)
 	kv.add_child(jobs_label)
 	kv.add_child(note_label)
@@ -239,8 +250,11 @@ func refresh(paused: bool, speed: int) -> void:
 	for b in state.town.buildings:
 		jobs += 1 if Buildings.needs_worker(b) and not b["paused"] else 0
 	kith_label.text = Data.KITH_LABEL % [Data.PEOPLE["many"], state.people.kith.size(), state.town.housing()]
-	kith_label.get_parent().tooltip_text = Data.JOBS_TIP % [state.people.job_counts(), Data.PEOPLE["many"]]
 	var note := Ui.growth_note(state)
+	kith_label.get_parent().tooltip_text = (
+		Data.JOBS_TIP % [state.people.job_counts(), Data.PEOPLE["many"]]
+		+ ("\n\n" + GrowthNote.rule() if GrowthNote.food_is_the_blocker(state) else "")
+	)
 	kith_label.add_theme_color_override("font_color", Ui.TEXT if note != "" else Ui.GOOD)
 	var rest: String = Data.HAUL_WORD if state.tech_tree.researched.has("haulers") else Data.IDLE_WORD
 	jobs_label.text = Data.JOBS_LABEL % [workers, jobs, idle, rest]
@@ -291,22 +305,27 @@ func _refresh_food() -> void:
 		sub = Data.FOOD_LOW_TEXT % _duration(minf(eco.seconds_of_food(), 3600.0), true)
 	food_sub.text = sub
 	var alarm := eco.low or eco.starving
-	food_label.add_theme_color_override("font_color", Ui.SHORT if alarm else Ui.TEXT)
-	food_sub.add_theme_color_override("font_color", Ui.SHORT if alarm else rate_color(fr))
-	food_box.add_theme_stylebox_override("panel", _outline(Ui.BAD if alarm else Color(0, 0, 0, 0)))
-	if not alarm:
-		food_box.modulate.a = 1.0
+	food_label.add_theme_color_override("font_color", ALARM_TEXT if alarm else Ui.TEXT)
+	food_sub.add_theme_color_override("font_color", ALARM_TEXT if alarm else rate_color(fr))
+	food_box.add_theme_stylebox_override("panel", _outline(flash_ring(pulse) if alarm else Color(0, 0, 0, 0)))
+	food_box.modulate.a = 1.0
 	food_bar.max_value = maxf(state.people.kith.size() * 2.0 + Data.BIRTH_FOOD, 1.0)
 	food_bar.value = minf(food, food_bar.max_value)
 	food_bar.modulate = Ui.BAD if alarm or fr < -0.005 else Ui.HIGHLIGHT
 
 
-## The flash: the Food block pulses while the food is low or gone.
+## The flash: while the food is low or gone the ring around the Food block pulses. Only the ring does: the block's
+## words and the bar behind them stay as they are, so they can always be read.
 func _process(delta: float) -> void:
 	if state == null or not (state.economy.low or state.economy.starving):
 		return
 	pulse += delta
-	food_box.modulate.a = 0.65 + 0.35 * sin(pulse * 7.0)
+	food_box.add_theme_stylebox_override("panel", _outline(flash_ring(pulse)))
+
+
+## The ring's colour at `phase` (seconds into the flash).
+static func flash_ring(phase: float) -> Color:
+	return FLASH_FROM.lerp(FLASH_TO, 0.5 + 0.5 * sin(phase * FLASH_SPEED))
 
 
 func _show_flow(id: String) -> void:
@@ -410,6 +429,8 @@ func _maker_name(source: String, id: String) -> String:
 			return "Gathered by hand"
 		"craft":
 			return "Crafted by hand"
+		Data.FLOW_FORAGE_SOURCE:
+			return Data.FORAGE_MAKER % Data.PEOPLE["many"]
 	var n := 0
 	for b in state.town.buildings:
 		if b["type"] == source and (id == b["focus"] or Data.BUILDINGS[source].get("out", {}).has(id)):

@@ -5,6 +5,7 @@ extends RefCounted
 const Data = preload("res://scripts/data.gd")
 const Art = preload("res://scripts/art.gd")
 const Rules = preload("res://scripts/rules.gd")
+const GrowthNote = preload("res://scripts/growth_note.gd")
 
 const OUTLINE: Color = Art.OUTLINE  # the sprite outline, also the map's
 
@@ -91,6 +92,18 @@ static func button(text: String) -> Button:
 	b.focus_mode = Control.FOCUS_NONE
 	b.add_theme_font_size_override("font_size", MIN_TEXT)
 	return b
+
+
+## WCAG contrast ratio between two opaque colours, 1 (none) to 21.
+static func contrast(a: Color, b: Color) -> float:
+	var la := _luminance(a)
+	var lb := _luminance(b)
+	return (maxf(la, lb) + 0.05) / (minf(la, lb) + 0.05)
+
+
+static func _luminance(c: Color) -> float:
+	var lin := func(v: float) -> float: return v / 12.92 if v <= 0.03928 else pow((v + 0.055) / 1.055, 2.4)
+	return 0.2126 * lin.call(c.r) + 0.7152 * lin.call(c.g) + 0.0722 * lin.call(c.b)
 
 
 ## A cocoa panel with the 2 px `ui-line` outline and `radius-panel` corners.
@@ -281,16 +294,9 @@ static func idle_kith(s) -> int:
 	return n
 
 
-## Why the population isn't growing, or "" when it is.
+## Why the population isn't growing, or "" when it is (see scripts/growth_note.gd).
 static func growth_note(s) -> String:
-	var n: int = s.people.kith.size()
-	if s.economy.starving:
-		return Data.NOTE_STARVING
-	if n >= s.town.housing():
-		return Data.NOTE_NO_ROOM
-	if not s.people.food_ready_for_birth():
-		return Data.GROW_NOTE_FOOD
-	return ""
+	return GrowthNote.note(s)
 
 
 static func ignore_mouse(n: Node) -> void:

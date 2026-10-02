@@ -20,6 +20,10 @@ const STORY_TECHS := {
 ## The opening checklist. A goal with `tech` or `building` is met once that is researched or built;
 ## Story.goal_met() checks the others by id.
 
+## The Goals panel's header: goals done, goals in all. The done ones list under it on hover.
+const GOALS_HEADER := "Goals %d/%d"
+const GOALS_ALL_DONE := "All goals done."
+
 const GOALS := [
 	{"id": "learn_wood", "text": "Hold the mouse on trees to gather Wood, until a Kith learns it (10 harvests)"},
 	{
@@ -51,7 +55,11 @@ const GOALS := [
 			+ " a trip for berries. A hut only works when you click it"
 		)
 	},
-	{"id": "dwelling", "text": "Build a Dwelling. Kith grow when there's room and steady food", "building": "dwelling"},
+	{
+		"id": "dwelling",
+		"text": "Build a Dwelling. Kith grow when there's room and steady food (a hut on a road feeds the Hearth)",
+		"building": "dwelling"
+	},
 	{"id": "charcoal", "text": "Discover Fire, then build a Charcoal Pit", "building": "charcoal_pit"},
 	{"id": "twine", "text": "Discover Cordage, then build a Twine Post", "building": "twine_post"},
 	{"id": "haulers", "text": "Discover Paths & Haulers: it unlocks Roads and lets idle Kith haul", "tech": "haulers"},

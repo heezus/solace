@@ -140,6 +140,7 @@ func _steady() -> void:
 	_eco.flows.hist = []
 	for _n in Data.RATE_WINDOW:
 		_eco.flows.hist.append({"berries|gatherers_hut": 1.0})
+	_eco.steady_held = Data.STEADY_SECONDS
 
 
 # --- Population --------------------------------------------------------------

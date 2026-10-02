@@ -27,6 +27,7 @@ const NewcomerTests = preload("res://tests/newcomer_tests.gd")
 const UiTests = preload("res://tests/ui_tests.gd")
 const HutFocusTests = preload("res://tests/hut_focus_tests.gd")
 const GrowthTests = preload("res://tests/growth_tests.gd")
+const ForageTests = preload("res://tests/forage_tests.gd")
 const HaulerTests = preload("res://tests/hauler_tests.gd")
 const World = preload("res://scripts/world.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
@@ -79,6 +80,7 @@ func _init() -> void:
 	SaveTests.new().run(self)
 	HutFocusTests.new().run(self)
 	GrowthTests.new().run(self)
+	ForageTests.new().run(self)
 	HaulerTests.new().run(self)
 	NewcomerTests.new().run(self)
 	UiTests.new().run(self)
@@ -402,6 +404,7 @@ func steady_income(s: Sim) -> void:
 	s.economy.flows.hist = []
 	for _n in Data.RATE_WINDOW:
 		s.economy.flows.hist.append({"berries|gatherers_hut": 1.0})
+	s.economy.steady_held = Data.STEADY_SECONDS
 
 
 func place_free(s: Sim, type: String, p: Vector2i) -> bool:

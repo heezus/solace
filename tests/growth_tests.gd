@@ -26,6 +26,8 @@ func run(runner) -> void:
 	test_the_starting_food_gives_no_fourth_kith()
 	test_a_hut_on_berries_feeds_growth()
 	test_the_note_and_the_goal_say_steady_food()
+	test_one_trip_is_not_steady_food()
+	test_steady_food_has_to_hold_for_a_while()
 
 
 ## A game with `count` people, a Hearth and `stock` berries in a stockpile that holds nothing else.
@@ -46,6 +48,7 @@ func _income(s: Sim, per_sec: float, source: String = "gatherers_hut") -> void:
 	for _n in Data.RATE_WINDOW:
 		s.economy.flows.hist.append({"berries|" + source: per_sec})
 	s.economy.food_use = s.people.kith.size() * Data.FOOD_PER_KITH_PER_SEC
+	s.economy.steady_held = Data.STEADY_SECONDS if s.economy.food_covers_eating() else 0.0  # as if it had held
 
 
 func _eating(s: Sim) -> float:
@@ -88,10 +91,10 @@ func test_hand_gathering_is_not_steady_income() -> void:
 	var s := _camp(3, 10)
 	_income(s, 0.4, "hand")
 	s.economy.food_use = _eating(s)
-	t.check(s.economy.food_supply() == 0.0 and not s.economy.food_is_steady(), "hand harvests are no income")
+	t.check(s.economy.food_supply() == 0.0 and not s.economy.food_covers_eating(), "hand harvests are no income")
 	_income(s, 0.4, "hand")
 	s.economy.flows.hist[0]["berries|gatherers_hut"] = 31.0 * _eating(s)
-	t.check(s.economy.food_is_steady(), "but a hut's berries beside them are")
+	t.check(s.economy.food_covers_eating(), "but a hut's berries beside them are")
 	var game: Sim = t.fresh()
 	var bush: Vector2i = t.find_tile(game, "berry")
 	game.economy.inv["berries"] = 18
@@ -107,20 +110,24 @@ func test_hand_gathering_is_not_steady_income() -> void:
 			break
 	t.check(harvests > 50 and game.economy.food_supply() == 0.0, "the window saw +0 of income, %d harvests" % harvests)
 	t.check(game.economy.flows.rate("berries") > 0.0, "although the top bar rate showed the harvests")
-	t.check(Ui.growth_note(game) == Data.GROW_NOTE_FOOD, "and the note says it needs steady food")
+	t.check(Ui.growth_note(game).begins_with(Data.GROW_NOTE_FOOD), "and the note says it needs steady food")
 
 
 func test_steady_means_income_covers_eating() -> void:
 	var s := _camp(4, 10)
 	_income(s, _eating(s) * 0.99)
-	t.check(not s.economy.food_is_steady(), "a little less than everyone eats is not steady")
+	t.check(not s.economy.food_covers_eating(), "a little less than everyone eats does not cover it")
 	_income(s, _eating(s))
-	t.check(s.economy.food_is_steady(), "exactly what they eat is")
+	t.check(s.economy.food_covers_eating(), "exactly what they eat does")
 	_income(s, _eating(s) * 3.0)
-	t.check(s.economy.food_is_steady(), "and more is")
-	s.economy.flows.hist = []
+	t.check(s.economy.food_covers_eating(), "and more does")
+	_income(s, 0.0)
 	s.economy.food_use = 0.0
-	t.check(s.economy.food_is_steady(), "no mouths to feed is steady too")
+	t.check(s.economy.food_covers_eating(), "no mouths to feed is covered too")
+	s.economy.flows.hist = [{"berries|gatherers_hut": 99.0}]
+	t.check(
+		not s.economy.food_covers_eating(), "and a window that has not yet elapsed covers nothing, however much came in"
+	)
 
 
 func test_a_birth_needs_steady_income() -> void:
@@ -187,7 +194,7 @@ func test_the_starting_food_gives_no_fourth_kith() -> void:
 	for _n in 240:
 		s.tick(1.0)
 	t.check(s.people.kith.size() == Data.KITH_START, "four minutes on the starting berries alone: still three")
-	t.check(Ui.growth_note(s) == Data.GROW_NOTE_FOOD, "and the note says why")
+	t.check(Ui.growth_note(s).begins_with(Data.GROW_NOTE_FOOD), "and the note says why")
 
 
 ## The real thing: a hut on berries, its worker sent on trips as a player clicking would, and a Dwelling.
@@ -219,7 +226,7 @@ func test_a_hut_on_berries_feeds_growth() -> void:
 func test_the_note_and_the_goal_say_steady_food() -> void:
 	var s := _camp(3, 500)
 	_income(s, 0.0)
-	t.check(Ui.growth_note(s) == Data.GROW_NOTE_FOOD, "the note beside the count: " + Data.GROW_NOTE_FOOD)
+	t.check(Ui.growth_note(s).begins_with(Data.GROW_NOTE_FOOD), "the note beside the count: " + Data.GROW_NOTE_FOOD)
 	t.check(Data.GROW_NOTE_FOOD.contains("steady food"), "in words a newcomer can act on")
 	_income(s, 1.0)
 	t.check(Ui.growth_note(s) == "", "and it goes away once the food is steady")
@@ -232,3 +239,60 @@ func test_the_note_and_the_goal_say_steady_food() -> void:
 	t.check(goal.contains("steady food") and not goal.contains("spare"), "the Dwelling goal says the same: " + goal)
 	var e := Economy.new()
 	t.check(e.food_supply() == 0.0, "an Economy alone reports no supply")
+
+
+## Playtest 4: hand harvests and ONE berry trip, the stock falling 23, 17, 10, and a Kith was born while the top bar
+## said "Needs steady food to grow". The trip's bundle stays in the 30 s window and used to cover the eating for
+## all of it, long enough for the birth timer. A birth now needs the food to have covered the eating, unbroken, for
+## Data.STEADY_SECONDS (longer than the window), and the note asks the very same question.
+func test_one_trip_is_not_steady_food() -> void:
+	var game: Sim = t.fresh()
+	var bush: Vector2i = t.find_tile(game, "berry")
+	game.economy.inv["berries"] = 23
+	game.economy.food_credit = 0.0
+	var covered := 0
+	var seconds := 0
+	for n in 2400:  # four minutes
+		if n % 80 == 0 and n < 600:
+			game.gather_by_hand(bush)  # a hand harvest every 8 s for the first minute
+		if n == 200:  # the one trip, delivered as a hut worker does
+			game.economy.add("berries", 3)
+			game.economy.note("berries", 3, "gatherers_hut")
+		game.tick(0.1)
+		if n % 10 == 0:
+			seconds += 1
+			covered += 1 if game.economy.food_covers_eating() else 0
+			t.check(not game.economy.food_is_steady(), "one trip is not steady food (at %d s)" % seconds)
+			t.check(
+				(Ui.growth_note(game) == "") == game.people.food_ready_for_birth(),
+				"the note and the birth rule agree (at %d s)" % seconds
+			)
+	t.check(covered >= 10, "the trip did cover the eating for a while (%d s), which is what used to pass" % covered)
+	t.check(game.people.kith.size() == Data.KITH_START, "and nobody was born")
+	t.check(Ui.growth_note(game).begins_with(Data.GROW_NOTE_FOOD), "the note says it needs steady food")
+
+
+## Food from a hut every second, more than they eat: the window fills, then it has to hold for STEADY_SECONDS. Any
+## break starts it again.
+func test_steady_food_has_to_hold_for_a_while() -> void:
+	var s := _camp(3, 60)
+	var e: Economy = s.economy
+	var born_at := -1
+	for second in 200:
+		e.advance(1.0)
+		if second < 120 or second >= 130:  # a ten second gap in the output
+			e.note("berries", 1.0, "gatherers_hut")
+			e.add("berries", 1)
+		var fed := e.feed(s.people.kith.size(), 1.0)
+		s.people.grow(1.0, fed)
+		if second == Data.RATE_WINDOW + int(Data.STEADY_SECONDS) - 10:
+			t.check(
+				not e.food_is_steady(), "a window's worth of output and most of the hold is not enough (%d s)" % second
+			)
+		if s.people.kith.size() > 3 and born_at < 0:
+			born_at = second
+			t.check(e.steady_held >= 0.0, "a birth")
+	t.check(
+		born_at >= Data.RATE_WINDOW + int(Data.STEADY_SECONDS), "the first birth waits for the hold: at %d s" % born_at
+	)
+	t.check(born_at < 120, "and comes before the break in the output: at %d s" % born_at)
