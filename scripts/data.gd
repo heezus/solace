@@ -166,6 +166,7 @@ const PACE_MAKES := DataWords.PACE_MAKES
 const PACE_BOOST := DataWords.PACE_BOOST
 const PACE_TIP := DataWords.PACE_TIP
 const TRIPS_HINT := DataWords.TRIPS_HINT
+const TRIPS_FED := DataWords.TRIPS_FED
 const RUSH_HINT := DataWords.RUSH_HINT
 const RUSH_WAIT := DataWords.RUSH_WAIT
 const RUSH_COOL := DataWords.RUSH_COOL

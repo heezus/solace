@@ -68,10 +68,24 @@ static func draw_marker(ci: CanvasItem, r: Rect2, item: String) -> void:
 	ci.draw_rect(at, Color("1b2a33"), false, 1.5)
 
 
+## True when a food hut's click can wait: the player has sent a first trip and the food is comfortable (no warning, no
+## famine, so idle Kith are not foraging). Then the hut still works when clicked, but nothing is at stake.
+static func click_can_wait(s: Sim, b: Dictionary) -> bool:
+	return (
+		Data.FOOD_VALUE.has(b["focus"])
+		and "first_trip" in s.story.events
+		and not s.economy.low
+		and not s.economy.famine
+	)
+
+
 ## True for a hut that is standing idle until someone clicks it: it has a worker who can work its focus, no road
-## links it to run it on its own, and no trip is waiting. (An unlinked hut only works on clicked trips.)
+## links it to run it on its own, and no trip is waiting. (An unlinked hut only works on clicked trips.) A food hut
+## stops asking while the food is comfortable (click_can_wait); the others always ask: their goods come only by click.
 static func wants_click(s: Sim, b: Dictionary) -> bool:
 	if Data.BUILDINGS[b["type"]]["kind"] != "gatherer" or b["worker"] < 0 or b["paused"]:
+		return false
+	if click_can_wait(s, b):
 		return false
 	return (
 		not Roads.automated(s, b)

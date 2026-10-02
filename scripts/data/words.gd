@@ -91,6 +91,8 @@ const TRIPS_HINT := (
 	"Click the hut to send its %s for a bundle: until a road links it, it works only when you click it."
 	+ " Trips waiting: %d of %d."
 )  # one
+## Heading the click hint of a food hut while its food is comfortable (formatted with PEOPLE["many"]).
+const TRIPS_FED := "Your %s are fed; click to send more anyway."
 const RUSH_HINT := "Click to finish this cycle now (then %d s to recover)."
 const RUSH_WAIT := "Click to finish a cycle early while it's working."
 const RUSH_COOL := "Rush ready in %d s."
