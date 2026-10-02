@@ -89,8 +89,7 @@ func _ready() -> void:
 	cam = Overlays.center(state.world.camp_pos)  # start looking at the Hearth
 	_build_ui()
 	state.tech_tree.tech_researched.connect(_on_tech_researched)
-	_toast(Data.CAMP_TOAST % Data.PEOPLE["many"], 6.0)
-	_toast(Data.CAMERA_HINT, 9.0)
+	_toast(Data.CAMP_TOAST % Data.PEOPLE["many"] + "\n" + Data.CAMERA_HINT, 9.0)  # one toast, low on the map
 
 
 func _process(delta: float) -> void:
@@ -155,8 +154,8 @@ func _layout() -> void:
 	view = Rect2(0, top, maxf(vp.x - SIDE_W, 100.0), maxf(vp.y - top - bottom, 100.0))
 	frame.position = view.position
 	frame.size = view.size
-	toasts.size.x = maxf(view.size.x - 32.0, 100.0)
-	toasts.position = Vector2(16, top + 14)
+	toasts.size = Vector2(maxf(view.size.x - 32.0, 100.0), maxf(view.size.y - 28.0, 100.0))
+	toasts.position = Vector2(16, top + 14)  # stacked from the bottom edge up, so the lit area stays in view
 	msg_log.position = Vector2(16, vp.y - bottom - msg_log.size.y - 16)
 	side_panel.position = Vector2(view.end.x, top)
 	side_panel.size = Vector2(SIDE_W, view.size.y)
@@ -418,7 +417,7 @@ func _build_ui() -> void:
 	building_panel.demolish_pressed.connect(_demolish)
 	building_panel.closed.connect(func(): building_panel.select(Vector2i(-1, -1)))
 
-	# Toasts stack under the top bar (placed in _layout, so they never cover its chips); the log opens over the map.
+	# Toasts stack up from the bottom of the map (placed in _layout, so they never cover the bars); the log opens over the map.
 	toasts = ToastStack.new()
 	layer.add_child(toasts)
 	toasts.setup(messages)

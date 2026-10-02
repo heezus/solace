@@ -19,6 +19,23 @@ static func note(s) -> String:
 	return ""
 
 
+## The note for the top bar: the same, but the food note waits until it can matter, that is until a hut and a Dwelling
+## stand (before that the food is not yet what holds the Kith back, and the bar's room is the Kith count's).
+static func bar_note(s) -> String:
+	if food_is_the_blocker(s) and not _hut_and_dwelling(s):
+		return ""
+	return note(s)
+
+
+static func _hut_and_dwelling(s) -> bool:
+	var hut := false
+	var home := false
+	for b in s.town.buildings:
+		hut = hut or Data.BUILDINGS[b["type"]]["kind"] == "gatherer"
+		home = home or b["type"] == "dwelling"
+	return hut and home
+
+
 ## What would make the food steady, for where the player is: before Paths & Haulers, after it with no hut on a road,
 ## and with a hut already on a road (more of them).
 static func fix(s) -> String:

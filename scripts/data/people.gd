@@ -48,7 +48,7 @@ const JOB_IDLE := "Idle"
 
 ## Messages and labels that name the people. Each is formatted with PEOPLE["one"] or PEOPLE["many"]
 ## (the noun they use is noted beside it).
-const CAMP_TOAST := "The %s gather at the Hearth, hopeful. Hold the mouse on a tree to begin: the goals are on the right."  # many
+const CAMP_TOAST := "The %s gather at the Hearth. Hold the mouse on a tree to begin; the goals are on the right."  # many
 const LEARNED_LINE := "%s learned %s and is now the %s."  # name, "to chop wood", job title
 const BORN_POPUP := "+1 %s"  # one
 const BORN_TOAST := "New %s arrive at the Hearth while food lasts"  # many

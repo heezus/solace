@@ -37,6 +37,7 @@ func run(runner) -> void:
 	test_every_kith_has_a_place_on_the_map()
 	test_words_are_plain()
 	test_the_growth_note_says_what_to_do_in_each_state()
+	test_the_bar_hides_the_food_note_until_a_hut_and_a_dwelling_stand()
 	test_a_building_waiting_for_kith_points_at_the_fix()
 	test_the_food_flash_stays_legible()
 	test_the_goal_list_shows_the_current_goal_and_the_next()
@@ -320,6 +321,21 @@ func test_the_food_flash_stays_legible() -> void:
 	for n in 32:
 		least = minf(least, Ui.contrast(TopBar.flash_ring(n * 0.1), Ui.BAR))
 	t.check(least >= 3.0, "the ring is visible at every phase of the flash (%.1f)" % least)
+
+
+## Playtest 6: the food note sat in the top bar at second one. It shows only once a hut and a Dwelling stand.
+func test_the_bar_hides_the_food_note_until_a_hut_and_a_dwelling_stand() -> void:
+	var s = t.fresh()
+	var camp: Vector2i = s.world.camp_pos
+	t.check(GrowthNote.food_is_the_blocker(s), "at the start food is what holds growth back")
+	t.check(GrowthNote.bar_note(s) == "", "but the bar says nothing at second one")
+	t.check(t.place_free(s, "gatherers_hut", camp + Vector2i(0, 2)), "a hut goes up")
+	t.check(GrowthNote.bar_note(s) == "", "a hut alone: still nothing")
+	t.check(t.place_free(s, "dwelling", camp + Vector2i(2, 2)), "a Dwelling goes up")
+	t.check(GrowthNote.bar_note(s) == Ui.growth_note(s), "hut and Dwelling: the food note shows")
+	t.check(GrowthNote.bar_note(s).begins_with(Data.GROW_NOTE_FOOD), "and it is the food note")
+	s.economy.starving = true
+	t.check(GrowthNote.bar_note(s) == Data.NOTE_STARVING, "starving always shows")
 
 
 ## Playtest 5: "Needs steady food to grow" explained nothing. The note now says what steady means and the fix for where
