@@ -15,6 +15,7 @@ const BonusTests = preload("res://tests/bonus_tests.gd")
 const EconomyTests = preload("res://tests/economy_tests.gd")
 const ResearchTests = preload("res://tests/research_tests.gd")
 const WorldTests = preload("res://tests/world_tests.gd")
+const MapgenTests = preload("res://tests/mapgen_tests.gd")
 const PathingTests = preload("res://tests/pathing_tests.gd")
 const BuildingsTests = preload("res://tests/buildings_tests.gd")
 const KithTests = preload("res://tests/kith_tests.gd")
@@ -72,6 +73,7 @@ func _init() -> void:
 	EconomyTests.new().run(self)
 	ResearchTests.new().run(self)
 	WorldTests.new().run(self)
+	MapgenTests.new().run(self)
 	PathingTests.new().run(self)
 	BuildingsTests.new().run(self)
 	KithTests.new().run(self)
@@ -132,6 +134,20 @@ func fresh() -> Sim:
 func give(s: Sim, amount: int) -> void:
 	for id in Data.ITEM_ORDER:
 		s.economy.inv[id] = amount
+
+
+## A spot where the river is 2 tiles wide between two open banks: {"river": its first tile, "side": the
+## step across it (east or south)}. The bridge tests build on it.
+func _find_crossing(s: Sim) -> Dictionary:
+	for y in World.HEIGHT:
+		for x in World.WIDTH:
+			for side in [Vector2i(1, 0), Vector2i(0, 1)]:
+				var p := Vector2i(x, y)
+				var open := func(q: Vector2i) -> bool: return s.world.tile_at(q) in ["grass", "tree", "clay", "gravel"]
+				var wet := func(q: Vector2i) -> bool: return s.world.tile_at(q) == "river"
+				if open.call(p - side) and wet.call(p) and wet.call(p + side) and open.call(p + side * 2):
+					return {"river": p, "side": side}
+	return {"river": find_tile(s, "river"), "side": Vector2i(1, 0)}
 
 
 func find_tile(s: Sim, tile: String) -> Vector2i:
@@ -493,9 +509,11 @@ func test_distance_slows_haulers() -> void:
 ## A Wooden Bridge (Paths & Haulers) spans the river at road speed.
 func test_roads_bridge_the_river() -> void:
 	var s := fresh()
-	var river := find_tile(s, "river")
-	var bank := river + Vector2i(-1, 0)
-	var far_bank := river + Vector2i(2, 0)
+	var cross := _find_crossing(s)
+	var river: Vector2i = cross["river"]
+	var side: Vector2i = cross["side"]
+	var bank := river - side
+	var far_bank := river + side * 2
 	check(s.pathing.walk_cost(bank) >= 1.0, "no road: normal speed")
 	check(s.pathing.astar.is_point_solid(river), "the river blocks walking")
 	check(Data.BUILDINGS["bridge"]["tech"] == "haulers", "bridges come with Paths & Haulers")
@@ -506,7 +524,7 @@ func test_roads_bridge_the_river() -> void:
 	var wood: int = s.economy.inv["wood"] + 100
 	check(place_free(s, "bridge", river), "a bridge goes on the river")
 	check(s.economy.inv["wood"] == wood - 10, "a bridge costs 10 Wood")
-	check(place_free(s, "bridge", river + Vector2i(1, 0)), "both river tiles")
+	check(place_free(s, "bridge", river + side), "both river tiles")
 	check(not s.pathing.astar.is_point_solid(river), "bridged river is walkable")
 	check(s.pathing.walk_cost(river) < 1.0, "bridges are road speed")
 	var path := s.pathing.astar.get_id_path(bank, far_bank)
