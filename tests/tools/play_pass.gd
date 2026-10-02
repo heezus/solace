@@ -13,7 +13,8 @@ const Hands = preload("res://scripts/hands.gd")
 const World = preload("res://scripts/world.gd")
 
 const BOT_STEPS_PER_FRAME := 40
-const MAX_FRAMES := 4000
+const MAX_FRAMES := 6000
+const SETTLE_SECONDS := 60.0  # game time the town runs on its own before the bot takes over
 
 var main: Node
 var frame := 0
@@ -325,6 +326,10 @@ func _script() -> void:
 	# Right-click cancels placing; a dragged Road lays a line.
 	_then(func(): _road_drag(), 2)
 	_then(func(): _road_drag_check(), 3)
+	# Let the town run a minute of game time with the UI drawing. The bot starts from whatever state the checks left,
+	# and a short, fast run of them (a lighter frame) left it one that could dead-end: workshops ahead of any hut.
+	_then(func(): probe["settled"] = game_time + SETTLE_SECONDS)
+	_wait_for(func(): return game_time >= probe["settled"], "game time stopped", int(SETTLE_SECONDS * 1500))
 	# Then the bot plays to Bronze Dawn with the UI drawing.
 	_then(func(): _start_bot(), 5)
 
