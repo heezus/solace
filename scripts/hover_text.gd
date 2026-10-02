@@ -91,13 +91,13 @@ static func _tile_text(m) -> String:
 			out += " It's food: the %s eat it." % Data.PEOPLE["many"]
 		out += "\n" + learn_text(s, item)
 		return out + ("\n" + hint + "." if hint != "" else "")
-	var out: String = t["name"]
+	var info: String = t["name"]
 	if t.has("hint"):
-		out += "\n" + t["hint"]
+		info += "\n" + t["hint"]
 		var near := _gatherable_near(s, p)
 		if not near.is_empty():
-			out += "\n" + Data.NEAR_TEXT % ", ".join(near)
-	return out + ("\n" + hint + "." if hint != "" else "")
+			info += "\n" + Data.NEAR_TEXT % ", ".join(near)
+	return info + ("\n" + hint + "." if hint != "" else "")
 
 
 ## The names of the things to gather within Data.NEAR_RADIUS tiles of p, nearest kind first, each once.

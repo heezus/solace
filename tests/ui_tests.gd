@@ -127,6 +127,8 @@ func test_card_line_always_fits() -> void:
 		CardText.short_names({"wood": 9}, hut_cost) == ["Wood", "Stone"], "the names of what is short, in cost order"
 	)
 	for type in Data.BUILDINGS:
+		if Data.BUILDINGS[type]["tech"] == "":
+			continue  # always available: never locked
 		var why: String = CardText.locked_reason(type, 100.0)
 		t.check(CardText.lines(why, 100.0) <= 2, "%s: the reason fits two lines: %s" % [type, why])
 		t.check(not why.contains("..."), "and never with dots: " + why)
@@ -466,6 +468,8 @@ static func badge_problems(s) -> Array:
 	for b in s.town.buildings:
 		if HutFocus.wants_click(s, b):
 			var click: Rect2 = HutFocus.badge_rect(Overlays.rect(b["pos"]))
+			if click.end.y > Overlays.rect(b["pos"]).position.y - 10.0:
+				problems.append("the click badge of %s covers the hut's roof or trip dots" % [b["pos"]])
 			for box in boxes:
 				if click.intersects(box):
 					problems.append("the click badge of %s covers an alert badge" % [b["pos"]])

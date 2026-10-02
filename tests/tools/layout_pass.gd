@@ -591,7 +591,8 @@ func _check_card_text_clear(when: String, type: String, parts: Dictionary, card:
 		var font: Font = l.get_theme_font("font")
 		var fs: int = l.get_theme_font_size("font_size")
 		var text_w := minf(font.get_string_size(l.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, l.size.x)
-		var box := Rect2(l.position, Vector2(text_w, font.get_height(fs)))
+		var lines := l.get_line_count() if l.autowrap_mode != TextServer.AUTOWRAP_OFF else 1
+		var box := Rect2(l.position, Vector2(text_w, lines * fs))  # a line is about its font size tall
 		if key == "sub" and l.text.contains("+"):
 			problems.append('%s: the %s card line "%s" has a "+" code in it' % [when, type, l.text])
 		if not Rect2(Vector2.ZERO, card.size).grow(-2.0).encloses(box):
