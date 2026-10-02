@@ -652,7 +652,38 @@ func _place_wheel() -> bool:
 	if _place_best("water_wheel", room_around):
 		return true
 	var bank := _nearest_bank()
-	return bank.x >= 0 and _explore_to(bank)
+	if bank.x >= 0 and _explore_to(bank):
+		return true
+	if _count("water_wheel") > 0:
+		return false
+	# No bank tile with room round it and nothing to explore: any free bank tile will do (a Grindstone then
+	# tears down a road beside it), else tear down a bank road.
+	return _place_near_hearth("water_wheel") or _tear_down_for("water_wheel", s.world.touches_river)
+
+
+## The last resort, when the bank has no free site and nothing left to explore toward (the bot's own roads
+## took it): tear down the road on the tile that `suits` `type` with the most open ground round it, and
+## build there. Hearth lanes stay. True if it went up.
+func _tear_down_for(type: String, suits: Callable) -> bool:
+	var best := Vector2i(-1, -1)
+	var best_open := -1
+	for p in reach:
+		if not s.world.roads.has(p) or _lane(p) or s.world.tile_at(p) != "grass" or not suits.call(p):
+			continue
+		var open := 0
+		for dy in range(-3, 4):
+			for dx in range(-3, 4):
+				var q: Vector2i = p + Vector2i(dx, dy)
+				if s.world.tile_at(q) == "grass" and not s.town.building_at.has(q):
+					open += 1
+		if open > best_open:
+			best = p
+			best_open = open
+	if best.x < 0:
+		return false
+	s.demolish(best)
+	lines.append("%5.0f s    - Road at %s, for the %s" % [clock, best, Data.BUILDINGS[type]["name"]])
+	return s.place(type, best)
 
 
 func _place_workshop(type: String) -> bool:
@@ -664,7 +695,7 @@ func _place_workshop(type: String) -> bool:
 		var placed := _place_best(
 			type, func(p): return -Vector2(p).distance_to(Vector2(s.world.camp_pos)) if s.town.is_powered(p) else -INF
 		)
-		return placed or (_count("water_wheel") < 3 and _place_wheel())
+		return placed or (_count("water_wheel") < 3 and _place_wheel()) or _tear_down_for(type, s.town.is_powered)
 	return _place_near_hearth(type)
 
 
