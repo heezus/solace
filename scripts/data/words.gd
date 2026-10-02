@@ -17,6 +17,7 @@ const DEMOLISH_LABEL := "Demolish"
 const CAMERA_HINT := "Arrows or WASD move the map, the wheel zooms, Home returns to the Hearth."
 const CARD_NEED_ITEMS := "Need more"  # when even the short form doesn't fit
 const CARD_DISCOVER := "Discover %s"  # a tech's name
+const CARD_DISCOVER_IT := "Discover it first"  # on a locked card whose tech has the card's own name
 
 # --- The tech board (scripts/tech_panel.gd, scripts/tech_board.gd). One verb for techs: Discover. ---
 const BOARD_TITLE := "Tech tree  ·  %s"  # an era's name
@@ -78,7 +79,14 @@ const STATE_LOCKED := "locked"
 # --- Era 2 (scripts/sim.gd, scripts/main.gd, scripts/tech_panel.gd) ---
 const LAND_GREW_EVENT := "The land opens to the east. Copper lies in the hills; tin is far off, to the north-east"
 const ERA_BANNER_TITLE := "BRONZE DAWN"
-const ERA_BANNER_TEXT := "The stone age ends. The land opens to the east, under fog.\nFar above Solace, something is falling."
+const ERA_BANNER_TEXT := (
+	"The stone age ends. The land opens to the east, under fog: copper lies in the hills, and tin is far off,"
+	+ " to the north-east. Press Look east at the edge of the map.\nFar above Solace, something is falling."
+)
+## The lasting pointer at the east edge of the map view (scripts/east_pointer.gd): the ore to look for, and the button.
+const LOOK_EAST := "Look east: %s >"  # "copper" or "tin"
+const LOOK_EAST_TIP := "Moves the view toward the %s, still under fog. Home brings it back to the Hearth."
+const LOOK_EAST_ORE := {"copper_hills": "copper", "tin_stream": "tin"}
 const TECH_UNBUILT := "Opens in a later age"  # on a card and in the strip of a tech that is not open to the Kith yet
 const ERA_TAB_TIP := "The %s tech tree"  # an era's name
 const ERA_TAB_LOCKED := "Opens when Bronze Dawn is discovered"

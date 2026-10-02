@@ -40,8 +40,16 @@ static func short_names(inv: Dictionary, cost: Dictionary) -> Array:
 ## FONT_SIZE (just the tech's name when "Discover ..." would need three); the card's tooltip has the whole sentence.
 static func locked_reason(type: String, max_w := 0.0) -> String:
 	var tech_name: String = Data.TECHS[Data.BUILDINGS[type]["tech"]]["name"]
+	if repeats_name(type, tech_name):
+		return Data.CARD_DISCOVER_IT  # the title above already says which
 	var full: String = Data.CARD_DISCOVER % tech_name
 	return full if max_w <= 0.0 or lines(full, max_w) <= 2 else tech_name
+
+
+## Whether `tech_name` says the card's own title again ("Discover Gatherer's Hut" under "Gatherer's Hut").
+static func repeats_name(type: String, tech_name: String) -> bool:
+	var title: String = Data.BUILDINGS[type]["name"]
+	return title.contains(tech_name) or tech_name.contains(title)
 
 
 ## How many lines `text` takes wrapped to `max_w` px at FONT_SIZE.
