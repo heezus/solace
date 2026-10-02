@@ -521,6 +521,24 @@ func _hover_info(p: Vector2i, name: String) -> void:
 	await _shot(name)
 
 
+func _diag(tag: String) -> void:
+	var s = main.state
+	var cu := _tiles_of("copper_hills")
+	var tin := _tiles_of("tin_stream")
+	var cu_seen := cu.filter(func(p): return s.fog.is_revealed(p)).size()
+	var tin_seen := tin.filter(func(p): return s.fog.is_revealed(p)).size()
+	var roads := 0
+	var east_road_x := -1
+	for p in s.world.roads:
+		roads += 1
+		east_road_x = maxi(east_road_x, p.x)
+	_say("DIAG %s: world %dx%d stone_width=%d camp=%s grown=%s copper=%d (seen %d) tin=%d (seen %d) roads=%d east-most road x=%d bridge_unlocked=%s" % [tag, s.world.width, s.world.height, s.world.stone_width, s.world.camp_pos, s.world.is_grown(), cu.size(), cu_seen, tin.size(), tin_seen, roads, east_road_x, str(s.town.unlocked("bridge"))])
+	if not cu.is_empty():
+		_say("DIAG copper nearest tile %s" % str(cu[0]))
+	if not tin.is_empty():
+		_say("DIAG tin first tile %s" % str(tin[0]))
+
+
 func _bronze_phase() -> void:
 	var s = main.state
 	_say("BRONZE: handing the town to the bot until Bronze Dawn")
@@ -566,6 +584,16 @@ func _bronze_phase() -> void:
 			shots += 1
 			_say("BRONZE +%.0f s: inv=%s mines=%d" % [since, str(s.economy.inv), s.town.buildings.filter(func(b): return b["type"] == "mine").size()])
 			await _shot("era2_%03d_s" % int(since))
+			if shots in [1, 6, 11] or since > 1190:
+				_diag("+%.0f" % since)
+				for i in 3:
+					_wheel(Vector2(500, 400), false)
+				main.center_on(Vector2i(s.world.stone_width + 6, s.world.height / 2))
+				await _wait(0.3)
+				await _shot("east_overview_%03d" % int(since))
+				for i in 3:
+					_wheel(Vector2(500, 400), true)
+				main.center_on(s.world.camp_pos)
 			if since >= 60 and not opened:
 				opened = true
 				_key(KEY_T)
