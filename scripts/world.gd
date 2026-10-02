@@ -27,6 +27,7 @@ var tiles: Array = []  # flat array of tile ids, index = y * width + x
 var camp_pos := Vector2i.ZERO
 var shard_pos := Vector2i(-1, -1)
 var roads: Dictionary = {}  # Vector2i -> true (a bridge is a road over the river)
+var stone_bridges: Dictionary = {}  # Vector2i -> true, the bridges among them that are stone (they bear carts)
 var fields: Dictionary = {}  # Vector2i -> true, grain tiles that were sown
 
 
@@ -130,6 +131,18 @@ func add_road(p: Vector2i) -> void:
 
 func remove_road(p: Vector2i) -> void:
 	roads.erase(p)
+	stone_bridges.erase(p)
+
+
+## Lay a stone bridge at p: a road over the river that is also remembered as stone.
+func add_stone_bridge(p: Vector2i) -> void:
+	roads[p] = true
+	stone_bridges[p] = true
+
+
+## True for a river tile with a Wooden Bridge on it: a road the Kith cross but a cart does not.
+func is_wooden_bridge(p: Vector2i) -> bool:
+	return roads.has(p) and not stone_bridges.has(p) and tile_at(p) == "river"
 
 
 ## Sow a field at p: the tile becomes grain and is remembered as sown.
@@ -159,6 +172,7 @@ func to_dict() -> Dictionary:
 		"camp_pos": Codec.vec(camp_pos),
 		"shard_pos": Codec.vec(shard_pos),
 		"roads": Codec.vec_keys(roads),
+		"stone_bridges": Codec.vec_keys(stone_bridges),
 		"fields": Codec.vec_keys(fields),
 	}
 
@@ -176,4 +190,5 @@ func from_dict(d: Dictionary) -> void:
 	camp_pos = Codec.to_vec(d.get("camp_pos", [0, 0]))
 	shard_pos = Codec.to_vec(d.get("shard_pos", [-1, -1]))
 	roads = Codec.to_vec_set(d.get("roads", []))
+	stone_bridges = Codec.to_vec_set(d.get("stone_bridges", []))
 	fields = Codec.to_vec_set(d.get("fields", []))

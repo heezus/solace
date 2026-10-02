@@ -8,6 +8,7 @@ extends RefCounted
 const Data = preload("res://scripts/data.gd")
 const Ranks = preload("res://scripts/ranks.gd")
 const Buildings = preload("res://scripts/buildings.gd")
+const Kith = preload("res://scripts/kith.gd")
 
 
 ## The bonuses at work on building b now, for `item` (yield bonuses name the item they apply to):
@@ -41,12 +42,20 @@ static func active(s, b: Dictionary, item: String) -> Array:
 
 ## Checks that depend on the building itself: its worker's tool, a Standing Stone nearby.
 static func _applies(s, b: Dictionary, id: String) -> bool:
+	if Data.BONUSES[id].has("tool"):
+		return b["worker"] >= 0 and Kith.tool_of(s.people.kith[b["worker"]]) == Data.BONUSES[id]["tool"]
 	match id:
-		"tools":
-			return b["worker"] >= 0 and s.people.kith[b["worker"]].get("tool", 0) > 0
 		"standing_stone":
 			return s.town.in_range_of("aura", b["pos"])
 	return true
+
+
+## The Speed a tool item gives its worker, as a share (0.5 for Flint Tools).
+static func tool_bonus(id: String) -> float:
+	for bonus in Data.BONUSES.values():
+		if bonus.get("tool", "") == id:
+			return bonus["add"]
+	return 0.0
 
 
 ## 1 + the sum of a group's bonuses.
@@ -87,7 +96,7 @@ static func text(s, b: Dictionary) -> String:
 	var parts := active(s, b, "")
 	var base: float = 60.0 / def["time"]
 	var unit := "jobs/min"
-	if def["kind"] == "processor":
+	if def["kind"] == "processor" and not Buildings.recipe_out(b).is_empty():
 		var out := Buildings.recipe_out(b)
 		var made := 0
 		for id in out:

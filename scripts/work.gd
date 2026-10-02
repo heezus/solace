@@ -32,10 +32,11 @@ static func bundle_size(s, b: Dictionary, item: String) -> int:
 ## quarter to Fields, paid out as whole items as the building's share builds up.
 static func harvest_amount(s, b: Dictionary, tile: Vector2i, item: String) -> int:
 	var n := bundle_size(s, b, item)
-	var more := 0.0  # a Field's extra yield, as a share of the bundle: Calendar and the Plough add up
+	var more := 0.0  # a Field's extra yield, as a share of the bundle: Calendar, the Plough and the Ploughshare add up
 	if s.world.fields.has(tile):
 		more += Data.CALENDAR_FIELD_BONUS if s.tech_tree.researched.has("calendar") else 0.0
 		more += Data.PLOUGH_FIELD_BONUS if s.tech_tree.researched.has("plough") else 0.0
+		more += Data.PLOUGHSHARE_FIELD_BONUS if s.tech_tree.researched.has("bronze_ploughshare") else 0.0
 	if more > 0.0:
 		b["field_extra"] = b.get("field_extra", 0.0) + n * more
 		if b["field_extra"] >= 1.0:
@@ -57,12 +58,12 @@ static func progress_frac(s, b: Dictionary) -> float:
 
 ## A workshop's cycle is done: it uses its inputs and makes its goods.
 static func finish_cycle(s, b: Dictionary) -> void:
-	var def: Dictionary = Data.BUILDINGS[b["type"]]
 	b["progress"] = 0.0
 	s.people.wear(b)
-	for id in def["in"]:
-		b["inbuf"][id] -= def["in"][id]
-		s.economy.note(id, -def["in"][id], b["type"])
+	var used := Buildings.recipe_in(b)
+	for id in used:
+		b["inbuf"][id] -= used[id]
+		s.economy.note(id, -used[id], b["type"])
 	var made := Buildings.recipe_out(b)
 	var more := Bonuses.output(s, b)
 	for id in made:

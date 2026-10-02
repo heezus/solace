@@ -79,7 +79,9 @@ func add_kith() -> void:
 		"carry": {},
 		"task": {},
 		"seen": Vector2i(-99, -99),  # the tile they last lifted the fog around
-		"tool": 0,  # jobs left on the Flint Tool they hold, 0 for none
+		"tool": 0,  # jobs left on the tool they hold, 0 for none
+		"tool_id": "",  # which tool it is (Data.TOOL_ITEMS), "" for none
+		"cart": false,  # a hauler pushing a cart (see Buildings.carts_allowed): it carries more but walks roads only
 		"trip": false,  # a hut worker out on a clicked trip, carrying the bundle to the stockpile
 		"name": _next_name(),
 	}
@@ -198,11 +200,15 @@ func assign_jobs() -> void:
 			if b[slot] < 0 and not _staff(i, b, slot):
 				out_of_hands = true
 				break
+	var carts := _town.carts_allowed()  # the first haulers in the list push the carts
 	for k in kith:
 		if k["job"] == "" and _research.unlocked("haulers"):
 			drop_task(k)  # a forager hands in what they carry
 			k["job"] = "haul"
 			k["phase"] = ""
+		k["cart"] = k["job"] == "haul" and carts > 0
+		if k["cart"]:
+			carts -= 1
 
 
 ## Send the first idle person (else the first hauler) to building `i`, to fill its place `slot`. False when
@@ -295,12 +301,29 @@ func worker_home(b: Dictionary) -> bool:
 # --- Tools -------------------------------------------------------------------
 
 
-## A worker without a tool takes one from the stockpile.
+## A worker without a tool takes the best one from the stockpile (Bronze Tools before Flint Tools).
 func equip(k: Dictionary) -> void:
-	if k["tool"] <= 0 and _economy.inv.get("flint_tools", 0) > 0:
-		_economy.pay({"flint_tools": 1})
-		_economy.note("flint_tools", -1, Data.FLOW_TOOL_SOURCE)
-		k["tool"] = Data.TOOL_JOBS
+	if k["tool"] > 0:
+		return
+	for id in Data.TOOL_ITEMS:
+		if _economy.inv.get(id, 0) > 0:
+			_economy.pay({id: 1})
+			_economy.note(id, -1, Data.FLOW_TOOL_SOURCE)
+			k["tool"] = tool_jobs(id)
+			k["tool_id"] = id
+			return
+
+
+## How many jobs a new tool of `id` lasts.
+static func tool_jobs(id: String) -> int:
+	return Data.BRONZE_TOOL_JOBS if id == "bronze_tools" else Data.TOOL_JOBS
+
+
+## The tool a worker holds: its item id, "" for none. A save from before Bronze Tools holds a Flint Tool.
+static func tool_of(k: Dictionary) -> String:
+	if k["tool"] <= 0:
+		return ""
+	return String(k.get("tool_id", "")) if k.get("tool_id", "") != "" else "flint_tools"
 
 
 ## One job done: the worker's tool wears a little, and they pick up a new one when it breaks.
@@ -309,9 +332,11 @@ func wear(b: Dictionary) -> void:
 		return
 	var k: Dictionary = kith[b["worker"]]
 	if k["tool"] > 0:
+		var id := tool_of(k)
 		k["tool"] -= 1
 		if k["tool"] == 0:
-			announce.emit("A Flint Tool wore out")
+			k["tool_id"] = ""
+			announce.emit(Data.TOOL_WORE_OUT % Data.ITEMS[id]["one"])
 	equip(k)
 
 
@@ -489,6 +514,8 @@ static func _person_from_dict(d: Dictionary) -> Dictionary:
 	k["carry"] = Codec.int_dict(d["carry"])
 	for key in ["building", "tool"]:
 		k[key] = int(d[key])
+	k["tool_id"] = String(d.get("tool_id", "flint_tools" if int(d["tool"]) > 0 else ""))  # older saves: flint
+	k["cart"] = bool(d.get("cart", false))
 	k["timer"] = float(d["timer"])
 	k["task"] = _int_task(k["task"])
 	return k
