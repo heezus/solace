@@ -31,16 +31,18 @@ const START_BERRIES := 10
 ## this many seconds at the current eating rate, and comes down again once it would last FOOD_CLEAR_SECONDS.
 const FOOD_WARN_SECONDS := 120.0
 const FOOD_CLEAR_SECONDS := 180.0
-## Famine: once the warning is up and the food would run out within this many seconds, Kith with nothing to do
-## forage by themselves (see scripts/forage.gd) until the warning comes down again.
-const FOOD_FAMINE_SECONDS := 60.0
+## Famine: once the food would run out within this many seconds, Kith with nothing to do forage by themselves (see
+## scripts/forage.gd), until it would last FOOD_FORAGE_END_SECONDS. It starts with the warning, or from FORAGE_OPENING_SECONDS
+## into the game: the opening is the player's own, hand-gathering the starting berries.
+const FOOD_FAMINE_SECONDS := 200.0
+const FORAGE_OPENING_SECONDS := 120.0
 ## ...and they stop once it would last this long (well past FOOD_CLEAR_SECONDS, so the famine does not flicker on and off).
 const FOOD_FORAGE_END_SECONDS := 300.0
 ## A forager picks FORAGE_YIELD of FORAGE_ITEM, FORAGE_TIME seconds a pick, from a bush within FORAGE_RADIUS tiles of the
 ## Hearth, and walks it to the nearest stockpile. A slow trickle beside a hut, enough to keep the people fed and never
 ## enough to grow (foraged food is not steady income).
 const FORAGE_ITEM := "berries"
-const FORAGE_RADIUS := 12
+const FORAGE_RADIUS := 16
 const FORAGE_TIME := 4.0
 const FORAGE_YIELD := 2
 ## Food in the stockpile under this counts as short: a new hut that could work food or something else at the same

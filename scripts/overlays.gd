@@ -7,6 +7,7 @@ const Data = preload("res://scripts/data.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Rules = preload("res://scripts/rules.gd")
+const HutFocus = preload("res://scripts/hut_focus.gd")
 
 const TILE := 32.0
 const OUTLINE: Color = Art.OUTLINE
@@ -141,40 +142,71 @@ static func pill_text(alert: String) -> String:
 	return alert.split(":")[0]
 
 
-## Blocked buildings get a short alert pill under their tile, with a small pointer up to it. Neighbours never
-## overlap: a pill that would land on another goes a row lower (or above the tile), and none leaves the map.
-static func status_pills(ci: CanvasItem, s) -> void:
+## Where each blocked building's alert pill goes, as [{"building": index, "text", "rect"}], with an empty rect for a
+## building whose pill finds no room. A pill never overlaps another pill, a "click" badge, or any building (its own
+## included), and never leaves the map: it tries the row under its tile, then lower rows, then above it, each straight
+## under the tile first and then shifted sideways. When no spot is free it is left out, and the building draws a small
+## "!" instead; its alert is still on its card and on hover. (Playtest 5: a row of adjacent workshops stacked "Needs
+## Wood" and "Idle" over each other and over the next building.)
+static func pill_layout(s) -> Array:
 	var font := ThemeDB.fallback_font
 	var map := Rect2(Vector2.ZERO, Vector2(s.world.width, s.world.height) * TILE)
-	var placed: Array = []
+	var blocks: Array = []  # what a pill must stay off: every building, and every badge on the map
 	for b in s.town.buildings:
+		blocks.append(rect(b["pos"]))
+		if HutFocus.wants_click(s, b):
+			blocks.append(HutFocus.badge_rect(rect(b["pos"])))
+	var out: Array = []
+	for i in s.town.buildings.size():
+		var b: Dictionary = s.town.buildings[i]
 		if b["alert"] == "":
 			continue
 		var text := pill_text(b["alert"])
 		var r := rect(b["pos"])
 		var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, PILL_FONT).x + 12.0
 		var h := PILL_FONT + 8.0
-		var x := clampf(r.get_center().x - w / 2.0, map.position.x + 2.0, map.end.x - w - 2.0)
-		var pill := Rect2(x, r.end.y + 5.0, w, h)
-		for row in range(4):  # below the tile, then a row lower, then above it
-			var y: float = r.end.y + 5.0 + row * (h + 2.0) if row < 3 else r.position.y - 5.0 - h
-			var tries := Rect2(x, y, w, h)
-			if map.encloses(tries) and not placed.any(func(o): return o.grow(1.0).intersects(tries)):
-				pill = tries
+		var found := Rect2()
+		for row in range(7):  # three rows below, one above, then rows further below
+			var y: float = r.end.y + 5.0 + row * (h + 2.0) if row != 3 else r.position.y - 5.0 - h
+			for shift in [0.0, -0.6, 0.6, -1.2, 1.2, -1.8, 1.8]:
+				var x := clampf(r.get_center().x - w / 2.0 + shift * w, map.position.x + 2.0, map.end.x - w - 2.0)
+				var tries := Rect2(x, y, w, h)
+				if map.encloses(tries) and not blocks.any(func(o): return o.grow(1.0).intersects(tries)):
+					found = tries
+					break
+			if found.size.x > 0.0:
 				break
-		placed.append(pill)
+		if found.size.x > 0.0:
+			blocks.append(found)
+		out.append({"building": i, "text": text, "rect": found})
+	return out
+
+
+## Blocked buildings get a short alert pill with a small pointer up to (or down to) the tile (see pill_layout).
+static func status_pills(ci: CanvasItem, s) -> void:
+	for item in pill_layout(s):
+		var r := rect(s.town.buildings[item["building"]]["pos"])
+		var pill: Rect2 = item["rect"]
+		if pill.size.x <= 0.0:
+			var dot := r.position + Vector2(r.size.x - 4.0, r.size.y - 4.0)
+			ci.draw_circle(dot, 6.0, ALERT)
+			ci.draw_circle(dot, 6.0, OUTLINE, false, 2.0)
+			ci.draw_string(
+				ThemeDB.fallback_font, dot + Vector2(-2.5, 4.0), "!", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color.WHITE
+			)
+			continue
 		var below := pill.position.y > r.end.y
 		var edge := Vector2(r.get_center().x, r.end.y if below else r.position.y)
 		var tip := Vector2(
 			clampf(edge.x, pill.position.x + 8.0, pill.end.x - 8.0), pill.position.y if below else pill.end.y
 		)
-		if edge.distance_to(tip) > 8.0:
+		if edge.distance_to(tip) > 8.0 or absf(edge.x - tip.x) > 1.0:
 			ci.draw_line(edge, tip, OUTLINE, 2.0)
 		var dir := 1.0 if below else -1.0
 		ci.draw_colored_polygon(
 			PackedVector2Array([tip + Vector2(0, -5 * dir), tip + Vector2(-5, dir), tip + Vector2(5, dir)]), OUTLINE
 		)
-		Art.pill(ci, Vector2(pill.get_center().x, pill.position.y), text, ALERT, OUTLINE, PILL_FONT)
+		Art.pill(ci, Vector2(pill.get_center().x, pill.position.y), item["text"], ALERT, OUTLINE, PILL_FONT)
 
 
 ## The settlement: a dashed Kith-colored ring 6 tiles around the Hearth. Faint while playing,

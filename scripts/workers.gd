@@ -10,6 +10,7 @@ const Kith = preload("res://scripts/kith.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Work = preload("res://scripts/work.gd")
+const GrowthNote = preload("res://scripts/growth_note.gd")
 
 
 ## One step of a worker's day at their building.
@@ -206,12 +207,7 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 		return
 	if b["worker"] < 0:
 		s.town.set_status(
-			b,
-			(
-				"No %s yet: more %s needed (they grow with food and Dwellings)"
-				% [s.people.building_job(b), Data.PEOPLE["many"]]
-			),
-			"Idle: no free %s" % Data.PEOPLE["one"]
+			b, GrowthNote.waiting_for_kith(s, s.people.building_job(b)), "Idle: no free %s" % Data.PEOPLE["one"]
 		)
 		return
 	if not fed:
@@ -283,7 +279,12 @@ static func idle_reason(s, b: Dictionary, def: Dictionary) -> void:
 		for id in def["in"]:
 			if b["inbuf"].get(id, 0) + b["incoming"].get(id, 0) < def["in"][id] and s.economy.inv.get(id, 0) == 0:
 				how = "stockpile is out"
-	s.town.set_status(b, "Needs %s (%s)" % [", ".join(missing), how], "Needs " + ", ".join(missing))
+	var more := "" if auto else GrowthNote.hint(s)
+	s.town.set_status(
+		b,
+		"Needs %s (%s)" % [", ".join(missing), how] + (". " + more if more != "" else ""),
+		"Needs " + ", ".join(missing)
+	)
 
 
 ## After Paths & Haulers, what a building with no road link needs: "" once it's linked (or before).

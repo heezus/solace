@@ -16,12 +16,13 @@ var t  # the runner, tests/run_tests.gd
 
 func run(runner) -> void:
 	t = runner
-	test_the_famine_comes_with_the_warning_and_goes_well_after_it()
+	test_the_famine_comes_before_the_warning_and_goes_well_after_it()
 	test_foraged_food_is_not_income()
 	test_idle_kith_forage_and_the_food_recovers_without_growth()
 	test_a_waiting_hut_worker_forages_and_a_click_calls_them_back()
 	test_no_bush_in_reach_means_no_foraging()
 	test_a_forager_survives_a_save()
+	test_a_forager_can_be_given_a_job()
 
 
 ## A game on the standard test map with `stock` berries and nothing else to eat, the people all idle at the Hearth.
@@ -41,18 +42,19 @@ func _foragers(s: Sim) -> int:
 	return n
 
 
-func test_the_famine_comes_with_the_warning_and_goes_well_after_it() -> void:
+func test_the_famine_comes_before_the_warning_and_goes_well_after_it() -> void:
 	var e := Economy.new()
-	e.inv["berries"] = 12
-	e.food_credit = 0.0
 	var eat := 4 * Data.FOOD_PER_KITH_PER_SEC
-	t.check(e.feed(4, 0.1) and not e.low and not e.famine, "%.0f s of food: no warning yet" % (12.0 / eat))
-	e.inv["berries"] = int(eat * Data.FOOD_WARN_SECONDS) - 1
-	e.feed(4, 0.1)
-	t.check(e.low and not e.famine, "under the warning point: the warning is up, and no famine yet")
+	e.flows.clock = Data.FORAGE_OPENING_SECONDS + 1.0  # past the opening
+	e.inv["berries"] = int(eat * Data.FOOD_FORAGE_END_SECONDS) + 2
+	e.food_credit = 0.0
+	t.check(e.feed(4, 0.1) and not e.low and not e.famine, "plenty of food: no warning and no famine")
 	e.inv["berries"] = int(eat * Data.FOOD_FAMINE_SECONDS) - 1
 	e.feed(4, 0.1)
-	t.check(e.famine, "under the famine point: the famine is on")
+	t.check(e.famine and not e.low, "under the famine point the famine is on, before the warning")
+	e.inv["berries"] = int(eat * Data.FOOD_WARN_SECONDS) - 1
+	e.feed(4, 0.1)
+	t.check(e.low and e.famine, "under the warning point the warning is up as well")
 	e.inv["berries"] = int(eat * Data.FOOD_CLEAR_SECONDS) + 2
 	e.feed(4, 0.1)
 	t.check(not e.low and e.famine, "the warning comes down at its own point and the famine stays")
@@ -173,3 +175,29 @@ func test_a_forager_survives_a_save() -> void:
 		copy.economy.inv["berries"] >= before - 1 and copy.people.kith.size() == s.people.kith.size(),
 		"and the foraging carries on"
 	)
+
+
+## A forager who is then needed at a new building, or turned into a hauler, drops what they carry and goes on (this once
+## crashed: the forage task had no building to give back).
+func test_a_forager_can_be_given_a_job() -> void:
+	var s := _camp(3)
+	for _n in 3000:
+		s.tick(0.1)
+		if _foragers(s) == 3:
+			break
+	t.check(_foragers(s) == 3, "all three are out foraging")
+	s.tech_tree.researched["cordage"] = true
+	t.give(s, 100)
+	t.place_free(s, "twine_post", s.world.camp_pos + Vector2i(0, 3))
+	for _n in 20:
+		s.tick(0.1)
+	var worker: int = s.town.buildings[s.town.building_at[s.world.camp_pos + Vector2i(0, 3)]]["worker"]
+	t.check(worker >= 0 and s.people.kith[worker]["job"] == "work", "one of them took the new building")
+	t.check(not String(s.people.kith[worker]["phase"]).begins_with("forage"), "and stopped foraging")
+	s.tech_tree.researched["haulers"] = true
+	for _n in 20:
+		s.tick(0.1)
+	var hauling := 0
+	for k in s.people.kith:
+		hauling += 1 if k["job"] == "haul" else 0
+	t.check(hauling >= 1 and s.people.kith.size() == 3, "the rest became haulers (%d)" % hauling)

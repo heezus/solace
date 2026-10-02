@@ -240,7 +240,10 @@ static func click_text(s: Sim, b: Dictionary) -> String:
 		return ""
 	var kind: String = Data.BUILDINGS[b["type"]]["kind"]
 	if kind == "gatherer" and not Roads.automated(s, b):
-		return Data.TRIPS_HINT % [Data.PEOPLE["one"], b["trips"], Data.TRIP_QUEUE]
+		var hint: String = Data.TRIPS_HINT % [Data.PEOPLE["one"], b["trips"], Data.TRIP_QUEUE]
+		if HutFocus.click_can_wait(s, b):
+			hint = Data.TRIPS_FED % Data.PEOPLE["many"] + " " + hint
+		return hint
 	if b["rush_cd"] > 0.0:
 		return Data.RUSH_COOL % ceili(b["rush_cd"])
 	if Workers.can_rush(s, b):
