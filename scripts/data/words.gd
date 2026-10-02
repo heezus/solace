@@ -17,6 +17,7 @@ const DEMOLISH_LABEL := "Demolish"
 const CAMERA_HINT := "Arrows or WASD move the map, the wheel zooms, Home returns to the Hearth."
 const CARD_NEED_ITEMS := "Need more"  # when even the short form doesn't fit
 const CARD_DISCOVER := "Discover %s"  # a tech's name
+const CARD_DISCOVER_IT := "Discover it first"  # on a locked card whose tech has the card's own name
 
 # --- The tech board (scripts/tech_panel.gd, scripts/tech_board.gd). One verb for techs: Discover. ---
 const BOARD_TITLE := "Tech tree  ·  %s"  # an era's name
@@ -78,14 +79,67 @@ const STATE_LOCKED := "locked"
 # --- Era 2 (scripts/sim.gd, scripts/main.gd, scripts/tech_panel.gd) ---
 const LAND_GREW_EVENT := "The land opens to the east. Copper lies in the hills; tin is far off, to the north-east"
 const ERA_BANNER_TITLE := "BRONZE DAWN"
-const ERA_BANNER_TEXT := "The stone age ends. The land opens to the east, under fog.\nFar above Solace, something is falling."
-const TECH_UNBUILT := "Needs the next update"  # on a card and in the strip of a tech whose effect isn't built yet
+const ERA_BANNER_TEXT := (
+	"The stone age ends. The land opens to the east, under fog: copper lies in the hills, and tin is far off,"
+	+ " to the north-east. Press Look east at the edge of the map.\nFar above Solace, something is falling."
+)
+## The lasting pointer at the east edge of the map view (scripts/east_pointer.gd): the ore to look for, and the button.
+const LOOK_EAST := "Look east: %s >"  # "copper" or "tin"
+const LOOK_EAST_TIP := "Moves the view toward the %s, still under fog. Home brings it back to the Hearth."
+const LOOK_EAST_ORE := {"copper_hills": "copper", "tin_stream": "tin"}
+const TECH_UNBUILT := "Opens in a later age"  # on a card and in the strip of a tech that is not open to the Kith yet
 const ERA_TAB_TIP := "The %s tech tree"  # an era's name
 const ERA_TAB_LOCKED := "Opens when Bronze Dawn is discovered"
 const MINE_TIP := "A Mine standing on it digs without walking: it takes two Kith."
 const ORE_PLAIN_HINT := "Discover %s to read what lies in it."  # a tech's name
 const WORKER_CREW := "It takes %d %s to work: %d here."  # how many, many, how many are here
 const LOG_COUNT := "%s  x%d"  # a message, how many times in a row (Tally Sticks)
+
+const TOOL_WORE_OUT := "A %s wore out"  # a tool's name in the singular: "Flint Tool", "Bronze Tool"
+
+# --- Stage 2 of era 2: the Trading Post, the Wanderer, the era's end ---
+const TRADE_UNSET := "Choose what it gives and what it gets: click the lines below."
+const TRADE_UNSET_ALERT := "Set a swap"
+const TRADE_GIVES := "Gives: %s"  # an item's name, or TRADE_NONE
+const TRADE_GETS := "Gets: %s"
+const TRADE_NONE := "nothing yet"
+const TRADE_TIP := "Click to move on to the next good."
+
+## What the Kith log from a Watchtower, in three moods as the Wanderer comes nearer (scripts/sky.gd).
+const WANDERER_SIGHTINGS := [
+	[
+		"From the tower the Kith watch a new light rise in the east. It is small and warm, and they give it a name.",
+		"The Wanderer shows itself again at dusk, a little way along the sky. The children are allowed to stay up.",
+		"A pale light drifts over the hills tonight. The Kith say it is a good sign for the harvest.",
+	],
+	[
+		"The Wanderer is brighter than it was. It no longer moves like a star, and the watchers do not say so aloud.",
+		"Tonight the Wanderer cast a shadow. A few of the Kith slept outside to see it, and none of them slept.",
+		"The dogs will not look up when the Wanderer rises. Neither will the oldest of the Kith.",
+	],
+	[
+		"The Wanderer burns white now, with a tail like a torn banner. The birds have gone quiet.",
+		"The Wanderer is over the whole sky by midnight. The watchers keep their eyes on it and their hands on the rail.",
+		"It is lower. Everyone on the tower can see that it is lower.",
+	],
+]
+## The sky window on the map (scripts/sky_view.gd): what it says about the light, and the path Star Charts draws.
+const WANDERER_NAME := "The Wanderer"
+const WANDERER_STATES := ["a faint light", "a bright light", "a burning light"]  # by mood
+const WANDERER_PATH := "%s  ·  %d%% of the way"  # a state, how much of its path the Wanderer has crossed
+const WANDERER_TIP := "The new light in the sky. Star Charts draws its path, and it is getting closer."
+## What the Kith say when Sky Watch names the light (a story moment, scripts/main.gd shows it once).
+const WANDERER_NAMED_LINE := "The new light has a name now: the Wanderer. The Kith build a tower to watch it from."
+
+## The end of the era, when The Falling Star is discovered (scripts/era_card.gd).
+const ERA_END_TITLE := "THE FALLING STAR"
+const ERA_END_TEXT := (
+	"The Wanderer grows huge and bright over Solace, and the whole sky holds its breath.\n\n"
+	+ "It is not a star. It is coming down."
+)
+const ERA_END_BUTTON := "Keep building"
+const PROFILE_UNSAVED := "The Kith's story could not be kept for the next run."
+const ERA_END_NOTE := "The Kith go on. Whatever is coming, the Hearth still needs wood."
 
 # --- Messages (scripts/main.gd, scripts/messages.gd) ---
 const UNLOCKED_TOAST := "%s unlocked: %s tab"  # "Gatherer's Hut", "Gathering"
@@ -94,8 +148,8 @@ const LOG_TIP := "The last messages (L)"
 
 # --- The building panel (scripts/building_panel.gd) ---
 const WORKER_HERE := "%s works here."  # "Aro the Woodcutter"
-const WORKER_TOOL := "Their flint tool has %d uses left."
-const WORKER_NO_TOOL := "They have no flint tool: craft Flint Tools to work %d%% faster."
+const WORKER_TOOL := "Their %s has %d uses left."  # a tool's name in lower case ("flint tool"), uses
+const WORKER_NO_TOOL := "They have no %s: craft %s to work %d%% faster."  # "flint tool", "Flint Tools", the share
 const WORKER_NONE := "No one works here yet: waiting for a free %s."  # one
 const WORKER_PAUSED := "Paused: no %s works here."  # one
 const PACE_TRIP := "Each trip brings back %s."  # "6 Berries"

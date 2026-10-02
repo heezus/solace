@@ -214,7 +214,7 @@ func test_flour_reserve() -> void:
 	var techs := {}
 	var e := _empty(techs)
 	var keep := 0
-	for id in Data.TECHS:
+	for id in Rules.era_techs(1):  # a later era's techs keep nothing back until that era begins
 		if Rules.tech_enabled(id):
 			keep += Data.TECHS[id]["cost"].get("flour", 0)
 	t.check(keep > 0 and e.flour_reserve() == keep, "flour that research still needs is reserved")

@@ -91,7 +91,7 @@ func step(tick: bool) -> void:
 	clock += DT
 	_log_research()
 	clicks += DT * (CLICKS_LATE if s.tech_tree.researched.has("haulers") else CLICKS_EARLY)
-	if trace and fmod(clock, 60.0) < DT - 0.001:
+	if trace and fmod(clock + DT * 0.5, 60.0) < DT:
 		_trace()
 	clicks = minf(clicks, 4.0)
 	think -= DT
@@ -734,7 +734,7 @@ func _spare(item: String) -> int:
 
 ## True if a road on `p` fits in what we can spare.
 func _road_affordable(p: Vector2i) -> bool:
-	var cost: Dictionary = Rules.cost_at("road", s.world.tile_at(p))
+	var cost: Dictionary = Rules.cost_at("road", s.world.tile_at(p), s.tech_tree.researched.has("causeways"))
 	for id in cost:
 		if cost[id] > _spare(id):
 			return false

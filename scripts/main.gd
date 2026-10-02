@@ -23,8 +23,12 @@ const SidePanel = preload("res://scripts/side_panel.gd")
 const HoverText = preload("res://scripts/hover_text.gd")
 const Messages = preload("res://scripts/messages.gd")
 const ToastStack = preload("res://scripts/toast_stack.gd")
+const EastPointer = preload("res://scripts/east_pointer.gd")
+const Land = preload("res://scripts/land.gd")
 const MessageLog = preload("res://scripts/message_log.gd")
 const HutFocus = preload("res://scripts/hut_focus.gd")
+const EraCard = preload("res://scripts/era_card.gd")
+const Profile = preload("res://scripts/profile.gd")
 
 const TILE: float = Overlays.TILE
 const MAP_ORIGIN := Vector2.ZERO  # the node's transform pans and zooms the map
@@ -40,7 +44,7 @@ const KITH: Color = Ui.KITH
 const SIDE_W := 264.0
 const BAD: Color = Ui.BAD
 const GOAL_COLOR: Color = Ui.HIGHLIGHT
-const LINE_TYPES := ["road", "bridge", "field"]  # laid by dragging
+const LINE_TYPES := ["road", "bridge", "stone_bridge", "field"]  # laid by dragging
 const AURA_FILL := Color(0.55, 0.45, 0.6, 0.2)
 const NUDGE_TIME := 2.0  # seconds the "hold it down" hint stays after a click that let go too soon
 
@@ -63,6 +67,7 @@ var rubble: Array = []  # {pos: Vector2i, t: float}, torn-down buildings fading 
 
 var messages := Messages.new()
 var toasts: ToastStack
+var east_pointer: EastPointer  # the lasting pointer to the new land (after Bronze Dawn)
 var msg_log: MessageLog
 var told := {}  # warm lines already said (see _watch_flavor)
 var was_starving := false
@@ -71,6 +76,7 @@ var bottom_bar: BuildBar
 var side_panel: SidePanel
 var info_label: Label  # the side panel's hover text
 var tech_panel: TechPanel
+var era_card: EraCard  # the Falling Star's card, put up once
 var building_panel: BuildingPanel  # the selected building's card, docked in the side panel
 var banner_shown := false  # the Bronze Dawn banner has been shown
 var ui_refresh := 0.0
@@ -90,6 +96,7 @@ func _ready() -> void:
 	cam = Overlays.center(state.world.camp_pos)  # start looking at the Hearth
 	_build_ui()
 	state.tech_tree.tech_researched.connect(_on_tech_researched)
+	state.story.recorded.connect(_on_story)
 	_toast(Data.CAMP_TOAST % Data.PEOPLE["many"] + "\n" + Data.CAMERA_HINT, 9.0)  # one toast, low on the map
 
 
@@ -105,6 +112,8 @@ func _process(delta: float) -> void:
 				{"pos": at, "text": Data.BORN_POPUP % Data.PEOPLE["one"], "t": 0.0, "col": KITH.lightened(0.3)}
 			)
 			_toast(Data.BORN_TOAST % Data.PEOPLE["many"], 3.0)
+		elif e == Data.LAND_GREW_EVENT or e == Data.DISCOVERED_EVENT % Data.TECHS["bronze_dawn"]["name"]:
+			continue  # the dawn says all of this once, in its banner
 		else:
 			var style := Messages.style_of(e)
 			messages.push(e, style["seconds"], style["sticky"], style["key"])
@@ -174,9 +183,18 @@ func _layout() -> void:
 		)
 	position = (view.get_center() - cam * k).round()
 	Art.ui_k = 1.0 / k
+	if not east_pointer.target.is_empty():
+		east_pointer.place(view, screen_of(east_pointer.target["tile"]))
+	else:
+		east_pointer.visible = false
 	var rid := get_canvas_item()  # nothing is drawn outside the view
 	RenderingServer.canvas_item_set_clip(rid, true)
 	RenderingServer.canvas_item_set_custom_rect(rid, true, Rect2((view.position - position) / k, view.size / k))
+
+
+## The east pointer was pressed: put the way to the ore in view (the Home key's camera, aimed east).
+func _look_east(tile: Vector2i) -> void:
+	center_on(Land.look_east_at(state, tile))
 
 
 ## Put tile p in the middle of the view.
@@ -417,13 +435,16 @@ func _build_ui() -> void:
 	side_panel.setup(state, SIDE_W)
 	info_label = side_panel.info_label
 	building_panel = side_panel.building_panel
-	building_panel.demolish_pressed.connect(_demolish)
 	building_panel.closed.connect(func(): building_panel.select(Vector2i(-1, -1)))
 
 	# Toasts stack up from the bottom of the map (placed in _layout, so they never cover the bars); the log opens over the map.
 	toasts = ToastStack.new()
 	layer.add_child(toasts)
 	toasts.setup(messages)
+	east_pointer = EastPointer.new()
+	layer.add_child(east_pointer)
+	east_pointer.setup()
+	east_pointer.look.connect(_look_east)
 	msg_log = MessageLog.new()
 	layer.add_child(msg_log)
 	msg_log.setup(messages)
@@ -431,6 +452,10 @@ func _build_ui() -> void:
 	tech_panel = TechPanel.new()
 	layer.add_child(tech_panel)
 	tech_panel.setup(state)
+	era_card = EraCard.new()
+	layer.add_child(era_card)
+	era_card.setup()
+	era_card.closed.connect(func(): paused = false)
 
 
 func _refresh_ui() -> void:
@@ -438,8 +463,9 @@ func _refresh_ui() -> void:
 	bottom_bar.refresh(placing, state.tech_tree.ready_list().size())
 	tech_panel.refresh()
 	building_panel.refresh()
-
+	east_pointer.refresh(state)
 	side_panel.refresh_goals(state)
+	side_panel.sky_view.refresh()
 	side_panel.show_info("" if get_viewport().gui_get_hovered_control() != null else HoverText.text(self))
 
 
@@ -474,6 +500,16 @@ func _watch_flavor() -> void:
 	if not told.has("stock") and state.economy.inv.get(Data.FLAVOR_STOCK_ITEM, 0) >= Data.FLAVOR_STOCK_AMOUNT:
 		told["stock"] = true
 		_toast(Data.FLAVOR_STOCK, 5.0)
+
+
+## The story moments that do something on screen: the Falling Star ends the era with a card (the game waits behind it)
+## and goes into the profile, the save that outlives a run.
+func _on_story(id: String) -> void:
+	if id == "star_falling":
+		paused = true
+		era_card.open()
+		if not Profile.note_run(state):
+			_toast(Data.PROFILE_UNSAVED, 6.0)
 
 
 ## A discovery that unlocks buildings: their cards and tab glow, and a toast says where to find them.
@@ -599,7 +635,10 @@ func _draw() -> void:
 		elif placing == "road" and state.world.tile_at(hover) == "rock":
 			note = "Cut a pass · %s" % Ui.cost_text(Data.PASS_COST)
 		elif placing == "road" and state.world.tile_at(hover) == "tree":
-			note = "Fell the trees · %s" % Ui.cost_text(Data.BUILDINGS["road"]["cost"])
+			note = (
+				"Fell the trees · %s"
+				% Ui.cost_text(Rules.cost_at("road", "tree", state.tech_tree.researched.has("causeways")))
+			)
 		Overlays.placement_ghost(self, state, placing, hover, note)
 	elif state.world.in_bounds(hover) and not state.fog.is_revealed(hover):
 		var fr := _tile_rect(hover)
@@ -669,6 +708,8 @@ func _draw_building(b: Dictionary) -> void:
 	var r := Overlays.footprint(state, p)  # a tile, or the Hearth's 2x2
 	var working: bool = b["status"] == "Working"
 	Art.map_building(self, b["type"], r, working, time)
+	if b["type"] == "shard_cairn":
+		Art.cairn_glow(self, r, state.sky.approach(), time)
 	var tile := _tile_rect(p).grow(-2.0 * k)
 	if def["kind"] == "gatherer":
 		HutFocus.draw_marker(self, tile, b["focus"])
@@ -753,7 +794,9 @@ func _draw_rush(b: Dictionary, r: Rect2) -> void:
 
 
 func _draw_roads() -> void:
-	var dirt := Data.BUILDINGS["road"]["color"]
+	var dirt: Color = Data.BUILDINGS["road"]["color"]
+	if state.tech_tree.researched.has("causeways"):
+		dirt = dirt.lerp(Data.BUILDINGS["stone_bridge"]["color"], 0.7)  # the roads are laid in stone now
 	var k := TILE / Art.DESIGN
 	var seen := _visible_tiles()
 	for p in state.world.roads:
@@ -761,7 +804,7 @@ func _draw_roads() -> void:
 			continue
 		var c := _tile_center(p)
 		if state.world.tile_at(p) == "river":
-			var bridge := Art.sprite("tile_bridge_wood")
+			var bridge := Art.sprite("stone_bridge" if state.world.stone_bridges.has(p) else "tile_bridge_wood")
 			if bridge != null:
 				draw_texture_rect(bridge, _tile_rect(p), false)
 				continue

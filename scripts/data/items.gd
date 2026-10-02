@@ -13,13 +13,15 @@ const ITEMS := {
 	"charcoal": {"name": "Charcoal", "color": Color("2b2d42")},
 	"brick": {"name": "Brick", "color": Color("b5543a")},
 	"flour": {"name": "Flour", "color": Color("f1e3c8")},
-	"flint_tools": {"name": "Flint Tools", "short": "Tools", "color": Color("6c757d")},
+	"flint_tools": {"name": "Flint Tools", "one": "Flint Tool", "short": "Tools", "color": Color("6c757d")},
 	"fish": {"name": "Fish", "color": Color("5fa8d3")},
 	# Era 2 (Bronze Dawn). `era` marks an item the stone age never holds.
 	"copper_ore": {"name": "Copper Ore", "short": "Ore", "color": Color("a5683a"), "era": 2},
 	"tin": {"name": "Tin", "color": Color("c0c7cf"), "era": 2},
 	"copper": {"name": "Copper", "color": Color("b87333"), "era": 2},
 	"bronze": {"name": "Bronze", "color": Color("cd7f32"), "era": 2},
+	"bronze_tools":
+	{"name": "Bronze Tools", "one": "Bronze Tool", "short": "Tools", "color": Color("a0522d"), "era": 2},
 }
 
 ## Order items appear in the top bar.
@@ -41,6 +43,7 @@ const ITEM_ORDER := [
 	"tin",
 	"copper",
 	"bronze",
+	"bronze_tools",
 ]
 
 ## Food value of each edible item. The Kith eat from the stockpile.
@@ -57,4 +60,6 @@ const RECIPES := {
 	"rope": {"name": "Rope", "tech": "cordage", "in": {"fiber": 2}, "out": {"rope": 1}},
 	"flint_tools":
 	{"name": "Flint Tools", "tech": "knapping", "in": {"flint": 2, "wood": 2}, "out": {"flint_tools": 1}},
+	"bronze_tools":
+	{"name": "Bronze Tools", "tech": "bronze_tools", "in": {"bronze": 1, "wood": 2}, "out": {"bronze_tools": 1}},
 }

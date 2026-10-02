@@ -2,9 +2,8 @@ extends PanelContainer
 ## The selected building's details, docked in the side panel's Info section (never floating over the map, so
 ## it can't cover the tiles you want next): status, what it does, its recipe or what it gathers, the worker and
 ## their tool in plain words (the exact numbers are in a tooltip), what it holds, the trip to the stockpile, and
-## Collect, Pause and Demolish buttons, with an x to close it.
+## Collect and Pause buttons, with an x to close it. Tearing down is the one Demolish tool on the bottom bar.
 
-signal demolish_pressed(p: Vector2i)
 signal closed
 
 const Data = preload("res://scripts/data.gd")
@@ -15,9 +14,11 @@ const Bonuses = preload("res://scripts/bonuses.gd")
 const Workers = preload("res://scripts/workers.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Hands = preload("res://scripts/hands.gd")
+const Kith = preload("res://scripts/kith.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Work = preload("res://scripts/work.gd")
 const HutFocus = preload("res://scripts/hut_focus.gd")
+const TradePicker = preload("res://scripts/trade_picker.gd")
 
 const INSET := Color("3b2a24")  # the `ui-bar` cocoa, sunk into the `ui-panel` card
 
@@ -71,6 +72,12 @@ func setup(game: Sim) -> void:
 	v.add_child(focus)
 	v.move_child(focus, parts["recipe"].get_index())
 	parts["focus"] = focus
+	var trade := TradePicker.new()  # what a Trading Post swaps: two lines, a click on each changes it
+	trade.setup(game)
+	trade.changed.connect(refresh)
+	v.add_child(trade)
+	v.move_child(trade, parts["recipe"].get_index())
+	parts["trade"] = trade
 	parts["holding"] = Ui.label("", Ui.MIN_TEXT)
 	v.add_child(parts["holding"])
 	var bar := ProgressBar.new()
@@ -101,10 +108,6 @@ func setup(game: Sim) -> void:
 	pause.pressed.connect(_on_pause)
 	buttons.add_child(pause)
 	parts["pause"] = pause
-	var demolish := _button("Demolish", Ui.CARD, Ui.BAD)
-	demolish.pressed.connect(func(): demolish_pressed.emit(pos))
-	buttons.add_child(demolish)
-	parts["demolish"] = demolish
 
 
 ## The button row follows the card: shown while a building is selected, wherever it was docked.
@@ -186,6 +189,7 @@ func refresh() -> void:
 	parts["desc"].text = def["desc"]
 	parts["desc"].visible = def["kind"] not in ["gatherer", "processor"]  # what it gathers or makes says it better
 	parts["focus"].show_for(b)
+	parts["trade"].show_for(b)
 	parts["recipe"].text = recipe_text(state, b)
 	parts["recipe"].visible = parts["recipe"].text != ""
 	parts["worker"].text = worker_text(state, b)
@@ -212,13 +216,6 @@ func refresh() -> void:
 	var pause: Button = parts["pause"]
 	pause.visible = Buildings.needs_worker(b)
 	pause.text = "Resume" if b["paused"] else "Pause"
-	var demolish: Button = parts["demolish"]
-	demolish.disabled = def["kind"] == "camp"
-	demolish.tooltip_text = (
-		"The Hearth stays: it's the heart of the settlement."
-		if def["kind"] == "camp"
-		else "Tear it down for half its cost back (X)."
-	)
 
 
 ## "3 Fiber → 1 Rope / 4 s" for a workshop, what's in reach for a hut.
@@ -226,8 +223,12 @@ static func recipe_text(s: Sim, b: Dictionary) -> String:
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
 	match def["kind"]:
 		"processor":
-			var ins := Ui.cost_text(def["in"]) if not def["in"].is_empty() else "nothing"
-			return "%s → %s / %s s" % [ins, Ui.cost_text(def["out"]), str(snappedf(Work.time(s, b), 0.1))]
+			if def.get("trade", false) and not Buildings.is_trading(b):
+				return ""
+			var used := Buildings.recipe_in(b)
+			var ins := Ui.cost_text(used) if not used.is_empty() else "nothing"
+			var made := Buildings.recipe_out(b)
+			return "%s → %s / %s s" % [ins, Ui.cost_text(made), str(snappedf(Work.time(s, b), 0.1))]
 		"gatherer":
 			return gather_text(s, s.town.focus_tiles(b), true)
 	return ""
@@ -262,9 +263,13 @@ static func worker_text(s: Sim, b: Dictionary) -> String:
 		var here := Buildings.crew_slots(b).filter(func(slot): return b[slot] >= 0).size()
 		who += " " + Data.WORKER_CREW % [Buildings.crew_size(b), Data.PEOPLE["many"], here]
 	if k["tool"] > 0:
-		return who + " " + Data.WORKER_TOOL % k["tool"]
-	if Hands.recipe_unlocked(s, "flint_tools"):
-		return who + " " + Data.WORKER_NO_TOOL % roundi(Data.BONUSES["tools"]["add"] * 100.0)
+		var tool_name: String = Data.ITEMS[Kith.tool_of(k)]["one"]
+		return who + " " + Data.WORKER_TOOL % [tool_name.to_lower(), k["tool"]]
+	for id in Data.TOOL_ITEMS:  # the best tool they could be given
+		if Hands.recipe_unlocked(s, id):
+			var one: String = Data.ITEMS[id]["one"]
+			var share := roundi(Bonuses.tool_bonus(id) * 100.0)
+			return who + " " + Data.WORKER_NO_TOOL % [one.to_lower(), Data.ITEMS[id]["name"], share]
 	return who
 
 
@@ -281,12 +286,15 @@ static func pace_text(s: Sim, b: Dictionary) -> String:
 			lines.append(Data.PACE_TRIP % ("%d %s" % [Work.bundle_size(s, b, item), Data.ITEMS[item]["name"]]))
 		lines.append(Data.PACE_WORK % str(snappedf(Work.time(s, b), 0.1)))
 	else:
+		var out := Buildings.recipe_out(b)
+		if out.is_empty():
+			return ""
 		var made := 0
-		for id in def["out"]:
-			made += def["out"][id]
+		for id in out:
+			made += out[id]
 		var per_min := 60.0 / Work.time(s, b) * made
 		lines.append(
-			Data.PACE_MAKES % [str(snappedf(per_min, 0.1)).trim_suffix(".0"), Data.ITEMS[def["out"].keys()[0]]["name"]]
+			Data.PACE_MAKES % [str(snappedf(per_min, 0.1)).trim_suffix(".0"), Data.ITEMS[out.keys()[0]]["name"]]
 		)
 	var boosts: Array = []
 	for bonus in Bonuses.active(s, b, ""):

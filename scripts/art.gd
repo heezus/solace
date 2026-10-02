@@ -290,6 +290,22 @@ static func feature(ci: CanvasItem, t: String, c: Vector2, p: Vector2i, time: fl
 			outlined_poly(ci, pts, Color("bdf4ff"))
 
 
+## The Shard Cairn's glow, brighter as the Wanderer comes nearer (`approach`, 0 to 1): nothing until Sky Watch has
+## named the light. Only flavor, drawn over the cairn's own sprite.
+static func cairn_glow(ci: CanvasItem, r: Rect2, approach: float, time: float) -> void:
+	if approach <= 0.0:
+		return
+	var radius := r.size.x * (0.6 + 0.5 * approach)
+	ci.draw_circle(r.get_center(), radius, Color(STONE_GLOW, cairn_glow_alpha(approach, time)))
+
+
+## How strong the cairn's glow is: 0 until the light is named, brighter as it nears, with a slow pulse.
+static func cairn_glow_alpha(approach: float, time: float) -> float:
+	if approach <= 0.0:
+		return 0.0
+	return (0.1 + 0.3 * clampf(approach, 0.0, 1.0)) * (0.8 + 0.2 * sin(time * 2.0))
+
+
 ## A building drawn in `r` (a tile, or the Hearth's 2x2): its SVG sprite at native scale (the sprite brings its own
 ## plate), or a plain plate in the building's color when it has none. `working` adds the charcoal pit's smoke.
 static func map_building(ci: CanvasItem, type: String, r: Rect2, working: bool, time: float) -> void:

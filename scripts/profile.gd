@@ -10,7 +10,7 @@ extends RefCounted
 ## The profile is its own file (PATH), apart from the run save (scripts/run_save.gd): a run save holds no
 ## profile data and the profile holds no run data (no map, stockpile, buildings, people or research).
 ## A missing or corrupt file gives an empty profile and prints nothing. No faction words are spelled here.
-## Nothing reads the profile yet: it does not change how a game starts or plays.
+## Nothing reads the profile to change how a game starts or plays. A run writes to it only at an ending (note_run).
 
 const VERSION := 1
 const PATH := "user://profile.json"
@@ -39,6 +39,20 @@ func merge(story_ids: Array, item_ids: Array) -> void:
 
 func knows(item: String) -> bool:
 	return item in knowledge
+
+
+## True when the story moment `id` (Data.STORY_EVENTS) has happened in any run.
+func has_story(id: String) -> bool:
+	return id in chronicle
+
+
+## Fold the run in `s` into the profile saved at `path` (a missing or corrupt file is an empty one) and write it back.
+## False when the file could not be written. The run save is not touched.
+static func note_run(s, path: String = PATH) -> bool:
+	var profile := new()
+	profile.load_file(path)
+	profile.absorb(s)
+	return profile.save(path)
 
 
 func to_dict() -> Dictionary:

@@ -62,15 +62,16 @@ static func draw_all(ci: CanvasItem, s, time: float) -> void:
 			at.y += sin(time * 12.0 + at.x) * 2.25
 		elif spot["working"]:
 			at.y += absf(sin(time * 5.0 + i)) * -3.0  # a little hop while it works
-		draw_one(ci, at, k["job"] == "haul")
+		draw_one(ci, at, k["job"] == "haul", k.get("cart", false))
 		var above := at + Vector2(-10, -SPRITE * 1.08)  # over the head
 		for id in k["carry"]:
 			Art.item_icon(ci, id, Rect2(above, Vector2(20, 20)), 1.0)
 
 
-## One Kith standing at `at` (the middle of its feet): its shadow, body and head. A hauler is a shade lighter.
-static func draw_one(ci: CanvasItem, at: Vector2, hauler: bool) -> void:
-	var tex := Art.sprite("hauler" if hauler else "kith")
+## One Kith standing at `at` (the middle of its feet): its shadow, body and head. A hauler is a shade lighter, and
+## one pushing a cart is drawn with it.
+static func draw_one(ci: CanvasItem, at: Vector2, hauler: bool, cart := false) -> void:
+	var tex := Art.sprite("cart" if cart else ("hauler" if hauler else "kith"))
 	if tex != null:
 		ci.draw_texture_rect(tex, Rect2(at - Vector2(SPRITE / 2.0, SPRITE * 0.78), Vector2(SPRITE, SPRITE)), false)
 		return

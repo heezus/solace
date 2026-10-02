@@ -447,13 +447,7 @@ func _era_two_script() -> void:
 	_then(
 		func():
 			var locked: Array = Rules.era_techs(2).filter(func(t): return not Rules.tech_enabled(t))
-			_expect(locked.size() == 9, "the second board has %d locked techs, not 9" % locked.size())
-			for tech in locked:
-				_click_card(tech)
-				_expect(
-					not s.tech_tree.researched.has(tech) and s.tech_tree.goal != tech,
-					"a click on %s, which needs the next update, did something" % tech
-				)
+			_expect(locked.is_empty(), "the second board has %d locked techs, not none" % locked.size())
 			_click_control(main.tech_panel.era_buttons[1])
 			_expect(main.tech_panel.board.era == 1, "the stone age tab didn't show the stone age")
 			_click_control(main.tech_panel.era_buttons[2])

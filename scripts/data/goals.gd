@@ -9,12 +9,16 @@ const STORY_EVENTS := {
 	"shard_found": "The Strange Stone was found",
 	"haulers": "The Kith began to carry for each other",
 	"bronze_dawn": "The stone age ended",
+	"wanderer_named": "The new light in the sky was named the Wanderer",
+	"star_falling": "The Wanderer was seen to fall",
 }
 
 ## Techs that are story moments: tech id -> the STORY_EVENTS id the Story block records when it is researched.
 const STORY_TECHS := {
 	"haulers": "haulers",
 	"bronze_dawn": "bronze_dawn",
+	"sky_watch": "wanderer_named",
+	"falling_star": "star_falling",
 }
 
 ## The opening checklist. A goal with `tech` or `building` is met once that is researched or built;
@@ -23,6 +27,8 @@ const STORY_TECHS := {
 ## The Goals panel's header: goals done, goals in all. The done ones list under it on hover.
 const GOALS_HEADER := "Goals %d/%d"
 const GOALS_ALL_DONE := "All goals done."
+## The same header once Bronze Dawn is discovered, over the era's own list (GOALS_ERA2).
+const GOALS_HEADER_ERA2 := "Dawn goals %d/%d"
 
 const GOALS := [
 	{"id": "learn_wood", "text": "Hold the mouse on trees to gather Wood, until a Kith learns it (10 harvests)"},
@@ -75,4 +81,27 @@ const GOALS := [
 	{"id": "storehouse", "text": "Discover Storehouse and build one by far workshops", "building": "storehouse"},
 	{"id": "calendar", "text": "Discover Calendar: Farming, plus Storytelling or Megaliths", "tech": "calendar"},
 	{"id": "bronze", "text": "Discover Bronze Dawn", "tech": "bronze_dawn"},
+]
+
+## The second era's checklist: it takes over from GOALS once Bronze Dawn is discovered, and its goals count in any order.
+## A goal with `tech` is met once that is researched, one with `building` once one stands; Story.goal_met() checks the
+## rest by id (the ore is found when its tile is out of the fog).
+const GOALS_ERA2 := [
+	{"id": "prospecting", "text": "Discover Prospecting: it names the ore in the new land", "tech": "prospecting"},
+	{"id": "find_copper", "text": "Find copper in the east: lay roads east, and press Look east to see the way"},
+	{"id": "copper_road", "text": "Lay a road to the copper hills"},
+	{
+		"id": "mine",
+		"text": "Discover Mining, then build a Mine on the copper hills (it takes two Kith)",
+		"building": "mine"
+	},
+	{"id": "smelting", "text": "Discover Smelting", "tech": "smelting"},
+	{"id": "smelter", "text": "Build a Smelter: Copper Ore and Charcoal make Copper", "building": "smelter"},
+	{"id": "find_tin", "text": "Find tin: it lies far off, to the north-east"},
+	{
+		"id": "crucible",
+		"text": "Discover Alloying, then build a Crucible: Copper and Tin make Bronze",
+		"building": "crucible"
+	},
+	{"id": "first_bronze", "text": "Make the first Bronze"},
 ]

@@ -46,6 +46,7 @@ var hud_checks := 0  # how many HUD checks ran
 var base := {}  # the top bar's height and the map's place before the stress cases
 var saved := {}  # the stockpile as it was, put back after them
 var row_at: Array = []  # the buildings placed by hand for the badge check
+var goals_height := 0.0  # the Goals list's height before a card opens
 var frozen := false  # the bot's ticking is paused while a check sets the state by hand
 
 
@@ -121,6 +122,11 @@ func _era_two_checks() -> void:
 			problems.append("Bronze Dawn showed no banner")
 		if "win_overlay" in main:
 			problems.append("a win overlay is still there: the game goes on after Bronze Dawn")
+		var dawn_lines: Array = main.messages.history.filter(
+			func(m): return m["text"].to_lower().contains("bronze dawn") or m["text"].contains("land opens")
+		)
+		if dawn_lines.size() != 1:
+			problems.append("the dawn told the player %d times (want one banner): %s" % [dawn_lines.size(), dawn_lines])
 	if frame == dawn_frame + 60:
 		frozen = true
 		main.tech_panel.era_chosen = false
@@ -130,6 +136,8 @@ func _era_two_checks() -> void:
 		_check_era_board()
 		main.tech_panel.visible = false
 		frozen = false
+	if frame == dawn_frame + 70:
+		_check_east_pointer()
 	if frame > dawn_frame + 6 and frame % 25 == 0:
 		_check_top_bar_text("in the second era, frame %d" % frame)
 		_check_fit("in the second era, frame %d" % frame)
@@ -155,8 +163,8 @@ func _check_era_board() -> void:
 			problems.append("%s has no card on the second board" % tech)
 		if Data.TECHS[tech].get("stage", 1) > Data.BUILT_STAGE:
 			locked += 1
-	if locked != 9:
-		problems.append("the second board has %d techs for the next update, not nine" % locked)
+	if locked != 0:
+		problems.append("the second board has %d techs for the next update, not none" % locked)
 
 
 func _check() -> void:
@@ -209,10 +217,19 @@ func _check() -> void:
 ## The HUD checks, on fixed frames. Those that set the state by hand freeze the bot for a frame or two.
 func _hud_checks() -> void:
 	match frame:
+		7:
+			goals_height = _goals_height()
 		8:
 			frozen = true
 			_show_hearth_panel()
 		10:
+			if _goals_height() != goals_height:
+				problems.append(
+					(
+						"the Goals list went %.0f -> %.0f px tall when the Info card opened"
+						% [goals_height, _goals_height()]
+					)
+				)
 			_check_hearth_blurb_once()
 			_check_empty_tile_info()
 			_check_card_is_docked("the Hearth's card")
@@ -468,13 +485,42 @@ func _show_hut_panel_with_a_wall_of_text() -> void:
 	main.building_panel.parts["desc"].text = WALL.repeat(4)
 
 
-## Collect, Pause and Demolish stay on the side panel and above the bottom bar, however tall the card is.
+## The lasting pointer at the east edge: shown while there is ore to look for out of view, inside the map view, in readable
+## text, and one press moves the camera east (the Hearth's Home key brings it back).
+func _check_east_pointer() -> void:
+	hud_checks += 1
+	var pointer = main.east_pointer
+	if pointer.target.is_empty():
+		return  # both ores are already in sight
+	var tile: Vector2i = pointer.target["tile"]
+	if main.view.has_point(main.screen_of(tile)):
+		if pointer.visible:
+			problems.append("the east pointer shows although the ore is in view")
+		return
+	if not pointer.visible:
+		problems.append("no east pointer while the %s is out of view" % pointer.target["ore"])
+		return
+	if not main.view.encloses(pointer.get_global_rect()):
+		problems.append("the east pointer %s runs out of the map view %s" % [pointer.get_global_rect(), main.view])
+	if pointer.get_theme_font_size("font_size") < 14 or not pointer.text.begins_with("Look east"):
+		problems.append(
+			'the east pointer reads "%s" at %d px' % [pointer.text, pointer.get_theme_font_size("font_size")]
+		)
+	var before: float = main.cam.x
+	pointer.pressed.emit()
+	main._layout()
+	if main.cam.x <= before:
+		problems.append("Look east did not move the view east (%.0f -> %.0f)" % [before, main.cam.x])
+	main.center_on(main.state.world.camp_pos)  # back to the Hearth, as the Home key does
+
+
+## Collect and Pause stay on the side panel and above the bottom bar, however tall the card is.
 func _check_card_buttons(what: String) -> void:
 	hud_checks += 1
 	var side: Rect2 = main.side_panel.get_global_rect()
 	var bottom: Rect2 = main.bottom_bar.get_global_rect()
 	var seen := 0
-	for key in ["collect", "pause", "demolish"]:
+	for key in ["collect", "pause"]:
 		var b: Button = main.building_panel.parts[key]
 		if not b.is_visible_in_tree():
 			continue
@@ -484,8 +530,16 @@ func _check_card_buttons(what: String) -> void:
 			problems.append(
 				"%s: the %s button (%s) isn't reachable (side panel %s, bottom bar %s)" % [what, key, r, side, bottom]
 			)
-	if seen < 2:
-		problems.append("%s: only %d card buttons showed (want Pause and Demolish)" % [what, seen])
+	if seen < 1:
+		problems.append("%s: no card button showed (want Pause)" % what)
+	if main.building_panel.parts.has("demolish"):
+		problems.append("%s: the card has a second Demolish button (the bottom bar's is the one)" % what)
+
+
+## How tall the Goals list is: from the top of the side panel to the rule under the last goal line.
+func _goals_height() -> float:
+	var last: Label = main.side_panel.goal_labels[main.side_panel.goal_labels.size() - 1]
+	return last.get_global_rect().end.y - main.side_panel.goal_header.get_global_rect().position.y
 
 
 func _show_hearth_panel() -> void:

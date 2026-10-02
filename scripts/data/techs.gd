@@ -37,7 +37,7 @@ const TIER_NAMES := ["TIER I", "TIER II", "TIER III", "TIER IV", "TIER V", "THE 
 const ERAS := {1: {"name": "Stone Age"}, 2: {"name": "Bronze Dawn"}}
 const ERA_TIER_NAMES := {1: TIER_NAMES, 2: ["TIER I", "TIER II", "TIER III", "TIER IV", "TIER V", "THE GATE"]}
 ## The latest build stage whose techs can be researched (see `stage` above).
-const BUILT_STAGE := 1
+const BUILT_STAGE := 2
 ## Tally Sticks makes every tech this share of its cost.
 const TALLY_DISCOUNT := 0.9
 
@@ -596,7 +596,6 @@ const TECHS := {
 		"color": Color("e9c46a"),
 		"name": "The Wheel",
 		"era": 2,
-		"stage": 2,
 		"lane": "fiber",
 		"tier": 1,
 		"slot": 0,
@@ -604,7 +603,8 @@ const TECHS := {
 		"icon": "cart_shed",
 		"requires": ["tally_sticks", "plough"],
 		"cost": {"wood": 100, "rope": 50, "copper": 12},
-		"desc": "A hauler becomes a cart: it carries 20, but only on roads.",
+		"desc":
+		"A Cart Shed turns haulers into carts. A cart carries twice the load, but only on roads, and a Wooden Bridge will not bear it.",
 	},
 	"alloying":
 	{
@@ -627,15 +627,15 @@ const TECHS := {
 		"color": Color("b3aca2"),
 		"name": "Causeways",
 		"era": 2,
-		"stage": 2,
 		"lane": "stone",
 		"tier": 2,
 		"slot": 0,
-		"unlock": "Bridges, Roads 5x",
+		"unlock": "Stone Bridge, Roads 5x",
 		"icon": "stone_bridge",
 		"requires": ["the_wheel", "mining"],
 		"cost": {"stone": 120, "brick": 80, "copper": 20},
-		"desc": "Bridges become a building. Roads cost 1 Stone and 1 Brick and are 5x as fast.",
+		"desc":
+		"Roads are laid in stone: 1 Stone and 1 Brick, five times as fast as open ground. The Stone Bridge spans the river and bears carts.",
 	},
 	"markets":
 	{
@@ -643,7 +643,6 @@ const TECHS := {
 		"color": Color("f2a65a"),
 		"name": "Markets",
 		"era": 2,
-		"stage": 2,
 		"lane": "fiber",
 		"tier": 2,
 		"slot": 0,
@@ -660,7 +659,6 @@ const TECHS := {
 		"color": Color("9d8df1"),
 		"name": "Sky Watch",
 		"era": 2,
-		"stage": 2,
 		"lane": "lore",
 		"tier": 2,
 		"slot": 0,
@@ -676,15 +674,18 @@ const TECHS := {
 		"color": Color("a0522d"),
 		"name": "Bronze Tools",
 		"era": 2,
-		"stage": 2,
 		"lane": "stone",
 		"tier": 3,
 		"slot": 0,
-		"unlock": "Workers +50%",
+		"unlock": "Bronze Tools: +50%",
 		"icon": "item_bronze_tools",
 		"requires": ["alloying", "causeways"],
 		"cost": {"bronze": 20, "copper": 20, "charcoal": 80},
-		"desc": "Bronze replaces flint. Every worker is 50% faster, and tools wear out.",
+		"desc":
+		(
+			"Bronze replaces flint. A worker with a Bronze Tool is 50% faster than with flint, and the tool lasts 200 jobs."
+			+ " Tools wear out: keep the Crucible pouring."
+		),
 	},
 	"granaries":
 	{
@@ -692,7 +693,6 @@ const TECHS := {
 		"color": Color("b5d99c"),
 		"name": "Granaries",
 		"era": 2,
-		"stage": 2,
 		"lane": "land",
 		"tier": 3,
 		"slot": 0,
@@ -709,7 +709,6 @@ const TECHS := {
 		"color": Color("4f8a3a"),
 		"name": "Bronze Ploughshare",
 		"era": 2,
-		"stage": 2,
 		"lane": "land",
 		"tier": 4,
 		"slot": 1,
@@ -726,7 +725,6 @@ const TECHS := {
 		"color": Color("7a6fd0"),
 		"name": "Star Charts",
 		"era": 2,
-		"stage": 2,
 		"lane": "lore",
 		"tier": 3,
 		"slot": 0,
@@ -742,7 +740,6 @@ const TECHS := {
 		"color": Color("e3a857"),
 		"name": "The Falling Star",
 		"era": 2,
-		"stage": 2,
 		"lane": "gate",
 		"tier": 5,
 		"slot": 0,

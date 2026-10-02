@@ -267,17 +267,21 @@ static func idle_reason(s, b: Dictionary, def: Dictionary) -> void:
 		else:
 			s.town.set_status(b, "Full: click to collect" + road_note(s, b), "Full: click to collect")
 		return
+	if def.get("trade", false) and not Buildings.is_trading(b):
+		s.town.set_status(b, Data.TRADE_UNSET, Data.TRADE_UNSET_ALERT)
+		return
 	var missing: Array = []
-	for id in def.get("in", {}):
-		if b["inbuf"].get(id, 0) < def["in"][id]:
+	var recipe := Buildings.recipe_in(b)
+	for id in recipe:
+		if b["inbuf"].get(id, 0) < recipe[id]:
 			missing.append(Data.ITEMS[id]["name"])
 	if missing.is_empty():
 		b["status"] = "Idle"
 		return
 	var how := "waiting for a hauler" if auto else "click to load" + road_note(s, b)
 	if auto:
-		for id in def["in"]:
-			if b["inbuf"].get(id, 0) + b["incoming"].get(id, 0) < def["in"][id] and s.economy.inv.get(id, 0) == 0:
+		for id in recipe:
+			if b["inbuf"].get(id, 0) + b["incoming"].get(id, 0) < recipe[id] and s.economy.inv.get(id, 0) == 0:
 				how = "stockpile is out"
 	var more := "" if auto else GrowthNote.hint(s)
 	s.town.set_status(
