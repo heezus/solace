@@ -25,6 +25,8 @@ const SaveTests = preload("res://tests/save_tests.gd")
 const EraTests = preload("res://tests/era_tests.gd")
 const Stage2Tests = preload("res://tests/stage2_tests.gd")
 const SkyTests = preload("res://tests/sky_tests.gd")
+const DawnTests = preload("res://tests/dawn_tests.gd")
+const EraFairTests = preload("res://tests/era_fair_tests.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
 const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
 const GoldenTests = preload("res://tests/golden_tests.gd")
@@ -38,6 +40,10 @@ const World = preload("res://scripts/world.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Work = preload("res://scripts/work.gd")
+
+## A map whose road east runs into a river bend with gravel banks and a ridge of rocks: the era-2 bot used to stop dead
+## there (playtest 7), and now plans its road.
+const ERA_TWO_STALL_SEED := 12
 
 var failures := 0
 
@@ -93,6 +99,8 @@ func _init() -> void:
 	EraTests.new().run(self)
 	Stage2Tests.new().run(self)
 	SkyTests.new().run(self)
+	DawnTests.new().run(self)
+	EraFairTests.new().run(self)
 	HutFocusTests.new().run(self)
 	GrowthTests.new().run(self)
 	ForageTests.new().run(self)
@@ -113,9 +121,10 @@ func _init() -> void:
 func test_pacing_bot() -> void:
 	var golden := GoldenTests.new()
 	var have_golden := golden.load_golden(self)
-	for map_seed in [1, 2, 3]:
+	for map_seed in [1, 2, 3, ERA_TWO_STALL_SEED]:
+		var pinned: bool = have_golden and map_seed <= 3  # the seeds the golden files pin
 		var bot := AutoplayBronze.new()
-		if have_golden:
+		if pinned:
 			bot.on_dawn = golden.check_dawn.bind(map_seed)  # win time and state at Bronze Dawn: tests/golden.json
 			bot.on_bronze = golden.check_bronze.bind(map_seed)  # and at the first Bronze: tests/golden_bronze.json
 		var r: Dictionary = bot.play_to_star(map_seed, 70 * 60.0)

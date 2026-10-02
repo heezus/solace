@@ -1,6 +1,7 @@
 extends RefCounted
 ## The Story block: the story moments that have happened (`events`, stable ids from Data.STORY_EVENTS, in the
-## order they happened, for a future profile save) and the opening checklist (`goals_done`, from Data.GOALS).
+## order they happened, for a future profile save) and the checklist (`goals_done`, from Data.GOALS, and from
+## Data.GOALS_ERA2 once Bronze Dawn is discovered: goal_list() is the one in force).
 ## It listens: the owner connects the other blocks' signals to the on_* methods below, so no block calls
 ## Story and Story never calls a block. record(id) notes a moment once. A goal is met when its `tech` is
 ## researched or its `building` stands, and the rest are checked by id against the Sim handed to
@@ -12,11 +13,14 @@ signal recorded(id: String)
 
 const Codec = preload("res://scripts/save_codec.gd")
 const Data = preload("res://scripts/data.gd")
+const Land = preload("res://scripts/land.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 
 var events: Array = []  # story ids, in the order they happened
 var goals_done: Dictionary = {}  # goal id -> true; goals stay done once met, even after the items are spent
+var _ore_tiles: Dictionary = {}  # tile id -> its positions in the grown land (see _ore)
+var _ore_width := 0
 
 
 ## Note a story moment once, by its id in Data.STORY_EVENTS.
@@ -57,9 +61,18 @@ func on_shard_found() -> void:
 
 ## Mark every goal that's met now. Goals stay done after that, even once the items are spent.
 func update(s) -> void:
-	for g in Data.GOALS:
-		if not goals_done.has(g["id"]) and goal_met(s, g):
-			goals_done[g["id"]] = true
+	var lists: Array = [Data.GOALS]
+	if goal_list() == Data.GOALS_ERA2:
+		lists.append(Data.GOALS_ERA2)  # the stone age's stay checked: its last goal is met by the dawn itself
+	for list in lists:
+		for g in list:
+			if not goals_done.has(g["id"]) and goal_met(s, g):
+				goals_done[g["id"]] = true
+
+
+## The checklist in force: the stone age's, and the second era's once Bronze Dawn is discovered.
+func goal_list() -> Array:
+	return Data.GOALS_ERA2 if "bronze_dawn" in events else Data.GOALS
 
 
 ## A goal is met when its `tech` is researched or its `building` stands; the rest are checked by id.
@@ -99,24 +112,56 @@ func goal_met(s, g: Dictionary) -> bool:
 			for b in s.town.buildings:
 				if b["type"] == "grindstone" and s.town.is_powered(b["pos"]):
 					return true
+		"find_copper":
+			return _ore_seen(s, "copper_hills")
+		"find_tin":
+			return _ore_seen(s, "tin_stream")
+		"copper_road":
+			return _road_beside_ore(s, "copper_hills")
+		"first_bronze":
+			return s.economy.inv.get("bronze", 0) > 0
 	return false
 
 
-## Index into Data.GOALS of the first goal not yet done, or GOALS.size() when all are.
+## Index into goal_list() of the first goal not yet done, or its size when all are.
 func current_goal() -> int:
-	for i in Data.GOALS.size():
-		if not goals_done.has(Data.GOALS[i]["id"]):
+	var list := goal_list()
+	for i in list.size():
+		if not goals_done.has(list[i]["id"]):
 			return i
-	return Data.GOALS.size()
+	return list.size()
 
 
 ## How many goals are done, in any order: skipping one early goal never hides the later ones.
 func done_count() -> int:
 	var n := 0
-	for g in Data.GOALS:
+	for g in goal_list():
 		if goals_done.has(g["id"]):
 			n += 1
 	return n
+
+
+## The ore tiles of one kind, found once per size of the map (the land grows only once, and ore is never laid later).
+func _ore(s, tile: String) -> Array:
+	if _ore_width != s.world.width:
+		_ore_width = s.world.width
+		_ore_tiles = {}
+	if not _ore_tiles.has(tile):
+		_ore_tiles[tile] = Land.ore_tiles(s, tile)
+	return _ore_tiles[tile]
+
+
+func _ore_seen(s, tile: String) -> bool:
+	return _ore(s, tile).any(func(p): return s.fog.is_revealed(p))
+
+
+## A road tile laid beside an ore tile of this kind: the way a Mine there is served.
+func _road_beside_ore(s, tile: String) -> bool:
+	for p in _ore(s, tile):
+		for n in Land.SIDES:
+			if s.world.roads.has(p + n):
+				return true
+	return false
 
 
 func _has_building(s, type: String) -> bool:

@@ -72,8 +72,12 @@ func test_card_says_what_is_missing() -> void:
 		CardText.state_line(s, "gatherers_hut", "", CARD_TEXT_W) == Data.CARD_LOCKED, "a locked card says it's locked"
 	)
 	t.check(
-		CardText.locked_reason("gatherers_hut") == "Discover Gatherer's Hut",
-		"and names the tech to discover: " + CardText.locked_reason("gatherers_hut")
+		CardText.locked_reason("gatherers_hut") == Data.CARD_DISCOVER_IT,
+		"a tech with the card's own name is not said twice: " + CardText.locked_reason("gatherers_hut")
+	)
+	t.check(
+		CardText.locked_reason("field") == "Discover Farming",
+		"and another names the tech: " + CardText.locked_reason("field")
 	)
 	s.tech_tree.researched["gatherers_hut"] = true
 	s.economy.inv.clear()
@@ -132,6 +136,7 @@ func test_card_line_always_fits() -> void:
 		var why: String = CardText.locked_reason(type, 100.0)
 		t.check(CardText.lines(why, 100.0) <= 2, "%s: the reason fits two lines: %s" % [type, why])
 		t.check(not why.contains("..."), "and never with dots: " + why)
+		t.check(not why.contains(Data.BUILDINGS[type]["name"]), "%s: and never its own title again: %s" % [type, why])
 
 
 ## The Lore cards (Standing Stone, Shard Cairn) stay off the build bar until their tech is on the board and reachable.
@@ -341,7 +346,8 @@ func test_the_goal_list_shows_the_current_goal_and_the_next() -> void:
 	panel.building_panel.visible = true
 	panel.refresh_goals(s)
 	t.check(
-		panel.goal_labels.filter(func(l): return l.visible).size() == 1, "with a card open, only the current goal shows"
+		panel.goal_labels.filter(func(l): return l.visible).size() == 2,
+		"with a card open both lines stay, so the list keeps its height"
 	)
 	panel.free()
 
