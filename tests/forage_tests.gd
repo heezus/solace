@@ -22,6 +22,7 @@ func run(runner) -> void:
 	test_a_waiting_hut_worker_forages_and_a_click_calls_them_back()
 	test_no_bush_in_reach_means_no_foraging()
 	test_a_forager_survives_a_save()
+	test_a_forager_can_be_given_a_job()
 
 
 ## A game on the standard test map with `stock` berries and nothing else to eat, the people all idle at the Hearth.
@@ -174,3 +175,29 @@ func test_a_forager_survives_a_save() -> void:
 		copy.economy.inv["berries"] >= before - 1 and copy.people.kith.size() == s.people.kith.size(),
 		"and the foraging carries on"
 	)
+
+
+## A forager who is then needed at a new building, or turned into a hauler, drops what they carry and goes on (this once
+## crashed: the forage task had no building to give back).
+func test_a_forager_can_be_given_a_job() -> void:
+	var s := _camp(3)
+	for _n in 3000:
+		s.tick(0.1)
+		if _foragers(s) == 3:
+			break
+	t.check(_foragers(s) == 3, "all three are out foraging")
+	s.tech_tree.researched["cordage"] = true
+	t.give(s, 100)
+	t.place_free(s, "twine_post", s.world.camp_pos + Vector2i(0, 3))
+	for _n in 20:
+		s.tick(0.1)
+	var worker: int = s.town.buildings[s.town.building_at[s.world.camp_pos + Vector2i(0, 3)]]["worker"]
+	t.check(worker >= 0 and s.people.kith[worker]["job"] == "work", "one of them took the new building")
+	t.check(not String(s.people.kith[worker]["phase"]).begins_with("forage"), "and stopped foraging")
+	s.tech_tree.researched["haulers"] = true
+	for _n in 20:
+		s.tick(0.1)
+	var hauling := 0
+	for k in s.people.kith:
+		hauling += 1 if k["job"] == "haul" else 0
+	t.check(hauling >= 1 and s.people.kith.size() == 3, "the rest became haulers (%d)" % hauling)

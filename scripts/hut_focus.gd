@@ -11,6 +11,9 @@ const Art = preload("res://scripts/art.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 
+const BADGE_TEXT := "click"
+const BADGE_FONT := 11
+
 var state: Sim
 var index := -1  # the hut's place in the building list, -1 for none
 
@@ -95,9 +98,21 @@ static func wants_click(s: Sim, b: Dictionary) -> bool:
 	)
 
 
+## Where the "click" badge goes over a hut's tile `r`: the box its pill covers.
+static func badge_rect(r: Rect2) -> Rect2:
+	var w := ThemeDB.fallback_font.get_string_size(BADGE_TEXT, HORIZONTAL_ALIGNMENT_LEFT, -1, BADGE_FONT).x + 12.0
+	return Rect2(Vector2(r.get_center().x - w / 2.0, r.position.y - 26.0), Vector2(w, BADGE_FONT + 8.0))
+
+
 ## A small pulsing "click" pill over a hut that is waiting for a click.
 static func draw_click_badge(ci: CanvasItem, r: Rect2, time: float) -> void:
 	var pulse := 0.55 + 0.45 * sin(time * 5.0)
+	var at := badge_rect(r)
 	Art.pill(
-		ci, Vector2(r.get_center().x, r.position.y - 26.0), "click", Color(1.0, 0.82, 0.4, pulse), Color("1b2a33"), 11
+		ci,
+		Vector2(at.get_center().x, at.position.y),
+		BADGE_TEXT,
+		Color(1.0, 0.82, 0.4, pulse),
+		Color("1b2a33"),
+		BADGE_FONT
 	)

@@ -6,7 +6,7 @@ extends RefCounted
 ## famine is over (the warning has come down, or their hut was clicked). It is a slow trickle: enough to keep the
 ## people fed, and it is noted under Data.FLOW_FORAGE_SOURCE, which is not food income, so it never makes anyone
 ## be born. Static, and works on the Sim passed in. A forager's state is in the Kith's own fields (phase "forage_*",
-## and `task` = {kind: "forage", tile}), so it is saved with them.
+## and `task` = {tile}), so it is saved with them.
 
 const Data = preload("res://scripts/data.gd")
 const Hands = preload("res://scripts/hands.gd")
@@ -64,7 +64,7 @@ static func _start(s, k: Dictionary) -> bool:
 	if tile.x < 0 or not s.people.walk_to(k, tile):
 		return false
 	k["phase"] = "forage_out"
-	k["task"] = {"kind": "forage", "tile": tile}
+	k["task"] = {"tile": tile}  # no "kind": that is for haulers (Kith.drop_task)
 	k["timer"] = 0.0
 	if not s.economy.forage_told:
 		s.economy.forage_told = true

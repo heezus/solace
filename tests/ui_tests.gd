@@ -11,6 +11,7 @@ const Overlays = preload("res://scripts/overlays.gd")
 const KithArt = preload("res://scripts/kith_art.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
 const Ui = preload("res://scripts/ui.gd")
+const HutFocus = preload("res://scripts/hut_focus.gd")
 const GrowthNote = preload("res://scripts/growth_note.gd")
 const Workers = preload("res://scripts/workers.gd")
 const SidePanel = preload("res://scripts/side_panel.gd")
@@ -31,6 +32,7 @@ func run(runner) -> void:
 	test_message_log_keeps_everything()
 	test_hut_panel_speaks_plainly()
 	test_status_pills_are_short()
+	test_a_row_of_buildings_gets_pills_that_never_overlap()
 	test_every_kith_has_a_place_on_the_map()
 	test_words_are_plain()
 	test_the_growth_note_says_what_to_do_in_each_state()
@@ -391,3 +393,69 @@ func test_a_building_waiting_for_kith_points_at_the_fix() -> void:
 	t.steady_income(s)
 	Workers.tick_building(s, b, 0.1, true)
 	t.check(not b["status"].contains("steady"), "with steady food it says nothing about it: " + b["status"])
+
+
+## The pills of a row of adjacent buildings never overlap each other, a "click" badge or a building, and stay on the map
+## (playtest 5: "Needs Wood" and "Idle" stacked over each other and over the next building).
+static func pill_problems(s) -> Array:
+	var problems: Array = []
+	var map := Rect2(Vector2.ZERO, Vector2(s.world.width, s.world.height) * Overlays.TILE)
+	var items: Array = Overlays.pill_layout(s)
+	var boxes: Array = []
+	for b in s.town.buildings:
+		boxes.append(["building %s" % [b["pos"]], Overlays.rect(b["pos"])])
+		if HutFocus.wants_click(s, b):
+			boxes.append(["click badge at %s" % [b["pos"]], HutFocus.badge_rect(Overlays.rect(b["pos"]))])
+	for i in items.size():
+		var r: Rect2 = items[i]["rect"]
+		if r.size.x <= 0.0:
+			continue
+		var name := "the '%s' pill of building %d" % [items[i]["text"], items[i]["building"]]
+		if not map.encloses(r):
+			problems.append("%s leaves the map" % name)
+		for other in boxes:
+			if r.intersects(other[1]):
+				problems.append("%s covers %s" % [name, other[0]])
+		for j in range(i + 1, items.size()):
+			if items[j]["rect"].size.x > 0.0 and r.intersects(items[j]["rect"]):
+				problems.append(
+					"%s covers the '%s' pill of building %d" % [name, items[j]["text"], items[j]["building"]]
+				)
+	return problems
+
+
+func test_a_row_of_buildings_gets_pills_that_never_overlap() -> void:
+	var s = t.fresh()
+	s.tech_tree.researched["cordage"] = true
+	s.tech_tree.researched["fire"] = true
+	s.tech_tree.researched["gatherers_hut"] = true
+	t.give(s, 200)
+	var camp: Vector2i = s.world.camp_pos
+	var spot := Vector2i(-1, -1)
+	for dy in range(-8, 9):
+		for dx in range(-8, 9):
+			var p := camp + Vector2i(dx, dy)
+			var ok := spot.x < 0
+			for k in 6:
+				ok = ok and s.town.placement_error("twine_post", p + Vector2i(k, 0)) == ""
+			if ok:
+				spot = p
+	t.check(spot.x >= 0, "room for a row of buildings")
+	var alerts := [
+		"Needs Wood", "Idle: no free Kith", "Needs Wood", "Hungry: no food", "Needs road", "Idle: no free Kith"
+	]
+	for k in 6:
+		t.check(
+			s.place("twine_post" if k % 2 == 0 else "charcoal_pit", spot + Vector2i(k, 0)), "building %d goes down" % k
+		)
+		s.town.buildings[s.town.building_at[spot + Vector2i(k, 0)]]["alert"] = alerts[k]
+	var problems := pill_problems(s)
+	t.check(problems.is_empty(), "no pill overlaps a pill, a badge or a building: %s" % [problems])
+	var shown := 0
+	for item in Overlays.pill_layout(s):
+		shown += 1 if item["rect"].size.x > 0.0 else 0
+	t.check(shown >= 4, "and most of them still have a pill (%d of 6)" % shown)
+	var hut := spot + Vector2i(0, 2)
+	t.place_free(s, "gatherers_hut", hut)
+	s.people.learned_by["wood"] = "Aro"
+	t.check(pill_problems(s).is_empty(), "also with huts and their click badges around: %s" % [pill_problems(s)])

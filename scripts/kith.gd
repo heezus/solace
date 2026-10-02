@@ -210,6 +210,7 @@ func assign_jobs() -> void:
 		walk_to(k, b["pos"])
 	for k in kith:
 		if k["job"] == "" and _research.unlocked("haulers"):
+			drop_task(k)  # a forager hands in what they carry
 			k["job"] = "haul"
 			k["phase"] = ""
 
