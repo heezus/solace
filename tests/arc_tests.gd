@@ -307,7 +307,7 @@ func test_tier_costs_scale() -> void:
 	for tier in bands.size():
 		var sum := 0.0
 		var n := 0
-		for tech in Data.TECHS:
+		for tech in Rules.era_techs(1):
 			var tt: Dictionary = Data.TECHS[tech]
 			if tt["tier"] != tier:
 				continue
@@ -357,7 +357,7 @@ func test_job_titles() -> void:
 			t.check(job != "" and job != Data.JOB_IDLE, "%s's worker has a job title (%s)" % [type, job])
 	for tile in Data.TILES:
 		var item: String = Data.TILES[tile]["yields"]
-		if item != "":
+		if item != "" and not Data.TILES[tile].get("mine_only", false):  # ore is for Mines, not huts
 			t.check(Data.HUT_JOBS.has(item), "a hut gathering %s has a job title" % item)
 			var b := {"type": "gatherers_hut", "gather_items": [item, item, "fiber"], "focus": ""}
 			t.check(

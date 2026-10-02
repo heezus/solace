@@ -4,6 +4,9 @@ extends RefCounted
 ## kind: "camp" | "house" | "road" | "bridge" | "field" | "depot" | "gatherer" | "processor" | "power" | "aura" | "cairn"
 ## `story` buildings stay off the build bar until their tech is on the board and reachable (nothing to spoil early).
 ## Processors turn `in` into `out` every `time` seconds (a processor with no `in` just makes `out`).
+## A processor with `dig` is a mine: it stands on one of its `on_tiles` and digs `dig` of whatever that tile yields
+## each cycle, with no input and without walking. `crew` is how many people it needs (default 1); it works only
+## while all of them are at it.
 ## Buildings without a worker show `status`, or `desc` if they have none.
 const BUILDINGS := {
 	"camp":
@@ -159,6 +162,51 @@ const BUILDINGS := {
 		"color": Color("0077b6"),
 		"desc": "Must touch the river. Its worker traps Fish, worth 2 food.",
 	},
+	"mine":
+	{
+		"name": "Mine",
+		"kind": "processor",
+		"job": "Miner",
+		"tech": "mining",
+		"story": true,
+		"cost": {"wood": 80, "stone": 30},
+		"in": {},
+		"out": {},
+		"dig": 2,
+		"on_tiles": ["copper_hills", "tin_stream"],
+		"crew": 2,
+		"time": 5.0,
+		"color": Color("8f9b5a"),
+		"desc": "Stands on Copper Hills or a Tin Stream. Two Kith dig ore without walking.",
+	},
+	"smelter":
+	{
+		"name": "Smelter",
+		"kind": "processor",
+		"job": "Smith",
+		"tech": "smelting",
+		"story": true,
+		"cost": {"stone": 30, "brick": 40},
+		"in": {"copper_ore": 2, "charcoal": 1},
+		"out": {"copper": 1},
+		"time": 5.0,
+		"color": Color("b87333"),
+		"desc": "Melts Copper Ore with Charcoal into Copper.",
+	},
+	"crucible":
+	{
+		"name": "Crucible",
+		"kind": "processor",
+		"job": "Founder",
+		"tech": "alloying",
+		"story": true,
+		"cost": {"brick": 50, "stone": 30},
+		"in": {"copper": 3, "tin": 1},
+		"out": {"bronze": 1},
+		"time": 6.0,
+		"color": Color("cd7f32"),
+		"desc": "Pours 3 Copper and 1 Tin into Bronze.",
+	},
 	"standing_stone":
 	{
 		"name": "Standing Stone",
@@ -189,6 +237,7 @@ const BUILD_TABS := {
 	"Homes": ["dwelling"],
 	"Gathering": ["gatherers_hut", "field", "fishing_weir"],
 	"Workshops": ["charcoal_pit", "twine_post", "kiln", "water_wheel", "grindstone"],
+	"Metal": ["mine", "smelter", "crucible"],
 	"Logistics": ["road", "bridge", "storehouse"],
 	"Lore": ["standing_stone", "shard_cairn"],
 }
@@ -208,6 +257,9 @@ const BUILD_ORDER := [
 	"fishing_weir",
 	"standing_stone",
 	"shard_cairn",
+	"mine",
+	"smelter",
+	"crucible",
 ]
 
 ## Output a building holds before it stops, when nobody hauls it away.

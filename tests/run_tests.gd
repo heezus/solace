@@ -22,7 +22,9 @@ const KithTests = preload("res://tests/kith_tests.gd")
 const ArcTests = preload("res://tests/arc_tests.gd")
 const StoryTests = preload("res://tests/story_tests.gd")
 const SaveTests = preload("res://tests/save_tests.gd")
+const EraTests = preload("res://tests/era_tests.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
+const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
 const GoldenTests = preload("res://tests/golden_tests.gd")
 const NewcomerTests = preload("res://tests/newcomer_tests.gd")
 const UiTests = preload("res://tests/ui_tests.gd")
@@ -80,6 +82,7 @@ func _init() -> void:
 	StoryTests.new().run(self)
 	ArcTests.new().run(self)
 	SaveTests.new().run(self)
+	EraTests.new().run(self)
 	HutFocusTests.new().run(self)
 	GrowthTests.new().run(self)
 	ForageTests.new().run(self)
@@ -93,26 +96,34 @@ func _init() -> void:
 	quit(1 if failures > 0 else 0)
 
 
-## A headless player (tests/autoplay.gd) plays the stone age on a few maps. It should reach Bronze Dawn
-## in 8 to 25 simulated minutes; data.gd is tuned so it takes about 12 to 16.
+## A headless player (tests/autoplay_bronze.gd) plays the stone age on a few maps. It should reach Bronze Dawn
+## in 8 to 25 simulated minutes; data.gd is tuned so it takes about 12 to 16. The game at that moment must match
+## tests/golden.json. It then plays on to its first Bronze, which should come 7 to 14 minutes later (the target is about
+## 8 to 12), and the game at that moment must match tests/golden_bronze.json.
 func test_pacing_bot() -> void:
 	var golden := GoldenTests.new()
 	var have_golden := golden.load_golden(self)
 	for map_seed in [1, 2, 3]:
-		var bot := Autoplay.new()
-		var r: Dictionary = bot.play(map_seed, 30 * 60.0)
+		var bot := AutoplayBronze.new()
 		if have_golden:
-			golden.check_run(map_seed, bot)  # win time and final state must match tests/golden.json
+			bot.on_dawn = golden.check_dawn.bind(map_seed)  # win time and state at Bronze Dawn: tests/golden.json
+		var r: Dictionary = bot.play_bronze(map_seed, 50 * 60.0)
+		if have_golden:
+			golden.check_bronze(map_seed, bot)  # and at the first Bronze: tests/golden_bronze.json
 		var minutes: float = r["seconds"] / 60.0
 		print(
 			(
-				"Pacing bot, map %d: %s at %.1f simulated minutes"
-				% [map_seed, "Bronze Dawn" if r["won"] else "no win", minutes]
+				"Pacing bot, map %d: %s at %.1f simulated minutes, first Bronze %.1f minutes later"
+				% [map_seed, "Bronze Dawn" if r["won"] else "no win", minutes, r["minutes"]]
 			)
 		)
 		check(r["won"], "the bot reaches Bronze Dawn on map %d" % map_seed)
 		check(minutes >= 8.0 and minutes <= 25.0, "map %d takes 8 to 25 minutes (%.1f)" % [map_seed, minutes])
-		if not r["won"]:
+		check(
+			r["minutes"] >= 7.0 and r["minutes"] <= 14.0,
+			"map %d: the first Bronze takes 7 to 14 minutes more (%.1f)" % [map_seed, r["minutes"]]
+		)
+		if not r["won"] or r["minutes"] < 0.0:
 			for line in r["log"]:
 				print("  ", line)
 
@@ -139,8 +150,8 @@ func give(s: Sim, amount: int) -> void:
 ## A spot where the river is 2 tiles wide between two open banks: {"river": its first tile, "side": the
 ## step across it (east or south)}. The bridge tests build on it.
 func _find_crossing(s: Sim) -> Dictionary:
-	for y in World.HEIGHT:
-		for x in World.WIDTH:
+	for y in s.world.height:
+		for x in s.world.width:
 			for side in [Vector2i(1, 0), Vector2i(0, 1)]:
 				var p := Vector2i(x, y)
 				var open := func(q: Vector2i) -> bool: return s.world.tile_at(q) in ["grass", "tree", "clay", "gravel"]
@@ -151,8 +162,8 @@ func _find_crossing(s: Sim) -> Dictionary:
 
 
 func find_tile(s: Sim, tile: String) -> Vector2i:
-	for y in World.HEIGHT:
-		for x in World.WIDTH:
+	for y in s.world.height:
+		for x in s.world.width:
 			if s.world.tile_at(Vector2i(x, y)) == tile:
 				return Vector2i(x, y)
 	return Vector2i(-1, -1)
@@ -188,8 +199,8 @@ func road_link(s: Sim, p: Vector2i) -> void:
 
 
 func find_grass(s: Sim, near_river: bool) -> Vector2i:
-	for y in World.HEIGHT:
-		for x in World.WIDTH:
+	for y in s.world.height:
+		for x in s.world.width:
 			var p := Vector2i(x, y)
 			if (
 				s.world.tile_at(p) == "grass"
@@ -256,7 +267,9 @@ func test_every_tech_is_reachable() -> void:
 	for i in Data.TECH_ORDER.size():
 		for tech in Data.TECH_ORDER:
 			s.research(tech)
-	check(s.tech_tree.researched.size() == Data.TECHS.size(), "all techs reachable")
+	var built := Data.TECH_ORDER.filter(Rules.tech_enabled)
+	check(s.tech_tree.researched.size() == built.size(), "every tech whose effect is built is reachable")
+	check(built.size() < Data.TECHS.size(), "and the rest wait for the next update")
 	check(s.won, "researching Bronze Dawn wins")
 
 
@@ -343,7 +356,8 @@ func test_flour_is_kept_for_research() -> void:
 	s.economy.inv["berries"] = 0
 	var keep := 0
 	for tech in Data.TECHS:
-		keep += Data.TECHS[tech]["cost"].get("flour", 0)
+		if Rules.tech_enabled(tech):
+			keep += Data.TECHS[tech]["cost"].get("flour", 0)
 	s.economy.inv["flour"] = keep
 	s.economy.food_credit = 0.0
 	check(keep > 0 and s.economy.flour_reserve() == keep, "flour that research needs is reserved")
@@ -534,11 +548,12 @@ func test_roads_bridge_the_river() -> void:
 
 ## Every parent sits left of its child, no two cards overlap, and most techs join two branches.
 func test_tech_tree_is_a_web() -> void:
-	check(Data.TECHS.size() == 29, "the stone age has 29 techs")
+	var stone := Rules.era_techs(1)
+	check(stone.size() == 29, "the stone age has 29 techs")
 	check(Data.TECH_ORDER.size() == Data.TECHS.size(), "TECH_ORDER lists every tech once")
 	var roots := 0
 	var multi := 0
-	for tech in Data.TECHS:
+	for tech in stone:
 		var t: Dictionary = Data.TECHS[tech]
 		var any: Array = t.get("requires_any", [])
 		roots += 1 if t["requires"].is_empty() and any.is_empty() else 0
@@ -557,16 +572,16 @@ func test_tech_tree_is_a_web() -> void:
 	check(multi >= 15, "most techs join two branches")
 	check_cards_dont_overlap()
 	var colors := {}
-	for tech in Data.TECHS:
+	for tech in stone:
 		colors[Data.TECHS[tech]["color"].to_html()] = true
-	check(colors.size() == Data.TECHS.size(), "every tech has its own color")
+	check(colors.size() == stone.size(), "every stone-age tech has its own color")
 	for tech in Data.TECHS:
 		check("star_lore" not in Data.TECHS[tech]["requires"], tech + " doesn't strictly need hidden Star Lore")
 
 
 ## Tech tree v4 (mockups/tech-tree-v4.md): each link reads "you need X to invent Y".
 func test_tech_tree_v4() -> void:
-	check(TechLayout.links().size() == 51, "v4 plus the Storehouse has 51 links (%d)" % TechLayout.links().size())
+	check(TechLayout.links(1).size() == 51, "v4 plus the Storehouse has 51 links (%d)" % TechLayout.links(1).size())
 	check(Data.LANE_ORDER == ["fiber", "stone", "land", "hearth", "lore"], "lanes run Fiber, Stone, Land, Hearth, Lore")
 	check(Data.TECHS["bronze_dawn"]["tier"] == 5, "the gate sits after Tier V")
 	check(Data.TIER_NAMES.size() == 6, "every column has a caption")
@@ -595,7 +610,7 @@ func test_tech_tree_v4() -> void:
 	# Side branches are exactly the techs Bronze Dawn can do without.
 	var route := Rules.route_to("bronze_dawn", {}, Rules.visible_techs(true))
 	check(route.size() == 19, "Bronze Dawn needs 19 techs (%d)" % route.size())
-	for tech in Data.TECHS:
+	for tech in Rules.era_techs(1):
 		check(
 			Data.TECHS[tech].get("side", false) == (tech not in route), tech + " is a side branch only if off the route"
 		)

@@ -2,25 +2,28 @@ extends SceneTree
 ## Plays the real main scene like a person, with the UI live, so runtime errors show up in the log:
 ## mouse moves and clicks over the map, the build bar tabs and buttons, the building panel, the top bar
 ## and the research board; keys T, Space, 1, 2, 3, X and Esc; placing, clicking and demolishing
-## buildings; then the pacing bot (tests/autoplay.gd) plays on to Bronze Dawn while the UI draws.
+## buildings; then the pacing bot (tests/autoplay_bronze.gd) plays on to Bronze Dawn while the UI draws, and on into the
+## era it opens: the land grows east, the research board gets its second tab, and the bot makes its first Bronze.
 ## Run under a display: xvfb-run godot --path . -s tests/tools/play_pass.gd
 ## CI fails the step if the output has any ERROR, SCRIPT ERROR, WARNING or Parse Error line.
 
 const Data = preload("res://scripts/data.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
+const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
 const Ranks = preload("res://scripts/ranks.gd")
 const Hands = preload("res://scripts/hands.gd")
-const World = preload("res://scripts/world.gd")
+const Rules = preload("res://scripts/rules.gd")
 
 const BOT_STEPS_PER_FRAME := 40
 const MAX_FRAMES := 6000
+const ERA_FRAMES := 500  # frames the era-2 bot plays after Bronze Dawn, to its first Bronze
 const SETTLE_SECONDS := 60.0  # game time the town runs on its own before the bot takes over
 
 var main: Node
 var frame := 0
 var game_time := 0.0  # seconds the game has been given: the sum of the frames' deltas (see _wait_for)
 var steps: Array = []  # Callables, one run per frame after the scene is up
-var bot: Autoplay
+var bot: AutoplayBronze
 var problems: Array = []
 var probe := {}  # what the input checks measured, between their steps
 var won_at := -1  # the frame Bronze Dawn was researched
@@ -43,13 +46,16 @@ func _process(delta: float) -> bool:
 		next.call()
 	elif frame > 3 and bot != null:
 		for i in BOT_STEPS_PER_FRAME:
-			if main.state.won:
+			if main.state.won and won_at < 0:
+				won_at = frame
+				bot.begin_era_two()
+				_era_two_script()
+				break
+			if won_at > 0 and (bot.made_bronze() or frame > won_at + ERA_FRAMES):
 				break
 			main.state.tick(Autoplay.DT)
 			bot.step(false)
-		if main.state.won and won_at < 0:
-			won_at = frame
-		if won_at > 0 and frame >= won_at + 5:
+		if won_at > 0 and steps.is_empty() and (bot.made_bronze() or frame > won_at + ERA_FRAMES):
 			_finish()
 	if frame > MAX_FRAMES:
 		problems.append("the bot didn't reach Bronze Dawn in %d frames" % MAX_FRAMES)
@@ -58,8 +64,12 @@ func _process(delta: float) -> bool:
 
 
 func _finish() -> void:
-	if not main.win_overlay.visible:
-		problems.append("the win overlay isn't showing")
+	if not main.banner_shown:
+		problems.append("Bronze Dawn showed no banner")
+	if bot != null and not bot.made_bronze():
+		problems.append("the era-2 bot made no Bronze in %d frames" % ERA_FRAMES)
+	if not main.state.world.is_grown():
+		problems.append("the land didn't grow east after Bronze Dawn")
 	for p in problems:
 		printerr("PLAY PASS PROBLEM: " + p)
 	if bot:
@@ -188,8 +198,8 @@ func _then(f: Callable, wait := 1) -> void:
 func _nearest(tile: String) -> Vector2i:
 	var s = main.state
 	var best := Vector2i(-1, -1)
-	for y in World.HEIGHT:
-		for x in World.WIDTH:
+	for y in s.world.height:
+		for x in s.world.width:
 			var p := Vector2i(x, y)
 			if s.world.tile_at(p) == tile and s.fog.is_revealed(p) and not s.town.building_at.has(p):
 				if (
@@ -403,8 +413,64 @@ func _demolish_first_hut() -> void:
 
 func _start_bot() -> void:
 	main.paused = true  # the bot ticks the game itself, in fixed steps
-	bot = Autoplay.new()
+	bot = AutoplayBronze.new()
 	bot.attach(main.state)
+
+
+# --- The next era -------------------------------------------------------------
+
+
+## What a player does just after Bronze Dawn: the land grows, the banner shows, the research board opens on the second
+## era's tab, its locked cards take no clicks, the build bar gets its Metal tab, and a Mine's card says it needs two.
+func _era_two_script() -> void:
+	var s = main.state
+	_then(
+		func():
+			for i in 40:  # a few seconds on: the land grows east
+				s.tick(Autoplay.DT)
+				bot.step(false)
+			_expect(s.world.is_grown(), "the land didn't grow east")
+			_expect(main.banner_shown, "Bronze Dawn showed no banner"),
+		2
+	)
+	_then(func(): _key(KEY_T), 3)
+	_then(
+		func():
+			var panel = main.tech_panel
+			_expect(panel.visible and panel.board.era == 2, "the board didn't open on the second era")
+			_expect(not panel.era_buttons[2].disabled, "the second era's tab is still locked after Bronze Dawn")
+			panel._pick_view("all")
+			for tech in Rules.era_techs(2):
+				_move(panel.board.get_global_transform() * panel.board.card_rect(tech).get_center()),
+		5
+	)
+	_then(
+		func():
+			var locked: Array = Rules.era_techs(2).filter(func(t): return not Rules.tech_enabled(t))
+			_expect(locked.size() == 9, "the second board has %d locked techs, not 9" % locked.size())
+			for tech in locked:
+				_click_card(tech)
+				_expect(
+					not s.tech_tree.researched.has(tech) and s.tech_tree.goal != tech,
+					"a click on %s, which needs the next update, did something" % tech
+				)
+			_click_control(main.tech_panel.era_buttons[1])
+			_expect(main.tech_panel.board.era == 1, "the stone age tab didn't show the stone age")
+			_click_control(main.tech_panel.era_buttons[2])
+			_expect(main.tech_panel.board.era == 2, "the second tab didn't show the second era"),
+		3
+	)
+	_then(func(): _key(KEY_T), 3)
+	_then(
+		func():
+			var bar = main.bottom_bar
+			_expect(bar.tab_buttons.has("Metal"), "the build bar has no Metal tab")
+			_click_visible(bar.tab_buttons["Metal"])
+			for type in Data.BUILD_TABS["Metal"]:
+				if bar.build_buttons[type]["button"].is_visible_in_tree():
+					_move(bar.build_buttons[type]["button"].get_global_rect().get_center()),
+		3
+	)
 
 
 # --- Input-path checks ---------------------------------------------------------
@@ -549,8 +615,8 @@ func _road_drag() -> void:
 	for id in Data.BUILDINGS["road"]["cost"]:  # whatever a Road costs, enough for the drag whatever else is held
 		s.economy.inv[id] = maxi(s.economy.inv.get(id, 0), 40)
 	var start := Vector2i(-1, -1)
-	for y in range(2, World.HEIGHT - 2):
-		for x in range(2, World.WIDTH - 6):
+	for y in range(2, s.world.height - 2):
+		for x in range(2, s.world.width - 6):
 			var ok := start.x < 0
 			for i in 4:
 				ok = ok and s.town.placement_error("road", Vector2i(x + i, y)) == ""

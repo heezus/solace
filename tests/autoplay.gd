@@ -31,6 +31,8 @@ const RAW_TILE := {
 	"clay": "clay",
 	"berries": "berry",
 	"grain": "grain",
+	"copper_ore": "copper_hills",
+	"tin": "tin_stream",
 }
 ## A hut is paused while everything it gathers is past this and not needed.
 const HUT_SURPLUS := 150
@@ -42,7 +44,16 @@ const ROADS_PER_DECISION := 4
 const WORKSHOP_PER := 40.0
 const WORKSHOPS_MAX := 4
 ## Which workshop makes each made good.
-const MAKER := {"rope": "twine_post", "charcoal": "charcoal_pit", "brick": "kiln", "flour": "grindstone"}
+const MAKER := {
+	"rope": "twine_post",
+	"charcoal": "charcoal_pit",
+	"brick": "kiln",
+	"flour": "grindstone",
+	"copper": "smelter",
+	"bronze": "crucible",
+}
+## Made goods from the last step of a chain to the first, so what a good needs is added before the goods it is made from.
+const MADE_ORDER := ["bronze", "copper", "flour", "brick", "charcoal", "rope"]
 
 var s: Sim
 var clock := 0.0
@@ -53,6 +64,7 @@ var known := {}  # techs already logged
 var trace := false  # log what the next tech is waiting on, every minute
 var clicked := {}  # what the harvests and clicks went to since the last trace
 var hold_tile := Vector2i(-1, -1)  # the tile the bot is holding on, (-1, -1) for none
+var goal_tech := "bronze_dawn"  # the tech the bot is working toward
 var reach := {}  # tiles the Kith can walk to from the Hearth, refreshed each decision
 
 
@@ -68,7 +80,7 @@ func play(map_seed: int, max_seconds: float) -> Dictionary:
 ## Play `game` from here on: step() then advances it (tests/tools/play_pass.gd runs it under the live UI).
 func attach(game: Sim) -> void:
 	s = game
-	s.tech_tree.set_goal("bronze_dawn")
+	s.tech_tree.set_goal(goal_tech)
 
 
 ## One DT of play: tick the simulation (unless something else ticks it), then click and decide.
@@ -143,7 +155,7 @@ func _trace() -> void:
 ## what they're made of.
 func _short() -> Dictionary:
 	if s.tech_tree.goal == "" and not s.won:
-		s.tech_tree.set_goal("bronze_dawn")
+		s.tech_tree.set_goal(goal_tech)
 	var want := {}
 	for tech in s.tech_tree.queue.slice(0, 3):
 		_want(want, Data.TECHS[tech]["cost"], 1)
@@ -153,10 +165,11 @@ func _short() -> Dictionary:
 		_want(want, Data.BUILDINGS["dwelling"]["cost"], 1)
 	for type in _workshops_due():
 		_want(want, Data.BUILDINGS[type]["cost"], 1)
+	_goal_wants(want)
 	var tools: int = _workers() + 1 - Hands.tools_held(s) - s.economy.inv.get("flint_tools", 0)
 	if Hands.recipe_unlocked(s, "flint_tools") and tools > 0:
 		_want(want, Data.RECIPES["flint_tools"]["in"], mini(tools, 2))
-	for made in ["flour", "brick", "charcoal", "rope"]:
+	for made in MADE_ORDER:
 		var n: int = want.get(made, 0) - s.economy.inv.get(made, 0)
 		if n > 0:
 			_want(want, Data.BUILDINGS[MAKER[made]]["in"], _batches(made, n))
@@ -170,16 +183,21 @@ func _short() -> Dictionary:
 	return short
 
 
+## More goods the bot wants than the techs and buildings above say (a later era's bot adds its own).
+func _goal_wants(_list: Dictionary) -> void:
+	pass
+
+
 ## Made goods the whole route to Bronze Dawn still costs: they take a workshop and time, so the
 ## workshops go up as soon as they're unlocked.
 func _route_need() -> Dictionary:
 	var need := {}
-	for tech in Rules.route_to("bronze_dawn", s.tech_tree.researched, Rules.visible_techs(s.shard_seen)):
+	for tech in Rules.route_to(goal_tech, s.tech_tree.researched, Rules.visible_techs(s.shard_seen)):
 		var cost: Dictionary = Data.TECHS[tech]["cost"]
 		for id in cost:
 			if MAKER.has(id):
 				need[id] = need.get(id, 0) + cost[id]
-	for made in ["flour", "brick", "charcoal", "rope"]:
+	for made in MADE_ORDER:
 		var left: int = need.get(made, 0) - s.economy.inv.get(made, 0)
 		var inputs: Dictionary = Data.BUILDINGS[MAKER[made]]["in"]
 		for id in inputs:
@@ -212,7 +230,7 @@ func _next_click() -> String:
 	for cost in costs:
 		var want := {}
 		_want(want, cost, 1)
-		for made in ["flour", "brick", "charcoal", "rope"]:
+		for made in MADE_ORDER:
 			var n: int = want.get(made, 0) - s.economy.inv.get(made, 0)
 			if n > 0:
 				_want(want, Data.BUILDINGS[MAKER[made]]["in"], _batches(made, n))
@@ -303,8 +321,8 @@ func _pick_tile() -> Vector2i:
 func _nearest_tile(tile: String, from: Vector2i) -> Vector2i:
 	var best := Vector2i(-1, -1)
 	var best_d := INF
-	for y in World.HEIGHT:
-		for x in World.WIDTH:
+	for y in s.world.height:
+		for x in s.world.width:
 			var p := Vector2i(x, y)
 			if s.world.tile_at(p) == tile and Hands.item_at(s, p) != "":
 				var d := Vector2(p).distance_to(Vector2(from))
@@ -358,7 +376,7 @@ func _workers() -> int:
 	var n := 0
 	for b in s.town.buildings:
 		if Buildings.needs_worker(b):
-			n += 1
+			n += Buildings.crew_size(b)
 	return n
 
 
@@ -481,8 +499,8 @@ func _explore(short: Dictionary) -> bool:
 func _explore_for(item: String) -> bool:
 	var best := Vector2i(-1, -1)
 	var best_d := INF
-	for y in World.HEIGHT:
-		for x in World.WIDTH:
+	for y in s.world.height:
+		for x in s.world.width:
 			var p := Vector2i(x, y)
 			if s.fog.is_revealed(p) or s.world.tile_at(p) != RAW_TILE[item] or not reach.has(p):
 				continue
@@ -524,8 +542,8 @@ func _at_fog_edge(p: Vector2i) -> bool:
 func _nearest_bank() -> Vector2i:
 	var best := Vector2i(-1, -1)
 	var best_d := INF
-	for y in World.HEIGHT:
-		for x in World.WIDTH:
+	for y in s.world.height:
+		for x in s.world.width:
 			var p := Vector2i(x, y)
 			if s.world.tile_at(p) == "grass" and s.world.touches_river(p) and not s.fog.is_revealed(p):
 				var d := Vector2(p).distance_to(Vector2(s.world.camp_pos))
@@ -538,8 +556,8 @@ func _nearest_bank() -> Vector2i:
 func _nearest_hidden(tile: String) -> Vector2i:
 	var best := Vector2i(-1, -1)
 	var best_d := INF
-	for y in World.HEIGHT:
-		for x in World.WIDTH:
+	for y in s.world.height:
+		for x in s.world.width:
 			var p := Vector2i(x, y)
 			if s.world.tile_at(p) == tile and reach.has(p):
 				var d := Vector2(p).distance_to(Vector2(s.world.camp_pos))
@@ -575,8 +593,8 @@ func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
 			if idle != b["paused"]:
 				s.set_paused(i, idle)
 			continue
-		if def["kind"] != "processor":
-			continue
+		if def["kind"] != "processor" or def["out"].is_empty():
+			continue  # a Mine makes no stock of its own
 		var made: String = def["out"].keys()[0]
 		var surplus: bool = s.economy.inv.get(made, 0) >= later.get(made, 0) + 10 and not short.has(made)
 		for id in def["in"]:
@@ -684,8 +702,8 @@ func _place_best(type: String, score: Callable, focus := "") -> bool:
 		return false
 	var best := Vector2i(-1, -1)
 	var best_score := -INF
-	for y in World.HEIGHT:
-		for x in World.WIDTH:
+	for y in s.world.height:
+		for x in s.world.width:
 			var p := Vector2i(x, y)
 			if not reach.has(p) or s.town.placement_error(type, p) != "":
 				continue

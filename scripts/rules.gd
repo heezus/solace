@@ -58,6 +58,16 @@ static func _collect(tech: String, researched: Dictionary, visible: Dictionary, 
 	out.append(tech)
 
 
+## True when `tech`'s effect is built (its `stage` is not past Data.BUILT_STAGE): the only techs that can be researched.
+static func tech_enabled(tech: String) -> bool:
+	return int(Data.TECHS[tech].get("stage", 1)) <= Data.BUILT_STAGE
+
+
+## The techs of era `era` (Data.TECHS `era`, 1 when it names none), in Data.TECH_ORDER.
+static func era_techs(era: int) -> Array:
+	return Data.TECH_ORDER.filter(func(t): return int(Data.TECHS[t].get("era", 1)) == era)
+
+
 ## Every tech the player can see: all of them once the Strange Stone is clicked, otherwise all but hidden ones.
 static func visible_techs(shard_seen: bool) -> Dictionary:
 	var out := {}

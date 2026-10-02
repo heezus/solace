@@ -19,7 +19,7 @@ const CARD_NEED_ITEMS := "Need more"  # when even the short form doesn't fit
 const CARD_DISCOVER := "Discover %s"  # a tech's name
 
 # --- The tech board (scripts/tech_panel.gd, scripts/tech_board.gd). One verb for techs: Discover. ---
-const BOARD_TITLE := "Tech tree  ·  Stone Age"
+const BOARD_TITLE := "Tech tree  ·  %s"  # an era's name
 # --- A few warm lines at the first moments (scripts/main.gd shows each once) ---
 ## Story id (Data.STORY_EVENTS) -> the line said when it first happens.
 const FLAVOR_STORY := {
@@ -74,6 +74,18 @@ const STATE_DONE := "discovered"
 const STATE_READY := "ready"
 const STATE_MORE := "gather more"
 const STATE_LOCKED := "locked"
+
+# --- Era 2 (scripts/sim.gd, scripts/main.gd, scripts/tech_panel.gd) ---
+const LAND_GREW_EVENT := "The land opens to the east. Copper lies in the hills; tin is far off, to the north-east"
+const ERA_BANNER_TITLE := "BRONZE DAWN"
+const ERA_BANNER_TEXT := "The stone age ends. The land opens to the east, under fog.\nFar above Solace, something is falling."
+const TECH_UNBUILT := "Needs the next update"  # on a card and in the strip of a tech whose effect isn't built yet
+const ERA_TAB_TIP := "The %s tech tree"  # an era's name
+const ERA_TAB_LOCKED := "Opens when Bronze Dawn is discovered"
+const MINE_TIP := "A Mine standing on it digs without walking: it takes two Kith."
+const ORE_PLAIN_HINT := "Discover %s to read what lies in it."  # a tech's name
+const WORKER_CREW := "It takes %d %s to work: %d here."  # how many, many, how many are here
+const LOG_COUNT := "%s  x%d"  # a message, how many times in a row (Tally Sticks)
 
 # --- Messages (scripts/main.gd, scripts/messages.gd) ---
 const UNLOCKED_TOAST := "%s unlocked: %s tab"  # "Gatherer's Hut", "Gathering"

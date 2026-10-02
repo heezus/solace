@@ -69,7 +69,7 @@ func refresh() -> void:
 		at.custom_minimum_size.x = 46.0
 		at.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 		row.add_child(at)
-		var text := Ui.label(e["text"], Ui.MIN_TEXT)
+		var text := Ui.label(Messages.entry_text(e), Ui.MIN_TEXT)
 		text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		text.custom_minimum_size.x = 200.0

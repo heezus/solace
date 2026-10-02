@@ -4,10 +4,16 @@ extends RefCounted
 ## block. Fog (which tiles have been seen) is its own block and is not held here. What a tile costs to
 ## walk over is the Pathing block's business, and what may be built on it is decided by the caller.
 ## Sim owns one, reached as `sim.world`.
+## At Bronze Dawn the map doubles to the east (grow_east): the stone-age half keeps every tile, and the new land comes
+## from MapEast with the same seed, so a seed always grows the same land.
+## Signal: grew(from_width) fires when the map grows, with the width it had; the owner lifts the walking grid and fog.
+
+signal grew(from_width: int)
 
 const Codec = preload("res://scripts/save_codec.gd")
 const Data = preload("res://scripts/data.gd")
 const MapGen = preload("res://scripts/map_gen.gd")
+const MapEast = preload("res://scripts/map_east.gd")
 
 const WIDTH := 36
 const HEIGHT := 22
@@ -15,6 +21,8 @@ const NEIGHBORS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0,
 
 var width: int
 var height: int
+var stone_width: int  # the width the map was made with: the stone-age half. The map is wider once it has grown
+var map_seed := 0  # the seed the map was made from, so the land that grows east comes from the same one
 var tiles: Array = []  # flat array of tile ids, index = y * width + x
 var camp_pos := Vector2i.ZERO
 var shard_pos := Vector2i(-1, -1)
@@ -26,6 +34,7 @@ var fields: Dictionary = {}  # Vector2i -> true, grain tiles that were sown
 func _init(w: int = WIDTH, h: int = HEIGHT) -> void:
 	width = w
 	height = h
+	stone_width = w
 	reset()
 
 
@@ -38,7 +47,34 @@ func reset(tile: String = "grass") -> void:
 
 ## Make a new map from `seed_value`: the same seed always makes the same map (see MapGen).
 func generate(seed_value: int) -> void:
+	width = stone_width  # a new map starts as the stone-age half again
+	map_seed = seed_value
 	MapGen.generate(self, seed_value)
+
+
+## True once the map has doubled east (see grow_east).
+func is_grown() -> bool:
+	return width > stone_width
+
+
+## Double the map to the east: every tile of the stone-age half stays as it is, and the new land beside it is made by
+## MapEast from the map's seed (ore in it, copper near its west edge and tin far to the north-east). The new tiles are
+## the last `stone_width` columns. Does nothing and returns false when the map has grown already.
+func grow_east() -> bool:
+	if is_grown():
+		return false
+	var old := width
+	var land: Array = MapEast.make(self)
+	var grown: Array = []
+	grown.resize(old * 2 * height)
+	for y in height:
+		for x in old:
+			grown[y * old * 2 + x] = tiles[y * old + x]
+			grown[y * old * 2 + old + x] = land[y * old + x]
+	width = old * 2
+	tiles = grown
+	grew.emit(old)
+	return true
 
 
 # --- Tiles -------------------------------------------------------------------
@@ -79,7 +115,7 @@ func gather_tiles(p: Vector2i, radius: int) -> Array:
 	for dy in range(-radius, radius + 1):
 		for dx in range(-radius, radius + 1):
 			var t := tile_at(p + Vector2i(dx, dy))
-			if t != "" and t != "grass" and Data.TILES[t]["yields"] != "":
+			if t != "" and t != "grass" and Data.TILES[t]["yields"] != "" and not Data.TILES[t].get("mine_only", false):
 				found.append(p + Vector2i(dx, dy))
 	return found
 
@@ -117,6 +153,8 @@ func to_dict() -> Dictionary:
 	return {
 		"width": width,
 		"height": height,
+		"stone_width": stone_width,
+		"map_seed": map_seed,
 		"tiles": tiles.duplicate(),
 		"camp_pos": Codec.vec(camp_pos),
 		"shard_pos": Codec.vec(shard_pos),
@@ -129,6 +167,8 @@ func to_dict() -> Dictionary:
 func from_dict(d: Dictionary) -> void:
 	width = int(d.get("width", width))
 	height = int(d.get("height", height))
+	stone_width = int(d.get("stone_width", width))
+	map_seed = int(d.get("map_seed", 0))
 	reset()
 	var saved: Array = d.get("tiles", [])
 	if saved.size() == width * height:

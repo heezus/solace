@@ -32,6 +32,7 @@ const ZOOM_PX := [32.0, 48.0, 64.0]  # a tile's size on screen at each zoom step
 const DEFAULT_ZOOM := 1
 const PAN_SPEED := 720.0  # screen px a second while an arrow key or WASD is held
 const FRAME_W := 4.0  # the cocoa frame round the map view
+const BANNER_SECONDS := 14.0  # how long the Bronze Dawn banner stays up
 const FIT_SETTLE_FRAMES := 3  # frames after a window resize while the bars settle to their new size
 const OUTLINE: Color = Art.OUTLINE
 const OUTLINE_W := 2.5
@@ -71,7 +72,7 @@ var side_panel: SidePanel
 var info_label: Label  # the side panel's hover text
 var tech_panel: TechPanel
 var building_panel: BuildingPanel  # the selected building's card, docked in the side panel
-var win_overlay: Control
+var banner_shown := false  # the Bronze Dawn banner has been shown
 var ui_refresh := 0.0
 var paused := false
 var speed := 1  # simulation steps per frame: 1x, 2x or 3x
@@ -108,8 +109,10 @@ func _process(delta: float) -> void:
 			var style := Messages.style_of(e)
 			messages.push(e, style["seconds"], style["sticky"], style["key"])
 	state.events.clear()
-	if state.won and not win_overlay.visible:
-		win_overlay.visible = true
+	if state.won and not banner_shown:
+		banner_shown = true  # the stone age ends with a banner, and the game goes on
+		messages.push(Data.ERA_BANNER_TITLE + "  ·  " + Data.ERA_BANNER_TEXT.replace("\n", " "), BANNER_SECONDS)
+	messages.keep_counts = state.tech_tree.researched.has("tally_sticks")
 	for p in popups:
 		p["t"] += delta
 	popups = popups.filter(func(p): return p["t"] < 1.2)
@@ -161,7 +164,7 @@ func _layout() -> void:
 	side_panel.size = Vector2(SIDE_W, view.size.y)
 	var k: float = ZOOM_PX[zoom_step] / TILE
 	scale = Vector2(k, k)
-	var map_size := Vector2(World.WIDTH, World.HEIGHT) * TILE
+	var map_size := Vector2(state.world.width, state.world.height) * TILE
 	var half := view.size / (2.0 * k)
 	for axis in 2:
 		cam[axis] = (
@@ -276,7 +279,7 @@ func _set_speed(v: int) -> void:
 
 ## The tiles the current drag covers, ending under the mouse (kept on the map).
 func _drag_line() -> Array:
-	var end := _tile_under().clamp(Vector2i.ZERO, Vector2i(World.WIDTH - 1, World.HEIGHT - 1))
+	var end := _tile_under().clamp(Vector2i.ZERO, Vector2i(state.world.width - 1, state.world.height - 1))
 	return Rules.line_tiles(drag_from, end)
 
 
@@ -428,28 +431,6 @@ func _build_ui() -> void:
 	tech_panel = TechPanel.new()
 	layer.add_child(tech_panel)
 	tech_panel.setup(state)
-	_build_win_overlay(layer)
-
-
-func _build_win_overlay(layer: CanvasLayer) -> void:
-	var overlay := ColorRect.new()
-	overlay.color = Color(0.05, 0.05, 0.08, 0.85)
-	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	overlay.visible = false
-	layer.add_child(overlay)
-	win_overlay = overlay
-	var v := VBoxContainer.new()
-	v.set_anchors_preset(Control.PRESET_CENTER)
-	v.offset_left = -300
-	v.offset_right = 300
-	v.offset_top = -80
-	win_overlay.add_child(v)
-	var title := Ui.label("BRONZE DAWN", 48)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	v.add_child(title)
-	var sub := Ui.label("The stone age ends. The next era begins.\nFar above Solace, something is falling.", 18)
-	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	v.add_child(sub)
 
 
 func _refresh_ui() -> void:
@@ -515,6 +496,12 @@ func _on_tech_researched(tech: String) -> void:
 # --- Drawing -----------------------------------------------------------------
 
 
+## What a tile is drawn as: ore not yet named by its tech shows as plain ground.
+func _feature_name(tile: String) -> String:
+	var tech: String = Data.TILES[tile].get("tech", "")
+	return "plain_ore" if tech != "" and not state.tech_tree.researched.has(tech) else tile
+
+
 func _tile_rect(p: Vector2i) -> Rect2:
 	return Rect2(MAP_ORIGIN + Vector2(p) * TILE, Vector2(TILE, TILE))
 
@@ -527,8 +514,12 @@ func _tile_center(p: Vector2i) -> Vector2:
 func _visible_tiles() -> Rect2i:
 	var from := (view.position - position) / scale.x / TILE
 	var to := (view.end - position) / scale.x / TILE
-	var lo := Vector2i(clampi(floori(from.x) - 1, 0, World.WIDTH - 1), clampi(floori(from.y) - 1, 0, World.HEIGHT - 1))
-	var hi := Vector2i(clampi(ceili(to.x) + 1, 0, World.WIDTH - 1), clampi(ceili(to.y) + 1, 0, World.HEIGHT - 1))
+	var lo := Vector2i(
+		clampi(floori(from.x) - 1, 0, state.world.width - 1), clampi(floori(from.y) - 1, 0, state.world.height - 1)
+	)
+	var hi := Vector2i(
+		clampi(ceili(to.x) + 1, 0, state.world.width - 1), clampi(ceili(to.y) + 1, 0, state.world.height - 1)
+	)
 	return Rect2i(lo, hi - lo + Vector2i.ONE)
 
 
@@ -560,7 +551,7 @@ func _draw() -> void:
 			var p := Vector2i(x, y)
 			if not state.fog.is_revealed(p):
 				continue
-			Art.map_feature(self, state.world.tile_at(p), _tile_center(p), p, time, TILE / Art.DESIGN)
+			Art.map_feature(self, _feature_name(state.world.tile_at(p)), _tile_center(p), p, time, TILE / Art.DESIGN)
 
 	# Ranges: a hut's gathering tiles, power range for wheels, Standing Stone reach.
 	var hovered_type := ""

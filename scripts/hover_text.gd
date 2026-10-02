@@ -76,11 +76,14 @@ static func _tile_text(m) -> String:
 	if s.town.building_at.has(p):
 		return _building_text(m)
 	var t: Dictionary = Data.TILES[s.world.tile_at(p)]
+	var plain: bool = t.has("tech") and not s.tech_tree.researched.has(t["tech"])  # ore not yet known
 	if s.world.roads.has(p):
 		if s.world.tile_at(p) == "river":
 			return Data.BRIDGE_HINT % Data.PEOPLE["many"]
 		return Data.ROAD_HINT % [t["name"], Data.PEOPLE["many"]]
 	var hint := Overlays.blocked_hint(s, p)
+	if plain:
+		return "%s\n%s" % [t["plain_name"], Data.ORE_PLAIN_HINT % Data.TECHS[t["tech"]]["name"]]
 	if t["yields"] != "":
 		var item: String = t["yields"]
 		var how := "Hold the mouse on it to gather."
@@ -89,7 +92,7 @@ static func _tile_text(m) -> String:
 		var out := "%s\n%s. %s" % [t["name"], hold_hint(s, item), how]
 		if Data.FOOD_VALUE.has(item):
 			out += " It's food: the %s eat it." % Data.PEOPLE["many"]
-		out += "\n" + learn_text(s, item)
+		out += "\n" + (Data.MINE_TIP if t.get("mine_only", false) else learn_text(s, item))
 		return out + ("\n" + hint + "." if hint != "" else "")
 	var info: String = t["name"]
 	if t.has("hint"):
@@ -161,4 +164,4 @@ static func hover_item(m) -> String:
 		return ""
 	if s.town.building_at.has(m.hover) or s.world.roads.has(m.hover) or s.world.tile_at(m.hover) == "":
 		return ""
-	return Data.TILES[s.world.tile_at(m.hover)]["yields"]
+	return Hands.item_at(s, m.hover)

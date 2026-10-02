@@ -2,7 +2,9 @@ extends RefCounted
 ## Where each card sits on the research board and how the lines between cards run.
 ## Pure geometry from Data.TECHS, so the headless tests can check that no line passes under a card.
 ##
-## Columns are tiers and bands are lanes (Data.LANE_ORDER). Lines are orthogonal: a line to the next
+## Each era has its own board (Data.TECHS `era`): build(era) lays out that era's techs, and a line from a tech of another
+## era (Prospecting needs Bronze Dawn) is left off it. Columns are tiers and bands are lanes (Data.LANE_ORDER).
+## Lines are orthogonal: a line to the next
 ## tier takes one vertical run in the gutter between the tiers; a line that skips tiers drops into the
 ## channel between lanes, runs along it, and climbs back up in the gutter before its target. Vertical
 ## runs get their own 7px track in a gutter and horizontal runs their own track in a channel.
@@ -26,10 +28,12 @@ const STEP := 7.0  # track spacing for lines and ports
 ## {"rects": {tech: Rect2}, "lanes": [{id, top, bottom}], "channels": [Vector2(top, bottom)],
 ##  "edges": [{from, to, any, pts: PackedVector2Array}], "pills": {tech: Vector2}, "size": Vector2,
 ##  "overflow": int (runs that found no free track; 0 when the layout is clean)}.
-static func build() -> Dictionary:
-	var lay := {"rects": {}, "lanes": [], "channels": [], "edges": [], "pills": {}, "overflow": 0}
+static func build(era: int = 1) -> Dictionary:
+	var lay := {"era": era, "rects": {}, "lanes": [], "channels": [], "edges": [], "pills": {}, "overflow": 0}
 	var rows := {}
 	for tech in Data.TECHS:
+		if era_of(tech) != era:
+			continue
 		var t: Dictionary = Data.TECHS[tech]
 		rows[t["lane"]] = maxi(rows.get(t["lane"], 0), int(t["slot"]) + 1)
 	var y := HEADER + CHANNEL
@@ -37,13 +41,15 @@ static func build() -> Dictionary:
 	lay["channels"].append(Vector2(HEADER, y))
 	for lane in Data.LANE_ORDER:
 		tops[lane] = y
-		var bottom: float = y + rows[lane] * ROW - GAP
+		var bottom: float = y + rows.get(lane, 1) * ROW - GAP
 		lay["lanes"].append({"id": lane, "top": y, "bottom": bottom})
 		y = bottom + GAP + CHANNEL
 		lay["channels"].append(Vector2(bottom, y))
 	var first_top: float = lay["lanes"][0]["top"]
 	var last_bottom: float = lay["lanes"][-1]["bottom"]
 	for tech in Data.TECHS:
+		if era_of(tech) != era:
+			continue
 		var t: Dictionary = Data.TECHS[tech]
 		var x: float = LEFT + t["tier"] * PITCH
 		if t["lane"] == "gate":
@@ -51,21 +57,31 @@ static func build() -> Dictionary:
 		else:
 			lay["rects"][tech] = Rect2(x, tops[t["lane"]] + t["slot"] * ROW, CARD_W, CARD_H)
 	var max_tier := 0
-	for tech in Data.TECHS:
+	for tech in lay["rects"]:
 		max_tier = maxi(max_tier, Data.TECHS[tech]["tier"])
 	lay["size"] = Vector2(LEFT + max_tier * PITCH + GATE_W + LEFT, y)
 	_route(lay)
 	return lay
 
 
-## Every requirement as a line: {from, to, any, i}, `any` for one of an either-or, `i` its place in the list.
-static func links() -> Array:
+## The era of a tech (Data.TECHS `era`, 1 when it names none).
+static func era_of(tech: String) -> int:
+	return int(Data.TECHS[tech].get("era", 1))
+
+
+## Every requirement within era `era` as a line: {from, to, any, i}, `any` for one of an either-or, `i` its place in the
+## list. A requirement from another era (Prospecting needs Bronze Dawn) is not a line on this board.
+static func links(era: int = 1) -> Array:
 	var out: Array = []
 	for tech in Data.TECH_ORDER:
+		if era_of(tech) != era:
+			continue
 		for r in Data.TECHS[tech]["requires"]:
-			out.append({"from": r, "to": tech, "any": false, "i": out.size()})
+			if era_of(r) == era:
+				out.append({"from": r, "to": tech, "any": false, "i": out.size()})
 		for r in Data.TECHS[tech].get("requires_any", []):
-			out.append({"from": r, "to": tech, "any": true, "i": out.size()})
+			if era_of(r) == era:
+				out.append({"from": r, "to": tech, "any": true, "i": out.size()})
 	return out
 
 
@@ -91,12 +107,12 @@ static func _key(e: Dictionary) -> String:
 static func _ports(lay: Dictionary, all: Array) -> Dictionary:
 	var outs := {}
 	var ins := {}
-	for tech in Data.TECHS:
+	for tech in lay["rects"]:
 		var mine: Array = all.filter(func(e): return e["from"] == tech)
 		mine.sort_custom(func(a, b): return _by_y(lay, a, b, "to"))
 		for i in mine.size():
 			outs[_key(mine[i])] = _mid_y(lay, tech) + (i - (mine.size() - 1) / 2.0) * STEP
-	for tech in Data.TECHS:
+	for tech in lay["rects"]:
 		var mine: Array = all.filter(func(e): return e["to"] == tech)
 		if Data.TECHS[tech]["lane"] == "gate":
 			for e in mine:
@@ -131,7 +147,7 @@ static func _ports(lay: Dictionary, all: Array) -> Dictionary:
 
 
 static func _route(lay: Dictionary) -> void:
-	var all := links()
+	var all := links(lay["era"])
 	var ports := _ports(lay, all)
 	var tracks := {}  # "g3:1" or "c2:0" -> Array of Vector2(lo, hi)
 	# Short lines first, so they get the tracks nearest their cards.

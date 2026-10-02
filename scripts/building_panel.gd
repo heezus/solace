@@ -258,6 +258,9 @@ static func worker_text(s: Sim, b: Dictionary) -> String:
 		return Data.WORKER_NONE % Data.PEOPLE["one"]
 	var k: Dictionary = s.people.kith[b["worker"]]
 	var who: String = Data.WORKER_HERE % s.people.title_of(k)
+	if Buildings.crew_size(b) > 1:
+		var here := Buildings.crew_slots(b).filter(func(slot): return b[slot] >= 0).size()
+		who += " " + Data.WORKER_CREW % [Buildings.crew_size(b), Data.PEOPLE["many"], here]
 	if k["tool"] > 0:
 		return who + " " + Data.WORKER_TOOL % k["tool"]
 	if Hands.recipe_unlocked(s, "flint_tools"):

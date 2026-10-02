@@ -19,6 +19,9 @@ var state: Sim
 var board: TechBoard
 var scroll: ScrollContainer
 var counter: Label
+var title: Label
+var era_buttons := {}  # era -> its tab
+var era_chosen := false  # the player picked an era tab: the panel keeps it from then on
 var queue_row: HBoxContainer
 var ready_row: HBoxContainer
 var stock_row: HBoxContainer
@@ -46,7 +49,16 @@ func setup(game: Sim) -> void:
 
 	var head := HFlowContainer.new()  # wraps onto a second line in a narrow window
 	head.add_theme_constant_override("h_separation", 14)
-	head.add_child(Ui.label(Data.BOARD_TITLE, 22))
+	title = Ui.label(Data.BOARD_TITLE % Data.ERAS[1]["name"], 22)
+	head.add_child(title)
+	for e in Data.ERAS:  # a tab per era
+		var tab := Ui.button(Data.ERAS[e]["name"])
+		tab.toggle_mode = true
+		tab.custom_minimum_size = Vector2(0, 26)
+		var which: int = e
+		tab.pressed.connect(func(): _pick_era(which))
+		head.add_child(tab)
+		era_buttons[e] = tab
 	counter = Ui.label("", Ui.MIN_TEXT)
 	counter.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	counter.add_theme_color_override("font_color", Ui.TEXT_DIM)
@@ -166,6 +178,24 @@ func _on_action() -> void:
 	_on_card(shown)
 
 
+## The player picked an era's tab (one that has opened): from then on the panel keeps it.
+func _pick_era(e: int) -> void:
+	if not _era_open(e):
+		refresh()
+		return
+	era_chosen = true
+	board.set_era(e)
+	scroll.scroll_horizontal = 0
+	scroll.scroll_vertical = 0
+	rows_key = ""
+	refresh()
+
+
+## Era 2's tab opens when Bronze Dawn is discovered.
+func _era_open(e: int) -> bool:
+	return e == 1 or state.tech_tree.researched.has("bronze_dawn")
+
+
 ## The player picked a view: from then on the panel keeps it.
 func _pick_view(which: String) -> void:
 	view_chosen = true
@@ -179,6 +209,8 @@ func _pick_view(which: String) -> void:
 func _on_open() -> void:
 	if not visible:
 		return
+	if not era_chosen:
+		board.set_era(2 if _era_open(2) else 1)
 	if not view_chosen:
 		board.set_view("next" if state.tech_tree.researched.size() < WHOLE_BOARD_FROM else "all")
 	refresh()
@@ -201,10 +233,19 @@ func _on_open() -> void:
 func refresh() -> void:
 	if not visible:
 		return
-	var done := state.tech_tree.researched.size()
 	var ready_now := state.tech_tree.ready_list()
-	# The count leaves out a tech that is still hidden, so it doesn't give it away.
-	counter.text = Data.COUNTER % [done, Rules.visible_techs(state.shard_seen).size(), ready_now.size()]
+	# The count is of this era's board, and leaves out a tech that is still hidden, so it doesn't give it away.
+	var mine: Array = Rules.era_techs(board.era)
+	var done := mine.filter(func(t): return state.tech_tree.researched.has(t)).size()
+	var seen := mine.filter(func(t): return state.tech_tree.tech_visible(t)).size()
+	var ready_here := ready_now.filter(func(t): return t in mine).size()
+	counter.text = Data.COUNTER % [done, seen, ready_here]
+	title.text = Data.BOARD_TITLE % Data.ERAS[board.era]["name"]
+	for e in era_buttons:
+		var tab: Button = era_buttons[e]
+		tab.button_pressed = e == board.era
+		tab.disabled = not _era_open(e)
+		tab.tooltip_text = Data.ERA_TAB_TIP % Data.ERAS[e]["name"] if _era_open(e) else Data.ERA_TAB_LOCKED
 	for which in view_buttons:
 		view_buttons[which].button_pressed = which == board.view
 	for id in stock_chips:
@@ -262,11 +303,12 @@ func _fill_row(row: HBoxContainer, caption: String, techs: Array, empty: String)
 
 ## A queue or ready chip's tooltip: the cost, what the building will cost after, and a heads-up when paying leaves too little.
 func _chip_tip(tech: String) -> String:
-	var lines: Array = ["Cost: " + Ui.cost_text(Data.TECHS[tech]["cost"])]
+	var lines: Array = ["Cost: " + Ui.cost_text(state.tech_tree.cost_of(tech))]
 	if Ui.then_builds_text(tech) != "":
 		lines.append(Ui.then_builds_text(tech))
-		if state.tech_tree.can_research(tech) and Ui.build_warning(state.economy.inv, tech) != "":
-			lines.append(Ui.build_warning(state.economy.inv, tech))
+		var warning := Ui.build_warning(state.economy.inv, tech, state.tech_tree.cost_of(tech))
+		if state.tech_tree.can_research(tech) and warning != "":
+			lines.append(warning)
 	return "\n".join(lines)
 
 
@@ -287,7 +329,9 @@ func _show_tech(tech: String) -> void:
 	var lane: String = Data.LANES[t["lane"]]["name"] if Data.LANES.has(t["lane"]) else "Gate"
 	var state_text := Data.STATE_DONE
 	if not state.tech_tree.researched.has(tech):
-		if state.tech_tree.can_research(tech):
+		if not Rules.tech_enabled(tech):
+			state_text = Data.TECH_UNBUILT
+		elif state.tech_tree.can_research(tech):
 			state_text = Data.STATE_READY
 		elif state.tech_tree.requirements_met(tech):
 			state_text = Data.STATE_MORE
@@ -297,12 +341,19 @@ func _show_tech(tech: String) -> void:
 	strip["title"].text = "%s  ·  %s  ·  %s%s" % [t["name"], lane, state_text, side]
 	strip["title"].add_theme_color_override("font_color", Ui.TEXT)
 	strip["desc"].text = t["desc"]
-	strip["cost"].text = "Cost (have/need): " + Ui.progress_text(state.economy.inv, t["cost"], 99)
+	var unbuilt := not Rules.tech_enabled(tech)
+	strip["cost"].text = (
+		Data.TECH_UNBUILT
+		if unbuilt
+		else "Cost (have/need): " + Ui.progress_text(state.economy.inv, state.tech_tree.cost_of(tech), 99)
+	)
 	var researched: bool = state.tech_tree.researched.has(tech)
-	if not researched and Ui.then_builds_text(tech) != "":
+	if not researched and not unbuilt and Ui.then_builds_text(tech) != "":
 		strip["cost"].text += "     " + Ui.then_builds_text(tech)
 	var warn := (
-		"" if researched or not state.tech_tree.can_research(tech) else Ui.build_warning(state.economy.inv, tech)
+		""
+		if researched or not state.tech_tree.can_research(tech)
+		else Ui.build_warning(state.economy.inv, tech, state.tech_tree.cost_of(tech))
 	)
 	strip["warn"].text = warn
 	strip["warn"].visible = warn != ""
@@ -316,7 +367,7 @@ func _show_tech(tech: String) -> void:
 			strip["cost"].text += (" · next: " + Ui.progress_text(state.economy.inv, Ranks.next_cost(state, tech), 99))
 	strip["links"].text = "NEEDS: %s     LEADS TO: %s" % [_needs_text(tech), _leads_text(tech)]
 	var route := Rules.route_to(tech, state.tech_tree.researched, Rules.visible_techs(state.shard_seen))
-	if route.is_empty():
+	if route.is_empty() or unbuilt:
 		strip["route"].text = ""
 	else:
 		var names: Array = route.map(func(r): return Data.TECHS[r]["name"])
@@ -327,7 +378,7 @@ func _show_tech(tech: String) -> void:
 			"YOUR ROUTE: " + " › ".join(names) + ("     Ready now: " + ", ".join(now) if not now.is_empty() else "")
 		)
 	var b: Button = strip["button"]
-	b.visible = not state.tech_tree.researched.has(tech) or not Ranks.next_cost(state, tech).is_empty()
+	b.visible = not unbuilt and (not researched or not Ranks.next_cost(state, tech).is_empty())
 	b.disabled = false
 	b.text = Data.DISCOVER_BUTTON % t["name"] if state.tech_tree.can_research(tech) else Data.QUEUE_BUTTON
 	if state.tech_tree.goal == tech:

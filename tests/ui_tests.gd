@@ -149,7 +149,11 @@ func test_story_cards_stay_hidden_until_revealed() -> void:
 	t.check(CardText.shown(s, "shard_cairn"), "and shows after, when Star Lore is reachable")
 	for type in Data.BUILDINGS:
 		var def: Dictionary = Data.BUILDINGS[type]
-		t.check(not def.get("story", false) or def["kind"] in ["aura", "cairn"], "only Lore buildings are story cards")
+		var era_two: bool = def.get("tech", "") != "" and int(Data.TECHS[def["tech"]].get("era", 1)) == 2
+		t.check(
+			not def.get("story", false) or def["kind"] in ["aura", "cairn"] or era_two,
+			"only Lore and next-era buildings are story cards"
+		)
 
 
 func test_messages_stack_and_expire() -> void:

@@ -11,6 +11,7 @@ const BuildingPanel = preload("res://scripts/building_panel.gd")
 const Overlays = preload("res://scripts/overlays.gd")
 const Hands = preload("res://scripts/hands.gd")
 const World = preload("res://scripts/world.gd")
+const Land = preload("res://scripts/land.gd")
 
 ## What Sim lets a caller do itself: commands that touch several blocks at once. Anything a single block can
 ## answer is asked of that block (`sim.economy.can_afford`), so a new name here needs a reason: add it to this
@@ -408,7 +409,7 @@ func test_research_queue() -> void:
 ## Side branches are exactly the techs Bronze Dawn doesn't need.
 func test_side_branches_are_marked() -> void:
 	var needed := Rules.route_to("bronze_dawn", {}, Rules.visible_techs(false))
-	for tech in Data.TECHS:
+	for tech in Rules.era_techs(1):
 		if tech != "bronze_dawn":
 			t.check(
 				Data.TECHS[tech].get("side", false) == (tech not in needed), tech + " is marked side only if optional"
@@ -477,15 +478,19 @@ func test_tree_gates_every_building() -> void:
 		for other in Data.TECHS:
 			if other != tech:
 				s.tech_tree.researched[other] = true
+		if def.has("on_tiles"):  # ore lies in the land that grows east
+			s.tech_tree.researched["bronze_dawn"] = true
+			Land.grow_if_due(s)
+			s.fog.reveal_all()
 		var ok := 0
-		for y in World.HEIGHT:
-			for x in World.WIDTH:
+		for y in s.world.height:
+			for x in s.world.width:
 				if s.town.placement_error(type, Vector2i(x, y)) == "":
 					ok += 1
 		t.check(ok == 0, "%s can't be placed anywhere before %s (%d tiles)" % [type, tech, ok])
 		s.tech_tree.researched[tech] = true
-		for y in World.HEIGHT:
-			for x in World.WIDTH:
+		for y in s.world.height:
+			for x in s.world.width:
 				if s.town.placement_error(type, Vector2i(x, y)) == "":
 					ok += 1
 		t.check(ok > 0 or def["kind"] == "camp", "%s can be placed once %s is researched" % [type, tech])
