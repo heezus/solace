@@ -16,6 +16,7 @@ const Hands = preload("res://scripts/hands.gd")
 const UiTests = preload("res://tests/ui_tests.gd")
 const Ui = preload("res://scripts/ui.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
+const HudChecks = preload("res://tests/tools/hud_checks.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
 const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
 
@@ -24,7 +25,6 @@ const MAX_FRAMES := 9000
 const ERA_FRAMES := 520  # frames played on after Bronze Dawn: the land grows, the era-2 bot digs, smelts and pours
 const RESIZE_AT := 400  # frame: the window is resized once, and the map must refit
 const SHRINK_AT := 450  # frame: and made smaller than the design size
-const ICON_SIZE := Vector2(24, 24)  # a good's sprite in the top bar
 const WALL := "A long line of text that has to wrap onto several lines inside the Info panel. "
 
 var main: Node
@@ -145,125 +145,22 @@ func _era_two_checks() -> void:
 			main.paused = true
 			main.era_card.open()  # the Falling Star's card, as the story opens it
 		92:
-			_check_end_card("at the shrunk window")
+			_report(HudChecks.end_card(main, "at the shrunk window"))
 		93:
 			root.size = Vector2i(1280, 800)
 		97:
-			_check_end_card("at 1280x800")
+			_report(HudChecks.end_card(main, "at 1280x800"))
 			_shot("end_card")
 			main.era_card.close()
 			main.paused = false
 			main.ui_refresh = 0.0
 		98:
-			_check_third_row("at 1280x800")
+			_report(HudChecks.third_row(main, "at 1280x800"))
 			_shot("third_row")
 			frozen = false
 	if frame > dawn_frame + 6 and frame % 25 == 0:
 		_check_top_bar_text("in the second era, frame %d" % frame)
 		_check_fit("in the second era, frame %d" % frame)
-
-
-## The Falling Star's card sits in the middle of the dimmed map view (not the top left), clear of the top bar, the side
-## panel and the bottom bar, inside the window, with the Keep building button on it, and the game waits behind it.
-func _check_end_card(when: String) -> void:
-	hud_checks += 1
-	var card: Control = main.era_card
-	var panel: Control = null
-	var button: Button = null
-	for c in _all(card):
-		if c is PanelContainer:
-			panel = c
-		elif c is Button:
-			button = c
-	if panel == null or button == null or not card.visible:
-		problems.append("%s: the end card isn't up with its panel and button" % when)
-		return
-	var r: Rect2 = panel.get_global_rect()
-	var view: Rect2 = main.view
-	if r.size.x < 200.0 or r.size.y < 100.0:
-		problems.append("%s: the end card is only %s" % [when, r.size])
-	if r.get_center().distance_to(view.get_center()) > 2.0:
-		problems.append("%s: the end card (%s) isn't centred in the map view (%s)" % [when, r, view])
-	for part in ["top_bar", "bottom_bar", "side_panel"]:
-		var other: Rect2 = main.get(part).get_global_rect()
-		if r.intersects(other):
-			problems.append("%s: the end card (%s) covers the %s (%s)" % [when, r, part, other])
-	if not Rect2(Vector2.ZERO, main.get_viewport_rect().size).encloses(r):
-		problems.append("%s: the end card (%s) runs off the window" % [when, r])
-	if not r.encloses(button.get_global_rect()) or button.text != Data.ERA_END_BUTTON:
-		problems.append("%s: the Keep building button isn't on the card" % when)
-	if not main.paused:
-		problems.append("%s: the game isn't paused behind the end card" % when)
-	var readout := Rect2(main.top_bar.kith_label.get_global_position(), main.top_bar.kith_label.size)
-	if r.intersects(readout) or r.position.x < view.position.x or r.position.y < main.top_bar.get_global_rect().end.y:
-		problems.append("%s: the end card sits over the Kith readout" % when)
-
-
-## The second era's row of chips: each is the sprite (as big as the other rows'), the good's name in readable text and
-## the count, on one line, with a tooltip that carries the rate, and none touches the bar's edge or is cut off.
-func _check_third_row(when: String) -> void:
-	hud_checks += 1
-	var tb = main.top_bar
-	var seen := 0
-	for id in tb.chips:
-		if int(Data.ITEMS[id].get("era", 1)) != 2:
-			continue
-		var c: Dictionary = tb.chips[id]
-		if not c["box"].is_visible_in_tree():
-			problems.append("%s: the %s chip isn't showing in the third row" % [when, id])
-			continue
-		seen += 1
-		var item: Dictionary = Data.ITEMS[id]
-		var short: String = item.get("short", item["name"])
-		var names: Array = _labels(c["box"]).filter(func(l): return l.text == short)
-		if names.is_empty():
-			problems.append("%s: the %s chip has no name (%s) beside its count" % [when, id, short])
-		for l in names:
-			if l.get_theme_font_size("font_size") < Ui.MIN_TEXT:
-				problems.append("%s: the %s chip's name is under %d px" % [when, id, Ui.MIN_TEXT])
-		if c["icon"].size != tb.chips["wood"]["icon"].size:
-			problems.append(
-				"%s: the %s sprite is %s, not %s like the first row" % [when, id, c["icon"].size, ICON_SIZE]
-			)
-		if not String(c["box"].tooltip_text).contains("per second"):
-			problems.append("%s: the %s chip's tooltip lost the rate" % [when, id])
-	if seen != 5:
-		problems.append("%s: %d chips in the third row, not 5" % [when, seen])
-	_check_chip_fit(when)
-
-
-## Every chip keeps TopBar.EDGE_PAD from the bar's top and bottom edge (the bottom rule sits inside that) and stays
-## inside the bar's goods area, not clipped at its right end.
-func _check_chip_fit(when: String) -> void:
-	hud_checks += 1
-	var tb = main.top_bar
-	var bar: Rect2 = tb.get_global_rect()
-	var goods: Rect2 = tb.chips["wood"]["box"].get_parent().get_parent().get_global_rect()
-	var vp: Vector2 = main.get_viewport_rect().size
-	for id in tb.chips:
-		var box: Control = tb.chips[id]["box"]
-		if not box.is_visible_in_tree():
-			continue
-		var r: Rect2 = box.get_global_rect()
-		if r.position.y < bar.position.y + tb.EDGE_PAD - 0.5:
-			problems.append(
-				(
-					"%s: the %s chip is %.0f px from the bar's top edge (want %.0f)"
-					% [when, id, r.position.y - bar.position.y, tb.EDGE_PAD]
-				)
-			)
-		var below: float = bar.end.y - r.end.y
-		if below < tb.EDGE_PAD + tb.RULE_W - 0.5:
-			problems.append(
-				(
-					"%s: the %s chip is %.0f px from the bar's bottom edge (want %d)"
-					% [when, id, below, tb.EDGE_PAD + tb.RULE_W]
-				)
-			)
-		if vp.x >= 1279.0 and r.end.x > goods.end.x + 0.5:
-			problems.append(
-				"%s: the %s chip runs out of the goods area (%.0f > %.0f)" % [when, id, r.end.x, goods.end.x]
-			)
 
 
 ## The research board after Bronze Dawn opens on the second era, with its tab, its 16 cards and the locked ones saying so.
@@ -579,7 +476,7 @@ func _check_stable(what: String) -> void:
 		problems.append(
 			"%s: the map moved (%s, x%s -> %s, x%s)" % [what, base["pos"], base["scale"], main.position, main.scale]
 		)
-	_check_chip_fit(what)
+	_report(HudChecks.chip_fit(main, what))
 	var chip_x: float = main.top_bar.chips["wood"]["box"].get_global_rect().position.x
 	if not is_equal_approx(chip_x, base["chip_x"]):
 		problems.append("%s: the chips moved sideways (%.0f -> %.0f)" % [what, base["chip_x"], chip_x])
@@ -989,11 +886,10 @@ func _texts(node: Node) -> Array:
 	return out
 
 
-func _all(node: Node) -> Array:
-	var out: Array = [node]
-	for c in node.get_children():
-		out += _all(c)
-	return out
+## Take in the problems another check found, and count it as a HUD check.
+func _report(found: Array) -> void:
+	hud_checks += 1
+	problems.append_array(found)
 
 
 ## Save the window to $LAYOUT_SHOTS/<name>.png when that is set (a way to look at the HUD; the pass doesn't need it).
