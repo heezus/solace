@@ -6,6 +6,9 @@ extends SceneTree
 
 const Data = preload("res://scripts/data.gd")
 const World = preload("res://scripts/world.gd")
+const Autoplay = preload("res://tests/autoplay.gd")
+const Rules = preload("res://scripts/rules.gd")
+const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
 
 const TILE_OF := {
 	"wood": "tree", "stone": "rock", "flint": "gravel", "fiber": "flax", "berries": "berry", "clay": "clay"
@@ -19,7 +22,7 @@ var log_lines: Array = []
 var mode := OS.get_environment("NEWBIE_MODE")  # "" or "no_berry_hut"
 var capped := false
 var last_food_log := 0.0
-const WALL_CAP_MS := 780000
+var wall_cap_ms := 780000 if OS.get_environment("NEWBIE_MODE") != "bronze" else 840000
 
 
 func _init() -> void:
@@ -40,7 +43,7 @@ func _process(delta: float) -> bool:
 		last_food_log = game_time
 		var st = main.state
 		_say("FOOD berries=%d kith=%d speed=%s food_label='%s'" % [st.economy.inv.get("berries", 0), st.people.kith.size(), main.speed, main.top_bar.food_label.text.replace("\n", " / ")])
-	if not capped and Time.get_ticks_msec() > WALL_CAP_MS:
+	if not capped and Time.get_ticks_msec() > wall_cap_ms:
 		capped = true
 		_finish_capped()
 	return false
@@ -478,11 +481,107 @@ func _run() -> void:
 		await _wait(30.0)
 		await _shot("workshops_30s_later")
 		_kith_check("end")
-		await _wait(60.0 if mode == "" else 150.0)
-		await _shot("final_60s_more")
-		_kith_check("final")
+		if mode == "bronze":
+			await _bronze_phase()
+		else:
+			await _wait(60.0 if mode == "" else 150.0)
+			await _shot("final_60s_more")
+			_kith_check("final")
 	else:
 		_say("never got the Gatherer's Hut tech")
 	_say("end of newbie pass")
 	_write_log()
 	quit(0)
+
+
+# --- Bronze Dawn: the bot fast-forwards to the dawn, then we look around like a newcomer ----------------
+
+
+func _tiles_of(kind: String) -> Array:
+	var out: Array = []
+	var s = main.state
+	for y in s.world.height:
+		for x in range(s.world.stone_width, s.world.width):
+			if s.world.tile_at(Vector2i(x, y)) == kind:
+				out.append(Vector2i(x, y))
+	return out
+
+
+func _hover_info(p: Vector2i, name: String) -> void:
+	_move(_screen_of(p))
+	_click(_screen_of(p))
+	await _wait(0.3)
+	_say("%s info at %s: '%s'" % [name, p, main.side_panel.info_label.text.replace("\n", " / ")])
+	await _shot(name)
+
+
+func _bronze_phase() -> void:
+	var s = main.state
+	_say("BRONZE: handing the town to the bot until Bronze Dawn")
+	main.paused = true
+	var bot := AutoplayBronze.new()
+	bot.attach(s)
+	var frames := 0
+	var dawn_frame := -1
+	while frames < 9000:
+		frames += 1
+		for i in 40:
+			if s.won and dawn_frame < 0:
+				break
+			s.tick(Autoplay.DT)
+			bot.step(false)
+		if s.won and dawn_frame < 0:
+			dawn_frame = frames
+			bot.begin_era_two()
+			_say("BRONZE: Bronze Dawn won at frame %d, bot clock %.0f s" % [frames, bot.clock])
+			break
+		if frames % 600 == 0:
+			_say("BRONZE: frame %d, bot clock %.0f s" % [frames, bot.clock])
+		await process_frame
+	if dawn_frame < 0:
+		_say("BRONZE: never reached Bronze Dawn")
+		return
+	await _wait(1.0)
+	await _shot("dawn_0")
+	var era_start := bot.clock
+	var shots := 0
+	var next_shot := 0
+	var opened := false
+	while not bot.made_bronze() and bot.clock - era_start < 1200.0 and frames < 16000:
+		frames += 1
+		for i in 20:
+			s.tick(Autoplay.DT)
+			bot.step(false)
+		var since := bot.clock - era_start
+		if since >= next_shot:
+			next_shot += 60
+			shots += 1
+			_say("BRONZE +%.0f s: inv=%s mines=%d" % [since, str(s.economy.inv), s.town.buildings.filter(func(b): return b["type"] == "mine").size()])
+			await _shot("era2_%03d_s" % int(since))
+			if since >= 60 and not opened:
+				opened = true
+				_key(KEY_T)
+				await _wait(0.5)
+				_say("tech board era=%s" % str(main.tech_panel.board.era))
+				await _shot("era2_tech_board")
+				_key(KEY_T)
+			if since >= 120 and shots == 3:
+				var hills := _tiles_of("copper_hills")
+				if not hills.is_empty() and s.fog.is_revealed(hills[0]):
+					await _hover_info(hills[0], "hover_copper_hills")
+				var tin := _tiles_of("tin_stream")
+				if not tin.is_empty():
+					main.center_on(tin[0])
+					await _wait(0.3)
+					await _shot("tin_stream_%s" % ("seen" if s.fog.is_revealed(tin[0]) else "fogged"))
+				var bar = main.bottom_bar
+				if bar.tab_buttons.has("Metal"):
+					_click_control(bar.tab_buttons["Metal"])
+					await _wait(0.3)
+					await _shot("metal_tab")
+				main.center_on(s.world.camp_pos)
+		await process_frame
+	_say("BRONZE: made_bronze=%s after %.0f s of era 2" % [str(bot.made_bronze()), bot.clock - era_start])
+	await _shot("era2_end")
+	for l in bot.lines.slice(-60):
+		_say("bot: " + str(l))
