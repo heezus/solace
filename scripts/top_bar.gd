@@ -29,9 +29,10 @@ const MINUS := "−"
 const CHIP_W := 80.0
 const ICON := 24.0  # a good's sprite, with nothing behind it
 const ROW_H := 42.0  # a row of chips keeps this height whether or not its goods have appeared yet
-## The bar is never shorter than its two rows of chips and the panel's margins: it is reserved from the first frame,
-## so a chip, a note or a long line appearing later can never make it (or the map under it) grow.
-const BAR_H := ROW_H * 2.0 + 10.0
+## The bar is never shorter than its tallest block, the Kith block with its name, jobs line and three lines of note,
+## plus the panel's margins: it is reserved from the first frame, so a chip, a note or a long line appearing later can
+## never make it (or the map under it) grow.
+const BAR_H := 113.0
 const FOOD_W := 190.0
 const COUNT_SIZE := 18  # numbers are 18
 const KITH_W := 216.0  # the Kith block, wide enough for "Jobs filled 19 of 19  ·  25 hauling"
@@ -60,7 +61,7 @@ func setup(game: Sim) -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
 	custom_minimum_size.y = BAR_H
 	var h := HBoxContainer.new()
-	h.add_theme_constant_override("separation", 10)
+	h.add_theme_constant_override("separation", 8)
 	add_child(h)
 
 	var kv := VBoxContainer.new()
@@ -132,7 +133,7 @@ func setup(game: Sim) -> void:
 	for part in [["Pause", 0], ["1x", 1], ["2x", 2], ["3x", 3]]:
 		var b := Ui.button(part[0])
 		b.toggle_mode = true
-		b.custom_minimum_size = Vector2(60 if part[1] == 0 else 38, 28)
+		b.custom_minimum_size = Vector2(60 if part[1] == 0 else 36, 28)
 		b.tooltip_text = "Pause or resume (Space)" if part[1] == 0 else "Speed x%d (key %d)" % [part[1], part[1]]
 		var v: int = part[1]
 		b.pressed.connect(func(): speed_picked.emit(v))

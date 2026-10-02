@@ -40,7 +40,7 @@ var refit_due := 0  # the frame by which the map must have refit after a resize
 var hud_checks := 0  # how many HUD checks ran
 var base := {}  # the top bar's height and the map's place before the stress cases
 var saved := {}  # the stockpile as it was, put back after them
-var row_at: Array = []  # the buildings placed by hand for the pill check
+var row_at: Array = []  # the buildings placed by hand for the badge check
 var frozen := false  # the bot's ticking is paused while a check sets the state by hand
 
 
@@ -304,7 +304,7 @@ func _build_a_row_of_buildings() -> void:
 			if ok:
 				spot = p
 	if spot.x < 0:
-		problems.append("no room for a row of buildings for the pill check")
+		problems.append("no room for a row of buildings for the badge check")
 		return
 	var alerts := [
 		"Needs Wood", "Idle: no free Kith", "Needs Wood", "Hungry: no food", "Needs road", "Idle: no free Kith"
@@ -317,10 +317,10 @@ func _build_a_row_of_buildings() -> void:
 	main.ui_refresh = 999.0
 
 
-## No alert pill overlaps another pill, a click badge or a building, and none leaves the map.
+## No alert badge leaves its tile, overlaps another badge or sits under a click badge.
 func _check_pills(what: String) -> void:
 	hud_checks += 1
-	for line in UiTests.pill_problems(main.state).slice(0, 3):
+	for line in UiTests.badge_problems(main.state).slice(0, 3):
 		problems.append("%s: %s" % [what, line])
 
 
