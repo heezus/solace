@@ -49,30 +49,52 @@ func run(runner) -> void:
 	test_maps_differ()
 	test_patching_makes_a_ruined_map_fair()
 	test_tiny_maps_are_safe()
-	test_the_bot_wins_from_a_stocked_start()
+	test_the_bot_gets_a_hut_up_when_every_kith_has_a_job()
 	print_maps([1, 2, 3, 4])
 
 
 # The Xvfb play pass (tests/tools/play_pass.gd) hands the bot a stocked start: 40 of everything, the first
-# techs bought and the first Kith skilled. The map it draws (seed 7's first randi) once left the bot with
-# every Kith on a Twine Post or Charcoal Pit and no hut, so no food income and no births, for good.
-func test_the_bot_wins_from_a_stocked_start() -> void:
-	for map_seed in [1352667803, 1, 4]:
+# techs bought, and a Charcoal Pit already up. On the map seed 7 draws, the bot then spent its wood on Twine
+# Posts and roads, every Kith had a job, and it never built a hut: no food income, so no births, for good.
+# Here that state is made by hand, and the bot must still get a Berries hut up and its people growing.
+func test_the_bot_gets_a_hut_up_when_every_kith_has_a_job() -> void:
+	for map_seed in [1352667803, 1, 3, 5]:
 		var game := Sim.new()
 		game.generate(map_seed)
-		for item in ["wood", "stone", "flint", "berries", "fiber"]:
-			game.people.learned_by[item] = "Tester"
 		for id in game.economy.inv:
 			game.economy.inv[id] = 40
-		for tech in ["knapping", "foraging", "cordage", "fire", "gatherers_hut", "storytelling"]:
+		for tech in ["knapping", "foraging", "cordage", "fire", "gatherers_hut", "storytelling", "haulers"]:
 			game.research(tech)
 		for id in game.economy.inv:
-			game.economy.inv[id] = maxi(game.economy.inv[id], 40)
+			game.economy.inv[id] = 40
+		var placed := 0
+		for type in ["charcoal_pit", "twine_post", "twine_post"]:
+			placed += 1 if _place_near_hearth(game, type) else 0
+		t.check(placed == 3, "map %d: a pit and two posts stand by the Hearth" % map_seed)
+		for id in ["wood", "stone"]:
+			game.economy.inv[id] = 4  # too little for a hut: the bot has to gather it
 		var bot := Autoplay.new()
 		bot.attach(game)
-		while bot.clock < 25 * 60.0 and not game.won:
+		while bot.clock < 15 * 60.0 and game.people.kith.size() < 4:
 			bot.step(true)
-		t.check(game.won, "the bot wins map %d from a stocked start (%.1f min)" % [map_seed, bot.clock / 60.0])
+		var huts := 0
+		for b in game.town.buildings:
+			huts += 1 if b["type"] == "gatherers_hut" else 0
+		t.check(
+			huts > 0 and game.people.kith.size() > 3,
+			"map %d: a hut went up and the Kith grew (%d huts, %d Kith)" % [map_seed, huts, game.people.kith.size()]
+		)
+
+
+func _place_near_hearth(game: Sim, type: String) -> bool:
+	var camp: Vector2i = game.world.camp_pos
+	for r in range(2, 7):
+		for dy in range(-r, r + 1):
+			for dx in range(-r, r + 1):
+				var at := camp + Vector2i(dx, dy)
+				if game.town.placement_error(type, at) == "" and game.place(type, at):
+					return true
+	return false
 
 
 # --- Helpers -------------------------------------------------------------------
