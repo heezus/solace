@@ -13,7 +13,8 @@ const Hands = preload("res://scripts/hands.gd")
 const World = preload("res://scripts/world.gd")
 
 const BOT_STEPS_PER_FRAME := 40
-const MAX_FRAMES := 4000
+const MAX_FRAMES := 6000
+const SETTLE_SECONDS := 60.0  # game time the town runs on its own before the bot takes over
 
 var main: Node
 var frame := 0
@@ -71,8 +72,11 @@ func _finish() -> void:
 # --- Input helpers -------------------------------------------------------------
 
 
+## Where tile p is on screen, after scrolling the map view to it if it is out of sight.
 func _screen_of(p: Vector2i) -> Vector2:
-	return main.position + (Vector2(p) + Vector2(0.5, 0.5)) * main.TILE * main.scale.x
+	if not main.view.grow(-main.TILE).has_point(main.screen_of(p)):
+		main.center_on(p)
+	return main.screen_of(p)
 
 
 ## Canvas coordinates (what Controls and the map use) to window coordinates (what input events carry).
@@ -322,6 +326,10 @@ func _script() -> void:
 	# Right-click cancels placing; a dragged Road lays a line.
 	_then(func(): _road_drag(), 2)
 	_then(func(): _road_drag_check(), 3)
+	# Let the town run a minute of game time with the UI drawing. The bot starts from whatever state the checks left,
+	# and a short, fast run of them (a lighter frame) left it one that could dead-end: workshops ahead of any hut.
+	_then(func(): probe["settled"] = game_time + SETTLE_SECONDS)
+	_wait_for(func(): return game_time >= probe["settled"], "game time stopped", int(SETTLE_SECONDS * 1500))
 	# Then the bot plays to Bronze Dawn with the UI drawing.
 	_then(func(): _start_bot(), 5)
 
@@ -489,7 +497,7 @@ func _first_click_panel() -> void:
 func _board_click_through() -> void:
 	var s = main.state
 	var panel = main.tech_panel
-	var over: Vector2 = _screen_of(_nearest("tree"))
+	var over := func() -> Vector2: return _screen_of(_nearest("tree"))  # looked up when used: the map may scroll
 	_then(
 		func():
 			if not panel.visible:
@@ -502,9 +510,9 @@ func _board_click_through() -> void:
 	_then(
 		func():
 			_expect(panel.visible, "T didn't open the research board")
-			_hold_on(over)
+			_hold_on(over.call())
 	)
-	_then(func(): _button(over, MOUSE_BUTTON_LEFT, false), 90)
+	_then(func(): _button(over.call(), MOUSE_BUTTON_LEFT, false), 90)
 	_then(
 		func():
 			_expect(s.hand_counts == probe["counts"], "holding on the research board harvested the map under it")
@@ -529,8 +537,8 @@ func _board_click_through() -> void:
 		3
 	)
 	# The same hold with the board shut does harvest, so the check above means something.
-	_then(func(): _hold_on(over), 2)
-	_then(func(): _button(over, MOUSE_BUTTON_LEFT, false), 90)
+	_then(func(): _hold_on(over.call()), 2)
+	_then(func(): _button(over.call(), MOUSE_BUTTON_LEFT, false), 90)
 	_then(func(): _expect(s.hand_counts != probe["counts"], "holding on the map with the board shut harvested nothing"))
 
 

@@ -1,17 +1,19 @@
 extends RefCounted
 ## Drawing the Kith on the map: every one of them, all the time. Walking, gathering, hauling, working at a
 ## building (drawn beside it, not hidden inside) or standing about (spread in a ring, so nobody stacks).
-## They use the Kith sprite (art/sprites/kith.svg) with a soft shadow, about half a tile wide, and a carried item
-## shows above the head. Static: `ci` is the map (a CanvasItem drawing in tile units of Overlays.TILE), `s` the Sim.
+## They use the Kith sprite (art/sprites/kith.svg) drawn at tile scale (3 px outline) with its soft oval shadow:
+## the figure is about 0.7 tile tall. A carried item shows above the head.
+## Static: `ci` is the map (a CanvasItem drawing in map px, Overlays.TILE a tile), `s` the Sim.
 
 const Data = preload("res://scripts/data.gd")
 const Art = preload("res://scripts/art.gd")
 const Overlays = preload("res://scripts/overlays.gd")
 
 const KITH := Color("e76f51")
-const SPRITE := 34.0  # the sprite's square, in map units: the figure inside is about half a tile wide
-const RING := 22.0  # how far from its spot an idle Kith stands
-const SEAT := Vector2(12, 10)  # where a worker stands beside its building, from the tile's center
+const SPRITE := Overlays.TILE  # the sprite's square: drawn at 1.5x, so its 2-unit outline is 3 px
+const RING := 33.0  # how far from its spot an idle Kith stands
+const HEARTH_RING := 66.0  # round the Hearth: outside its 2x2 drawing
+const SEAT := Vector2(18, 15)  # where a worker stands beside its building, from the tile's center
 
 
 ## Where each Kith is drawn (map units), by index, and whether it is working at its building.
@@ -40,8 +42,9 @@ static func spots(s, time: float) -> Array:
 		if spot["still"]:
 			var count: int = groups[spot["tile"]]
 			var angle: float = TAU * (spot["n"] + 0.5) / count + 0.7
-			var sway := Vector2(sin(time * 0.9 + i * 1.7), cos(time * 0.7 + i * 2.3)) * 3.0
-			spot["pos"] = Overlays.center(spot["tile"]) + Vector2.from_angle(angle) * RING + sway
+			var sway := Vector2(sin(time * 0.9 + i * 1.7), cos(time * 0.7 + i * 2.3)) * 4.5
+			var ring := HEARTH_RING if spot["tile"] == s.world.camp_pos else RING
+			spot["pos"] = Overlays.center(spot["tile"]) + Vector2.from_angle(angle) * ring + sway
 	return out
 
 
@@ -56,13 +59,13 @@ static func draw_all(ci: CanvasItem, s, time: float) -> void:
 		var at: Vector2 = spot["pos"]
 		var moving: bool = not k["path"].is_empty()
 		if moving:
-			at.y += sin(time * 12.0 + at.x) * 1.5
+			at.y += sin(time * 12.0 + at.x) * 2.25
 		elif spot["working"]:
-			at.y += absf(sin(time * 5.0 + i)) * -2.0  # a little hop while it works
+			at.y += absf(sin(time * 5.0 + i)) * -3.0  # a little hop while it works
 		draw_one(ci, at, k["job"] == "haul")
-		var above := at + Vector2(-6, -SPRITE * 0.7)
+		var above := at + Vector2(-10, -SPRITE * 1.08)  # over the head
 		for id in k["carry"]:
-			Art.item_icon(ci, id, Rect2(above, Vector2(12, 12)), 1.0)
+			Art.item_icon(ci, id, Rect2(above, Vector2(20, 20)), 1.0)
 
 
 ## One Kith standing at `at` (the middle of its feet): its shadow, body and head. A hauler is a shade lighter.

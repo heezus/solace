@@ -8,7 +8,7 @@ const Sim = preload("res://scripts/sim.gd")
 const Ui = preload("res://scripts/ui.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
 
-const GOAL_COLOR := Color("ffd166")
+const GOAL_COLOR: Color = Ui.HIGHLIGHT
 const GOALS_SHOWN := 2
 
 var goal_header: Label
@@ -19,9 +19,18 @@ var building_panel: BuildingPanel
 var wrap_width := 260.0
 
 
+## The panel runs from the top bar to the bottom bar with one 3 px `ui-line` rule against the map.
+static func _style() -> StyleBoxFlat:
+	var s := Ui.bar_style(Ui.PANEL, true)
+	s.border_width_bottom = 0
+	s.border_width_left = 3
+	s.set_content_margin_all(12)
+	return s
+
+
 func setup(game: Sim, width: float) -> void:
 	wrap_width = width - 30.0
-	add_theme_stylebox_override("panel", Ui.panel_style(Color("264653"), 12))
+	add_theme_stylebox_override("panel", _style())
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 6)
 	add_child(v)
@@ -80,7 +89,7 @@ func refresh_goals(s: Sim) -> void:
 		if not l.visible:
 			continue
 		l.text = ("> " if i == 0 else "  ") + Data.GOALS[gi]["text"]
-		l.add_theme_color_override("font_color", GOAL_COLOR if i == 0 else Color(1, 1, 1, 0.55))
+		l.add_theme_color_override("font_color", GOAL_COLOR if i == 0 else Ui.TEXT_DIM)
 	if cur >= total:
 		goal_labels[0].visible = true
 		goal_labels[0].text = Data.GOALS_ALL_DONE
