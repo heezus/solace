@@ -5,8 +5,10 @@ extends RefCounted
 ## differ from one another, and a tiny World is safe. It also prints maps 1 to 4 as ASCII so a person can
 ## look at them. Run from tests/run_tests.gd, which owns check().
 
+const Autoplay = preload("res://tests/autoplay.gd")
 const Data = preload("res://scripts/data.gd")
 const MapGen = preload("res://scripts/map_gen.gd")
+const Sim = preload("res://scripts/sim.gd")
 const Terrain = preload("res://scripts/map_terrain.gd")
 const World = preload("res://scripts/world.gd")
 
@@ -47,7 +49,30 @@ func run(runner) -> void:
 	test_maps_differ()
 	test_patching_makes_a_ruined_map_fair()
 	test_tiny_maps_are_safe()
+	test_the_bot_wins_from_a_stocked_start()
 	print_maps([1, 2, 3, 4])
+
+
+# The Xvfb play pass (tests/tools/play_pass.gd) hands the bot a stocked start: 40 of everything, the first
+# techs bought and the first Kith skilled. The map it draws (seed 7's first randi) once left the bot with
+# every Kith on a Twine Post or Charcoal Pit and no hut, so no food income and no births, for good.
+func test_the_bot_wins_from_a_stocked_start() -> void:
+	for map_seed in [1352667803, 1, 4]:
+		var game := Sim.new()
+		game.generate(map_seed)
+		for item in ["wood", "stone", "flint", "berries", "fiber"]:
+			game.people.learned_by[item] = "Tester"
+		for id in game.economy.inv:
+			game.economy.inv[id] = 40
+		for tech in ["knapping", "foraging", "cordage", "fire", "gatherers_hut", "storytelling"]:
+			game.research(tech)
+		for id in game.economy.inv:
+			game.economy.inv[id] = maxi(game.economy.inv[id], 40)
+		var bot := Autoplay.new()
+		bot.attach(game)
+		while bot.clock < 25 * 60.0 and not game.won:
+			bot.step(true)
+		t.check(game.won, "the bot wins map %d from a stocked start (%.1f min)" % [map_seed, bot.clock / 60.0])
 
 
 # --- Helpers -------------------------------------------------------------------
