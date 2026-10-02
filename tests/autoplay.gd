@@ -184,7 +184,7 @@ func _short() -> Dictionary:
 
 
 ## More goods the bot wants than the techs and buildings above say (a later era's bot adds its own).
-func _goal_wants(_want: Dictionary) -> void:
+func _goal_wants(_list: Dictionary) -> void:
 	pass
 
 

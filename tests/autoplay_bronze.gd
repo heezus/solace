@@ -110,12 +110,12 @@ func _explore_ore() -> bool:
 		return false
 	if reach.has(target):
 		return _explore_to(target)
-	var step := _first_step_beyond_reach(target)
-	if step.x < 0:
+	var edge := _first_step_beyond_reach(target)
+	if edge.x < 0:
 		return false
-	if s.world.tile_at(step) == "river" and s.fog.is_revealed(step):
-		return _bridge(step)
-	return _explore_to(step)
+	if s.world.tile_at(edge) == "river" and s.fog.is_revealed(edge):
+		return _bridge(edge)
+	return _explore_to(edge)
 
 
 ## A Wooden Bridge on river tile p, if Paths & Haulers is in and it can be paid for.

@@ -82,22 +82,22 @@ func check_bronze(map_seed: int, bot) -> void:
 			)
 		)
 		return
-	(
-		t
-		. check(
-			false,
+	t.check(
+		false,
+		(
 			(
-				'golden snapshot of the first Bronze differs on map %d\n  want %s\n  got  %s\n  If this change is deliberate, replace the entry for map %d in %s with:\n  "%d": %s'
-				% [
-					map_seed,
-					JSON.stringify(want),
-					JSON.stringify(got),
-					map_seed,
-					BRONZE_PATH,
-					map_seed,
-					JSON.stringify(got)
-				]
+				"golden snapshot of the first Bronze differs on map %d\n  want %s\n  got  %s\n"
+				+ '  If this change is deliberate, replace the entry for map %d in %s with:\n  "%d": %s'
 			)
+			% [
+				map_seed,
+				JSON.stringify(want),
+				JSON.stringify(got),
+				map_seed,
+				BRONZE_PATH,
+				map_seed,
+				JSON.stringify(got)
+			]
 		)
 	)
 

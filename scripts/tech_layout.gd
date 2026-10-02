@@ -3,7 +3,8 @@ extends RefCounted
 ## Pure geometry from Data.TECHS, so the headless tests can check that no line passes under a card.
 ##
 ## Each era has its own board (Data.TECHS `era`): build(era) lays out that era's techs, and a line from a tech of another
-## era (Prospecting needs Bronze Dawn) is left off it. Columns are tiers and bands are lanes (Data.LANE_ORDER). Lines are orthogonal: a line to the next
+## era (Prospecting needs Bronze Dawn) is left off it. Columns are tiers and bands are lanes (Data.LANE_ORDER).
+## Lines are orthogonal: a line to the next
 ## tier takes one vertical run in the gutter between the tiers; a line that skips tiers drops into the
 ## channel between lanes, runs along it, and climbs back up in the gutter before its target. Vertical
 ## runs get their own 7px track in a gutter and horizontal runs their own track in a channel.

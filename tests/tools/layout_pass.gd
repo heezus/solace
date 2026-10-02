@@ -21,7 +21,7 @@ const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
 
 const BOT_STEPS_PER_FRAME := 20
 const MAX_FRAMES := 9000
-const ERA_FRAMES := 320  # frames played on after Bronze Dawn: the land grows, the era-2 bot digs, smelts and pours
+const ERA_FRAMES := 520  # frames played on after Bronze Dawn: the land grows, the era-2 bot digs, smelts and pours
 const RESIZE_AT := 400  # frame: the window is resized once, and the map must refit
 const SHRINK_AT := 450  # frame: and made smaller than the design size
 const WALL := "A long line of text that has to wrap onto several lines inside the Info panel. "
@@ -171,7 +171,8 @@ func _check() -> void:
 					% [frame, last_scale.x, main.scale.x, last_bars, bars]
 				)
 			)
-	if main.view != last_view and last_view.size != Vector2.ZERO and vp == last_vp and refit_due == 0:
+	var view_changed: bool = main.view != last_view
+	if view_changed and last_view.size != Vector2.ZERO and vp == last_vp and refit_due == 0:
 		problems.append(
 			"frame %d: the map view went %s -> %s with the window unchanged" % [frame, last_view, main.view]
 		)
@@ -193,7 +194,8 @@ func _check() -> void:
 		first_pos = main.position
 	if last_vp != Vector2.ZERO and vp != last_vp:
 		refit_due = frame + 2
-	if refit_due > 0 and (main.scale != last_scale or main.position != last_pos):
+	# Refit: the map moved or rescaled, or its view took the new window's size (a map held at its left edge stays put).
+	if refit_due > 0 and (main.scale != last_scale or main.position != last_pos or view_changed):
 		refit_due = 0
 	elif refit_due > 0 and frame > refit_due:
 		problems.append("frame %d: the window went to %s but the map didn't refit" % [frame, vp])
@@ -377,7 +379,8 @@ func _build_a_row_of_buildings() -> void:
 	s.tech_tree.researched["cordage"] = true
 	s.tech_tree.researched["fire"] = true
 	for id in s.economy.inv:
-		s.economy.inv[id] = maxi(s.economy.inv[id], 100)
+		if int(Data.ITEMS[id].get("era", 1)) == 1:  # the second era's goods are the bot's to make
+			s.economy.inv[id] = maxi(s.economy.inv[id], 100)
 	var spot := Vector2i(-1, -1)
 	for dy in range(-9, 10):
 		for dx in range(-9, 10):
@@ -446,7 +449,8 @@ func _check_stable(what: String) -> void:
 func _show_hut_panel_with_a_wall_of_text() -> void:
 	var s = main.state
 	for id in s.economy.inv:
-		if not Data.FOOD_VALUE.has(id):  # food stays as it is: a big pantry with no income would stop the bot growing
+		# food stays as it is: a big pantry with no income would stop the bot growing
+		if not Data.FOOD_VALUE.has(id) and int(Data.ITEMS[id].get("era", 1)) == 1:
 			s.economy.inv[id] = maxi(s.economy.inv[id], 40)
 	s.research("gatherers_hut")
 	var at := Vector2i(-1, -1)

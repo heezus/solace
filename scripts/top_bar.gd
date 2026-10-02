@@ -17,7 +17,7 @@ const Hands = preload("res://scripts/hands.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 
 const RAW := ["wood", "stone", "flint", "fiber", "clay", "berries", "grain", "fish", "copper_ore", "tin"]
-const FIRST_ROW := 7  # goods in the first row; the rest are in the second
+const ROWS := [0, 7, 13, 17]  # where each row of goods starts in ITEM_ORDER: raw, made, the second era's four
 const LOSS := Ui.SHORT  # `alert`, lifted to read on cocoa
 ## The Food readout's text while the warning is up: light enough to read on the bar (over 4.5 to 1) at every moment.
 const ALARM_TEXT := Ui.SHORT
@@ -30,10 +30,12 @@ const MINUS := "−"
 const CHIP_W := 80.0
 const ICON := 24.0  # a good's sprite, with nothing behind it
 const ROW_H := 42.0  # a row of chips keeps this height whether or not its goods have appeared yet
+const ROW3_H := 30.0  # the second era's row: each chip is one line (sprite, count, rate), so the row is shorter
+const WIDE_CHIP_W := 128.0
 ## The bar is never shorter than its tallest block, the Kith block with its name, jobs line and three lines of note,
 ## plus the panel's margins: it is reserved from the first frame, so a chip, a note or a long line appearing later can
 ## never make it (or the map under it) grow.
-const BAR_H := 113.0
+const BAR_H := 130.0
 const FOOD_W := 190.0
 const COUNT_SIZE := 18  # numbers are 18
 const KITH_W := 216.0  # the Kith block, wide enough for "Jobs filled 19 of 19  ·  25 hauling"
@@ -103,20 +105,21 @@ func setup(game: Sim) -> void:
 	h.add_child(food_box)
 	h.add_child(VSeparator.new())
 
-	# The goods, in two rows that never wrap: RAW, and MADE with the tool count at its end.
+	# The goods, in three rows that never wrap: raw, made (with the tool count at its end), and the second era's.
 	var goods := VBoxContainer.new()
 	goods.add_theme_constant_override("separation", 2)
 	goods.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	goods.clip_contents = true  # a narrow window clips the end of a row; it never pushes the buttons off screen
 	goods.custom_minimum_size.x = 0.0
 	h.add_child(goods)
-	for group in [Data.ITEM_ORDER.slice(0, FIRST_ROW), Data.ITEM_ORDER.slice(FIRST_ROW)]:
+	for r in ROWS.size() - 1:
+		var group: Array = Data.ITEM_ORDER.slice(ROWS[r], ROWS[r + 1])
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 3)
-		row.custom_minimum_size = Vector2(0, ROW_H)
+		row.custom_minimum_size = Vector2(0, ROW3_H if r == 2 else ROW_H)
 		for id in group:
-			row.add_child(_chip(id, CHIP_W))
-		if group[0] == Data.ITEM_ORDER[FIRST_ROW]:
+			row.add_child(_chip(id, WIDE_CHIP_W if r == 2 else CHIP_W, r == 2))
+		if r == 1:
 			tools_label = Ui.label("", Ui.MIN_TEXT)
 			tools_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			_fix_width(tools_label, [tools_label], 120)
@@ -159,7 +162,7 @@ func setup(game: Sim) -> void:
 
 
 ## A fixed-width chip: the item's sprite, the count and the net rate under it. The name is in its tooltip.
-func _chip(id: String, width: float) -> PanelContainer:
+func _chip(id: String, width: float, one_line := false) -> PanelContainer:
 	var box := PanelContainer.new()
 	box.custom_minimum_size = Vector2(width, 0)
 	box.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -169,8 +172,8 @@ func _chip(id: String, width: float) -> PanelContainer:
 	box.add_child(h)
 	var icon := Ui.item_icon(id, ICON)
 	h.add_child(icon)
-	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", -8)
+	var v: BoxContainer = HBoxContainer.new() if one_line else VBoxContainer.new()
+	v.add_theme_constant_override("separation", 6 if one_line else -8)
 	var count := Ui.label("", COUNT_SIZE)
 	var rate := Ui.label("", Ui.MIN_TEXT)
 	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -182,6 +185,10 @@ func _chip(id: String, width: float) -> PanelContainer:
 	box.mouse_entered.connect(_show_flow.bind(id))
 	box.mouse_exited.connect(_hide_flow.bind(id))
 	_fix_width(box, [count, rate], width)
+	if one_line:
+		count.custom_minimum_size.x = 34.0
+		rate.custom_minimum_size.x = 52.0
+		rate.size_flags_vertical = Control.SIZE_SHRINK_END
 	chips[id] = {"box": box, "count": count, "rate": rate, "icon": icon}
 	return box
 
