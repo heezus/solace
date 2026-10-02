@@ -8,8 +8,9 @@ extends RefCounted
 ## Fairness works like MapGen's: make() builds a strip, faults_of() says what is wrong with it, and a strip that fails
 ## is thrown away and another is made from the next attempt seed (a fixed sequence). Besides the ore counts and where
 ## they lie, the tin must be reachable: by land, or across the stone-age river by a bridge (or a raft), which is no more
-## than MAX_CROSSINGS river tiles on the way from the Hearth. Static, and works on the World passed in: it reads the
-## stone-age tiles and the Hearth and returns the new tiles, it sets nothing.
+## than MAX_CROSSINGS river tiles on the way from the Hearth. And a road must be able to follow the way (road_ways): over
+## the ground roads go on, with a bridge for each river tile, to both ores. Static, and works on the World passed in: it
+## reads the stone-age tiles and the Hearth and returns the new tiles, it sets nothing.
 
 const Terrain = preload("res://scripts/map_terrain.gd")
 
@@ -24,6 +25,10 @@ const MAX_CROSSINGS := 3  # river tiles between the Hearth and the ore, at most 
 const FOREST_PERCENT := 14
 const ROCK_PERCENT := 5
 const NEIGHBORS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+const ROAD_TILES := ["grass", "rock", "tree", "river"]  # what a road (or a bridge, on the river) can be laid on
+const RIVER_WEIGHT := 1000000  # in a road's price a river tile outweighs any run of dry tiles: fewest bridges first
+const ROCK_WEIGHT := 1000  # then fewest passes cut through rocks (3 Stone each), then the shortest way
+const NONE := 1000000  # "rivers" of an ore no road can reach
 
 
 ## The new land for `s` (a World that has not grown): an Array of tile ids, `stone_width` by `height`, row by row.
@@ -148,7 +153,109 @@ static func faults_of(s, strip: Array) -> Array:
 	var cross := crossings_to_east(s)
 	if cross > MAX_CROSSINGS:
 		faults.append("the new land is %d river tiles away (at most %d)" % [cross, MAX_CROSSINGS])
+	var ways := road_ways(s, strip)
+	for ore in ways:
+		if ways[ore]["rivers"] > MAX_CROSSINGS:
+			faults.append("no road reaches the %s within %d bridges" % [ore, MAX_CROSSINGS])
 	return faults
+
+
+## What a road from the Hearth faces on its way to each ore, over the stone-age map of `s` and the new `strip` beside it:
+## {"copper": {...}, "tin": {...}}, each with "rivers" (river tiles to bridge, NONE when no road can get there), "rocks"
+## (rock tiles to cut a pass through), "steps" (tiles of road) and "at" (the ore tile it ends beside). It is the cheapest
+## way from the Hearth over grass, forest, rocks and river (fewest bridges first, then fewest passes, then the shortest)
+## to a tile beside the nearest ore of that kind. Gravel, clay and the like cannot take a road, so a bank of them is no
+## way across.
+static func road_ways(s, strip: Array) -> Dictionary:
+	var w: int = s.stone_width
+	var h: int = s.height
+	var tiles: Array = []
+	tiles.resize(w * 2 * h)
+	for y in h:
+		for x in w:
+			tiles[y * w * 2 + x] = s.tile_at(Vector2i(x, y))
+			tiles[y * w * 2 + w + x] = strip[y * w + x]
+	var cost := _road_costs(tiles, w * 2, h, s.camp_pos)
+	return {
+		"copper": _cheapest_beside(tiles, cost, w * 2, h, "copper_hills"),
+		"tin": _cheapest_beside(tiles, cost, w * 2, h, "tin_stream"),
+	}
+
+
+## The price of the cheapest road from `from` to every tile (index -> price) a road can reach: a binary heap of
+## price * 4096 + index.
+static func _road_costs(tiles: Array, w: int, h: int, from: Vector2i) -> Dictionary:
+	var cost := {from.y * w + from.x: 0}
+	var heap: Array = [from.y * w + from.x]
+	while not heap.is_empty():
+		var top: int = heap[0]
+		var last: int = heap.pop_back()
+		if not heap.is_empty():
+			heap[0] = last
+			var i := 0
+			while true:
+				var small := i
+				for c in [2 * i + 1, 2 * i + 2]:
+					if c < heap.size() and heap[c] < heap[small]:
+						small = c
+				if small == i:
+					break
+				var swap: int = heap[i]
+				heap[i] = heap[small]
+				heap[small] = swap
+				i = small
+		var at := top % 4096
+		if top >> 12 != cost[at]:
+			continue
+		var p := Vector2i(at % w, floori(float(at) / w))
+		for n in NEIGHBORS:
+			var q: Vector2i = p + n
+			if q.x < 0 or q.y < 0 or q.x >= w or q.y >= h:
+				continue
+			var tile: String = tiles[q.y * w + q.x]
+			if tile not in ROAD_TILES:
+				continue
+			var price: int = cost[at] + 1
+			if tile == "river":
+				price += RIVER_WEIGHT
+			elif tile == "rock":
+				price += ROCK_WEIGHT
+			var qi := q.y * w + q.x
+			if not cost.has(qi) or price < cost[qi]:
+				cost[qi] = price
+				heap.append((price << 12) + qi)
+				var j := heap.size() - 1
+				while j > 0 and heap[floori(float(j - 1) / 2.0)] > heap[j]:
+					var parent := floori(float(j - 1) / 2.0)
+					var swap: int = heap[j]
+					heap[j] = heap[parent]
+					heap[parent] = swap
+					j = parent
+	return cost
+
+
+## The cheapest priced tile beside a tile of `ore`, as road_ways describes it.
+static func _cheapest_beside(tiles: Array, cost: Dictionary, w: int, h: int, ore: String) -> Dictionary:
+	var best := {"rivers": NONE, "rocks": NONE, "steps": NONE, "at": Vector2i(-1, -1)}
+	var best_price := -1
+	for i in tiles.size():
+		if tiles[i] != ore:
+			continue
+		var p := Vector2i(i % w, floori(float(i) / w))
+		for n in NEIGHBORS:
+			var q: Vector2i = p + n
+			if q.x < 0 or q.y < 0 or q.x >= w or q.y >= h or not cost.has(q.y * w + q.x):
+				continue
+			var price: int = cost[q.y * w + q.x]
+			if tiles[q.y * w + q.x] in ROAD_TILES and (best_price < 0 or price < best_price):
+				best_price = price
+				best = {
+					"rivers": floori(float(price) / RIVER_WEIGHT),
+					"rocks": floori(float(price % RIVER_WEIGHT) / ROCK_WEIGHT),
+					"steps": price % ROCK_WEIGHT,
+					"at": p,
+				}
+	return best
 
 
 ## The fewest river tiles a walker from the Hearth must cross to reach the stone-age map's east edge, from where the
