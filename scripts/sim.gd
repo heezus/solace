@@ -1,19 +1,17 @@
 extends RefCounted
 ## Sim: the whole simulation, with no rendering, so it runs headless in tests. It is a thin owner. It holds
-## one of each block (`fog`, `world`, `pathing`, `economy`, `tech_tree`, `town`, `people`, `story`) and
-## nothing else about the map, the stockpile, the techs, the buildings or the Kith: callers reach a block
-## through its name (`sim.economy.inv`, `sim.world.tile_at(p)`). What stays here is what no single block
-## can do: the commands that touch several blocks at once (`place`, `demolish`, `research`,
-## `gather_by_hand`...), the few flags of the run itself, and the tick order:
-##   1. Land.grow_if_due (the tick after Bronze Dawn, the map doubles east), economy.advance the stockpile's clocks,
-##      then tech_tree.tick (each finished tech runs `_tech_done`)
-##   2. people.assign_jobs, economy.feed and people.grow, then story.update (the checklist and the story moments)
-##   3. every Kith takes a step (Forage in a famine, else Workers, Haulers or a plain walk), and what they now see is revealed
+## one of each block (`fog`, `world`, `pathing`, `economy`, `tech_tree`, `town`, `people`, `story`, `sky`) and
+## nothing else about them: callers reach a block through its name (`sim.economy.inv`, `sim.world.tile_at(p)`).
+## What stays here is what no single block can do: the commands that touch several blocks at once (`place`,
+## `demolish`, `research`, `gather_by_hand`...), the few flags of the run itself, and the tick order:
+##   1. Land.grow_if_due (the tick after Bronze Dawn, the map doubles east), economy.advance, then tech_tree.tick
+##   2. people.assign_jobs, economy.feed and people.grow, then story.update and sky.tick
+##   3. every Kith takes a step (Forage in a famine, else Workers, Haulers or a plain walk), and what they see is revealed
 ##   4. every building takes its turn (Workers.tick_building), then the "Needs road" alert
 ## The work cycle is in Work, Bonuses, Hands, Roads, Workers and Haulers: static modules that take the Sim.
-## The blocks never call each other to report: they emit signals, and _init connects them (Story listens, the message queue listens).
+## Blocks never call each other to report: they emit signals, and _init connects them.
 
-## The player clicked the Strange Stone (it reveals the hidden techs). Story listens.
+## The Strange Stone was clicked (it reveals the hidden techs). Story listens.
 signal shard_found
 
 const Data = preload("res://scripts/data.gd")
@@ -31,6 +29,7 @@ const Workers = preload("res://scripts/workers.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Forage = preload("res://scripts/forage.gd")
 const Land = preload("res://scripts/land.gd")
+const SkyBlock = preload("res://scripts/sky.gd")
 
 var won := false
 var hand_tools := false  # you've made a Flint Tool, so hand gathering is doubled for good
@@ -44,21 +43,19 @@ var rushes := 0  # buildings rushed so far
 var ranks: Dictionary = {}  # tech -> rank bought on its card (2 or 3); a researched tech is rank 1
 var events: Array = []  # messages for the UI to show and clear
 var fog := Fog.new()
-## The researched techs, built first: Economy and Research both hold this one set (it is `tech_tree.researched`).
+## The researched techs, built first: Economy and Research both hold this one set.
 var tech_set: Dictionary = {}
 var world := World.new()  # the map: tiles, camp and shard positions, roads and fields
 var pathing := Pathing.new(world, _has_tech)  # the walking grid and A*; it reads `world` and the techs
 var economy := Economy.new(tech_set)  # stockpile, food and flows; it reads the techs but never writes them
-## Techs: what is researched, requirements, the goal and the queue. It pays through `economy`.
+## Techs: what is researched, the goal and the queue. It pays through `economy`.
 var tech_tree := Research.new(economy, tech_set, _hidden_shown)
-## The buildings that stand on the map, the rules for placing and tearing them down, power and housing.
-## It builds through `world` and `economy`, asks `tech_tree` what is unlocked and reads the fog.
+## The buildings on the map, the rules for placing and tearing them down, power and housing.
 var town := Buildings.new(world, economy, tech_tree, fog.is_revealed)
-## The people: the Kith, who they are, how many, what they work at and where they walk. They read `world`,
-## `pathing`, `town` and `tech_tree`, eat through `economy`, and report messages through _announce.
+## The people: who they are, how many, what they work at and where they walk.
 var people := Kith.new(world, pathing, economy, tech_tree, town)
-## The story moments and the opening checklist. It listens to the other blocks' signals (see _init).
-var story := Story.new()
+var story := Story.new()  # story moments and the opening checklist
+var sky := SkyBlock.new(tech_tree, town)
 
 
 ## Wire the blocks together. Every signal connection in the game is here, so it is all in one place.
@@ -67,7 +64,9 @@ func _init() -> void:
 	people.learned.connect(story.on_learned)
 	people.trip_started.connect(story.on_trip_started)
 	shard_found.connect(story.on_shard_found)
+	tech_tree.tech_researched.connect(sky.on_tech_researched)
 	people.announce.connect(_announce)
+	sky.sighted.connect(_announce)
 	economy.food_low.connect(_on_food_low)
 
 
@@ -268,7 +267,7 @@ func tick(delta: float) -> void:
 	var fed := economy.feed(people.kith.size(), delta)
 	people.grow(delta, fed)
 	story.update(self)
-
+	sky.tick(delta)
 	if fed:
 		for k in people.kith:
 			if Forage.tick(self, k, delta):

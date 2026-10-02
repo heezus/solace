@@ -415,7 +415,7 @@ func test_a_trading_post_must_be_set() -> void:
 	s.people.found(4)
 	var i := _post(s)
 	var b: Dictionary = s.town.buildings[i]
-	t.check(not s.town.is_trading(b), "a new Trading Post trades nothing")
+	t.check(not Buildings.is_trading(b), "a new Trading Post trades nothing")
 	t.check(Buildings.recipe_in(b).is_empty() and Buildings.recipe_out(b).is_empty(), "it has no recipe to run")
 	t.check(not s.town.wants_to_work(b), "so there is nothing for a worker to do")
 	for n in 150:
@@ -425,9 +425,9 @@ func test_a_trading_post_must_be_set() -> void:
 	t.check(not s.town.set_trade(i, "wood", "unobtainium"), "and so is a good that doesn't exist")
 	t.check(not s.town.set_trade(s.town.building_at[s.world.camp_pos], "wood", "stone"), "only a Trading Post trades")
 	t.check(s.town.set_trade(i, "wood", ""), "giving first, getting later")
-	t.check(not s.town.is_trading(b), "is still not trading")
+	t.check(not Buildings.is_trading(b), "is still not trading")
 	t.check(s.town.set_trade(i, "wood", "flint"), "then both")
-	t.check(s.town.is_trading(b), "now it trades")
+	t.check(Buildings.is_trading(b), "now it trades")
 	t.check(Buildings.recipe_in(b) == {"wood": Data.TRADE_GIVE}, "it takes %d Wood" % Data.TRADE_GIVE)
 	t.check(Buildings.recipe_out(b) == {"flint": Data.TRADE_GET}, "and makes %d Flint" % Data.TRADE_GET)
 	t.check(Data.BUILDINGS["trading_post"]["tech"] == "markets", "the Trading Post comes with Markets")
@@ -461,12 +461,12 @@ func test_a_trading_post_swaps_goods() -> void:
 	var copy := Sim.new()
 	RunSave.restore(copy, RunSave.dump(s))
 	var c: Dictionary = copy.town.buildings[i]
-	t.check(c["give"] == "stone" and c["get"] == "wood" and copy.town.is_trading(c), "a save keeps the trade")
+	t.check(c["give"] == "stone" and c["get"] == "wood" and Buildings.is_trading(c), "a save keeps the trade")
 	var unset := game(["markets"])
 	var u := _post(unset)
 	var again := Sim.new()
 	RunSave.restore(again, RunSave.dump(unset))
-	t.check(not again.town.is_trading(again.town.buildings[u]), "and an unset one stays unset")
+	t.check(not Buildings.is_trading(again.town.buildings[u]), "and an unset one stays unset")
 	t.check(again.town.buildings[u]["give"] == "" and again.town.buildings[u]["get"] == "", "with nothing chosen")
 
 

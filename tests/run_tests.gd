@@ -24,6 +24,7 @@ const StoryTests = preload("res://tests/story_tests.gd")
 const SaveTests = preload("res://tests/save_tests.gd")
 const EraTests = preload("res://tests/era_tests.gd")
 const Stage2Tests = preload("res://tests/stage2_tests.gd")
+const SkyTests = preload("res://tests/sky_tests.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
 const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
 const GoldenTests = preload("res://tests/golden_tests.gd")
@@ -44,6 +45,7 @@ var failures := 0
 func _init() -> void:
 	if "stage2" in OS.get_cmdline_user_args():  # `-- stage2` runs only the second stage's tests while iterating
 		Stage2Tests.new().run(self)
+		SkyTests.new().run(self)
 		print("FAILED: %d" % failures if failures > 0 else "STAGE 2 TESTS PASSED")
 		quit(1 if failures > 0 else 0)
 		return
@@ -90,6 +92,7 @@ func _init() -> void:
 	SaveTests.new().run(self)
 	EraTests.new().run(self)
 	Stage2Tests.new().run(self)
+	SkyTests.new().run(self)
 	HutFocusTests.new().run(self)
 	GrowthTests.new().run(self)
 	ForageTests.new().run(self)
