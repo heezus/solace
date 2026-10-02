@@ -2,6 +2,10 @@ extends RefCounted
 ## Every building, the build bar's tabs and order. Read through the `Data` facade (scripts/data.gd).
 
 ## kind: "camp" | "house" | "road" | "bridge" | "field" | "depot" | "gatherer" | "processor" | "power" | "aura" | "cairn"
+##   | "shed" (a Cart Shed) | "tower" (a Watchtower)
+## A `stone` bridge bears carts and walks at the Causeway pace; the Wooden Bridge bears the Kith only.
+## A processor with `trade` has no fixed recipe: it swaps Data.TRADE_GIVE of the good it is set to give for
+## Data.TRADE_GET of the one it is set to get (the building's `give` and `get`). `sight` is how far a building sees.
 ## `story` buildings stay off the build bar until their tech is on the board and reachable (nothing to spoil early).
 ## Processors turn `in` into `out` every `time` seconds (a processor with no `in` just makes `out`).
 ## A processor with `dig` is a mine: it stands on one of its `on_tiles` and digs `dig` of whatever that tile yields
@@ -52,6 +56,17 @@ const BUILDINGS := {
 		"cost": {"wood": 10, "rope": 2},
 		"color": Color("f4a261"),
 		"desc": "Goes on a river tile. The Kith cross it at road speed. Drag to span the river.",
+	},
+	"stone_bridge":
+	{
+		"name": "Stone Bridge",
+		"kind": "bridge",
+		"stone": true,
+		"tech": "causeways",
+		"cost": {"stone": 6, "brick": 4},
+		"color": Color("b3aca2"),
+		"desc":
+		"Goes on a river tile. The Kith cross at Causeway pace, and carts can cross too. Drag to span the river.",
 	},
 	"field":
 	{
@@ -207,6 +222,44 @@ const BUILDINGS := {
 		"color": Color("cd7f32"),
 		"desc": "Pours 3 Copper and 1 Tin into Bronze.",
 	},
+	"cart_shed":
+	{
+		"name": "Cart Shed",
+		"kind": "shed",
+		"tech": "the_wheel",
+		"story": true,
+		"cost": {"wood": 60, "rope": 20, "copper": 6},
+		"color": Color("c9a45c"),
+		"desc": "Turns two haulers into carts. A cart carries twice a hauler's load, but only on roads.",
+		"status": "Two haulers push carts for it.",
+	},
+	"trading_post":
+	{
+		"name": "Trading Post",
+		"kind": "processor",
+		"job": "Trader",
+		"tech": "markets",
+		"story": true,
+		"cost": {"wood": 60, "stone": 20, "brick": 20},
+		"in": {},
+		"out": {},
+		"trade": true,
+		"time": 10.0,
+		"color": Color("f2a65a"),
+		"desc": "Swaps 3 of one good for 1 of another, slowly. Choose what it gives and what it gets.",
+	},
+	"watchtower":
+	{
+		"name": "Watchtower",
+		"kind": "tower",
+		"tech": "sky_watch",
+		"story": true,
+		"cost": {"stone": 40, "brick": 30, "copper": 6},
+		"sight": 9,
+		"color": Color("8d8a99"),
+		"desc": "Sees far over the fog, and from its top the Kith watch the sky for the Wanderer.",
+		"status": "Watching the sky.",
+	},
 	"standing_stone":
 	{
 		"name": "Standing Stone",
@@ -238,14 +291,15 @@ const BUILD_TABS := {
 	"Gathering": ["gatherers_hut", "field", "fishing_weir"],
 	"Workshops": ["charcoal_pit", "twine_post", "kiln", "water_wheel", "grindstone"],
 	"Metal": ["mine", "smelter", "crucible"],
-	"Logistics": ["road", "bridge", "storehouse"],
-	"Lore": ["standing_stone", "shard_cairn"],
+	"Logistics": ["road", "bridge", "stone_bridge", "storehouse", "cart_shed", "trading_post"],
+	"Lore": ["standing_stone", "shard_cairn", "watchtower"],
 }
 
 const BUILD_ORDER := [
 	"dwelling",
 	"road",
 	"bridge",
+	"stone_bridge",
 	"field",
 	"storehouse",
 	"charcoal_pit",
@@ -260,6 +314,9 @@ const BUILD_ORDER := [
 	"mine",
 	"smelter",
 	"crucible",
+	"cart_shed",
+	"trading_post",
+	"watchtower",
 ]
 
 ## Output a building holds before it stops, when nobody hauls it away.

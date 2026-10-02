@@ -1,5 +1,5 @@
 extends RefCounted
-## Era 2, Bronze Dawn, stage 1 (design-system/10-bronze-dawn.md): the second tech tree and what of it is built, the land
+## Era 2, Bronze Dawn (design-system/10-bronze-dawn.md): the second tech tree, the land
 ## that grows east, ore and hand mining, Mines (two Kith), the Smelter and the Crucible, the era's tech effects, and
 ## the save of a grown game. Run from tests/run_tests.gd, which owns check().
 
@@ -18,8 +18,6 @@ const TechLayout = preload("res://scripts/tech_layout.gd")
 const TechBoard = preload("res://scripts/tech_board.gd")
 const TechPanel = preload("res://scripts/tech_panel.gd")
 
-## The era's techs whose effects are built (stage 1); the rest are the next update's.
-const BUILT := ["prospecting", "tally_sticks", "plough", "mining", "smelting", "kilns_ii", "alloying"]
 ## What each era-2 tech needs (design-system/10-bronze-dawn.md); Granaries also needs Markets or Kilns II.
 const PARENTS := {
 	"prospecting": ["bronze_dawn"],
@@ -48,7 +46,7 @@ func run(runner) -> void:
 	t = runner
 	test_era_two_tree_is_defined()
 	test_era_two_board_lays_out()
-	test_unbuilt_techs_cannot_be_bought()
+	test_every_era_two_tech_can_be_bought()
 	test_the_land_grows_east_and_the_stone_half_stays()
 	test_the_new_land_is_fair()
 	test_ore_is_dug_by_hand_after_prospecting()
@@ -133,13 +131,7 @@ func test_era_two_tree_is_defined() -> void:
 		colors[Data.TECHS[tech]["color"].to_html()] = true
 	t.check(colors.size() == mine.size(), "every era-2 tech has its own color")
 	var built := mine.filter(Rules.tech_enabled)
-	built.sort()
-	var expect := BUILT.duplicate()
-	expect.sort()
-	t.check(built == expect, "exactly the seven stage-1 techs are built: %s" % [built])
-	for tech in mine:
-		if tech not in BUILT:
-			t.check(int(Data.TECHS[tech]["stage"]) == 2, tech + " waits for stage 2")
+	t.check(built.size() == mine.size(), "every era-2 tech is built, none is gated: %s" % [built])
 	t.check(Rules.era_techs(1).size() == 29, "the stone age is untouched")
 
 
@@ -169,37 +161,28 @@ func test_era_two_board_lays_out() -> void:
 				t.check(not hit, "%s > %s passes under %s" % [e["from"], e["to"], tech])
 
 
-## A tech whose effect is not built yet is on the board but locked: it can't be bought, queued or aimed at.
-func test_unbuilt_techs_cannot_be_bought() -> void:
+## Every era-2 tech can be bought once its parents are in and its price is paid, and shows no "needs the next update".
+func test_every_era_two_tech_can_be_bought() -> void:
 	var s: Sim = t.fresh()
 	t.give(s, 99999)
-	for tech in Data.TECH_ORDER:
-		if Rules.tech_enabled(tech):
-			s.tech_tree.researched[tech] = true
+	s.tech_tree.researched["bronze_dawn"] = true
 	var board := TechBoard.new()
 	board.setup(s)
 	board.set_era(2)
 	var panel := TechPanel.new()
 	panel.setup(s)
-	var locked := 0
+	var order: Array = Rules.route_to("falling_star", s.tech_tree.researched, Rules.visible_techs(true))
+	t.check(order.size() >= 12 and order[order.size() - 1] == "falling_star", "the gate comes last: %s" % [order])
+	var bought := 0
+	for tech in order:
+		t.check(Rules.tech_enabled(tech), tech + " is enabled")
+		t.check(s.tech_tree.can_research(tech), tech + " can be researched once its parents are in")
+		t.check(s.research(tech), tech + " can be paid for")
+		bought += 1 if s.tech_tree.researched.has(tech) else 0
+	t.check(bought == order.size(), "the whole route was bought (%d of %d)" % [bought, order.size()])
 	for tech in Rules.era_techs(2):
-		if Rules.tech_enabled(tech):
-			continue
-		locked += 1
-		t.check(not s.tech_tree.can_research(tech), tech + " isn't researchable")
-		t.check(not s.research(tech), tech + " can't be paid for")
-		t.check(not s.tech_tree.researched.has(tech), tech + " stays unresearched")
-		s.tech_tree.set_goal(tech)
-		t.check(s.tech_tree.goal == "" and s.tech_tree.queue.is_empty(), tech + " can't be a goal")
-		panel._on_card(tech)
-		t.check(not s.tech_tree.researched.has(tech) and s.tech_tree.goal == "", tech + " ignores a click")
-		t.check(tech not in s.tech_tree.ready_list(), tech + " is never ready")
-		t.check(tech not in board.next_techs(), tech + " is never a next step")
 		t.check(board.shows(tech), tech + " is on the board")
-	t.check(locked == 9, "nine era-2 techs wait for the next update (%d)" % locked)
-	t.check(Data.TECH_UNBUILT == "Opens in a later age", "locked cards say it is for a later age")
-	t.check(not Data.TECH_UNBUILT.to_lower().contains("update"), "and never sound like a software update")
-	t.check(not Data.TECH_UNBUILT.to_lower().contains("soon"), "and never 'coming soon'")
+	t.check(not Data.TECH_UNBUILT.to_lower().contains("soon"), "a gate message never says 'coming soon'")
 	board.free()
 	panel.free()
 

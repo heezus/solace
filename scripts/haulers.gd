@@ -10,9 +10,10 @@ const Roads = preload("res://scripts/roads.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 
 
-## Items a hauler carries per trip: Carrying Poles double it.
-static func carry_cap(s) -> int:
-	return Data.CARRY * (2 if s.tech_tree.researched.has("carrying_poles") else 1)
+## Items a hauler carries per trip: Carrying Poles double it, and a cart (`k`, if given) carries Data.CART_LOAD times.
+static func carry_cap(s, k := {}) -> int:
+	var n: int = Data.CARRY * (2 if s.tech_tree.researched.has("carrying_poles") else 1)
+	return n * (Data.CART_LOAD if k.get("cart", false) else 1)
 
 
 static func tick(s, k: Dictionary, delta: float) -> void:
@@ -23,7 +24,10 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 			if here == home and _find_task(s, k):
 				return
 			if here != home:
-				s.people.walk_to(k, home)  # off duty: back to a depot on the roads, across country
+				if k["cart"]:
+					Roads.walk(s, k, home)  # a cart goes back by road, or waits where it stands
+				else:
+					s.people.walk_to(k, home)  # off duty: back to a depot on the roads, across country
 		s.people.step(k, delta)
 		return
 	if not s.people.step(k, delta):
@@ -32,7 +36,7 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 	var b: Dictionary = s.town.buildings[t["building"]]
 	match k["phase"]:
 		"to_pickup":
-			var left: int = carry_cap(s)
+			var left: int = carry_cap(s, k)
 			for id in b["out"].keys():
 				var n: int = mini(b["out"][id], left)
 				if n > 0:
@@ -110,22 +114,19 @@ static func _find_task(s, k: Dictionary) -> bool:
 		if not Buildings.needs_worker(cand) or cand["unreachable"] > 0.0 or not Roads.net_of(s, cand) in nets:
 			continue
 		var d := Vector2(here).distance_to(Vector2(cand["pos"]))
-		var starved: bool = (
-			not Data.BUILDINGS[cand["type"]].get("in", {}).is_empty() and Buildings.buffered(cand["inbuf"]) == 0
-		)
+		var starved: bool = not Buildings.recipe_in(cand).is_empty() and Buildings.buffered(cand["inbuf"]) == 0
 		if starved or Buildings.buffered(cand["out"]) >= Data.BUFFER_CAP:
 			d /= 3.0
-		if d >= best_d:
+		if d >= best_d or (k["cart"] and not Roads.cart_can_reach(s, here, cand["pos"])):
 			continue
 		if Buildings.buffered(cand["out"]) > 0 and not cand["claimed"]:
 			best = {"kind": "pickup", "building": i}
 			best_d = d
 			continue
-		var def: Dictionary = Data.BUILDINGS[cand["type"]]
-		var inputs: Dictionary = {} if cand["paused"] else def.get("in", {})
+		var inputs: Dictionary = {} if cand["paused"] else Buildings.recipe_in(cand)
 		for id in inputs:
-			var want: int = def["in"][id] * 2 - cand["inbuf"].get(id, 0) - cand["incoming"].get(id, 0)
-			var n := mini(mini(want, s.economy.inv.get(id, 0)), carry_cap(s))
+			var want: int = inputs[id] * 2 - cand["inbuf"].get(id, 0) - cand["incoming"].get(id, 0)
+			var n := mini(mini(want, s.economy.inv.get(id, 0)), carry_cap(s, k))
 			if n > 0:
 				best = {"kind": "deliver", "building": i, "item": id, "amount": n}
 				best_d = d

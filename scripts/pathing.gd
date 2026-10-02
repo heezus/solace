@@ -40,10 +40,14 @@ func update_cell(p: Vector2i) -> void:
 	astar.set_point_weight_scale(p, walk_cost(p))
 
 
-## Relative time to cross a tile: roads are fast, forest and rocks are slow, rafting a river slower.
+## Relative time to cross a tile: roads are fast, forest and rocks are slow, rafting a river slower. Causeways makes
+## every road faster still, and a Wooden Bridge keeps the pace it had (only stone is laid to the Causeway).
 func walk_cost(p: Vector2i) -> float:
 	if _world.roads.has(p):
-		return Data.WALK_COST["road"] / (2.0 if _has_tech.call("paved_roads") else 1.0)
+		var road: float = Data.WALK_COST["road"] / (2.0 if _has_tech.call("paved_roads") else 1.0)
+		if _has_tech.call("causeways") and not _world.is_wooden_bridge(p):
+			return minf(road, Data.CAUSEWAY_WALK_COST)
+		return road
 	return Data.WALK_COST.get(_world.tile_at(p), 1.0)
 
 

@@ -7,6 +7,7 @@ const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Ui = preload("res://scripts/ui.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
+const SkyView = preload("res://scripts/sky_view.gd")
 
 const GOAL_COLOR: Color = Ui.HIGHLIGHT
 const GOALS_SHOWN := 2
@@ -16,6 +17,7 @@ var goal_labels: Array = []
 var info_scroll: ScrollContainer
 var info_label: Label
 var building_panel: BuildingPanel
+var sky_view: SkyView  # the Wanderer's window, shown once Sky Watch has named it
 var wrap_width := 260.0
 
 
@@ -43,6 +45,9 @@ func setup(game: Sim, width: float) -> void:
 		g.custom_minimum_size = Vector2(wrap_width, 0)
 		v.add_child(g)
 		goal_labels.append(g)
+	sky_view = SkyView.new()
+	v.add_child(sky_view)
+	sky_view.setup(game, wrap_width)
 	v.add_child(HSeparator.new())
 	v.add_child(Ui.label("Info", 18))
 	# The selected building's card, then the text under the mouse. Both clip to the panel, never past its bottom edge.

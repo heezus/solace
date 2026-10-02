@@ -163,8 +163,8 @@ func _check_era_board() -> void:
 			problems.append("%s has no card on the second board" % tech)
 		if Data.TECHS[tech].get("stage", 1) > Data.BUILT_STAGE:
 			locked += 1
-	if locked != 9:
-		problems.append("the second board has %d techs for the next update, not nine" % locked)
+	if locked != 0:
+		problems.append("the second board has %d techs for the next update, not none" % locked)
 
 
 func _check() -> void:

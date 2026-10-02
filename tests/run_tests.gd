@@ -23,6 +23,8 @@ const ArcTests = preload("res://tests/arc_tests.gd")
 const StoryTests = preload("res://tests/story_tests.gd")
 const SaveTests = preload("res://tests/save_tests.gd")
 const EraTests = preload("res://tests/era_tests.gd")
+const Stage2Tests = preload("res://tests/stage2_tests.gd")
+const SkyTests = preload("res://tests/sky_tests.gd")
 const DawnTests = preload("res://tests/dawn_tests.gd")
 const EraFairTests = preload("res://tests/era_fair_tests.gd")
 const StoneStallTests = preload("res://tests/stone_stall_tests.gd")
@@ -48,6 +50,12 @@ var failures := 0
 
 
 func _init() -> void:
+	if "stage2" in OS.get_cmdline_user_args():  # `-- stage2` runs only the second stage's tests while iterating
+		Stage2Tests.new().run(self)
+		SkyTests.new().run(self)
+		print("FAILED: %d" % failures if failures > 0 else "STAGE 2 TESTS PASSED")
+		quit(1 if failures > 0 else 0)
+		return
 	test_map_has_every_resource_near_camp()
 	test_hand_gathering_and_tools()
 	test_tech_requires_its_parents()
@@ -90,6 +98,8 @@ func _init() -> void:
 	ArcTests.new().run(self)
 	SaveTests.new().run(self)
 	EraTests.new().run(self)
+	Stage2Tests.new().run(self)
+	SkyTests.new().run(self)
 	DawnTests.new().run(self)
 	EraFairTests.new().run(self)
 	HutFocusTests.new().run(self)
@@ -118,14 +128,14 @@ func test_pacing_bot() -> void:
 		var bot := AutoplayBronze.new()
 		if pinned:
 			bot.on_dawn = golden.check_dawn.bind(map_seed)  # win time and state at Bronze Dawn: tests/golden.json
-		var r: Dictionary = bot.play_bronze(map_seed, 50 * 60.0)
-		if pinned:
-			golden.check_bronze(map_seed, bot)  # and at the first Bronze: tests/golden_bronze.json
+			bot.on_bronze = golden.check_bronze.bind(map_seed)  # and at the first Bronze: tests/golden_bronze.json
+		var r: Dictionary = bot.play_to_star(map_seed, 70 * 60.0)
 		var minutes: float = r["seconds"] / 60.0
+		var star: float = bot.star_minutes()
 		print(
 			(
-				"Pacing bot, map %d: %s at %.1f simulated minutes, first Bronze %.1f minutes later"
-				% [map_seed, "Bronze Dawn" if r["won"] else "no win", minutes, r["minutes"]]
+				"Pacing bot, map %d: %s at %.1f simulated minutes, first Bronze %.1f minutes later, the Falling Star %.1f"
+				% [map_seed, "Bronze Dawn" if r["won"] else "no win", minutes, r["minutes"], star]
 			)
 		)
 		check(r["won"], "the bot reaches Bronze Dawn on map %d" % map_seed)
@@ -134,7 +144,11 @@ func test_pacing_bot() -> void:
 			r["minutes"] >= 7.0 and r["minutes"] <= 14.0,
 			"map %d: the first Bronze takes 7 to 14 minutes more (%.1f)" % [map_seed, r["minutes"]]
 		)
-		if not r["won"] or r["minutes"] < 0.0:
+		check(
+			star >= 8.0 and star <= 20.0,
+			"map %d: the Falling Star comes 8 to 20 minutes after it (%.1f)" % [map_seed, star]
+		)
+		if not r["won"] or r["minutes"] < 0.0 or star < 0.0:
 			for line in r["log"]:
 				print("  ", line)
 
@@ -153,9 +167,11 @@ func fresh() -> Sim:
 	return s
 
 
+## Stock the stockpile with `amount` of every good, except Bronze Tools: a worker who takes one works twice as fast, so a
+## test that wants them sets them itself.
 func give(s: Sim, amount: int) -> void:
 	for id in Data.ITEM_ORDER:
-		s.economy.inv[id] = amount
+		s.economy.inv[id] = 0 if id == "bronze_tools" else amount
 
 
 ## A spot where the river is 2 tiles wide between two open banks: {"river": its first tile, "side": the
@@ -279,8 +295,8 @@ func test_every_tech_is_reachable() -> void:
 		for tech in Data.TECH_ORDER:
 			s.research(tech)
 	var built := Data.TECH_ORDER.filter(Rules.tech_enabled)
-	check(s.tech_tree.researched.size() == built.size(), "every tech whose effect is built is reachable")
-	check(built.size() < Data.TECHS.size(), "and the rest wait for the next update")
+	check(s.tech_tree.researched.size() == built.size(), "every tech is reachable")
+	check(built.size() == Data.TECHS.size(), "and none waits for a later update")
 	check(s.won, "researching Bronze Dawn wins")
 
 
@@ -366,7 +382,7 @@ func test_flour_is_kept_for_research() -> void:
 	var s := fresh()
 	s.economy.inv["berries"] = 0
 	var keep := 0
-	for tech in Data.TECHS:
+	for tech in Rules.era_techs(1):  # a later era's techs keep nothing back until that era begins
 		if Rules.tech_enabled(tech):
 			keep += Data.TECHS[tech]["cost"].get("flour", 0)
 	s.economy.inv["flour"] = keep
