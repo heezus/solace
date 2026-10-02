@@ -240,6 +240,8 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 				b["status"] = "Carrying %s home" % Data.ITEMS[k["carry"].keys()[0]]["name"]
 			"to_depot":
 				b["status"] = "Carrying %s to the stockpile" % Data.ITEMS[k["carry"].keys()[0]]["name"]
+			"forage_out", "forage_pick", "forage_back":
+				b["status"] = Data.FORAGE_STATUS
 			"home":
 				if not s.people.knows_focus(b):
 					b["status"] = "Can't work it yet: " + teach_note(b)

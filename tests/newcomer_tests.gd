@@ -7,10 +7,11 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 const Newcomer = preload("res://tests/newcomer.gd")
+const Sim = preload("res://scripts/sim.gd")
 
 const MINUTES := 10.0
 ## The warning must come at least this long before the first departure (the food warning time, less a margin).
-const LEAD := 45.0
+const LEAD := 100.0
 
 var t  # the runner, tests/run_tests.gd
 
@@ -20,6 +21,7 @@ func run(runner) -> void:
 	test_the_goals_start_with_food()
 	test_a_newcomer_following_the_goals_stays_fed()
 	test_a_newcomer_who_clicks_only_one_berry_hut_stays_fed()
+	test_a_newcomer_who_clicks_each_hut_once_is_carried_by_the_famine_fallback()
 	test_an_idle_player_is_warned_before_anyone_leaves()
 
 
@@ -123,18 +125,53 @@ func _check_the_food_hut(bot, map_seed: int, hut: Vector2i) -> void:
 	t.check(share >= 0.9, "map %d: and mostly berries (%.0f%%)" % [map_seed, share * 100.0])
 
 
-## A player who never touches the mouse loses Kith in the end, but the warning comes well before the first one goes.
+## Playtest 4's clumsy newcomer clicks each hut exactly once and never again, and ignores the warning. The famine
+## fallback (idle Kith forage, scripts/forage.gd) keeps them fed: at most one run out of food, at least three
+## of them stay, and once the warning has come the food recovers past it.
+func test_a_newcomer_who_clicks_each_hut_once_is_carried_by_the_famine_fallback() -> void:
+	for map_seed in [1, 4, 8]:
+		var bot := _play("once", map_seed)
+		t.check(bot.min_kith >= 3, "once, map %d: at least three Kith stay (least %d)" % [map_seed, bot.min_kith])
+		t.check(bot.zeros <= 1, "once, map %d: the food ran out %d times" % [map_seed, bot.zeros])
+		t.check(bot.warned_at >= 0.0, "once, map %d: the food warning came (at %.0f s)" % [map_seed, bot.warned_at])
+		t.check(bot.foraging_steps > 0, "once, map %d: idle Kith went foraging" % map_seed)
+		t.check(
+			bot.recovered_at >= 0.0 and not bot.s.economy.low,
+			"once, map %d: and the food recovered past the warning (at %.0f s)" % [map_seed, bot.recovered_at]
+		)
+		t.check(
+			bot.runway_at_warning <= Data.FOOD_WARN_SECONDS and bot.runway_at_warning > Data.FOOD_FAMINE_SECONDS,
+			"once, map %d: the warning came with %.0f s of food left" % [map_seed, bot.runway_at_warning]
+		)
+
+
+## A player who never touches the mouse is warned with two minutes of food left, and the idle Kith forage, so
+## nobody leaves. With no bush in reach there is nothing to forage: then they do leave in the end, and the warning
+## comes well before the first one goes.
 func test_an_idle_player_is_warned_before_anyone_leaves() -> void:
 	var bot := Newcomer.new()
 	bot.idler = true
 	bot.play(3, MINUTES * 60.0)
-	t.check(bot.warned_at >= 0.0, "an idle player is warned that the food is running low (at %.0f s)" % bot.warned_at)
+	t.check(bot.warned_at >= 30.0, "an idle player is warned that the food is running low (at %.0f s)" % bot.warned_at)
+	t.check(bot.left == 0 and bot.min_food > 0.0, "and the idle %s forage, so nobody leaves" % Data.PEOPLE["many"])
+	var bare := Sim.new()
+	bare.generate(3)
+	var camp := bare.world.camp_pos
+	for y in range(camp.y - Data.FORAGE_RADIUS - 2, camp.y + Data.FORAGE_RADIUS + 3):
+		for x in range(camp.x - Data.FORAGE_RADIUS - 2, camp.x + Data.FORAGE_RADIUS + 3):
+			if bare.world.tile_at(Vector2i(x, y)) == "berry":
+				bare.world.set_tile(Vector2i(x, y), "grass")
+	var starved := Newcomer.new()
+	starved.idler = true
+	starved.attach(bare)
+	while starved.clock < MINUTES * 60.0:
+		starved.step()
 	t.check(
-		bot.left_at >= 0.0,
-		"with nobody feeding them the %s do leave in the end (at %.0f s)" % [Data.PEOPLE["many"], bot.left_at]
+		starved.left_at >= 0.0,
+		"with no bushes to forage the %s do leave in the end (at %.0f s)" % [Data.PEOPLE["many"], starved.left_at]
 	)
 	t.check(
-		bot.left_at - bot.warned_at >= LEAD,
-		"and the warning comes %.0f s before the first one goes" % (bot.left_at - bot.warned_at)
+		starved.left_at - starved.warned_at >= LEAD,
+		"and the warning comes %.0f s before the first one goes" % (starved.left_at - starved.warned_at)
 	)
-	t.check(bot.warned_at >= 60.0, "not in the first minute, while the pantry is full")
+	t.check(starved.warned_at >= 30.0, "not at the very start, while the pantry is full")
