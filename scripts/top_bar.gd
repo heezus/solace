@@ -251,7 +251,7 @@ func refresh(paused: bool, speed: int) -> void:
 	for b in state.town.buildings:
 		jobs += 1 if Buildings.needs_worker(b) and not b["paused"] else 0
 	kith_label.text = Data.KITH_LABEL % [Data.PEOPLE["many"], state.people.kith.size(), state.town.housing()]
-	var note := Ui.growth_note(state)
+	var note := GrowthNote.bar_note(state)
 	kith_label.get_parent().tooltip_text = (
 		Data.JOBS_TIP % [state.people.job_counts(), Data.PEOPLE["many"]]
 		+ ("\n\n" + GrowthNote.rule() if GrowthNote.food_is_the_blocker(state) else "")

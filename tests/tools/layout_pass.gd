@@ -129,6 +129,7 @@ func _hud_checks() -> void:
 			_show_hearth_panel()
 		10:
 			_check_hearth_blurb_once()
+			_check_empty_tile_info()
 			_check_card_is_docked("the Hearth's card")
 			main.building_panel.select(Vector2i(-1, -1))
 			main._toast("A toast that must not cover the chips", 30.0)
@@ -405,6 +406,29 @@ func _show_hearth_panel() -> void:
 	main.ui_refresh = 0.0
 
 
+## An empty grass tile says more than its name: it can be built on, and what is close by to gather.
+func _check_empty_tile_info() -> void:
+	hud_checks += 1
+	var camp: Vector2i = main.state.world.camp_pos
+	var found := false
+	for dx in range(-6, 7):
+		for dy in range(-6, 7):
+			var p := camp + Vector2i(dx, dy)
+			if found or not main.state.world.in_bounds(p) or main.state.town.building_at.has(p):
+				continue
+			if main.state.world.tile_at(p) == "grass" and main.state.fog.is_revealed(p):
+				main.hover = p
+				found = true
+	if not found:
+		problems.append("no empty grass tile near the Hearth to check the Info text on")
+		return
+	var info: String = HoverText.text(main)
+	if not info.contains(Data.TILES["grass"]["hint"]):
+		problems.append("an empty tile's Info text says only: " + info.replace("\n", " / "))
+	if info.contains("%s") or info.length() <= Data.TILES["grass"]["name"].length() + 10:
+		problems.append("an empty tile's Info text is too thin: " + info)
+
+
 ## Clicking the Hearth: its blurb is on screen once, across its card and the Info panel.
 func _check_hearth_blurb_once() -> void:
 	hud_checks += 1
@@ -557,6 +581,28 @@ func _check_toast_stack() -> void:
 			problems.append("toast %d runs into the side panel (%s)" % [i, rects[i]])
 
 
+## A card's text rows never overlap each other or the sprite, and a missing-items line is plain (no "+1" codes).
+func _check_card_text_clear(when: String, type: String, parts: Dictionary, card: Control) -> void:
+	var boxes: Array = [Rect2(parts["icon"].position, parts["icon"].size)]
+	for key in ["title", "sub", "why"]:
+		var l: Label = parts[key]
+		if l.text == "":
+			continue
+		var font: Font = l.get_theme_font("font")
+		var fs: int = l.get_theme_font_size("font_size")
+		var text_w := minf(font.get_string_size(l.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, l.size.x)
+		var lines := l.get_line_count() if l.autowrap_mode != TextServer.AUTOWRAP_OFF else 1
+		var box := Rect2(l.position, Vector2(text_w, lines * fs))  # a line is about its font size tall
+		if key == "sub" and l.text.contains("+"):
+			problems.append('%s: the %s card line "%s" has a "+" code in it' % [when, type, l.text])
+		if not Rect2(Vector2.ZERO, card.size).grow(-2.0).encloses(box):
+			problems.append("%s: the %s text of the %s card touches the border" % [when, key, type])
+		for other in boxes:
+			if other.intersects(box):
+				problems.append("%s: the %s text of the %s card overlaps other text or the sprite" % [when, key, type])
+		boxes.append(box)
+
+
 ## Every build card's words fit it: no cut-off, at most two lines under a locked card, nothing with dots.
 func _check_build_cards(when: String) -> void:
 	hud_checks += 1
@@ -593,6 +639,7 @@ func _check_build_cards(when: String) -> void:
 						% [when, key, type, end, card.size]
 					)
 				)
+		_check_card_text_clear(when, type, parts, card)
 		if (
 			parts["pips"].visible
 			and not Rect2(Vector2.ZERO, card.size).encloses(Rect2(parts["pips"].position, parts["pips"].size))

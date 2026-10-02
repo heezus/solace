@@ -26,6 +26,7 @@ var t  # the runner, tests/run_tests.gd
 func run(runner) -> void:
 	t = runner
 	test_card_says_what_is_missing()
+	test_an_empty_tile_names_what_is_near()
 	test_card_line_always_fits()
 	test_story_cards_stay_hidden_until_revealed()
 	test_messages_stack_and_expire()
@@ -37,10 +38,32 @@ func run(runner) -> void:
 	test_every_kith_has_a_place_on_the_map()
 	test_words_are_plain()
 	test_the_growth_note_says_what_to_do_in_each_state()
+	test_the_bar_hides_the_food_note_until_a_hut_and_a_dwelling_stand()
 	test_a_building_waiting_for_kith_points_at_the_fix()
 	test_the_food_flash_stays_legible()
 	test_the_goal_list_shows_the_current_goal_and_the_next()
 	test_every_skill_text_says_what_they_gather()
+
+
+## Playtest 6: an empty tile said only "Grassland". It now lists what can be gathered within a few tiles.
+func test_an_empty_tile_names_what_is_near() -> void:
+	var s = t.fresh()
+	var camp: Vector2i = s.world.camp_pos
+	var spot := camp + Vector2i(10, 10)
+	for dx in range(-4, 5):
+		for dy in range(-4, 5):
+			s.world.set_tile(spot + Vector2i(dx, dy), "grass")
+	t.check(HoverText._gatherable_near(s, spot).is_empty(), "nothing to gather around bare grass")
+	s.world.set_tile(spot + Vector2i(3, 0), "rock")
+	s.world.set_tile(spot + Vector2i(-1, 1), "tree")
+	s.world.set_tile(spot + Vector2i(4, 4), "berry")
+	t.check(
+		HoverText._gatherable_near(s, spot) == ["Forest", "Rocks"], "the near kinds, nearest first, none out of reach"
+	)
+	t.check(
+		Data.TILES["grass"].has("hint") and Data.TILES["grass"]["hint"].contains("build"),
+		"grass says it can be built on"
+	)
 
 
 func test_card_says_what_is_missing() -> void:
@@ -94,7 +117,21 @@ func test_card_line_always_fits() -> void:
 	var lines := {}
 	s.economy.inv["stone"] = 0
 	lines["two"] = CardText.state_line(s, "kiln", "", CARD_TEXT_W)
-	t.check(lines["two"].begins_with("Need 10 Stone"), "two items short still say what: " + lines["two"])
+	t.check(
+		lines["two"].begins_with("Need ") and lines["two"].contains("Stone"), "items short say what: " + lines["two"]
+	)
+	t.check(not lines["two"].contains("+"), "and never in a '+1' code: " + lines["two"])
+	s.economy.inv["wood"] = 9
+	var hut_cost: Dictionary = {"wood": 10, "stone": 5}
+	t.check(
+		CardText.short_names({"wood": 9}, hut_cost) == ["Wood", "Stone"], "the names of what is short, in cost order"
+	)
+	for type in Data.BUILDINGS:
+		if Data.BUILDINGS[type]["tech"] == "":
+			continue  # always available: never locked
+		var why: String = CardText.locked_reason(type, 100.0)
+		t.check(CardText.lines(why, 100.0) <= 2, "%s: the reason fits two lines: %s" % [type, why])
+		t.check(not why.contains("..."), "and never with dots: " + why)
 
 
 ## The Lore cards (Standing Stone, Shard Cairn) stay off the build bar until their tech is on the board and reachable.
@@ -322,6 +359,21 @@ func test_the_food_flash_stays_legible() -> void:
 	t.check(least >= 3.0, "the ring is visible at every phase of the flash (%.1f)" % least)
 
 
+## Playtest 6: the food note sat in the top bar at second one. It shows only once a hut and a Dwelling stand.
+func test_the_bar_hides_the_food_note_until_a_hut_and_a_dwelling_stand() -> void:
+	var s = t.fresh()
+	var camp: Vector2i = s.world.camp_pos
+	t.check(GrowthNote.food_is_the_blocker(s), "at the start food is what holds growth back")
+	t.check(GrowthNote.bar_note(s) == "", "but the bar says nothing at second one")
+	t.check(t.place_free(s, "gatherers_hut", camp + Vector2i(0, 2)), "a hut goes up")
+	t.check(GrowthNote.bar_note(s) == "", "a hut alone: still nothing")
+	t.check(t.place_free(s, "dwelling", camp + Vector2i(2, 2)), "a Dwelling goes up")
+	t.check(GrowthNote.bar_note(s) == Ui.growth_note(s), "hut and Dwelling: the food note shows")
+	t.check(GrowthNote.bar_note(s).begins_with(Data.GROW_NOTE_FOOD), "and it is the food note")
+	s.economy.starving = true
+	t.check(GrowthNote.bar_note(s) == Data.NOTE_STARVING, "starving always shows")
+
+
 ## Playtest 5: "Needs steady food to grow" explained nothing. The note now says what steady means and the fix for where
 ## the player is: no room, no haulers yet, haulers but no hut on a road, a hut on a road. The tooltip has the exact rule.
 func test_the_growth_note_says_what_to_do_in_each_state() -> void:
@@ -416,6 +468,8 @@ static func badge_problems(s) -> Array:
 	for b in s.town.buildings:
 		if HutFocus.wants_click(s, b):
 			var click: Rect2 = HutFocus.badge_rect(Overlays.rect(b["pos"]))
+			if click.end.y > Overlays.rect(b["pos"]).position.y - 10.0:
+				problems.append("the click badge of %s covers the hut's roof or trip dots" % [b["pos"]])
 			for box in boxes:
 				if click.intersects(box):
 					problems.append("the click badge of %s covers an alert badge" % [b["pos"]])

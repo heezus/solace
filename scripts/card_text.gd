@@ -27,13 +27,34 @@ static func shortfall(inv: Dictionary, cost: Dictionary) -> Array:
 	return out
 
 
-## Why a locked card is locked: the tech to discover.
-static func locked_reason(type: String) -> String:
-	return Data.CARD_DISCOVER % Data.TECHS[Data.BUILDINGS[type]["tech"]]["name"]
+## The names of the items of `cost` the stockpile `inv` is short of, in cost order.
+static func short_names(inv: Dictionary, cost: Dictionary) -> Array:
+	var out: Array = []
+	for id in cost:
+		if cost[id] > inv.get(id, 0):
+			out.append(Data.ITEMS[id]["name"])
+	return out
+
+
+## Why a locked card is locked: the tech to discover. With `max_w` it is shortened to fit two lines of that width at
+## FONT_SIZE (just the tech's name when "Discover ..." would need three); the card's tooltip has the whole sentence.
+static func locked_reason(type: String, max_w := 0.0) -> String:
+	var tech_name: String = Data.TECHS[Data.BUILDINGS[type]["tech"]]["name"]
+	var full: String = Data.CARD_DISCOVER % tech_name
+	return full if max_w <= 0.0 or lines(full, max_w) <= 2 else tech_name
+
+
+## How many lines `text` takes wrapped to `max_w` px at FONT_SIZE.
+static func lines(text: String, max_w: float) -> int:
+	var font := ThemeDB.fallback_font
+	var one := font.get_height(FONT_SIZE)
+	var box := font.get_multiline_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, max_w, FONT_SIZE)
+	return maxi(1, roundi(box.y / one))
 
 
 ## The card's one line: "Locked", "Placing", "Ready" (or "Drag to lay") or what is missing ("Need 4 Wood").
-## It always fits `max_w` px at FONT_SIZE: two short items become "Need 4 Wood +1 more", then "Need more".
+## It always fits `max_w` px at FONT_SIZE: with several items short it says "Need Wood, Stone" (the amounts are in
+## the price), then "Need 3 items", then "Need more".
 static func state_line(s, type: String, placing: String, max_w: float) -> String:
 	var def: Dictionary = Data.BUILDINGS[type]
 	if not s.town.unlocked(type):
@@ -45,8 +66,8 @@ static func state_line(s, type: String, placing: String, max_w: float) -> String
 		return Data.CARD_DRAG if def["kind"] in ["road", "bridge", "field"] else Data.CARD_READY
 	var options: Array = [Data.CARD_NEED % ", ".join(short)]
 	if short.size() > 1:
-		options.append(Data.CARD_NEED_MORE % [short[0], short.size() - 1])
-		options.append(Data.CARD_NEED_PLUS % [short[0], short.size() - 1])
+		options.append(Data.CARD_NEED_NAMES % ", ".join(short_names(s.economy.inv, def["cost"])))
+		options.append(Data.CARD_NEED_COUNT % short.size())
 	for line in options:
 		if width(line) <= max_w:
 			return line
