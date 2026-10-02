@@ -316,6 +316,12 @@ func _run() -> void:
 	await _shot("first_look")
 	await _wait(4.0)
 	await _shot("after_4s_doing_nothing")
+	if mode == "bronze":
+		await _bronze_phase()
+		_say("end of newbie pass")
+		_write_log()
+		quit(0)
+		return
 
 	# Discover the camera the way a newcomer would: arrow keys, wheel, Home.
 	await _key_hold(KEY_RIGHT, 1.0)
@@ -547,6 +553,8 @@ func _bronze_phase() -> void:
 	var shots := 0
 	var next_shot := 0
 	var opened := false
+	var metal_done := false
+	var seen := {}
 	while not bot.made_bronze() and bot.clock - era_start < 1200.0 and frames < 16000:
 		frames += 1
 		for i in 20:
@@ -565,21 +573,23 @@ func _bronze_phase() -> void:
 				_say("tech board era=%s" % str(main.tech_panel.board.era))
 				await _shot("era2_tech_board")
 				_key(KEY_T)
-			if since >= 120 and shots == 3:
-				var hills := _tiles_of("copper_hills")
-				if not hills.is_empty() and s.fog.is_revealed(hills[0]):
-					await _hover_info(hills[0], "hover_copper_hills")
-				var tin := _tiles_of("tin_stream")
-				if not tin.is_empty():
-					main.center_on(tin[0])
-					await _wait(0.3)
-					await _shot("tin_stream_%s" % ("seen" if s.fog.is_revealed(tin[0]) else "fogged"))
+			if since >= 120 and not metal_done:
+				metal_done = true
 				var bar = main.bottom_bar
 				if bar.tab_buttons.has("Metal"):
 					_click_control(bar.tab_buttons["Metal"])
 					await _wait(0.3)
 					await _shot("metal_tab")
-				main.center_on(s.world.camp_pos)
+		for kind in ["copper_hills", "tin_stream"]:
+			if seen.has(kind):
+				continue
+			for p in _tiles_of(kind):
+				if s.fog.is_revealed(p):
+					seen[kind] = true
+					_say("BRONZE +%.0f s: first %s in sight at %s" % [since, kind, p])
+					await _hover_info(p, "first_%s" % kind)
+					main.center_on(s.world.camp_pos)
+					break
 		await process_frame
 	_say("BRONZE: made_bronze=%s after %.0f s of era 2" % [str(bot.made_bronze()), bot.clock - era_start])
 	await _shot("era2_end")

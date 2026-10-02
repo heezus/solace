@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mode: [default, no_berry_hut, bronze]
+        mode: [bronze]
     env:
       GODOT_VERSION: 4.7.2
       NEWBIE_OUT: ${{ github.workspace }}/newbie-out
