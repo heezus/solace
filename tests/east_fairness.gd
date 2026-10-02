@@ -38,7 +38,10 @@ static func faults(r: Dictionary, max_rivers: int) -> Array:
 	for ore in ["copper", "tin"]:
 		if r[ore]["rivers"] > max_rivers:
 			out.append(
-				"%s needs %s river tiles" % [ore, "unreachable" if r[ore]["rivers"] >= MapEast.NONE else r[ore]["rivers"]]
+				(
+					"%s needs %s river tiles"
+					% [ore, "unreachable" if r[ore]["rivers"] >= MapEast.NONE else r[ore]["rivers"]]
+				)
 			)
 	if r["bad_ore"] > 0:
 		out.append("%d ore tiles are in the stone-age half" % r["bad_ore"])

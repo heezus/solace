@@ -196,15 +196,15 @@ func _plan_road(kind: String) -> Array:
 					return _unbuilt(from, p)
 			for n in World.NEIGHBORS:
 				var q: Vector2i = p + n
-				var step := _plan_step(q)
-				if step < 0 or (cost.has(q) and cost[q] <= at + step):
+				var price := _plan_step(q)
+				if price < 0 or (cost.has(q) and cost[q] <= at + price):
 					continue
-				cost[q] = at + step
+				cost[q] = at + price
 				from[q] = p
-				if step == 0:
+				if price == 0:
 					todo.append(q)
 				else:
-					level[at + step] = level.get(at + step, []) + [q]
+					level[at + price] = level.get(at + price, []) + [q]
 		at += 1
 		if level.is_empty():
 			break

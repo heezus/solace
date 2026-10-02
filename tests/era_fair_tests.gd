@@ -39,7 +39,8 @@ func test_many_seeds_are_fair() -> void:
 			worst["rivers"] = maxi(worst["rivers"], mini(r[ore]["rivers"], 99))
 			worst["rocks"] = maxi(worst["rocks"], mini(r[ore]["rocks"], 99))
 			t.check(
-				r[ore]["rocks"] <= MAX_PASSES, "seed %d: %d passes through rocks to the %s" % [map_seed, r[ore]["rocks"], ore]
+				r[ore]["rocks"] <= MAX_PASSES,
+				"seed %d: %d passes through rocks to the %s" % [map_seed, r[ore]["rocks"], ore]
 			)
 		var copper := 0
 		var open := 0
@@ -50,8 +51,16 @@ func test_many_seeds_are_fair() -> void:
 					copper += 1
 					open += 1 if _open_beside(w, p) else 0
 		t.check(copper >= MapEast.COPPER_MIN, "seed %d: copper is common (%d tiles)" % [map_seed, copper])
-		t.check(open >= MapEast.COPPER_NEAR_MIN, "seed %d: and %d of it has open ground beside it for a road" % [map_seed, open])
-	print("East fairness: %d seeds, worst %d bridges and %d passes through rocks" % [seeds.size(), worst["rivers"], worst["rocks"]])
+		t.check(
+			open >= MapEast.COPPER_NEAR_MIN,
+			"seed %d: and %d of it has open ground beside it for a road" % [map_seed, open]
+		)
+	print(
+		(
+			"East fairness: %d seeds, worst %d bridges and %d passes through rocks"
+			% [seeds.size(), worst["rivers"], worst["rocks"]]
+		)
+	)
 
 
 ## Some road ground (grass, forest, rock) or a road already beside p, so the ore can be reached.
