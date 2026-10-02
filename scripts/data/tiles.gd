@@ -2,17 +2,21 @@ extends RefCounted
 ## Map tiles and how hard they are to cross. Read through the `Data` facade (scripts/data.gd).
 
 const TILES := {
-	"grass": {"name": "Grassland", "yields": "", "color": Color("7cb342"), "buildable": true},
-	"flax": {"name": "Wild Flax", "yields": "fiber", "color": Color("7cb342"), "buildable": false},
-	"tree": {"name": "Forest", "yields": "wood", "color": Color("2e7d32"), "buildable": false},
+	"grass": {"name": "Grassland", "yields": "", "color": Color("9bb85c"), "buildable": true},
+	"flax": {"name": "Wild Flax", "yields": "fiber", "color": Color("9bb85c"), "buildable": false},
+	"tree": {"name": "Forest", "yields": "wood", "color": Color("3f7d3a"), "buildable": false},
 	"rock": {"name": "Rocks", "yields": "stone", "color": Color("8d8d8d"), "buildable": false},
 	"gravel": {"name": "Riverbed Gravel", "yields": "flint", "color": Color("b0a18a"), "buildable": false},
 	"clay": {"name": "Clay Bank", "yields": "clay", "color": Color("c47a5a"), "buildable": false},
 	"berry": {"name": "Berry Bushes", "yields": "berries", "color": Color("558b2f"), "buildable": false},
 	"grain": {"name": "Wild Grain", "yields": "grain", "color": Color("d4b44a"), "buildable": false},
 	"river": {"name": "River", "yields": "", "color": Color("3a86c8"), "buildable": false},
-	"shard": {"name": "Strange Stone", "yields": "", "color": Color("7cb342"), "buildable": false},
+	"shard": {"name": "Strange Stone", "yields": "", "color": Color("9bb85c"), "buildable": false},
 }
+
+## The second grass shade, for the checker (4% from `grass`), and the flat color of unexplored land.
+const GRASS_ALT := Color("93b055")
+const FOG := Color("5b5046")
 
 const SHARD_TEXT := (
 	"A smooth stone, faintly warm, humming with a pale light no fire gave it. "

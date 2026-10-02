@@ -8,8 +8,12 @@ signal changed
 const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Art = preload("res://scripts/art.gd")
+const Ui = preload("res://scripts/ui.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Buildings = preload("res://scripts/buildings.gd")
+
+const BADGE_TEXT := "click"
+const BADGE_FONT := 14
 
 var state: Sim
 var index := -1  # the hut's place in the building list, -1 for none
@@ -19,11 +23,14 @@ func setup(game: Sim) -> void:
 	state = game
 	flat = true
 	alignment = HORIZONTAL_ALIGNMENT_LEFT
+	autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # wraps inside a narrow panel instead of widening it
+	size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	custom_minimum_size = Vector2(60, 0)
 	visible = false
-	add_theme_font_size_override("font_size", 12)
-	add_theme_color_override("font_color", Color("ffd166"))
-	add_theme_color_override("font_hover_color", Color.WHITE)
-	add_theme_color_override("font_disabled_color", Color("ffd166"))
+	add_theme_font_size_override("font_size", Ui.MIN_TEXT)
+	add_theme_color_override("font_color", Ui.TEXT)
+	add_theme_color_override("font_hover_color", Ui.HIGHLIGHT)
+	add_theme_color_override("font_disabled_color", Ui.TEXT)
 
 
 ## Show the line for building b (hidden unless it is a hut).
@@ -59,19 +66,33 @@ static func label_text(s: Sim, b: Dictionary) -> String:
 	return line
 
 
-## The little square of the item's color at a hut's lower left corner: what it works, on the map.
+## The item's icon in a cocoa disc at a hut's lower left corner: what it works, on the map.
 static func draw_marker(ci: CanvasItem, r: Rect2, item: String) -> void:
 	if item == "":
 		return
-	var at := Rect2(r.position + Vector2(3, r.size.y - 16), Vector2(9, 9))
-	ci.draw_rect(at, Data.ITEMS[item]["color"])
-	ci.draw_rect(at, Color("1b2a33"), false, 1.5)
+	var c := r.position + Vector2(11, r.size.y - 11)
+	ci.draw_circle(c, 12.0, Ui.LINE)
+	Art.item_icon(ci, item, Rect2(c - Vector2(10, 10), Vector2(20, 20)), 1.0)
+
+
+## True when a food hut's click can wait: the player has sent a first trip and the food is comfortable (no warning, no
+## famine, so idle Kith are not foraging). Then the hut still works when clicked, but nothing is at stake.
+static func click_can_wait(s: Sim, b: Dictionary) -> bool:
+	return (
+		Data.FOOD_VALUE.has(b["focus"])
+		and "first_trip" in s.story.events
+		and not s.economy.low
+		and not s.economy.famine
+	)
 
 
 ## True for a hut that is standing idle until someone clicks it: it has a worker who can work its focus, no road
-## links it to run it on its own, and no trip is waiting. (An unlinked hut only works on clicked trips.)
+## links it to run it on its own, and no trip is waiting. (An unlinked hut only works on clicked trips.) A food hut
+## stops asking while the food is comfortable (click_can_wait); the others always ask: their goods come only by click.
 static func wants_click(s: Sim, b: Dictionary) -> bool:
 	if Data.BUILDINGS[b["type"]]["kind"] != "gatherer" or b["worker"] < 0 or b["paused"]:
+		return false
+	if click_can_wait(s, b):
 		return false
 	return (
 		not Roads.automated(s, b)
@@ -81,9 +102,16 @@ static func wants_click(s: Sim, b: Dictionary) -> bool:
 	)
 
 
+## Where the "click" badge goes over a hut's tile `r`: the box its pill covers (it floats just above the tile).
+static func badge_rect(r: Rect2) -> Rect2:
+	var k := Art.ui_k
+	var w := ThemeDB.fallback_font.get_string_size(BADGE_TEXT, HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(BADGE_FONT * k)).x
+	w += 14.0 * k
+	return Rect2(Vector2(r.get_center().x - w / 2.0, r.position.y - 28.0 * k), Vector2(w, (BADGE_FONT + 8.0) * k))
+
+
 ## A small pulsing "click" pill over a hut that is waiting for a click.
 static func draw_click_badge(ci: CanvasItem, r: Rect2, time: float) -> void:
 	var pulse := 0.55 + 0.45 * sin(time * 5.0)
-	Art.pill(
-		ci, Vector2(r.get_center().x, r.position.y - 26.0), "click", Color(1.0, 0.82, 0.4, pulse), Color("1b2a33"), 11
-	)
+	var at := badge_rect(r)
+	Art.pill(ci, Vector2(at.get_center().x, at.position.y), BADGE_TEXT, Color(Ui.HIGHLIGHT, pulse), Ui.LINE, BADGE_FONT)

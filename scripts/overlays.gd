@@ -8,13 +8,13 @@ const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Rules = preload("res://scripts/rules.gd")
 
-const TILE := 32.0
+const TILE := 48.0  # map px per tile at the default zoom
 const OUTLINE: Color = Art.OUTLINE
-const ALERT := Color("ef476f")
-const KITH := Color("e76f51")
-const FOG := Color("2c3834")
+const ALERT: Color = Ui.BAD
+const KITH: Color = Ui.KITH
 const RUBBLE_TIME := 0.9
-const PILL_FONT := 10
+const SIDES := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+const CORNERS := [Vector2i(1, 1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(-1, -1)]
 
 
 static func rect(p: Vector2i) -> Rect2:
@@ -23,6 +23,14 @@ static func rect(p: Vector2i) -> Rect2:
 
 static func center(p: Vector2i) -> Vector2:
 	return (Vector2(p) + Vector2(0.5, 0.5)) * TILE
+
+
+## What a building at p covers on the map: its tile, or for the Hearth a 2x2 block centred on its tile. This is
+## only how it is drawn: the Hearth still stands on one tile, so nothing about placement or walking changes.
+static func footprint(s, p: Vector2i) -> Rect2:
+	if s.town.built_type(p) == "camp":
+		return rect(p).grow(TILE * 0.5)
+	return rect(p)
 
 
 ## The pill a demolish click would answer: what comes back and who goes idle.
@@ -51,7 +59,7 @@ static func demolish_hover(ci: CanvasItem, s, p: Vector2i) -> void:
 	if type == "" or Data.BUILDINGS[type]["kind"] == "camp":
 		ci.draw_rect(r.grow(-2), Color(1, 1, 1, 0.5), false, 2.0)
 		if type != "":
-			Art.pill(ci, r.get_center() - Vector2(0, TILE * 1.2), demolish_text(s, p), Color.WHITE, OUTLINE, 12)
+			Art.pill(ci, r.get_center() - Vector2(0, TILE * 1.2), demolish_text(s, p), Ui.TEXT, OUTLINE, 14)
 		return
 	ci.draw_rect(r, Color(ALERT, 0.35))
 	var tex := Art.sprite("demolish_hover")
@@ -64,7 +72,7 @@ static func demolish_hover(ci: CanvasItem, s, p: Vector2i) -> void:
 			ci.draw_line(a, b, OUTLINE, 7.0)
 			ci.draw_line(a, b, Color.WHITE, 4.0)
 	ci.draw_rect(r, ALERT, false, 3.0)
-	Art.pill(ci, r.get_center() - Vector2(0, TILE * 1.2), demolish_text(s, p), ALERT, Color.WHITE, 12)
+	Art.pill(ci, r.get_center() - Vector2(0, TILE * 1.2), demolish_text(s, p), ALERT, Ui.TEXT, 14)
 
 
 ## Torn-down buildings leave rubble for a moment: `list` holds {"pos", "t"}.
@@ -141,58 +149,88 @@ static func pill_text(alert: String) -> String:
 	return alert.split(":")[0]
 
 
-## Blocked buildings get a short alert pill under their tile, with a small pointer up to it. Neighbours never
-## overlap: a pill that would land on another goes a row lower (or above the tile), and none leaves the map.
-static func status_pills(ci: CanvasItem, s) -> void:
+## Where a blocked building's alert badge sits: its lower right corner, inside its own tile, so it never covers a
+## neighbour, another badge or a "click" badge (those float above the tile).
+static func alert_badge_at(p: Vector2i) -> Vector2:
+	return rect(p).end - Vector2(10.0, 10.0) * Art.ui_k
+
+
+## Blocked buildings (hungry, no power, no road...) wear a 16 px alert-red badge on their lower right corner. No
+## text on the map: the words are in the Info panel while the mouse is over the building. (Playtest 5 had pills
+## stacking over each other and over the next building; a badge inside its own tile cannot.)
+static func alert_badges(ci: CanvasItem, s) -> void:
 	var font := ThemeDB.fallback_font
-	var map := Rect2(Vector2.ZERO, Vector2(s.world.width, s.world.height) * TILE)
-	var placed: Array = []
 	for b in s.town.buildings:
 		if b["alert"] == "":
 			continue
-		var text := pill_text(b["alert"])
-		var r := rect(b["pos"])
-		var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, PILL_FONT).x + 12.0
-		var h := PILL_FONT + 8.0
-		var x := clampf(r.get_center().x - w / 2.0, map.position.x + 2.0, map.end.x - w - 2.0)
-		var pill := Rect2(x, r.end.y + 5.0, w, h)
-		for row in range(4):  # below the tile, then a row lower, then above it
-			var y: float = r.end.y + 5.0 + row * (h + 2.0) if row < 3 else r.position.y - 5.0 - h
-			var tries := Rect2(x, y, w, h)
-			if map.encloses(tries) and not placed.any(func(o): return o.grow(1.0).intersects(tries)):
-				pill = tries
-				break
-		placed.append(pill)
-		var below := pill.position.y > r.end.y
-		var edge := Vector2(r.get_center().x, r.end.y if below else r.position.y)
-		var tip := Vector2(
-			clampf(edge.x, pill.position.x + 8.0, pill.end.x - 8.0), pill.position.y if below else pill.end.y
-		)
-		if edge.distance_to(tip) > 8.0:
-			ci.draw_line(edge, tip, OUTLINE, 2.0)
-		var dir := 1.0 if below else -1.0
-		ci.draw_colored_polygon(
-			PackedVector2Array([tip + Vector2(0, -5 * dir), tip + Vector2(-5, dir), tip + Vector2(5, dir)]), OUTLINE
-		)
-		Art.pill(ci, Vector2(pill.get_center().x, pill.position.y), text, ALERT, OUTLINE, PILL_FONT)
+		var at := alert_badge_at(b["pos"])
+		var radius := 8.0 * Art.ui_k
+		ci.draw_circle(at, radius, ALERT)
+		ci.draw_arc(at, radius, 0, TAU, 24, Ui.LINE, maxf(2.0 * Art.ui_k, 1.0), true)
+		var px := roundi(14.0 * Art.ui_k)
+		var wide := font.get_string_size("!", HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
+		ci.draw_string(font, at + Vector2(-wide / 2.0, px * 0.36), "!", HORIZONTAL_ALIGNMENT_LEFT, -1, px, Ui.TEXT)
 
 
-## The settlement: a dashed Kith-colored ring 6 tiles around the Hearth. Faint while playing,
-## strong and labeled while placing a Dwelling, with the good empty spots inside dashed in white.
-static func settlement_ring(ci: CanvasItem, s, strong: bool) -> void:
+## The edge of the lit land: each explored tile next to fog fades into the fog color over its own width, so the
+## border is one soft tile wide with no ragged rim. Nothing of the fogged land shows through.
+static func fog_edges(ci: CanvasItem, s, seen: Rect2i) -> void:
+	var fog: Color = Data.FOG
+	for y in range(seen.position.y, seen.end.y):
+		for x in range(seen.position.x, seen.end.x):
+			var p := Vector2i(x, y)
+			if not s.fog.is_revealed(p):
+				continue
+			var r := rect(p)
+			for d in SIDES:
+				if _fogged(s, p + d):
+					_fade_side(ci, r, d, fog)
+			for d in CORNERS:
+				if _fogged(s, p + d) and not _fogged(s, p + Vector2i(d.x, 0)) and not _fogged(s, p + Vector2i(0, d.y)):
+					var corner := r.get_center() + Vector2(d) * TILE * 0.5
+					var pts := PackedVector2Array(
+						[corner, corner - Vector2(d.x * TILE * 0.6, 0), corner - Vector2(0, d.y * TILE * 0.6)]
+					)
+					ci.draw_polygon(pts, PackedColorArray([fog, Color(fog, 0.0), Color(fog, 0.0)]))
+
+
+static func _fogged(s, p: Vector2i) -> bool:
+	return s.world.in_bounds(p) and not s.fog.is_revealed(p)
+
+
+## A strip across tile `r`, clear on the side away from the fog and solid fog color at the edge facing it.
+static func _fade_side(ci: CanvasItem, r: Rect2, toward: Vector2i, fog: Color) -> void:
+	var edge := r.get_center() + Vector2(toward) * TILE * 0.5
+	var across := Vector2(absf(toward.y), absf(toward.x)) * TILE * 0.5
+	var back := Vector2(toward) * TILE
+	var mid := Color(fog, 0.35)
+	var near := PackedVector2Array(
+		[edge - across, edge + across, edge + across - back * 0.5, edge - across - back * 0.5]
+	)
+	ci.draw_polygon(near, PackedColorArray([fog, fog, mid, mid]))
+	var far := PackedVector2Array(
+		[edge - across - back * 0.5, edge + across - back * 0.5, edge + across - back, edge - across - back]
+	)
+	ci.draw_polygon(far, PackedColorArray([mid, mid, Color(fog, 0.0), Color(fog, 0.0)]))
+
+
+## The Hearth's reach: a 2 px dashed cream line at 40% opacity, labelled "Build range", drawn only while a Dwelling
+## is being placed or the mouse is over the Hearth. While placing, the good empty spots inside are dashed too.
+static func settlement_ring(ci: CanvasItem, s, placing_home: bool, over_hearth: bool) -> void:
+	if not (placing_home or over_hearth):
+		return
 	var c := center(s.world.camp_pos)
 	var radius: float = (Data.HEARTH_RADIUS + 0.5) * TILE
-	ci.draw_circle(c, radius, Color(KITH, 0.14 if strong else 0.05))
-	Art.dashed_circle(ci, c, radius, Color(KITH, 1.0 if strong else 0.7), 4.0 if strong else 2.5, 10.0, 7.0)
-	if not strong:
-		return
-	for y in range(-int(Data.HEARTH_RADIUS), int(Data.HEARTH_RADIUS) + 1):
-		for x in range(-int(Data.HEARTH_RADIUS), int(Data.HEARTH_RADIUS) + 1):
-			var p: Vector2i = s.world.camp_pos + Vector2i(x, y)
-			if s.world.in_bounds(p) and s.town.placement_error("dwelling", p) == "":
-				Art.dashed_rect(ci, rect(p).grow(-4), Color(1, 1, 1, 0.8), 1.5, 4.0, 3.0)
-	var label := "Settlement · %d tiles around the Hearth" % int(Data.HEARTH_RADIUS)
-	Art.pill(ci, c - Vector2(0, radius + 12), label, KITH, Color.WHITE, 12)
+	var k := Art.ui_k
+	var line := Color(Ui.TEXT, 0.4)
+	Art.dashed_circle(ci, c, radius, line, 2.0 * k, 10.0 * k, 7.0 * k)
+	if placing_home:
+		for y in range(-int(Data.HEARTH_RADIUS), int(Data.HEARTH_RADIUS) + 1):
+			for x in range(-int(Data.HEARTH_RADIUS), int(Data.HEARTH_RADIUS) + 1):
+				var p: Vector2i = s.world.camp_pos + Vector2i(x, y)
+				if s.world.in_bounds(p) and s.town.placement_error("dwelling", p) == "":
+					Art.dashed_rect(ci, rect(p).grow(-6), Color(Ui.TEXT, 0.5), 2.0 * k, 4.0 * k, 3.0 * k)
+	Art.pill(ci, c - Vector2(0, radius + 12.0 * k), "Build range", Ui.TEXT, Ui.LINE, 14)
 
 
 ## What the placement ghost's pill says when the spot won't do.
@@ -213,9 +251,9 @@ static func placement_ghost(ci: CanvasItem, s, type: String, p: Vector2i, note: 
 		ci.draw_texture_rect(tex, r.grow(-3), false, Color(1, 1, 1, 0.6))
 	ci.draw_rect(r.grow(-2), OUTLINE if err == "" else ALERT, false, 2.0)
 	if err != "":
-		Art.pill(ci, Vector2(r.get_center().x, r.end.y + 4), ghost_text(type, err), ALERT, Color.WHITE, 12)
+		Art.pill(ci, Vector2(r.get_center().x, r.end.y + 4), ghost_text(type, err), ALERT, Ui.TEXT, 14)
 	elif note != "":
-		Art.pill(ci, Vector2(r.get_center().x, r.end.y + 4), note, Color.WHITE, OUTLINE, 12)
+		Art.pill(ci, Vector2(r.get_center().x, r.end.y + 4), note, Ui.TEXT, OUTLINE, 14)
 
 
 ## "Road: 7 tiles · 14 Wood · release to lay" for a drag over `tiles`, counting only those it can go on.
@@ -253,7 +291,7 @@ static func line_ghost(ci: CanvasItem, s, type: String, tiles: Array) -> void:
 	var end: Vector2i = tiles[tiles.size() - 1]
 	Art.dashed_rect(ci, rect(end).grow(-1), Color.WHITE, 2.0, 5.0, 4.0)
 	Art.pill(
-		ci, Vector2(rect(end).get_center().x, rect(end).end.y + 4), line_text(s, type, tiles), Color.WHITE, OUTLINE, 12
+		ci, Vector2(rect(end).get_center().x, rect(end).end.y + 4), line_text(s, type, tiles), Ui.TEXT, OUTLINE, 14
 	)
 
 

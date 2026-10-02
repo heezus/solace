@@ -15,12 +15,14 @@ const Ui = preload("res://scripts/ui.gd")
 const Hands = preload("res://scripts/hands.gd")
 const CardText = preload("res://scripts/card_text.gd")
 
-const BUTTON := Vector2(156, 64)
+const BUTTON := Vector2(172, 64)
 const TEXT_X := 42.0  # the title and state line start here, beside the 30 px icon
-const TEXT_W := 110.0
-const LOWER_Y := 37.0  # the price pips, or a locked card's reason, run along the bottom
-const LOCKED_BG := Color("1f3a47")
-const LOCKED_TEXT := Color("9fb4bf")
+const TEXT_W := 124.0
+const LOWER_Y := 41.0  # the price pips run along the bottom
+const WHY_Y := 22.0  # a locked card has no state line: its reason (two lines at most) starts here
+const LOCKED_BG: Color = Ui.CARD_LOCKED
+const LOCKED_TEXT: Color = Ui.TEXT_DIM
+const DEMOLISH_SIZE := 40.0
 const PULSE_SECONDS := 4.0  # how long a card and its tab glow after research unlocks it
 
 var state: Sim
@@ -36,14 +38,14 @@ var row: HBoxContainer
 
 func setup(game: Sim) -> void:
 	state = game
-	add_theme_stylebox_override("panel", Ui.panel_style(Ui.BAR, 6))
+	add_theme_stylebox_override("panel", Ui.bar_style(Ui.BAR, false))
 	set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	grow_vertical = Control.GROW_DIRECTION_BEGIN
 	var h := HBoxContainer.new()
 	h.add_theme_constant_override("separation", 10)
 	add_child(h)
 
-	tech_button = _big_button("Tech tree", "T", Ui.tech_color("storytelling"))
+	tech_button = _tech_button()
 	tech_button.pressed.connect(func(): tech_pressed.emit())
 	h.add_child(tech_button)
 	h.add_child(VSeparator.new())
@@ -57,7 +59,7 @@ func setup(game: Sim) -> void:
 	for tab_name in Data.BUILD_TABS:
 		var b := Ui.button(tab_name)
 		b.toggle_mode = true
-		b.custom_minimum_size = Vector2(96, 22)
+		b.custom_minimum_size = Vector2(100, 26)
 		b.pressed.connect(_show_tab.bind(tab_name))
 		tabs.add_child(b)
 		tab_buttons[tab_name] = b
@@ -72,18 +74,13 @@ func setup(game: Sim) -> void:
 			build_buttons[type] = parts
 
 	h.add_child(VSeparator.new())
-	demolish_button = _big_button("Demolish (X)", "refunds half", Ui.BAD)
-	demolish_button.custom_minimum_size = Vector2(118, BUTTON.y)
-	demolish_button.pressed.connect(func(): demolish_pressed.emit())
-	h.add_child(demolish_button)
-	h.add_child(VSeparator.new())
 
 	var craft := VBoxContainer.new()
 	craft.add_theme_constant_override("separation", 4)
 	craft.add_child(Ui.heading("Craft by hand"))
 	for r in Data.RECIPES:
 		var b := Ui.button(Data.RECIPES[r]["name"])
-		b.custom_minimum_size = Vector2(110, 22)
+		b.custom_minimum_size = Vector2(120, 26)
 		var sprite := Ui.item_sprite(r) if Data.ITEMS.has(r) else null
 		b.icon = sprite if sprite != null else Ui.swatch_texture(Ui.tech_color(Data.RECIPES[r]["tech"]))
 		b.expand_icon = true
@@ -92,6 +89,12 @@ func setup(game: Sim) -> void:
 		craft.add_child(b)
 		craft_buttons[r] = b
 	h.add_child(craft)
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	h.add_child(spacer)
+	demolish_button = _demolish_button()  # the far right: small, ghost style, red only while it is the tool in use
+	demolish_button.pressed.connect(func(): demolish_pressed.emit())
+	h.add_child(demolish_button)
 	_show_tab(tab)
 
 
@@ -170,16 +173,17 @@ func _build_button(type: String) -> Dictionary:
 	if icon.texture == null:
 		icon.texture = Ui.swatch_texture(def["color"])
 	b.add_child(icon)
-	var title := _text(def["name"], 12, Vector2(TEXT_X, 4), Vector2(TEXT_W, 16))
+	var title := _text(def["name"], Ui.MIN_TEXT, Vector2(TEXT_X, 3), Vector2(TEXT_W, 19))
 	b.add_child(title)
-	var sub := _text("", CardText.FONT_SIZE, Vector2(TEXT_X, 20), Vector2(TEXT_W, 14))
+	var sub := _text("", CardText.FONT_SIZE, Vector2(TEXT_X, 21), Vector2(TEXT_W, 19))
 	b.add_child(sub)
-	var pips := Ui.cost_pips(def["cost"], 20, 12)
+	var pips := Ui.cost_pips(def["cost"], 20, Ui.MIN_TEXT)
 	pips.position = Vector2(6, LOWER_Y)
 	b.add_child(pips)
-	var why := _text("", CardText.FONT_SIZE, Vector2(6, LOWER_Y - 1), Vector2(BUTTON.x - 12, 26))
+	var why := _text("", CardText.FONT_SIZE, Vector2(6, WHY_Y), Vector2(BUTTON.x - 12, 36))
 	why.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	why.clip_text = false
+	why.add_theme_constant_override("line_spacing", -4)
 	b.add_child(why)
 	for c in [icon, title, sub, pips, why]:
 		Ui.ignore_mouse(c)
@@ -196,14 +200,34 @@ static func _text(text: String, font_size: int, at: Vector2, extent: Vector2) ->
 	return l
 
 
-func _big_button(title: String, sub: String, col: Color) -> Button:
-	var b := Ui.button(title + "\n" + sub)
-	b.custom_minimum_size = Vector2(104, BUTTON.y)
-	var style := Ui.panel_style(col.darkened(0.35), 6)
+## The Tech tree button: Kith orange, filled, and the only filled button on screen.
+func _tech_button() -> Button:
+	var b := Ui.button("Tech tree\nT")
+	b.custom_minimum_size = Vector2(112, BUTTON.y)
+	b.add_theme_font_size_override("font_size", Ui.LABEL_TEXT)
+	var style := Ui.panel_style(Ui.KITH, 6)
 	b.add_theme_stylebox_override("normal", style)
+	b.add_theme_stylebox_override("pressed", style)
 	var hover := style.duplicate()
-	hover.bg_color = col.darkened(0.2)
+	hover.bg_color = Ui.KITH.lightened(0.12)
+	hover.border_color = Ui.HIGHLIGHT
 	b.add_theme_stylebox_override("hover", hover)
+	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		b.add_theme_color_override(key, Ui.LINE)  # dark cocoa text: cream would not read on orange
+	return b
+
+
+## The Demolish tool: a 40x40 icon button (a hammer with a small X) in the ghost card style.
+func _demolish_button() -> Button:
+	var b := Button.new()
+	b.focus_mode = Control.FOCUS_NONE
+	b.custom_minimum_size = Vector2(DEMOLISH_SIZE, DEMOLISH_SIZE)
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	b.icon = Art.sprite("demolish_tool")
+	b.expand_icon = true
+	b.add_theme_constant_override("icon_max_width", 28)
+	b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	b.tooltip_text = Data.DEMOLISH_TIP
 	return b
 
 
@@ -218,19 +242,20 @@ func refresh(placing: String, ready_count: int) -> void:
 		var unlocked := state.town.unlocked(type)
 		var style := Ui.panel_style(Ui.CARD if unlocked else LOCKED_BG, 4)
 		if placing == type:
-			style.bg_color = Ui.HIGHLIGHT
+			style.border_color = Ui.HIGHLIGHT  # the card being placed is ringed in gold
+			style.set_border_width_all(3)
 		b.add_theme_stylebox_override("normal", style)
 		var hover := style.duplicate()
 		hover.bg_color = style.bg_color.lightened(0.1)
 		b.add_theme_stylebox_override("hover", hover)
 		b.add_theme_stylebox_override("pressed", style)
-		var on_gold: bool = placing == type
-		var text_col := Art.OUTLINE if on_gold else (Color.WHITE if unlocked else LOCKED_TEXT)
+		var text_col: Color = Ui.TEXT if unlocked else LOCKED_TEXT
 		parts["title"].add_theme_color_override("font_color", text_col)
 		b.disabled = not unlocked
 		var sub: Label = parts["sub"]
-		sub.text = CardText.state_line(state, type, placing, sub.size.x)
-		sub.add_theme_color_override("font_color", Art.OUTLINE if on_gold else Color(text_col, 0.85))
+		sub.text = CardText.state_line(state, type, placing, sub.size.x) if unlocked else ""  # the reason says it
+		var short := not CardText.shortfall(state.economy.inv, def["cost"]).is_empty()
+		sub.add_theme_color_override("font_color", Ui.SHORT if short and placing != type else Ui.TEXT_DIM)
 		var why: Label = parts["why"]
 		why.text = CardText.locked_reason(type) if not unlocked else ""
 		why.add_theme_color_override("font_color", LOCKED_TEXT)
@@ -238,8 +263,11 @@ func refresh(placing: String, ready_count: int) -> void:
 		Ui.update_pips(parts["pips"], def["cost"], state.economy.inv)
 		parts["icon"].modulate = Color(1, 1, 1, 1.0 if unlocked else 0.4)
 		b.tooltip_text = _tooltip(type)
-	var demo := Ui.panel_style(Ui.BAD if placing == "demolish" else Ui.BAD.darkened(0.55), 6)
+	var demo := Ui.panel_style(Ui.BAD if placing == "demolish" else Ui.CARD, 4)
 	demolish_button.add_theme_stylebox_override("normal", demo)
+	var demo_hover := demo.duplicate()
+	demo_hover.border_color = Ui.HIGHLIGHT
+	demolish_button.add_theme_stylebox_override("hover", demo_hover)
 	for r in craft_buttons:
 		var b: Button = craft_buttons[r]
 		var rec: Dictionary = Data.RECIPES[r]

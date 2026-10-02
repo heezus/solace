@@ -55,7 +55,11 @@ const GOALS := [
 			+ " a trip for berries. A hut only works when you click it"
 		)
 	},
-	{"id": "dwelling", "text": "Build a Dwelling. Kith grow when there's room and steady food", "building": "dwelling"},
+	{
+		"id": "dwelling",
+		"text": "Build a Dwelling. Kith grow when there's room and steady food (a hut on a road feeds the Hearth)",
+		"building": "dwelling"
+	},
 	{"id": "charcoal", "text": "Discover Fire, then build a Charcoal Pit", "building": "charcoal_pit"},
 	{"id": "twine", "text": "Discover Cordage, then build a Twine Post", "building": "twine_post"},
 	{"id": "haulers", "text": "Discover Paths & Haulers: it unlocks Roads and lets idle Kith haul", "tech": "haulers"},

@@ -110,7 +110,7 @@ func test_hand_gathering_is_not_steady_income() -> void:
 			break
 	t.check(harvests > 50 and game.economy.food_supply() == 0.0, "the window saw +0 of income, %d harvests" % harvests)
 	t.check(game.economy.flows.rate("berries") > 0.0, "although the top bar rate showed the harvests")
-	t.check(Ui.growth_note(game) == Data.GROW_NOTE_FOOD, "and the note says it needs steady food")
+	t.check(Ui.growth_note(game).begins_with(Data.GROW_NOTE_FOOD), "and the note says it needs steady food")
 
 
 func test_steady_means_income_covers_eating() -> void:
@@ -194,7 +194,7 @@ func test_the_starting_food_gives_no_fourth_kith() -> void:
 	for _n in 240:
 		s.tick(1.0)
 	t.check(s.people.kith.size() == Data.KITH_START, "four minutes on the starting berries alone: still three")
-	t.check(Ui.growth_note(s) == Data.GROW_NOTE_FOOD, "and the note says why")
+	t.check(Ui.growth_note(s).begins_with(Data.GROW_NOTE_FOOD), "and the note says why")
 
 
 ## The real thing: a hut on berries, its worker sent on trips as a player clicking would, and a Dwelling.
@@ -226,7 +226,7 @@ func test_a_hut_on_berries_feeds_growth() -> void:
 func test_the_note_and_the_goal_say_steady_food() -> void:
 	var s := _camp(3, 500)
 	_income(s, 0.0)
-	t.check(Ui.growth_note(s) == Data.GROW_NOTE_FOOD, "the note beside the count: " + Data.GROW_NOTE_FOOD)
+	t.check(Ui.growth_note(s).begins_with(Data.GROW_NOTE_FOOD), "the note beside the count: " + Data.GROW_NOTE_FOOD)
 	t.check(Data.GROW_NOTE_FOOD.contains("steady food"), "in words a newcomer can act on")
 	_income(s, 1.0)
 	t.check(Ui.growth_note(s) == "", "and it goes away once the food is steady")
@@ -269,7 +269,7 @@ func test_one_trip_is_not_steady_food() -> void:
 			)
 	t.check(covered >= 10, "the trip did cover the eating for a while (%d s), which is what used to pass" % covered)
 	t.check(game.people.kith.size() == Data.KITH_START, "and nobody was born")
-	t.check(Ui.growth_note(game) == Data.GROW_NOTE_FOOD, "the note says it needs steady food")
+	t.check(Ui.growth_note(game).begins_with(Data.GROW_NOTE_FOOD), "the note says it needs steady food")
 
 
 ## Food from a hut every second, more than they eat: the window fills, then it has to hold for STEADY_SECONDS. Any

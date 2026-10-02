@@ -1,8 +1,9 @@
 extends PanelContainer
 ## The top bar: Kith and jobs, food with its time left (flashing red when it is about to run out), and a
-## fixed-width chip per good in two rows, RAW and MADE, each showing the good's name, its count and its net
-## rate per second (green up, red down). Hovering a chip drops a panel explaining where that good comes
-## from and where it goes. No line in the bar is ever cut short: long ones wrap onto a second line.
+## fixed-width chip per good in two rows, each a sprite that carries the good's color, its count in cream and its
+## net rate per second under it (moss up, alert red down; the name is in the tooltip). Hovering a chip drops a
+## panel explaining where that good comes from and where it goes. No line in the bar is ever cut short: long
+## ones wrap onto a second line.
 
 signal speed_picked(value: int)  # 0 toggles pause
 signal log_pressed  # the Messages button
@@ -11,27 +12,30 @@ const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
+const GrowthNote = preload("res://scripts/growth_note.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 
-const RAW := ["wood", "stone", "flint", "fiber", "clay", "berries", "grain", "fish"]
-const LOSS := Color("ff9aa9")
+const FIRST_ROW := 7  # goods in the first row; the rest are in the second
+const LOSS := Ui.SHORT  # `alert`, lifted to read on cocoa
 ## The Food readout's text while the warning is up: light enough to read on the bar (over 4.5 to 1) at every moment.
-const ALARM_TEXT := Color("ffb0bc")
+const ALARM_TEXT := Ui.SHORT
 ## The ring around it flashes between these two; it is the only thing that flashes, so the words never dim.
-const FLASH_FROM := Color("ff6b8a")
-const FLASH_TO := Color("ffffff")
+const FLASH_FROM := Ui.SHORT
+const FLASH_TO := Ui.TEXT
 const FLASH_SPEED := 7.0
-const FLAT := Color("9fb4bf")
+const FLAT := Ui.TEXT_DIM
 const MINUS := "−"
-const CHIP_W := 74.0
+const CHIP_W := 80.0
 const ICON := 24.0  # a good's sprite, with nothing behind it
-const ROW_H := 45.0  # a row of chips keeps this height whether or not its goods have appeared yet
-## The bar is never shorter than its two rows of chips and the panel's margins: it is reserved from the first frame,
-## so a chip, a note or a long line appearing later can never make it (or the map under it) grow.
-const BAR_H := ROW_H * 2.0 + 2.0 + 12.0
-const CAPTION_W := 40.0
+const ROW_H := 42.0  # a row of chips keeps this height whether or not its goods have appeared yet
+## The bar is never shorter than its tallest block, the Kith block with its name, jobs line and three lines of note,
+## plus the panel's margins: it is reserved from the first frame, so a chip, a note or a long line appearing later can
+## never make it (or the map under it) grow.
+const BAR_H := 113.0
 const FOOD_W := 190.0
+const COUNT_SIZE := 18  # numbers are 18
+const KITH_W := 216.0  # the Kith block, wide enough for "Jobs filled 19 of 19  ·  25 hauling"
 
 var state: Sim
 var kith_label: Label
@@ -53,26 +57,26 @@ var speed_buttons := {}
 
 func setup(game: Sim) -> void:
 	state = game
-	add_theme_stylebox_override("panel", Ui.panel_style(Ui.BAR, 6))
+	add_theme_stylebox_override("panel", Ui.bar_style(Ui.BAR, true))
 	set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
 	custom_minimum_size.y = BAR_H
 	var h := HBoxContainer.new()
-	h.add_theme_constant_override("separation", 10)
+	h.add_theme_constant_override("separation", 8)
 	add_child(h)
 
 	var kv := VBoxContainer.new()
 	kv.add_theme_constant_override("separation", -2)
-	kith_label = Ui.label("", 15)
-	jobs_label = Ui.label("", 10)
-	note_label = Ui.label("", 10)
+	kith_label = Ui.label("", Ui.LABEL_TEXT)
+	jobs_label = Ui.label("", Ui.MIN_TEXT)
+	note_label = Ui.label("", Ui.MIN_TEXT)
 	note_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	note_label.max_lines_visible = 2  # the block never grows the bar: two lines at most
+	note_label.max_lines_visible = 3  # the bar keeps its reserved height (BAR_H): three lines at most
 	kv.add_child(kith_label)
 	kv.add_child(jobs_label)
 	kv.add_child(note_label)
 	kv.mouse_filter = Control.MOUSE_FILTER_PASS
-	_fix_width(kv, [kith_label, jobs_label], 176)
-	note_label.custom_minimum_size.x = 176
+	_fix_width(kv, [kith_label, jobs_label], KITH_W)
+	note_label.custom_minimum_size.x = KITH_W
 	kv.tooltip_text = ""  # filled in refresh() with the job counts
 	h.add_child(kv)
 	h.add_child(VSeparator.new())
@@ -81,9 +85,9 @@ func setup(game: Sim) -> void:
 	food_box.add_theme_stylebox_override("panel", _outline(Color(0, 0, 0, 0)))
 	var fv := VBoxContainer.new()
 	fv.add_theme_constant_override("separation", 0)
-	food_label = Ui.label("", 14)
+	food_label = Ui.label("", Ui.LABEL_TEXT)
 	fv.add_child(food_label)
-	food_sub = Ui.label("", 10)
+	food_sub = Ui.label("", Ui.MIN_TEXT)
 	food_sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	fv.add_child(food_sub)
 	food_bar = ProgressBar.new()
@@ -105,19 +109,14 @@ func setup(game: Sim) -> void:
 	goods.clip_contents = true  # a narrow window clips the end of a row; it never pushes the buttons off screen
 	goods.custom_minimum_size.x = 0.0
 	h.add_child(goods)
-	for group in [["RAW", RAW], ["MADE", Data.ITEM_ORDER.filter(func(i): return i not in RAW)]]:
+	for group in [Data.ITEM_ORDER.slice(0, FIRST_ROW), Data.ITEM_ORDER.slice(FIRST_ROW)]:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 3)
 		row.custom_minimum_size = Vector2(0, ROW_H)
-		var cap := Ui.label(group[0], 9)
-		cap.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
-		cap.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		cap.custom_minimum_size.x = CAPTION_W
-		row.add_child(cap)
-		for id in group[1]:
+		for id in group:
 			row.add_child(_chip(id, CHIP_W))
-		if group[0] == "MADE":
-			tools_label = Ui.label("", 12)
+		if group[0] == Data.ITEM_ORDER[FIRST_ROW]:
+			tools_label = Ui.label("", Ui.MIN_TEXT)
 			tools_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			_fix_width(tools_label, [tools_label], 120)
 			row.add_child(tools_label)
@@ -134,14 +133,14 @@ func setup(game: Sim) -> void:
 	for part in [["Pause", 0], ["1x", 1], ["2x", 2], ["3x", 3]]:
 		var b := Ui.button(part[0])
 		b.toggle_mode = true
-		b.custom_minimum_size = Vector2(52 if part[1] == 0 else 32, 26)
+		b.custom_minimum_size = Vector2(60 if part[1] == 0 else 36, 28)
 		b.tooltip_text = "Pause or resume (Space)" if part[1] == 0 else "Speed x%d (key %d)" % [part[1], part[1]]
 		var v: int = part[1]
 		b.pressed.connect(func(): speed_picked.emit(v))
 		speeds.add_child(b)
 		speed_buttons[v] = b
 	log_button = Ui.button(Data.LOG_BUTTON + "  (L)")
-	log_button.custom_minimum_size = Vector2(160, 24)
+	log_button.custom_minimum_size = Vector2(0, 28)
 	log_button.tooltip_text = Data.LOG_TIP
 	log_button.pressed.connect(func(): log_pressed.emit())
 	right.add_child(log_button)
@@ -150,7 +149,7 @@ func setup(game: Sim) -> void:
 	flow_panel.top_level = true
 	flow_panel.visible = false
 	flow_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	flow_panel.custom_minimum_size = Vector2(260, 0)
+	flow_panel.custom_minimum_size = Vector2(280, 0)
 	flow_panel.add_theme_stylebox_override("panel", Ui.panel_style(Ui.PANEL, 10))
 	add_child(flow_panel)
 	flow_box = VBoxContainer.new()
@@ -158,7 +157,7 @@ func setup(game: Sim) -> void:
 	flow_panel.add_child(flow_box)
 
 
-## A fixed-width chip: the item's sprite, its name, the count and the net rate under it.
+## A fixed-width chip: the item's sprite, the count and the net rate under it. The name is in its tooltip.
 func _chip(id: String, width: float) -> PanelContainer:
 	var box := PanelContainer.new()
 	box.custom_minimum_size = Vector2(width, 0)
@@ -170,14 +169,10 @@ func _chip(id: String, width: float) -> PanelContainer:
 	var icon := Ui.item_icon(id, ICON)
 	h.add_child(icon)
 	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", -3)
-	var item: Dictionary = Data.ITEMS[id]
-	var title := Ui.label(item.get("short", item["name"]), 9)
-	title.add_theme_color_override("font_color", Color(1, 1, 1, 0.65))
-	var count := Ui.label("", 14)
-	var rate := Ui.label("", 10)
+	v.add_theme_constant_override("separation", -8)
+	var count := Ui.label("", COUNT_SIZE)
+	var rate := Ui.label("", Ui.MIN_TEXT)
 	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	v.add_child(title)
 	v.add_child(count)
 	v.add_child(rate)
 	h.add_child(v)
@@ -185,8 +180,8 @@ func _chip(id: String, width: float) -> PanelContainer:
 	box.tooltip_text = item_tip(id)
 	box.mouse_entered.connect(_show_flow.bind(id))
 	box.mouse_exited.connect(_hide_flow.bind(id))
-	_fix_width(box, [title, count, rate], width)
-	chips[id] = {"box": box, "title": title, "count": count, "rate": rate, "icon": icon}
+	_fix_width(box, [count, rate], width)
+	chips[id] = {"box": box, "count": count, "rate": rate, "icon": icon}
 	return box
 
 
@@ -256,14 +251,17 @@ func refresh(paused: bool, speed: int) -> void:
 	for b in state.town.buildings:
 		jobs += 1 if Buildings.needs_worker(b) and not b["paused"] else 0
 	kith_label.text = Data.KITH_LABEL % [Data.PEOPLE["many"], state.people.kith.size(), state.town.housing()]
-	kith_label.get_parent().tooltip_text = Data.JOBS_TIP % [state.people.job_counts(), Data.PEOPLE["many"]]
 	var note := Ui.growth_note(state)
-	kith_label.add_theme_color_override("font_color", Ui.HIGHLIGHT if note != "" else Ui.GOOD)
+	kith_label.get_parent().tooltip_text = (
+		Data.JOBS_TIP % [state.people.job_counts(), Data.PEOPLE["many"]]
+		+ ("\n\n" + GrowthNote.rule() if GrowthNote.food_is_the_blocker(state) else "")
+	)
+	kith_label.add_theme_color_override("font_color", Ui.TEXT if note != "" else Ui.GOOD)
 	var rest: String = Data.HAUL_WORD if state.tech_tree.researched.has("haulers") else Data.IDLE_WORD
 	jobs_label.text = Data.JOBS_LABEL % [workers, jobs, idle, rest]
 	note_label.text = note
 	note_label.visible = note != ""
-	note_label.add_theme_color_override("font_color", ALARM_TEXT if state.economy.starving else Ui.HIGHLIGHT)
+	note_label.add_theme_color_override("font_color", Ui.SHORT if state.economy.starving else Ui.TEXT_DIM)
 	_refresh_food()
 	var have_tools: bool = state.economy.seen.has("flint_tools")
 	tools_label.visible = have_tools
@@ -273,7 +271,7 @@ func refresh(paused: bool, speed: int) -> void:
 		Data.TOOLS_TIP % [Data.PEOPLE["many"], Data.TOOL_JOBS, state.economy.inv.get("flint_tools", 0)]
 	)
 	tools_label.mouse_filter = Control.MOUSE_FILTER_STOP
-	tools_label.add_theme_color_override("font_color", Ui.GOOD if held >= state.people.kith.size() else Color.WHITE)
+	tools_label.add_theme_color_override("font_color", Ui.GOOD if held >= state.people.kith.size() else Ui.TEXT)
 	for id in chips:
 		var c: Dictionary = chips[id]
 		var n: int = state.economy.inv.get(id, 0)
@@ -281,7 +279,7 @@ func refresh(paused: bool, speed: int) -> void:
 		# A good shows once the stockpile has held it. The rows never wrap, so the bar keeps its height.
 		c["box"].visible = state.economy.seen.has(id)
 		c["count"].text = str(n)
-		c["count"].modulate = Color(1, 1, 1, 0.4 if n == 0 and absf(r) < 0.005 else 1.0)
+		c["count"].modulate = Color(1, 1, 1, 0.5 if n == 0 and absf(r) < 0.005 else 1.0)
 		c["rate"].text = rate_text(r) + "/s"
 		c["rate"].add_theme_color_override("font_color", rate_color(r))
 		c["box"].tooltip_text = "" if flow_item == id else chip_tip(id, n, r)
@@ -308,7 +306,7 @@ func _refresh_food() -> void:
 		sub = Data.FOOD_LOW_TEXT % _duration(minf(eco.seconds_of_food(), 3600.0), true)
 	food_sub.text = sub
 	var alarm := eco.low or eco.starving
-	food_label.add_theme_color_override("font_color", ALARM_TEXT if alarm else Color.WHITE)
+	food_label.add_theme_color_override("font_color", ALARM_TEXT if alarm else Ui.TEXT)
 	food_sub.add_theme_color_override("font_color", ALARM_TEXT if alarm else rate_color(fr))
 	food_box.add_theme_stylebox_override("panel", _outline(flash_ring(pulse) if alarm else Color(0, 0, 0, 0)))
 	food_box.modulate.a = 1.0
@@ -338,7 +336,7 @@ func _show_flow(id: String) -> void:
 	flow_panel.visible = true
 	flow_panel.position = chip.global_position + Vector2(0, chip.size.y + 8)
 	var vp := get_viewport_rect().size
-	flow_panel.position.x = minf(flow_panel.position.x, vp.x - 270.0)
+	flow_panel.position.x = minf(flow_panel.position.x, vp.x - 290.0)
 
 
 func _hide_flow(id: String) -> void:
@@ -353,8 +351,10 @@ func _fill_flow(id: String) -> void:
 		flow_box.remove_child(c)
 		c.queue_free()
 	var net := state.economy.flows.rate(id)
-	var head := Ui.label("%s  %d   %s/s" % [Data.ITEMS[id]["name"], state.economy.inv.get(id, 0), rate_text(net)], 14)
-	head.add_theme_color_override("font_color", rate_color(net) if absf(net) >= 0.005 else Color.WHITE)
+	var head := Ui.label(
+		"%s  %d   %s/s" % [Data.ITEMS[id]["name"], state.economy.inv.get(id, 0), rate_text(net)], Ui.LABEL_TEXT
+	)
+	head.add_theme_color_override("font_color", rate_color(net) if absf(net) >= 0.005 else Ui.TEXT)
 	flow_box.add_child(head)
 	var parts := state.economy.flows.parts(id)
 	var ins: Array = []
@@ -377,7 +377,7 @@ func _fill_flow(id: String) -> void:
 	for source in outs:
 		_flow_row(_user_name(source, id), parts[source])
 	if Data.FOOD_VALUE.has(id):
-		_flow_note(Data.FOOD_NOTE % [str(state.economy.food_value(id)), Data.PEOPLE["many"]], Color(1, 1, 1, 0.7))
+		_flow_note(Data.FOOD_NOTE % [str(state.economy.food_value(id)), Data.PEOPLE["many"]], Ui.TEXT_DIM)
 	if net < -0.005 and not outs.is_empty():
 		var have: int = state.economy.inv.get(id, 0)
 		var left := have / -net
@@ -388,31 +388,31 @@ func _fill_flow(id: String) -> void:
 		var fix := "Fix: " + _how_to_make(id)
 		if outs[0] != "kith" and outs[0] != "craft":
 			fix += ", or pause the " + _type_name(outs[0])
-		_flow_note(fix + ".", Color(1, 1, 1, 0.8))
+		_flow_note(fix + ".", Ui.TEXT_DIM)
 
 
 func _flow_caption(text: String) -> void:
-	var l := Ui.label(text, 9)
-	l.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
+	var l := Ui.label(text, Ui.MIN_TEXT)
+	l.add_theme_color_override("font_color", Ui.TEXT_DIM)
 	flow_box.add_child(l)
 
 
 func _flow_row(text: String, per_sec: float) -> void:
 	var h := HBoxContainer.new()
-	var l := Ui.label(text, 12)
+	var l := Ui.label(text, Ui.MIN_TEXT)
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD
-	l.custom_minimum_size = Vector2(190, 0)
+	l.custom_minimum_size = Vector2(180, 0)
 	h.add_child(l)
 	if per_sec != 0.0:
-		var r := Ui.label(rate_text(per_sec), 12)
+		var r := Ui.label(rate_text(per_sec), Ui.MIN_TEXT)
 		r.add_theme_color_override("font_color", rate_color(per_sec))
 		h.add_child(r)
 	flow_box.add_child(h)
 
 
 func _flow_note(text: String, col: Color) -> void:
-	var l := Ui.label(text, 11)
+	var l := Ui.label(text, Ui.MIN_TEXT)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD
 	l.custom_minimum_size = Vector2(240, 0)
 	l.add_theme_color_override("font_color", col)

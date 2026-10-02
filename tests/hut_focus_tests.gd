@@ -26,6 +26,7 @@ func run(runner) -> void:
 	test_job_and_bundle_follow_the_focus()
 	test_the_panel_line_and_the_range_text()
 	test_an_unlinked_hut_waiting_for_a_click_says_so()
+	test_the_click_bubble_stops_nagging_while_the_food_is_comfortable()
 	test_the_focus_survives_a_save()
 	test_an_old_save_gets_a_default_focus()
 
@@ -323,6 +324,44 @@ func test_an_unlinked_hut_waiting_for_a_click_says_so() -> void:
 	t.check(Data.FOOD_LOW_EVENT.contains("Click your berry hut to send a trip"), "the food warning names the click")
 	t.check(Data.TRIPS_HINT.contains("only when you click it"), "the hut card says it works only when clicked")
 	t.check(Data.BUILDINGS["gatherers_hut"]["desc"].contains("only when you click it"), "as does its description")
+
+
+## Playtest 5: the yellow "click" bubbles stayed on after the Kith began foraging by themselves, looking like a to-do the
+## game handles. A food hut shows it before the first trip, and once the food is short (warning or famine); while the
+## food is comfortable it hides, and the card says clicking is optional. A wood hut always asks: only a click brings wood.
+func test_the_click_bubble_stops_nagging_while_the_food_is_comfortable() -> void:
+	var a := _arena()
+	var s: Sim = a[0]
+	var p: Vector2i = a[1]
+	_put(s, p + Vector2i(0, 1), "berry")
+	_put(s, p + Vector2i(-2, 0), "tree")
+	s.people.learned_by["berries"] = "Aro"
+	s.people.learned_by["wood"] = "Aro"
+	s.place("gatherers_hut", p)
+	s.tick(0.1)
+	var b: Dictionary = s.town.buildings[s.town.building_at[p]]
+	s.economy.inv["berries"] = 200
+	t.check(b["focus"] == "berries" and HutFocus.wants_click(s, b), "before any trip was sent, the food hut asks")
+	s.story.record("first_trip")
+	t.check(not HutFocus.wants_click(s, b), "after a first trip, with comfortable food, it does not")
+	t.check(HutFocus.click_can_wait(s, b), "its click can wait")
+	var card := BuildingPanel.click_text(s, b)
+	t.check(card.begins_with("Your Kith are fed; click to send more anyway."), "the card says so: " + card)
+	s.economy.low = true
+	t.check(
+		HutFocus.wants_click(s, b) and not BuildingPanel.click_text(s, b).contains("are fed"),
+		"with the warning up it asks again"
+	)
+	s.economy.low = false
+	s.economy.famine = true
+	t.check(HutFocus.wants_click(s, b), "and in a famine")
+	s.economy.famine = false
+	b["trips"] = 2
+	t.check(not HutFocus.wants_click(s, b), "never with trips waiting")
+	b["trips"] = 0
+	s.town.set_focus(s.town.building_at[p], "wood")
+	t.check(HutFocus.wants_click(s, b), "a wood hut always asks, whatever the food")
+	t.check(not BuildingPanel.click_text(s, b).contains("are fed"), "and its card does not say the Kith are fed")
 
 
 func test_the_focus_survives_a_save() -> void:

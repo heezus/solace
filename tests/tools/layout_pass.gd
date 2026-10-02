@@ -1,10 +1,11 @@
 extends SceneTree
-## The map's fit scale over a long run: the bot plays to Bronze Dawn with the UI refreshing every frame,
-## and the map's scale may change only when the window size does (the bars must keep steady heights).
+## The map view over a long run: the bot plays to Bronze Dawn with the UI refreshing every frame, and the map's
+## view (its place between the bars and the zoom) may change only when the window size does (the bars must keep
+## steady heights). The view runs edge to edge between the bars and up to the side panel, with the Hearth in it.
 ## It also checks the HUD's fit, at 1280x800 and after two resizes: the Info panel stays above the bottom bar
 ## even with a wall of text, a building's details are docked in the Info panel (nothing floats over the map),
 ## the top bar never runs past the window and none of its text is cut short (also with the food warning and
-## starvation showing), toasts stack without overlapping each other or a chip, every chip has a name, a tooltip
+## starvation showing), toasts stack without overlapping each other or a chip, every chip has a tooltip that names it
 ## and a sprite, a Hearth's blurb shows once, every build card's text fits it, and the message log opens.
 ## Run: godot --headless --path . -s tests/tools/layout_pass.gd   (exits 1 on a problem)
 
@@ -12,6 +13,7 @@ const Data = preload("res://scripts/data.gd")
 const World = preload("res://scripts/world.gd")
 const HoverText = preload("res://scripts/hover_text.gd")
 const Hands = preload("res://scripts/hands.gd")
+const UiTests = preload("res://tests/ui_tests.gd")
 const Ui = preload("res://scripts/ui.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
@@ -28,6 +30,7 @@ var frame := 0
 var last_vp := Vector2.ZERO
 var last_scale := Vector2.ZERO
 var last_pos := Vector2.ZERO
+var last_view := Rect2()
 var last_bars := Vector2.ZERO
 var problems: Array = []
 var changes := 0
@@ -37,6 +40,7 @@ var refit_due := 0  # the frame by which the map must have refit after a resize
 var hud_checks := 0  # how many HUD checks ran
 var base := {}  # the top bar's height and the map's place before the stress cases
 var saved := {}  # the stockpile as it was, put back after them
+var row_at: Array = []  # the buildings placed by hand for the badge check
 var frozen := false  # the bot's ticking is paused while a check sets the state by hand
 
 
@@ -84,6 +88,12 @@ func _check() -> void:
 					% [frame, last_scale.x, main.scale.x, last_bars, bars]
 				)
 			)
+	if main.view != last_view and last_view.size != Vector2.ZERO and vp == last_vp and refit_due == 0:
+		problems.append(
+			"frame %d: the map view went %s -> %s with the window unchanged" % [frame, last_view, main.view]
+		)
+	last_view = main.view
+	_check_view(frame)
 	if frame == 6:
 		if bars.x != main.top_bar.BAR_H:
 			problems.append("the top bar is %.0f tall, not the %.0f it reserves" % [bars.x, main.top_bar.BAR_H])
@@ -126,6 +136,7 @@ func _hud_checks() -> void:
 			main.messages.push("A third that stays until it is clicked", 0.0, true)
 			main.messages.push("A fourth: " + WALL, 30.0)
 		12:
+			_check_min_text("with toasts up")
 			_check_toast_and_chips()
 			main.messages.active.clear()
 			main.messages.changed.emit()
@@ -198,11 +209,21 @@ func _hud_checks() -> void:
 			main.tech_panel.view_chosen = false
 			main.tech_panel.visible = true
 		60:
+			_check_min_text("with the research board open")
 			_check_board_open()
 			main.tech_panel._pick_view("all")
 		62:
 			_check_board_hover()
 			main.tech_panel.visible = false
+			frozen = false
+		64:
+			frozen = true
+			_build_a_row_of_buildings()
+		66:
+			_check_pills("a row of six adjacent buildings, each blocked")
+			for p in row_at:
+				main.state.demolish(p)
+			row_at.clear()
 			frozen = false
 	if frame > 5 and frame % 5 == 0:
 		_check_fit("at frame %d" % frame)
@@ -210,6 +231,8 @@ func _hud_checks() -> void:
 		_check_build_cards("at frame %d" % frame)
 	if frame > 5 and frame % 25 == 0:
 		_check_top_bar_text("at frame %d" % frame)
+	if frame > 5 and frame % 10 == 0 and not frozen:
+		_check_pills("at frame %d" % frame)
 
 
 ## Playtest 4: the top bar grew 99 -> 104 px and the map shifted 2 px the first time the Tools chip showed. Craft a Flint
@@ -261,6 +284,44 @@ func _check_the_food_flash() -> void:
 		if Ui.contrast(ring, Ui.BAR) < 3.0:
 			problems.append("%s: the ring has a contrast of only %.1f" % [what, Ui.contrast(ring, Ui.BAR)])
 	tb.pulse = keep
+
+
+## Playtest 5: "Needs Wood" and "Idle" pills stacked over each other and over the next building in a row of adjacent
+## buildings. Place six side by side by hand, each with an alert, and the pills must not overlap (checked in _check_pills).
+func _build_a_row_of_buildings() -> void:
+	var s = main.state
+	s.tech_tree.researched["cordage"] = true
+	s.tech_tree.researched["fire"] = true
+	for id in s.economy.inv:
+		s.economy.inv[id] = maxi(s.economy.inv[id], 100)
+	var spot := Vector2i(-1, -1)
+	for dy in range(-9, 10):
+		for dx in range(-9, 10):
+			var p: Vector2i = s.world.camp_pos + Vector2i(dx, dy)
+			var ok := spot.x < 0
+			for k in 6:
+				ok = ok and s.town.placement_error("twine_post", p + Vector2i(k, 0)) == ""
+			if ok:
+				spot = p
+	if spot.x < 0:
+		problems.append("no room for a row of buildings for the badge check")
+		return
+	var alerts := [
+		"Needs Wood", "Idle: no free Kith", "Needs Wood", "Hungry: no food", "Needs road", "Idle: no free Kith"
+	]
+	for k in 6:
+		var p := spot + Vector2i(k, 0)
+		if s.place("twine_post" if k % 2 == 0 else "charcoal_pit", p):
+			row_at.append(p)
+			s.town.buildings[s.town.building_at[p]]["alert"] = alerts[k]
+	main.ui_refresh = 999.0
+
+
+## No alert badge leaves its tile, overlaps another badge or sits under a click badge.
+func _check_pills(what: String) -> void:
+	hud_checks += 1
+	for line in UiTests.badge_problems(main.state).slice(0, 3):
+		problems.append("%s: %s" % [what, line])
 
 
 ## Long top-bar text, one case at a time: the food warning, starving, needs-room text, the longest hold hint,
@@ -360,7 +421,7 @@ func _check_hearth_blurb_once() -> void:
 		problems.append("the Hearth's blurb shows %d times across its card and the Info panel (want 1)" % n)
 
 
-## Toasts sit below the top bar, clear of every chip and of each other; every chip has a name, a tooltip
+## Toasts sit below the top bar, clear of every chip and of each other; every chip has a tooltip that names it
 ## and a sprite behind nothing.
 func _check_toast_and_chips() -> void:
 	hud_checks += 1
@@ -373,8 +434,8 @@ func _check_toast_and_chips() -> void:
 				problems.append("a toast covers the %s chip" % id)
 		if c["box"].tooltip_text == "":
 			problems.append("the %s chip has no tooltip" % id)
-		if c["title"].text == "":
-			problems.append("the %s chip has no name" % id)
+		elif not String(c["box"].tooltip_text).begins_with(Data.ITEMS[id]["name"]):
+			problems.append("the %s chip's tooltip doesn't start with its name (the icon carries it)" % id)
 		var icon: Control = c["icon"]
 		if not icon is TextureRect or icon.texture == null:
 			problems.append("the %s chip has no sprite" % id)
@@ -417,9 +478,48 @@ func _check_top_bar_text(when: String) -> void:
 			problems.append('%s: "%s" is cut short in the top bar' % [when, l.text])
 
 
-## The map's rectangle on screen.
+## The map view's rectangle on screen.
 func _map_rect() -> Rect2:
-	return Rect2(main.position, Vector2(World.WIDTH, World.HEIGHT) * main.TILE * main.scale.x)
+	return main.view
+
+
+## The view is flush: from the left edge to the side panel, from the top bar to the bottom bar, at least 21 tiles
+## wide at 1280 px; tiles are 32, 48 or 64 px; the map covers it (or is centred where smaller); the Hearth is in it
+## at the start.
+func _check_view(at_frame: int) -> void:
+	hud_checks += 1
+	var v: Rect2 = main.view
+	var top: Rect2 = main.top_bar.get_global_rect()
+	var bottom: Rect2 = main.bottom_bar.get_global_rect()
+	var side: Rect2 = main.side_panel.get_global_rect()
+	var vp: Vector2 = main.get_viewport_rect().size
+	var settled: bool = at_frame > 8 and main.fit_settle == 0 and main.fit_vp == vp  # not while a resize settles
+	if settled and not (is_equal_approx(v.position.x, 0.0) and absf(v.end.x - side.position.x) < 1.5):
+		problems.append(
+			"frame %d: the map view %s isn't flush with the window edge and the side panel %s" % [at_frame, v, side]
+		)
+	if settled and (absf(v.position.y - top.end.y) > 1.5 or absf(v.end.y - bottom.position.y) > 1.5):
+		problems.append("frame %d: the map view %s isn't flush between the bars (%s, %s)" % [at_frame, v, top, bottom])
+	var tile_px: float = main.TILE * main.scale.x
+	if tile_px < 31.9 or tile_px > 64.1:
+		problems.append("frame %d: tiles are %.1f px (want 32 to 64)" % [at_frame, tile_px])
+	var map := Rect2(main.position, Vector2(World.WIDTH, World.HEIGHT) * main.TILE * main.scale.x)
+	for axis in 2:
+		if (
+			map.size[axis] >= v.size[axis]
+			and (map.position[axis] > v.position[axis] + 1.0 or map.end[axis] < v.end[axis] - 1.0)
+		):
+			problems.append("frame %d: the map %s doesn't cover its view %s" % [at_frame, map, v])
+			break
+	if at_frame == 8 and not v.has_point(main.screen_of(main.state.world.camp_pos)):
+		problems.append("the Hearth isn't in the map view at the start")
+	if (
+		at_frame == 8
+		and v.size.x > 1015.0
+		and absf(main.get_viewport_rect().size.x - 1280.0) < 1.0
+		and v.size.x != 1016.0
+	):
+		problems.append("the map view is %.0f px wide at 1280 (want 1016)" % v.size.x)
 
 
 ## The selected building's card is docked in the side panel: not floating, inside its width, off the map.
@@ -557,6 +657,24 @@ func _check_board_hover() -> void:
 	if board.chain.size() < 2:
 		problems.append("hovering %s lit nothing around it" % probe_tech)
 	board._set_hover("")
+
+
+## No label or button on screen is set smaller than 14 px.
+func _check_min_text(when: String) -> void:
+	hud_checks += 1
+	for c in _texts(main):
+		var size: int = c.get_theme_font_size("font_size")
+		if size < 14:
+			problems.append('%s: "%s" is %d px (the minimum is 14)' % [when, c.text, size])
+
+
+func _texts(node: Node) -> Array:
+	var out: Array = []
+	if (node is Label or node is Button) and node.is_visible_in_tree() and node.text != "":
+		out.append(node)
+	for c in node.get_children():
+		out += _texts(c)
+	return out
 
 
 func _labels(node: Node) -> Array:

@@ -11,6 +11,9 @@ const CARD_PLACING := "Placing"
 const CARD_LOCKED := "Locked"
 const CARD_NEED := "Need %s"  # "4 Wood, 2 Rope"
 const CARD_NEED_MORE := "Need %s +%d more"  # "4 Wood", how many other items are short
+const DEMOLISH_TIP := "Demolish (X). Refunds half."
+const CAMERA_HINT := "Arrow keys or WASD move the map, the mouse wheel zooms, Home looks at the Hearth."
+const CARD_NEED_PLUS := "Need %s +%d"  # the same, shorter
 const CARD_NEED_ITEMS := "Need more"  # when even the short form doesn't fit
 const CARD_DISCOVER := "Discover %s"  # a tech's name
 
@@ -91,6 +94,8 @@ const TRIPS_HINT := (
 	"Click the hut to send its %s for a bundle: until a road links it, it works only when you click it."
 	+ " Trips waiting: %d of %d."
 )  # one
+## Heading the click hint of a food hut while its food is comfortable (formatted with PEOPLE["many"]).
+const TRIPS_FED := "Your %s are fed; click to send more anyway."
 const RUSH_HINT := "Click to finish this cycle now (then %d s to recover)."
 const RUSH_WAIT := "Click to finish a cycle early while it's working."
 const RUSH_COOL := "Rush ready in %d s."

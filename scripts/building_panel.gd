@@ -19,7 +19,7 @@ const Buildings = preload("res://scripts/buildings.gd")
 const Work = preload("res://scripts/work.gd")
 const HutFocus = preload("res://scripts/hut_focus.gd")
 
-const INSET := Color("1b3a47")
+const INSET := Color("3b2a24")  # the `ui-bar` cocoa, sunk into the `ui-panel` card
 
 var state: Sim
 var pos := Vector2i(-1, -1)  # the selected building's tile
@@ -29,7 +29,7 @@ var parts := {}
 func setup(game: Sim) -> void:
 	state = game
 	visible = false
-	add_theme_stylebox_override("panel", Ui.panel_style(Ui.PANEL, 8))
+	add_theme_stylebox_override("panel", Ui.panel_style(Ui.CARD, 8))
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 4)
 	add_child(v)
@@ -47,23 +47,23 @@ func setup(game: Sim) -> void:
 	names.add_theme_constant_override("separation", -2)
 	names.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(names)
-	parts["name"] = Ui.label("", 15)
+	parts["name"] = Ui.label("", Ui.LABEL_TEXT)
 	names.add_child(parts["name"])
-	parts["status"] = _wrapped(11)
+	parts["status"] = _wrapped(Ui.MIN_TEXT)
 	names.add_child(parts["status"])
 	var close := Ui.button("x")
 	close.custom_minimum_size = Vector2(28, 28)
 	close.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	close.tooltip_text = Data.CLOSE_TIP
-	close.add_theme_stylebox_override("normal", _x_style(Ui.BAR))
-	close.add_theme_stylebox_override("hover", _x_style(Ui.BAD.darkened(0.3)))
+	close.add_theme_stylebox_override("normal", _x_style(Ui.PANEL))
+	close.add_theme_stylebox_override("hover", _x_style(Ui.BAD))
 	close.pressed.connect(func(): closed.emit())
 	head.add_child(close)
 
 	for key in ["desc", "recipe", "worker", "pace", "click"]:
-		parts[key] = _wrapped(12)
+		parts[key] = _wrapped(Ui.MIN_TEXT)
 		v.add_child(parts[key])
-	parts["pace"].add_theme_color_override("font_color", Color(1, 1, 1, 0.75))
+	parts["pace"].add_theme_color_override("font_color", Ui.TEXT_DIM)
 	parts["pace"].mouse_filter = Control.MOUSE_FILTER_STOP  # its tooltip has the exact numbers
 	var focus := HutFocus.new()  # what a hut works: one line, one click to change (scripts/hut_focus.gd)
 	focus.setup(game)
@@ -71,7 +71,7 @@ func setup(game: Sim) -> void:
 	v.add_child(focus)
 	v.move_child(focus, parts["recipe"].get_index())
 	parts["focus"] = focus
-	parts["holding"] = Ui.label("", 12)
+	parts["holding"] = Ui.label("", Ui.MIN_TEXT)
 	v.add_child(parts["holding"])
 	var bar := ProgressBar.new()
 	bar.custom_minimum_size = Vector2(0, 6)
@@ -83,7 +83,7 @@ func setup(game: Sim) -> void:
 	var trip := PanelContainer.new()
 	trip.add_theme_stylebox_override("panel", Ui.panel_style(INSET, 6))
 	parts["trip_box"] = trip
-	parts["trip"] = _wrapped(12)
+	parts["trip"] = _wrapped(Ui.MIN_TEXT)
 	trip.add_child(parts["trip"])
 	v.add_child(trip)
 
@@ -93,16 +93,15 @@ func setup(game: Sim) -> void:
 	v.add_child(buttons)
 	parts["buttons"] = buttons
 	visibility_changed.connect(_sync_buttons)
-	var collect := _button("Collect", Ui.HIGHLIGHT, Ui.HIGHLIGHT)
-	collect.add_theme_color_override("font_color", Art.OUTLINE)
+	var collect := _button("Collect", Ui.CARD, Ui.HIGHLIGHT)
 	collect.pressed.connect(_on_collect)
 	buttons.add_child(collect)
 	parts["collect"] = collect
-	var pause := _button("Pause", Ui.BAR, Color.WHITE)
+	var pause := _button("Pause", Ui.CARD, Ui.LINE)
 	pause.pressed.connect(_on_pause)
 	buttons.add_child(pause)
 	parts["pause"] = pause
-	var demolish := _button("Demolish", Ui.BAR, Ui.BAD)
+	var demolish := _button("Demolish", Ui.CARD, Ui.BAD)
 	demolish.pressed.connect(func(): demolish_pressed.emit(pos))
 	buttons.add_child(demolish)
 	parts["demolish"] = demolish
@@ -178,9 +177,9 @@ func refresh() -> void:
 	var status: Label = parts["status"]
 	status.text = b["status"]
 	status.visible = b["status"] != def["desc"]  # a building with no status of its own says its blurb: show it once
-	var col := Color.WHITE
+	var col := Ui.TEXT
 	if b["alert"] != "":
-		col = Color("ff9aa9")
+		col = Ui.SHORT
 	elif b["status"].begins_with("Working") or b["status"].begins_with("Carrying"):
 		col = Ui.GOOD
 	status.add_theme_color_override("font_color", col)
@@ -196,7 +195,7 @@ func refresh() -> void:
 	parts["pace"].tooltip_text = Data.PACE_TIP % Work.text(state, b).replace("\n", "; ")
 	parts["click"].text = click_text(state, b)
 	parts["click"].visible = parts["click"].text != ""
-	parts["click"].add_theme_color_override("font_color", Ui.HIGHLIGHT)
+	parts["click"].add_theme_color_override("font_color", Ui.TEXT)
 	var held := Buildings.buffered(b["out"])
 	parts["holding"].visible = Buildings.needs_worker(b)
 	parts["bar"].visible = Buildings.needs_worker(b)
@@ -240,7 +239,10 @@ static func click_text(s: Sim, b: Dictionary) -> String:
 		return ""
 	var kind: String = Data.BUILDINGS[b["type"]]["kind"]
 	if kind == "gatherer" and not Roads.automated(s, b):
-		return Data.TRIPS_HINT % [Data.PEOPLE["one"], b["trips"], Data.TRIP_QUEUE]
+		var hint: String = Data.TRIPS_HINT % [Data.PEOPLE["one"], b["trips"], Data.TRIP_QUEUE]
+		if HutFocus.click_can_wait(s, b):
+			hint = Data.TRIPS_FED % Data.PEOPLE["many"] + " " + hint
+		return hint
 	if b["rush_cd"] > 0.0:
 		return Data.RUSH_COOL % ceili(b["rush_cd"])
 	if Workers.can_rush(s, b):
