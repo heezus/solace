@@ -1,0 +1,72 @@
+name: Windows build
+
+# Builds a single-file Windows .exe of the game. Pull requests only prove the export works; a push to
+# main also publishes it as the rolling "latest" release, so one stable link always has the newest build.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - export_presets.cfg
+      - .github/workflows/release.yml
+  workflow_dispatch:
+
+concurrency:
+  group: windows-build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: ubuntu-latest
+    env:
+      GODOT_VERSION: 4.7.2
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Godot and its export templates
+        run: |
+          base="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          curl -sSL -o godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip
+          mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
+          curl -sSL -o templates.tpz "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          mkdir -p "$HOME/.local/share/godot/export_templates"
+          unzip -q templates.tpz -d templates
+          mv templates/templates "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          ./godot --version
+
+      - name: Import project
+        run: ./godot --headless --path . --import
+
+      - name: Export Windows build
+        run: |
+          mkdir -p build
+          ./godot --headless --path . --export-release "Windows Desktop" build/Solace.exe
+          test -s build/Solace.exe
+          ls -l build
+
+      - name: Zip it
+        run: |
+          cd build
+          zip -q Solace-windows.zip Solace.exe
+          ls -l
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Solace-windows
+          path: build/Solace-windows.zip
+
+      - name: Publish the rolling latest release
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          short="${GITHUB_SHA::7}"
+          gh release delete latest --cleanup-tag --yes || true
+          gh release create latest build/Solace-windows.zip \
+            --target "$GITHUB_SHA" \
+            --title "Solace, newest build ($short)" \
+            --notes "Windows build of main at $short. Unzip, then double-click Solace.exe. Windows may warn that it is an unknown app: click More info, then Run anyway."
