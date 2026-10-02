@@ -1,18 +1,27 @@
 extends "res://tests/autoplay.gd"
-## The headless player for the era after the stone age (stage 1 of Bronze Dawn). It plays the stone age exactly as
-## Autoplay does, then keeps going after Bronze Dawn: it pushes roads east through the fog until the Copper Hills and
-## the Tin Stream are in sight, researches toward Alloying, puts a Mine on the hills, a Smelter and a Crucible by the
-## Hearth, digs ore by hand where that is quicker, and stops when the first Bronze is made.
+## The headless player for the era after the stone age (Bronze Dawn). It plays the stone age exactly as Autoplay does,
+## then keeps going after Bronze Dawn: it pushes roads east through the fog until the Copper Hills and the Tin Stream
+## are in sight, researches toward Alloying, puts a Mine on the hills, a Smelter and a Crucible by the Hearth, digs ore
+## by hand where that is quicker, and stops when the first Bronze is made (play_bronze), or plays on (play_to_star):
+## the research goal becomes The Falling Star, and it adds Mines on the hills and the Tin Stream, a Cart Shed and a
+## Watchtower, until the era ends.
 ## play_bronze() returns {"won", "seconds" (Bronze Dawn), "bronze_seconds" (the first Bronze, -1 for never),
-## "minutes" (from Bronze Dawn to the first Bronze), "log"}.
+## "minutes" (from Bronze Dawn to the first Bronze), "log"}; play_to_star() adds "star_seconds" (-1 for never) and
+## "star_minutes" (from the first Bronze to The Falling Star, -1 for never).
 
-const MINES := 1  # Mines on Copper Hills the bot builds (the Tin Stream is dug by hand: the Crucible takes one tin)
+const MINES := 1  # Mines on Copper Hills the bot builds before the first Bronze (the Tin Stream is dug by hand)
+const MINES_COPPER := 4  # ...and the most it builds on the hills once it plays on
+const MINES_TIN := 1  # Mines on the Tin Stream after the first Bronze
+const MINE_ORE := 120.0  # one more copper Mine for every this much Copper Ore still short
 const COPPER_FIRST := 15  # Copper: Alloying costs 12, and a Crucible batch takes 3
 
 ## Called once with the bot when Bronze Dawn is won, before the bot plays on: the state is then the stone age's last.
 var on_dawn: Callable
+## Called once with the bot at the moment of the first Bronze (play_to_star calls it and plays on).
+var on_bronze: Callable
 var dawn_at := -1.0  # the clock when Bronze Dawn was won
 var bronze_at := -1.0  # the clock when the first Bronze was made
+var star_at := -1.0  # the clock when The Falling Star was researched
 
 
 func play_bronze(map_seed: int, max_seconds: float) -> Dictionary:
@@ -22,6 +31,30 @@ func play_bronze(map_seed: int, max_seconds: float) -> Dictionary:
 	while clock < max_seconds and not s.won:
 		step(true)
 	return _after_dawn(max_seconds)
+
+
+## Play the whole era: Bronze Dawn, the first Bronze, then on until The Falling Star (or `max_seconds`).
+func play_to_star(map_seed: int, max_seconds: float) -> Dictionary:
+	var game := Sim.new()
+	game.generate(map_seed)
+	attach(game)
+	while clock < max_seconds and not s.won:
+		step(true)
+	var r := _after_dawn(max_seconds)
+	if bronze_at >= 0.0:
+		while clock < max_seconds and not fell():
+			step(true)
+	r["star_seconds"] = star_at
+	r["star_minutes"] = (star_at - bronze_at) / 60.0 if star_at >= 0.0 and bronze_at >= 0.0 else -1.0
+	return r
+
+
+## True once The Falling Star is researched: the era has ended (and when, in `star_at`).
+func fell() -> bool:
+	if star_at < 0.0 and "star_falling" in s.story.events:
+		star_at = clock
+		lines.append("%5.0f s  == The Falling Star: the era ends ==" % clock)
+	return star_at >= 0.0
 
 
 ## Play on from a game that has just won Bronze Dawn (a run restored from a save made then), `at` seconds in.
@@ -46,6 +79,8 @@ func begin_era_two() -> void:
 func made_bronze() -> bool:
 	if bronze_at < 0.0 and s.economy.inv.get("bronze", 0) > 0:
 		bronze_at = clock
+		if on_bronze.is_valid():
+			on_bronze.call(self)
 	return bronze_at >= 0.0
 
 
@@ -58,9 +93,12 @@ func _after_dawn(max_seconds: float) -> Dictionary:
 	return {"won": s.won, "seconds": dawn_at, "bronze_seconds": bronze_at, "minutes": minutes, "log": lines}
 
 
-## The goal: Mining first (the Mine starts digging while Smelting is researched), then Alloying.
+## The goal: Mining first (the Mine starts digging while Smelting is researched), then Alloying, and once the first
+## Bronze is made, The Falling Star.
 func _aim() -> void:
 	var want := "alloying" if s.tech_tree.researched.has("mining") else "mining"
+	if bronze_at >= 0.0:
+		want = "falling_star"
 	if want != goal_tech or s.tech_tree.goal == "":
 		goal_tech = want
 		s.tech_tree.set_goal(goal_tech)
@@ -74,6 +112,8 @@ func _decide() -> void:
 	_flood_reach()
 	if _explore_ore() or _place_mine():
 		return
+	if bronze_at >= 0.0 and _build_for_the_star():
+		return
 	super._decide()
 
 
@@ -85,6 +125,11 @@ func _goal_wants(want: Dictionary) -> void:
 		want["copper"] = want.get("copper", 0) + 12
 	if s.tech_tree.researched.has("alloying") and s.economy.inv.get("bronze", 0) == 0:
 		_want(want, Data.BUILDINGS["crucible"]["in"], 1)
+	if bronze_at >= 0.0:  # past the first Bronze: the Cart Shed, the Watchtower and one more Mine are to be paid for
+		for type in ["cart_shed", "watchtower"]:
+			if s.town.unlocked(type) and _count(type) < 1:
+				_want(want, Data.BUILDINGS[type]["cost"], 1)
+		_want(want, Data.BUILDINGS["mine"]["cost"], 1)
 
 
 ## The era's workshops are due once their tech is in and the first Bronze still needs them.
@@ -185,3 +230,40 @@ func _place_mine() -> bool:
 			return -INF
 		return -Vector2(p).distance_to(Vector2(s.world.camp_pos))
 	return _place_best("mine", hills)
+
+
+# --- On to The Falling Star ----------------------------------------------------
+
+
+## After the first Bronze: the buildings the era's later techs give (a Cart Shed, a Watchtower), and more Mines for the
+## ore the Smelter and Crucible are short of. One placement a decision.
+func _build_for_the_star() -> bool:
+	if s.town.unlocked("cart_shed") and _count("cart_shed") < 1 and _place_near_hearth("cart_shed"):
+		return true
+	if s.town.unlocked("watchtower") and _count("watchtower") < 1 and _place_near_hearth("watchtower"):
+		return true
+	if not s.town.unlocked("mine"):
+		return false
+	var ore_short: int = _short().get("copper_ore", 0)
+	var copper_wanted := 1 + clampi(int(ore_short / MINE_ORE), 0, MINES_COPPER - 1)
+	if _mines_on("copper_hills") < copper_wanted and _place_mine_on("copper_hills"):
+		return true
+	return _ore_seen("tin_stream") and _mines_on("tin_stream") < MINES_TIN and _place_mine_on("tin_stream")
+
+
+## Mines that stand on `tile` (copper_hills or tin_stream).
+func _mines_on(tile: String) -> int:
+	var n := 0
+	for b in s.town.buildings:
+		if b["type"] == "mine" and s.world.tile_at(b["pos"]) == tile:
+			n += 1
+	return n
+
+
+## A Mine on the `tile` nearest the Hearth that has none yet.
+func _place_mine_on(tile: String) -> bool:
+	var near := func(p):
+		if s.world.tile_at(p) != tile:
+			return -INF
+		return -Vector2(p).distance_to(Vector2(s.world.camp_pos))
+	return _place_best("mine", near)

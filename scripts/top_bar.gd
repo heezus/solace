@@ -17,7 +17,7 @@ const Hands = preload("res://scripts/hands.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 
 const RAW := ["wood", "stone", "flint", "fiber", "clay", "berries", "grain", "fish", "copper_ore", "tin"]
-const ROWS := [0, 7, 13, 17]  # where each row of goods starts in ITEM_ORDER: raw, made, the second era's four
+const ROWS := [0, 7, 13, 18]  # where each row of goods starts in ITEM_ORDER: raw, made, the second era's five
 const LOSS := Ui.SHORT  # `alert`, lifted to read on cocoa
 ## The Food readout's text while the warning is up: light enough to read on the bar (over 4.5 to 1) at every moment.
 const ALARM_TEXT := Ui.SHORT
@@ -31,7 +31,7 @@ const CHIP_W := 80.0
 const ICON := 24.0  # a good's sprite, with nothing behind it
 const ROW_H := 42.0  # a row of chips keeps this height whether or not its goods have appeared yet
 const ROW3_H := 30.0  # the second era's row: each chip is one line (sprite, count, rate), so the row is shorter
-const WIDE_CHIP_W := 128.0
+const WIDE_CHIP_W := 114.0  # five of them fit the bar at 1280 px, like the six chips and the Tools line above
 ## The bar is never shorter than its tallest block, the Kith block with its name, jobs line and three lines of note,
 ## plus the panel's margins: it is reserved from the first frame, so a chip, a note or a long line appearing later can
 ## never make it (or the map under it) grow.
@@ -190,8 +190,8 @@ func _chip(id: String, width: float, one_line := false) -> PanelContainer:
 	box.mouse_exited.connect(_hide_flow.bind(id))
 	_fix_width(box, [count, rate], width)
 	if one_line:
-		count.custom_minimum_size.x = 34.0
-		rate.custom_minimum_size.x = 52.0
+		count.custom_minimum_size.x = 30.0
+		rate.custom_minimum_size.x = 50.0
 		rate.size_flags_vertical = Control.SIZE_SHRINK_END
 	chips[id] = {"box": box, "count": count, "rate": rate, "icon": icon}
 	return box
@@ -280,7 +280,13 @@ func refresh(paused: bool, speed: int) -> void:
 	var held := Hands.tools_held(state)
 	tools_label.text = Data.TOOLS_LABEL % [held, state.people.kith.size(), Data.PEOPLE["many"]]
 	tools_label.tooltip_text = (
-		Data.TOOLS_TIP % [Data.PEOPLE["many"], Data.TOOL_JOBS, state.economy.inv.get("flint_tools", 0)]
+		Data.TOOLS_TIP
+		% [
+			Data.PEOPLE["many"],
+			Data.TOOL_JOBS,
+			Data.BRONZE_TOOL_JOBS,
+			state.economy.inv.get("flint_tools", 0) + state.economy.inv.get("bronze_tools", 0)
+		]
 	)
 	tools_label.mouse_filter = Control.MOUSE_FILTER_STOP
 	tools_label.add_theme_color_override("font_color", Ui.GOOD if held >= state.people.kith.size() else Ui.TEXT)

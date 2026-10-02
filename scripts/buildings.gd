@@ -72,7 +72,7 @@ func placement_error(type: String, p: Vector2i) -> String:
 			return "Roads can't cross the river: build a Wooden Bridge"
 		if tile not in ["grass", "rock", "tree"]:
 			return "Roads go on grassland or through Forest, or cut a pass through Rocks"
-		return "" if _economy.can_afford(Rules.cost_at(type, tile)) else "Not enough materials"
+		return "" if _economy.can_afford(Rules.cost_at(type, tile, _causeways())) else "Not enough materials"
 	if def["kind"] == "bridge":
 		if tile != "river":
 			return "Bridges go on river tiles"
@@ -97,6 +97,11 @@ func placement_error(type: String, p: Vector2i) -> String:
 	return ""
 
 
+## True once Causeways is known: Roads are laid in stone and brick.
+func _causeways() -> bool:
+	return _research.unlocked("causeways")
+
+
 func near_hearth(p: Vector2i) -> bool:
 	return Vector2(p).distance_to(Vector2(_world.camp_pos)) <= Data.HEARTH_RADIUS
 
@@ -106,6 +111,8 @@ func built_type(p: Vector2i) -> String:
 	if building_at.has(p):
 		return buildings[building_at[p]]["type"]
 	if _world.roads.has(p):
+		if _world.stone_bridges.has(p):
+			return "stone_bridge"
 		return "bridge" if _world.tile_at(p) == "river" else "road"
 	if _world.fields.has(p):
 		return "field"
@@ -120,7 +127,7 @@ func place(type: String, p: Vector2i) -> Dictionary:
 	if placement_error(type, p) != "":
 		return {}
 	var tile := _world.tile_at(p)
-	_economy.pay(Rules.cost_at(type, tile))
+	_economy.pay(Rules.cost_at(type, tile, _causeways()))
 	road_rev += 1
 	var kind: String = Data.BUILDINGS[type]["kind"]
 	var cleared := ""
@@ -128,7 +135,10 @@ func place(type: String, p: Vector2i) -> Dictionary:
 		if tile in ["rock", "tree"]:
 			cleared = tile
 			_world.set_tile(p, "grass")  # a mountain pass, or the trees felled for the road
-		_world.add_road(p)  # a bridge is a road over the river
+		if Data.BUILDINGS[type].get("stone", false):
+			_world.add_stone_bridge(p)
+		else:
+			_world.add_road(p)  # a bridge is a road over the river
 	elif kind == "field":
 		_world.add_field(p)
 	else:
@@ -152,6 +162,8 @@ func add_building(type: String, p: Vector2i) -> void:
 		"worker": -1,  # index into kith, or -1
 		"mate": -1,  # the second person of a building that needs two (see CREW_SLOTS), or -1
 		"ore": "",  # what a Mine digs: the item its tile yields, "" for any other building
+		"give": "",  # what a Trading Post gives up (Data.TRADE_GIVE of it), "" for none yet
+		"get": "",  # ...and what it gets for it (Data.TRADE_GET of it)
 		"claimed": false,  # a hauler is on its way to empty it
 		"incoming": {},  # inputs haulers are carrying here
 		"unreachable": 0.0,  # seconds left to show "can't reach"
@@ -316,7 +328,23 @@ func housing() -> int:
 		total += Data.BUILDINGS[b["type"]].get("housing", 0)
 		if b["type"] == "dwelling" and _research.unlocked("shelter"):
 			total += 2
-	return total
+	return total + granary_homes()
+
+
+## The homes Granaries add: one for every Data.GRANARY_FOOD food in the stockpile, up to Data.GRANARY_HOMES.
+func granary_homes() -> int:
+	if not _research.unlocked("granaries"):
+		return 0
+	return mini(floori(_economy.food_total() / Data.GRANARY_FOOD), Data.GRANARY_HOMES)
+
+
+## How many Cart Sheds stand, and so how many haulers are carts (Data.CARTS_PER_SHED each).
+func carts_allowed() -> int:
+	var n := 0
+	for b in buildings:
+		if Data.BUILDINGS[b["type"]]["kind"] == "shed":
+			n += Data.CARTS_PER_SHED
+	return n
 
 
 # --- Work --------------------------------------------------------------------
@@ -345,12 +373,46 @@ static func is_staffed(b: Dictionary) -> bool:
 	return true
 
 
-## What a cycle at `b` makes: the building's `out`, or for a Mine its `dig` of the ore on its tile.
+## What a cycle at `b` makes: the building's `out`, for a Mine its `dig` of the ore on its tile, for a Trading Post
+## what it is set to get.
 static func recipe_out(b: Dictionary) -> Dictionary:
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
 	if def.has("dig"):
 		return {b["ore"]: def["dig"]}
+	if def.get("trade", false):
+		return {b["get"]: Data.TRADE_GET} if is_trading(b) else {}
 	return def["out"]
+
+
+## What a cycle at `b` uses: the building's `in`, or for a Trading Post what it is set to give.
+static func recipe_in(b: Dictionary) -> Dictionary:
+	var def: Dictionary = Data.BUILDINGS[b["type"]]
+	if def.get("trade", false):
+		return {b["give"]: Data.TRADE_GIVE} if is_trading(b) else {}
+	return def.get("in", {})
+
+
+## True for a Trading Post that has been told what to give and what to get.
+static func is_trading(b: Dictionary) -> bool:
+	return Data.BUILDINGS[b["type"]].get("trade", false) and b["give"] != "" and b["get"] != ""
+
+
+## Tell Trading Post `i` to swap `gives` for `gets` ("" for one not chosen yet). False when it isn't a Trading Post, or
+## the two are one good, or either is not a good. What it had loaded of the old good goes back to the stockpile.
+func set_trade(i: int, gives: String, gets: String) -> bool:
+	var b: Dictionary = buildings[i]
+	if not Data.BUILDINGS[b["type"]].get("trade", false) or (gives == gets and gives != ""):
+		return false
+	for id in [gives, gets]:
+		if id != "" and not Data.ITEMS.has(id):
+			return false
+	for id in b["inbuf"]:
+		_economy.add(id, b["inbuf"][id])
+	b["inbuf"].clear()
+	b["give"] = gives
+	b["get"] = gets
+	b["progress"] = 0.0
+	return true
 
 
 ## Carry by hand: empty the building's output into the stockpile and load its inputs from the stockpile.
@@ -361,8 +423,9 @@ func haul(index: int) -> void:
 	b["out"].clear()
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
 	if def["kind"] == "processor":
-		for id in def["in"]:
-			var want: int = def["in"][id] * 2 - b["inbuf"].get(id, 0)
+		var recipe := recipe_in(b)
+		for id in recipe:
+			var want: int = recipe[id] * 2 - b["inbuf"].get(id, 0)
 			var take: int = mini(want, _economy.inv.get(id, 0))
 			if take > 0:
 				_economy.pay({id: take})
@@ -387,8 +450,11 @@ func wants_to_work(b: Dictionary) -> bool:
 		"processor":
 			if def.get("needs_power", false) and not is_powered(b["pos"]):
 				return false
-			for id in def["in"]:
-				if b["inbuf"].get(id, 0) < def["in"][id]:
+			if def.get("trade", false) and not is_trading(b):
+				return false
+			var recipe := recipe_in(b)
+			for id in recipe:
+				if b["inbuf"].get(id, 0) < recipe[id]:
 					return false
 			return buffered(b["out"]) < Data.BUFFER_CAP
 	return false
@@ -446,4 +512,6 @@ static func _building_from_dict(d: Dictionary) -> Dictionary:
 		b[key] = int(d[key])
 	b["mate"] = int(d.get("mate", -1))  # a save from before the Mine has no second place
 	b["ore"] = String(d.get("ore", ""))
+	b["give"] = String(d.get("give", ""))
+	b["get"] = String(d.get("get", ""))
 	return b

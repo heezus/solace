@@ -40,7 +40,7 @@ const KITH: Color = Ui.KITH
 const SIDE_W := 264.0
 const BAD: Color = Ui.BAD
 const GOAL_COLOR: Color = Ui.HIGHLIGHT
-const LINE_TYPES := ["road", "bridge", "field"]  # laid by dragging
+const LINE_TYPES := ["road", "bridge", "stone_bridge", "field"]  # laid by dragging
 const AURA_FILL := Color(0.55, 0.45, 0.6, 0.2)
 const NUDGE_TIME := 2.0  # seconds the "hold it down" hint stays after a click that let go too soon
 
@@ -599,7 +599,10 @@ func _draw() -> void:
 		elif placing == "road" and state.world.tile_at(hover) == "rock":
 			note = "Cut a pass · %s" % Ui.cost_text(Data.PASS_COST)
 		elif placing == "road" and state.world.tile_at(hover) == "tree":
-			note = "Fell the trees · %s" % Ui.cost_text(Data.BUILDINGS["road"]["cost"])
+			note = (
+				"Fell the trees · %s"
+				% Ui.cost_text(Rules.cost_at("road", "tree", state.tech_tree.researched.has("causeways")))
+			)
 		Overlays.placement_ghost(self, state, placing, hover, note)
 	elif state.world.in_bounds(hover) and not state.fog.is_revealed(hover):
 		var fr := _tile_rect(hover)
@@ -753,7 +756,9 @@ func _draw_rush(b: Dictionary, r: Rect2) -> void:
 
 
 func _draw_roads() -> void:
-	var dirt := Data.BUILDINGS["road"]["color"]
+	var dirt: Color = Data.BUILDINGS["road"]["color"]
+	if state.tech_tree.researched.has("causeways"):
+		dirt = dirt.lerp(Data.BUILDINGS["stone_bridge"]["color"], 0.7)  # the roads are laid in stone now
 	var k := TILE / Art.DESIGN
 	var seen := _visible_tiles()
 	for p in state.world.roads:
@@ -761,7 +766,7 @@ func _draw_roads() -> void:
 			continue
 		var c := _tile_center(p)
 		if state.world.tile_at(p) == "river":
-			var bridge := Art.sprite("tile_bridge_wood")
+			var bridge := Art.sprite("stone_bridge" if state.world.stone_bridges.has(p) else "tile_bridge_wood")
 			if bridge != null:
 				draw_texture_rect(bridge, _tile_rect(p), false)
 				continue

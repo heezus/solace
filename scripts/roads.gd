@@ -10,7 +10,7 @@ extends RefCounted
 ## The networks are cached in s.town.road_net and rebuilt when s.town.road_rev changes (place and demolish bump
 ## it): {"rev", "depots", "posts", "net": road tile -> network id, "depot_nets": depot pos -> [ids] (each depot's
 ## own doorstep id first), "link": building pos -> [network id, depot pos], "grid": an AStarGrid2D where
-## only road tiles are open}.
+## only road tiles are open, "cart_grid": the same without the Wooden Bridges: a cart will not cross one}.
 
 const Data = preload("res://scripts/data.gd")
 const Kith = preload("res://scripts/kith.gd")
@@ -83,19 +83,31 @@ static func walk(s, k: Dictionary, to: Vector2i) -> bool:
 	if from == to:
 		k["path"] = []
 		return true
-	var grid: AStarGrid2D = _cache(s)["grid"]
-	var ends := [from, to]
-	var was: Array = ends.map(func(p): return grid.is_point_solid(p))
-	for p in ends:
-		grid.set_point_solid(p, false)
-	var path := grid.get_id_path(from, to)
-	for i in ends.size():
-		grid.set_point_solid(ends[i], was[i])
+	var path := _route(s, from, to, bool(k.get("cart", false)))
 	if path.is_empty():
 		return false
 	path.remove_at(0)
 	k["path"] = Array(path)
 	return true
+
+
+## True when a cart can roll from `from` to `to` along the roads (a Wooden Bridge in the way stops it).
+static func cart_can_reach(s, from: Vector2i, to: Vector2i) -> bool:
+	return from == to or not _route(s, from, to, true).is_empty()
+
+
+## The road tiles from `from` to `to`, both ends included ([] when the roads don't join them). The two ends may be
+## off the road.
+static func _route(s, from: Vector2i, to: Vector2i, cart: bool) -> Array:
+	var grid: AStarGrid2D = _cache(s)["cart_grid" if cart else "grid"]
+	var ends := [from, to]
+	var was: Array = ends.map(func(p): return grid.is_point_solid(p))
+	for p in ends:
+		grid.set_point_solid(p, false)
+	var path := Array(grid.get_id_path(from, to))
+	for i in ends.size():
+		grid.set_point_solid(ends[i], was[i])
+	return path
 
 
 ## The road tiles a new road from p should run along to join the nearest network that reaches a
@@ -129,7 +141,8 @@ static func _net_has_depot(c: Dictionary, id: int) -> bool:
 
 static func _cache(s) -> Dictionary:
 	var c: Dictionary = s.town.road_net
-	if c.get("rev", -1) == s.town.road_rev and c.get("paved", false) == s.tech_tree.researched.has("paved_roads"):
+	var fast: Array = [s.tech_tree.researched.has("paved_roads"), s.tech_tree.researched.has("causeways")]
+	if c.get("rev", -1) == s.town.road_rev and c.get("fast", []) == fast:
 		return c
 	c = _build(s)
 	s.town.road_net = c
@@ -182,15 +195,8 @@ static func _build(s) -> Dictionary:
 						best_d = d
 		if not best.is_empty():
 			link[b["pos"]] = best
-	var grid := AStarGrid2D.new()
-	grid.region = Rect2i(0, 0, s.world.width, s.world.height)
-	grid.cell_size = Vector2.ONE
-	grid.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_NEVER
-	grid.update()
-	grid.fill_solid_region(grid.region, true)
-	for p in s.world.roads:
-		grid.set_point_solid(p, false)
-		grid.set_point_weight_scale(p, s.pathing.walk_cost(p))
+	var grid := _road_grid(s, false)
+	var cart_grid := _road_grid(s, true)
 	var waiting_posts: Array = []
 	for depot in all_depots:
 		for b in link:
@@ -201,9 +207,26 @@ static func _build(s) -> Dictionary:
 		"rev": s.town.road_rev,
 		"depots": all_depots,
 		"posts": waiting_posts,
-		"paved": s.tech_tree.researched.has("paved_roads"),
+		"fast": [s.tech_tree.researched.has("paved_roads"), s.tech_tree.researched.has("causeways")],
 		"net": net,
 		"depot_nets": at_depot,
 		"link": link,
 		"grid": grid,
+		"cart_grid": cart_grid,
 	}
+
+
+## An AStarGrid2D where only the road tiles are open (not the Wooden Bridges, for a cart).
+static func _road_grid(s, cart: bool) -> AStarGrid2D:
+	var grid := AStarGrid2D.new()
+	grid.region = Rect2i(0, 0, s.world.width, s.world.height)
+	grid.cell_size = Vector2.ONE
+	grid.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_NEVER
+	grid.update()
+	grid.fill_solid_region(grid.region, true)
+	for p in s.world.roads:
+		if cart and s.world.is_wooden_bridge(p):
+			continue
+		grid.set_point_solid(p, false)
+		grid.set_point_weight_scale(p, s.pathing.walk_cost(p))
+	return grid

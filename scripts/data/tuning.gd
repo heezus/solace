@@ -97,9 +97,11 @@ const STORYTELLING_GROW := 0.75  # grow time multiplier
 ## `kinds` (building kinds it applies to), `types` (building types), `item` (only harvests of that item),
 ## `rank_of` (a tech's ranks: `add` per rank bought beyond I).
 ## The Stone Axe is a hand tool (HAND_TOOLS): huts get it through their bundle, which is based on a harvest.
-## "tools" applies while the worker holds a Flint Tool, "standing_stone" next to a Standing Stone.
+## A bonus with a `tool` applies while the worker holds that tool item (Flint Tools, Bronze Tools); "standing_stone"
+## applies next to a Standing Stone.
 const BONUSES := {
-	"tools": {"name": "Flint Tools", "group": "speed", "add": 0.5, "kinds": ["gatherer", "processor"]},
+	"tools":
+	{"name": "Flint Tools", "group": "speed", "add": 0.5, "kinds": ["gatherer", "processor"], "tool": "flint_tools"},
 	"standing_stone": {"name": "Standing Stone", "group": "speed", "add": 1.0, "kinds": ["gatherer", "processor"]},
 	"foraging": {"name": "Foraging", "group": "yield", "add": 1.0, "tech": "foraging", "item": "berries"},
 	"ochre": {"name": "Ochre", "group": "yield", "add": 1.0, "tech": "ochre", "item": "clay", "kinds": ["gatherer"]},
@@ -110,8 +112,34 @@ const BONUSES := {
 	"rank_kiln": {"name": "Pottery", "group": "speed", "add": 0.25, "rank_of": "pottery", "types": ["kiln"]},
 	# Era 2: Kilns II doubles what a Kiln makes each cycle (group "output": more of each good a workshop makes).
 	"kilns_ii": {"name": "Kilns II", "group": "output", "add": 1.0, "tech": "kilns_ii", "types": ["kiln"]},
+	# Bronze Tools: the tool a worker holds is bronze, +100% Speed in place of a Flint Tool's +50% (so +50% over flint).
+	"bronze_tools":
+	{"name": "Bronze Tools", "group": "speed", "add": 1.0, "kinds": ["gatherer", "processor"], "tool": "bronze_tools"},
 }
-## A Flint Tool lasts this many jobs (harvests or work cycles) in a worker's hands.
+## A tool lasts this many jobs (harvests or work cycles) in a worker's hands: flint, then bronze (one per 200 jobs).
 const TOOL_JOBS := 40
+const BRONZE_TOOL_JOBS := 200
+## The tool items a worker takes from the stockpile, best first.
+const TOOL_ITEMS := ["bronze_tools", "flint_tools"]
 const CALENDAR_FIELD_BONUS := 0.25  # extra yield from Fields
 const PLOUGH_FIELD_BONUS := 0.5  # ...and the Plough's share, on top
+const PLOUGHSHARE_FIELD_BONUS := 0.5  # ...and the Bronze Ploughshare's, on top of that
+
+## Era 2, stage 2.
+## Carts (The Wheel): each Cart Shed turns CARTS_PER_SHED haulers into carts. A cart carries CART_LOAD times what a
+## hauler does, walks roads only (a Wooden Bridge will not bear it: it needs a Stone Bridge) and waits where it stands
+## when the roads do not reach.
+const CARTS_PER_SHED := 2
+const CART_LOAD := 2
+## Causeways: every road walks at this cost (the Road's WALK_COST is 0.5, paved 0.25; 0.2 is five times open ground),
+## and a new Road costs this instead of its Wood. A Road cut through Rocks still costs PASS_COST.
+const CAUSEWAY_WALK_COST := 0.2
+const CAUSEWAY_ROAD_COST := {"stone": 1, "brick": 1}
+## Granaries: every GRANARY_FOOD food in the stockpile houses one more person, up to GRANARY_HOMES.
+const GRANARY_FOOD := 20.0
+const GRANARY_HOMES := 30
+## The Trading Post (Markets) swaps TRADE_GIVE of one good for TRADE_GET of another, every `time` seconds.
+const TRADE_GIVE := 3
+const TRADE_GET := 1
+## While a Watchtower stands (Sky Watch), the Kith log a sighting of the Wanderer every SIGHTING_SECONDS.
+const SIGHTING_SECONDS := 150.0

@@ -87,6 +87,16 @@ const ORE_PLAIN_HINT := "Discover %s to read what lies in it."  # a tech's name
 const WORKER_CREW := "It takes %d %s to work: %d here."  # how many, many, how many are here
 const LOG_COUNT := "%s  x%d"  # a message, how many times in a row (Tally Sticks)
 
+const TOOL_WORE_OUT := "A %s wore out"  # a tool's name in the singular: "Flint Tool", "Bronze Tool"
+
+# --- Stage 2 of era 2: the Trading Post, the Wanderer, the era's end ---
+const TRADE_UNSET := "Choose what it gives and what it gets: click the lines below."
+const TRADE_UNSET_ALERT := "Set a swap"
+const TRADE_GIVES := "Gives: %s"  # an item's name, or TRADE_NONE
+const TRADE_GETS := "Gets: %s"
+const TRADE_NONE := "nothing yet"
+const TRADE_TIP := "Click to move on to the next good."
+
 # --- Messages (scripts/main.gd, scripts/messages.gd) ---
 const UNLOCKED_TOAST := "%s unlocked: %s tab"  # "Gatherer's Hut", "Gathering"
 const LOG_BUTTON := "Messages"
@@ -94,8 +104,8 @@ const LOG_TIP := "The last messages (L)"
 
 # --- The building panel (scripts/building_panel.gd) ---
 const WORKER_HERE := "%s works here."  # "Aro the Woodcutter"
-const WORKER_TOOL := "Their flint tool has %d uses left."
-const WORKER_NO_TOOL := "They have no flint tool: craft Flint Tools to work %d%% faster."
+const WORKER_TOOL := "Their %s has %d uses left."  # a tool's name in lower case ("flint tool"), uses
+const WORKER_NO_TOOL := "They have no %s: craft %s to work %d%% faster."  # "flint tool", "Flint Tools", the share
 const WORKER_NONE := "No one works here yet: waiting for a free %s."  # one
 const WORKER_PAUSED := "Paused: no %s works here."  # one
 const PACE_TRIP := "Each trip brings back %s."  # "6 Berries"

@@ -155,11 +155,11 @@ func research(tech: String) -> bool:
 
 ## What a finished tech sets off in the rest of the game (Research only reports that it finished).
 func _tech_done(tech: String) -> void:
-	if tech in ["paved_roads", "rafts"]:
+	if tech in ["paved_roads", "rafts", "causeways"]:
 		pathing.refresh()
 	if tech == "scouting":
 		for b in town.buildings:
-			fog.reveal(b["pos"], _sight(Data.SIGHT_BUILDING))
+			fog.reveal(b["pos"], _sight(Data.BUILDINGS[b["type"]].get("sight", Data.SIGHT_BUILDING)))
 	events.append(Data.DISCOVERED_EVENT % Data.TECHS[tech]["name"])
 	if tech == "haulers":
 		for b in town.buildings:
@@ -208,7 +208,7 @@ func place(type: String, p: Vector2i) -> bool:
 	elif kind == "field":
 		pathing.update_cell(p)
 	else:
-		fog.reveal(p, _sight(Data.SIGHT_BUILDING))
+		fog.reveal(p, _sight(Data.BUILDINGS[type].get("sight", Data.SIGHT_BUILDING)))  # a Watchtower sees far
 	return true
 
 

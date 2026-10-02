@@ -9,12 +9,16 @@ const STORY_EVENTS := {
 	"shard_found": "The Strange Stone was found",
 	"haulers": "The Kith began to carry for each other",
 	"bronze_dawn": "The stone age ended",
+	"wanderer_named": "The new light in the sky was named the Wanderer",
+	"star_falling": "The Wanderer was seen to fall",
 }
 
 ## Techs that are story moments: tech id -> the STORY_EVENTS id the Story block records when it is researched.
 const STORY_TECHS := {
 	"haulers": "haulers",
 	"bronze_dawn": "bronze_dawn",
+	"sky_watch": "wanderer_named",
+	"falling_star": "star_falling",
 }
 
 ## The opening checklist. A goal with `tech` or `building` is met once that is researched or built;

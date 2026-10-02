@@ -4,6 +4,7 @@ extends RefCounted
 ## Static: each takes the CanvasItem to draw on (the map) and the Sim.
 
 const Data = preload("res://scripts/data.gd")
+const Buildings = preload("res://scripts/buildings.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Rules = preload("res://scripts/rules.gd")
@@ -128,19 +129,16 @@ static func flow_arrows(ci: CanvasItem, s, b: Dictionary, time: float) -> void:
 	if here.distance_to(depot) < TILE:
 		return
 	var k := 0
-	for id in def["in"]:
+	var used := Buildings.recipe_in(b)
+	for id in used:
 		var off := Vector2(0, 6 * k)
 		flow_arrow(
-			ci,
-			depot + off,
-			here + off,
-			Data.ITEMS[id]["color"],
-			"%d %s" % [def["in"][id], Data.ITEMS[id]["name"]],
-			time
+			ci, depot + off, here + off, Data.ITEMS[id]["color"], "%d %s" % [used[id], Data.ITEMS[id]["name"]], time
 		)
 		k += 1
-	for id in def["out"]:
-		flow_arrow(ci, here, depot, Data.ITEMS[id]["color"], "%d %s" % [def["out"][id], Data.ITEMS[id]["name"]], time)
+	var made := Buildings.recipe_out(b)
+	for id in made:
+		flow_arrow(ci, here, depot, Data.ITEMS[id]["color"], "%d %s" % [made[id], Data.ITEMS[id]["name"]], time)
 
 
 ## The word on an alert's pill: "Hungry: no food" says "Hungry", "Idle: no free Kith" says "Idle". The whole
@@ -264,7 +262,7 @@ static func line_text(s, type: String, tiles: Array) -> String:
 		if s.town.placement_error(type, p) != "":
 			continue
 		n += 1
-		var cost := Rules.cost_at(type, s.world.tile_at(p))
+		var cost := Rules.cost_at(type, s.world.tile_at(p), s.tech_tree.researched.has("causeways"))
 		for id in cost:
 			total[id] = total.get(id, 0) + cost[id]
 	var name: String = Data.BUILDINGS[type]["name"]
@@ -301,6 +299,8 @@ static func blocked_hint(s, p: Vector2i) -> String:
 		"river":
 			if s.world.roads.has(p):
 				return ""
+			if s.tech_tree.researched.has("causeways"):
+				return "Cross with a Stone Bridge (carts need one) or a Wooden Bridge"
 			return "Cross with a Wooden Bridge (Paths & Haulers)"
 		"rock":
 			return "Cut a pass with a Road (%d Stone)" % Data.PASS_COST["stone"]

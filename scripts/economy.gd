@@ -215,10 +215,12 @@ func _next_food() -> String:
 
 
 ## Flour kept back for research, so eating doesn't take the Bronze Dawn cost. A tech that can't be researched yet
-## (its effect isn't built) keeps nothing back.
+## (its effect isn't built) keeps nothing back, and neither does a later era's tech while that era has not begun.
 func flour_reserve() -> int:
 	var keep := 0
 	for tech in Data.TECHS:
+		if int(Data.TECHS[tech].get("era", 1)) > 1 and not _techs.has("bronze_dawn"):
+			continue
 		if not _techs.has(tech) and Rules.tech_enabled(tech):
 			keep += Data.TECHS[tech]["cost"].get("flour", 0)
 	return keep

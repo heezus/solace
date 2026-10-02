@@ -2,7 +2,8 @@ extends SceneTree
 ## Pacing report: the bot (tests/autoplay.gd) plays maps and prints when each tech came, with a trace
 ## of what held it up every minute. With `bronze` it plays on past Bronze Dawn to the first Bronze (the era's stage 1) and
 ## reports the minutes that took.
-## Run: godot --headless --path . -s tests/tools/pace.gd -- [map|all] [minutes] [quiet] [bronze]
+## With `star` it plays the whole era, on past the first Bronze to The Falling Star, and reports both spans.
+## Run: godot --headless --path . -s tests/tools/pace.gd -- [map|all] [minutes] [quiet] [bronze|star]
 
 const Autoplay = preload("res://tests/autoplay.gd")
 const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
@@ -17,6 +18,9 @@ func _init() -> void:
 	var quiet := "quiet" in args
 	if "bronze" in args:
 		_bronze(maps, minutes, quiet)
+		return
+	if "star" in args:
+		_star(maps, minutes, quiet)
 		return
 	var times: Array = []
 	for m in maps:
@@ -75,3 +79,48 @@ func _bronze(maps: Array, minutes: float, quiet: bool) -> void:
 		total += x
 	print("era 2: average %.1f min, from %.1f to %.1f" % [total / spans.size(), spans.min(), spans.max()])
 	quit(0)
+
+
+## The whole era: minutes from Bronze Dawn to the first Bronze, and from the first Bronze to The Falling Star, per map.
+func _star(maps: Array, minutes: float, quiet: bool) -> void:
+	var firsts: Array = []
+	var stars: Array = []
+	for m in maps:
+		var bot := AutoplayBronze.new()
+		bot.trace = not quiet
+		var r: Dictionary = bot.play_to_star(m, minutes * 60.0)
+		print(
+			(
+				"map %d: Bronze Dawn at %.1f min, first Bronze %.1f min later, The Falling Star %s"
+				% [
+					m,
+					r["seconds"] / 60.0,
+					r["minutes"],
+					(
+						"%.1f min after that" % r["star_minutes"]
+						if r["star_minutes"] >= 0.0
+						else "never (stopped at %.1f min)" % [bot.clock / 60.0]
+					)
+				]
+			)
+		)
+		firsts.append(r["minutes"])
+		stars.append(r["star_minutes"])
+		if not quiet:
+			for line in r["log"]:
+				print("   ", line)
+			print("   inv ", bot.s.economy.inv)
+	print(
+		(
+			"era 2: first Bronze %.1f min on average (%.1f to %.1f), the star %.1f min after it (%.1f to %.1f)"
+			% [_mean(firsts), firsts.min(), firsts.max(), _mean(stars), stars.min(), stars.max()]
+		)
+	)
+	quit(0)
+
+
+func _mean(xs: Array) -> float:
+	var total := 0.0
+	for x in xs:
+		total += x
+	return total / xs.size()

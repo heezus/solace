@@ -734,7 +734,7 @@ func _spare(item: String) -> int:
 
 ## True if a road on `p` fits in what we can spare.
 func _road_affordable(p: Vector2i) -> bool:
-	var cost: Dictionary = Rules.cost_at("road", s.world.tile_at(p))
+	var cost: Dictionary = Rules.cost_at("road", s.world.tile_at(p), s.tech_tree.researched.has("causeways"))
 	for id in cost:
 		if cost[id] > _spare(id):
 			return false
