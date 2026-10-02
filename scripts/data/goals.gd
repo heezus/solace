@@ -20,6 +20,10 @@ const STORY_TECHS := {
 ## The opening checklist. A goal with `tech` or `building` is met once that is researched or built;
 ## Story.goal_met() checks the others by id.
 
+## The Goals panel's header: goals done, goals in all. The done ones list under it on hover.
+const GOALS_HEADER := "Goals %d/%d"
+const GOALS_ALL_DONE := "All goals done."
+
 const GOALS := [
 	{"id": "learn_wood", "text": "Hold the mouse on trees to gather Wood, until a Kith learns it (10 harvests)"},
 	{

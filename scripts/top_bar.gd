@@ -16,11 +16,20 @@ const Buildings = preload("res://scripts/buildings.gd")
 
 const RAW := ["wood", "stone", "flint", "fiber", "clay", "berries", "grain", "fish"]
 const LOSS := Color("ff9aa9")
+## The Food readout's text while the warning is up: light enough to read on the bar (over 4.5 to 1) at every moment.
+const ALARM_TEXT := Color("ffb0bc")
+## The ring around it flashes between these two; it is the only thing that flashes, so the words never dim.
+const FLASH_FROM := Color("ff6b8a")
+const FLASH_TO := Color("ffffff")
+const FLASH_SPEED := 7.0
 const FLAT := Color("9fb4bf")
 const MINUS := "−"
 const CHIP_W := 74.0
 const ICON := 24.0  # a good's sprite, with nothing behind it
 const ROW_H := 45.0  # a row of chips keeps this height whether or not its goods have appeared yet
+## The bar is never shorter than its two rows of chips and the panel's margins: it is reserved from the first frame,
+## so a chip, a note or a long line appearing later can never make it (or the map under it) grow.
+const BAR_H := ROW_H * 2.0 + 2.0 + 12.0
 const CAPTION_W := 40.0
 const FOOD_W := 190.0
 
@@ -46,6 +55,7 @@ func setup(game: Sim) -> void:
 	state = game
 	add_theme_stylebox_override("panel", Ui.panel_style(Ui.BAR, 6))
 	set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	custom_minimum_size.y = BAR_H
 	var h := HBoxContainer.new()
 	h.add_theme_constant_override("separation", 10)
 	add_child(h)
@@ -253,7 +263,7 @@ func refresh(paused: bool, speed: int) -> void:
 	jobs_label.text = Data.JOBS_LABEL % [workers, jobs, idle, rest]
 	note_label.text = note
 	note_label.visible = note != ""
-	note_label.add_theme_color_override("font_color", Ui.BAD if state.economy.starving else Ui.HIGHLIGHT)
+	note_label.add_theme_color_override("font_color", ALARM_TEXT if state.economy.starving else Ui.HIGHLIGHT)
 	_refresh_food()
 	var have_tools: bool = state.economy.seen.has("flint_tools")
 	tools_label.visible = have_tools
@@ -298,22 +308,27 @@ func _refresh_food() -> void:
 		sub = Data.FOOD_LOW_TEXT % _duration(minf(eco.seconds_of_food(), 3600.0), true)
 	food_sub.text = sub
 	var alarm := eco.low or eco.starving
-	food_label.add_theme_color_override("font_color", Ui.BAD if alarm else Color.WHITE)
-	food_sub.add_theme_color_override("font_color", Ui.BAD if alarm else rate_color(fr))
-	food_box.add_theme_stylebox_override("panel", _outline(Ui.BAD if alarm else Color(0, 0, 0, 0)))
-	if not alarm:
-		food_box.modulate.a = 1.0
+	food_label.add_theme_color_override("font_color", ALARM_TEXT if alarm else Color.WHITE)
+	food_sub.add_theme_color_override("font_color", ALARM_TEXT if alarm else rate_color(fr))
+	food_box.add_theme_stylebox_override("panel", _outline(flash_ring(pulse) if alarm else Color(0, 0, 0, 0)))
+	food_box.modulate.a = 1.0
 	food_bar.max_value = maxf(state.people.kith.size() * 2.0 + Data.BIRTH_FOOD, 1.0)
 	food_bar.value = minf(food, food_bar.max_value)
 	food_bar.modulate = Ui.BAD if alarm or fr < -0.005 else Ui.HIGHLIGHT
 
 
-## The flash: the Food block pulses while the food is low or gone.
+## The flash: while the food is low or gone the ring around the Food block pulses. Only the ring does: the block's
+## words and the bar behind them stay as they are, so they can always be read.
 func _process(delta: float) -> void:
 	if state == null or not (state.economy.low or state.economy.starving):
 		return
 	pulse += delta
-	food_box.modulate.a = 0.65 + 0.35 * sin(pulse * 7.0)
+	food_box.add_theme_stylebox_override("panel", _outline(flash_ring(pulse)))
+
+
+## The ring's colour at `phase` (seconds into the flash).
+static func flash_ring(phase: float) -> Color:
+	return FLASH_FROM.lerp(FLASH_TO, 0.5 + 0.5 * sin(phase * FLASH_SPEED))
 
 
 func _show_flow(id: String) -> void:
@@ -415,6 +430,8 @@ func _maker_name(source: String, id: String) -> String:
 			return "Gathered by hand"
 		"craft":
 			return "Crafted by hand"
+		Data.FLOW_FORAGE_SOURCE:
+			return Data.FORAGE_MAKER % Data.PEOPLE["many"]
 	var n := 0
 	for b in state.town.buildings:
 		if b["type"] == source and (id == b["focus"] or Data.BUILDINGS[source].get("out", {}).has(id)):

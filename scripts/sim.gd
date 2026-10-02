@@ -5,12 +5,10 @@ extends RefCounted
 ## through its name (`sim.economy.inv`, `sim.world.tile_at(p)`). What stays here is what no single block
 ## can do: the commands that touch several blocks at once (`place`, `demolish`, `research`,
 ## `gather_by_hand`...), the few flags of the run itself, and the tick order:
-##   1. economy.advance     the stockpile's clocks
-##   2. tech_tree.tick      research the queue can afford (each finished tech runs `_tech_done`)
-##   3. people.assign_jobs, then economy.feed and people.grow
-##   4. story.update        the checklist and the story moments
-##   5. every Kith takes a step (Workers, Haulers or a plain walk), and what they now see is revealed
-##   6. every building takes its turn (Workers.tick_building), then the "Needs road" alert
+##   1. economy.advance the stockpile's clocks, then tech_tree.tick (each finished tech runs `_tech_done`)
+##   2. people.assign_jobs, economy.feed and people.grow, then story.update (the checklist and the story moments)
+##   3. every Kith takes a step (Forage in a famine, else Workers, Haulers or a plain walk), and what they now see is revealed
+##   4. every building takes its turn (Workers.tick_building), then the "Needs road" alert
 ## The work cycle is in Work, Bonuses, Hands, Roads, Workers and Haulers: static modules that take the Sim.
 ## The blocks never call each other to report: they emit signals, and _init below is the one place that
 ## connects them (Story listens, the message queue listens).
@@ -31,6 +29,7 @@ const Research = preload("res://scripts/research.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Workers = preload("res://scripts/workers.gd")
 const Roads = preload("res://scripts/roads.gd")
+const Forage = preload("res://scripts/forage.gd")
 
 var won := false
 var hand_tools := false  # you've made a Flint Tool, so hand gathering is doubled for good
@@ -268,11 +267,12 @@ func tick(delta: float) -> void:
 	people.assign_jobs()
 	var fed := economy.feed(people.kith.size(), delta)
 	people.grow(delta, fed)
-
 	story.update(self)
 
 	if fed:
 		for k in people.kith:
+			if Forage.tick(self, k, delta):
+				continue
 			match k["job"]:
 				"work":
 					Workers.tick(self, k, delta)

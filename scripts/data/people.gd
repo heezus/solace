@@ -45,6 +45,11 @@ const ROAD_HINT := "Road on %s. %s walk twice as fast here."  # tile name, many
 const FOOD_TIP := "Every %s eats food: Berries, then Fish, then any Flour that isn't in use."  # one
 ## The Food readout while the warning is up, formatted with the time left ("45 s").
 const FOOD_LOW_TEXT := "Low: %s left. Gather berries!"
+## The famine fallback (scripts/forage.gd): told once when idle people start foraging, what a waiting hut's card says while
+## its worker is out, and how the top bar's hover panel names that food.
+const FORAGE_EVENT := "Food is short: idle %s are out foraging for berries. It keeps them fed, not growing"  # many
+const FORAGE_STATUS := "Out foraging for berries while it waits for a click"
+const FORAGE_MAKER := "Foraged by idle %s"  # many
 const STARVING_TEXT := "Food: none! The %s have stopped working"  # many
 const TOOLS_LABEL := "Tools %d/%d %s"  # held, people, many
 const TOOLS_TIP := "%s holding a Flint Tool work 50%% faster. Each tool lasts %d jobs; spares in the stockpile: %d."  # many

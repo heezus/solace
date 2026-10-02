@@ -18,9 +18,16 @@ var starving := false  # the last feed found no food to eat
 ## The early warning is up: food_low has fired and the food hasn't yet recovered to last Data.FOOD_CLEAR_SECONDS.
 ## Not saved: a loaded game works it out again on its first feed.
 var low := false
+## The famine is on: the food would run out within Data.FOOD_FAMINE_SECONDS, so idle people forage (scripts/forage.gd).
+## It comes down once the food would last Data.FOOD_FORAGE_END_SECONDS. Not saved, like `low`.
+var famine := false
+var forage_told := false  # the player has been told about this famine's foraging; not saved
+var steady_held := 0.0  # seconds the buildings' food has covered what everyone eats, without a break
 var food_use := 0.0  # food eaten per second right now
 var flows := Flows.new()  # what made and used each item lately
 var _techs: Dictionary  # researched tech ids (a view of the Research block's set, never written here)
+var _steady_second := -1  # the flow-window second `_steady_ok` was worked out in
+var _steady_ok := false  # the window is full and its food covers what everyone eats (worked out once a second)
 
 
 func _init(researched: Dictionary = {}) -> void:
@@ -87,18 +94,20 @@ func feed(mouths: int, delta: float) -> bool:
 	food_use = mouths * Data.FOOD_PER_KITH_PER_SEC * (0.75 if _techs.has("preservation") else 1.0)
 	var fed := eat(food_use * delta)
 	starving = not fed
+	_watch_steady(delta)
 	_watch_food()
 	return fed
 
 
-## Food made per second by anything but the player's own hands (huts, the Fishing Weir, the Grindstone), in
-## food units, over the flow window. The player answers a warning by gathering, so that doesn't count here.
+## Food made per second by anything but the player's own hands and idle foragers (huts, the Fishing Weir, the
+## Grindstone), in food units, over the flow window. The player answers a warning by gathering and the famine
+## fallback by foraging, so neither counts here: the warning stays up until the stockpile itself has recovered.
 func food_income() -> float:
 	var total := 0.0
 	for id in Data.FOOD_VALUE:
 		var by_source := flows.parts(id)
 		for source in by_source:
-			if source != Data.FLOW_HAND_SOURCE and by_source[source] > 0.0:
+			if not _not_income(source) and by_source[source] > 0.0:
 				total += by_source[source] * food_value(id)
 	return total
 
@@ -112,15 +121,42 @@ func food_supply() -> float:
 	for id in Data.FOOD_VALUE:
 		var by_source := flows.parts_over(id, float(Data.RATE_WINDOW))
 		for source in by_source:
-			if source != Data.FLOW_EAT_SOURCE and source != Data.FLOW_HAND_SOURCE and by_source[source] > 0.0:
+			if source != Data.FLOW_EAT_SOURCE and not _not_income(source) and by_source[source] > 0.0:
 				total += by_source[source] * food_value(id)
 	return total
 
 
-## True when the food coming in over the window at least covers what the people eat right now: the
-## rule that lets the population grow (a big stockpile alone never does).
+## Food made by hand or by idle foragers is not income: the player's own hands and a famine fallback never make
+## the population grow.
+static func _not_income(source: String) -> bool:
+	return source == Data.FLOW_HAND_SOURCE or source == Data.FLOW_FORAGE_SOURCE
+
+
+## The rule that lets the population grow, and the note beside the Kith count says the same thing: the food the
+## buildings make over the whole flow window (Data.RATE_WINDOW seconds, all of it elapsed) has covered what
+## everyone eats for Data.STEADY_SECONDS (counting up while it does and down while it does not, so a short dip in
+## a long run of output does not start it all again, but output covered only half the time never gets there). A big
+## stockpile never does, a burst of hand-gathering doesn't, and neither does a single trip: its bundle stays in the
+## window for only RATE_WINDOW seconds, less than the hold.
 func food_is_steady() -> bool:
-	return food_supply() - food_use >= 0.0
+	return steady_held >= Data.STEADY_SECONDS
+
+
+## True while the buildings' food over the whole window (all of it elapsed) covers what everyone eats right now.
+## One step of the growth rule (see food_is_steady).
+func food_covers_eating() -> bool:
+	return flows.hist.size() >= Data.RATE_WINDOW and food_supply() - food_use >= 0.0
+
+
+## Keep `steady_held`: the window's food is only weighed once a second, when the flow window closes one.
+func _watch_steady(delta: float) -> void:
+	var second := floori(flows.clock)
+	if second != _steady_second:
+		_steady_second = second
+		_steady_ok = food_covers_eating()
+	steady_held = snappedf(
+		clampf(steady_held + (delta if _steady_ok else -delta), 0.0, Data.STEADY_SECONDS * 2.0), 0.01
+	)
 
 
 ## How long the food lasts, in seconds: the stockpile plus the credit already taken from it, against what
@@ -142,6 +178,11 @@ func _watch_food() -> void:
 		food_low.emit()
 	elif low and (gross >= Data.FOOD_CLEAR_SECONDS or seconds_of_food() >= Data.FOOD_CLEAR_SECONDS):
 		low = false
+	if famine and (gross >= Data.FOOD_FORAGE_END_SECONDS or seconds_of_food() >= Data.FOOD_FORAGE_END_SECONDS):
+		famine = false
+		forage_told = false
+	elif not famine and low and gross < Data.FOOD_FAMINE_SECONDS and seconds_of_food() < Data.FOOD_FAMINE_SECONDS:
+		famine = true
 
 
 ## Eat `need` food units, taking whole items in eating order as the credit runs out.
@@ -210,6 +251,7 @@ func to_dict() -> Dictionary:
 		"food_credit": food_credit,
 		"starving": starving,
 		"food_use": food_use,
+		"steady_held": steady_held,
 		"flows": flows.to_dict(),
 	}
 
@@ -227,4 +269,6 @@ func from_dict(d: Dictionary) -> void:
 	food_credit = float(d.get("food_credit", 0.0))
 	starving = bool(d.get("starving", false))
 	food_use = float(d.get("food_use", 0.0))
+	steady_held = float(d.get("steady_held", 0.0))
+	_steady_second = -1
 	flows.from_dict(d.get("flows", {}))
