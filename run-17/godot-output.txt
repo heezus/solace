@@ -1,0 +1,338 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+OpenGL API 4.5 (Core Profile) Mesa 25.2.8-0ubuntu0.24.04.4 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 20.1.2, 256 bits)
+
+WARNING: 2D MSAA is not yet supported for GLES3.
+     at: render_target_set_msaa (drivers/gles3/storage/texture_storage.cpp:3210)
+[   0.0s] start
+[   1.1s] SHOT 01 first_look
+    GOALS: > Hold the mouse on trees to gather Wood, until a Kith learns it (10 harvests) |   Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock
+    INFO: Riverbed Gravel / Hold: +1 Flint, 1.0s. Hold the mouse on it to gather. / Harvested by hand 0/10. A Kith is watching and will learn Flint.
+    TOAST: The Kith gather at the Hearth. Hold the mouse on a tree to begin.
+Arrows or WASD move the map, the wheel zooms, Home returns to the Hearth.
+    HAVE: berries 10
+    KITH: 3, learned: 
+    LAYOUT: map_pos=(0.0, 37.0) scale=(1.0, 1.0) top_bar_h=130 side_w=264
+[   5.2s] SHOT 02 after_4s_doing_nothing
+    GOALS: > Hold the mouse on trees to gather Wood, until a Kith learns it (10 harvests) |   Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock
+    INFO: Riverbed Gravel / Hold: +1 Flint, 1.0s. Hold the mouse on it to gather. / Harvested by hand 0/10. A Kith is watching and will learn Flint.
+    TOAST: The Kith gather at the Hearth. Hold the mouse on a tree to begin.
+Arrows or WASD move the map, the wheel zooms, Home returns to the Hearth.
+    HAVE: berries 10
+    KITH: 3, learned: 
+    LAYOUT: map_pos=(0.0, 37.0) scale=(1.0, 1.0) top_bar_h=130 side_w=264
+[   5.2s] BRONZE: handing the town to the bot until Bronze Dawn
+[  10.1s] FOOD berries=21 kith=3 speed=1 food_label='Food 21'
+[  20.1s] FOOD berries=149 kith=33 speed=1 food_label='Food 156'
+[  30.2s] FOOD berries=304 kith=49 speed=1 food_label='Food 374'
+[  33.6s] BRONZE: Bronze Dawn won at frame 241, bot clock 961 s
+[  34.8s] SHOT 03 dawn_0
+    GOALS: > Discover Prospecting: it names the ore in the new land |   Find copper in the east: lay roads east, and press Look east to see the way
+    INFO: Riverbed Gravel / Hold: +1 Flint, 0.7s. Hold the mouse on it to gather. / Aro knows how to gather Flint: huts can gather it.
+    TOAST: BRONZE DAWN  ·  The stone age ends. The land opens to the east, under fog: copper lies in the hills, and tin is far off, to the north-east. Press Look east at the edge of the map. Far above Solace, something is falling.
+    HAVE: wood 171, stone 222, flint 151, fiber 158, clay 167, berries 227, grain 159, rope 16, charcoal 20, brick 23, flint_tools 1
+    KITH: 49, learned: stone, fiber, wood, flint, berries, clay, grain
+    LAYOUT: map_pos=(0.0, 37.0) scale=(1.0, 1.0) top_bar_h=130 side_w=264
+[  34.8s] BRONZE +2 s: inv={ "wood": 165, "stone": 224, "flint": 153, "fiber": 158, "clay": 167, "berries": 226, "grain": 157, "rope": 16, "charcoal": 20, "brick": 23, "flour": 0, "flint_tools": 1, "fish": 0, "copper_ore": 0, "tin": 0, "copper": 0, "bronze": 0, "bronze_tools": 0 } mines=0
+[  35.0s] SHOT 04 era2_002_s
+    GOALS: > Discover Prospecting: it names the ore in the new land |   Find copper in the east: lay roads east, and press Look east to see the way
+    INFO: Riverbed Gravel / Hold: +1 Flint, 0.7s. Hold the mouse on it to gather. / Aro knows how to gather Flint: huts can gather it.
+    TOAST: BRONZE DAWN  ·  The stone age ends. The land opens to the east, under fog: copper lies in the hills, and tin is far off, to the north-east. Press Look east at the edge of the map. Far above Solace, something is falling. || Felled the trees for a road
+    HAVE: wood 165, stone 224, flint 153, fiber 158, clay 167, berries 226, grain 157, rope 16, charcoal 20, brick 23, flint_tools 1
+    KITH: 49, learned: stone, fiber, wood, flint, berries, clay, grain
+    LAYOUT: map_pos=(0.0, 37.0) scale=(1.0, 1.0) top_bar_h=130 side_w=264
+[  35.0s] DIAG +2: world 72x22 stone_width=36 camp=(9, 7) grown=true copper=21 (seen 0) tin=3 (seen 0) roads=76 east-most road x=22 bridge_unlocked=true
+[  35.0s] MAP y=00 x=24.. .?........r........cc...rr.....tr.............tt
+[  35.0s] MAP y=01 x=24.. ???.......r.........cc..rr...........tt.......rt
+[  35.0s] MAP y=02 x=24.. ..??.....rr..........cc..r............t.....t...
+[  35.0s] MAP y=03 x=24.. ..??.....rr.............tt...............r..t...
+[  35.0s] MAP y=04 x=24.. .........rr....r.........tt......ttttt...r......
+[  35.0s] MAP y=05 x=24.. ?.....t..rr..............tt.........tt.....t....
+[  35.0s] MAP y=06 x=24.. ttt...tt.rr...............t........r.......t....
+[  35.0s] MAP y=07 x=24.. tttt..ttrrtt...ttt...r.......rcc..........tt....
+[  35.0s] MAP y=08 x=24.. tttttttrrrt?....tt...........ccc......r.ttt.....
+[  35.0s] MAP y=09 x=24.. ttttttttr........tt...........r......tt.tt....rr
+[  35.0s] MAP y=10 x=24.. tttttrrrr........tt......t...rr.......t..t....r.
+[  35.0s] MAP y=11 x=24.. ??ttrrrt..rr.....ttt............t............t..
+[  35.0s] MAP y=12 x=24.. --?rrt?....r......tt.ct...t...ttt..c.........ttt
+[  35.0s] MAP y=13 x=24.. r--?.....rr.......tttct.....rtttt..c..........tt
+[  35.0s] MAP y=14 x=24.. rr-?.....rr......ttccc......rttt..............tt
+[  35.0s] MAP y=15 x=24.. t?-.????rr..r....ttt.......r.tttt.....t........t
+[  35.0s] MAP y=16 x=24.. t?------rr.....c..t.......rr.ttt......tt........
+[  35.0s] MAP y=17 x=24.. ..r?.??--r??t..cc...........rttt...r............
+[  35.0s] MAP y=18 x=24.. .......?----t.................tt...rr...........
+[  35.0s] MAP y=19 x=24.. ...?..rrrr?rt........rr............rr...........
+[  35.0s] MAP y=20 x=24.. r....rrrrrrr.............ttt....................
+[  35.0s] MAP y=21 x=24.. .r...rrrrrrr...............tt.......rrr.tt......
+[  35.0s] DIAG copper nearest tile (43, 0)
+[  35.0s] DIAG tin first tile (61, 1)
+[  35.4s] SHOT 05 east_overview_002
+    GOALS: > Discover Prospecting: it names the ore in the new land |   Find copper in the east: lay roads east, and press Look east to see the way
+    INFO: Unexplored. Build a Gatherer's Hut, or discover Scouting, to see farther.
+    TOAST: BRONZE DAWN  ·  The stone age ends. The land opens to the east, under fog: copper lies in the hills, and tin is far off, to the north-east. Press Look east at the edge of the map. Far above Solace, something is falling. || Felled the trees for a road
+    HAVE: wood 165, stone 224, flint 153, fiber 158, clay 167, berries 226, grain 157, rope 16, charcoal 20, brick 23, flint_tools 1
+    KITH: 49, learned: stone, fiber, wood, flint, berries, clay, grain
+    LAYOUT: map_pos=(-852.0, 29.0) scale=(0.666667, 0.666667) top_bar_h=130 side_w=264
+[  40.3s] FOOD berries=173 kith=49 speed=1 food_label='Food 253'
+[  42.4s] BRONZE +108 s: first copper_hills in sight at (44, 14)
+[  42.7s] first_copper_hills info at (44, 14): 'Copper Hills / Hold: +1 Copper Ore, 2.1s. You let go too soon: keep the mouse down until the ring fills. / A Mine standing on it digs without walking: it takes two Kith.'
+[  42.8s] SHOT 06 first_copper_hills
+    GOALS: > Lay a road to the copper hills |   Discover Mining, then build a Mine on the copper hills (it takes two Kith)
+    INFO: Copper Hills / Hold: +1 Copper Ore, 2.1s. You let go too soon: keep the mouse down until the ring fills. / A Mine standing on it digs without walking: it takes two Kith.
+    TOAST: BRONZE DAWN  ·  The stone age ends. The land opens to the east, under fog: copper lies in the hills, and tin is far off, to the north-east. Press Look east at the edge of the map. Far above Solace, something is falling. || A Flint Tool wore out || Cut a pass through the rocks
+    HAVE: wood 878, stone 200, flint 29, fiber 2, clay 167, berries 148, grain 177, rope 91, charcoal 20, brick 23, flour 16, flint_tools 1
+    KITH: 49, learned: stone, fiber, wood, flint, berries, clay, grain
+    LAYOUT: map_pos=(-2340.0, -531.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  43.2s] BRONZE +114 s: first tin_stream in sight at (61, 1)
+[  43.5s] first_tin_stream info at (61, 1): 'Tin Stream / Hold: +1 Tin, 2.8s. You let go too soon: keep the mouse down until the ring fills. / A Mine standing on it digs without walking: it takes two Kith.'
+[  43.6s] SHOT 07 first_tin_stream
+    GOALS: > Discover Mining, then build a Mine on the copper hills (it takes two Kith) |   Discover Smelting
+    INFO: Tin Stream / Hold: +1 Tin, 2.8s. You let go too soon: keep the mouse down until the ring fills. / A Mine standing on it digs without walking: it takes two Kith.
+    TOAST: BRONZE DAWN  ·  The stone age ends. The land opens to the east, under fog: copper lies in the hills, and tin is far off, to the north-east. Press Look east at the edge of the map. Far above Solace, something is falling. || A Flint Tool wore out || Cut a pass through the rocks || Felled the trees for a road
+    HAVE: wood 854, stone 200, flint 35, fiber 5, clay 167, berries 143, grain 177, rope 104, charcoal 20, brick 23, flour 16, flint_tools 1
+    KITH: 49, learned: stone, fiber, wood, flint, berries, clay, grain
+    LAYOUT: map_pos=(-3428.0, 130.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  44.1s] BRONZE +122 s: inv={ "wood": 572, "stone": 200, "flint": 42, "fiber": 9, "clay": 57, "berries": 165, "grain": 177, "rope": 1, "charcoal": 20, "brick": 23, "flour": 16, "flint_tools": 1, "fish": 0, "copper_ore": 0, "tin": 0, "copper": 0, "bronze": 0, "bronze_tools": 0 } mines=0
+[  44.3s] SHOT 08 era2_121_s
+    GOALS: > Discover Mining, then build a Mine on the copper hills (it takes two Kith) |   Discover Smelting
+    INFO: Moss the Hauler /  / Road on Grassland. Kith walk twice as fast here.
+    TOAST: A Flint Tool wore out || Cut a pass through the rocks || Felled the trees for a road || Discovered Tally Sticks
+    HAVE: wood 572, stone 200, flint 42, fiber 9, clay 57, berries 165, grain 177, rope 1, charcoal 20, brick 23, flour 16, flint_tools 1
+    KITH: 49, learned: stone, fiber, wood, flint, berries, clay, grain
+    LAYOUT: map_pos=(-100.0, -83.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  44.8s] tech board era=2
+[  45.0s] SHOT 09 era2_tech_board
+    GOALS: > Discover Mining, then build a Mine on the copper hills (it takes two Kith) |   Discover Smelting
+    INFO: Moss the Hauler /  / Road on Grassland. Kith walk twice as fast here.
+    TOAST: A Flint Tool wore out || Cut a pass through the rocks || Felled the trees for a road || Discovered Tally Sticks
+    HAVE: wood 572, stone 200, flint 42, fiber 9, clay 57, berries 165, grain 177, rope 1, charcoal 20, brick 23, flour 16, flint_tools 1
+    KITH: 49, learned: stone, fiber, wood, flint, berries, clay, grain
+    LAYOUT: map_pos=(-100.0, -83.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  45.4s] SHOT 10 metal_tab
+    GOALS: > Discover Mining, then build a Mine on the copper hills (it takes two Kith) |   Discover Smelting
+    INFO: 
+    TOAST: A Flint Tool wore out || Cut a pass through the rocks || Felled the trees for a road || Discovered Tally Sticks
+    HAVE: wood 572, stone 200, flint 42, fiber 9, clay 57, berries 165, grain 177, rope 1, charcoal 20, brick 23, flour 16, flint_tools 1
+    KITH: 49, learned: stone, fiber, wood, flint, berries, clay, grain
+    LAYOUT: map_pos=(-100.0, -83.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  50.3s] FOOD berries=247 kith=49 speed=1 food_label='Food 327'
+[  53.2s] BRONZE +242 s: inv={ "wood": 47, "stone": 130, "flint": 130, "fiber": 10, "clay": 93, "berries": 145, "grain": 177, "rope": 12, "charcoal": 18, "brick": 25, "flour": 16, "flint_tools": 3, "fish": 0, "copper_ore": 0, "tin": 0, "copper": 0, "bronze": 0, "bronze_tools": 0 } mines=1
+[  53.4s] SHOT 11 era2_241_s
+    GOALS: > Discover Smelting |   Build a Smelter: Copper Ore and Charcoal make Copper
+    INFO: 
+    TOAST: A Flint Tool wore out || Mine unlocked: Metal tab || Discovered Mining || Ochre rank III
+    HAVE: wood 47, stone 130, flint 130, fiber 10, clay 93, berries 145, grain 177, rope 12, charcoal 18, brick 25, flour 16, flint_tools 3
+    KITH: 49, learned: stone, fiber, wood, flint, berries, clay, grain
+    LAYOUT: map_pos=(-100.0, -83.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  60.4s] FOOD berries=219 kith=49 speed=1 food_label='Food 299'
+[  61.2s] BRONZE +362 s: inv={ "wood": 612, "stone": 184, "flint": 151, "fiber": 163, "clay": 166, "berries": 209, "grain": 193, "rope": 13, "charcoal": 140, "brick": 215, "flour": 16, "flint_tools": 2, "fish": 0, "copper_ore": 87, "tin": 0, "copper": 0, "bronze": 0, "bronze_tools": 0 } mines=1
+[  61.4s] SHOT 12 era2_361_s
+    GOALS: > Discover Smelting |   Build a Smelter: Copper Ore and Charcoal make Copper
+    INFO: 
+    TOAST: A Flint Tool wore out
+    HAVE: wood 612, stone 184, flint 151, fiber 163, clay 166, berries 209, grain 193, rope 13, charcoal 140, brick 215, flour 16, flint_tools 2, copper_ore 87
+    KITH: 49, learned: stone, fiber, wood, flint, berries, clay, grain
+    LAYOUT: map_pos=(-100.0, -83.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  61.4s] DIAG +362: world 72x22 stone_width=36 camp=(9, 7) grown=true copper=21 (seen 10) tin=3 (seen 3) roads=181 east-most road x=61 bridge_unlocked=true
+[  61.4s] MAP y=00 x=24.. .?........r........cc...rr.....tr....=........tt
+[  61.4s] MAP y=01 x=24.. ???.......r.........cc..rr..........=TT.......rt
+[  61.4s] MAP y=02 x=24.. ..??.....rr..........cc..r..........=.T.....t...
+[  61.4s] MAP y=03 x=24.. ..??.....rr.............tt........=......r..t...
+[  61.4s] MAP y=04 x=24.. .........rr....r.........tt......ttttt...r......
+[  61.4s] MAP y=05 x=24.. ?.....t..rr..............tt......=..tt.....t....
+[  61.4s] MAP y=06 x=24.. ttt...tt.rr...............t........r.......t....
+[  61.4s] MAP y=07 x=24.. tttt..ttrrtt...ttt...r.......rCC=.........tt....
+[  61.4s] MAP y=08 x=24.. tttttttrrrt?....tt...........CCC......r.ttt.....
+[  61.4s] MAP y=09 x=24.. ttttttttr........tt..........=r=.....tt.tt....rr
+[  61.4s] MAP y=10 x=24.. tttttrrrr........tt......t.=.rr.......t..t....r.
+[  61.4s] MAP y=11 x=24.. ??ttrrrt..rr.....ttt............t............t..
+[  61.4s] MAP y=12 x=24.. --?rrt?....r......tt.ct...=...ttt..c.........ttt
+[  61.4s] MAP y=13 x=24.. r~-?.....rr.......tttct.=...rtttt..c..........tt
+[  61.4s] MAP y=14 x=24.. rr~?.....rr......ttcCC......rttt..............tt
+[  61.4s] MAP y=15 x=24.. =?~.????rr..r....ttt...=...r.tttt.....t........t
+[  61.4s] MAP y=16 x=24.. =?~~~~~~rr.....C..t..=....rr.ttt......tt........
+[  61.4s] MAP y=17 x=24.. ==r?.??~~r??t..CC..=........rttt...r............
+[  61.4s] MAP y=18 x=24.. ====.==?~~~~t....=............tt...rr...........
+[  61.4s] MAP y=19 x=24.. ===?==rrrr?rt..=.....rr............rr...........
+[  61.4s] MAP y=20 x=24.. r===============.........ttt....................
+[  61.4s] MAP y=21 x=24.. =r...rrrrrrr...............tt.......rrr.tt......
+[  61.4s] DIAG copper nearest tile (43, 0)
+[  61.4s] DIAG tin first tile (61, 1)
+[  61.8s] SHOT 13 east_overview_361
+    GOALS: > Discover Smelting |   Build a Smelter: Copper Ore and Charcoal make Copper
+    INFO: 
+    TOAST: A Flint Tool wore out
+    HAVE: wood 612, stone 184, flint 151, fiber 163, clay 166, berries 209, grain 193, rope 13, charcoal 140, brick 215, flour 16, flint_tools 2, copper_ore 87
+    KITH: 49, learned: stone, fiber, wood, flint, berries, clay, grain
+    LAYOUT: map_pos=(-852.0, 29.0) scale=(0.666667, 0.666667) top_bar_h=130 side_w=264
+[  69.7s] BRONZE +482 s: inv={ "wood": 282, "stone": 170, "flint": 153, "fiber": 163, "clay": 180, "berries": 283, "grain": 193, "rope": 13, "charcoal": 93, "brick": 218, "flour": 16, "flint_tools": 4, "fish": 0, "copper_ore": 145, "tin": 0, "copper": 12, "bronze": 0, "bronze_tools": 0 } mines=1
+[  69.9s] SHOT 14 era2_481_s
+    GOALS: > Discover Alloying, then build a Crucible: Copper and Tin make Bronze |   Make the first Bronze
+    INFO: 
+    TOAST: A Flint Tool wore out || Smelter unlocked: Metal tab
+    HAVE: wood 282, stone 170, flint 153, fiber 163, clay 180, berries 283, grain 193, rope 13, charcoal 93, brick 218, flour 16, flint_tools 4, copper_ore 145, copper 12
+    KITH: 49, learned: stone, fiber, wood, flint, berries, clay, grain
+    LAYOUT: map_pos=(-100.0, -83.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  70.4s] FOOD berries=278 kith=49 speed=1 food_label='Food 360'
+[  77.9s] BRONZE +602 s: inv={ "wood": 243, "stone": 244, "flint": 155, "fiber": 163, "clay": 180, "berries": 195, "grain": 193, "rope": 13, "charcoal": 298, "brick": 218, "flour": 16, "flint_tools": 4, "fish": 0, "copper_ore": 147, "tin": 0, "copper": 56, "bronze": 0, "bronze_tools": 0 } mines=1
+[  78.1s] SHOT 15 era2_601_s
+    GOALS: > Discover Alloying, then build a Crucible: Copper and Tin make Bronze |   Make the first Bronze
+    INFO: 
+    TOAST: A Flint Tool wore out
+    HAVE: wood 243, stone 244, flint 155, fiber 163, clay 180, berries 195, grain 193, rope 13, charcoal 298, brick 218, flour 16, flint_tools 4, copper_ore 147, copper 56
+    KITH: 49, learned: stone, fiber, wood, flint, berries, clay, grain
+    LAYOUT: map_pos=(-100.0, -83.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  79.9s] BRONZE +628 s: first Bronze made
+[  80.1s] SHOT 16 first_bronze
+    GOALS: All goals done. |   Make the first Bronze
+    INFO: 
+    TOAST: Crucible unlocked: Metal tab || Discovered Alloying
+    HAVE: wood 253, stone 222, flint 153, fiber 163, clay 166, berries 176, grain 193, rope 13, charcoal 36, brick 20, flour 16, flint_tools 5, copper_ore 145, bronze 1
+    KITH: 49, learned: stone, fiber, wood, flint, berries, clay, grain
+    LAYOUT: map_pos=(-100.0, -83.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  80.5s] FOOD berries=171 kith=49 speed=1 food_label='Food 253'
+[  85.4s] BRONZE +722 s: inv={ "wood": 431, "stone": 250, "flint": 154, "fiber": 115, "clay": 139, "berries": 214, "grain": 167, "rope": 97, "charcoal": 43, "brick": 26, "flour": 45, "flint_tools": 4, "fish": 0, "copper_ore": 161, "tin": 32, "copper": 0, "bronze": 5, "bronze_tools": 0 } mines=2
+[  85.6s] SHOT 17 era2_721_s
+    GOALS: All goals done. |   Make the first Bronze
+    INFO: 
+    TOAST: A Flint Tool wore out
+    HAVE: wood 431, stone 250, flint 154, fiber 115, clay 139, berries 214, grain 167, rope 97, charcoal 43, brick 26, flour 45, flint_tools 4, copper_ore 161, tin 32, bronze 5
+    KITH: 49, learned: stone, fiber, wood, flint, berries, clay, grain
+    LAYOUT: map_pos=(-100.0, -83.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  90.5s] FOOD berries=151 kith=49 speed=1 food_label='Food 501'
+[  92.5s] BRONZE +842 s: inv={ "wood": 259, "stone": 262, "flint": 151, "fiber": 160, "clay": 160, "berries": 252, "grain": 165, "rope": 167, "charcoal": 97, "brick": 104, "flour": 70, "flint_tools": 6, "fish": 0, "copper_ore": 113, "tin": 65, "copper": 0, "bronze": 26, "bronze_tools": 0 } mines=2
+[  92.7s] SHOT 18 era2_841_s
+    GOALS: All goals done. |   Make the first Bronze
+    INFO: 
+    TOAST: A Flint Tool wore out
+    HAVE: wood 259, stone 262, flint 151, fiber 160, clay 160, berries 252, grain 165, rope 167, charcoal 97, brick 104, flour 70, flint_tools 6, copper_ore 113, tin 65, bronze 26
+    KITH: 49, learned: stone, fiber, wood, flint, berries, clay, grain
+    LAYOUT: map_pos=(-100.0, -83.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  99.5s] BRONZE +962 s: inv={ "wood": 196, "stone": 265, "flint": 149, "fiber": 160, "clay": 143, "berries": 164, "grain": 165, "rope": 167, "charcoal": 156, "brick": 388, "flour": 70, "flint_tools": 6, "fish": 0, "copper_ore": 19, "tin": 76, "copper": 0, "bronze": 55, "bronze_tools": 0 } mines=2
+[  99.6s] SHOT 19 era2_961_s
+    GOALS: All goals done. |   Make the first Bronze
+    INFO: 
+    TOAST: A Flint Tool wore out
+    HAVE: wood 196, stone 265, flint 149, fiber 160, clay 143, berries 164, grain 165, rope 167, charcoal 156, brick 388, flour 70, flint_tools 6, copper_ore 19, tin 76, bronze 55
+    KITH: 49, learned: stone, fiber, wood, flint, berries, clay, grain
+    LAYOUT: map_pos=(-100.0, -83.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[ 100.6s] FOOD berries=152 kith=49 speed=1 food_label='Food 502'
+[ 106.5s] BRONZE +1082 s: inv={ "wood": 210, "stone": 265, "flint": 154, "fiber": 160, "clay": 198, "berries": 184, "grain": 165, "rope": 167, "charcoal": 274, "brick": 618, "flour": 70, "flint_tools": 6, "fish": 0, "copper_ore": 0, "tin": 106, "copper": 0, "bronze": 75, "bronze_tools": 0 } mines=2
+[ 106.7s] SHOT 20 era2_1081_s
+    GOALS: All goals done. |   Make the first Bronze
+    INFO: 
+    TOAST: A Flint Tool wore out
+    HAVE: wood 210, stone 265, flint 154, fiber 160, clay 198, berries 184, grain 165, rope 167, charcoal 274, brick 618, flour 70, flint_tools 6, tin 106, bronze 75
+    KITH: 49, learned: stone, fiber, wood, flint, berries, clay, grain
+    LAYOUT: map_pos=(-100.0, -83.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[ 110.7s] FOOD berries=230 kith=49 speed=1 food_label='Food 580'
+[ 114.5s] BRONZE +1202 s: inv={ "wood": 205, "stone": 265, "flint": 152, "fiber": 160, "clay": 198, "berries": 186, "grain": 165, "rope": 167, "charcoal": 422, "brick": 618, "flour": 70, "flint_tools": 6, "fish": 0, "copper_ore": 0, "tin": 170, "copper": 0, "bronze": 93, "bronze_tools": 0 } mines=2
+[ 114.7s] SHOT 21 era2_1201_s
+    GOALS: All goals done. |   Make the first Bronze
+    INFO: 
+    TOAST: A Flint Tool wore out
+    HAVE: wood 205, stone 265, flint 152, fiber 160, clay 198, berries 186, grain 165, rope 167, charcoal 422, brick 618, flour 70, flint_tools 6, tin 170, bronze 93
+    KITH: 49, learned: stone, fiber, wood, flint, berries, clay, grain
+    LAYOUT: map_pos=(-100.0, -83.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[ 120.7s] FOOD berries=157 kith=49 speed=1 food_label='Food 507'
+[ 122.7s] BRONZE +1322 s: inv={ "wood": 249, "stone": 265, "flint": 151, "fiber": 160, "clay": 198, "berries": 151, "grain": 165, "rope": 167, "charcoal": 371, "brick": 618, "flour": 70, "flint_tools": 6, "fish": 0, "copper_ore": 0, "tin": 246, "copper": 0, "bronze": 111, "bronze_tools": 0 } mines=2
+[ 122.9s] SHOT 22 era2_1321_s
+    GOALS: All goals done. |   Make the first Bronze
+    INFO: 
+    TOAST: A Flint Tool wore out
+    HAVE: wood 249, stone 265, flint 151, fiber 160, clay 198, berries 151, grain 165, rope 167, charcoal 371, brick 618, flour 70, flint_tools 6, tin 246, bronze 111
+    KITH: 49, learned: stone, fiber, wood, flint, berries, clay, grain
+    LAYOUT: map_pos=(-100.0, -83.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[ 130.6s] BRONZE +1442 s: inv={ "wood": 171, "stone": 198, "flint": 152, "fiber": 145, "clay": 198, "berries": 171, "grain": 181, "rope": 64, "charcoal": 320, "brick": 390, "flour": 70, "flint_tools": 6, "fish": 0, "copper_ore": 0, "tin": 318, "copper": 2, "bronze": 93, "bronze_tools": 0 } mines=2
+[ 130.7s] FOOD berries=171 kith=49 speed=1 food_label='Food 523'
+[ 130.8s] SHOT 23 era2_1441_s
+    GOALS: All goals done. |   Make the first Bronze
+    INFO: 
+    TOAST: The new light has a name now: the Wanderer. The Kith build a tower to watch it from. || Discovered Sky Watch || Discovered Star Charts || A Flint Tool wore out
+    HAVE: wood 171, stone 198, flint 152, fiber 145, clay 198, berries 171, grain 181, rope 64, charcoal 320, brick 390, flour 70, flint_tools 6, tin 318, copper 2, bronze 93
+    KITH: 49, learned: stone, fiber, wood, flint, berries, clay, grain
+    LAYOUT: map_pos=(-100.0, -83.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[ 136.1s] BRONZE: fell=true made_bronze=true after 1520 s of era 2
+[ 137.2s] SHOT 24 falling_star
+    GOALS: All goals done. |   Make the first Bronze
+    INFO: 
+    TOAST: A Flint Tool wore out || Discovered Bronze Tools || Discovered The Falling Star
+    HAVE: wood 176, stone 189, flint 148, fiber 160, clay 198, berries 186, grain 181, rope 28, charcoal 215, brick 228, flour 16, flint_tools 6, tin 380, copper 1, bronze 21
+    KITH: 49, learned: stone, fiber, wood, flint, berries, clay, grain
+    LAYOUT: map_pos=(-100.0, -83.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[ 140.4s] SHOT 25 falling_star_after
+    GOALS: All goals done. |   Make the first Bronze
+    INFO: 
+    TOAST: 
+    HAVE: wood 176, stone 189, flint 148, fiber 160, clay 198, berries 186, grain 181, rope 28, charcoal 215, brick 228, flour 16, flint_tools 6, tin 380, copper 1, bronze 21
+    KITH: 49, learned: stone, fiber, wood, flint, berries, clay, grain
+    LAYOUT: map_pos=(-100.0, -83.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[ 140.5s] SHOT 26 era2_end
+    GOALS: All goals done. |   Make the first Bronze
+    INFO: 
+    TOAST: 
+    HAVE: wood 176, stone 189, flint 148, fiber 160, clay 198, berries 186, grain 181, rope 28, charcoal 215, brick 228, flour 16, flint_tools 6, tin 380, copper 1, bronze 21
+    KITH: 49, learned: stone, fiber, wood, flint, berries, clay, grain
+    LAYOUT: map_pos=(-100.0, -83.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[ 140.5s] bot:   992 s    + Road at (12, 19)
+[ 140.5s] bot:   992 s    + Road at (12, 20)
+[ 140.5s] bot:   993 s    + Road at (11, 19)
+[ 140.5s] bot:   993 s    + Road at (11, 20)
+[ 140.5s] bot:   993 s    + Road at (10, 20)
+[ 140.5s] bot:   995 s    + Road at (2, 15)
+[ 140.5s] bot:   995 s    + Road at (4, 2)
+[ 140.5s] bot:   995 s    + Road at (4, 1)
+[ 140.5s] bot:   996 s    + Road at (3, 3)
+[ 140.5s] bot:   996 s    + Road at (3, 2)
+[ 140.5s] bot:   996 s    + Road at (2, 4)
+[ 140.5s] bot:   997 s    + Road at (3, 1)
+[ 140.5s] bot:   997 s    + Road at (2, 3)
+[ 140.5s] bot:   997 s    + Road at (1, 3)
+[ 140.5s] bot:   998 s    + Road at (2, 0)
+[ 140.5s] bot:  1018 s  Prospecting  (Kith 49)
+[ 140.5s] bot:  1063 s    (no headway toward the Copper Hills: planning the road)
+[ 140.5s] bot:  1068 s    + Road at (41, 18)
+[ 140.5s] bot:  1068 s    + Road at (43, 17)
+[ 140.5s] bot:  1068 s    + Road at (45, 16)
+[ 140.5s] bot:  1069 s    + Road at (47, 15)
+[ 140.5s] bot:  1069 s    + Road at (48, 13)
+[ 140.5s] bot:  1069 s    + Road at (50, 12)
+[ 140.5s] bot:  1070 s    + Road at (51, 10)
+[ 140.5s] bot:  1070 s    + Road at (53, 9)
+[ 140.5s] bot:  1070 s    + Road at (55, 9)
+[ 140.5s] bot:  1072 s    + Road at (56, 7)
+[ 140.5s] bot:  1072 s    + Road at (57, 5)
+[ 140.5s] bot:  1072 s    + Road at (58, 3)
+[ 140.5s] bot:  1073 s    + Road at (60, 2)
+[ 140.5s] bot:  1073 s    + Road at (61, 0)
+[ 140.5s] bot:  1073 s    + Road at (60, 1)
+[ 140.5s] bot:  1082 s  Tally Sticks  (Kith 49)
+[ 140.5s] bot:  1192 s  Mining  (Kith 49)
+[ 140.5s] bot:  1193 s    + Mine at (39, 17)
+[ 140.5s] bot:  1194 s    rank III on Ochre
+[ 140.5s] bot:  1195 s    + Storehouse at (38, 17)
+[ 140.5s] bot:  1215 s  Plough  (Kith 49)
+[ 140.5s] bot:  1394 s  Smelting  (Kith 49)
+[ 140.5s] bot:  1395 s    + Smelter at (5, 1)
+[ 140.5s] bot:  1572 s  Alloying  (Kith 49)
+[ 140.5s] bot:  1584 s    + Crucible at (16, 9)
+[ 140.5s] bot:  1590 s    + Mine at (61, 1)
+[ 140.5s] bot:  1591 s    rank III on Masonry
+[ 140.5s] bot:  1603 s    + Storehouse at (61, 2)
+[ 140.5s] bot:  1608 s    + Smelter at (12, 14)
+[ 140.5s] bot:  1695 s    + Smelter at (5, 0)
+[ 140.5s] bot:  1746 s    + Crucible at (17, 6)
+[ 140.5s] bot:  1747 s    + Storehouse at (17, 5)
+[ 140.5s] bot:  2331 s  The Wheel  (Kith 49)
+[ 140.5s] bot:  2331 s  Markets  (Kith 49)
+[ 140.5s] bot:  2345 s  Granaries  (Kith 49)
+[ 140.5s] bot:  2352 s    + Cart Shed at (10, 15)
+[ 140.5s] bot:  2382 s  Sky Watch  (Kith 49)
+[ 140.5s] bot:  2382 s  Star Charts  (Kith 49)
+[ 140.5s] bot:  2395 s    + Watchtower at (1, 5)
+[ 140.5s] bot:  2436 s  Causeways  (Kith 49)
+[ 140.5s] bot:  2479 s  Bronze Tools  (Kith 49)
+[ 140.5s] bot:  2479 s  The Falling Star  (Kith 49)
+[ 140.5s] bot:  2480 s  == The Falling Star: the era ends ==
+[ 140.5s] end of newbie pass
