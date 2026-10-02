@@ -16,6 +16,11 @@ extends RefCounted
 ## `via` dictionary steers a line that skips tiers: {parent: lane id} runs it along the channel just below
 ## that lane ("top" for the channel above the first lane), e.g. "via": {"masonry": "fiber"}.
 
+## `era` (default 1) says which tree a tech is in: 1 is the stone age, 2 is Bronze Dawn (design-system/10-bronze-dawn.md).
+## Each era has its own board, and its `tier`s count from 0 again. `stage` (default 1) is the build stage the tech's
+## effect ships in: a tech past BUILT_STAGE is on the board, locked, and can't be bought, so nobody pays for a tech
+## that does nothing yet.
+
 ## The research board's bands, top to bottom. Bronze Dawn sits alone in the "gate" column.
 const LANES := {
 	"hearth": {"name": "Hearth", "color": Color("ff7b39")},
@@ -27,6 +32,14 @@ const LANES := {
 const LANE_ORDER := ["fiber", "stone", "land", "hearth", "lore"]
 ## Column captions on the research board, one per tier; the last is the gate's column.
 const TIER_NAMES := ["TIER I", "TIER II", "TIER III", "TIER IV", "TIER V", "THE GATE"]
+
+## The eras, each with a board of its own, and the column captions of each board (the last is the gate's column).
+const ERAS := {1: {"name": "Stone Age"}, 2: {"name": "Bronze Dawn"}}
+const ERA_TIER_NAMES := {1: TIER_NAMES, 2: ["TIER I", "TIER II", "TIER III", "TIER IV", "THE GATE"]}
+## The latest build stage whose techs can be researched (see `stage` above).
+const BUILT_STAGE := 1
+## Tally Sticks makes every tech this share of its cost.
+const TALLY_DISCOUNT := 0.9
 
 ## How many techs the research queue lines up at once.
 const QUEUE_SLOTS := 5
@@ -481,6 +494,264 @@ const TECHS := {
 		"cost": {"brick": 80, "flour": 60, "rope": 80, "stone": 100, "charcoal": 100, "wood": 160},
 		"desc": "The stone age ends. The next era begins.",
 	},
+
+	# --- Era 2: Bronze Dawn (design-system/10-bronze-dawn.md) ---
+	"prospecting":
+	{
+		"abbr": "Pr",
+		"color": Color("8f9b5a"),
+		"name": "Prospecting",
+		"era": 2,
+		"lane": "stone",
+		"tier": 0,
+		"slot": 0,
+		"unlock": "Ore named, hand mining",
+		"icon": "tile_copper_hills",
+		"requires": ["bronze_dawn"],
+		"cost": {"stone": 60, "flint": 30, "rope": 15},
+		"desc": "Learn to read the hills. Copper Hills and Tin Streams are named, and a hold on one digs ore by hand, slowly.",
+	},
+	"tally_sticks":
+	{
+		"abbr": "TS",
+		"color": Color("b8b8ff"),
+		"name": "Tally Sticks",
+		"era": 2,
+		"lane": "lore",
+		"tier": 0,
+		"slot": 0,
+		"unlock": "Log counts, research -10%",
+		"icon": "@tally",
+		"requires": ["bronze_dawn"],
+		"cost": {"wood": 50, "rope": 20, "clay": 20},
+		"effect": "tally_sticks",
+		"desc": "Notch a stick for every load. The message log keeps counts, and every tech costs 10% less.",
+	},
+	"plough":
+	{
+		"abbr": "Pl",
+		"color": Color("90be6d"),
+		"name": "Plough",
+		"era": 2,
+		"lane": "land",
+		"tier": 0,
+		"slot": 0,
+		"unlock": "Fields +50%",
+		"icon": "field",
+		"requires": ["bronze_dawn"],
+		"cost": {"wood": 60, "stone": 30, "grain": 40},
+		"effect": "plough",
+		"desc": "A timber plough turns deeper furrows. Fields yield 50% more.",
+	},
+	"mining":
+	{
+		"abbr": "Mi",
+		"color": Color("c0c6cc"),
+		"name": "Mining",
+		"era": 2,
+		"lane": "stone",
+		"tier": 1,
+		"slot": 0,
+		"unlock": "Mine (2 Kith)",
+		"icon": "mine",
+		"requires": ["prospecting", "tally_sticks"],
+		"cost": {"wood": 90, "stone": 70, "rope": 30},
+		"desc": "Dig into the hills. A Mine stands on an ore tile and two Kith dig it without walking.",
+	},
+	"smelting":
+	{
+		"abbr": "Sm",
+		"color": Color("ff7b39"),
+		"name": "Smelting",
+		"era": 2,
+		"lane": "hearth",
+		"tier": 1,
+		"slot": 0,
+		"unlock": "Smelter",
+		"icon": "smelter",
+		"requires": ["prospecting", "plough"],
+		"cost": {"brick": 30, "charcoal": 50, "stone": 50},
+		"desc": "The harvest feeds the smiths. A Smelter melts 2 Copper Ore and 1 Charcoal into Copper.",
+	},
+	"kilns_ii":
+	{
+		"abbr": "K2",
+		"color": Color("c8553d"),
+		"name": "Kilns II",
+		"era": 2,
+		"lane": "hearth",
+		"tier": 1,
+		"slot": 1,
+		"unlock": "Brick x2 per firing",
+		"icon": "kiln",
+		"side": true,
+		"requires": ["smelting", "tally_sticks"],
+		"cost": {"brick": 40, "clay": 50, "charcoal": 40},
+		"effect": "kilns_ii",
+		"desc": "Hotter kilns from the smiths' bellows. Every Kiln fires twice the Brick each cycle.",
+	},
+	"the_wheel":
+	{
+		"abbr": "Wh",
+		"color": Color("e9c46a"),
+		"name": "The Wheel",
+		"era": 2,
+		"stage": 2,
+		"lane": "fiber",
+		"tier": 1,
+		"slot": 0,
+		"unlock": "Cart Shed",
+		"icon": "cart_shed",
+		"requires": ["tally_sticks", "plough"],
+		"cost": {"wood": 100, "rope": 50, "copper": 12},
+		"desc": "A hauler becomes a cart: it carries 20, but only on roads.",
+	},
+	"alloying":
+	{
+		"abbr": "Al",
+		"color": Color("cd7f32"),
+		"name": "Alloying",
+		"era": 2,
+		"lane": "hearth",
+		"tier": 2,
+		"slot": 0,
+		"unlock": "Crucible (Bronze)",
+		"icon": "crucible",
+		"requires": ["smelting", "mining"],
+		"cost": {"brick": 50, "charcoal": 60, "copper": 12},
+		"desc": "Tin hardens copper. A Crucible pours 3 Copper and 1 Tin into Bronze.",
+	},
+	"causeways":
+	{
+		"abbr": "Cw",
+		"color": Color("b3aca2"),
+		"name": "Causeways",
+		"era": 2,
+		"stage": 2,
+		"lane": "stone",
+		"tier": 2,
+		"slot": 0,
+		"unlock": "Bridges, Roads 5x",
+		"icon": "stone_bridge",
+		"requires": ["the_wheel", "mining"],
+		"cost": {"stone": 120, "brick": 80, "copper": 20},
+		"desc": "Bridges become a building. Roads cost 1 Stone and 1 Brick and are 5x as fast.",
+	},
+	"markets":
+	{
+		"abbr": "Mk",
+		"color": Color("e9c46a"),
+		"name": "Markets",
+		"era": 2,
+		"stage": 2,
+		"lane": "fiber",
+		"tier": 2,
+		"slot": 0,
+		"unlock": "Trading Post",
+		"icon": "trading_post",
+		"side": true,
+		"requires": ["the_wheel", "tally_sticks"],
+		"cost": {"wood": 100, "rope": 60, "tin": 10},
+		"desc": "Swap 3 of anything for 1 of anything, slowly.",
+	},
+	"sky_watch":
+	{
+		"abbr": "SW",
+		"color": Color("b8b8ff"),
+		"name": "Sky Watch",
+		"era": 2,
+		"stage": 2,
+		"lane": "lore",
+		"tier": 2,
+		"slot": 0,
+		"unlock": "Watchtower",
+		"icon": "watchtower",
+		"requires": ["tally_sticks", "mining"],
+		"cost": {"stone": 100, "brick": 60, "copper": 15},
+		"desc": "A stone tower sees far. The new light in the sky is named the Wanderer.",
+	},
+	"bronze_tools":
+	{
+		"abbr": "BT",
+		"color": Color("cd7f32"),
+		"name": "Bronze Tools",
+		"era": 2,
+		"stage": 2,
+		"lane": "stone",
+		"tier": 3,
+		"slot": 0,
+		"unlock": "Workers +50%",
+		"icon": "item_bronze_tools",
+		"requires": ["alloying", "causeways"],
+		"cost": {"bronze": 20, "copper": 20, "charcoal": 80},
+		"desc": "Bronze replaces flint. Every worker is 50% faster, and tools wear out.",
+	},
+	"granaries":
+	{
+		"abbr": "Gn",
+		"color": Color("90be6d"),
+		"name": "Granaries",
+		"era": 2,
+		"stage": 2,
+		"lane": "land",
+		"tier": 3,
+		"slot": 0,
+		"unlock": "Housing +1 per 20 food",
+		"icon": "granary",
+		"requires": ["plough"],
+		"requires_any": ["markets", "kilns_ii"],
+		"cost": {"brick": 100, "grain": 100, "wood": 100},
+		"desc": "Stored food holds more people: housing grows by 1 for every 20 food in store.",
+	},
+	"bronze_ploughshare":
+	{
+		"abbr": "BP",
+		"color": Color("90be6d"),
+		"name": "Bronze Ploughshare",
+		"era": 2,
+		"stage": 2,
+		"lane": "land",
+		"tier": 3,
+		"slot": 1,
+		"unlock": "Fields +50% more",
+		"icon": "field",
+		"side": true,
+		"requires": ["bronze_tools", "plough"],
+		"cost": {"bronze": 15, "copper": 20, "wood": 60},
+		"desc": "A bronze edge. Fields yield another 50%.",
+	},
+	"star_charts":
+	{
+		"abbr": "SC",
+		"color": Color("b8b8ff"),
+		"name": "Star Charts",
+		"era": 2,
+		"stage": 2,
+		"lane": "lore",
+		"tier": 3,
+		"slot": 0,
+		"unlock": "The Wanderer's path",
+		"icon": "wanderer",
+		"requires": ["sky_watch", "alloying"],
+		"cost": {"bronze": 25, "brick": 60, "rope": 60},
+		"desc": "Bronze instruments trace the Wanderer's path. It is getting closer.",
+	},
+	"falling_star":
+	{
+		"abbr": "FS",
+		"color": Color("e3a857"),
+		"name": "The Falling Star",
+		"era": 2,
+		"stage": 2,
+		"lane": "gate",
+		"tier": 4,
+		"slot": 0,
+		"unlock": "The era ends",
+		"icon": "wanderer",
+		"requires": ["bronze_tools", "star_charts", "granaries"],
+		"cost": {"bronze": 60, "brick": 100, "flour": 60, "rope": 40},
+		"desc": "It is not a star. It is coming down.",
+	},
 }
 
 ## Order for lists and tests (roots first, then by column).
@@ -514,4 +785,20 @@ const TECH_ORDER := [
 	"calendar",
 	"baking",
 	"bronze_dawn",
+	"prospecting",
+	"tally_sticks",
+	"plough",
+	"mining",
+	"smelting",
+	"kilns_ii",
+	"the_wheel",
+	"alloying",
+	"causeways",
+	"markets",
+	"sky_watch",
+	"bronze_tools",
+	"granaries",
+	"bronze_ploughshare",
+	"star_charts",
+	"falling_star",
 ]

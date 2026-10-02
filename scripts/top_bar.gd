@@ -15,7 +15,7 @@ const GrowthNote = preload("res://scripts/growth_note.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 
-const RAW := ["wood", "stone", "flint", "fiber", "clay", "berries", "grain", "fish"]
+const RAW := ["wood", "stone", "flint", "fiber", "clay", "berries", "grain", "fish", "copper_ore", "tin"]
 const LOSS := Color("ff9aa9")
 ## The Food readout's text while the warning is up: light enough to read on the bar (over 4.5 to 1) at every moment.
 const ALARM_TEXT := Color("ffb0bc")
@@ -461,6 +461,8 @@ func _user_name(source: String, id: String) -> String:
 static func _how_to_make(id: String) -> String:
 	for tile in Data.TILES:
 		if Data.TILES[tile]["yields"] == id:
+			if Data.TILES[tile].get("mine_only", false):
+				return "a Mine on %s" % Data.TILES[tile]["name"]
 			return "another Gatherer's Hut near %s" % Data.TILES[tile]["name"]
 	for type in Data.BUILD_ORDER:
 		if Data.BUILDINGS[type].get("out", {}).has(id):

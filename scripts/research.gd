@@ -59,8 +59,30 @@ func requirements_met(tech: String) -> bool:
 	return tech_visible(tech) and missing_requirements(tech) == 0
 
 
+## False for a tech whose effect isn't built yet (its `stage` is past Data.BUILT_STAGE): it shows on the board,
+## locked, and can never be researched, so nobody pays for a tech that does nothing.
+static func enabled(tech: String) -> bool:
+	return Rules.tech_enabled(tech)
+
+
+## What `tech` costs now: Tally Sticks makes every tech a tenth cheaper (never less than 1 of an item).
+func cost_of(tech: String) -> Dictionary:
+	var cost: Dictionary = Data.TECHS[tech]["cost"]
+	if not researched.has("tally_sticks"):
+		return cost
+	var out := {}
+	for id in cost:
+		out[id] = maxi(roundi(cost[id] * Data.TALLY_DISCOUNT), 1)
+	return out
+
+
 func can_research(tech: String) -> bool:
-	return not researched.has(tech) and requirements_met(tech) and _economy.can_afford(Data.TECHS[tech]["cost"])
+	return (
+		not researched.has(tech)
+		and enabled(tech)
+		and requirements_met(tech)
+		and _economy.can_afford(cost_of(tech))
+	)
 
 
 ## Pay for `tech` and mark it researched. Returns false, and takes nothing, when it can't be researched
@@ -68,7 +90,7 @@ func can_research(tech: String) -> bool:
 func research(tech: String) -> bool:
 	if not can_research(tech):
 		return false
-	_economy.pay(Data.TECHS[tech]["cost"])
+	_economy.pay(cost_of(tech))
 	researched[tech] = true
 	tech_researched.emit(tech)
 	return true
@@ -78,6 +100,8 @@ func research(tech: String) -> bool:
 
 
 func set_goal(tech: String) -> void:
+	if tech != "" and not enabled(tech):
+		return  # nothing to queue toward: it can't be researched yet
 	goal = tech
 	refill()
 

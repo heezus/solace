@@ -6,6 +6,7 @@ extends RefCounted
 const Data = preload("res://scripts/data.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const Hands = preload("res://scripts/hands.gd")
+const Buildings = preload("res://scripts/buildings.gd")
 
 
 ## Seconds for one work cycle at this building: its base time, shortened by the Speed group.
@@ -31,8 +32,12 @@ static func bundle_size(s, b: Dictionary, item: String) -> int:
 ## quarter to Fields, paid out as whole items as the building's share builds up.
 static func harvest_amount(s, b: Dictionary, tile: Vector2i, item: String) -> int:
 	var n := bundle_size(s, b, item)
-	if s.world.fields.has(tile) and s.tech_tree.researched.has("calendar"):
-		b["field_extra"] = b.get("field_extra", 0.0) + n * Data.CALENDAR_FIELD_BONUS
+	var more := 0.0  # a Field's extra yield, as a share of the bundle: Calendar and the Plough add up
+	if s.world.fields.has(tile):
+		more += Data.CALENDAR_FIELD_BONUS if s.tech_tree.researched.has("calendar") else 0.0
+		more += Data.PLOUGH_FIELD_BONUS if s.tech_tree.researched.has("plough") else 0.0
+	if more > 0.0:
+		b["field_extra"] = b.get("field_extra", 0.0) + n * more
 		if b["field_extra"] >= 1.0:
 			b["field_extra"] -= 1.0
 			n += 1
@@ -56,9 +61,12 @@ static func finish_cycle(s, b: Dictionary) -> void:
 	for id in def["in"]:
 		b["inbuf"][id] -= def["in"][id]
 		s.economy.note(id, -def["in"][id], b["type"])
-	for id in def["out"]:
-		b["out"][id] = b["out"].get(id, 0) + def["out"][id]
-		s.economy.note(id, def["out"][id], b["type"])
+	var made := Buildings.recipe_out(b)
+	var more := Bonuses.output(s, b)
+	for id in made:
+		var n := roundi(made[id] * more)
+		b["out"][id] = b["out"].get(id, 0) + n
+		s.economy.note(id, n, b["type"])
 
 
 ## What a building's card says about its rate: the speed math, then a hut's bundle of its focus once its
