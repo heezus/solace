@@ -34,6 +34,7 @@ func run(runner) -> void:
 	test_the_ore_goals_follow_the_fog_and_the_road()
 	test_the_first_bronze_stays_done()
 	test_the_panel_reads_dawn_goals()
+	test_the_dawn_banner_is_short()
 	test_the_dawn_goals_survive_a_save()
 	test_the_pointer_points_at_copper_then_tin()
 	test_the_pointer_button_hides_and_looks()
@@ -177,12 +178,32 @@ func test_the_panel_reads_dawn_goals() -> void:
 	t.check(
 		panel.goal_labels[0].visible and panel.goal_labels[0].text == Data.GOALS_ALL_DONE, "then it says it is done"
 	)
+	t.check(not panel.goal_labels[1].visible, "with no closing line before the star falls")
+	d.story.record("star_falling")
+	panel.refresh_goals(d)
+	t.check(panel.goal_header.text == "Dawn goals 9/9", "the count stays 9/9 after the fall: " + panel.goal_header.text)
+	t.check(panel.goal_labels[0].text == Data.GOALS_ALL_DONE, "the first line still says all done")
+	t.check(
+		panel.goal_labels[1].visible and panel.goal_labels[1].text.strip_edges() == Data.GOALS_STAR_CLOSING,
+		"and a closing line says what comes next once the star has fallen"
+	)
 	t.check(panel.goal_header.tooltip_text.count("Done: ") == 9, "and hovering the count lists them")
 	var before := Sim.new()
 	before.generate(1)
 	panel.refresh_goals(before)
 	t.check(panel.goal_header.text == "Goals 0/%d" % Data.GOALS.size(), "a stone-age game still reads Goals n/22")
 	panel.free()
+
+
+func test_the_dawn_banner_is_short() -> void:
+	var text: String = Data.ERA_BANNER_TEXT
+	var sentences := 0
+	for part in text.replace("?", ".").replace("!", ".").split("."):
+		sentences += 1 if part.strip_edges() != "" else 0
+	t.check(sentences <= 2, "the banner is at most two sentences, not %d: %s" % [sentences, text])
+	t.check(text.length() <= 100, "and short (%d characters)" % text.length())
+	t.check(text.contains("Look east"), "and still points at Look east")
+	t.check(not text.contains("\n"), "on one line")
 
 
 func test_the_dawn_goals_survive_a_save() -> void:

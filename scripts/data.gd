@@ -97,6 +97,7 @@ const GOALS_HEADER := DataGoals.GOALS_HEADER
 const GOALS_HEADER_ERA2 := DataGoals.GOALS_HEADER_ERA2
 const GOALS_ERA2 := DataGoals.GOALS_ERA2
 const GOALS_ALL_DONE := DataGoals.GOALS_ALL_DONE
+const GOALS_STAR_CLOSING := DataGoals.GOALS_STAR_CLOSING
 
 # --- Tuning: data/tuning.gd ---
 const LEARN_CLICKS := DataTuning.LEARN_CLICKS

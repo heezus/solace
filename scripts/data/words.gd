@@ -79,10 +79,7 @@ const STATE_LOCKED := "locked"
 # --- Era 2 (scripts/sim.gd, scripts/main.gd, scripts/tech_panel.gd) ---
 const LAND_GREW_EVENT := "The land opens to the east. Copper lies in the hills; tin is far off, to the north-east"
 const ERA_BANNER_TITLE := "BRONZE DAWN"
-const ERA_BANNER_TEXT := (
-	"The stone age ends. The land opens to the east, under fog: copper lies in the hills, and tin is far off,"
-	+ " to the north-east. Press Look east at the edge of the map.\nFar above Solace, something is falling."
-)
+const ERA_BANNER_TEXT := "The stone age ends, and the land opens east under fog. Press Look east at the map's edge."
 ## The lasting pointer at the east edge of the map view (scripts/east_pointer.gd): the ore to look for, and the button.
 const LOOK_EAST := "Look east: %s >"  # "copper" or "tin"
 const LOOK_EAST_TIP := "Moves the view toward the %s, still under fog. Home brings it back to the Hearth."

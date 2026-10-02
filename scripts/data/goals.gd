@@ -27,6 +27,8 @@ const STORY_TECHS := {
 ## The Goals panel's header: goals done, goals in all. The done ones list under it on hover.
 const GOALS_HEADER := "Goals %d/%d"
 const GOALS_ALL_DONE := "All goals done."
+## Under it once the Falling Star has fallen: hopeful, then not (the card says the same, scripts/era_card.gd).
+const GOALS_STAR_CLOSING := "The star is coming down. Keep building while you wait."
 ## The same header once Bronze Dawn is discovered, over the era's own list (GOALS_ERA2).
 const GOALS_HEADER_ERA2 := "Dawn goals %d/%d"
 
