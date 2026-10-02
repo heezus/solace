@@ -139,8 +139,8 @@ func give(s: Sim, amount: int) -> void:
 ## A spot where the river is 2 tiles wide between two open banks: {"river": its first tile, "side": the
 ## step across it (east or south)}. The bridge tests build on it.
 func _find_crossing(s: Sim) -> Dictionary:
-	for y in World.HEIGHT:
-		for x in World.WIDTH:
+	for y in s.world.height:
+		for x in s.world.width:
 			for side in [Vector2i(1, 0), Vector2i(0, 1)]:
 				var p := Vector2i(x, y)
 				var open := func(q: Vector2i) -> bool: return s.world.tile_at(q) in ["grass", "tree", "clay", "gravel"]
@@ -151,8 +151,8 @@ func _find_crossing(s: Sim) -> Dictionary:
 
 
 func find_tile(s: Sim, tile: String) -> Vector2i:
-	for y in World.HEIGHT:
-		for x in World.WIDTH:
+	for y in s.world.height:
+		for x in s.world.width:
 			if s.world.tile_at(Vector2i(x, y)) == tile:
 				return Vector2i(x, y)
 	return Vector2i(-1, -1)
@@ -188,8 +188,8 @@ func road_link(s: Sim, p: Vector2i) -> void:
 
 
 func find_grass(s: Sim, near_river: bool) -> Vector2i:
-	for y in World.HEIGHT:
-		for x in World.WIDTH:
+	for y in s.world.height:
+		for x in s.world.width:
 			var p := Vector2i(x, y)
 			if (
 				s.world.tile_at(p) == "grass"
