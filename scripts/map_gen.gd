@@ -40,6 +40,8 @@ const FOOTPRINT_MAX := Vector2i(5, 5)
 ## What a map must offer, counted as reachable tiles: within the first fog radius of the Hearth, and on the whole map.
 const NEAR_MIN := {"tree": 5, "rock": 4, "berry": 3, "grain": 2, "flax": 3, "gravel": 2}
 const REACH_MIN := {"tree": 12, "rock": 8, "berry": 5, "grain": 6, "flax": 6, "gravel": 4, "clay": 3}
+const MID_RADIUS := 12  # the stone, grain and clay of the middle game lie within this many tiles of the Hearth
+const MID_MIN := {"rock": 7, "grain": 8}  # reachable by land; a map with less made the pacing bot's middle game crawl
 const FAR_BANK_SHARE := 8  # at least this percent of the land must lie across the water: a crossing to solve
 
 const RIDGE_PERCENT := 72  # the ridge follows this height
@@ -491,6 +493,10 @@ static func faults_of(s, land: Dictionary) -> Array:
 	for tile in REACH_MIN:
 		if whole.get(tile, 0) < REACH_MIN[tile]:
 			faults.append("too little %s reachable (%d)" % [tile, whole.get(tile, 0)])
+	var mid := _reachable_counts(s, walk, camp, MID_RADIUS)
+	for tile in MID_MIN:
+		if mid.get(tile, 0) < MID_MIN[tile]:
+			faults.append("too little %s within %d tiles of the Hearth (%d)" % [tile, MID_RADIUS, mid.get(tile, 0)])
 	if _open_banks(s, walk) < OPEN_BANK_MIN:
 		faults.append("no open river bank for a wheel or a weir")
 	if not _wheel_site(s, walk, camp):
@@ -575,6 +581,8 @@ static func patch(s, land: Dictionary) -> void:
 		_top_up(s, tile, NEAR_MIN[tile], Data.SIGHT_START)
 	for tile in REACH_MIN:
 		_top_up(s, tile, REACH_MIN[tile], 1000)
+	for tile in MID_MIN:
+		_top_up(s, tile, MID_MIN[tile], MID_RADIUS)
 	_open_up_banks(s)
 	if not s.in_bounds(s.shard_pos) or s.tile_at(s.shard_pos) != "shard":
 		_lay_shard(s, land)

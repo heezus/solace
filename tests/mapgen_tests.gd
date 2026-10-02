@@ -36,6 +36,7 @@ func run(runner) -> void:
 	test_a_seed_makes_the_same_map()
 	test_the_reroll_sequence_is_fixed()
 	test_every_map_is_fair()
+	test_the_middle_game_has_stone_and_grain_in_reach()
 	test_the_opening_guarantees_are_where_they_always_were()
 	test_the_river_runs_from_high_to_low()
 	test_there_is_a_river_to_bridge()
@@ -58,7 +59,7 @@ func run(runner) -> void:
 # Posts and roads, every Kith had a job, and it never built a hut: no food income, so no births, for good.
 # Here that state is made by hand, and the bot must still get a Berries hut up and its people growing.
 func test_the_bot_gets_a_hut_up_when_every_kith_has_a_job() -> void:
-	for map_seed in [1352667803, 1, 3, 5]:
+	for map_seed in [1352667803, 1, 5, 6]:
 		var game := Sim.new()
 		game.generate(map_seed)
 		for id in game.economy.inv:
@@ -274,6 +275,22 @@ func test_every_map_is_fair() -> void:
 
 
 ## The little patches every map has around the Hearth are still there, at the same offsets from it.
+## Seeds 19 and 25 once made maps with 6 Rock, or 3 Grain, within 12 tiles of the Hearth, and the bot took over 20
+## minutes on them: now such a map is thrown away, and every map keeps its stone and grain in reach.
+func test_the_middle_game_has_stone_and_grain_in_reach() -> void:
+	for map_seed in range(1, SEEDS + 1):
+		var w := _world(map_seed)
+		var walk := MapGen._flood(w, w.camp_pos, false)
+		var mid := MapGen._reachable_counts(w, walk, w.camp_pos, MapGen.MID_RADIUS)
+		for tile in MapGen.MID_MIN:
+			t.check(
+				mid.get(tile, 0) >= MapGen.MID_MIN[tile],
+				"seed %d: %d %s within %d tiles" % [map_seed, mid.get(tile, 0), tile, MapGen.MID_RADIUS]
+			)
+	for map_seed in [19, 25]:
+		t.check(_map(map_seed)["report"]["attempts"] > 1, "seed %d: the first try was thrown away" % map_seed)
+
+
 func test_the_opening_guarantees_are_where_they_always_were() -> void:
 	for map_seed in range(1, SEEDS + 1):
 		var w := _world(map_seed)
