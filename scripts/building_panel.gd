@@ -2,9 +2,8 @@ extends PanelContainer
 ## The selected building's details, docked in the side panel's Info section (never floating over the map, so
 ## it can't cover the tiles you want next): status, what it does, its recipe or what it gathers, the worker and
 ## their tool in plain words (the exact numbers are in a tooltip), what it holds, the trip to the stockpile, and
-## Collect, Pause and Demolish buttons, with an x to close it.
+## Collect and Pause buttons, with an x to close it. Tearing down is the one Demolish tool on the bottom bar.
 
-signal demolish_pressed(p: Vector2i)
 signal closed
 
 const Data = preload("res://scripts/data.gd")
@@ -101,10 +100,6 @@ func setup(game: Sim) -> void:
 	pause.pressed.connect(_on_pause)
 	buttons.add_child(pause)
 	parts["pause"] = pause
-	var demolish := _button("Demolish", Ui.CARD, Ui.BAD)
-	demolish.pressed.connect(func(): demolish_pressed.emit(pos))
-	buttons.add_child(demolish)
-	parts["demolish"] = demolish
 
 
 ## The button row follows the card: shown while a building is selected, wherever it was docked.
@@ -212,13 +207,6 @@ func refresh() -> void:
 	var pause: Button = parts["pause"]
 	pause.visible = Buildings.needs_worker(b)
 	pause.text = "Resume" if b["paused"] else "Pause"
-	var demolish: Button = parts["demolish"]
-	demolish.disabled = def["kind"] == "camp"
-	demolish.tooltip_text = (
-		"The Hearth stays: it's the heart of the settlement."
-		if def["kind"] == "camp"
-		else "Tear it down for half its cost back (X)."
-	)
 
 
 ## "3 Fiber → 1 Rope / 4 s" for a workshop, what's in reach for a hut.

@@ -94,6 +94,8 @@ const STORY_EVENTS := DataGoals.STORY_EVENTS
 const STORY_TECHS := DataGoals.STORY_TECHS
 const GOALS := DataGoals.GOALS
 const GOALS_HEADER := DataGoals.GOALS_HEADER
+const GOALS_HEADER_ERA2 := DataGoals.GOALS_HEADER_ERA2
+const GOALS_ERA2 := DataGoals.GOALS_ERA2
 const GOALS_ALL_DONE := DataGoals.GOALS_ALL_DONE
 
 # --- Tuning: data/tuning.gd ---
@@ -144,6 +146,9 @@ const PLOUGH_FIELD_BONUS := DataTuning.PLOUGH_FIELD_BONUS
 const LAND_GREW_EVENT := DataWords.LAND_GREW_EVENT
 const ERA_BANNER_TITLE := DataWords.ERA_BANNER_TITLE
 const ERA_BANNER_TEXT := DataWords.ERA_BANNER_TEXT
+const LOOK_EAST := DataWords.LOOK_EAST
+const LOOK_EAST_TIP := DataWords.LOOK_EAST_TIP
+const LOOK_EAST_ORE := DataWords.LOOK_EAST_ORE
 const TECH_UNBUILT := DataWords.TECH_UNBUILT
 const ERA_TAB_TIP := DataWords.ERA_TAB_TIP
 const ERA_TAB_LOCKED := DataWords.ERA_TAB_LOCKED
@@ -163,6 +168,7 @@ const DEMOLISH_TIP := DataWords.DEMOLISH_TIP
 const DEMOLISH_LABEL := DataWords.DEMOLISH_LABEL
 const CARD_NEED_ITEMS := DataWords.CARD_NEED_ITEMS
 const CARD_DISCOVER := DataWords.CARD_DISCOVER
+const CARD_DISCOVER_IT := DataWords.CARD_DISCOVER_IT
 const KITH_LABEL := DataWords.KITH_LABEL
 const JOBS_LABEL := DataWords.JOBS_LABEL
 const JOBS_TIP := DataWords.JOBS_TIP

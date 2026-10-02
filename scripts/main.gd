@@ -23,6 +23,8 @@ const SidePanel = preload("res://scripts/side_panel.gd")
 const HoverText = preload("res://scripts/hover_text.gd")
 const Messages = preload("res://scripts/messages.gd")
 const ToastStack = preload("res://scripts/toast_stack.gd")
+const EastPointer = preload("res://scripts/east_pointer.gd")
+const Land = preload("res://scripts/land.gd")
 const MessageLog = preload("res://scripts/message_log.gd")
 const HutFocus = preload("res://scripts/hut_focus.gd")
 
@@ -63,6 +65,7 @@ var rubble: Array = []  # {pos: Vector2i, t: float}, torn-down buildings fading 
 
 var messages := Messages.new()
 var toasts: ToastStack
+var east_pointer: EastPointer  # the lasting pointer to the new land (after Bronze Dawn)
 var msg_log: MessageLog
 var told := {}  # warm lines already said (see _watch_flavor)
 var was_starving := false
@@ -105,6 +108,8 @@ func _process(delta: float) -> void:
 				{"pos": at, "text": Data.BORN_POPUP % Data.PEOPLE["one"], "t": 0.0, "col": KITH.lightened(0.3)}
 			)
 			_toast(Data.BORN_TOAST % Data.PEOPLE["many"], 3.0)
+		elif e == Data.LAND_GREW_EVENT or e == Data.DISCOVERED_EVENT % Data.TECHS["bronze_dawn"]["name"]:
+			continue  # the dawn says all of this once, in its banner
 		else:
 			var style := Messages.style_of(e)
 			messages.push(e, style["seconds"], style["sticky"], style["key"])
@@ -174,9 +179,18 @@ func _layout() -> void:
 		)
 	position = (view.get_center() - cam * k).round()
 	Art.ui_k = 1.0 / k
+	if not east_pointer.target.is_empty():
+		east_pointer.place(view, screen_of(east_pointer.target["tile"]))
+	else:
+		east_pointer.visible = false
 	var rid := get_canvas_item()  # nothing is drawn outside the view
 	RenderingServer.canvas_item_set_clip(rid, true)
 	RenderingServer.canvas_item_set_custom_rect(rid, true, Rect2((view.position - position) / k, view.size / k))
+
+
+## The east pointer was pressed: put the way to the ore in view (the Home key's camera, aimed east).
+func _look_east(tile: Vector2i) -> void:
+	center_on(Land.look_east_at(state, tile))
 
 
 ## Put tile p in the middle of the view.
@@ -417,13 +431,16 @@ func _build_ui() -> void:
 	side_panel.setup(state, SIDE_W)
 	info_label = side_panel.info_label
 	building_panel = side_panel.building_panel
-	building_panel.demolish_pressed.connect(_demolish)
 	building_panel.closed.connect(func(): building_panel.select(Vector2i(-1, -1)))
 
 	# Toasts stack up from the bottom of the map (placed in _layout, so they never cover the bars); the log opens over the map.
 	toasts = ToastStack.new()
 	layer.add_child(toasts)
 	toasts.setup(messages)
+	east_pointer = EastPointer.new()
+	layer.add_child(east_pointer)
+	east_pointer.setup()
+	east_pointer.look.connect(_look_east)
 	msg_log = MessageLog.new()
 	layer.add_child(msg_log)
 	msg_log.setup(messages)
@@ -438,7 +455,7 @@ func _refresh_ui() -> void:
 	bottom_bar.refresh(placing, state.tech_tree.ready_list().size())
 	tech_panel.refresh()
 	building_panel.refresh()
-
+	east_pointer.refresh(state)
 	side_panel.refresh_goals(state)
 	side_panel.show_info("" if get_viewport().gui_get_hovered_control() != null else HoverText.text(self))
 

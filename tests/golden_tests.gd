@@ -129,7 +129,7 @@ func canonical(s: Sim) -> String:
 	lines.append("inv %s" % _counts(_stockpile(s.economy.inv)))
 	lines.append("researched %s" % ",".join(_sorted_keys(s.tech_tree.researched)))
 	lines.append("ranks %s" % _counts(s.ranks))
-	lines.append("goals_done %s" % ",".join(_sorted_keys(s.story.goals_done)))
+	lines.append("goals_done %s" % ",".join(_sorted_keys(_stone_age_goals(s.story.goals_done))))
 	lines.append("story %s" % ",".join(s.story.events))
 	lines.append("seen %s" % ",".join(_sorted_keys(s.economy.seen)))
 	lines.append("hand_counts %s" % _counts(s.hand_counts))
@@ -162,6 +162,17 @@ func _stockpile(inv: Dictionary) -> Dictionary:
 	for id in inv:
 		if inv[id] != 0 or int(Data.ITEMS[id].get("era", 1)) == 1:
 			out[id] = inv[id]
+	return out
+
+
+## The goals done that belong to the stone age's list: the second era's goals are not part of the pinned state, so adding a
+## goal to that list does not change the hash of a game that has pinned its stone-age half.
+func _stone_age_goals(done: Dictionary) -> Dictionary:
+	var ids: Array = Data.GOALS.map(func(g): return g["id"])
+	var out := {}
+	for id in done:
+		if id in ids:
+			out[id] = true
 	return out
 
 

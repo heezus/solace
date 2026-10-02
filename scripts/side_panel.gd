@@ -58,7 +58,7 @@ func setup(game: Sim, width: float) -> void:
 	building_panel = BuildingPanel.new()
 	inner.add_child(building_panel)
 	building_panel.setup(game)
-	# Collect, Pause and Demolish sit under the scrolling area, so a tall card never pushes them off the panel.
+	# Collect and Pause sit under the scrolling area, so a tall card never pushes them off the panel.
 	var buttons: Control = building_panel.parts["buttons"]
 	buttons.get_parent().remove_child(buttons)
 	v.add_child(buttons)
@@ -71,24 +71,27 @@ func setup(game: Sim, width: float) -> void:
 
 
 ## The checklist: only the current goal (in gold) and the one after it (dim). The done ones are behind the count in the
-## header ("Goals 9/22"; hover it to list them), so a long goal never pushes the current one down. While a building's
-## card is open only the current goal shows, so the card has room.
+## header ("Goals 9/22", or "Dawn goals 3/9" in the second era; hover it to list them), so a long goal never pushes the
+## current one down. Both lines stay up while a building's card is open (the card scrolls), so the list never changes
+## height as cards come and go.
 func refresh_goals(s: Sim) -> void:
+	var list := s.story.goal_list()
 	var cur := s.story.current_goal()
-	var total := Data.GOALS.size()
-	goal_header.text = Data.GOALS_HEADER % [s.story.done_count(), total]
+	var total := list.size()
+	var era_two := list == Data.GOALS_ERA2
+	goal_header.text = (Data.GOALS_HEADER_ERA2 if era_two else Data.GOALS_HEADER) % [s.story.done_count(), total]
 	var done: Array = []
-	for g in Data.GOALS:
+	for g in list:
 		if s.story.goals_done.has(g["id"]):
 			done.append("Done: " + g["text"])
 	goal_header.tooltip_text = "\n".join(done)
 	for i in goal_labels.size():
 		var gi := cur + i
 		var l: Label = goal_labels[i]
-		l.visible = gi < total and (not building_panel.visible or i == 0)
+		l.visible = gi < total
 		if not l.visible:
 			continue
-		l.text = ("> " if i == 0 else "  ") + Data.GOALS[gi]["text"]
+		l.text = ("> " if i == 0 else "  ") + list[gi]["text"]
 		l.add_theme_color_override("font_color", GOAL_COLOR if i == 0 else Ui.TEXT_DIM)
 	if cur >= total:
 		goal_labels[0].visible = true
