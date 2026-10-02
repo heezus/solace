@@ -5,6 +5,7 @@ extends RefCounted
 const Data = preload("res://scripts/data.gd")
 const Art = preload("res://scripts/art.gd")
 const Rules = preload("res://scripts/rules.gd")
+const GrowthNote = preload("res://scripts/growth_note.gd")
 
 const OUTLINE: Color = Art.OUTLINE
 const BAD := Color("ef476f")
@@ -224,16 +225,9 @@ static func idle_kith(s) -> int:
 	return n
 
 
-## Why the population isn't growing, or "" when it is.
+## Why the population isn't growing, or "" when it is (see scripts/growth_note.gd).
 static func growth_note(s) -> String:
-	var n: int = s.people.kith.size()
-	if s.economy.starving:
-		return Data.NOTE_STARVING
-	if n >= s.town.housing():
-		return Data.NOTE_NO_ROOM
-	if not s.people.food_ready_for_birth():
-		return Data.GROW_NOTE_FOOD
-	return ""
+	return GrowthNote.note(s)
 
 
 static func ignore_mouse(n: Node) -> void:
