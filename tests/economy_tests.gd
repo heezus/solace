@@ -6,6 +6,7 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 const Economy = preload("res://scripts/economy.gd")
+const Rules = preload("res://scripts/rules.gd")
 const Sim = preload("res://scripts/sim.gd")
 const RunSave = preload("res://scripts/run_save.gd")
 
@@ -214,7 +215,8 @@ func test_flour_reserve() -> void:
 	var e := _empty(techs)
 	var keep := 0
 	for id in Data.TECHS:
-		keep += Data.TECHS[id]["cost"].get("flour", 0)
+		if Rules.tech_enabled(id):
+			keep += Data.TECHS[id]["cost"].get("flour", 0)
 	t.check(keep > 0 and e.flour_reserve() == keep, "flour that research still needs is reserved")
 	e.inv["flour"] = keep
 	t.check(not e.eat(1.0), "reserved flour is not eaten")

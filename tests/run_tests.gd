@@ -256,7 +256,9 @@ func test_every_tech_is_reachable() -> void:
 	for i in Data.TECH_ORDER.size():
 		for tech in Data.TECH_ORDER:
 			s.research(tech)
-	check(s.tech_tree.researched.size() == Data.TECHS.size(), "all techs reachable")
+	var built := Data.TECH_ORDER.filter(Rules.tech_enabled)
+	check(s.tech_tree.researched.size() == built.size(), "every tech whose effect is built is reachable")
+	check(built.size() < Data.TECHS.size(), "and the rest wait for the next update")
 	check(s.won, "researching Bronze Dawn wins")
 
 
@@ -343,7 +345,8 @@ func test_flour_is_kept_for_research() -> void:
 	s.economy.inv["berries"] = 0
 	var keep := 0
 	for tech in Data.TECHS:
-		keep += Data.TECHS[tech]["cost"].get("flour", 0)
+		if Rules.tech_enabled(tech):
+			keep += Data.TECHS[tech]["cost"].get("flour", 0)
 	s.economy.inv["flour"] = keep
 	s.economy.food_credit = 0.0
 	check(keep > 0 and s.economy.flour_reserve() == keep, "flour that research needs is reserved")
@@ -534,11 +537,12 @@ func test_roads_bridge_the_river() -> void:
 
 ## Every parent sits left of its child, no two cards overlap, and most techs join two branches.
 func test_tech_tree_is_a_web() -> void:
-	check(Data.TECHS.size() == 29, "the stone age has 29 techs")
+	var stone := Rules.era_techs(1)
+	check(stone.size() == 29, "the stone age has 29 techs")
 	check(Data.TECH_ORDER.size() == Data.TECHS.size(), "TECH_ORDER lists every tech once")
 	var roots := 0
 	var multi := 0
-	for tech in Data.TECHS:
+	for tech in stone:
 		var t: Dictionary = Data.TECHS[tech]
 		var any: Array = t.get("requires_any", [])
 		roots += 1 if t["requires"].is_empty() and any.is_empty() else 0
@@ -557,16 +561,16 @@ func test_tech_tree_is_a_web() -> void:
 	check(multi >= 15, "most techs join two branches")
 	check_cards_dont_overlap()
 	var colors := {}
-	for tech in Data.TECHS:
+	for tech in stone:
 		colors[Data.TECHS[tech]["color"].to_html()] = true
-	check(colors.size() == Data.TECHS.size(), "every tech has its own color")
+	check(colors.size() == stone.size(), "every stone-age tech has its own color")
 	for tech in Data.TECHS:
 		check("star_lore" not in Data.TECHS[tech]["requires"], tech + " doesn't strictly need hidden Star Lore")
 
 
 ## Tech tree v4 (mockups/tech-tree-v4.md): each link reads "you need X to invent Y".
 func test_tech_tree_v4() -> void:
-	check(TechLayout.links().size() == 51, "v4 plus the Storehouse has 51 links (%d)" % TechLayout.links().size())
+	check(TechLayout.links(1).size() == 51, "v4 plus the Storehouse has 51 links (%d)" % TechLayout.links(1).size())
 	check(Data.LANE_ORDER == ["fiber", "stone", "land", "hearth", "lore"], "lanes run Fiber, Stone, Land, Hearth, Lore")
 	check(Data.TECHS["bronze_dawn"]["tier"] == 5, "the gate sits after Tier V")
 	check(Data.TIER_NAMES.size() == 6, "every column has a caption")
@@ -595,7 +599,7 @@ func test_tech_tree_v4() -> void:
 	# Side branches are exactly the techs Bronze Dawn can do without.
 	var route := Rules.route_to("bronze_dawn", {}, Rules.visible_techs(true))
 	check(route.size() == 19, "Bronze Dawn needs 19 techs (%d)" % route.size())
-	for tech in Data.TECHS:
+	for tech in Rules.era_techs(1):
 		check(
 			Data.TECHS[tech].get("side", false) == (tech not in route), tech + " is a side branch only if off the route"
 		)
