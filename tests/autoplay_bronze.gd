@@ -12,6 +12,7 @@ extends "res://tests/autoplay.gd"
 const MINES := 1  # Mines on Copper Hills the bot builds before the first Bronze (the Tin Stream is dug by hand)
 const MINES_COPPER := 4  # ...and the most it builds on the hills once it plays on
 const MINES_TIN := 1  # Mines on the Tin Stream after the first Bronze
+const STAR_WORKSHOPS := {"smelter": 3, "crucible": 2}  # after the first Bronze: the later techs cost lots of both
 const MINE_ORE := 120.0  # one more copper Mine for every this much Copper Ore still short
 const COPPER_FIRST := 15  # Copper: Alloying costs 12, and a Crucible batch takes 3
 
@@ -45,8 +46,13 @@ func play_to_star(map_seed: int, max_seconds: float) -> Dictionary:
 		while clock < max_seconds and not fell():
 			step(true)
 	r["star_seconds"] = star_at
-	r["star_minutes"] = (star_at - bronze_at) / 60.0 if star_at >= 0.0 and bronze_at >= 0.0 else -1.0
+	r["star_minutes"] = star_minutes()
 	return r
+
+
+## Minutes from the first Bronze to the Falling Star, -1 when either has not happened.
+func star_minutes() -> float:
+	return (star_at - bronze_at) / 60.0 if star_at >= 0.0 and bronze_at >= 0.0 else -1.0
 
 
 ## True once The Falling Star is researched: the era has ended (and when, in `star_at`).
@@ -128,6 +134,9 @@ func _goal_wants(want: Dictionary) -> void:
 	if bronze_at >= 0.0:  # past the first Bronze: the Cart Shed, the Watchtower and one more Mine are to be paid for
 		for type in ["cart_shed", "watchtower"]:
 			if s.town.unlocked(type) and _count(type) < 1:
+				_want(want, Data.BUILDINGS[type]["cost"], 1)
+		for type in STAR_WORKSHOPS:
+			if s.town.unlocked(type) and _count(type) < STAR_WORKSHOPS[type]:
 				_want(want, Data.BUILDINGS[type]["cost"], 1)
 		_want(want, Data.BUILDINGS["mine"]["cost"], 1)
 
@@ -242,6 +251,9 @@ func _build_for_the_star() -> bool:
 		return true
 	if s.town.unlocked("watchtower") and _count("watchtower") < 1 and _place_near_hearth("watchtower"):
 		return true
+	for type in ["smelter", "crucible"]:  # the era's later techs cost a great deal of Copper and Bronze
+		if s.town.unlocked(type) and _count(type) < STAR_WORKSHOPS[type] and _place_near_hearth(type):
+			return true
 	if not s.town.unlocked("mine"):
 		return false
 	var ore_short: int = _short().get("copper_ore", 0)

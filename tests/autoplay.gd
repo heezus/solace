@@ -91,7 +91,7 @@ func step(tick: bool) -> void:
 	clock += DT
 	_log_research()
 	clicks += DT * (CLICKS_LATE if s.tech_tree.researched.has("haulers") else CLICKS_EARLY)
-	if trace and fmod(clock, 60.0) < DT - 0.001:
+	if trace and fmod(clock + DT * 0.5, 60.0) < DT:
 		_trace()
 	clicks = minf(clicks, 4.0)
 	think -= DT

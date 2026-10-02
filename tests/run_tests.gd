@@ -117,14 +117,14 @@ func test_pacing_bot() -> void:
 		var bot := AutoplayBronze.new()
 		if have_golden:
 			bot.on_dawn = golden.check_dawn.bind(map_seed)  # win time and state at Bronze Dawn: tests/golden.json
-		var r: Dictionary = bot.play_bronze(map_seed, 50 * 60.0)
-		if have_golden:
-			golden.check_bronze(map_seed, bot)  # and at the first Bronze: tests/golden_bronze.json
+			bot.on_bronze = golden.check_bronze.bind(map_seed)  # and at the first Bronze: tests/golden_bronze.json
+		var r: Dictionary = bot.play_to_star(map_seed, 70 * 60.0)
 		var minutes: float = r["seconds"] / 60.0
+		var star: float = bot.star_minutes()
 		print(
 			(
-				"Pacing bot, map %d: %s at %.1f simulated minutes, first Bronze %.1f minutes later"
-				% [map_seed, "Bronze Dawn" if r["won"] else "no win", minutes, r["minutes"]]
+				"Pacing bot, map %d: %s at %.1f simulated minutes, first Bronze %.1f minutes later, the Falling Star %.1f"
+				% [map_seed, "Bronze Dawn" if r["won"] else "no win", minutes, r["minutes"], star]
 			)
 		)
 		check(r["won"], "the bot reaches Bronze Dawn on map %d" % map_seed)
@@ -133,7 +133,11 @@ func test_pacing_bot() -> void:
 			r["minutes"] >= 7.0 and r["minutes"] <= 14.0,
 			"map %d: the first Bronze takes 7 to 14 minutes more (%.1f)" % [map_seed, r["minutes"]]
 		)
-		if not r["won"] or r["minutes"] < 0.0:
+		check(
+			star >= 8.0 and star <= 20.0,
+			"map %d: the Falling Star comes 8 to 20 minutes after it (%.1f)" % [map_seed, star]
+		)
+		if not r["won"] or r["minutes"] < 0.0 or star < 0.0:
 			for line in r["log"]:
 				print("  ", line)
 

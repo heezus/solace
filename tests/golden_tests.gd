@@ -64,8 +64,9 @@ func check_dawn(bot, map_seed: int) -> void:
 	check_run(map_seed, bot)
 
 
-## Compare the era-2 bot (tests/autoplay_bronze.gd) at its first Bronze with the second golden snapshot.
-func check_bronze(map_seed: int, bot) -> void:
+## Compare the era-2 bot (tests/autoplay_bronze.gd) at its first Bronze (it calls this the moment the Bronze is made)
+## with the second golden snapshot.
+func check_bronze(bot, map_seed: int) -> void:
 	var got := {
 		"bronze_seconds": roundi(bot.bronze_at) if bot.bronze_at >= 0.0 else -1, "state_hash": state_hash(bot.s)
 	}
