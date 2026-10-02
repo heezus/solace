@@ -1,0 +1,383 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+OpenGL API 4.5 (Core Profile) Mesa 25.2.8-0ubuntu0.24.04.3 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 20.1.2, 256 bits)
+
+WARNING: 2D MSAA is not yet supported for GLES3.
+     at: render_target_set_msaa (drivers/gles3/storage/texture_storage.cpp:3210)
+[   0.0s] start
+[   1.2s] SHOT 01 first_look
+    GOALS: > Hold the mouse on trees to gather Wood, until a Kith learns it (10 harvests) |   Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock
+    INFO: Riverbed Gravel / Hold: +1 Flint, 1.0s. Hold the mouse on it to gather. / Harvested by hand 0/10. A Kith is watching and will learn Flint.
+    TOAST: The Kith gather at the Hearth. Hold the mouse on a tree to begin.
+Arrows or WASD move the map, the wheel zooms, Home returns to the Hearth.
+    HAVE: berries 10
+    KITH: 3, learned: 
+    LAYOUT: map_pos=(0.0, 51.0) scale=(1.0, 1.0) top_bar_h=130 side_w=264
+[   5.4s] SHOT 02 after_4s_doing_nothing
+    GOALS: > Hold the mouse on trees to gather Wood, until a Kith learns it (10 harvests) |   Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock
+    INFO: Riverbed Gravel / Hold: +1 Flint, 1.0s. Hold the mouse on it to gather. / Harvested by hand 0/10. A Kith is watching and will learn Flint.
+    TOAST: The Kith gather at the Hearth. Hold the mouse on a tree to begin.
+Arrows or WASD move the map, the wheel zooms, Home returns to the Hearth.
+    HAVE: berries 10
+    KITH: 3, learned: 
+    LAYOUT: map_pos=(0.0, 51.0) scale=(1.0, 1.0) top_bar_h=130 side_w=264
+[   6.5s] SHOT 03 camera_arrow_right
+    GOALS: > Hold the mouse on trees to gather Wood, until a Kith learns it (10 harvests) |   Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock
+    INFO: Unexplored. Build a Gatherer's Hut, or discover Scouting, to see farther.
+    TOAST: The Kith gather at the Hearth. Hold the mouse on a tree to begin.
+Arrows or WASD move the map, the wheel zooms, Home returns to the Hearth.
+    HAVE: berries 10
+    KITH: 3, learned: 
+    LAYOUT: map_pos=(-712.0, 51.0) scale=(1.0, 1.0) top_bar_h=130 side_w=264
+[   7.6s] SHOT 04 camera_w_up
+    GOALS: > Hold the mouse on trees to gather Wood, until a Kith learns it (10 harvests) |   Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock
+    INFO: Unexplored. Build a Gatherer's Hut, or discover Scouting, to see farther.
+    TOAST: The Kith gather at the Hearth. Hold the mouse on a tree to begin.
+Arrows or WASD move the map, the wheel zooms, Home returns to the Hearth.
+    HAVE: berries 10
+    KITH: 3, learned: 
+    LAYOUT: map_pos=(-712.0, 130.0) scale=(1.0, 1.0) top_bar_h=130 side_w=264
+[   8.4s] SHOT 05 camera_wheel_zoom_out
+    GOALS: > Hold the mouse on trees to gather Wood, until a Kith learns it (10 harvests) |   Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock
+    INFO: Unexplored. Build a Gatherer's Hut, or discover Scouting, to see farther.
+    TOAST: The Kith gather at the Hearth. Hold the mouse on a tree to begin.
+Arrows or WASD move the map, the wheel zooms, Home returns to the Hearth.
+    HAVE: berries 10
+    KITH: 3, learned: 
+    LAYOUT: map_pos=(-136.0, 130.0) scale=(0.666667, 0.666667) top_bar_h=130 side_w=264
+[   9.9s] SHOT 06 camera_home
+    GOALS: > Hold the mouse on trees to gather Wood, until a Kith learns it (10 harvests) |   Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock
+    INFO: Grassland / Open ground: you can build here. Pick a card below, or press T to discover more to build. / Close by you can gather: Riverbed Gravel, Rocks, Wild Flax, Berry Bushes, Forest, Wild Grain.
+    TOAST: 
+    HAVE: berries 10
+    KITH: 3, learned: 
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[   9.9s] quick-click on the nearest tree at (9, 4)
+[  10.1s] FOOD berries=10 kith=3 speed=1 food_label='Food 10'
+[  11.1s] SHOT 07 quick_click_tree
+    GOALS: > Hold the mouse on trees to gather Wood, until a Kith learns it (10 harvests) |   Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock
+    INFO: Forest / Hold: +1 Wood, 1.0s. You let go too soon: keep the mouse down until the ring fills. / Harvested by hand 0/10. A Kith is watching and will learn Wood.
+    TOAST: 
+    HAVE: berries 10
+    KITH: 3, learned: 
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  11.1s] click the Hearth
+[  11.9s] SHOT 08 click_hearth
+    GOALS: > Hold the mouse on trees to gather Wood, until a Kith learns it (10 harvests) |   Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock
+    INFO: Aro the Idle, Tam the Idle, Esk the Idle /  / 
+    TOAST: 
+    HAVE: berries 10
+    KITH: 3, learned: 
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  12.9s] (could not click a hidden control)
+[  13.6s] (could not click a hidden control)
+[  14.1s] SHOT 09 last_build_tab
+    GOALS: > Hold the mouse on trees to gather Wood, until a Kith learns it (10 harvests) |   Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock
+    INFO: 
+    TOAST: 
+    HAVE: berries 10
+    KITH: 3, learned: 
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  14.8s] clicked Gatherer's Hut before researching it; placing = ''
+[  15.0s] SHOT 10 locked_hut_click
+    GOALS: > Hold the mouse on trees to gather Wood, until a Kith learns it (10 harvests) |   Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock
+    INFO: Grassland / Open ground: you can build here. Pick a card below, or press T to discover more to build. / Close by you can gather: Forest, Riverbed Gravel, Rocks, Berry Bushes, Wild Grain.
+    TOAST: 
+    HAVE: berries 10
+    KITH: 3, learned: 
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  16.1s] SHOT 11 research_board_first_open
+    GOALS: > Hold the mouse on trees to gather Wood, until a Kith learns it (10 harvests) |   Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock
+    INFO: Grassland / Open ground: you can build here. Pick a card below, or press T to discover more to build. / Close by you can gather: Forest, Riverbed Gravel, Rocks, Berry Bushes, Wild Grain.
+    TOAST: 
+    HAVE: berries 10
+    KITH: 3, learned: 
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  16.5s] hold on a tree until a Kith learns Wood
+[  20.1s] FOOD berries=10 kith=3 speed=1 food_label='Food 10'
+[  22.5s] probe wood: tile tree at (9, 4), holding=true, frac=0.07, harvest_tile=(9, 4), hand_counts={ "wood": 6 }, hover=(9, 4)
+[  26.5s] wood learned=true after 10s
+[  26.6s] SHOT 12 wood_learned
+    GOALS: > Hold the mouse on trees to gather Wood, until a Kith learns it (10 harvests) |   Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock
+    INFO: Forest / Hold: +1 Wood, 1.0s. Hold the mouse on it to gather. / Aro knows how to gather Wood: huts can gather it.
+    TOAST: Aro learned to chop wood and is now the Woodcutter. || The first lesson is learned. What one Kith knows, the Hearth will soon know.
+    HAVE: wood 10, berries 10
+    KITH: 3, learned: wood
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  30.1s] FOOD berries=10 kith=3 speed=1 food_label='Food 10'
+[  32.6s] probe stone: tile rock at (12, 9), holding=true, frac=0.02, harvest_tile=(12, 9), hand_counts={ "wood": 10, "stone": 6 }, hover=(12, 9)
+[  36.6s] stone learned=true after 10s
+[  40.2s] FOOD berries=10 kith=3 speed=1 food_label='Food 10'
+[  42.7s] probe flint: tile gravel at (12, 8), holding=true, frac=0.04, harvest_tile=(12, 8), hand_counts={ "wood": 10, "stone": 10, "flint": 6 }, hover=(12, 8)
+[  46.7s] flint learned=true after 10s
+[  46.8s] SHOT 13 stone_flint_learned
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: Riverbed Gravel / Hold: +1 Flint, 1.0s. Hold the mouse on it to gather. / Harvested by hand 9/10. A Kith is watching and will learn Flint.
+    TOAST: Esk learned to gather flint and is now the Knapper.
+    HAVE: wood 10, stone 10, flint 10, berries 10
+    KITH: 3, learned: wood, stone, flint
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  50.2s] FOOD berries=10 kith=3 speed=1 food_label='Food 10'
+[  52.8s] probe fiber: tile flax at (8, 4), holding=true, frac=0.05, harvest_tile=(8, 4), hand_counts={ "wood": 10, "stone": 10, "flint": 10, "fiber": 6 }, hover=(8, 4)
+[  56.8s] fiber learned/have=true after 10s
+[  56.9s] SHOT 14 fiber_gathered
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: Wild Flax / Hold: +1 Fiber, 1.0s. Hold the mouse on it to gather. / Aro knows how to gather Fiber: huts can gather it.
+    TOAST: Aro learned to cut flax and is now the Thatcher.
+    HAVE: wood 10, stone 10, flint 10, fiber 10, berries 10
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  58.0s] SHOT 15 board_hover_knapping
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: 
+    TOAST: Aro learned to cut flax and is now the Thatcher.
+    HAVE: wood 10, stone 10, flint 10, fiber 10, berries 10
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  58.5s] SHOT 16 board_after_click_knapping
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: 
+    TOAST: Aro learned to cut flax and is now the Thatcher. || Discovered Knapping
+    HAVE: wood 10, flint 5, fiber 10, berries 10
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  58.8s] knapping researched=true
+[  59.6s] SHOT 17 after_craft_click
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: 
+    TOAST: Aro learned to cut flax and is now the Thatcher. || Discovered Knapping
+    HAVE: wood 8, flint 3, fiber 10, berries 10, flint_tools 1
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  60.3s] FOOD berries=10 kith=3 speed=1 food_label='Food 10'
+[  60.7s] SHOT 18 board_hover_foraging
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: 
+    TOAST: Aro learned to cut flax and is now the Thatcher. || Discovered Knapping
+    HAVE: wood 8, flint 3, fiber 10, berries 10, flint_tools 1
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  61.2s] SHOT 19 board_after_click_foraging
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: 
+    TOAST: Discovered Foraging || Food is running low. Click your berry hut to send a trip, or hold the mouse on Berry Bushes, and the Kith stay fed || Food is short: idle Kith are out foraging for berries. It keeps them fed, not growing
+    HAVE: wood 8, flint 3, berries 5, flint_tools 1
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  61.6s] foraging researched=true
+[  67.6s] probe wood: tile tree at (9, 4), holding=true, frac=0.59, harvest_tile=(9, 4), hand_counts={ "wood": 18, "stone": 10, "flint": 10, "fiber": 10 }, hover=(9, 4)
+[  70.3s] FOOD berries=11 kith=3 speed=1 food_label='Food 11'
+[  76.1s] probe stone: tile rock at (12, 9), holding=true, frac=0.62, harvest_tile=(12, 9), hand_counts={ "wood": 22, "stone": 18, "flint": 10, "fiber": 10 }, hover=(12, 9)
+[  78.1s] SHOT 20 board_hover_gatherers_hut
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: 
+    TOAST: 
+    HAVE: wood 20, stone 10, flint 3, berries 17, flint_tools 1
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  78.5s] SHOT 21 board_after_click_gatherers_hut
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: 
+    TOAST: Gatherer's Hut unlocked: Gathering tab || Discovered Gatherer's Hut
+    HAVE: flint 3, berries 17, flint_tools 1
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  78.9s] gatherers_hut researched=true
+[  78.9s] hut costs { "wood": 10, "stone": 5 }, have { "wood": 0, "stone": 0, "flint": 3, "fiber": 0, "clay": 0, "berries": 17, "grain": 0, "rope": 0, "charcoal": 0, "brick": 0, "flour": 0, "flint_tools": 1, "fish": 0, "copper_ore": 0, "tin": 0, "copper": 0, "bronze": 0 }
+[  80.3s] FOOD berries=17 kith=3 speed=1 food_label='Food 17'
+[  84.9s] probe wood: tile tree at (9, 4), holding=true, frac=0.65, harvest_tile=(9, 4), hand_counts={ "wood": 30, "stone": 20, "flint": 10, "fiber": 10 }, hover=(9, 4)
+[  89.6s] SHOT 22 hut1_preview
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: Rocks / Hold: +1 Stone, 0.7s. Hold the mouse on it to gather. / Tam knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: 
+    HAVE: wood 10, stone 5, flint 3, berries 22, flint_tools 1
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  90.3s] FOOD berries=22 kith=3 speed=1 food_label='Food 22'
+[  90.8s] SHOT 23 hut1_placed
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: Aro the Thatcher /  / Gatherer's Hut / Aro the Thatcher walking here /  / Click the hut to send its Kith for a bundle: until a road links it, it works only when you click it. Trips waiting: 0 of 3. / Click to select it.
+    TOAST: 
+    HAVE: flint 3, berries 22
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  90.8s] hut1 placed=true
+[  96.9s] SHOT 24 hut1_trip_running
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: 
+    TOAST: 
+    HAVE: flint 3, berries 22
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[  96.9s] MODE no_berry_hut: skipping berries and the second hut
+[ 100.3s] FOOD berries=21 kith=3 speed=3 food_label='Food 21'
+[ 110.4s] FOOD berries=19 kith=3 speed=3 food_label='Food 19'
+[ 120.4s] FOOD berries=17 kith=3 speed=3 food_label='Food 17'
+[ 127.1s] SHOT 25 no_berry_hut_30s
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: Aro the Thatcher /  / Gatherer's Hut / Waiting: click to send a trip /  / Click the hut to send its Kith for a bundle: until a road links it, it works only when you click it. Trips waiting: 0 of 3. / Click to select it.
+    TOAST: 
+    HAVE: flint 3, fiber 3, berries 16
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[ 127.1s] KITH t0: 3 on map: Aro@(8.0,5.0) job=work; Tam@(9.0,7.0) job=; Esk@(9.0,7.0) job=
+[ 127.3s] SHOT 26 kith_watch_0
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: Aro the Thatcher /  / Gatherer's Hut / Waiting: click to send a trip /  / Click the hut to send its Kith for a bundle: until a road links it, it works only when you click it. Trips waiting: 0 of 3. / Click to select it.
+    TOAST: 
+    HAVE: flint 3, fiber 3, berries 16
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[ 128.9s] KITH t1: 3 on map: Aro@(8.0,5.0) job=work; Tam@(9.0,7.0) job=; Esk@(9.0,7.0) job=
+[ 129.0s] SHOT 27 kith_watch_1
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: Aro the Thatcher /  / Gatherer's Hut / Waiting: click to send a trip /  / Click the hut to send its Kith for a bundle: until a road links it, it works only when you click it. Trips waiting: 0 of 3. / Click to select it.
+    TOAST: 
+    HAVE: flint 3, fiber 3, berries 16
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[ 130.4s] FOOD berries=16 kith=3 speed=1 food_label='Food 16'
+[ 130.5s] KITH t2: 3 on map: Aro@(8.0,5.0) job=work; Tam@(9.0,7.0) job=; Esk@(9.0,7.0) job=
+[ 130.7s] SHOT 28 kith_watch_2
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: Aro the Thatcher /  / Gatherer's Hut / Waiting: click to send a trip /  / Click the hut to send its Kith for a bundle: until a road links it, it works only when you click it. Trips waiting: 0 of 3. / Click to select it.
+    TOAST: 
+    HAVE: flint 3, fiber 3, berries 16
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[ 132.2s] KITH t3: 3 on map: Aro@(8.0,5.0) job=work; Tam@(9.0,7.0) job=; Esk@(9.0,7.0) job=
+[ 132.4s] SHOT 29 kith_watch_3
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: Aro the Thatcher /  / Gatherer's Hut / Waiting: click to send a trip /  / Click the hut to send its Kith for a bundle: until a road links it, it works only when you click it. Trips waiting: 0 of 3. / Click to select it.
+    TOAST: 
+    HAVE: flint 3, fiber 3, berries 16
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[ 139.9s] probe wood: tile tree at (9, 4), holding=true, frac=0.67, harvest_tile=(9, 4), hand_counts={ "wood": 40, "stone": 25, "flint": 10, "fiber": 10 }, hover=(9, 4)
+[ 140.5s] FOOD berries=15 kith=3 speed=3 food_label='Food 15'
+[ 144.6s] SHOT 30 dwelling_preview
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: Placing Dwelling. Left-click open grassland, right-click to stop. / Cost (have/need): Wood 12/12, Fiber 6/6
+    TOAST: 
+    HAVE: wood 12, flint 3, fiber 6, berries 14
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[ 145.8s] SHOT 31 dwelling_placed
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: Dwelling / Room for 3 more Kith. Must be within 6 tiles of the Hearth. They grow while food keeps coming in. /  / Click to select it.
+    TOAST: 
+    HAVE: flint 3, berries 14
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[ 145.8s] dwelling placed=true
+[ 150.5s] FOOD berries=13 kith=3 speed=3 food_label='Food 13'
+[ 160.5s] FOOD berries=11 kith=3 speed=3 food_label='Food 11'
+[ 165.9s] SHOT 32 after_dwelling
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: Dwelling / Room for 3 more Kith. Must be within 6 tiles of the Hearth. They grow while food keeps coming in. /  / Click to select it.
+    TOAST: 
+    HAVE: flint 3, berries 22
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[ 170.6s] FOOD berries=21 kith=3 speed=3 food_label='Food 21'
+[ 172.0s] probe wood: tile tree at (9, 4), holding=true, frac=0.64, harvest_tile=(9, 4), hand_counts={ "wood": 52, "stone": 25, "flint": 10, "fiber": 13 }, hover=(9, 4)
+[ 177.6s] SHOT 33 board_hover_fire
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: 
+    TOAST: 
+    HAVE: wood 10, stone 5, flint 3, berries 20
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[ 178.1s] SHOT 34 board_after_click_fire
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: 
+    TOAST: Charcoal Pit unlocked: Workshops tab || Discovered Fire
+    HAVE: flint 3, berries 20
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[ 178.4s] fire researched=true
+[ 180.6s] FOOD berries=19 kith=3 speed=3 food_label='Food 19'
+[ 185.6s] SHOT 35 charcoal_pit_preview
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: Rocks / Hold: +1 Stone, 0.7s. Hold the mouse on it to gather. / Tam knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: 
+    HAVE: wood 5, stone 5, flint 3, berries 19
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[ 186.8s] SHOT 36 charcoal_pit_placed
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: Tam the Collier /  / Charcoal Pit / Needs Wood (click to load). Kith grow once the food is steady: research Paths & Haulers and link huts by road /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: 
+    HAVE: flint 3, berries 18
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[ 186.8s] charcoal_pit placed=true
+[ 190.6s] FOOD berries=18 kith=3 speed=3 food_label='Food 18'
+[ 192.8s] probe fiber: tile flax at (8, 4), holding=true, frac=0.60, harvest_tile=(8, 4), hand_counts={ "wood": 59, "stone": 35, "flint": 10, "fiber": 21 }, hover=(8, 4)
+[ 198.3s] SHOT 37 board_hover_cordage
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: 
+    TOAST: 
+    HAVE: flint 3, fiber 15, berries 16
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[ 198.8s] SHOT 38 board_after_click_cordage
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: 
+    TOAST: Twine Post unlocked: Workshops tab || Discovered Cordage
+    HAVE: flint 3, berries 16
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[ 199.2s] cordage researched=true
+[ 200.7s] FOOD berries=16 kith=3 speed=3 food_label='Food 16'
+[ 204.9s] SHOT 39 twine_post_preview
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: Placing Twine Post. Left-click open grassland, right-click to stop. / Cost (have/need): Wood 8/8
+    TOAST: 
+    HAVE: wood 8, flint 3, berries 15
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[ 206.1s] SHOT 40 twine_post_placed
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: Esk the Roper /  / Twine Post / Needs Fiber (click to load). Kith grow once the food is steady: research Paths & Haulers and link huts by road /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: 
+    HAVE: flint 3, berries 15
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[ 206.1s] twine_post placed=true
+[ 210.7s] FOOD berries=14 kith=3 speed=3 food_label='Food 14'
+[ 220.7s] FOOD berries=12 kith=3 speed=3 food_label='Food 12'
+[ 230.8s] FOOD berries=14 kith=3 speed=3 food_label='Food 14'
+[ 236.3s] SHOT 41 workshops_30s_later
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: Esk the Roper /  / Twine Post / Needs Fiber (click to load). Kith grow once the food is steady: research Paths & Haulers and link huts by road /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: 
+    HAVE: flint 3, berries 17
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[ 236.3s] KITH end: 3 on map: Aro@(8.0,5.0) job=work; Tam@(9.0,6.0) job=work; Esk@(10.0,6.0) job=work
+[ 240.8s] FOOD berries=17 kith=3 speed=3 food_label='Food 17'
+[ 250.8s] FOOD berries=15 kith=3 speed=3 food_label='Food 15'
+[ 260.9s] FOOD berries=13 kith=3 speed=3 food_label='Food 13'
+[ 270.9s] FOOD berries=11 kith=3 speed=3 food_label='Food 11'
+[ 281.0s] FOOD berries=17 kith=3 speed=3 food_label='Food 17'
+[ 291.0s] FOOD berries=16 kith=3 speed=3 food_label='Food 16'
+[ 301.0s] FOOD berries=14 kith=3 speed=3 food_label='Food 14'
+[ 311.0s] FOOD berries=12 kith=3 speed=3 food_label='Food 12'
+[ 321.1s] FOOD berries=14 kith=3 speed=3 food_label='Food 14'
+[ 331.1s] FOOD berries=16 kith=3 speed=3 food_label='Food 16'
+[ 341.1s] FOOD berries=15 kith=3 speed=3 food_label='Food 15'
+[ 351.1s] FOOD berries=13 kith=3 speed=3 food_label='Food 13'
+[ 361.2s] FOOD berries=13 kith=3 speed=3 food_label='Food 13'
+[ 371.2s] FOOD berries=17 kith=3 speed=3 food_label='Food 17'
+[ 381.3s] FOOD berries=15 kith=3 speed=3 food_label='Food 15'
+[ 386.5s] SHOT 42 final_60s_more
+    GOALS: > Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock |   Gather Stone and Flint by hand until they're learned too
+    INFO: Esk the Roper /  / Twine Post / Needs Fiber (click to load). Kith grow once the food is steady: research Paths & Haulers and link huts by road /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: 
+    HAVE: flint 3, berries 14
+    KITH: 3, learned: wood, stone, flint, fiber
+    LAYOUT: map_pos=(-100.0, -69.0) scale=(1.333333, 1.333333) top_bar_h=130 side_w=264
+[ 386.5s] KITH final: 3 on map: Aro@(8.0,5.0) job=work; Tam@(9.0,6.0) job=work; Esk@(10.0,6.0) job=work
+[ 386.5s] end of newbie pass
