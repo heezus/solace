@@ -101,6 +101,10 @@ func refresh_goals(s: Sim) -> void:
 	if cur >= total:
 		goal_labels[0].visible = true
 		goal_labels[0].text = Data.GOALS_ALL_DONE
+		var star_fell: bool = s.story.events.has("star_falling")
+		goal_labels[1].visible = star_fell
+		goal_labels[1].text = "  " + Data.GOALS_STAR_CLOSING
+		goal_labels[1].add_theme_color_override("font_color", Ui.TEXT_DIM)
 
 
 ## Show `text` under the card; a card that doesn't fit scrolls (the bar only shows when it must).

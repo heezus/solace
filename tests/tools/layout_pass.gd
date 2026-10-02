@@ -16,6 +16,7 @@ const Hands = preload("res://scripts/hands.gd")
 const UiTests = preload("res://tests/ui_tests.gd")
 const Ui = preload("res://scripts/ui.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
+const HudChecks = preload("res://tests/tools/hud_checks.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
 const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
 
@@ -138,6 +139,25 @@ func _era_two_checks() -> void:
 		frozen = false
 	if frame == dawn_frame + 70:
 		_check_east_pointer()
+	match frame - dawn_frame:
+		90:
+			frozen = true
+			main.paused = true
+			main.era_card.open()  # the Falling Star's card, as the story opens it
+		92:
+			_report(HudChecks.end_card(main, "at the shrunk window"))
+		93:
+			root.size = Vector2i(1280, 800)
+		97:
+			_report(HudChecks.end_card(main, "at 1280x800"))
+			_shot("end_card")
+			main.era_card.close()
+			main.paused = false
+			main.ui_refresh = 0.0
+		98:
+			_report(HudChecks.third_row(main, "at 1280x800"))
+			_shot("third_row")
+			frozen = false
 	if frame > dawn_frame + 6 and frame % 25 == 0:
 		_check_top_bar_text("in the second era, frame %d" % frame)
 		_check_fit("in the second era, frame %d" % frame)
@@ -456,6 +476,7 @@ func _check_stable(what: String) -> void:
 		problems.append(
 			"%s: the map moved (%s, x%s -> %s, x%s)" % [what, base["pos"], base["scale"], main.position, main.scale]
 		)
+	_report(HudChecks.chip_fit(main, what))
 	var chip_x: float = main.top_bar.chips["wood"]["box"].get_global_rect().position.x
 	if not is_equal_approx(chip_x, base["chip_x"]):
 		problems.append("%s: the chips moved sideways (%.0f -> %.0f)" % [what, base["chip_x"], chip_x])
@@ -863,6 +884,23 @@ func _texts(node: Node) -> Array:
 	for c in node.get_children():
 		out += _texts(c)
 	return out
+
+
+## Take in the problems another check found, and count it as a HUD check.
+func _report(found: Array) -> void:
+	hud_checks += 1
+	problems.append_array(found)
+
+
+## Save the window to $LAYOUT_SHOTS/<name>.png when that is set (a way to look at the HUD; the pass doesn't need it).
+func _shot(name: String) -> void:
+	var dir := OS.get_environment("LAYOUT_SHOTS")
+	if dir == "":
+		return
+	DirAccess.make_dir_recursive_absolute(dir)
+	var err := root.get_texture().get_image().save_png("%s/%s.png" % [dir, name])
+	if err != OK:
+		problems.append("couldn't save the screenshot %s (error %d)" % [name, err])
 
 
 func _labels(node: Node) -> Array:
