@@ -428,7 +428,7 @@ func test_a_row_of_buildings_gets_alert_badges_that_never_overlap() -> void:
 	for k in [1.0, 1.5, 0.75]:
 		Art.ui_k = k
 		var problems: Array = []
-		var radius := 8.0 * k
+		var radius: float = 8.0 * k
 		var circles: Array = []
 		for b in s.town.buildings:
 			if b["alert"] == "":
