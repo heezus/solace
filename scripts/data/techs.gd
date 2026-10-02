@@ -35,7 +35,7 @@ const TIER_NAMES := ["TIER I", "TIER II", "TIER III", "TIER IV", "TIER V", "THE 
 
 ## The eras, each with a board of its own, and the column captions of each board (the last is the gate's column).
 const ERAS := {1: {"name": "Stone Age"}, 2: {"name": "Bronze Dawn"}}
-const ERA_TIER_NAMES := {1: TIER_NAMES, 2: ["TIER I", "TIER II", "TIER III", "TIER IV", "THE GATE"]}
+const ERA_TIER_NAMES := {1: TIER_NAMES, 2: ["TIER I", "TIER II", "TIER III", "TIER IV", "TIER V", "THE GATE"]}
 ## The latest build stage whose techs can be researched (see `stage` above).
 const BUILT_STAGE := 1
 ## Tally Sticks makes every tech this share of its cost.
@@ -514,7 +514,7 @@ const TECHS := {
 	"tally_sticks":
 	{
 		"abbr": "TS",
-		"color": Color("b8b8ff"),
+		"color": Color("c9b6f2"),
 		"name": "Tally Sticks",
 		"era": 2,
 		"lane": "lore",
@@ -530,7 +530,7 @@ const TECHS := {
 	"plough":
 	{
 		"abbr": "Pl",
-		"color": Color("90be6d"),
+		"color": Color("7fb069"),
 		"name": "Plough",
 		"era": 2,
 		"lane": "land",
@@ -580,7 +580,7 @@ const TECHS := {
 		"name": "Kilns II",
 		"era": 2,
 		"lane": "hearth",
-		"tier": 1,
+		"tier": 2,
 		"slot": 1,
 		"unlock": "Brick x2 per firing",
 		"icon": "kiln",
@@ -640,7 +640,7 @@ const TECHS := {
 	"markets":
 	{
 		"abbr": "Mk",
-		"color": Color("e9c46a"),
+		"color": Color("f2a65a"),
 		"name": "Markets",
 		"era": 2,
 		"stage": 2,
@@ -657,7 +657,7 @@ const TECHS := {
 	"sky_watch":
 	{
 		"abbr": "SW",
-		"color": Color("b8b8ff"),
+		"color": Color("9d8df1"),
 		"name": "Sky Watch",
 		"era": 2,
 		"stage": 2,
@@ -673,7 +673,7 @@ const TECHS := {
 	"bronze_tools":
 	{
 		"abbr": "BT",
-		"color": Color("cd7f32"),
+		"color": Color("a0522d"),
 		"name": "Bronze Tools",
 		"era": 2,
 		"stage": 2,
@@ -689,7 +689,7 @@ const TECHS := {
 	"granaries":
 	{
 		"abbr": "Gn",
-		"color": Color("90be6d"),
+		"color": Color("b5d99c"),
 		"name": "Granaries",
 		"era": 2,
 		"stage": 2,
@@ -706,12 +706,12 @@ const TECHS := {
 	"bronze_ploughshare":
 	{
 		"abbr": "BP",
-		"color": Color("90be6d"),
+		"color": Color("4f8a3a"),
 		"name": "Bronze Ploughshare",
 		"era": 2,
 		"stage": 2,
 		"lane": "land",
-		"tier": 3,
+		"tier": 4,
 		"slot": 1,
 		"unlock": "Fields +50% more",
 		"icon": "field",
@@ -723,7 +723,7 @@ const TECHS := {
 	"star_charts":
 	{
 		"abbr": "SC",
-		"color": Color("b8b8ff"),
+		"color": Color("7a6fd0"),
 		"name": "Star Charts",
 		"era": 2,
 		"stage": 2,
@@ -744,7 +744,7 @@ const TECHS := {
 		"era": 2,
 		"stage": 2,
 		"lane": "gate",
-		"tier": 4,
+		"tier": 5,
 		"slot": 0,
 		"unlock": "The era ends",
 		"icon": "wanderer",
