@@ -583,18 +583,24 @@ func _bronze_phase() -> void:
 	var opened := false
 	var metal_done := false
 	var seen := {}
-	while not bot.made_bronze() and bot.clock - era_start < 1200.0 and frames < 16000:
+	var got_bronze := false
+	while not bot.fell() and bot.clock - era_start < 3000.0 and frames < 30000:
+		if bot.made_bronze() and not got_bronze:
+			got_bronze = true
+			_say("BRONZE +%.0f s: first Bronze made" % (bot.clock - era_start))
+			await _shot("first_bronze")
+
 		frames += 1
 		for i in 20:
 			s.tick(Autoplay.DT)
 			bot.step(false)
 		var since := bot.clock - era_start
 		if since >= next_shot:
-			next_shot += 60
+			next_shot += 120
 			shots += 1
 			_say("BRONZE +%.0f s: inv=%s mines=%d" % [since, str(s.economy.inv), s.town.buildings.filter(func(b): return b["type"] == "mine").size()])
 			await _shot("era2_%03d_s" % int(since))
-			if shots in [1, 6, 11] or since > 1190:
+			if shots in [1, 4]:
 				_diag("+%.0f" % since)
 				for i in 3:
 					_wheel(Vector2(500, 400), false)
@@ -629,7 +635,12 @@ func _bronze_phase() -> void:
 					main.center_on(s.world.camp_pos)
 					break
 		await process_frame
-	_say("BRONZE: made_bronze=%s after %.0f s of era 2" % [str(bot.made_bronze()), bot.clock - era_start])
+	_say("BRONZE: fell=%s made_bronze=%s after %.0f s of era 2" % [str(bot.fell()), str(bot.made_bronze()), bot.clock - era_start])
+	if bot.fell():
+		await _wait(1.0)
+		await _shot("falling_star")
+		await _wait(3.0)
+		await _shot("falling_star_after")
 	await _shot("era2_end")
 	for l in bot.lines.slice(-60):
 		_say("bot: " + str(l))
