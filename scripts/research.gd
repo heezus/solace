@@ -77,12 +77,7 @@ func cost_of(tech: String) -> Dictionary:
 
 
 func can_research(tech: String) -> bool:
-	return (
-		not researched.has(tech)
-		and enabled(tech)
-		and requirements_met(tech)
-		and _economy.can_afford(cost_of(tech))
-	)
+	return not researched.has(tech) and enabled(tech) and requirements_met(tech) and _economy.can_afford(cost_of(tech))
 
 
 ## Pay for `tech` and mark it researched. Returns false, and takes nothing, when it can't be researched

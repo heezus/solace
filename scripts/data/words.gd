@@ -15,7 +15,7 @@ const CARD_NEED_ITEMS := "Need more"  # when even the short form doesn't fit
 const CARD_DISCOVER := "Discover %s"  # a tech's name
 
 # --- The tech board (scripts/tech_panel.gd, scripts/tech_board.gd). One verb for techs: Discover. ---
-const BOARD_TITLE := "Tech tree  ·  Stone Age"
+const BOARD_TITLE := "Tech tree  ·  %s"  # an era's name
 # --- A few warm lines at the first moments (scripts/main.gd shows each once) ---
 ## Story id (Data.STORY_EVENTS) -> the line said when it first happens.
 const FLAVOR_STORY := {

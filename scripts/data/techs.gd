@@ -494,7 +494,6 @@ const TECHS := {
 		"cost": {"brick": 80, "flour": 60, "rope": 80, "stone": 100, "charcoal": 100, "wood": 160},
 		"desc": "The stone age ends. The next era begins.",
 	},
-
 	# --- Era 2: Bronze Dawn (design-system/10-bronze-dawn.md) ---
 	"prospecting":
 	{
@@ -509,7 +508,8 @@ const TECHS := {
 		"icon": "tile_copper_hills",
 		"requires": ["bronze_dawn"],
 		"cost": {"stone": 60, "flint": 30, "rope": 15},
-		"desc": "Learn to read the hills. Copper Hills and Tin Streams are named, and a hold on one digs ore by hand, slowly.",
+		"desc":
+		"Learn to read the hills. Copper Hills and Tin Streams are named, and a hold on one digs ore by hand, slowly.",
 	},
 	"tally_sticks":
 	{

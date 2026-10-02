@@ -9,6 +9,7 @@ extends RefCounted
 ## Run from tests/run_tests.gd, which owns check().
 
 const Sim = preload("res://scripts/sim.gd")
+const Data = preload("res://scripts/data.gd")
 
 const GOLDEN_PATH := "res://tests/golden.json"
 
@@ -75,7 +76,7 @@ func state_hash(s: Sim) -> String:
 func canonical(s: Sim) -> String:
 	var lines: Array = []
 	lines.append("won %s" % s.won)
-	lines.append("inv %s" % _counts(s.economy.inv))
+	lines.append("inv %s" % _counts(_stockpile(s.economy.inv)))
 	lines.append("researched %s" % ",".join(_sorted_keys(s.tech_tree.researched)))
 	lines.append("ranks %s" % _counts(s.ranks))
 	lines.append("goals_done %s" % ",".join(_sorted_keys(s.story.goals_done)))
@@ -102,6 +103,16 @@ func canonical(s: Sim) -> String:
 	for k in s.people.kith:
 		lines.append("k %s job=%s tool=%d" % [k["name"], k["job"], k["tool"]])
 	return "\n".join(lines)
+
+
+## The stockpile as the stone age knew it: an item of a later era is listed only once there is some of it, so adding
+## an era's goods to the game does not change the hash of a game that never touched them.
+func _stockpile(inv: Dictionary) -> Dictionary:
+	var out := {}
+	for id in inv:
+		if inv[id] != 0 or int(Data.ITEMS[id].get("era", 1)) == 1:
+			out[id] = inv[id]
+	return out
 
 
 func _sorted_keys(d: Dictionary) -> Array:

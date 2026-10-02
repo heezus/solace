@@ -135,6 +135,13 @@ static func tech_icon(ci: CanvasItem, icon: String, r: Rect2, time: float) -> vo
 			outlined_poly(ci, loaf, Color("d4a373"))
 			for x in [-5, 0, 5]:
 				ci.draw_line(Vector2(x - 2, -1), Vector2(x + 2, -3), Color("8d5a3b"), 1.5)
+		"@tally":
+			# A split stick with a row of notches cut across it.
+			ci.draw_line(Vector2(-12, 10), Vector2(12, -10), OUTLINE, 8.0)
+			ci.draw_line(Vector2(-12, 10), Vector2(12, -10), Color("c9a26b"), 5.0)
+			for i in 4:
+				var at := Vector2(-6 + i * 5, 5 - i * 4)
+				ci.draw_line(at + Vector2(-2, -3), at + Vector2(2, 3), OUTLINE, 1.5)
 		_:
 			outlined_circle(ci, Vector2.ZERO, 10.0, Color("9aa0a6"))
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
@@ -186,6 +193,27 @@ static func feature(ci: CanvasItem, t: String, c: Vector2, p: Vector2i, time: fl
 			var w := sin(time * 2.0 + p.y * 0.9) * 3.0
 			ci.draw_line(c + Vector2(-10 + w, -4), c + Vector2(-2 + w, -4), Color(1, 1, 1, 0.5), 2.0)
 			ci.draw_line(c + Vector2(2 - w, 5), c + Vector2(10 - w, 5), Color(1, 1, 1, 0.5), 2.0)
+		"copper_hills", "tin_stream":
+			var tex := sprite("tile_" + t)
+			if tex != null:
+				ci.draw_texture_rect(tex, Rect2(c - tex.get_size() / 2.0, tex.get_size()), false)
+				return
+			# Drawn stand-in if the sprite is missing: low mounds, flecked with green (copper) or silver (tin).
+			var fleck := Color("3fa37a") if t == "copper_hills" else Color("d9dde3")
+			for off in [Vector2(-5, 5), Vector2(6, 2)]:
+				var mound := PackedVector2Array(
+					[c + off + Vector2(-8, 5), c + off + Vector2(0, -7), c + off + Vector2(8, 5)]
+				)
+				outlined_poly(ci, mound, Color("8c8f79") if t == "copper_hills" else Color("a9a69a"))
+			for off in [Vector2(-5, 3), Vector2(7, 0), Vector2(0, 8)]:
+				ci.draw_circle(c + off, 1.8, fleck)
+		"plain_ore":
+			# Ore not yet named (before Prospecting): just low grey mounds.
+			for off in [Vector2(-5, 5), Vector2(6, 2)]:
+				var mound := PackedVector2Array(
+					[c + off + Vector2(-8, 5), c + off + Vector2(0, -7), c + off + Vector2(8, 5)]
+				)
+				outlined_poly(ci, mound, Color("8c8f79"))
 		"shard":
 			var glow := 0.35 + 0.25 * sin(time * 2.5)
 			ci.draw_circle(c, 13.0, Color(STONE_GLOW, glow * 0.5))
@@ -259,6 +287,36 @@ static func building(ci: CanvasItem, type: String, c: Vector2, working: bool, ti
 					PackedVector2Array([c + Vector2(-5, 3 + bob), c + Vector2(3, -1 + bob), c + Vector2(3, 7 + bob)]),
 					Color("5fa8d3")
 				)
+		"mine":
+			# A timber-framed shaft mouth in the hillside.
+			outlined_poly(
+				ci,
+				PackedVector2Array([c + Vector2(-11, 9), c + Vector2(-8, -6), c + Vector2(8, -6), c + Vector2(11, 9)]),
+				Color("8c8f79")
+			)
+			ci.draw_rect(Rect2(c + Vector2(-5, -2), Vector2(10, 11)), OUTLINE)
+			ci.draw_rect(Rect2(c + Vector2(-6, -3), Vector2(12, 3)), Color("6d4c41"))
+			ci.draw_line(c + Vector2(-5, -2), c + Vector2(-5, 9), Color("6d4c41"), 2.0)
+			ci.draw_line(c + Vector2(5, -2), c + Vector2(5, 9), Color("6d4c41"), 2.0)
+			if working:
+				ci.draw_circle(c + Vector2(sin(time * 8.0) * 3.0, 4), 1.6, Color("e9c46a"))
+		"smelter":
+			outlined_poly(
+				ci,
+				PackedVector2Array([c + Vector2(-8, 10), c + Vector2(-5, -9), c + Vector2(5, -9), c + Vector2(8, 10)]),
+				Color("b86b3d")
+			)
+			ci.draw_circle(c + Vector2(0, 5), 3.5, Color("ffb703") if working else OUTLINE)
+			if working:
+				var t := fmod(time * 0.7, 1.0)
+				ci.draw_circle(c + Vector2(0, -11 - t * 6), 2.0 + t * 2.0, Color(0.8, 0.8, 0.8, 1.0 - t))
+		"crucible":
+			var pot := PackedVector2Array(
+				[c + Vector2(-9, -4), c + Vector2(9, -4), c + Vector2(6, 9), c + Vector2(-6, 9)]
+			)
+			outlined_poly(ci, pot, Color("8d5a3b"))
+			ci.draw_rect(Rect2(c + Vector2(-7, -6), Vector2(14, 3)), Color("ffb703") if working else Color("c78f4a"))
+			ci.draw_rect(Rect2(c + Vector2(-7, -6), Vector2(14, 3)), OUTLINE, false, 1.5)
 		"standing_stone":
 			outlined_poly(
 				ci,

@@ -32,6 +32,7 @@ const GATE_BG := Color("3a2f1f")
 
 var state: Sim
 var lay: Dictionary
+var era := 1  # the era whose board is shown
 var hovered := ""
 var chain := {}  # techs lit by the hover: the hovered one, what it directly needs and what directly needs it
 var view := "all"  # "next": a grid of what can be discovered next; "all": the whole board
@@ -42,7 +43,7 @@ var pan_from := Vector2(-1, -1)
 
 func setup(game: Sim) -> void:
 	state = game
-	lay = TechLayout.build()
+	lay = TechLayout.build(era)
 	custom_minimum_size = lay["size"]
 	mouse_filter = Control.MOUSE_FILTER_PASS  # unhandled wheel events reach the ScrollContainer
 	var fv := FontVariation.new()
@@ -54,18 +55,34 @@ func setup(game: Sim) -> void:
 func card_rect(tech: String) -> Rect2:
 	if view == "next" and grid.has(tech):
 		return grid[tech]
-	return lay["rects"][tech]
+	return lay["rects"].get(tech, Rect2())
 
 
 ## Whether the current view shows this tech's card.
 func shows(tech: String) -> bool:
-	return view == "all" or grid.has(tech)
+	return lay["rects"].has(tech) if view == "all" else grid.has(tech)
 
 
-## The techs that can be discovered next: not done, everything they need is, and on show. Affordable ones first.
+## Show another era's board (each era has its own tree).
+func set_era(e: int) -> void:
+	if e == era:
+		return
+	era = e
+	lay = TechLayout.build(era)
+	_set_hover("")
+	grid = {}
+	update_view()
+	queue_redraw()
+
+
+## The techs that can be discovered next: not done, everything they need is, built, and in this era's tree. Affordable
+## ones first.
 func next_techs() -> Array:
-	var out: Array = Data.TECH_ORDER.filter(
-		func(t): return not state.tech_tree.researched.has(t) and state.tech_tree.requirements_met(t)
+	var out: Array = Rules.era_techs(era).filter(
+		func(t):
+			return (
+				not state.tech_tree.researched.has(t) and Rules.tech_enabled(t) and state.tech_tree.requirements_met(t)
+			)
 	)
 	out.sort_custom(func(a, b): return state.tech_tree.can_research(a) and not state.tech_tree.can_research(b))
 	return out
@@ -106,7 +123,7 @@ func update_view() -> void:
 
 
 func _tech_at(p: Vector2) -> String:
-	for tech in Data.TECH_ORDER:
+	for tech in Rules.era_techs(era):
 		if shows(tech) and state.tech_tree.tech_visible(tech) and card_rect(tech).has_point(p):
 			return tech
 	return ""
@@ -178,14 +195,15 @@ func _draw() -> void:
 		for ch in lane_name:
 			spaced += ch + " "
 		draw_string(font, Vector2(TechLayout.LEFT, lane["top"] - 10.0), spaced, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, col)
-	for t in Data.TIER_NAMES.size():
+	var captions: Array = Data.ERA_TIER_NAMES[era]
+	for t in captions.size():
 		var x := TechLayout.LEFT + t * TechLayout.PITCH
-		draw_string(font, Vector2(x, 16), Data.TIER_NAMES[t], HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.75))
+		draw_string(font, Vector2(x, 16), captions[t], HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.75))
 	for lit in [false, true]:
 		for e in lay["edges"]:
 			_draw_edge(e, lit)
 	_draw_or_pills()
-	for tech in Data.TECH_ORDER:
+	for tech in Rules.era_techs(era):
 		_draw_card(tech)
 
 
@@ -273,7 +291,8 @@ func _draw_card(tech: String) -> void:
 		return
 	var done: bool = state.tech_tree.researched.has(tech)
 	var is_ready := state.tech_tree.can_research(tech)
-	var open := state.tech_tree.requirements_met(tech)
+	var unbuilt := not Rules.tech_enabled(tech)  # its effect ships in the next update: shown, locked, never bought
+	var open := state.tech_tree.requirements_met(tech) and not unbuilt
 	var bg := DONE_BG if done else (READY_BG if open else LOCKED_BG)
 	var box := StyleBoxFlat.new()
 	box.bg_color = Color(bg, a)
@@ -294,7 +313,7 @@ func _draw_card(tech: String) -> void:
 	var x0 := r.position.x + 8.0  # the cost rows run the whole width under it
 	draw_string(bold, Vector2(x, r.position.y + 22), t["name"], HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 78.0, 14, text)
 	var builds := Rules.buildings_of(tech)
-	var shows_build := not done and not builds.is_empty()  # a second cost row: what the building costs after
+	var shows_build := not done and not builds.is_empty() and not unbuilt  # a second cost row: what the building costs after
 	var unlock: String = t["unlock"] + ("  ·  " + Data.TECH_OPTIONAL if t.get("side", false) else "")
 	var sub := Color(text, text.a * 0.8)
 	draw_string(
@@ -328,8 +347,18 @@ func _draw_card(tech: String) -> void:
 			Color(Ui.GOOD, a)
 		)
 		_draw_check(r.position + Vector2(r.size.x - 16, 13), a)
+	elif unbuilt:
+		draw_string(
+			ThemeDB.fallback_font,
+			Vector2(x0, r.position.y + 62),
+			Data.TECH_UNBUILT,
+			HORIZONTAL_ALIGNMENT_LEFT,
+			-1,
+			10,
+			Color(GOLD, 0.8 * a)
+		)
 	else:
-		_draw_cost(t["cost"], Vector2(x0, r.position.y + 48), a)
+		_draw_cost(state.tech_tree.cost_of(tech), Vector2(x0, r.position.y + 48), a)
 		if shows_build:
 			_draw_build_cost(tech, builds[0], Vector2(x0, r.position.y + 70), a)
 	if is_ready:
@@ -381,7 +410,7 @@ func _draw_build_cost(tech: String, type: String, at: Vector2, a: float) -> void
 		Color(1, 1, 1, 0.6 * a)
 	)
 	var w := ThemeDB.fallback_font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 9).x
-	var left := Rules.left_after(state.economy.inv, Data.TECHS[tech]["cost"])
+	var left := Rules.left_after(state.economy.inv, state.tech_tree.cost_of(tech))
 	_draw_cost(Data.BUILDINGS[type]["cost"], Vector2(at.x + w + 5.0, at.y), a, left)
 
 
@@ -451,6 +480,17 @@ func _draw_gate(tech: String, r: Rect2, a: float) -> void:
 			col
 		)
 	y += 26
+	if not Rules.tech_enabled(tech):
+		draw_string(
+			ThemeDB.fallback_font,
+			Vector2(r.position.x + 12, y),
+			Data.TECH_UNBUILT,
+			HORIZONTAL_ALIGNMENT_LEFT,
+			r.size.x - 20,
+			11,
+			Color(GOLD, 0.8 * a)
+		)
+		return
 	draw_string(
 		ThemeDB.fallback_font,
 		Vector2(r.position.x + 12, y),
@@ -460,10 +500,11 @@ func _draw_gate(tech: String, r: Rect2, a: float) -> void:
 		10,
 		Color(1, 1, 1, 0.75 * a)
 	)
-	for id in t["cost"]:
+	var cost := state.tech_tree.cost_of(tech)
+	for id in cost:
 		y += 16
 		var have: int = state.economy.inv.get(id, 0)
-		var need: int = t["cost"][id]
+		var need: int = cost[id]
 		var col := Color(1, 1, 1, a) if have >= need else Color(Ui.SHORT, a)
 		var line := "%d/%d" % [mini(have, need), need]
 		Art.item_icon(self, id, Rect2(r.position.x + 10, y - 13, 16, 16), a)

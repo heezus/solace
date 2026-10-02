@@ -39,8 +39,10 @@ static func harvest_amount(s, b: Dictionary, tile: Vector2i, item: String) -> in
 	if more > 0.0:
 		b["field_extra"] = b.get("field_extra", 0.0) + n * more
 		if b["field_extra"] >= 1.0:
-			b["field_extra"] -= 1.0
-			n += 1
+			# One item a harvest as ever; the Plough's bigger share can pay out more than one at a time.
+			var paid := floori(b["field_extra"]) if s.tech_tree.researched.has("plough") else 1
+			b["field_extra"] -= paid
+			n += paid
 	return n
 
 

@@ -202,12 +202,14 @@ static func then_builds_text(tech: String) -> String:
 
 
 ## A heads-up when paying for `tech` from the stockpile `inv` would leave too little for its first building
-## (researching and building both charge for materials), or "" when there's enough or no building.
-static func build_warning(inv: Dictionary, tech: String) -> String:
+## (researching and building both charge for materials), or "" when there's enough or no building. `cost` is what
+## the tech costs now (Tally Sticks changes it), the tech's own cost when left out.
+static func build_warning(inv: Dictionary, tech: String, cost: Dictionary = {}) -> String:
 	var types := Rules.buildings_of(tech)
 	if types.is_empty():
 		return ""
-	var short := shortfall_text(Rules.left_after(inv, Data.TECHS[tech]["cost"]), Data.BUILDINGS[types[0]]["cost"])
+	var paid: Dictionary = cost if not cost.is_empty() else Data.TECHS[tech]["cost"]
+	var short := shortfall_text(Rules.left_after(inv, paid), Data.BUILDINGS[types[0]]["cost"])
 	if short == "":
 		return ""
 	return (

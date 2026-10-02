@@ -17,6 +17,7 @@ const MAX_SECONDS := 9.0
 var active: Array = []  # {"id", "text", "left" (seconds), "sticky", "key"}, oldest first
 var history: Array = []  # {"text", "at" (seconds of play), "sticky"}, oldest first
 var clock := 0.0
+var keep_counts := false  # Tally Sticks: a message repeated back to back is one log line with a count
 var _next_id := 1
 
 
@@ -24,9 +25,13 @@ var _next_id := 1
 ## dismissed. A message with the same `key` (or, with no key, the same text) already showing is refreshed, not stacked.
 func push(text: String, seconds := 0.0, sticky := false, key := "") -> int:
 	var secs := seconds if seconds > 0.0 else clampf(2.0 + text.length() * 0.05, MIN_SECONDS, MAX_SECONDS)
-	history.append({"text": text, "at": clock, "sticky": sticky})
-	if history.size() > LOG_MAX:
-		history.pop_front()
+	if keep_counts and not history.is_empty() and history.back()["text"] == text:
+		history.back()["n"] += 1
+		history.back()["at"] = clock
+	else:
+		history.append({"text": text, "at": clock, "sticky": sticky, "n": 1})
+		if history.size() > LOG_MAX:
+			history.pop_front()
 	for shown in active:
 		if (key != "" and shown["key"] == key) or (key == "" and shown["key"] == "" and shown["text"] == text):
 			shown["text"] = text
@@ -90,6 +95,11 @@ func recent(n: int) -> Array:
 	var out: Array = history.slice(maxi(history.size() - n, 0))
 	out.reverse()
 	return out
+
+
+## What a log entry reads: its text, and how many times in a row when it came more than once.
+static func entry_text(e: Dictionary) -> String:
+	return Data.LOG_COUNT % [e["text"], e["n"]] if e.get("n", 1) > 1 else e["text"]
 
 
 ## "1:05" for a time in seconds of play.
