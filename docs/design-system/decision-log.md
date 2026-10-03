@@ -355,7 +355,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Claude and Codex both edit it in `docs/design-system/` via PRs; the project-folder copy is retired. Decided by Jon.
 - Sprites live only in `art/sprites/`. Codex owns art; Claude owns code and mechanics pages (06/09/10/11/14/15).
 
-## 2026-10-03: visual overhaul direction studies (PR pending)
+## 2026-10-03: visual overhaul direction studies (PR #33)
 - Codex proposed Folkwood (curved storybook timber), Emberwork (angular carved forms), and Claybound (rounded ceramic forms), with the same Hearth, Kith, Gatherer's Hut and Wood icon in each. Jon will choose the direction before production work.
 - Samples and a comparison board live only in `docs/art/overhaul/`; a `.gdignore` keeps them out of Godot imports. Existing game sprites, import files and approved art direction remain unchanged.
 - Each study retains current subject identities, the top-down map convention, 64-unit Hearth and 32-unit other viewBoxes. The board compares the documented 96/34/48/24 px display sizes to support the choice.
