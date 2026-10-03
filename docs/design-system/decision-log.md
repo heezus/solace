@@ -355,7 +355,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Claude and Codex both edit it in `docs/design-system/` via PRs; the project-folder copy is retired. Decided by Jon.
 - Sprites live only in `art/sprites/`. Codex owns art; Claude owns code and mechanics pages (06/09/10/11/14/15).
 
-## 2026-10-03: top bar chips match across eras (PR #n)
+## 2026-10-03: top bar chips match across eras (PR #34)
 - Claude, from Jon's playtest feedback: the third row (Ore, Tin, Copper, Bronze, Tools) did not match the others. It used a one-line chip (sprite, short name, count) with no rate, a 10 px gap and a 30 px row, where the stone-age rows use a fixed 80 px chip (sprite, count, rate under it) with a 3 px gap and 42 px rows.
 - Every chip is now the same widget in every era: 24 px sprite, 18 px count, 14 px rate, 2 px padding, the same tooltip with the rate and the same hover panel. The name stays in the tooltip, as for the stone-age goods. The third row's chips sit under the first row's columns.
 - The three rows are 38 px each (was 42, 42 and 30; a chip keeps 1 px above and below and the rate sits 2 px closer), so all three fit in the 130 px bar and are evenly spaced; it still fits at 1280 and 1100 wide.
