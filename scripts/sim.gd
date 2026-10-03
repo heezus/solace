@@ -191,8 +191,8 @@ func _has_tech(tech: String) -> bool:
 
 
 ## Build at p and set off what that does elsewhere: the fog lifts and the walking grid updates.
-func place(type: String, p: Vector2i) -> bool:
-	var done := town.place(type, p)
+func place(type: String, p: Vector2i, focus := "") -> bool:
+	var done := town.place(type, p, focus)
 	if done.is_empty():
 		return false
 	var cleared: String = done["cleared"]

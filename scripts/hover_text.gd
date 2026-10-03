@@ -11,6 +11,7 @@ const Workers = preload("res://scripts/workers.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Hands = preload("res://scripts/hands.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
+const HutFocus = preload("res://scripts/hut_focus.gd")
 
 
 static func text(m) -> String:
@@ -42,10 +43,12 @@ static func _placing_text(m) -> String:
 		if err != "":
 			t += "\n\nCan't build here: " + err + "."
 		if m.placing == "gatherers_hut":
-			var tiles: Array = s.town.tiles_of(m.hover, s.town.default_focus(m.hover))
+			var tiles: Array = s.town.tiles_of(m.hover, HutFocus.pick_chosen(s, m.hover, m.pick_focus))
 			t += "\n\n" + BuildingPanel.gather_text(s, tiles)
 			if not tiles.is_empty():
-				t += "\nIt will work the resource nearest it: click the hut afterwards to change."
+				t += "\nIt works the resource nearest it, unless you pick another."
+			if not HutFocus.pick_options(s, m.hover).is_empty():
+				t += " Click one in the picker by the hut, or press Tab or R."
 		if s.tech_tree.researched.has("haulers") and def["kind"] in ["gatherer", "processor"]:
 			t += "\n" + _road_preview(s, m.hover)
 	return t

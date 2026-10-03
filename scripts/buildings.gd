@@ -123,7 +123,7 @@ func built_type(p: Vector2i) -> String:
 ## clears the tile first). Returns {} when it can't go here, otherwise {"kind": the building's kind,
 ## "cleared": "rock" or "tree" when a road cut through one, else ""}. The owner lifts the fog, refreshes the
 ## walking cell and tells the player.
-func place(type: String, p: Vector2i) -> Dictionary:
+func place(type: String, p: Vector2i, focus := "") -> Dictionary:
 	if placement_error(type, p) != "":
 		return {}
 	var tile := _world.tile_at(p)
@@ -143,6 +143,8 @@ func place(type: String, p: Vector2i) -> Dictionary:
 		_world.add_field(p)
 	else:
 		add_building(type, p)
+		if focus != "":
+			set_focus(building_at[p], focus)  # a hut set to work something in reach as it went down; else the default
 	built.emit(type, p)
 	return {"kind": kind, "cleared": cleared}
 

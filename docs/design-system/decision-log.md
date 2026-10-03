@@ -354,3 +354,11 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 ## 2026-10-03: design system moved into the repo
 - Claude and Codex both edit it in `docs/design-system/` via PRs; the project-folder copy is retired. Decided by Jon.
 - Sprites live only in `art/sprites/`. Codex owns art; Claude owns code and mechanics pages (06/09/10/11/14/15).
+
+## 2026-10-03: choose what a hut works (PR #n)
+- Claude, from Jon's playtest feedback: clay and flint stood side by side, the Gatherer's Hut defaulted to flint, and the only way to clay was to demolish round it (two roads built just to do that). The change existed (one text line, "click to change") but nobody found it.
+- While placing a hut over a spot with two or more resources in reach, a picker by the ghost shows one row per resource (icon and name, the chosen one gold). Click a row, or press Tab or R. The hut goes down working that, with no extra click. With no choice made the default stands (the nearest resource), and a pick never carries over to the next hut.
+- The hut card replaces the "click to change" line with a button per resource in reach (icon, plain name, tooltip, the current one pressed); Tab or R steps through them from the keyboard. With one resource in reach it is still just the line.
+- A hut put down with a choice left unmade shows one toast: "This hut works Flint. Clay is in reach too: pick it in the hut panel."
+- The range overlay lights the tiles of the chosen resource and follows a change at once. Save format, hauling and both goldens are unchanged (the bots place huts with the default).
+- The layout pass checks the picker and the card's buttons fit with three resources at 1280x800 and 1100x700.

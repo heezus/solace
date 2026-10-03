@@ -59,6 +59,7 @@ var zoom_wait := 0.0  # seconds before a pinch may step the zoom again
 var frame: Panel
 var state: Sim
 var placing := ""  # building type being placed, "" when not placing
+var pick_focus := ""  # what the Gatherer's Hut being placed will work, once the player picked (see HutFocus.pick_*)
 var hover := Vector2i(-1, -1)
 var drag_from := Vector2i(-1, -1)  # where a road, bridge or field drag started
 var time := 0.0
@@ -138,7 +139,10 @@ func _process(delta: float) -> void:
 	zoom_wait -= delta
 	_pan_with_keys(delta)
 	_layout()
-	hover = _tile_under()
+	if placing != "gatherers_hut":
+		pick_focus = ""
+	if not _over_picker():  # over the hut picker the ghost stays put, so its choices can be clicked
+		hover = _tile_under()
 	_hold(delta)
 	ui_refresh -= delta
 	if ui_refresh <= 0.0:
@@ -263,6 +267,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			placing = ""
 			drag_from = Vector2i(-1, -1)
 			building_panel.select(Vector2i(-1, -1))
+		elif event.button_index == MOUSE_BUTTON_LEFT and _click_picker():
+			pass  # a click on one of the hut picker's choices
 		elif event.button_index == MOUSE_BUTTON_LEFT and state.world.in_bounds(p):
 			if placing in LINE_TYPES:
 				drag_from = p  # laid on release, with a preview while dragging
@@ -278,6 +284,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				_set_speed(event.keycode - KEY_0)
 			KEY_X:
 				placing = "" if placing == "demolish" else "demolish"
+			KEY_TAB, KEY_R:
+				_cycle_hut_focus()
 			KEY_HOME:
 				center_on(state.world.camp_pos)
 			KEY_ESCAPE:
@@ -331,7 +339,7 @@ func _click_tile(p: Vector2i) -> void:
 	if placing != "":
 		var err := state.town.placement_error(placing, p)
 		if err == "":
-			state.place(placing, p)
+			_place_at(p)
 			if not state.economy.can_afford(Data.BUILDINGS[placing]["cost"]):
 				placing = ""
 		else:
@@ -354,6 +362,62 @@ func _click_tile(p: Vector2i) -> void:
 	holding = true
 	press_tile = p
 	press_harvested = false
+
+
+## A hut goes down working what the player picked (else its default); a hut with a choice left unmade says so once.
+func _place_at(p: Vector2i) -> void:
+	var hut := placing == "gatherers_hut"
+	state.place(placing, p, pick_focus if hut else "")
+	if hut:
+		var note := HutFocus.pick_note(state, p, pick_focus)
+		if note != "":
+			_toast(note, 7.0)
+		pick_focus = ""
+
+
+## Tab or R: while placing a hut, the next resource in reach; with a hut selected, its next resource.
+func _cycle_hut_focus() -> void:
+	if placing == "gatherers_hut":
+		pick_focus = HutFocus.pick_next(state, hover, pick_focus)
+	elif placing == "" and building_panel.visible:
+		building_panel.parts["focus"].cycle()
+
+
+## The visible map in its own drawing space: what the hut picker keeps inside.
+func _view_local() -> Rect2:
+	return Rect2((view.position - position) / scale.x, view.size / scale.x)
+
+
+func _over_picker() -> bool:
+	return (
+		placing == "gatherers_hut"
+		and state.world.in_bounds(hover)
+		and HutFocus.pick_over(state, hover, _view_local(), get_local_mouse_position())
+	)
+
+
+## A left click on a picker choice picks it (true), and one on the panel between choices is swallowed.
+func _click_picker() -> bool:
+	if not _over_picker():
+		return false
+	var item := HutFocus.pick_at(state, hover, _view_local(), get_local_mouse_position())
+	if item != "":
+		pick_focus = item
+	return true
+
+
+## The hut ghost's marker (what it will work) and picker (when there is a choice), over a spot it can stand on.
+func _draw_hut_picker() -> void:
+	if (
+		placing != "gatherers_hut"
+		or not state.world.in_bounds(hover)
+		or state.town.placement_error(placing, hover) != ""
+	):
+		return
+	HutFocus.draw_marker(
+		self, _tile_rect(hover).grow(-2.0 * TILE / Art.DESIGN), HutFocus.pick_chosen(state, hover, pick_focus)
+	)
+	HutFocus.draw_picker(self, state, hover, pick_focus, _view_local())
 
 
 ## Hold to harvest, each frame the button is down: over a Control (a bar, a panel) it doesn't count.
@@ -656,6 +720,7 @@ func _draw() -> void:
 	elif state.world.in_bounds(hover):
 		draw_rect(_tile_rect(hover).grow(-1), Color(1, 1, 1, 0.8), false, 2.0)  # the Info panel says what it is
 
+	_draw_hut_picker()
 	_draw_hold_ring()
 	_draw_nudge()
 	if paused:
@@ -699,7 +764,8 @@ func _draw_gather_range(p: Vector2i) -> void:
 	var reach := Rect2(MAP_ORIGIN + Vector2(p - Vector2i(r, r)) * TILE, Vector2.ONE * (2 * r + 1) * TILE)
 	draw_rect(reach, Color(GOAL_COLOR, 0.18))
 	Art.dashed_rect(self, reach, GOAL_COLOR, 2.0 * Art.ui_k, 10.0 * Art.ui_k, 6.0 * Art.ui_k)
-	for t in state.town.tiles_of(p, state.town.focus_at(p)):  # only what the hut works
+	var focus := HutFocus.pick_chosen(state, p, pick_focus) if placing == "gatherers_hut" else state.town.focus_at(p)
+	for t in state.town.tiles_of(p, focus):  # only what the hut works
 		draw_rect(_tile_rect(t).grow(-3), Color(1, 0.82, 0.4, 0.35))
 		draw_rect(_tile_rect(t).grow(-3), GOAL_COLOR, false, 2.0)
 
