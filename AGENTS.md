@@ -1,7 +1,7 @@
 # AGENTS.md — start here (Codex / ChatGPT / any non-Claude agent)
 
 Solace is a top-down 2D automation game in Godot 4.7 (GDScript). Two AI teams share this repo.
-Full coordination rules: [docs/HANDOFF.md](docs/HANDOFF.md). Read it before your first change.
+Full coordination rules: [docs/HANDOFF.md](docs/HANDOFF.md). Machine setup: [docs/CODEX_SETUP.md](docs/CODEX_SETUP.md). Read them before your first change.
 
 ## Your lane: visuals
 You own the **art assets**: everything under `art/` (SVG sprites in `art/sprites/`), plus the art specs in `docs/art/`.
