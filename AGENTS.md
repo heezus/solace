@@ -5,7 +5,7 @@ Full coordination rules: [docs/HANDOFF.md](docs/HANDOFF.md). Machine setup: [doc
 
 ## Your lane: visuals
 You own the **art assets**: everything under `art/` (SVG sprites in `art/sprites/`). You may also read and edit the **design system** in `docs/design-system/` (lore, art direction, mechanics, mockups). It is the source of truth for the game's universe; `docs/design-system/README.md` indexes it.
-Style: clean vector, Advance Wars feel: flat saturated colors, bold dark outlines (`#1b1b1f`), chunky toy-like shapes. See `docs/art/art-direction.md` and `docs/art/look-and-scale.md`.
+Style: clean vector, Advance Wars feel: flat saturated colors, bold dark outlines (`#1b1b1f`), chunky toy-like shapes. See `docs/design-system/05-art-direction.md` and `docs/design-system/mockups/look-and-scale.md`.
 
 ## Not your lane (Claude owns it)
 `scripts/`, `tests/`, `scenes/`, `project.godot`, `.github/`, `export_presets.cfg`. If a visual change needs code (a new sprite slot, a different size, an animation), write it up in `docs/art/requests.md` and Claude will wire it. Do not edit those files.
