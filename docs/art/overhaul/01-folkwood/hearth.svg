@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <ellipse cx="32" cy="52" rx="27" ry="8" fill="#392c2b22" stroke="none" stroke-width="1.8"/>
+  <path d="M8 29 Q7 17 17 12 H45 Q56 17 56 29 L52 35 H12 Z" fill="#f5dfb2" stroke="#392c2b" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M5 24 Q10 7 25 6 Q44 3 59 23 L53 29 Q32 20 11 29 Z" fill="#dca85b" stroke="#392c2b" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M13 24 Q15 16 23 11 M25 21 Q27 13 31 9 M39 21 Q39 15 38 10 M50 23 Q48 16 44 13" fill="none" stroke="#ae7743" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M26 33 V27 Q32 19 38 27 V33 Z" fill="#86533c" stroke="#392c2b" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M14 31 H21 M44 31 H51" fill="none" stroke="#86533c" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+  <ellipse cx="32" cy="47" rx="17" ry="10" fill="#ba8b67" stroke="#392c2b" stroke-width="2"/>
+  <ellipse cx="17" cy="44" rx="4" ry="3" fill="#d4c7ad" stroke="#392c2b" stroke-width="1.6"/>
+  <ellipse cx="22" cy="39" rx="4" ry="3" fill="#d4c7ad" stroke="#392c2b" stroke-width="1.6"/>
+  <ellipse cx="32" cy="37" rx="4" ry="3" fill="#d4c7ad" stroke="#392c2b" stroke-width="1.6"/>
+  <ellipse cx="42" cy="39" rx="4" ry="3" fill="#d4c7ad" stroke="#392c2b" stroke-width="1.6"/>
+  <ellipse cx="47" cy="44" rx="4" ry="3" fill="#d4c7ad" stroke="#392c2b" stroke-width="1.6"/>
+  <ellipse cx="44" cy="51" rx="4" ry="3" fill="#d4c7ad" stroke="#392c2b" stroke-width="1.6"/>
+  <ellipse cx="34" cy="55" rx="4" ry="3" fill="#d4c7ad" stroke="#392c2b" stroke-width="1.6"/>
+  <ellipse cx="23" cy="53" rx="4" ry="3" fill="#d4c7ad" stroke="#392c2b" stroke-width="1.6"/>
+  <path d="M24 49 L40 43 M25 43 L39 50" fill="none" stroke="#392c2b" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M24 49 L40 43 M25 43 L39 50" fill="none" stroke="#86533c" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M31 27 Q33 36 38 36 Q48 48 32 51 Q19 47 24 38 Q25 43 28 40 Z" fill="#d77553" stroke="#392c2b" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M32 38 Q39 44 32 48 Q25 45 32 38 Z" fill="#ffd47d" stroke="none" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>
