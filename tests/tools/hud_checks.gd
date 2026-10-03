@@ -44,12 +44,15 @@ static func end_card(main: Node, when: String) -> Array:
 	return problems
 
 
-## The second era's row of chips: each is the sprite (as big as the other rows'), the good's name in readable text and
-## the count, on one line, with a tooltip that carries the rate, and none touches the bar's edge or is cut off.
+## The second era's row of chips is the same widget as the stone age's rows (a chip is a chip in every era): the same
+## size, sprite size, count and rate font sizes, padding, gap and tooltip with the rate in it, each under the column of
+## the chip above it, and none touches the bar's edge or is cut off.
 static func third_row(main: Node, when: String) -> Array:
 	var problems: Array = []
 	var tb = main.top_bar
+	var ref: Dictionary = tb.chips["wood"]
 	var seen := 0
+	var col := 0
 	for id in tb.chips:
 		if int(Data.ITEMS[id].get("era", 1)) != 2:
 			continue
@@ -58,23 +61,48 @@ static func third_row(main: Node, when: String) -> Array:
 			problems.append("%s: the %s chip isn't showing in the third row" % [when, id])
 			continue
 		seen += 1
-		var item: Dictionary = Data.ITEMS[id]
-		var short: String = item.get("short", item["name"])
-		var names: Array = _all(c["box"]).filter(func(l): return l is Label and l.text == short)
-		if names.is_empty():
-			problems.append("%s: the %s chip has no name (%s) beside its count" % [when, id, short])
-		for l in names:
-			if l.get_theme_font_size("font_size") < Ui.MIN_TEXT:
-				problems.append("%s: the %s chip's name is under %d px" % [when, id, Ui.MIN_TEXT])
-		if c["icon"].size != ICON_SIZE or c["icon"].size != tb.chips["wood"]["icon"].size:
-			problems.append(
-				"%s: the %s sprite is %s, not %s like the first row" % [when, id, c["icon"].size, ICON_SIZE]
-			)
-		if not String(c["box"].tooltip_text).contains("per second"):
-			problems.append("%s: the %s chip's tooltip lost the rate" % [when, id])
+		problems.append_array(_same_chip(ref, c, id, when))
+		var above: Control = tb.chips[Data.ITEM_ORDER[col]]["box"]  # the same column of the first row
+		var lined_up := absf(c["box"].get_global_rect().position.x - above.get_global_rect().position.x) <= 0.5
+		if above.is_visible_in_tree() and not lined_up:
+			problems.append("%s: the %s chip isn't under the first row's column %d" % [when, id, col])
+		col += 1
 	if seen != 5:
 		problems.append("%s: %d chips in the third row, not 5" % [when, seen])
+	var rows: Array = []
+	for id in ["wood", "rope", "copper_ore"]:
+		rows.append(tb.chips[id]["box"].get_global_rect())
+	if absf(rows[1].position.y - rows[0].position.y - (rows[2].position.y - rows[1].position.y)) > 0.5:
+		problems.append("%s: the three rows of chips aren't evenly spaced (%s)" % [when, rows])
 	return problems + chip_fit(main, when)
+
+
+## Chip `c` against the reference chip `ref`: every measured property of the widget is the same.
+static func _same_chip(ref: Dictionary, c: Dictionary, id: String, when: String) -> Array:
+	var problems: Array = []
+	var a: Control = ref["box"]
+	var b: Control = c["box"]
+	if a.size != b.size:
+		problems.append("%s: the %s chip is %s, the first row's are %s" % [when, id, b.size, a.size])
+	if c["icon"].size != ICON_SIZE or c["icon"].size != ref["icon"].size:
+		problems.append("%s: the %s sprite is %s, not %s like the first row" % [when, id, c["icon"].size, ICON_SIZE])
+	for part in ["count", "rate"]:
+		if c[part] == null:
+			problems.append("%s: the %s chip has no %s line like the first row's" % [when, id, part])
+		elif c[part].get_theme_font_size("font_size") != ref[part].get_theme_font_size("font_size"):
+			problems.append("%s: the %s chip's %s is a different size from the first row's" % [when, id, part])
+	if c["rate"] != null and c["rate"].get_theme_font_size("font_size") < Ui.MIN_TEXT:
+		problems.append("%s: the %s chip's rate is under %d px" % [when, id, Ui.MIN_TEXT])
+	var pa: StyleBox = a.get_theme_stylebox("panel")
+	var pb: StyleBox = b.get_theme_stylebox("panel")
+	for side in 4:
+		if pa.get_margin(side) != pb.get_margin(side):
+			problems.append("%s: the %s chip's padding differs from the first row's (side %d)" % [when, id, side])
+	if _all(a).size() != _all(b).size():
+		problems.append("%s: the %s chip is built differently from the first row's" % [when, id])
+	if not String(b.tooltip_text).contains("per second"):
+		problems.append("%s: the %s chip's tooltip lost the rate" % [when, id])
+	return problems
 
 
 ## Every chip keeps TopBar.EDGE_PAD from the bar's top and bottom edge (the bottom rule sits inside that) and stays
