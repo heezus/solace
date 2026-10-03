@@ -6,15 +6,15 @@ Owner: Jon (heezus). Two AI teams, one repo, split by file ownership so they nev
 | Area | Owner | Notes |
 |---|---|---|
 | `art/` (SVG sprites) | **Codex** | Visual and sprite improvements |
-| `docs/art/` (art specs, `requests.md`) | **Codex** | Claude may add requests |
+| `docs/art/requests.md` | both | Request queue, see below |
+| `docs/design-system/` (lore, art direction, mockups, decision log) | **both**, in this repo | Single source of truth since 2026-10-03; the old project-folder copy is retired. Pages 06/09/10/11/14/15 are Claude-owned |
 | `scripts/`, `tests/`, `scenes/`, `project.godot`, `.github/`, `export_presets.cfg` | **Claude** | All game code, CI, releases |
 | `main` branch, merging | **Claude** | Merges once CI is green |
-| Game design and lore (outside this repo) | **Claude** | Lives in the Claude project, summarized in `docs/art/glossary.md` |
 
 ## Interface (the "contract")
 - Code loads `res://art/sprites/<name>.svg` (`scripts/art.gd`, `Art.sprite(name)`). Name = interface; keep it stable.
 - Items use `item_<id>.svg`. Buildings use their id (`hearth.svg`, `kiln.svg`). Tiles use `tile_*.svg`. A few aliases live in `SPRITE_OF` in `scripts/art.gd` (`camp` -> `hearth`, `road` -> `tile_path`).
-- Sprites are authored on a 32x32 viewBox and drawn at 48 px per tile, so a 2 unit outline shows as 3 px. Larger buildings span several tiles (see `docs/art/units-and-buildings.md`).
+- Sprites are authored on a 32x32 viewBox and drawn at 48 px per tile, so a 2 unit outline shows as 3 px. Larger buildings span several tiles (see `docs/design-system/mockups/units-and-buildings.md`).
 - If a sprite is missing, code falls back to drawing shapes, so nothing breaks, but the game looks worse.
 
 ## Workflow
@@ -33,4 +33,4 @@ Install Godot 4.7 (standard, not .NET), import `project.godot`, press F5. Window
 ## Style quick facts
 - Outline `#1b1b1f`, 2 units on the 32-unit grid. Flat colors, little shading.
 - Warm "cocoa and cream" UI; Kith are warm (orange, red, iron). Lumen are pale gold and cyan. Bloom are magenta and sickly green.
-- Full detail: `docs/art/art-direction.md`, `docs/art/look-and-scale.md`.
+- Full detail: `docs/design-system/05-art-direction.md`, `docs/design-system/mockups/look-and-scale.md`.
