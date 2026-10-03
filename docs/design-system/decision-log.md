@@ -362,3 +362,10 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Shard Cairn built before the landing means guests and open trade; no cairn means wary outsiders and closed trade.
 - Lumen choice is Jon's mix: a hidden trust meter moved by buildings and trade, plus three big choice moments. It leans toward a reset (Time loop, Exodus or Cataclysm) and is stored as `lumen_lean` in the profile save.
 - Era runs about 20 minutes and ends on decoding the Bloom glyph and the first Bloom sign.
+
+## 2026-10-03: top bar chips match across eras (PR #34)
+- Claude, from Jon's playtest feedback: the third row (Ore, Tin, Copper, Bronze, Tools) did not match the others. It used a one-line chip (sprite, short name, count) with no rate, a 10 px gap and a 30 px row, where the stone-age rows use a fixed 80 px chip (sprite, count, rate under it) with a 3 px gap and 42 px rows.
+- Every chip is now the same widget in every era: 24 px sprite, 18 px count, 14 px rate, 2 px padding, the same tooltip with the rate and the same hover panel. The name stays in the tooltip, as for the stone-age goods. The third row's chips sit under the first row's columns.
+- The three rows are 38 px each (was 42, 42 and 30; a chip keeps 1 px above and below and the rate sits 2 px closer), so all three fit in the 130 px bar and are evenly spaced; it still fits at 1280 and 1100 wide.
+- The era-2 sprites are wired and drawn at the same size, but they are thinner-outlined and Copper and Bronze share one shape. Requested a redraw from Codex in `docs/art/requests.md`; no code change is needed when it lands.
+- Layout-pass checks now compare each era-2 chip with the first row's on size, sprite size, font sizes, padding, build, tooltip and column, and check the rows are evenly spaced.
