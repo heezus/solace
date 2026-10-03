@@ -536,7 +536,10 @@ func _on_tech_researched(tech: String) -> void:
 
 
 ## What a tile is drawn as: ore not yet named by its tech shows as plain ground.
-func _feature_name(tile: String) -> String:
+func _feature_name(p: Vector2i) -> String:
+	if state.world.flax_fields.has(p):
+		return "flax_field"  # sown flax is drawn apart from the wild patches
+	var tile := state.world.tile_at(p)
 	var tech: String = Data.TILES[tile].get("tech", "")
 	return "plain_ore" if tech != "" and not state.tech_tree.researched.has(tech) else tile
 
@@ -590,7 +593,7 @@ func _draw() -> void:
 			var p := Vector2i(x, y)
 			if not state.fog.is_revealed(p):
 				continue
-			Art.map_feature(self, _feature_name(state.world.tile_at(p)), _tile_center(p), p, time, TILE / Art.DESIGN)
+			Art.map_feature(self, _feature_name(p), _tile_center(p), p, time, TILE / Art.DESIGN)
 
 	# Ranges: a hut's gathering tiles, power range for wheels, Standing Stone reach.
 	var hovered_type := ""

@@ -75,6 +75,10 @@ func _process(_delta: float) -> bool:
 		main.ui_refresh = 0.0  # refresh the bars every frame, so any wobble shows
 	if frame == RESIZE_AT:
 		root.size = Vector2i(1600, 800)  # wider: the map must refit (re-centre; the bars keep their heights)
+	if frame == RESIZE_AT + 10:
+		_report(HudChecks.gathering_tab(main, "at 1600x800"))
+	if frame == SHRINK_AT + 10:
+		_report(HudChecks.gathering_tab(main, "at 1100x700"))
 	if frame == SHRINK_AT:
 		root.size = Vector2i(1100, 700)  # then a window of another shape: everything must still fit
 	if frame > 5:
@@ -239,6 +243,8 @@ func _hud_checks() -> void:
 	match frame:
 		7:
 			goals_height = _goals_height()
+		9:
+			_report(HudChecks.gathering_tab(main, "at 1280x800"))
 		8:
 			frozen = true
 			_show_hearth_panel()

@@ -354,3 +354,10 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 ## 2026-10-03: design system moved into the repo
 - Claude and Codex both edit it in `docs/design-system/` via PRs; the project-folder copy is retired. Decided by Jon.
 - Sprites live only in `art/sprites/`. Codex owns art; Claude owns code and mechanics pages (06/09/10/11/14/15).
+
+## 2026-10-03: flax can be planted, a canon change by Jon (PR #n)
+- Claude, from Jon's request ("I think we need an ability to plant fiber"). Canon until now: flax was the only source of Fiber and grew only in wild patches. It is no longer wild-only: Flax can be sown, and wild patches stay as the early start.
+- New build card **Flax Field** on the Gathering tab beside Field. It unlocks with **Cordage** (no new tech, the stone age can use it before Farming), costs 2 Fiber a tile and no grain, and is dragged on open grassland like a grain Field.
+- A sown tile is a flax tile (`World.flax_fields` remembers which), so a hut set to Fiber and a hand gatherer treat it exactly as wild flax. The yield per harvest is the same, it never runs out (wild tiles do not either), and Calendar, Plough and Irrigation do not touch it.
+- Demolish returns 1 Fiber and the grass. Saves keep the list; older saves load with none. Map generation, fairness and the bots are unchanged, so both goldens are unchanged.
+- Placeholder art: the wild flax sprite tinted pale blue-green with furrows; a Flax Field sprite is asked of Codex in `docs/art/requests.md`.
