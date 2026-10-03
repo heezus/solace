@@ -20,6 +20,7 @@ const PathingTests = preload("res://tests/pathing_tests.gd")
 const BuildingsTests = preload("res://tests/buildings_tests.gd")
 const KithTests = preload("res://tests/kith_tests.gd")
 const ArcTests = preload("res://tests/arc_tests.gd")
+const HoldTests = preload("res://tests/hold_tests.gd")
 const StoryTests = preload("res://tests/story_tests.gd")
 const SaveTests = preload("res://tests/save_tests.gd")
 const EraTests = preload("res://tests/era_tests.gd")
@@ -54,6 +55,11 @@ func _init() -> void:
 		Stage2Tests.new().run(self)
 		SkyTests.new().run(self)
 		print("FAILED: %d" % failures if failures > 0 else "STAGE 2 TESTS PASSED")
+		quit(1 if failures > 0 else 0)
+		return
+	if "hold" in OS.get_cmdline_user_args():  # `-- hold` runs just the hold-to-harvest tests while iterating
+		HoldTests.new().run(self)
+		print("FAILED: %d" % failures if failures > 0 else "HOLD TESTS PASSED")
 		quit(1 if failures > 0 else 0)
 		return
 	test_map_has_every_resource_near_camp()
@@ -96,6 +102,7 @@ func _init() -> void:
 	KithTests.new().run(self)
 	StoryTests.new().run(self)
 	ArcTests.new().run(self)
+	HoldTests.new().run(self)
 	SaveTests.new().run(self)
 	EraTests.new().run(self)
 	Stage2Tests.new().run(self)

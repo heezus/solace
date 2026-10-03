@@ -101,10 +101,12 @@ const GOALS_STAR_CLOSING := DataGoals.GOALS_STAR_CLOSING
 
 # --- Tuning: data/tuning.gd ---
 const LEARN_CLICKS := DataTuning.LEARN_CLICKS
+const LEARN_FIRST := DataTuning.LEARN_FIRST
 const BUNDLE := DataTuning.BUNDLE
 const TRIP_QUEUE := DataTuning.TRIP_QUEUE
 const RUSH_COOLDOWN := DataTuning.RUSH_COOLDOWN
 const HOLD_TIME := DataTuning.HOLD_TIME
+const HOLD_KEEP := DataTuning.HOLD_KEEP
 const HAND_TOOLS := DataTuning.HAND_TOOLS
 const HAND_HOLD := DataTuning.HAND_HOLD
 const FOOD_PER_KITH_PER_SEC := DataTuning.FOOD_PER_KITH_PER_SEC

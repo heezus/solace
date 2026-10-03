@@ -4,6 +4,8 @@ extends RefCounted
 
 ## Harvest a resource by hand this many times and a watching Kith learns it: huts may then gather it.
 const LEARN_CLICKS := 10
+## ...but the very first resource the Kith learn takes only this many, so the first lesson comes quickly.
+const LEARN_FIRST := 6
 ## A hut trip brings back a bundle: this many times your harvest yield for that resource.
 const BUNDLE := 3
 ## Trips a hut can have queued before Paths & Haulers (the one under way counts).
@@ -13,6 +15,10 @@ const RUSH_COOLDOWN := 5.0
 ## Gathering by hand is a hold: a ring fills over the tile for HOLD_TIME seconds, then the harvest pops,
 ## and it repeats while you hold. A harvest's yield is base x tool x rank.
 const HOLD_TIME := 1.0
+## A hold forgives a shaky hand: progress on a ring that was let go early, or that slipped off its tile (onto bare
+## ground, a bar, another kind of tile), waits this many seconds for the pointer to come back. Sliding to the next tile of
+## the same kind keeps the ring at once.
+const HOLD_KEEP := 0.6
 ## Ore is dug slowly by hand: seconds of holding for one harvest of these items (HOLD_TIME for everything else).
 ## A hand tool's hold is a share of HOLD_TIME, so Flint Tools shorten these in the same proportion.
 const HAND_HOLD := {"copper_ore": 3.0, "tin": 4.0}

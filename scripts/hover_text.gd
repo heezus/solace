@@ -153,7 +153,7 @@ static func learn_text(s, item: String) -> String:
 		return "%s knows how to gather %s: huts can gather it." % [s.people.learned_by[item], item_name]
 	return (
 		"Harvested by hand %d/%d. A %s is watching and will learn %s."
-		% [s.hand_counts.get(item, 0), Data.LEARN_CLICKS, Data.PEOPLE["one"], item_name]
+		% [s.hand_counts.get(item, 0), Hands.learn_needed(s), Data.PEOPLE["one"], item_name]
 	)
 
 

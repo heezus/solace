@@ -22,7 +22,7 @@ var t  # the runner, tests/run_tests.gd
 
 func run(runner) -> void:
 	t = runner
-	test_learning_at_ten_clicks()
+	test_learning_after_a_few_clicks()
 	test_huts_gather_only_what_is_learned()
 	test_dispatch_trips_and_queue_cap()
 	test_no_loop_before_haulers_loop_after()
@@ -54,16 +54,16 @@ func run_for(s: Sim, seconds: float) -> void:
 		s.tick(0.1)
 
 
-func test_learning_at_ten_clicks() -> void:
+func test_learning_after_a_few_clicks() -> void:
 	var s: Sim = t.fresh()
 	var tree: Vector2i = t.find_tile(s, "tree")
-	for i in Data.LEARN_CLICKS - 1:
+	for i in Data.LEARN_FIRST - 1:
 		s.gather_by_hand(tree)
-	t.check(not s.people.knows("wood"), "9 clicks: nobody has learned Wood yet")
-	t.check(s.hand_counts["wood"] == Data.LEARN_CLICKS - 1, "hand clicks are counted per resource")
+	t.check(not s.people.knows("wood"), "one click short: nobody has learned Wood yet")
+	t.check(s.hand_counts["wood"] == Data.LEARN_FIRST - 1, "hand clicks are counted per resource")
 	s.events.clear()
 	s.gather_by_hand(tree)
-	t.check(s.people.knows("wood"), "the 10th click teaches a Kith to gather Wood")
+	t.check(s.people.knows("wood"), "click %d (the first lesson) teaches a Kith to gather Wood" % Data.LEARN_FIRST)
 	var first: String = Data.PEOPLE_NAMES[0]
 	t.check(s.people.learned_by["wood"] == first, "the first learner is " + first)
 	var toast: String = Data.LEARNED_LINE % [first, Data.HUT_JOBS["wood"]["craft"], "Woodcutter"]
@@ -88,7 +88,10 @@ func test_huts_gather_only_what_is_learned() -> void:
 	t.check(Workers.dispatch(s, r[1]).begins_with("Nothing learned"), "so a hut can't send a trip yet")
 	t.check(b["trips"] == 0, "and nothing is queued")
 	var preview := BuildingPanel.gather_text(s, s.town.focus_tiles(b))
-	t.check(preview.contains("not yet learned (gather by hand 10x)"), "the preview says what isn't learned: " + preview)
+	t.check(
+		preview.contains("not yet learned (gather by hand %dx)" % Data.LEARN_FIRST),
+		"the preview says what isn't learned: " + preview
+	)
 	s.people.learned_by["wood"] = "Aro"
 	preview = BuildingPanel.gather_text(s, s.town.focus_tiles(b))
 	t.check(preview.contains("Wood x") and not preview.contains("Wood x1 (not"), "Wood is learned: " + preview)
@@ -252,7 +255,7 @@ func test_hold_to_harvest() -> void:
 	t.check(s.hold_harvest(s.world.camp_pos, 5.0) == "", "the Hearth isn't a resource")
 	for i in Data.LEARN_CLICKS:
 		s.hold_harvest(rock, 0.7)
-	t.check(s.people.knows("stone"), "learning takes %d harvests" % Data.LEARN_CLICKS)
+	t.check(s.people.knows("stone"), "learning takes %d harvests" % Data.LEARN_FIRST)
 
 
 func test_rank_costs_and_effects() -> void:

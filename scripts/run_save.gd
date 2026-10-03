@@ -108,7 +108,7 @@ static func _game_to_dict(s) -> Dictionary:
 		"shard_seen": s.shard_seen,
 		"hand_counts": Codec.int_dict(s.hand_counts),
 		"harvest_tile": Codec.vec(s.harvest_tile),
-		"harvest_held": s.harvest_held,
+		"harvest_held": s.harvest_ring["held"],
 		"harvest_frac": s.harvest_frac,
 		"rushes": s.rushes,
 		"ranks": Codec.int_dict(s.ranks),
@@ -123,7 +123,7 @@ static func _game_from_dict(s, d: Dictionary) -> void:
 	s.shard_seen = bool(d.get("shard_seen", false))
 	s.hand_counts = Codec.int_dict(d.get("hand_counts", {}))
 	s.harvest_tile = Codec.to_vec(d.get("harvest_tile", [-1, -1]))
-	s.harvest_held = float(d.get("harvest_held", 0.0))
+	s.harvest_ring["held"] = float(d.get("harvest_held", 0.0))
 	s.harvest_frac = float(d.get("harvest_frac", 0.0))
 	s.rushes = int(d.get("rushes", 0))
 	s.ranks = Codec.int_dict(d.get("ranks", {}))

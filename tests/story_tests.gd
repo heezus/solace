@@ -205,7 +205,7 @@ func test_learning_by_watching_records_a_lesson() -> void:
 	var people := Monitor.new()
 	people.watch(s.people, "learned")
 	var tree: Vector2i = t.find_tile(s, "tree")
-	for i in Data.LEARN_CLICKS - 1:
+	for i in Data.LEARN_FIRST - 1:
 		s.gather_by_hand(tree)
 	t.check(people.count() == 0 and s.story.events.is_empty(), "nothing learned before the last click")
 	s.gather_by_hand(tree)
