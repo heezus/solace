@@ -136,7 +136,8 @@ func _process(delta: float) -> void:
 	_watch_flavor()
 	messages.advance(delta)
 	zoom_wait -= delta
-	_pan_with_keys(delta)
+	if not tech_panel.visible:  # the research board takes the arrows and WASD while it is open
+		_pan_with_keys(delta)
 	_layout()
 	hover = _tile_under()
 	_hold(delta)

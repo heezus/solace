@@ -1,32 +1,38 @@
 extends PanelContainer
-## The tech panel: a header with the counter, the two views and the legend, the stock strip (what you have, so
-## nothing needs closing to check), the queue and the techs ready now, the scrolling board, and a strip about
-## the tech under the mouse. Click a ready card to discover it. Click any other card to make it the goal: the
-## techs it still needs are queued and discovered as soon as each is affordable.
-## It opens on "Next steps", a short grid of what is next, until the player picks the whole board.
+## The tech panel: a header with the counter, the two views and the board's zoom buttons, a line saying what the view
+## shows, the stock strip (what you have, so nothing needs closing to check), and then one of two views. "What to
+## learn next" (the one it opens on) is a few cards, one per tech that can be discovered now, with the suggested one
+## marked. "Whole board" is the fitted tech board, with the queue, the techs ready now and a strip about the tech under
+## the mouse. Click a ready card to discover it. Click any other card to make it the goal: the techs it still needs
+## are queued and discovered as soon as each is affordable. The panel keeps the era and view the player picks.
 
 const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Rules = preload("res://scripts/rules.gd")
 const TechBoard = preload("res://scripts/tech_board.gd")
+const TechNextView = preload("res://scripts/tech_next_view.gd")
 const Ranks = preload("res://scripts/ranks.gd")
 
 const BG := Ui.PANEL
-const WHOLE_BOARD_FROM := 8  # techs discovered before the board opens on the whole board by default
+const STRIP_H := 170.0  # the strip about one tech: always this tall
+const STRIP_SIDE_W := 330.0  # its right column: needs, leads to, route
 
 var state: Sim
 var board: TechBoard
-var scroll: ScrollContainer
+var next_view: TechNextView
+var view := "next"  # "next": What to learn next; "all": the whole board
 var counter: Label
 var title: Label
 var era_buttons := {}  # era -> its tab
 var era_chosen := false  # the player picked an era tab: the panel keeps it from then on
 var queue_row: HBoxContainer
-var ready_row: HBoxContainer
 var stock_row: HBoxContainer
 var stock_chips := {}  # item -> {"box", "count"}
 var view_buttons := {}
+var explain: Label  # one line on what the view shows
+var board_buttons: Array = []  # Fit, zoom in and out: only the whole board has a view to move
+var detail: PanelContainer  # the strip about one tech
 var view_chosen := false  # the player picked a view: the panel keeps it from then on
 var strip := {}
 var shown := ""  # the tech in the strip, "" for the frontier
@@ -68,26 +74,26 @@ func setup(game: Sim) -> void:
 		b.toggle_mode = true
 		b.tooltip_text = part[2]
 		b.custom_minimum_size = Vector2(0, 26)
-		var which: String = part[0]
-		b.pressed.connect(func(): _pick_view(which))
+		b.pressed.connect(_pick_view.bind(part[0]))
 		head.add_child(b)
-		view_buttons[which] = b
+		view_buttons[part[0]] = b
 	for part in [
-		[Data.LEGEND_DONE, TechBoard.MET],
-		[Data.LEGEND_NEEDED, TechBoard.NEEDED],
-		[Data.LEGEND_HOVER, TechBoard.GOLD],
+		[Data.FIT_BUTTON, Data.FIT_TIP, _fit], ["+", Data.ZOOM_IN_TIP, _zoom_in], ["-", Data.ZOOM_OUT_TIP, _zoom_out]
 	]:
-		var l := Ui.label("— " + part[0], Ui.MIN_TEXT)
-		l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		l.add_theme_color_override("font_color", part[1])
-		head.add_child(l)
-	var or_note := Ui.label("or = either parent", Ui.MIN_TEXT)
-	or_note.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	head.add_child(or_note)
+		var b := Ui.button(part[0])
+		b.tooltip_text = part[1]
+		b.custom_minimum_size = Vector2(0, 26)
+		b.pressed.connect(part[2])
+		head.add_child(b)
+		board_buttons.append(b)
 	var close := Ui.button("Close (T)")
 	close.pressed.connect(func(): visible = false)
 	head.add_child(close)
 	v.add_child(head)
+	explain = Ui.label("", Ui.MIN_TEXT)
+	explain.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	explain.add_theme_color_override("font_color", Ui.TEXT_DIM)
+	v.add_child(explain)
 
 	# What you have, so nothing needs closing to check what you can afford; one line says how the costs read.
 	stock_row = HBoxContainer.new()
@@ -106,57 +112,73 @@ func setup(game: Sim) -> void:
 		box.add_child(count)
 		stock_row.add_child(box)
 		stock_chips[id] = {"box": box, "count": count}
-	var cost_note := Ui.label(Data.LEGEND_COST, Ui.MIN_TEXT)
-	cost_note.add_theme_color_override("font_color", Ui.TEXT_DIM)
-	cost_note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cost_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	stock_row.add_child(cost_note)
+	queue_row = HBoxContainer.new()  # the queue sits at the end of the same line
+	queue_row.add_theme_constant_override("separation", 6)
+	queue_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	queue_row.alignment = BoxContainer.ALIGNMENT_END
+	stock_row.add_child(queue_row)
 	v.add_child(stock_row)
 
-	var rows := HBoxContainer.new()
-	rows.add_theme_constant_override("separation", 24)
-	queue_row = HBoxContainer.new()
-	queue_row.add_theme_constant_override("separation", 6)
-	rows.add_child(queue_row)
-	ready_row = HBoxContainer.new()
-	ready_row.add_theme_constant_override("separation", 6)
-	rows.add_child(ready_row)
-	v.add_child(rows)
-
-	scroll = ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	v.add_child(scroll)
+	next_view = TechNextView.new()
+	v.add_child(next_view)
+	next_view.setup(state)
+	next_view.chosen.connect(_on_card)
 	board = TechBoard.new()
-	scroll.add_child(board)
+	v.add_child(board)
 	board.setup(state)
 	board.card_clicked.connect(_on_card)
 	board.hover_changed.connect(func(_t): refresh())
 
-	var detail := PanelContainer.new()
+	_build_strip(v)
+	_apply_view(view)
+	visibility_changed.connect(_on_open)
+
+
+## The strip about one tech, under the board: a fixed height, so hovering never resizes (and so never refits) the board.
+## Left, what it is and costs; right, what it needs, leads to and the route there; far right, the one button. A line that
+## runs long is trimmed, never allowed to grow the strip.
+func _build_strip(parent: VBoxContainer) -> void:
+	detail = PanelContainer.new()
 	detail.add_theme_stylebox_override("panel", Ui.panel_style(Ui.BAR, 10))
-	detail.custom_minimum_size = Vector2(0, 118)
-	v.add_child(detail)
+	detail.custom_minimum_size = Vector2(0, STRIP_H)
+	detail.size_flags_vertical = Control.SIZE_SHRINK_END
+	detail.clip_contents = true
+	parent.add_child(detail)
 	var dh := HBoxContainer.new()
 	dh.add_theme_constant_override("separation", 16)
 	detail.add_child(dh)
-	var dv := VBoxContainer.new()
-	dv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	dv.add_theme_constant_override("separation", 3)
-	dh.add_child(dv)
+	var left := VBoxContainer.new()
+	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	left.add_theme_constant_override("separation", 2)
+	dh.add_child(left)
+	var right := VBoxContainer.new()
+	right.custom_minimum_size = Vector2(STRIP_SIDE_W, 0)
+	right.add_theme_constant_override("separation", 2)
+	dh.add_child(right)
 	strip["title"] = Ui.label("", 16)
-	dv.add_child(strip["title"])
-	for key in ["desc", "cost", "warn", "links", "route"]:
+	strip["title"].text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	strip["title"].clip_text = true
+	left.add_child(strip["title"])
+	for part in [
+		["desc", left, 2],
+		["cost", left, 3],
+		["warn", left, 1],
+		["needs", right, 2],
+		["leads", right, 2],
+		["route", right, 3]
+	]:
 		var l := Ui.label("", Ui.MIN_TEXT)
-		l.autowrap_mode = TextServer.AUTOWRAP_WORD
-		dv.add_child(l)
-		strip[key] = l
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l.max_lines_visible = part[2]
+		l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		part[1].add_child(l)
+		strip[part[0]] = l
 	var act := Ui.button("")
 	act.custom_minimum_size = Vector2(200, 44)
 	act.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	act.pressed.connect(_on_action)
 	dh.add_child(act)
 	strip["button"] = act
-	visibility_changed.connect(_on_open)
 
 
 ## Research a ready tech; any other becomes the goal, with its missing chain queued.
@@ -185,8 +207,6 @@ func _pick_era(e: int) -> void:
 		return
 	era_chosen = true
 	board.set_era(e)
-	scroll.scroll_horizontal = 0
-	scroll.scroll_vertical = 0
 	rows_key = ""
 	refresh()
 
@@ -199,35 +219,63 @@ func _era_open(e: int) -> bool:
 ## The player picked a view: from then on the panel keeps it.
 func _pick_view(which: String) -> void:
 	view_chosen = true
-	board.set_view(which)
-	scroll.scroll_horizontal = 0
-	scroll.scroll_vertical = 0
+	_apply_view(which)
 	refresh()
 
 
-## Open on Next steps (early on) or the whole board scrolled to the frontier: the middle of the techs ready now.
+## Show one of the two views: "next" (What to learn next) or "all" (the whole board, with its queue, ready row and strip).
+func _apply_view(which: String) -> void:
+	view = which
+	var whole := view == "all"
+	board.visible = whole
+	next_view.visible = not whole
+	detail.visible = whole
+	for b in board_buttons:
+		b.visible = whole
+	explain.text = Data.EXPLAIN_ALL if whole else Data.EXPLAIN_NEXT
+	if not whole:
+		board._set_hover("")
+	rows_key = ""
+
+
+## Open on What to learn next, or on the view the player last picked; the board is always fitted when it opens.
 func _on_open() -> void:
 	if not visible:
 		return
 	if not era_chosen:
 		board.set_era(2 if _era_open(2) else 1)
 	if not view_chosen:
-		board.set_view("next" if state.tech_tree.researched.size() < WHOLE_BOARD_FROM else "all")
+		_apply_view("next")
+	board.fit(true)
 	refresh()
-	if board.view == "next":
-		scroll.scroll_horizontal = 0
-		scroll.scroll_vertical = 0
+
+
+func _fit() -> void:
+	board.fit()
+
+
+func _zoom_in() -> void:
+	board.zoom_at(TechBoard.BUTTON_STEP, board.size / 2.0)
+
+
+func _zoom_out() -> void:
+	board.zoom_at(1.0 / TechBoard.BUTTON_STEP, board.size / 2.0)
+
+
+## F fits the whole board, + and - zoom it, while the whole board is showing.
+func _unhandled_key_input(event: InputEvent) -> void:
+	if not visible or view != "all" or not event is InputEventKey or not event.pressed or event.echo:
 		return
-	var ready_now := state.tech_tree.ready_list()
-	if ready_now.is_empty():
-		return
-	var c := Vector2.ZERO
-	for tech in ready_now:
-		c += board.card_rect(tech).get_center()
-	c /= ready_now.size()
-	await get_tree().process_frame
-	scroll.scroll_horizontal = int(c.x - scroll.size.x / 2.0)
-	scroll.scroll_vertical = int(c.y - scroll.size.y / 2.0)
+	match event.keycode:
+		KEY_F:
+			_fit()
+		KEY_EQUAL, KEY_PLUS, KEY_KP_ADD:
+			_zoom_in()
+		KEY_MINUS, KEY_KP_SUBTRACT:
+			_zoom_out()
+		_:
+			return
+	get_viewport().set_input_as_handled()
 
 
 func refresh() -> void:
@@ -247,17 +295,19 @@ func refresh() -> void:
 		tab.disabled = not _era_open(e)
 		tab.tooltip_text = Data.ERA_TAB_TIP % Data.ERAS[e]["name"] if _era_open(e) else Data.ERA_TAB_LOCKED
 	for which in view_buttons:
-		view_buttons[which].button_pressed = which == board.view
+		view_buttons[which].button_pressed = which == view
 	for id in stock_chips:
 		var c: Dictionary = stock_chips[id]
 		c["box"].visible = state.economy.seen.has(id)
 		c["count"].text = str(state.economy.inv.get(id, 0))
-	board.update_view()
+	queue_row.visible = view == "all" or not state.tech_tree.queue.is_empty()  # over the cards, only when it holds something
 	var key := "%s|%s|%s" % [state.tech_tree.queue, ready_now, state.tech_tree.goal]
 	if key != rows_key:
 		rows_key = key
 		_fill_row(queue_row, Data.QUEUE_CAPTION, state.tech_tree.queue, Data.QUEUE_EMPTY)
-		_fill_row(ready_row, Data.READY_CAPTION, ready_now, Data.READY_EMPTY)
+	if view == "next":
+		next_view.refresh(board.era)
+		return
 	shown = board.hovered if board.hovered != "" else selected
 	if shown != "" and (not state.tech_tree.tech_visible(shown) or not board.shows(shown)):
 		shown = ""
@@ -319,7 +369,8 @@ func _show_frontier(ready_now: Array) -> void:
 	strip["desc"].text = Data.STRIP_HELP
 	strip["cost"].text = Data.RANK_HELP
 	strip["warn"].visible = false
-	strip["links"].text = ""
+	strip["needs"].text = ""
+	strip["leads"].text = ""
 	strip["route"].text = ""
 	strip["button"].visible = false
 
@@ -365,7 +416,8 @@ func _show_tech(tech: String) -> void:
 		)
 		if not Ranks.next_cost(state, tech).is_empty():
 			strip["cost"].text += (" · next: " + Ui.progress_text(state.economy.inv, Ranks.next_cost(state, tech), 99))
-	strip["links"].text = "NEEDS: %s     LEADS TO: %s" % [_needs_text(tech), _leads_text(tech)]
+	strip["needs"].text = "NEEDS: " + _needs_text(tech)
+	strip["leads"].text = "LEADS TO: " + _leads_text(tech)
 	var route := Rules.route_to(tech, state.tech_tree.researched, Rules.visible_techs(state.shard_seen))
 	if route.is_empty() or unbuilt:
 		strip["route"].text = ""

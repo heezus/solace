@@ -135,6 +135,9 @@ func _era_two_checks() -> void:
 		main.tech_panel.visible = true
 	if frame == dawn_frame + 62:
 		_check_era_board()
+	if frame == dawn_frame + 64:
+		_report(HudChecks.board_fit(main, "the second era's board"))
+		_shot("tech_board_era2")
 		main.tech_panel.visible = false
 		frozen = false
 	if frame == dawn_frame + 70:
@@ -236,6 +239,7 @@ func _check() -> void:
 
 ## The HUD checks, on fixed frames. Those that set the state by hand freeze the bot for a frame or two.
 func _hud_checks() -> void:
+	_board_at_the_shrunk_window()
 	match frame:
 		7:
 			goals_height = _goals_height()
@@ -334,9 +338,13 @@ func _hud_checks() -> void:
 		60:
 			_check_min_text("with the research board open")
 			_check_board_open()
+			_report(HudChecks.next_view(main, "What to learn next at 1280x800"))
+			_shot("tech_next")
 			main.tech_panel._pick_view("all")
 		62:
 			_check_board_hover()
+			_report(HudChecks.board_fit(main, "the whole board at 1280x800"))
+			_shot("tech_board")
 			main.tech_panel.visible = false
 			frozen = false
 		64:
@@ -833,12 +841,33 @@ func _check_log_opens() -> void:
 		problems.append("the newest message isn't in the log")
 
 
-## The research board on first open: the Next steps view, the stock strip showing, all inside the window.
+## The research board again in the 1100x700 window (the canvas never goes under 1280x800: its longer side grows):
+## What to learn next, then the whole board, both fitted and inside the panel.
+func _board_at_the_shrunk_window() -> void:
+	var panel = main.tech_panel
+	match frame - SHRINK_AT:
+		6:
+			frozen = true
+			panel.era_chosen = false
+			panel.view_chosen = false
+			panel.visible = true
+		8:
+			_report(HudChecks.next_view(main, "What to learn next at 1100x700"))
+			_shot("tech_next_1100x700")
+			panel._pick_view("all")
+		10:
+			_report(HudChecks.board_fit(main, "the whole board at 1100x700"))
+			_shot("tech_board_1100x700")
+			panel.visible = false
+			frozen = false
+
+
+## The research board on first open: the What to learn next view, the stock strip showing, all inside the window.
 func _check_board_open() -> void:
 	hud_checks += 1
 	var panel = main.tech_panel
-	if panel.board.view != "next" and panel.state.tech_tree.researched.size() < panel.WHOLE_BOARD_FROM:
-		problems.append("the board didn't open on Next steps")
+	if panel.view != "next":
+		problems.append("the board didn't open on What to learn next")
 	if not panel.stock_row.visible or panel.stock_row.get_global_rect().size.y < 8.0:
 		problems.append("the stock strip isn't visible while the board is open")
 	if not Rect2(Vector2.ZERO, main.get_viewport_rect().size).encloses(panel.get_global_rect()):
