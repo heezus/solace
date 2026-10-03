@@ -18,6 +18,8 @@ const Roads = preload("res://scripts/roads.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 
 var events: Array = []  # story ids, in the order they happened
+## The first cairn went up before the Falling Star fell: a run flag, saved, that a future first contact will read.
+var cairn_before_landing := false
 var goals_done: Dictionary = {}  # goal id -> true; goals stay done once met, even after the items are spent
 var _ore_tiles: Dictionary = {}  # tile id -> its positions in the grown land (see _ore)
 var _ore_width := 0
@@ -54,6 +56,14 @@ func on_trip_started() -> void:
 ## Sim.shard_found: the Strange Stone was clicked.
 func on_shard_found() -> void:
 	record("shard_found")
+
+
+## Buildings.built: the first cairn is a story moment, and if the Falling Star has not fallen it sets the flag.
+func on_built(type: String, _pos: Vector2i) -> void:
+	if Data.BUILDINGS[type]["kind"] != "cairn" or events.has("cairn_raised"):
+		return
+	cairn_before_landing = not events.has("star_falling")
+	record("cairn_raised")
 
 
 # --- The checklist -----------------------------------------------------------
@@ -176,10 +186,15 @@ func _has_building(s, type: String) -> bool:
 
 ## The story ids in order and the goals met so far, as JSON-safe values.
 func to_dict() -> Dictionary:
-	return {"events": events.duplicate(), "goals_done": Codec.keys(goals_done)}
+	return {
+		"events": events.duplicate(),
+		"goals_done": Codec.keys(goals_done),
+		"cairn_before_landing": cairn_before_landing,
+	}
 
 
 ## Restore what to_dict wrote. `recorded` is not emitted: these moments already happened in the saved run.
 func from_dict(d: Dictionary) -> void:
 	events = Codec.strings(d.get("events", []))
 	goals_done = Codec.to_set(d.get("goals_done", []))
+	cairn_before_landing = bool(d.get("cairn_before_landing", false))

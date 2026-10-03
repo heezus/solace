@@ -307,6 +307,14 @@ func set_status(b: Dictionary, status: String, alert: String) -> void:
 	b["alert"] = alert
 
 
+## The share off every tech that the standing buildings give: the best single one (0 to 1), so two cairns count as one.
+func research_discount() -> float:
+	var best := 0.0
+	for b in buildings:
+		best = maxf(best, float(Data.BUILDINGS[b["type"]].get("research_discount", 0.0)))
+	return best
+
+
 func is_powered(p: Vector2i) -> bool:
 	return in_range_of("power", p)
 

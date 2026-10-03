@@ -280,8 +280,14 @@ const BUILDINGS := {
 		"cost": {"stone": 12},
 		"needs_shard": true,
 		"color": Color("caf0f8"),
-		"desc": "A ring of stones beside the Strange Stone. Must go next to it.",
-		"status": "It hums. Nothing more. Yet.",
+		"research_discount": 0.05,
+		"desc":
+		(
+			"A ring of stones beside the Strange Stone. Must go next to it."
+			+ " Its hum steadies the Kith's thinking: every tech costs 5% less (one is enough)."
+			+ " Something far off may hear it."
+		),
+		"status": "It hums. The Kith think clearer. Something far off may hear.",
 	},
 }
 

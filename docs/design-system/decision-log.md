@@ -354,3 +354,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 ## 2026-10-03: design system moved into the repo
 - Claude and Codex both edit it in `docs/design-system/` via PRs; the project-folder copy is retired. Decided by Jon.
 - Sprites live only in `art/sprites/`. Codex owns art; Claude owns code and mechanics pages (06/09/10/11/14/15).
+
+## 2026-10-03: Shard Cairn gets a purpose (PR #33)
+- Claude decided this at Jon's request (his option c): the Shard Cairn did nothing, so there was no reason to build it. It now pays off twice.
+- Now: while a cairn stands every tech costs 5% less. It multiplies with Tally Sticks, rounds once, and only one cairn counts. Small enough that the 12 Stone is a fair trade, not a must-build; the bot never builds it, so both goldens are unchanged.
+- Later: a cairn raised before the Falling Star lands sets the saved run flag `cairn_before_landing` and records the story moment `cairn_raised`, for a future Chronicle. When the Lumen ship arrives, the flag will make first contact friendlier. No ship or Lumen gameplay was added.
+- The status and tooltip hint at both effects in the mystery tone ("the Kith think clearer", "something far off may hear") and name no ship or visitor, since a playtest said the old text gave the twist away.
