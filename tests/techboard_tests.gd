@@ -68,22 +68,22 @@ func test_the_board_is_fitted_whole_in_each_window() -> void:
 	var s: Sim = t.fresh()
 	for room in [ROOM_WIDE, ROOM_TIGHT]:
 		for era in [1, 2]:
-			var board := _board(s, room, era)
+			var era_board := _board(s, room, era)
 			var where := "era %d in %s" % [era, room]
-			t.check(board.fitted, "the board opens fitted: " + where)
+			t.check(era_board.fitted, "the board opens fitted: " + where)
 			t.check(
-				_inside(board.board_screen_rect(), room),
-				"the fitted board is inside its room: %s (%s)" % [where, board.board_screen_rect()]
+				_inside(era_board.board_screen_rect(), room),
+				"the fitted board is inside its room: %s (%s)" % [where, era_board.board_screen_rect()]
 			)
-			t.check(is_equal_approx(board.zoom, board.min_zoom()), "the fit is the smallest zoom: " + where)
+			t.check(is_equal_approx(era_board.zoom, era_board.min_zoom()), "the fit is the smallest zoom: " + where)
 			var floor_zoom := READABLE_WIDE if room == ROOM_WIDE else READABLE_TIGHT
 			t.check(
-				board.zoom >= floor_zoom,
-				"the fit keeps names readable (%.2f < %.2f): %s" % [board.zoom, floor_zoom, where]
+				era_board.zoom >= floor_zoom,
+				"the fit keeps names readable (%.2f < %.2f): %s" % [era_board.zoom, floor_zoom, where]
 			)
 			for tech in Rules.era_techs(era):
-				t.check(_inside(board.card_screen_rect(tech), room), "%s's card is in view: %s" % [tech, where])
-			board.free()
+				t.check(_inside(era_board.card_screen_rect(tech), room), "%s's card is in view: %s" % [tech, where])
+			era_board.free()
 	# The fit leaves a small board alone rather than blowing it up, and never divides by an empty room.
 	var tiny := TechBoard.fit_for(Vector2(100, 50), Vector2(2000, 1000))
 	t.check(tiny["zoom"] <= TechBoard.MAX_FIT, "a small board is not blown up past %.1f" % TechBoard.MAX_FIT)
