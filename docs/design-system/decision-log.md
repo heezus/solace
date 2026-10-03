@@ -354,3 +354,10 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 ## 2026-10-03: design system moved into the repo
 - Claude and Codex both edit it in `docs/design-system/` via PRs; the project-folder copy is retired. Decided by Jon.
 - Sprites live only in `art/sprites/`. Codex owns art; Claude owns code and mechanics pages (06/09/10/11/14/15).
+
+## 2026-10-03: clear any resource tile (PR #n)
+- Claude, from Jon's playtest feedback: only Forest and Rocks could be cleared (by laying a road over them), so clay beside flint left the hut on flint and he built roads just to clear room. Demolish now clears any gatherable tile to grass.
+- Clearable (a `clearable` flag per tile in `scripts/data/tiles.gd`): Flax, Forest, Rocks, Gravel, Clay, Berries, Wild Grain. Never: the river, the Hearth, the Strange Stone, Copper Hills, Tin Stream, unexplored tiles (each has a plain "it stays" pill) and anything built (that is demolished as before). The new rule is in `scripts/clearing.gd`.
+- Clearing is free and gives nothing back: the pill reads "Clear Clay Bank · gone for good", and the log says what was cleared. Roads laid over Rocks or Forest cut them exactly as before.
+- Guard against soft-locks: a tile is refused ("That's the last Clay Bank · it stays") unless `CLEAR_KEEP` (1) other tiles of its kind are left anywhere on the map, fogged or not; sown fields do not count as Wild Grain. Every map has several of each near the Hearth, so this only stops clearing a kind off the map.
+- A cleared tile is saved with the tiles; every Gatherer's Hut re-reads its reach, and one whose focus is gone moves to what is nearest it, or to none. Both goldens are unchanged (the bots never clear).
