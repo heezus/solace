@@ -355,7 +355,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Claude and Codex both edit it in `docs/design-system/` via PRs; the project-folder copy is retired. Decided by Jon.
 - Sprites live only in `art/sprites/`. Codex owns art; Claude owns code and mechanics pages (06/09/10/11/14/15).
 
-## 2026-10-03: Era 3 Starfall designed (PR #TBD)
+## 2026-10-03: Era 3 Starfall designed (PR #35)
 - Claude wrote [16-starfall.md](16-starfall.md) after Jon agreed the starred picks. Design only, nothing built.
 - Glyphs are the one new mechanic: scribes at a Glyph Wall copy glyphs automatically, the player only guesses meanings, and the game confirms 3 at a time. This keeps Jon's "no click chores" feedback.
 - Expeditions are set and forget (pick a fog target and a pack, parties walk on roads, haulers resupply, standing orders), so roads stay the star.
