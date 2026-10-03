@@ -62,3 +62,11 @@ The 20-minute target for a first stone-age run still holds. The bot plays the ar
 - A building with no road link shows a "Needs road" marker and status, and its hover text says what to connect. Its own worker still gathers and drops off by hand-carry trips, as before Haulers.
 - Haulers walk the road network. Off-road tiles are not part of a hauler's route.
 - This makes Roads part of the automation step, not a later extra. Paths & Haulers unlocks Roads, and roads are the visible sign that a building is automated.
+
+## Tools are made by a workshop (2026-10-03, Jon's playtest)
+Jon: "the tools creation is pretty annoying. That I have to make them by hand and shit the entire game."
+- Crafting by hand is the first step for tools too, and it stays (it is the way in, and a fallback). Knapping also unlocks the **Tool Bench**, so the same tech that lets you craft a Flint Tool lets you build the workshop that does it for you.
+- The Tool Bench is an ordinary workshop (kind `processor`, one Toolmaker, 6 s a tool, 10 Wood and 5 Stone). Before Paths & Haulers you load it and empty it by clicking, like any workshop. Once a road links it to the Hearth or a Storehouse, haulers bring it flint and wood and carry the tools to the stockpile: automated.
+- It does not drain the early game. It keeps a small stock and then waits: **2 spare tools plus one for each working Kith who holds none**. Its panel says so in plain words: "Making: flint tools, 3 in stock (keeps 5 ready)", and "Enough flint tools: 5 in stock. It starts again when more are needed." Haulers stop loading it while it has enough.
+- It is one building for both ages. With Bronze Tools learned and Bronze in the stockpile it makes Bronze Tools (1 Bronze, 2 Wood, the same recipe as by hand), otherwise Flint Tools (2 Flint, 2 Wood). It changes only between batches. Both recipes are the `RECIPES` entries hand crafting uses.
+- Tools it makes are picked up and wear exactly as before: a Kith without a tool takes the best one from the stockpile, a flint tool lasts 40 jobs, a bronze tool 200.

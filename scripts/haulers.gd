@@ -8,6 +8,7 @@ const Data = preload("res://scripts/data.gd")
 const Kith = preload("res://scripts/kith.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Buildings = preload("res://scripts/buildings.gd")
+const Work = preload("res://scripts/work.gd")
 
 
 ## Items a hauler carries per trip: Carrying Poles double it, and a cart (`k`, if given) carries Data.CART_LOAD times.
@@ -123,7 +124,7 @@ static func _find_task(s, k: Dictionary) -> bool:
 			best = {"kind": "pickup", "building": i}
 			best_d = d
 			continue
-		var inputs: Dictionary = {} if cand["paused"] else Buildings.recipe_in(cand)
+		var inputs: Dictionary = {} if cand["paused"] or Work.enough(s, cand) else Buildings.recipe_in(cand)
 		for id in inputs:
 			var want: int = inputs[id] * 2 - cand["inbuf"].get(id, 0) - cand["incoming"].get(id, 0)
 			var n := mini(mini(want, s.economy.inv.get(id, 0)), carry_cap(s, k))

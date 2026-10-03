@@ -74,13 +74,16 @@ const TECHS := {
 		"lane": "stone",
 		"tier": 0,
 		"slot": 0,
-		"unlock": "Flint Tools",
+		"unlock": "Flint Tools, Tool Bench",
 		"icon": "@flint",
 		"requires": [],
 		"cost": {"flint": 5, "stone": 10},
 		"rank": {"item": "flint"},
 		"desc":
-		"Shape flint. Craft Flint Tools: a harvest by hand takes 0.7s, and each Kith holding one works 50% faster.",
+		(
+			"Shape flint. Craft Flint Tools: a harvest by hand takes 0.7s, and each Kith holding one works 50% faster."
+			+ " A Tool Bench makes them for you."
+		),
 	},
 	"cordage":
 	{

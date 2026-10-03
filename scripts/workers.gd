@@ -202,6 +202,8 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 	if not Buildings.needs_worker(b):
 		b["status"] = def.get("status", def["desc"])
 		return
+	if def.has("makes"):
+		Work.choose_tool(s, b)
 	if b["paused"]:
 		s.town.set_status(b, "Paused: its %s is free for other jobs" % s.people.building_job(b), "Paused")
 		return
@@ -221,6 +223,9 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 		return
 	if not s.people.worker_home(b):
 		b["status"] = "%s walking here" % s.people.title_of(s.people.kith[b["worker"]])
+		return
+	if Work.enough(s, b):
+		b["status"] = Work.bench_text(s, b)
 		return
 	if not s.town.wants_to_work(b):
 		idle_reason(s, b, def)

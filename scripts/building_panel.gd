@@ -228,7 +228,8 @@ static func recipe_text(s: Sim, b: Dictionary) -> String:
 			var used := Buildings.recipe_in(b)
 			var ins := Ui.cost_text(used) if not used.is_empty() else "nothing"
 			var made := Buildings.recipe_out(b)
-			return "%s → %s / %s s" % [ins, Ui.cost_text(made), str(snappedf(Work.time(s, b), 0.1))]
+			var line := "%s → %s / %s s" % [ins, Ui.cost_text(made), str(snappedf(Work.time(s, b), 0.1))]
+			return Work.bench_text(s, b) + "\n" + line if def.has("makes") else line
 		"gatherer":
 			return gather_text(s, s.town.focus_tiles(b), true)
 	return ""
