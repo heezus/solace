@@ -33,6 +33,8 @@ const ICON := 24.0  # a good's sprite, with nothing behind it
 ## A row of chips keeps this height whether or not its goods have appeared yet. Three rows fill the bar's goods area.
 const ROW_H := 38.0
 const CHIP_GAP := 3  # between the chips of a row, the same in every row
+const CHIP_STACK := -10  # the rate sits this close under the count
+const CHIP_VPAD := 1  # a chip keeps this much above and below, so it is 38 px tall and three rows fit the bar
 const EDGE_PAD := 6.0  # the goods keep this much clear of the bar's top and bottom edge (the bottom rule is on top of it)
 const RULE_W := 3  # the rule along the bar's bottom edge
 ## The bar is never shorter than its tallest block, the Kith block with its name, jobs line and three lines of note,
@@ -172,14 +174,14 @@ func _chip(id: String, width: float) -> PanelContainer:
 	var box := PanelContainer.new()
 	box.custom_minimum_size = Vector2(width, 0)
 	box.mouse_filter = Control.MOUSE_FILTER_PASS
-	box.add_theme_stylebox_override("panel", _outline(Color(0, 0, 0, 0)))
+	box.add_theme_stylebox_override("panel", _outline(Color(0, 0, 0, 0), CHIP_VPAD))
 	var h := HBoxContainer.new()
 	h.add_theme_constant_override("separation", 3)
 	box.add_child(h)
 	var icon := Ui.item_icon(id, ICON)
 	h.add_child(icon)
 	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", -8)
+	v.add_theme_constant_override("separation", CHIP_STACK)
 	var count := Ui.label("", COUNT_SIZE)
 	var rate := Ui.label("", Ui.MIN_TEXT)
 	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -196,13 +198,15 @@ func _chip(id: String, width: float) -> PanelContainer:
 
 
 ## A panel style that keeps the same margins whether or not its outline shows, so a ring never moves anything.
-static func _outline(color: Color) -> StyleBoxFlat:
+static func _outline(color: Color, vpad := 2) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
 	s.draw_center = false
 	s.border_color = color
 	s.set_border_width_all(2)
 	s.set_corner_radius_all(4)
 	s.set_content_margin_all(2)
+	s.content_margin_top = vpad
+	s.content_margin_bottom = vpad
 	return s
 
 
@@ -299,7 +303,9 @@ func refresh(paused: bool, speed: int) -> void:
 		c["rate"].text = rate_text(r) + "/s"
 		c["rate"].add_theme_color_override("font_color", rate_color(r))
 		c["box"].tooltip_text = "" if flow_item == id else chip_tip(id, n, r)
-		c["box"].add_theme_stylebox_override("panel", _outline(Ui.HIGHLIGHT if flow_item == id else Color(0, 0, 0, 0)))
+		c["box"].add_theme_stylebox_override(
+			"panel", _outline(Ui.HIGHLIGHT if flow_item == id else Color(0, 0, 0, 0), CHIP_VPAD)
+		)
 	for v in speed_buttons:
 		speed_buttons[v].button_pressed = paused if v == 0 else (not paused and v == speed)
 	if flow_item != "":
