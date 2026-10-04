@@ -12,6 +12,8 @@ Reviewed Jon's 39-second gameplay recording: approximately 100 Kith, dense resou
 
 ## Kit
 
+The follow-up [coordinated variants study](variants/README.md) adds 40 subjects across six sheets and compares them together on the tile map. It also tests continuous grass, connected road masks and softly irregular riverbanks. The screenshots below retain the earlier single-subject study for comparison.
+
 ![Generated transparent atlas](sprite-atlas.png)
 
 The atlas contains tree, stone, berries, blue-flowered fiber, grain, clay, copper ore, cottage, Gatherer's Hut, Hearth, Kith, and bridge. Grass, road earth and water are separate ground textures. Road earth is clipped to neighbor-connected orthogonal paths in the browser study. These are generated with the built-in image-generation tool; exact prompts are in [prompts.json](prompts.json). Original outputs are retained unmodified. Sprite rectangles are browser presentation metadata, not exported production sprites.
