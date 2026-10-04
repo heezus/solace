@@ -9,6 +9,7 @@ const Sim = preload("res://scripts/sim.gd")
 const FieldText = preload("res://scripts/field_text.gd")
 const GrowthNote = preload("res://scripts/growth_note.gd")
 const Patch = preload("res://scripts/patch.gd")
+const PatchRate = preload("res://scripts/patch_rate.gd")
 
 var t  # the runner, tests/run_tests.gd
 
@@ -68,7 +69,7 @@ func test_a_field_names_the_hut_that_reaps_it_and_what_it_brings() -> void:
 	var p: Vector2i = a[1]
 	var b := _hut_on_fields(s, p, 3)
 	var field := p + Vector2i(1, -1)
-	var rate := Patch.per_minute(s, b, s.town.focus_tiles(b), "grain")
+	var rate := PatchRate.per_minute(s, b, s.town.focus_tiles(b), "grain")
 	t.check(rate > 0.0, "a hut on three grain tiles brings grain (%.1f a minute)" % rate)
 	var text := FieldText.hut_line(s, field, "grain")
 	t.check(text.begins_with("A hut with a worker reaps it: about "), "line: " + text)
@@ -144,7 +145,8 @@ func test_placing_and_dragging_say_whether_a_hut_reaches() -> void:
 	)
 	_hut_on_fields(s, p, 1)
 	t.check(
-		FieldText.placing_text(s, p + Vector2i(0, 2)) == "In reach of 1 hut: a hut works it.", "placing next to a hut"
+		FieldText.placing_text(s, p + Vector2i(0, 2)).begins_with("In reach of 1 hut: a hut works it."),
+		"placing next to a hut"
 	)
 	s.tech_tree.researched["farming"] = true
 	var line: Array = [p + Vector2i(0, 1), p + Vector2i(0, 2), p + Vector2i(0, 4)]

@@ -12,6 +12,7 @@ const Buildings = preload("res://scripts/buildings.gd")
 const Hands = preload("res://scripts/hands.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
 const FieldText = preload("res://scripts/field_text.gd")
+const PatchText = preload("res://scripts/patch_text.gd")
 
 
 static func text(m) -> String:
@@ -47,6 +48,8 @@ static func _placing_text(m) -> String:
 		if m.placing == "gatherers_hut":
 			var tiles: Array = s.town.tiles_of(m.hover, s.town.default_focus(m.hover))
 			t += "\n\n" + BuildingPanel.gather_text(s, tiles)
+			var patch := PatchText.placement_text(s, m.hover)
+			t += "\n" + patch if patch != "" else ""
 			if not tiles.is_empty():
 				t += "\nIt will work the resource nearest it: click the hut afterwards to change."
 		if s.tech_tree.researched.has("haulers") and def["kind"] in ["gatherer", "processor"]:

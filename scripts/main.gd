@@ -22,6 +22,7 @@ const KithArt = preload("res://scripts/kith_art.gd")
 const SidePanel = preload("res://scripts/side_panel.gd")
 const HoverText = preload("res://scripts/hover_text.gd")
 const PatchView = preload("res://scripts/patch_view.gd")
+const PatchText = preload("res://scripts/patch_text.gd")
 const Messages = preload("res://scripts/messages.gd")
 const ToastStack = preload("res://scripts/toast_stack.gd")
 const EastPointer = preload("res://scripts/east_pointer.gd")
@@ -645,7 +646,7 @@ func _draw() -> void:
 				"Fell the trees · %s"
 				% Ui.cost_text(Rules.cost_at("road", "tree", state.tech_tree.researched.has("causeways")))
 			)
-		Overlays.placement_ghost(self, state, placing, hover, note)
+		Overlays.placement_ghost(self, state, placing, hover, PatchText.with_pill(state, placing, hover, note))
 	elif state.world.in_bounds(hover) and not state.fog.is_revealed(hover):
 		var fr := _tile_rect(hover)
 		Art.dashed_rect(self, fr.grow(-1), Color(1, 1, 1, 0.6), 2.0, 5.0, 4.0)

@@ -7,6 +7,7 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 const Patch = preload("res://scripts/patch.gd")
+const PatchRate = preload("res://scripts/patch_rate.gd")
 
 
 ## The Info panel's lines under a sown tile: which huts reap it and how much, what a field pays over wild growth, the
@@ -15,7 +16,11 @@ static func tile_text(s, p: Vector2i) -> String:
 	if not s.world.fields.has(p):
 		return ""
 	var item: String = Data.TILES[s.world.tile_at(p)]["yields"]
-	var lines: Array = [hut_line(s, p, item), yield_line(s, p, item)]
+	var lines: Array = [hut_line(s, p, item)]
+	var gain := gain_line(s, p, item)
+	if gain != "":
+		lines.append(gain)
+	lines.append(yield_line(s, p, item))
 	var river := river_line(s, p)
 	if river != "":
 		lines.append(river)
@@ -48,10 +53,39 @@ static func hut_line(s, p: Vector2i, item: String) -> String:
 		return Data.FIELD_HUT_EMPTY % Data.PEOPLE["one"] if empty else Data.FIELD_NO_HUT % s.town.hut_radius()
 	var total := 0.0
 	for b in working:
-		total += Patch.per_minute(s, b, s.town.focus_tiles(b), item)
+		total += PatchRate.per_minute(s, b, s.town.focus_tiles(b), item)
 	if working.size() == 1:
 		return Data.FIELD_HUT_WORKS % [num(total), item_name, s.town.focus_tiles(working[0]).size()]
 	return Data.FIELD_HUTS_WORK % [working.size(), num(total), item_name]
+
+
+## What this tile is worth to the huts that work its crop: the speed one more tile adds and what that is a minute, or
+## that the hut already has all the tiles that help. "" when no hut in reach works the crop.
+static func gain_line(s, p: Vector2i, item: String) -> String:
+	var total := 0.0
+	var any := false
+	var room := false  # some hut in reach still gains speed from one more tile
+	var first := false  # this tile would be a hut's only one
+	var most := 0
+	for b in Patch.huts_reaching(s, p):
+		if not Patch.works(s, b, item):
+			continue
+		any = true
+		var tiles: Array = s.town.focus_tiles(b)
+		var others := tiles.size() - (1 if tiles.has(p) else 0)
+		most = maxi(most, others)
+		room = room or not Patch.is_full(others)
+		first = first or others == 0
+		total += PatchRate.tile_gain(s, b, p, item)
+	if not any:
+		return ""
+	var name: String = Data.ITEMS[item]["name"]
+	var step := roundi(Data.PATCH_STEP * 100.0)
+	if not room and Patch.field_share(s, p) <= 0.0:
+		return Data.FIELD_GAIN_FULL % most
+	if first:
+		return Data.FIELD_GAIN_FIRST % [name, num(total), name, step]
+	return Data.FIELD_GAIN % [step, num(total), name]
 
 
 ## What a field pays over the wild plant: the share Calendar and on give, or which tech would.
@@ -120,7 +154,10 @@ static func placing_text(s, p: Vector2i) -> String:
 	var huts := Patch.huts_reaching(s, p)
 	if huts.is_empty():
 		return Data.FIELD_NO_HUT % s.town.hut_radius()
-	return Data.FIELD_PLACE_HUT % ("1 hut" if huts.size() == 1 else "%d huts" % huts.size())
+	var line: String = Data.FIELD_PLACE_HUT % ("1 hut" if huts.size() == 1 else "%d huts" % huts.size())
+	var item: String = Data.BUILDINGS["field"].get("crop", "grain")
+	var gain := gain_line(s, p, item)
+	return line + ("\n" + gain if gain != "" else "")
 
 
 ## What a dragged line of fields adds to the pill: how many of its tiles a hut reaches.

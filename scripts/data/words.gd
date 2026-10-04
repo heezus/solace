@@ -182,6 +182,21 @@ const FIELD_CARD_NONE := "You have no fields yet."
 const FIELD_PLACE_HUT := "In reach of %s: a hut works it."  # "1 hut" / "2 huts"
 const FIELD_DRAG_NONE := "no hut in reach"
 const FIELD_DRAG_SOME := "%d in reach of a hut"  # tiles
+
+# --- What the tiles in a hut's reach do (scripts/patch_text.gd) ---
+## ("1 Clay tile", step, most, tiles) ("4 Clay tiles", now, step, most, tiles) ("6 Clay tiles", most)
+const PATCH_ONE := "%s in range: enough to work. Each extra tile adds +%d%% speed, up to +%d%% at %d tiles."
+const PATCH_SOME := "%s in range: +%d%% speed. Each extra tile adds +%d%%, up to +%d%% at %d tiles."
+const PATCH_FULL := "%s in range: +%d%% speed, the most a patch gives. More tiles will not help this hut."
+const PATCH_EXACT := "Patch: %d tiles in reach, Speed x%s"  # tiles, a multiplier
+const PATCH_PILL := "%s x%d · +%d%% speed"  # "Clay", tiles, percent
+const PATCH_FIELDS := "%d of its %d tiles are Fields."
+const PATCH_RATE := "About %s %s a minute while its worker is at it."  # a number, an item's name
+## (step, a number, an item's name)
+const FIELD_GAIN := "Each field adds +%d%% to the hut's speed: this one is worth about +%s %s a minute."
+## (an item's name, a number, an item's name, step)
+const FIELD_GAIN_FIRST := "It is the only %s tile this hut has: worth about +%s %s a minute, each extra one adds +%d%% speed."
+const FIELD_GAIN_FULL := "The hut already has %d tiles in reach, the most that help: this field adds nothing to it."  # tiles
 const TRIPS_HINT := (
 	"Click the hut to send its %s for a bundle: until a road links it, it works only when you click it."
 	+ " Trips waiting: %d of %d."
