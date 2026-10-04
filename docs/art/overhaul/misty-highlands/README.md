@@ -14,7 +14,7 @@ Reviewed Jon's 39-second gameplay recording: approximately 100 Kith, dense resou
 
 ![Generated transparent atlas](sprite-atlas.png)
 
-The atlas contains tree, stone, berries, blue-flowered fiber, grain, clay, copper ore, cottage, Gatherer's Hut, Hearth, Kith, and bridge. Grass and water are separate ground textures. These are generated with the built-in image-generation tool; exact prompts are in [prompts.json](prompts.json). Original outputs are retained unmodified. Sprite rectangles are browser presentation metadata, not exported production sprites.
+The atlas contains tree, stone, berries, blue-flowered fiber, grain, clay, copper ore, cottage, Gatherer's Hut, Hearth, Kith, and bridge. Grass, road earth and water are separate ground textures. Road earth is clipped to neighbor-connected orthogonal paths in the browser study. These are generated with the built-in image-generation tool; exact prompts are in [prompts.json](prompts.json). Original outputs are retained unmodified. Sprite rectangles are browser presentation metadata, not exported production sprites.
 
 Direction: dimensional thatch and timber, sculpted mossy stone, cool green ground, readable warm clothing and fire. Keep the square placement model; avoid decorative square object plates. Quiet ground supports dense objects. Scale is still an evaluation, not an approved engine change.
 
@@ -22,7 +22,7 @@ Direction: dimensional thatch and timber, sculpted mossy stone, cool green groun
 
 - This is an art test, not an engine screenshot or a Godot playtest. The map is representative, not reconstructed from a save.
 - The accompanying browser prototype has 64 illustrative road-following haulers, selection, fake resource-state toggles, placement previews, grid/fog toggles, and camera navigation. It does not implement gameplay. Kith uses one translated pose; there is no validated walk cycle or directional animation.
-- Kiln, water wheel, harvested states, roads and riverbank transitions remain simplified placeholders. The generated atlas has imperfect cell spacing and a three-quarter camera despite the more overhead prompt. Camera consistency, alpha edges, repeated variants, resource depletion semantics and spritesheet layout need a controlled production pass.
+- Kiln, water wheel, harvested states and riverbank transitions remain simplified placeholders; road edges still use a simple geometric mask. The generated atlas has imperfect cell spacing and a three-quarter camera despite the more overhead prompt. Camera consistency, alpha edges, repeated variants, resource depletion semantics and spritesheet layout need a controlled production pass.
 - Grass and water were requested seamless; exact edge continuity has not been proven. The browser tests repetition only. Production needs matched edge and corner tiles and a repeat/seam check.
 - Production is currently SVG-only. Raster imports, an atlas loader or rendered spritesheets require a reviewed pipeline change by Claude; these PNGs are isolated under the parent `.gdignore`. Do not copy them into `art/sprites/`.
 - Treat animations as separate aligned directional sheets: shared anchors and sizes, restrained walk/work motion, separate fire/smoke, and reduced-motion support. Lighting and fog should remain separate layers rather than baked into every sprite.
