@@ -16,7 +16,10 @@ const BuildingPanel = preload("res://scripts/building_panel.gd")
 static func text(m) -> String:
 	var s = m.state
 	if m.placing == "demolish":
-		return "Demolish: click a building, road or field to tear it down for half its cost back. Right-click to stop."
+		return (
+			"Demolish: click a building, road or field to tear it down for half its cost back, or a resource tile "
+			+ "(forest, rocks, clay...) to clear it to grass for good. Right-click to stop."
+		)
 	if m.placing != "":
 		return _placing_text(m)
 	if not s.world.in_bounds(m.hover):

@@ -10,7 +10,7 @@ From Jon's playtest: "it feels like there are so many ideas based on other games
 | 1 | **Rates under every resource**: +/- per minute, green or red | Anno, Factorio | A small line under each top bar item shows its net rate per minute over the last 30s, green when rising and red when falling. |
 | 2 | **Where does it go?** Hover a resource to see its producers and consumers | Factorio production stats | A tooltip on each item lists, for example, "Fiber: +12/min from 2 huts on flax, -18/min into Twine Post (makes Rope)". |
 | 3 | **Click a building for its panel** | all four | Shows inputs and outputs as icons, the worker, the trip time, status, a pause toggle and a Demolish button. |
-| 4 | **Demolish** | all four | Press X or use the panel button. You get 50% of the cost back, and its worker goes idle. The Camp can't be demolished. |
+| 4 | **Demolish** | all four | Press X or use the panel button. You get 50% of the cost back, and its worker goes idle. The Camp can't be demolished. Demolish on a natural resource tile (forest, rocks, flax, berries, grain, gravel, clay) clears it to grass for good, free and with nothing back, so a hut can be steered or room made. The river, the Strange Stone, ore, unexplored land and the last tile of a kind stay. |
 | 5 | **Pause and speed** | Timberborn, Anno | Space pauses. Keys 1, 2 and 3 set the speed to 1x, 2x and 3x, and buttons in the top-right corner do the same. |
 
 ## P2: A world with shape

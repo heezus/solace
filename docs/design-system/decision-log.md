@@ -355,9 +355,31 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Claude and Codex both edit it in `docs/design-system/` via PRs; the project-folder copy is retired. Decided by Jon.
 - Sprites live only in `art/sprites/`. Codex owns art; Claude owns code and mechanics pages (06/09/10/11/14/15).
 
-## 2026-10-03: flax can be planted, a canon change by Jon (PR #n)
+## 2026-10-03: flax can be planted, a canon change by Jon (PR #38)
 - Claude, from Jon's request ("I think we need an ability to plant fiber"). Canon until now: flax was the only source of Fiber and grew only in wild patches. It is no longer wild-only: Flax can be sown, and wild patches stay as the early start.
 - New build card **Flax Field** on the Gathering tab beside Field. It unlocks with **Cordage** (no new tech, the stone age can use it before Farming), costs 2 Fiber a tile and no grain, and is dragged on open grassland like a grain Field.
 - A sown tile is a flax tile (`World.flax_fields` remembers which), so a hut set to Fiber and a hand gatherer treat it exactly as wild flax. The yield per harvest is the same, it never runs out (wild tiles do not either), and Calendar, Plough and Irrigation do not touch it.
 - Demolish returns 1 Fiber and the grass. Saves keep the list; older saves load with none. Map generation, fairness and the bots are unchanged, so both goldens are unchanged.
 - Placeholder art: the wild flax sprite tinted pale blue-green with furrows; a Flax Field sprite is asked of Codex in `docs/art/requests.md`.
+
+## 2026-10-03: clear any resource tile (PR #37)
+- Claude, from Jon's playtest feedback: only Forest and Rocks could be cleared (by laying a road over them), so clay beside flint left the hut on flint and he built roads just to clear room. Demolish now clears any gatherable tile to grass.
+- Clearable (a `clearable` flag per tile in `scripts/data/tiles.gd`): Flax, Forest, Rocks, Gravel, Clay, Berries, Wild Grain. Never: the river, the Hearth, the Strange Stone, Copper Hills, Tin Stream, unexplored tiles (each has a plain "it stays" pill) and anything built (that is demolished as before). The new rule is in `scripts/clearing.gd`.
+- Clearing is free and gives nothing back: the pill reads "Clear Clay Bank · gone for good", and the log says what was cleared. Roads laid over Rocks or Forest cut them exactly as before.
+- Guard against soft-locks: a tile is refused ("That's the last Clay Bank · it stays") unless `CLEAR_KEEP` (1) other tiles of its kind are left anywhere on the map, fogged or not; sown fields do not count as Wild Grain. Every map has several of each near the Hearth, so this only stops clearing a kind off the map.
+- A cleared tile is saved with the tiles; every Gatherer's Hut re-reads its reach, and one whose focus is gone moves to what is nearest it, or to none. Both goldens are unchanged (the bots never clear).
+
+## 2026-10-03: Era 3 Starfall designed (PR #35)
+- Claude wrote [16-starfall.md](16-starfall.md) after Jon agreed the starred picks. Design only, nothing built.
+- Glyphs are the one new mechanic: scribes at a Glyph Wall copy glyphs automatically, the player only guesses meanings, and the game confirms 3 at a time. This keeps Jon's "no click chores" feedback.
+- Expeditions are set and forget (pick a fog target and a pack, parties walk on roads, haulers resupply, standing orders), so roads stay the star.
+- Shard Cairn built before the landing means guests and open trade; no cairn means wary outsiders and closed trade.
+- Lumen choice is Jon's mix: a hidden trust meter moved by buildings and trade, plus three big choice moments. It leans toward a reset (Time loop, Exodus or Cataclysm) and is stored as `lumen_lean` in the profile save.
+- Era runs about 20 minutes and ends on decoding the Bloom glyph and the first Bloom sign.
+
+## 2026-10-03: top bar chips match across eras (PR #34)
+- Claude, from Jon's playtest feedback: the third row (Ore, Tin, Copper, Bronze, Tools) did not match the others. It used a one-line chip (sprite, short name, count) with no rate, a 10 px gap and a 30 px row, where the stone-age rows use a fixed 80 px chip (sprite, count, rate under it) with a 3 px gap and 42 px rows.
+- Every chip is now the same widget in every era: 24 px sprite, 18 px count, 14 px rate, 2 px padding, the same tooltip with the rate and the same hover panel. The name stays in the tooltip, as for the stone-age goods. The third row's chips sit under the first row's columns.
+- The three rows are 38 px each (was 42, 42 and 30; a chip keeps 1 px above and below and the rate sits 2 px closer), so all three fit in the 130 px bar and are evenly spaced; it still fits at 1280 and 1100 wide.
+- The era-2 sprites are wired and drawn at the same size, but they are thinner-outlined and Copper and Bronze share one shape. Requested a redraw from Codex in `docs/art/requests.md`; no code change is needed when it lands.
+- Layout-pass checks now compare each era-2 chip with the first row's on size, sprite size, font sizes, padding, build, tooltip and column, and check the rows are evenly spaced.
