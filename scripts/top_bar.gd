@@ -335,7 +335,10 @@ func _refresh_food() -> void:
 		sub = Data.STARVING_TEXT % Data.PEOPLE["many"]
 	elif eco.low:
 		sub = Data.FOOD_LOW_TEXT % _duration(minf(eco.seconds_of_food(), 3600.0), true)
-	food_sub.text = sub
+	var growth := GrowthNote.progress_text(state)
+	food_sub.text = sub + ("\n" + growth if growth != "" else "")
+	var more := GrowthNote.progress_tip(state)
+	food_box.tooltip_text = Data.FOOD_TIP % Data.PEOPLE["one"] + ("\n\n" + more if more != "" else "")
 	var alarm := eco.low or eco.starving
 	food_label.add_theme_color_override("font_color", ALARM_TEXT if alarm else Ui.TEXT)
 	food_sub.add_theme_color_override("font_color", ALARM_TEXT if alarm else rate_color(fr))

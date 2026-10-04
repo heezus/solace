@@ -21,6 +21,7 @@ const Work = preload("res://scripts/work.gd")
 const KithArt = preload("res://scripts/kith_art.gd")
 const SidePanel = preload("res://scripts/side_panel.gd")
 const HoverText = preload("res://scripts/hover_text.gd")
+const PatchView = preload("res://scripts/patch_view.gd")
 const Messages = preload("res://scripts/messages.gd")
 const ToastStack = preload("res://scripts/toast_stack.gd")
 const EastPointer = preload("res://scripts/east_pointer.gd")
@@ -601,6 +602,8 @@ func _draw() -> void:
 		and (placing == "gatherers_hut" or (placing == "" and hovered_type == "gatherers_hut"))
 	):
 		_draw_gather_range(hover)
+	if state.world.in_bounds(hover) and (placing == "field" or (placing == "" and state.world.fields.has(hover))):
+		PatchView.draw_huts_reaching(self, state, hover)  # the huts that would reap this field
 	if placing == "water_wheel" and state.world.in_bounds(hover):
 		draw_circle(_tile_center(hover), Data.BUILDINGS["water_wheel"]["radius"] * TILE, Color(0.16, 0.62, 0.56, 0.18))
 	if placing == "grindstone" or hovered_type in ["water_wheel", "grindstone"]:

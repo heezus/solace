@@ -236,6 +236,8 @@ func _check() -> void:
 
 ## The HUD checks, on fixed frames. Those that set the state by hand freeze the bot for a frame or two.
 func _hud_checks() -> void:
+	if frame == 9 or frame == SHRINK_AT + 4:  # at 1280 x 800, then at 1100 x 700
+		_report(HudChecks.food_readout(main, "at %dx%d" % [root.size.x, root.size.y]))
 	match frame:
 		7:
 			goals_height = _goals_height()

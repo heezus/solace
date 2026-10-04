@@ -8,6 +8,7 @@ const Buildings = preload("res://scripts/buildings.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Rules = preload("res://scripts/rules.gd")
+const FieldText = preload("res://scripts/field_text.gd")
 
 const TILE := 48.0  # map px per tile at the default zoom
 const OUTLINE: Color = Art.OUTLINE
@@ -271,6 +272,8 @@ static func line_text(s, type: String, tiles: Array) -> String:
 	var text := (
 		"%s: %d tile%s · %s" % [name, n, "" if n == 1 else "s", Ui.cost_text(total) if not total.is_empty() else "free"]
 	)
+	if type == "field":
+		text += " · " + FieldText.drag_note(s, tiles)
 	if not s.economy.can_afford(total):
 		return text + " · you have enough for part of it"
 	return text + " · release to lay"

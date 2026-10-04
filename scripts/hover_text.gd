@@ -11,6 +11,7 @@ const Workers = preload("res://scripts/workers.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Hands = preload("res://scripts/hands.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
+const FieldText = preload("res://scripts/field_text.gd")
 
 
 static func text(m) -> String:
@@ -41,6 +42,8 @@ static func _placing_text(m) -> String:
 		var err: String = s.town.placement_error(m.placing, m.hover)
 		if err != "":
 			t += "\n\nCan't build here: " + err + "."
+		if m.placing == "field" and err == "":
+			t += "\n\n" + FieldText.placing_text(s, m.hover)
 		if m.placing == "gatherers_hut":
 			var tiles: Array = s.town.tiles_of(m.hover, s.town.default_focus(m.hover))
 			t += "\n\n" + BuildingPanel.gather_text(s, tiles)
@@ -89,10 +92,13 @@ static func _tile_text(m) -> String:
 		var how := "Hold the mouse on it to gather."
 		if not m.nudge.is_empty() and m.nudge["tile"] == p:
 			how = "You let go too soon: keep the mouse down until the ring fills."
-		var out := "%s\n%s. %s" % [t["name"], hold_hint(s, item), how]
+		var title: String = Data.FIELD_TITLE % Data.ITEMS[item]["name"] if s.world.fields.has(p) else t["name"]
+		var out := "%s\n%s. %s" % [title, hold_hint(s, item), how]
 		if Data.FOOD_VALUE.has(item):
 			out += " It's food: the %s eat it." % Data.PEOPLE["many"]
 		out += "\n" + (Data.MINE_TIP if t.get("mine_only", false) else learn_text(s, item))
+		if s.world.fields.has(p):
+			out += "\n\n" + FieldText.tile_text(s, p)
 		return out + ("\n" + hint + "." if hint != "" else "")
 	var info: String = t["name"]
 	if t.has("hint"):
