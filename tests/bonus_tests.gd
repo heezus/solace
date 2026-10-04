@@ -7,6 +7,7 @@ const Sim = preload("res://scripts/sim.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Work = preload("res://scripts/work.gd")
+const Patch = preload("res://scripts/patch.gd")
 
 var t  # the runner, tests/run_tests.gd
 
@@ -47,7 +48,8 @@ func test_bonuses_add_within_and_multiply_across() -> void:
 		"Stone Axe is a click tool: x3 Wood, so a bundle is %d Wood" % (Data.BUNDLE * 3)
 	)
 	var cycles := 60.0 / Data.BUILDINGS["gatherers_hut"]["time"]
-	t.check(is_equal_approx(60.0 / Work.time(s, hut), cycles * 2.5), "speed x2.5 and the bundle multiply")
+	var patch := Patch.speed(s, hut)  # a hut with several tiles in reach is faster still (scripts/patch.gd)
+	t.check(is_equal_approx(60.0 / Work.time(s, hut), cycles * 2.5 * patch), "speed x2.5 and the bundle multiply")
 	var text := Work.text(s, hut)
 	t.check(text.contains("x Speed 2.5"), "the panel shows the speed math: " + text)
 	t.check(text.contains("Flint Tools +50%") and text.contains("Standing Stone +100%"), "and names each bonus")
@@ -69,7 +71,10 @@ func test_workers_take_tools() -> void:
 	t.check(s.economy.inv["flint_tools"] == 1, "from the stockpile")
 	t.check(Hands.tools_held(s) == 1, "one Kith holds a tool")
 	t.check(is_equal_approx(Bonuses.speed(s, hut), 1.5), "a worker with a tool works 50% faster")
-	t.check(is_equal_approx(Work.time(s, hut), Data.BUILDINGS["gatherers_hut"]["time"] / 1.5), "so each job is shorter")
+	t.check(
+		is_equal_approx(Work.time(s, hut), Data.BUILDINGS["gatherers_hut"]["time"] / (1.5 * Patch.speed(s, hut))),
+		"so each job is shorter"
+	)
 	var q := s.world.camp_pos + Vector2i(2, 0)
 	t.place_free(s, "gatherers_hut", q)
 	s.tick(0.1)

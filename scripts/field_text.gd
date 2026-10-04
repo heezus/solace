@@ -1,0 +1,191 @@
+extends RefCounted
+## What a Field is for, in plain words with live numbers: the Info panel's lines for a sown tile, the build card's
+## tooltip, and the pill while fields are being laid. A Field is a sown tile of a crop; it pays only through a Gatherer's
+## Hut that reaches it and works that crop, so every line says which huts do. The crop is read from the tile (its
+## `yields`), so another crop's field reads the same. Static, and works on the Sim passed in. The wording is in Data
+## (scripts/data/words.gd); the numbers are in scripts/patch.gd.
+
+const Data = preload("res://scripts/data.gd")
+const Patch = preload("res://scripts/patch.gd")
+const PatchRate = preload("res://scripts/patch_rate.gd")
+
+
+## The Info panel's lines under a sown tile: which huts reap it and how much, what a field pays over wild growth, the
+## river, and what the crop is for. "" for a tile that is not a field.
+static func tile_text(s, p: Vector2i) -> String:
+	if not is_sown(s, p):
+		return ""
+	var item: String = Data.TILES[s.world.tile_at(p)]["yields"]
+	var lines: Array = [hut_line(s, p, item)]
+	var gain := gain_line(s, p, item)
+	if gain != "":
+		lines.append(gain)
+	lines.append(yield_line(s, p, item))
+	var river := river_line(s, p) if s.world.fields.has(p) else ""  # Irrigation is for grain fields
+	if river != "":
+		lines.append(river)
+	var mill := mill_line(item)
+	if mill != "":
+		lines.append(mill)
+	return "\n".join(lines)
+
+
+## Who reaps the field at `p`: nobody in reach (and how to fix that), a hut with another job or no worker, or the huts
+## that do with what they bring home a minute.
+static func hut_line(s, p: Vector2i, item: String) -> String:
+	var huts := Patch.huts_reaching(s, p)
+	if huts.is_empty():
+		return Data.FIELD_NO_HUT % s.town.hut_radius()
+	var item_name: String = Data.ITEMS[item]["name"]
+	var working: Array = []
+	var other := ""
+	var empty := false
+	for b in huts:
+		if not Patch.works(s, b, item):
+			other = b["focus"] if other == "" else other
+		elif b["worker"] < 0:
+			empty = true
+		else:
+			working.append(b)
+	if working.is_empty():
+		if other != "":
+			return Data.FIELD_HUT_OTHER % [Data.ITEMS[other]["name"], item_name]
+		return Data.FIELD_HUT_EMPTY % Data.PEOPLE["one"] if empty else Data.FIELD_NO_HUT % s.town.hut_radius()
+	var total := 0.0
+	for b in working:
+		total += PatchRate.per_minute(s, b, s.town.focus_tiles(b), item)
+	if working.size() == 1:
+		return Data.FIELD_HUT_WORKS % [num(total), item_name, s.town.focus_tiles(working[0]).size()]
+	return Data.FIELD_HUTS_WORK % [working.size(), num(total), item_name]
+
+
+## What this tile is worth to the huts that work its crop: the speed one more tile adds and what that is a minute, or
+## that the hut already has all the tiles that help. "" when no hut in reach works the crop.
+static func gain_line(s, p: Vector2i, item: String) -> String:
+	var total := 0.0
+	var any := false
+	var room := false  # some hut in reach still gains speed from one more tile
+	var first := false  # this tile would be a hut's only one
+	var most := 0
+	for b in Patch.huts_reaching(s, p):
+		if not Patch.works(s, b, item):
+			continue
+		any = true
+		var tiles: Array = s.town.focus_tiles(b)
+		var others := tiles.size() - (1 if tiles.has(p) else 0)
+		most = maxi(most, others)
+		room = room or not Patch.is_full(others)
+		first = first or others == 0
+		total += PatchRate.tile_gain(s, b, p, item)
+	if not any:
+		return ""
+	var name: String = Data.ITEMS[item]["name"]
+	var step := roundi(Data.PATCH_STEP * 100.0)
+	if not room and Patch.field_share(s, p) <= 0.0:
+		return Data.FIELD_GAIN_FULL % most
+	if first:
+		return Data.FIELD_GAIN_FIRST % [name, num(total), name, step]
+	return Data.FIELD_GAIN % [step, num(total), name]
+
+
+## What a field pays over the wild plant: the share Calendar and on give, or which tech would.
+static func yield_line(s, p: Vector2i, item: String) -> String:
+	var item_name: String = Data.ITEMS[item]["name"]
+	if s.world.flax_fields.has(p):
+		return Data.FIELD_SOWN_STAYS % item_name
+	var share := Patch.field_share(s, p)
+	if share > 0.0:
+		return Data.FIELD_PAYS % [roundi(share * 100.0), item_name]
+	return (
+		Data.FIELD_PAYS_LATER % [item_name, Data.TECHS["calendar"]["name"], roundi(Data.CALENDAR_FIELD_BONUS * 100.0)]
+	)
+
+
+## A field on the river bank is harvested twice as fast once Irrigation is known; "" when it is not on the bank.
+static func river_line(s, p: Vector2i) -> String:
+	if not s.world.touches_river(p):
+		return ""
+	if s.tech_tree.researched.has("irrigation"):
+		return Data.FIELD_RIVER
+	return Data.FIELD_RIVER_LATER % Data.TECHS["irrigation"]["name"]
+
+
+## Whether tile `p` was sown by the player (a grain Field or a Flax Field), not wild.
+static func is_sown(s, p: Vector2i) -> bool:
+	return s.world.fields.has(p) or s.world.flax_fields.has(p)
+
+
+## The item a field kind's crop gives: the yield of its tile ("grain" for the Field, "fiber" for the Flax Field).
+static func crop_item(def: Dictionary) -> String:
+	return Data.TILES[def.get("crop", "grain")]["yields"]
+
+
+## The fields of one kind that stand now (the Field's grain, or the Flax Field's flax).
+static func sown_of(s, def: Dictionary) -> Dictionary:
+	return s.world.flax_fields if def.get("crop", "grain") == "flax" else s.world.fields
+
+
+## What the crop is for, when it is not eaten raw: the workshop that mills it and into what. "" for none.
+static func mill_line(item: String) -> String:
+	if Data.FOOD_VALUE.has(item):
+		return ""
+	for type in Data.BUILD_ORDER:
+		var def: Dictionary = Data.BUILDINGS[type]
+		if def["kind"] == "processor" and def.get("in", {}).has(item) and not def.get("out", {}).is_empty():
+			var made: String = def["out"].keys()[0]
+			return (
+				Data.FIELD_MILL
+				% [
+					Data.ITEMS[item]["name"],
+					def["name"],
+					"%d %s" % [def["in"][item], Data.ITEMS[item]["name"]],
+					"%d %s" % [def["out"][made], Data.ITEMS[made]["name"]]
+				]
+			)
+	return ""
+
+
+## The build card's tooltip lines: how many of your fields have no hut in reach, and what the crop is for.
+static func card_text(s, def: Dictionary) -> String:
+	var crop := crop_item(def)
+	var fields: Array = sown_of(s, def).keys()
+	var idle := 0
+	for p in fields:
+		if Patch.huts_reaching(s, p).is_empty():
+			idle += 1
+	var lines: Array = []
+	if fields.is_empty():
+		lines.append(Data.FIELD_CARD_NONE)
+	elif idle == 0:
+		lines.append(Data.FIELD_CARD_OK % fields.size())
+	else:
+		lines.append(Data.FIELD_CARD % [idle, fields.size(), s.town.hut_radius()])
+	lines.append(Data.FIELD_CARD_RULE % [s.town.hut_radius(), Data.ITEMS[crop]["name"]])
+	var mill := mill_line(crop)
+	if mill != "":
+		lines.append(mill)
+	return "\n".join(lines)
+
+
+## The line the Info panel adds while a field is being placed at `p`: the huts that would reap it, or how to get one.
+static func placing_text(s, p: Vector2i, def: Dictionary) -> String:
+	var huts := Patch.huts_reaching(s, p)
+	if huts.is_empty():
+		return Data.FIELD_NO_HUT % s.town.hut_radius()
+	var line: String = Data.FIELD_PLACE_HUT % ("1 hut" if huts.size() == 1 else "%d huts" % huts.size())
+	var gain := gain_line(s, p, crop_item(def))
+	return line + ("\n" + gain if gain != "" else "")
+
+
+## What a dragged line of fields adds to the pill: how many of its tiles a hut reaches.
+static func drag_note(s, type: String, tiles: Array) -> String:
+	var in_reach := 0
+	for p in tiles:
+		if s.town.placement_error(type, p) == "" and not Patch.huts_reaching(s, p).is_empty():
+			in_reach += 1
+	return Data.FIELD_DRAG_SOME % in_reach if in_reach > 0 else Data.FIELD_DRAG_NONE
+
+
+## A number of items a minute, to one place with no trailing ".0" ("9", "9.4").
+static func num(x: float) -> String:
+	return str(snappedf(x, 0.1)).trim_suffix(".0")

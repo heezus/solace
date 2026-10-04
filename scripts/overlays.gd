@@ -8,6 +8,8 @@ const Buildings = preload("res://scripts/buildings.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Rules = preload("res://scripts/rules.gd")
+const FieldText = preload("res://scripts/field_text.gd")
+const Clearing = preload("res://scripts/clearing.gd")
 
 const TILE := 48.0  # map px per tile at the default zoom
 const OUTLINE: Color = Art.OUTLINE
@@ -38,7 +40,7 @@ static func footprint(s, p: Vector2i) -> Rect2:
 static func demolish_text(s, p: Vector2i) -> String:
 	var type: String = s.town.built_type(p)
 	if type == "":
-		return ""
+		return Clearing.check(s, p)["text"]  # a resource tile: what clearing it loses, or why it stays
 	var def: Dictionary = Data.BUILDINGS[type]
 	if def["kind"] == "camp":
 		return "The Hearth stays · it's the heart of the settlement"
@@ -57,9 +59,10 @@ static func demolish_text(s, p: Vector2i) -> String:
 static func demolish_hover(ci: CanvasItem, s, p: Vector2i) -> void:
 	var r := rect(p)
 	var type: String = s.town.built_type(p)
-	if type == "" or Data.BUILDINGS[type]["kind"] == "camp":
+	var keeps: bool = type == "" and not Clearing.check(s, p)["ok"]  # a tile that stays: grass, fog, river, the last one
+	if keeps or (type != "" and Data.BUILDINGS[type]["kind"] == "camp"):
 		ci.draw_rect(r.grow(-2), Color(1, 1, 1, 0.5), false, 2.0)
-		if type != "":
+		if demolish_text(s, p) != "":
 			Art.pill(ci, r.get_center() - Vector2(0, TILE * 1.2), demolish_text(s, p), Ui.TEXT, OUTLINE, 14)
 		return
 	ci.draw_rect(r, Color(ALERT, 0.35))
@@ -271,6 +274,8 @@ static func line_text(s, type: String, tiles: Array) -> String:
 	var text := (
 		"%s: %d tile%s · %s" % [name, n, "" if n == 1 else "s", Ui.cost_text(total) if not total.is_empty() else "free"]
 	)
+	if Data.BUILDINGS[type]["kind"] == "field":
+		text += " · " + FieldText.drag_note(s, type, tiles)
 	if not s.economy.can_afford(total):
 		return text + " · you have enough for part of it"
 	return text + " · release to lay"

@@ -19,6 +19,7 @@ const Buildings = preload("res://scripts/buildings.gd")
 const Work = preload("res://scripts/work.gd")
 const HutFocus = preload("res://scripts/hut_focus.gd")
 const TradePicker = preload("res://scripts/trade_picker.gd")
+const PatchText = preload("res://scripts/patch_text.gd")
 
 const INSET := Color("3b2a24")  # the `ui-bar` cocoa, sunk into the `ui-panel` card
 
@@ -66,7 +67,7 @@ func setup(game: Sim) -> void:
 		v.add_child(parts[key])
 	parts["pace"].add_theme_color_override("font_color", Ui.TEXT_DIM)
 	parts["pace"].mouse_filter = Control.MOUSE_FILTER_STOP  # its tooltip has the exact numbers
-	var focus := HutFocus.new()  # what a hut works: one line, one click to change (scripts/hut_focus.gd)
+	var focus := HutFocus.new()  # what a hut works: a line and a button per resource in reach (scripts/hut_focus.gd)
 	focus.setup(game)
 	focus.changed.connect(refresh)
 	v.add_child(focus)
@@ -194,7 +195,8 @@ func refresh() -> void:
 	parts["recipe"].visible = parts["recipe"].text != ""
 	parts["worker"].text = worker_text(state, b)
 	parts["worker"].visible = Buildings.needs_worker(b)
-	parts["pace"].text = pace_text(state, b)
+	var patch := PatchText.panel_text(state, b) if def["kind"] == "gatherer" else ""
+	parts["pace"].text = pace_text(state, b) + ("\n" + patch if patch != "" else "")
 	parts["pace"].visible = parts["pace"].text != ""
 	parts["pace"].tooltip_text = Data.PACE_TIP % Work.text(state, b).replace("\n", "; ")
 	parts["click"].text = click_text(state, b)

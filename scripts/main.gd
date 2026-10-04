@@ -21,6 +21,9 @@ const Work = preload("res://scripts/work.gd")
 const KithArt = preload("res://scripts/kith_art.gd")
 const SidePanel = preload("res://scripts/side_panel.gd")
 const HoverText = preload("res://scripts/hover_text.gd")
+const PatchView = preload("res://scripts/patch_view.gd")
+const FieldText = preload("res://scripts/field_text.gd")
+const PatchText = preload("res://scripts/patch_text.gd")
 const Messages = preload("res://scripts/messages.gd")
 const ToastStack = preload("res://scripts/toast_stack.gd")
 const EastPointer = preload("res://scripts/east_pointer.gd")
@@ -29,6 +32,7 @@ const MessageLog = preload("res://scripts/message_log.gd")
 const HutFocus = preload("res://scripts/hut_focus.gd")
 const EraCard = preload("res://scripts/era_card.gd")
 const Profile = preload("res://scripts/profile.gd")
+const Clearing = preload("res://scripts/clearing.gd")
 
 const TILE: float = Overlays.TILE
 const MAP_ORIGIN := Vector2.ZERO  # the node's transform pans and zooms the map
@@ -59,6 +63,7 @@ var zoom_wait := 0.0  # seconds before a pinch may step the zoom again
 var frame: Panel
 var state: Sim
 var placing := ""  # building type being placed, "" when not placing
+var pick_focus := ""  # what the Gatherer's Hut being placed will work, once the player picked (see HutFocus.pick_*)
 var hover := Vector2i(-1, -1)
 var drag_from := Vector2i(-1, -1)  # where a road, bridge or field drag started
 var time := 0.0
@@ -136,9 +141,13 @@ func _process(delta: float) -> void:
 	_watch_flavor()
 	messages.advance(delta)
 	zoom_wait -= delta
-	_pan_with_keys(delta)
+	if not tech_panel.visible:  # the research board takes the arrows and WASD while it is open
+		_pan_with_keys(delta)
 	_layout()
-	hover = _tile_under()
+	if placing != "gatherers_hut":
+		pick_focus = ""
+	if not _over_picker():  # over the hut picker the ghost stays put, so its choices can be clicked
+		hover = _tile_under()
 	_hold(delta)
 	ui_refresh -= delta
 	if ui_refresh <= 0.0:
@@ -263,6 +272,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			placing = ""
 			drag_from = Vector2i(-1, -1)
 			building_panel.select(Vector2i(-1, -1))
+		elif event.button_index == MOUSE_BUTTON_LEFT and _click_picker():
+			pass  # a click on one of the hut picker's choices
 		elif event.button_index == MOUSE_BUTTON_LEFT and state.world.in_bounds(p):
 			if placing in LINE_TYPES:
 				drag_from = p  # laid on release, with a preview while dragging
@@ -278,6 +289,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				_set_speed(event.keycode - KEY_0)
 			KEY_X:
 				placing = "" if placing == "demolish" else "demolish"
+			KEY_TAB, KEY_R:
+				_cycle_hut_focus()
 			KEY_HOME:
 				center_on(state.world.camp_pos)
 			KEY_ESCAPE:
@@ -331,7 +344,7 @@ func _click_tile(p: Vector2i) -> void:
 	if placing != "":
 		var err := state.town.placement_error(placing, p)
 		if err == "":
-			state.place(placing, p)
+			_place_at(p)
 			if not state.economy.can_afford(Data.BUILDINGS[placing]["cost"]):
 				placing = ""
 		else:
@@ -354,6 +367,62 @@ func _click_tile(p: Vector2i) -> void:
 	holding = true
 	press_tile = p
 	press_harvested = false
+
+
+## A hut goes down working what the player picked (else its default); a hut with a choice left unmade says so once.
+func _place_at(p: Vector2i) -> void:
+	var hut := placing == "gatherers_hut"
+	state.place(placing, p, pick_focus if hut else "")
+	if hut:
+		var note := HutFocus.pick_note(state, p, pick_focus)
+		if note != "":
+			_toast(note, 7.0)
+		pick_focus = ""
+
+
+## Tab or R: while placing a hut, the next resource in reach; with a hut selected, its next resource.
+func _cycle_hut_focus() -> void:
+	if placing == "gatherers_hut":
+		pick_focus = HutFocus.pick_next(state, hover, pick_focus)
+	elif placing == "" and building_panel.visible:
+		building_panel.parts["focus"].cycle()
+
+
+## The visible map in its own drawing space: what the hut picker keeps inside.
+func _view_local() -> Rect2:
+	return Rect2((view.position - position) / scale.x, view.size / scale.x)
+
+
+func _over_picker() -> bool:
+	return (
+		placing == "gatherers_hut"
+		and state.world.in_bounds(hover)
+		and HutFocus.pick_over(state, hover, _view_local(), get_local_mouse_position())
+	)
+
+
+## A left click on a picker choice picks it (true), and one on the panel between choices is swallowed.
+func _click_picker() -> bool:
+	if not _over_picker():
+		return false
+	var item := HutFocus.pick_at(state, hover, _view_local(), get_local_mouse_position())
+	if item != "":
+		pick_focus = item
+	return true
+
+
+## The hut ghost's marker (what it will work) and picker (when there is a choice), over a spot it can stand on.
+func _draw_hut_picker() -> void:
+	if (
+		placing != "gatherers_hut"
+		or not state.world.in_bounds(hover)
+		or state.town.placement_error(placing, hover) != ""
+	):
+		return
+	HutFocus.draw_marker(
+		self, _tile_rect(hover).grow(-2.0 * TILE / Art.DESIGN), HutFocus.pick_chosen(state, hover, pick_focus)
+	)
+	HutFocus.draw_picker(self, state, hover, pick_focus, _view_local())
 
 
 ## Hold to harvest, each frame the button is down: over a Control (a bar, a panel) it doesn't count.
@@ -382,10 +451,22 @@ func _stop_holding() -> void:
 	state.release_harvest()
 
 
+## Demolish on unbuilt ground: a resource tile is cleared to grass for good, anything else says why it stays.
+func _clear_land(p: Vector2i) -> void:
+	if Clearing.clear(state, p) == "":
+		var why: String = Clearing.check(state, p)["text"]
+		if why != "":
+			_toast(why + ".", 2.0)
+		return
+	rubble.append({"pos": p, "t": 0.0})
+	popups.append({"pos": _tile_center(p), "text": "Cleared", "t": 0.0})
+
+
 ## Tear down what's at p for half its cost back.
 func _demolish(p: Vector2i) -> void:
 	var type := state.town.built_type(p)
 	if type == "":
+		_clear_land(p)
 		return
 	if Data.BUILDINGS[type]["kind"] == "camp":
 		_toast("The Hearth stays: it's the heart of the settlement.", 2.0)
@@ -536,7 +617,10 @@ func _on_tech_researched(tech: String) -> void:
 
 
 ## What a tile is drawn as: ore not yet named by its tech shows as plain ground.
-func _feature_name(tile: String) -> String:
+func _feature_name(p: Vector2i) -> String:
+	if state.world.flax_fields.has(p):
+		return "flax_field"  # sown flax is drawn apart from the wild patches
+	var tile := state.world.tile_at(p)
 	var tech: String = Data.TILES[tile].get("tech", "")
 	return "plain_ore" if tech != "" and not state.tech_tree.researched.has(tech) else tile
 
@@ -590,7 +674,7 @@ func _draw() -> void:
 			var p := Vector2i(x, y)
 			if not state.fog.is_revealed(p):
 				continue
-			Art.map_feature(self, _feature_name(state.world.tile_at(p)), _tile_center(p), p, time, TILE / Art.DESIGN)
+			Art.map_feature(self, _feature_name(p), _tile_center(p), p, time, TILE / Art.DESIGN)
 
 	# Ranges: a hut's gathering tiles, power range for wheels, Standing Stone reach.
 	var hovered_type := ""
@@ -601,6 +685,14 @@ func _draw() -> void:
 		and (placing == "gatherers_hut" or (placing == "" and hovered_type == "gatherers_hut"))
 	):
 		_draw_gather_range(hover)
+	if (
+		state.world.in_bounds(hover)
+		and (
+			(Data.BUILDINGS.has(placing) and Data.BUILDINGS[placing]["kind"] == "field")
+			or (placing == "" and FieldText.is_sown(state, hover))
+		)
+	):
+		PatchView.draw_huts_reaching(self, state, hover)  # the huts that would reap this field
 	if placing == "water_wheel" and state.world.in_bounds(hover):
 		draw_circle(_tile_center(hover), Data.BUILDINGS["water_wheel"]["radius"] * TILE, Color(0.16, 0.62, 0.56, 0.18))
 	if placing == "grindstone" or hovered_type in ["water_wheel", "grindstone"]:
@@ -642,7 +734,13 @@ func _draw() -> void:
 				"Fell the trees · %s"
 				% Ui.cost_text(Rules.cost_at("road", "tree", state.tech_tree.researched.has("causeways")))
 			)
-		Overlays.placement_ghost(self, state, placing, hover, note)
+		Overlays.placement_ghost(
+			self,
+			state,
+			placing,
+			hover,
+			PatchText.with_pill(state, placing, hover, HutFocus.pick_chosen(state, hover, pick_focus), note)
+		)
 	elif state.world.in_bounds(hover) and not state.fog.is_revealed(hover):
 		var fr := _tile_rect(hover)
 		Art.dashed_rect(self, fr.grow(-1), Color(1, 1, 1, 0.6), 2.0, 5.0, 4.0)
@@ -656,6 +754,7 @@ func _draw() -> void:
 	elif state.world.in_bounds(hover):
 		draw_rect(_tile_rect(hover).grow(-1), Color(1, 1, 1, 0.8), false, 2.0)  # the Info panel says what it is
 
+	_draw_hut_picker()
 	_draw_hold_ring()
 	_draw_nudge()
 	if paused:
@@ -699,7 +798,8 @@ func _draw_gather_range(p: Vector2i) -> void:
 	var reach := Rect2(MAP_ORIGIN + Vector2(p - Vector2i(r, r)) * TILE, Vector2.ONE * (2 * r + 1) * TILE)
 	draw_rect(reach, Color(GOAL_COLOR, 0.18))
 	Art.dashed_rect(self, reach, GOAL_COLOR, 2.0 * Art.ui_k, 10.0 * Art.ui_k, 6.0 * Art.ui_k)
-	for t in state.town.tiles_of(p, state.town.focus_at(p)):  # only what the hut works
+	var focus := HutFocus.pick_chosen(state, p, pick_focus) if placing == "gatherers_hut" else state.town.focus_at(p)
+	for t in state.town.tiles_of(p, focus):  # only what the hut works
 		draw_rect(_tile_rect(t).grow(-3), Color(1, 0.82, 0.4, 0.35))
 		draw_rect(_tile_rect(t).grow(-3), GOAL_COLOR, false, 2.0)
 

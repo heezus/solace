@@ -90,12 +90,12 @@ const TECHS := {
 		"lane": "fiber",
 		"tier": 0,
 		"slot": 0,
-		"unlock": "Rope, Twine Post",
+		"unlock": "Rope, Twine Post, Flax Field",
 		"icon": "twine_post",
 		"requires": [],
 		"cost": {"fiber": 15},
 		"rank": {"building": "twine_post"},
-		"desc": "Twist fiber into rope, by hand or at a Twine Post.",
+		"desc": "Twist fiber into rope, by hand or at a Twine Post. Keep some back to sow Flax Fields.",
 	},
 	"fire":
 	{

@@ -361,6 +361,64 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Each study retains current subject identities, the top-down map convention, 64-unit Hearth and 32-unit other viewBoxes. The board compares the documented 96/34/48/24 px display sizes to support the choice.
 - Proposed palettes, silhouettes and future terrain/UI applications are exploratory, not new canon or approved tokens. See [the proposal](../art/overhaul/README.md).
 
+## 2026-10-03: choose what a hut works (PR #40)
+- Claude, from Jon's playtest feedback: clay and flint stood side by side, the Gatherer's Hut defaulted to flint, and the only way to clay was to demolish round it (two roads built just to do that). The change existed (one text line, "click to change") but nobody found it.
+- While placing a hut over a spot with two or more resources in reach, a picker by the ghost shows one row per resource (icon and name, the chosen one gold). Click a row, or press Tab or R. The hut goes down working that, with no extra click. With no choice made the default stands (the nearest resource), and a pick never carries over to the next hut.
+- The hut card replaces the "click to change" line with a button per resource in reach (icon, plain name, tooltip, the current one pressed); Tab or R steps through them from the keyboard. With one resource in reach it is still just the line.
+- A hut put down with a choice left unmade shows one toast: "This hut works Flint. Clay is in reach too: pick it in the hut panel."
+- The range overlay lights the tiles of the chosen resource and follows a change at once. Save format, hauling and both goldens are unchanged (the bots place huts with the default).
+- The layout pass checks the picker and the card's buttons fit with three resources at 1280x800 and 1100x700.
+
+## 2026-10-03: tech board fit and next-steps clarity (PR #36)
+- Claude, from Jon's playtest feedback: "the tech tree movement is clunky, it doesn't fit neatly" and "Next steps is not really intuitive". UI only: both goldens and every tech, cost and effect are unchanged.
+- **The board fits.** Cards are one compact line each (icon, name, a status mark, a thin bar for how much of the price you hold; costs moved to the hover strip and the next-steps cards), so a whole era is about 1340 x 520 and opens fitted to the room it has (about 1240 x 485 in a 1280x800 window, names 14 px). Wheel or +/- zoom about the pointer (down to the fit, up to 2x), dragging empty space or a card pans, arrows or WASD pan while the board is open, F or the Fit button snaps back. The view eases, and is clamped so the board can never be moved out of sight. The hover strip is a fixed 170 px so hovering never resizes (and refits) the board.
+- **What to learn next is the opening view.** A titled view of just the techs you can discover now (everything they need is done), each a card with the price as "Wood 9 of 20", one plain sentence on what it unlocks (`TECH_BLURBS` in `scripts/data/words.gd`) and a Discover or Queue it button, with a "Locked for now" list under it saying "needs X first". A toggle switches it with Whole board, and a line under the header explains the view.
+- **The Suggested rule** (`scripts/tech_next.gd`, first match wins): the next step on the route to the goal you queued; else on the route to the first tech the Goals list still asks for; else the cheapest tech you can pay for now (fewest items, ties in tree order); else the one with the least still to gather. The card says which rule picked it.
+- The old design page `mockups/tech-tree-v4.md` still describes the lines and lanes (unchanged); only the card is now compact. The ready-to-discover chips were dropped (gold cards and the next-steps view show the same) and the queue moved onto the stock line.
+
+## 2026-10-03: Shard Cairn gets a purpose (PR #39)
+- Claude decided this at Jon's request (his option c): the Shard Cairn did nothing, so there was no reason to build it. It now pays off twice.
+- Now: while a cairn stands every tech costs 5% less. It multiplies with Tally Sticks, rounds once, and only one cairn counts. Small enough that the 12 Stone is a fair trade, not a must-build; the bot never builds it, so both goldens are unchanged.
+- Later: a cairn raised before the Falling Star lands sets the saved run flag `cairn_before_landing` and records the story moment `cairn_raised`, for a future Chronicle. When the Lumen ship arrives, the flag will make first contact friendlier. No ship or Lumen gameplay was added.
+- The status and tooltip hint at both effects in the mystery tone ("the Kith think clearer", "something far off may hear") and name no ship or visitor, since a playtest said the old text gave the twist away.
+
+## 2026-10-03: flax can be planted, a canon change by Jon (PR #38)
+- Claude, from Jon's request ("I think we need an ability to plant fiber"). Canon until now: flax was the only source of Fiber and grew only in wild patches. It is no longer wild-only: Flax can be sown, and wild patches stay as the early start.
+- New build card **Flax Field** on the Gathering tab beside Field. It unlocks with **Cordage** (no new tech, the stone age can use it before Farming), costs 2 Fiber a tile and no grain, and is dragged on open grassland like a grain Field.
+- A sown tile is a flax tile (`World.flax_fields` remembers which), so a hut set to Fiber and a hand gatherer treat it exactly as wild flax. The yield per harvest is the same, it never runs out (wild tiles do not either), and Calendar, Plough and Irrigation do not touch it.
+- Demolish returns 1 Fiber and the grass. Saves keep the list; older saves load with none. Map generation, fairness and the bots are unchanged, so both goldens are unchanged.
+- Placeholder art: the wild flax sprite tinted pale blue-green with furrows; a Flax Field sprite is asked of Codex in `docs/art/requests.md`.
+
+## 2026-10-03: clear any resource tile (PR #37)
+- Claude, from Jon's playtest feedback: only Forest and Rocks could be cleared (by laying a road over them), so clay beside flint left the hut on flint and he built roads just to clear room. Demolish now clears any gatherable tile to grass.
+- Clearable (a `clearable` flag per tile in `scripts/data/tiles.gd`): Flax, Forest, Rocks, Gravel, Clay, Berries, Wild Grain. Never: the river, the Hearth, the Strange Stone, Copper Hills, Tin Stream, unexplored tiles (each has a plain "it stays" pill) and anything built (that is demolished as before). The new rule is in `scripts/clearing.gd`.
+- Clearing is free and gives nothing back: the pill reads "Clear Clay Bank · gone for good", and the log says what was cleared. Roads laid over Rocks or Forest cut them exactly as before.
+- Guard against soft-locks: a tile is refused ("That's the last Clay Bank · it stays") unless `CLEAR_KEEP` (1) other tiles of its kind are left anywhere on the map, fogged or not; sown fields do not count as Wild Grain. Every map has several of each near the Hearth, so this only stops clearing a kind off the map.
+- A cleared tile is saved with the tiles; every Gatherer's Hut re-reads its reach, and one whose focus is gone moves to what is nearest it, or to none. Both goldens are unchanged (the bots never clear).
+
+## 2026-10-03: Era 3 Starfall designed (PR #35)
+- Claude wrote [16-starfall.md](16-starfall.md) after Jon agreed the starred picks. Design only, nothing built.
+- Glyphs are the one new mechanic: scribes at a Glyph Wall copy glyphs automatically, the player only guesses meanings, and the game confirms 3 at a time. This keeps Jon's "no click chores" feedback.
+- Expeditions are set and forget (pick a fog target and a pack, parties walk on roads, haulers resupply, standing orders), so roads stay the star.
+- Shard Cairn built before the landing means guests and open trade; no cairn means wary outsiders and closed trade.
+- Lumen choice is Jon's mix: a hidden trust meter moved by buildings and trade, plus three big choice moments. It leans toward a reset (Time loop, Exodus or Cataclysm) and is stored as `lumen_lean` in the profile save.
+- Era runs about 20 minutes and ends on decoding the Bloom glyph and the first Bloom sign.
+
+## 2026-10-03: top bar chips match across eras (PR #34)
+- Claude, from Jon's playtest feedback: the third row (Ore, Tin, Copper, Bronze, Tools) did not match the others. It used a one-line chip (sprite, short name, count) with no rate, a 10 px gap and a 30 px row, where the stone-age rows use a fixed 80 px chip (sprite, count, rate under it) with a 3 px gap and 42 px rows.
+- Every chip is now the same widget in every era: 24 px sprite, 18 px count, 14 px rate, 2 px padding, the same tooltip with the rate and the same hover panel. The name stays in the tooltip, as for the stone-age goods. The third row's chips sit under the first row's columns.
+- The three rows are 38 px each (was 42, 42 and 30; a chip keeps 1 px above and below and the rate sits 2 px closer), so all three fit in the 130 px bar and are evenly spaced; it still fits at 1280 and 1100 wide.
+- The era-2 sprites are wired and drawn at the same size, but they are thinner-outlined and Copper and Bronze share one shape. Requested a redraw from Codex in `docs/art/requests.md`; no code change is needed when it lands.
+- Layout-pass checks now compare each era-2 chip with the first row's on size, sprite size, font sizes, padding, build, tooltip and column, and check the rows are evenly spaced.
+
+## 2026-10-03: show what fields are for (PR #41)
+- Claude, from Jon's playtest: "I'm not sure what the purpose of building more fields is", then "one field vs 50 fields doesn't seem different to me". He was right. A hut has one worker, takes its tiles in turn, and tiles never ran out, so 1 tile in reach and 12 were the same (a clay hut: 40.8 a minute on 1 tile, 39.3 on 12). A Field paid nothing over wild grain until Calendar (+25%, 100 Grain), and grain is not food: a Grindstone mills 2 Grain into 1 Flour.
+- Text: a Field's Info panel, the Field build card and the placement line say which huts reach it ("No hut in reach: put a Gatherer's Hut within 2 tiles"), what they bring a minute, what a field pays over the wild plant, and what the crop is for. Hovering or laying a field outlines the huts that reach it.
+- Food readout: the Food block gets a second line, in plain words and 14 px: "Counting what your huts bring in: 12 of 30 s", "Needs +1.3 more food a minute to grow", "Steady food 12 of 35 s, then a Kith in about 47 s", "Next Kith in about 8 s". Its tooltip gives what the buildings bring against what everyone eats. The layout pass checks it fits at 1280 and 1100 wide.
+- Rule: rich patch. Each tile of a hut's resource in reach beyond the first adds +10% Speed, up to 8 tiles (+70%); wild tiles and Fields count alike (`PATCH_STEP`, `PATCH_MAX_TILES`). A clay hut makes 41 a minute on 1 tile, 51 on 4, 61 on 8. The placement preview, its map pill, the hut panel and a field's Info panel say so, and say "adds nothing" at the cap. No tile runs dry, so no hut can get stuck.
+- Pacing, bot on 8 maps. Stone-age first win: 12.9 to 15.1 min (avg 14.3) before, 13.0 to 14.7 after. First Bronze after dawn: 8.7 to 13.1 min (avg 10.0) before, 8.1 to 10.5 (avg 9.2) after. Tried: cap 6 (one map 17.1 min), cap 4 (one 12.5), half steps (one 17.8 to dawn); cap 8 was the tightest.
+- Goldens (`tests/golden.json`, `tests/golden_bronze.json`) were re-pinned in their own commit because hut speed moves every run.
+
 ## 2026-10-04: rendered miniature direction tested on dense tiles (PR #33)
 - Codex followed Jon's preference for grounded, atmospheric miniature rendering and sturdy stylized Kith; the earlier three SVG alternatives did not capture the intended material richness. The [Misty Highlands kit](../art/overhaul/misty-highlands/README.md) is a new direction proposal, not production-ready approval.
 - Reviewed Jon's gameplay recording and replaced sparse scenic assumptions with an orthogonal tile-map art test: dense resource groups, compact adjacent buildings, roads, bridges and illustrative hauling traffic. Tiles govern occupancy; square visual plates are not required.
