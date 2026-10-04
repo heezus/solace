@@ -116,6 +116,8 @@ func built_type(p: Vector2i) -> String:
 		return "bridge" if _world.tile_at(p) == "river" else "road"
 	if _world.fields.has(p):
 		return "field"
+	if _world.flax_fields.has(p):
+		return "flax_field"
 	return ""
 
 
@@ -140,7 +142,10 @@ func place(type: String, p: Vector2i, focus := "") -> Dictionary:
 		else:
 			_world.add_road(p)  # a bridge is a road over the river
 	elif kind == "field":
-		_world.add_field(p)
+		if Data.BUILDINGS[type].get("crop", "") == "flax":
+			_world.add_flax_field(p)
+		else:
+			_world.add_field(p)
 	else:
 		add_building(type, p)
 		if focus != "":
@@ -280,6 +285,8 @@ func demolish(p: Vector2i) -> Dictionary:
 		_world.remove_road(p)
 	elif _world.fields.has(p):
 		_world.remove_field(p)
+	elif _world.flax_fields.has(p):
+		_world.remove_flax_field(p)
 	else:
 		index = building_at[p]
 	demolished.emit(type, p)
@@ -307,6 +314,14 @@ func set_paused(i: int, on: bool) -> void:
 func set_status(b: Dictionary, status: String, alert: String) -> void:
 	b["status"] = status
 	b["alert"] = alert
+
+
+## The share off every tech that the standing buildings give: the best single one (0 to 1), so two cairns count as one.
+func research_discount() -> float:
+	var best := 0.0
+	for b in buildings:
+		best = maxf(best, float(Data.BUILDINGS[b["type"]].get("research_discount", 0.0)))
+	return best
 
 
 func is_powered(p: Vector2i) -> bool:

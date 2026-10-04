@@ -1,6 +1,6 @@
 extends RefCounted
 ## The World block: the tiles of the map, where the camp and the star shard are, and the roads and
-## fields laid on it. It stands alone: it reads Data and nothing else, and never reaches into another
+## fields laid on it (grain and flax). It stands alone: it reads Data and nothing else, and never reaches into another
 ## block. Fog (which tiles have been seen) is its own block and is not held here. What a tile costs to
 ## walk over is the Pathing block's business, and what may be built on it is decided by the caller.
 ## Sim owns one, reached as `sim.world`.
@@ -29,6 +29,7 @@ var shard_pos := Vector2i(-1, -1)
 var roads: Dictionary = {}  # Vector2i -> true (a bridge is a road over the river)
 var stone_bridges: Dictionary = {}  # Vector2i -> true, the bridges among them that are stone (they bear carts)
 var fields: Dictionary = {}  # Vector2i -> true, grain tiles that were sown
+var flax_fields: Dictionary = {}  # Vector2i -> true, flax tiles that were sown (wild flax is not in here)
 
 
 ## A map of open grass, `w` by `h` tiles (the game's size unless a test wants a tiny one).
@@ -157,6 +158,18 @@ func remove_field(p: Vector2i) -> void:
 	set_tile(p, "grass")
 
 
+## Sow a flax field at p: the tile becomes flax and is remembered as sown, so it can be told from the wild patches.
+func add_flax_field(p: Vector2i) -> void:
+	set_tile(p, "flax")
+	flax_fields[p] = true
+
+
+## Clear the flax field at p: the tile goes back to grass.
+func remove_flax_field(p: Vector2i) -> void:
+	flax_fields.erase(p)
+	set_tile(p, "grass")
+
+
 # --- Save --------------------------------------------------------------------
 
 
@@ -174,6 +187,7 @@ func to_dict() -> Dictionary:
 		"roads": Codec.vec_keys(roads),
 		"stone_bridges": Codec.vec_keys(stone_bridges),
 		"fields": Codec.vec_keys(fields),
+		"flax_fields": Codec.vec_keys(flax_fields),
 	}
 
 
@@ -192,3 +206,4 @@ func from_dict(d: Dictionary) -> void:
 	roads = Codec.to_vec_set(d.get("roads", []))
 	stone_bridges = Codec.to_vec_set(d.get("stone_bridges", []))
 	fields = Codec.to_vec_set(d.get("fields", []))
+	flax_fields = Codec.to_vec_set(d.get("flax_fields", []))

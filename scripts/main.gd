@@ -29,6 +29,7 @@ const MessageLog = preload("res://scripts/message_log.gd")
 const HutFocus = preload("res://scripts/hut_focus.gd")
 const EraCard = preload("res://scripts/era_card.gd")
 const Profile = preload("res://scripts/profile.gd")
+const Clearing = preload("res://scripts/clearing.gd")
 
 const TILE: float = Overlays.TILE
 const MAP_ORIGIN := Vector2.ZERO  # the node's transform pans and zooms the map
@@ -137,7 +138,8 @@ func _process(delta: float) -> void:
 	_watch_flavor()
 	messages.advance(delta)
 	zoom_wait -= delta
-	_pan_with_keys(delta)
+	if not tech_panel.visible:  # the research board takes the arrows and WASD while it is open
+		_pan_with_keys(delta)
 	_layout()
 	if placing != "gatherers_hut":
 		pick_focus = ""
@@ -446,10 +448,22 @@ func _stop_holding() -> void:
 	state.release_harvest()
 
 
+## Demolish on unbuilt ground: a resource tile is cleared to grass for good, anything else says why it stays.
+func _clear_land(p: Vector2i) -> void:
+	if Clearing.clear(state, p) == "":
+		var why: String = Clearing.check(state, p)["text"]
+		if why != "":
+			_toast(why + ".", 2.0)
+		return
+	rubble.append({"pos": p, "t": 0.0})
+	popups.append({"pos": _tile_center(p), "text": "Cleared", "t": 0.0})
+
+
 ## Tear down what's at p for half its cost back.
 func _demolish(p: Vector2i) -> void:
 	var type := state.town.built_type(p)
 	if type == "":
+		_clear_land(p)
 		return
 	if Data.BUILDINGS[type]["kind"] == "camp":
 		_toast("The Hearth stays: it's the heart of the settlement.", 2.0)
@@ -600,7 +614,10 @@ func _on_tech_researched(tech: String) -> void:
 
 
 ## What a tile is drawn as: ore not yet named by its tech shows as plain ground.
-func _feature_name(tile: String) -> String:
+func _feature_name(p: Vector2i) -> String:
+	if state.world.flax_fields.has(p):
+		return "flax_field"  # sown flax is drawn apart from the wild patches
+	var tile := state.world.tile_at(p)
 	var tech: String = Data.TILES[tile].get("tech", "")
 	return "plain_ore" if tech != "" and not state.tech_tree.researched.has(tech) else tile
 
@@ -654,7 +671,7 @@ func _draw() -> void:
 			var p := Vector2i(x, y)
 			if not state.fog.is_revealed(p):
 				continue
-			Art.map_feature(self, _feature_name(state.world.tile_at(p)), _tile_center(p), p, time, TILE / Art.DESIGN)
+			Art.map_feature(self, _feature_name(p), _tile_center(p), p, time, TILE / Art.DESIGN)
 
 	# Ranges: a hut's gathering tiles, power range for wheels, Standing Stone reach.
 	var hovered_type := ""
