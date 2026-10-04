@@ -198,6 +198,8 @@ static func next_view(main: Node, when: String) -> Array:
 				problems.append("%s: '%s' is under %d px" % [when, l.text, Ui.MIN_TEXT])
 			if l is Label and l.autowrap_mode == TextServer.AUTOWRAP_OFF and l.size.x + 1.0 < l.get_minimum_size().x:
 				problems.append("%s: '%s' is cut off" % [when, l.text])
+	return problems
+
 
 ## The Gathering tab's four cards (Gatherer's Hut, Field, Flax Field, Fishing Weir) all show, each whole inside the
 ## bottom bar and the window, clear of one another and of the Craft by hand buttons and the Demolish button.
