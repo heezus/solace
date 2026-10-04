@@ -92,7 +92,10 @@ static func _tile_text(m) -> String:
 		var how := "Hold the mouse on it to gather."
 		if not m.nudge.is_empty() and m.nudge["tile"] == p:
 			how = "You let go too soon: keep the mouse down until the ring fills."
-		var out := "%s\n%s. %s" % [t["name"], hold_hint(s, item), how]
+		var tile_name: String = t["name"]
+		if s.world.flax_fields.has(p):
+			tile_name = Data.BUILDINGS["flax_field"]["name"]
+		var out := "%s\n%s. %s" % [tile_name, hold_hint(s, item), how]
 		if Data.FOOD_VALUE.has(item):
 			out += " It's food: the %s eat it." % Data.PEOPLE["many"]
 		out += "\n" + (Data.MINE_TIP if t.get("mine_only", false) else learn_text(s, item))

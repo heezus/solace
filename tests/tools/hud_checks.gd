@@ -198,6 +198,41 @@ static func next_view(main: Node, when: String) -> Array:
 				problems.append("%s: '%s' is under %d px" % [when, l.text, Ui.MIN_TEXT])
 			if l is Label and l.autowrap_mode == TextServer.AUTOWRAP_OFF and l.size.x + 1.0 < l.get_minimum_size().x:
 				problems.append("%s: '%s' is cut off" % [when, l.text])
+
+## The Gathering tab's four cards (Gatherer's Hut, Field, Flax Field, Fishing Weir) all show, each whole inside the
+## bottom bar and the window, clear of one another and of the Craft by hand buttons and the Demolish button.
+static func gathering_tab(main: Node, when: String) -> Array:
+	var problems: Array = []
+	var bar: Control = main.bottom_bar
+	if bar.tab != "Gathering":
+		return ["%s: the Gathering tab isn't the one showing" % when]
+	var window := Rect2(Vector2.ZERO, main.get_viewport_rect().size)
+	var cards: Array = []
+	for type in Data.BUILD_TABS["Gathering"]:
+		var card: Control = bar.build_buttons[type]["button"]
+		if not card.is_visible_in_tree():
+			problems.append("%s: the %s card isn't showing on the Gathering tab" % [when, type])
+			continue
+		cards.append({"type": type, "rect": card.get_global_rect()})
+	if cards.size() != 4:
+		problems.append("%s: the Gathering tab shows %d cards (want 4)" % [when, cards.size()])
+	var others: Array = [{"type": "Demolish", "rect": bar.demolish_button.get_global_rect()}]
+	for r in bar.craft_buttons:
+		others.append({"type": "Craft " + r, "rect": bar.craft_buttons[r].get_global_rect()})
+	for a in cards:
+		var r: Rect2 = a["rect"]
+		if not bar.get_global_rect().encloses(r) or not window.encloses(r):
+			problems.append("%s: the %s card (%s) runs out of the bottom bar or the window" % [when, a["type"], r])
+		for b in cards + others:
+			if a["type"] != b["type"] and r.intersects(b["rect"]) and (b in others or a["type"] < b["type"]):
+				problems.append("%s: the %s card overlaps %s" % [when, a["type"], b["type"]])
+	if bar.get_combined_minimum_size().x > window.size.x:
+		problems.append(
+			(
+				"%s: the bottom bar needs %.0f px of a %.0f px window"
+				% [when, bar.get_combined_minimum_size().x, window.size.x]
+			)
+		)
 	return problems
 
 

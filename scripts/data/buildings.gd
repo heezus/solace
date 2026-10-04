@@ -3,6 +3,7 @@ extends RefCounted
 
 ## kind: "camp" | "house" | "road" | "bridge" | "field" | "depot" | "gatherer" | "processor" | "power" | "aura" | "cairn"
 ##   | "shed" (a Cart Shed) | "tower" (a Watchtower)
+## A "field" with `crop` "flax" sows flax instead of grain (World.flax_fields); it yields fiber as wild flax does.
 ## A `stone` bridge bears carts and walks at the Causeway pace; the Wooden Bridge bears the Kith only.
 ## A processor with `trade` has no fixed recipe: it swaps Data.TRADE_GIVE of the good it is set to give for
 ## Data.TRADE_GET of the one it is set to get (the building's `give` and `get`). `sight` is how far a building sees.
@@ -77,6 +78,16 @@ const BUILDINGS := {
 		"cost": {"fiber": 3, "grain": 1},
 		"color": Color("d4b44a"),
 		"desc": "Plant wild grain on open grassland, for huts to gather. Drag to sow.",
+	},
+	"flax_field":
+	{
+		"name": "Flax Field",
+		"kind": "field",
+		"crop": "flax",
+		"tech": "cordage",
+		"cost": {"fiber": 2},
+		"color": Color("8fbf9f"),
+		"desc": "Sow flax seed on open grassland, for huts and hands to cut as fiber. It never runs out. Drag to sow.",
 	},
 	"storehouse":
 	{
@@ -288,7 +299,7 @@ const BUILDINGS := {
 ## The build bar's tabs, in order. Craft by hand has its own small group beside them.
 const BUILD_TABS := {
 	"Homes": ["dwelling"],
-	"Gathering": ["gatherers_hut", "field", "fishing_weir"],
+	"Gathering": ["gatherers_hut", "field", "flax_field", "fishing_weir"],
 	"Workshops": ["charcoal_pit", "twine_post", "kiln", "water_wheel", "grindstone"],
 	"Metal": ["mine", "smelter", "crucible"],
 	"Logistics": ["road", "bridge", "stone_bridge", "storehouse", "cart_shed", "trading_post"],
@@ -301,6 +312,7 @@ const BUILD_ORDER := [
 	"bridge",
 	"stone_bridge",
 	"field",
+	"flax_field",
 	"storehouse",
 	"charcoal_pit",
 	"twine_post",
