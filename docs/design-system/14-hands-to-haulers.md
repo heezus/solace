@@ -62,3 +62,10 @@ The 20-minute target for a first stone-age run still holds. The bot plays the ar
 - A building with no road link shows a "Needs road" marker and status, and its hover text says what to connect. Its own worker still gathers and drops off by hand-carry trips, as before Haulers.
 - Haulers walk the road network. Off-road tiles are not part of a hauler's route.
 - This makes Roads part of the automation step, not a later extra. Paths & Haulers unlocks Roads, and roads are the visible sign that a building is automated.
+
+## Rich patch: more tiles in a hut's reach (2026-10-03, from Jon's playtest)
+- A hut has one worker and works one tile at a time, taking the tiles of its one resource in turn. Before this, tiles never ran out, so one tile in reach was worth exactly as much as fifty.
+- Now each tile of the hut's resource in reach, beyond the first, adds **+10% Speed** (a shorter harvest), up to **8 tiles (+70%)**. Wild tiles and Fields count alike. The numbers are `PATCH_STEP` and `PATCH_MAX_TILES` in `scripts/data/tuning.gd`.
+- It shows at three places: under the placement preview (and as a pill on the map: "Clay x4 · +30% speed"), on the hut's panel ("4 Clay tiles in range: +30% speed", with a live "About 51 Clay a minute"), and on a Field's Info panel ("Each field adds +10% to the hut's speed: this one is worth about +N Grain a minute", or "adds nothing" once the hut has all 8 it can use).
+- Speed only shortens the harvest, not the walk, so a clay hut with 1 tile makes about 41 a minute, with 4 tiles 51 and with 8 tiles 61 (+49%). More tiles than the cap do not help and, since the hut takes them in turn, the far ones lengthen its walk: 12 tiles make 54 a minute, 24 make 48.
+- A Field's other payoffs stand: +25% (Calendar), +50% (Plough), +50% (Bronze Ploughshare) more grain a harvest from sown tiles, and half the harvest time on the river bank with Irrigation. Grain is not eaten raw: a Grindstone mills 2 Grain into 1 Flour.

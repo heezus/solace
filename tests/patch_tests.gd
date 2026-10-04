@@ -135,7 +135,7 @@ func test_only_the_huts_resource_counts() -> void:
 
 
 func test_workshops_feel_no_patch() -> void:
-	var a := _arena(6)
+	var a := _arena(Data.PATCH_MAX_TILES)
 	var s: Sim = a[0]
 	var spot: Vector2i = a[1] + Vector2i(0, 3)
 	t.check(t.place_free(s, "twine_post", spot), "a Twine Post goes down by the clay")
@@ -146,14 +146,14 @@ func test_workshops_feel_no_patch() -> void:
 func test_the_words_say_where_the_hut_stands() -> void:
 	var one := PatchText.tiles_line("clay", 1)
 	t.check(one.begins_with("1 Clay tile in range: enough to work."), "one tile is enough to work: " + one)
-	t.check(one.contains("+10% speed") and one.contains("up to +50% at 6 tiles"), "and says what more adds: " + one)
+	t.check(one.contains("+10% speed") and one.contains("up to +70% at 8 tiles"), "and says what more adds: " + one)
 	var some := PatchText.tiles_line("clay", 4)
 	t.check(some.begins_with("4 Clay tiles in range: +30% speed."), "four tiles: " + some)
-	var full := PatchText.tiles_line("clay", 6)
-	t.check(full.contains("+50% speed, the most a patch gives"), "the cap: " + full)
+	var full := PatchText.tiles_line("clay", Data.PATCH_MAX_TILES)
+	t.check(full.contains("+70% speed, the most a patch gives"), "the cap: " + full)
 	t.check(full.contains("More tiles will not help this hut"), "and says more do not help: " + full)
 	t.check(PatchText.tiles_line("clay", 0) == "", "none: nothing to say")
-	t.check(PatchText.tiles_line("clay", 9).contains("+50%"), "past the cap it still says +50%")
+	t.check(PatchText.tiles_line("clay", 11).contains("+70%"), "past the cap it still says +70%")
 
 
 func test_a_field_says_what_one_more_tile_is_worth() -> void:

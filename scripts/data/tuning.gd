@@ -128,7 +128,7 @@ const PLOUGHSHARE_FIELD_BONUS := 0.5  # ...and the Bronze Ploughshare's, on top 
 ## ripest, and has more to choose from). Each tile beyond the first adds PATCH_STEP to its Speed, up to PATCH_MAX_TILES tiles
 ## in all: more tiles than that do not help. Wild tiles and Fields count alike (see scripts/patch.gd).
 const PATCH_STEP := 0.1
-const PATCH_MAX_TILES := 6
+const PATCH_MAX_TILES := 8
 
 ## Era 2, stage 2.
 ## Carts (The Wheel): each Cart Shed turns CARTS_PER_SHED haulers into carts. A cart carries CART_LOAD times what a
