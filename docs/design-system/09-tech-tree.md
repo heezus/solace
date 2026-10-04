@@ -160,8 +160,8 @@ Lore gates the era through Calendar, so story is part of progress, not flavor. T
 ## The hidden node: Star Lore
 - Clicking the Strange Stone (the shard tile) sets a `shard_seen` flag. The toast adds: "A new idea stirs in the tech tree: Star Lore."
 - Until then, Star Lore's card, its arrow from Storytelling and its dashed branch into Megaliths are not drawn, and it can't be researched. Megaliths shows a plain arrow from Storytelling, so the "or" doesn't give the secret away.
-- It unlocks the **Shard Cairn** (12 Stone), which must be built beside the Strange Stone. It does nothing yet. Its status reads "It hums. Nothing more. Yet." It's drawn as a small ring of grey stones with a faint pale-cyan glow.
-- Setup: the Cairn stays inert until the Lumen ship lands in the next era.
+- It unlocks the **Shard Cairn** (12 Stone), which must be built beside the Strange Stone. While one stands, every tech costs 5% less (`research_discount` 0.05 in the building's data). It stacks with Tally Sticks (the two multiply, the item is rounded once), and only one cairn counts however many are built. Its status reads "It hums. The Kith think clearer. Something far off may hear." It's drawn as a small ring of grey stones with a faint pale-cyan glow.
+- **Built before the ship lands.** The first cairn records the story moment `cairn_raised`. If the Falling Star has not fallen yet, it also sets the saved run flag `cairn_before_landing` (set once, never cleared; a cairn raised after the star falls leaves it off). Nothing reads the flag yet, since the ship is not in the game. Once the Lumen arrive, it will mean the cairn guided them to the Kith, and first contact starts friendlier. The flag is the whole hook: no ship or Lumen gameplay exists until then.
 
 ## Why these edges
 - **Stone Axe is the tool hub.** A flint head hafted with cord clears land (Farming), cuts timber (Water Wheel, Rafts) and poles (Carrying Poles).
