@@ -1,5 +1,9 @@
 # Solace: three visual directions
 
+## Current follow-up: Misty Highlands
+
+Jon's subsequent direction is grounded, atmospheric, beautiful and mysterious, with rendered miniature materials and sturdy stylized Kith. See the [rendered tile kit and dense-map scale tests](misty-highlands/README.md). The original three SVG studies below are retained for comparison; they are not the selected production direction. Raster studies are documentation-only and do not change the SVG production contract.
+
 Status: **proposals for Jon to choose**, 2026-10-03. No game sprites are replaced and no direction is approved by this PR. The current art direction remains the production baseline until Jon chooses.
 
 ![Three directions, enlarged and at documented game sizes](comparison.svg)

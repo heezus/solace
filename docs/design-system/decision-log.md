@@ -360,3 +360,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Samples and a comparison board live only in `docs/art/overhaul/`; a `.gdignore` keeps them out of Godot imports. Existing game sprites, import files and approved art direction remain unchanged.
 - Each study retains current subject identities, the top-down map convention, 64-unit Hearth and 32-unit other viewBoxes. The board compares the documented 96/34/48/24 px display sizes to support the choice.
 - Proposed palettes, silhouettes and future terrain/UI applications are exploratory, not new canon or approved tokens. See [the proposal](../art/overhaul/README.md).
+
+## 2026-10-04: rendered miniature direction tested on dense tiles (PR #33)
+- Codex followed Jon's preference for grounded, atmospheric miniature rendering and sturdy stylized Kith; the earlier three SVG alternatives did not capture the intended material richness. The [Misty Highlands kit](../art/overhaul/misty-highlands/README.md) is a new direction proposal, not production-ready approval.
+- Reviewed Jon's gameplay recording and replaced sparse scenic assumptions with an orthogonal tile-map art test: dense resource groups, compact adjacent buildings, roads, bridges and illustrative hauling traffic. Tiles govern occupancy; square visual plates are not required.
+- Generated a transparent 12-subject raster atlas plus grass and water studies, isolated in documentation under `.gdignore`. Compared 48 and 64 px tiles while retaining the 2×2 Hearth footprint. No production sprites, imports, engine files or mechanics changed.
+- Retained the SVG-only production baseline pending Claude's pipeline review. Documented camera/atlas alignment, terrain transitions, harvested states and real directional animations as unfinished production work rather than claiming the prototype solves them.
