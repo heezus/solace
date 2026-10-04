@@ -6,6 +6,10 @@ extends RefCounted
 const Data = preload("res://scripts/data.gd")
 const Ui = preload("res://scripts/ui.gd")
 const HutFocus = preload("res://scripts/hut_focus.gd")
+const PatchText = preload("res://scripts/patch_text.gd")
+const BuildingPanel = preload("res://scripts/building_panel.gd")
+const Overlays = preload("res://scripts/overlays.gd")
+const Art = preload("res://scripts/art.gd")
 
 var spot := Vector2i(-1, -1)  # where the hut stands for the check
 var tiles := {}  # the tiles turned into resources, to put back
@@ -67,6 +71,27 @@ func check_placing(main: Node, when: String) -> Array:
 			if r.intersects(other):
 				problems.append("the placement picker at %s: two rows overlap" % when)
 		seen.append(r)
+	return problems + check_pill(main, panel, when)
+
+
+## The ghost's note pill (trip, then the patch's "Clay x4 · +30% speed") sits under the ghost and never touches the
+## picker's panel, and it fits the map view.
+func check_pill(main: Node, panel: Rect2, when: String) -> Array:
+	var s = main.state
+	var item: String = HutFocus.pick_chosen(s, spot, main.pick_focus)
+	var note: String = PatchText.with_pill(s, "gatherers_hut", spot, item, BuildingPanel.trip_text(s, spot))
+	if note == "":
+		return []
+	var k := Art.ui_k
+	var px := maxi(roundi(14.0 * k), 1)
+	var w: float = ThemeDB.fallback_font.get_string_size(note, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x + 14.0 * k
+	var tile: Rect2 = Overlays.rect(spot)
+	var pill := Rect2(Vector2(tile.get_center().x - w / 2.0, tile.end.y + 4.0), Vector2(w, px + 8.0 * k))
+	var problems: Array = []
+	if pill.intersects(panel):
+		problems.append("the placement pill at %s (%s) overlaps the picker (%s): %s" % [when, pill, panel, note])
+	if pill.intersects(tile):
+		problems.append("the placement pill at %s covers the ghost" % when)
 	return problems
 
 

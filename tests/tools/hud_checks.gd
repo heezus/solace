@@ -137,6 +137,47 @@ static func chip_fit(main: Node, when: String) -> Array:
 	return problems
 
 
+## The Food block's second line (rate, then where the next birth stands) fits the block: the live label shows all its
+## lines at 14 px or more inside the bar, and the longest wording each state can take, measured at the block's width,
+## still leaves the block (name, up to three lines, the bar) within the bar's height.
+static func food_readout(main: Node, when: String) -> Array:
+	var problems: Array = []
+	var tb = main.top_bar
+	var sub: Label = tb.food_sub
+	var bar: Rect2 = tb.get_global_rect()
+	if sub.is_visible_in_tree():
+		if sub.get_line_count() > sub.get_visible_line_count():
+			problems.append('%s: the Food readout "%s" is cut short' % [when, sub.text])
+		if sub.get_theme_font_size("font_size") < Ui.MIN_TEXT:
+			problems.append("%s: the Food readout is under %d px" % [when, Ui.MIN_TEXT])
+		var box: Rect2 = tb.food_box.get_global_rect()
+		if box.end.y > bar.end.y - tb.RULE_W + 0.5 or box.position.y < bar.position.y + tb.EDGE_PAD - 0.5:
+			problems.append("%s: the Food block (%s) runs out of the bar (%s)" % [when, box, bar])
+		if box.end.x > bar.end.x + 0.5:
+			problems.append("%s: the Food block runs off the bar's right end" % when)
+	var one: String = Data.PEOPLE["one"]
+	var worst: Array = [
+		Data.GROW_STEADY % [35, 35, one, "99 min"],
+		Data.GROW_NEEDS_MORE % "99.9",
+		Data.GROW_NEEDS_STOCK % 999,
+		Data.GROW_COUNTING % [30, 30],
+		Data.GROW_NEXT % [one, "99 min"],
+	]
+	var font := ThemeDB.fallback_font
+	var width: float = tb.FOOD_W - 4.0
+	var line_h := font.get_height(Ui.MIN_TEXT)
+	for text in worst:
+		var lines := roundi(
+			font.get_multiline_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, width, Ui.MIN_TEXT).y / line_h
+		)
+		var block: float = font.get_height(tb.COUNT_SIZE) + (1 + lines) * line_h + 6.0
+		if block > tb.BAR_H - 2.0 * tb.EDGE_PAD - tb.RULE_W:
+			problems.append(
+				'%s: "%s" takes %d lines: the Food block would be %.0f px tall' % [when, text, lines, block]
+			)
+	return problems
+
+
 ## The whole board in the real window: fitted (the smallest zoom, so the whole era shows), every card inside the board's
 ## own rectangle, inside the research panel and inside the window, its names at least 14 px on screen, the strip below
 ## it the same height whatever it says, and nothing in the panel under 14 px.
