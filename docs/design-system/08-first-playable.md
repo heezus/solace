@@ -11,7 +11,7 @@ Grow a Kith camp from bare hands to a self-running stone-age economy, then unloc
 | Wood | Trees | Fire, charcoal, huts, water wheel |
 | Stone | Rocks | Tools, grindstone, huts |
 | Flint | Riverbeds (rare) | Flint tools |
-| Fiber | Flax (wild patches on open grassland) | Rope |
+| Fiber | Flax (wild patches on open grassland, or sown as a Flax Field) | Rope |
 | Clay | Riverbanks | Pottery, bricks |
 | Food | Berry bushes, later flour | Keeps workers working |
 
