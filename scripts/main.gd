@@ -29,6 +29,7 @@ const MessageLog = preload("res://scripts/message_log.gd")
 const HutFocus = preload("res://scripts/hut_focus.gd")
 const EraCard = preload("res://scripts/era_card.gd")
 const Profile = preload("res://scripts/profile.gd")
+const Clearing = preload("res://scripts/clearing.gd")
 
 const TILE: float = Overlays.TILE
 const MAP_ORIGIN := Vector2.ZERO  # the node's transform pans and zooms the map
@@ -383,10 +384,22 @@ func _stop_holding() -> void:
 	state.release_harvest()
 
 
+## Demolish on unbuilt ground: a resource tile is cleared to grass for good, anything else says why it stays.
+func _clear_land(p: Vector2i) -> void:
+	if Clearing.clear(state, p) == "":
+		var why: String = Clearing.check(state, p)["text"]
+		if why != "":
+			_toast(why + ".", 2.0)
+		return
+	rubble.append({"pos": p, "t": 0.0})
+	popups.append({"pos": _tile_center(p), "text": "Cleared", "t": 0.0})
+
+
 ## Tear down what's at p for half its cost back.
 func _demolish(p: Vector2i) -> void:
 	var type := state.town.built_type(p)
 	if type == "":
+		_clear_land(p)
 		return
 	if Data.BUILDINGS[type]["kind"] == "camp":
 		_toast("The Hearth stays: it's the heart of the settlement.", 2.0)
