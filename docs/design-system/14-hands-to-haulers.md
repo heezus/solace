@@ -64,7 +64,8 @@ Jon: "the early game is kinda slow and wonky with clicking, but once I got roads
 - The very first resource a Kith learns takes 6 harvests, every later one 10.
 - Paths & Haulers costs 20 Rope and 40 Wood (was 30 and 50). It still needs only Cordage and the Gatherer's Hut.
 - The Goals ask for Rope, Haulers and the first road before the Charcoal Pit (nothing waits on the pit).
-- Pacing bot, maps 1 to 8: first hut placed at 79 s (was 98 s), first trip about 96 s (was 120 s), Paths & Haulers researched about 286 s (was 332 s) and the first road laid a second later. The stone age is still won in 12.9 to 16.3 min (mean 14.1, was 14.3).
+- Pacing bot, maps 1 to 8: first hut placed at 79 s (was 98 s), first trip about 96 s (was 120 s), Paths & Haulers researched about 286 s (was 332 s) and the first road laid a second later. The stone age is still won in 12.8 to 16.5 min (mean 13.9, was 14.3); 40 seeds win in 12.7 to 19.8 min.
+- Idle haulers wait at their posts (the Hearth and each Storehouse with work) in turn by birth order, not by a hash of their name: the hash once left the Storehouse by the Smelters with 1 hauler of 45.
 
 ## Haulers need roads (2026-09-30, Jon's call)
 - Researching Paths & Haulers doesn't start hauling by itself. A hauler serves a building only if a **road connects it to the Hearth or a Storehouse**. Connected means the building touches a road tile that joins the road network of that depot.

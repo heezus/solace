@@ -117,7 +117,7 @@ func _aim() -> void:
 
 
 func _decide() -> void:
-	if not s.won:
+	if not _in_era_two():
 		super._decide()
 		return
 	_aim()
@@ -129,9 +129,16 @@ func _decide() -> void:
 	super._decide()
 
 
+## True once the era-2 bot has taken over: Bronze Dawn is won and begin_era_two has run. The very step that wins the dawn is
+## still the stone age's last, so this bot and the plain one (tests/autoplay.gd) reach tests/golden.json's state alike,
+## whether or not that step is one where the bot thinks.
+func _in_era_two() -> bool:
+	return s.won and dawn_at >= 0.0
+
+
 ## The first Bronze needs the smelting chain to have run: copper for Alloying and for the batch, and one tin.
 func _goal_wants(want: Dictionary) -> void:
-	if not s.won:
+	if not _in_era_two():
 		return
 	if s.economy.inv.get("copper", 0) < COPPER_FIRST and not s.tech_tree.researched.has("alloying"):
 		want["copper"] = want.get("copper", 0) + 12
@@ -150,7 +157,7 @@ func _goal_wants(want: Dictionary) -> void:
 ## The era's workshops are due once their tech is in and the first Bronze still needs them.
 func _workshops_due() -> Array:
 	var out := super._workshops_due()
-	if not s.won:
+	if not _in_era_two():
 		return out
 	if s.town.unlocked("smelter") and _count("smelter") == 0:
 		out.append("smelter")
