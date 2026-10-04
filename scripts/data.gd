@@ -67,6 +67,11 @@ const NEAR_TEXT := DataTiles.NEAR_TEXT
 const NEAR_RADIUS := DataTiles.NEAR_RADIUS
 const WALK_COST := DataTiles.WALK_COST
 const PASS_COST := DataTiles.PASS_COST
+const CLEAR_TEXT := DataTiles.CLEAR_TEXT
+const CLEAR_LAST := DataTiles.CLEAR_LAST
+const CLEAR_FOG := DataTiles.CLEAR_FOG
+const CLEAR_KEEP := DataTiles.CLEAR_KEEP
+const CLEAR_EVENT := DataTiles.CLEAR_EVENT
 
 # --- Techs: data/techs.gd ---
 const LANES := DataTechs.LANES
