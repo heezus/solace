@@ -1,6 +1,6 @@
 extends RefCounted
 ## The Gatherer's Hut picker, checked for the layout pass (tests/tools/layout_pass.gd): the picker beside the ghost while
-## a hut is placed, and the row of buttons on the hut card, with three resources in reach, at whatever the window is.
+## a hut is placed, and the row of buttons on the hut card, with three or more resources in reach, at whatever the window is.
 ## A hut is held over a spot, placed with Clay picked, and its card opened; each step returns its problems as a list.
 
 const Data = preload("res://scripts/data.gd")
@@ -9,6 +9,7 @@ const HutFocus = preload("res://scripts/hut_focus.gd")
 
 var spot := Vector2i(-1, -1)  # where the hut stands for the check
 var tiles := {}  # the tiles turned into resources, to put back
+var count := 3  # how many resources are in reach of the spot (three made up, others the map has)
 
 
 ## Hold a hut over a spot with Wood, Clay and Berries in reach, with the Hearth's neighbourhood stocked to pay for it.
@@ -32,7 +33,9 @@ func hold_a_hut(main: Node) -> Array:
 	for off in want:
 		tiles[spot + off] = s.world.tile_at(spot + off)
 		s.world.set_tile(spot + off, want[off])
-	main.center_on(spot)
+	count = s.town.focus_options(spot).size()
+	if count < 3:
+		return ["only %d resources in reach of the picker check's spot (want 3)" % count]
 	main.building_panel.select(Vector2i(-1, -1))
 	main.placing = "gatherers_hut"
 	main.pick_focus = ""
@@ -48,8 +51,8 @@ func check_placing(main: Node, when: String) -> Array:
 	var problems: Array = []
 	var bounds: Rect2 = main._view_local()
 	var rects: Dictionary = HutFocus.pick_rects(main.state, spot, bounds)
-	if rects.is_empty() or rects["rows"].size() != 3:
-		return ["the placement picker at %s isn't offering three resources" % when]
+	if rects.is_empty() or rects["rows"].size() != count:
+		return ["the placement picker at %s isn't offering all %d resources" % [when, count]]
 	var panel: Rect2 = rects["panel"]
 	if not bounds.encloses(panel):
 		problems.append("the placement picker at %s: %s runs out of the map view %s" % [when, panel, bounds])
@@ -89,8 +92,8 @@ func check_card(main: Node, when: String) -> Array:
 	var focus = main.building_panel.parts["focus"]
 	var card: Rect2 = main.building_panel.get_global_rect()
 	var side: Rect2 = main.side_panel.get_global_rect()
-	if not focus.is_visible_in_tree() or not focus.row.visible or focus.row.get_child_count() != 3:
-		return ["the hut card at %s isn't showing a button for each of three resources" % when]
+	if not focus.is_visible_in_tree() or not focus.row.visible or focus.row.get_child_count() != count:
+		return ["the hut card at %s isn't showing a button for each of %d resources" % [when, count]]
 	var pressed := 0
 	var seen: Array = []
 	for b in focus.row.get_children():

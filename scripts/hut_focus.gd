@@ -103,15 +103,12 @@ func cycle() -> void:
 		changed.emit()
 
 
-## "Gathering: Berries" and, when there is a choice, a pointer to the buttons under it.
-static func label_text(s: Sim, b: Dictionary) -> String:
+## "Gathering: Berries" (the buttons under it, when there is a choice, say the rest).
+static func label_text(_s: Sim, b: Dictionary) -> String:
 	var item: String = b["focus"]
 	if item == "":
 		return "Gathering: nothing in reach"
-	var text := "Gathering: %s" % Data.ITEMS[item]["name"]
-	if s.town.focus_options(b["pos"]).size() > 1:
-		text += " (pick another below)"
-	return text
+	return "Gathering: %s" % Data.ITEMS[item]["name"]
 
 
 ## The item's icon in a cocoa disc at a hut's lower left corner: what it works, on the map.

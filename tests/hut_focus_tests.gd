@@ -266,10 +266,7 @@ func test_the_panel_line_and_the_range_text() -> void:
 	var b: Dictionary = s.town.buildings[s.town.building_at[p]]
 	t.check(HutFocus.label_text(s, b) == "Gathering: Berries", "a hut with one choice reads 'Gathering: Berries'")
 	_put(s, p + Vector2i(2, 2), "tree")
-	t.check(
-		HutFocus.label_text(s, b).begins_with("Gathering: Berries"), "with a second choice it still leads with that"
-	)
-	t.check(HutFocus.label_text(s, b).contains("pick another below"), "and points at the buttons under it")
+	t.check(HutFocus.label_text(s, b) == "Gathering: Berries", "with a second choice the line stays the same")
 	var button := HutFocus.new()
 	button.setup(s)
 	button.show_for(b)
