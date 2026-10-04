@@ -47,19 +47,8 @@ const TECH_DONE := "Discovered"
 const DISCOVERED_EVENT := "Discovered %s"  # a tech's name: the one verb for research, in toast, log, goals and cards
 const TECH_OPTIONAL := "optional"
 const HIDDEN_CARD_HINT := "Click the Strange Stone"
-const NEXT_NONE := "Nothing new to discover right now. Gather more, or look at the whole board."
-const VIEW_NEXT := "Next steps"
-const VIEW_ALL := "Whole board"
-const VIEW_NEXT_TIP := "Just what you can discover next"
-const VIEW_ALL_TIP := "Every tech, and the lines between them"
 const QUEUE_CAPTION := "QUEUE"
 const QUEUE_EMPTY := "Click a far tech to queue its chain"
-const READY_CAPTION := "READY TO DISCOVER"
-const READY_EMPTY := "Nothing yet: gather more"
-const LEGEND_DONE := "discovered"
-const LEGEND_NEEDED := "still needed"
-const LEGEND_HOVER := "hover: what it needs and unlocks"
-const LEGEND_COST := "costs: you have / it needs"
 const STOCK_CAPTION := "YOU HAVE"
 const STRIP_READY := "Ready now: %s"  # names
 const STRIP_NONE := "Nothing is ready yet: gather what the cards need"
@@ -75,6 +64,104 @@ const STATE_DONE := "discovered"
 const STATE_READY := "ready"
 const STATE_MORE := "gather more"
 const STATE_LOCKED := "locked"
+
+# --- The research board's two views: "What to learn next" and the whole board (scripts/tech_panel.gd) ---
+const VIEW_NEXT := "What to learn next"
+const VIEW_ALL := "Whole board"
+const VIEW_NEXT_TIP := "Only the techs you can discover right now, and what each one costs"
+const VIEW_ALL_TIP := "Every tech in this age, and what leads to what"
+const EXPLAIN_NEXT := (
+	"These are the techs you can discover right now: everything each one needs is already discovered."
+	+ " The gold one is the one we suggest."
+)
+const EXPLAIN_ALL := (
+	"What leads to what in this age. Light lines are done, dark are still needed, 'or' means either parent."
+	+ " Drag to move, wheel to zoom, F to fit."
+)
+const FIT_BUTTON := "Fit (F)"
+const FIT_TIP := "Show the whole board at once (F)"
+const ZOOM_IN_TIP := "Zoom in (wheel up, or +)"
+const ZOOM_OUT_TIP := "Zoom out (wheel down, or -)"
+const GATE_NEEDS := "NEEDS ALL %d"  # how many (the tall card at the end of an age)
+const GATE_MET := "ALL MET"
+const GATE_COUNT := "%d of %d done"
+const GATE_COST := "COST"
+
+# --- "What to learn next" (scripts/tech_next.gd, scripts/tech_next_view.gd) ---
+const NEXT_NONE := "Nothing new to learn right now. Look at the whole board to see what is left."
+const NEXT_ALL_DONE := "Every tech in this age is discovered."
+const NEXT_SUGGESTED := "Suggested"
+## The rule behind "Suggested", in the badge's tooltip. Keep it in step with TechNext.suggested().
+const NEXT_RULE := (
+	"We suggest the next step toward the goal you queued, or else toward the tech your Goals list asks for."
+	+ " With neither, the cheapest one you can pay for now; and if you can pay for none, the one you are closest to."
+)
+const NEXT_WHY_QUEUED := "It is the goal you queued."
+const NEXT_WHY_QUEUED_ROUTE := "On the way to %s, the goal you queued."  # a tech's name
+const NEXT_WHY_LIST := "Your Goals list asks for it."
+const NEXT_WHY_LIST_ROUTE := "On the way to %s, which your Goals list asks for."  # a tech's name
+const NEXT_WHY_CHEAP := "The cheapest one you can pay for right now."
+const NEXT_WHY_CLOSE := "You are closest to paying for this one."
+const NEXT_UNLOCKS := "Unlocks: %s"  # one short sentence (TECH_BLURBS)
+const NEXT_COST_HEAD := "Costs:"
+const NEXT_COST_ITEM := "%s %d of %d"  # an item's name, how many you have, how many it needs
+const NEXT_ENOUGH := "You have enough for this."
+const NEXT_SHORT := "Still need %s."  # "3 Wood, 2 Stone"
+const NEXT_QUEUE := "Queue it"
+const NEXT_QUEUE_TIP := "Discovers it for you as soon as you can pay."
+const LOCKED_HEADING := "Locked for now"
+const LOCKED_NOTE := "Each of these waits on something first."
+const LOCKED_NEEDS := "needs %s first"  # "Fire", "Fire and Masonry", "one of Fire or Masonry"
+const LOCKED_MORE := "And %d more further on: see the whole board."
+
+## What each tech unlocks, in one short plain sentence (the "What to learn next" cards).
+const TECH_BLURBS := {
+	"foraging": "Berries gather twice as fast.",
+	"knapping": "Lets you craft Flint Tools, so harvests go faster.",
+	"cordage": "Lets you make Rope, and build a Twine Post.",
+	"fire": "Lets you build a Charcoal Pit that turns wood into charcoal.",
+	"storytelling": "New Kith are born 25% faster.",
+	"gatherers_hut": "Lets you build a Gatherer's Hut, a building whose worker gathers what is near.",
+	"water_wheel": "Lets you build a Water Wheel that powers machines near the river.",
+	"masonry": "Dressed stone, which millstones, paved roads and megaliths need.",
+	"shelter": "Each Dwelling houses 5 Kith instead of 3.",
+	"pottery": "Lets you build a Kiln that fires clay and charcoal into brick.",
+	"ochre": "Gatherer's Huts bring back twice the Clay per trip.",
+	"star_lore": "Lets you raise a Shard Cairn around the Strange Stone.",
+	"scouting": "Gatherer's Huts reach 3 tiles instead of 2.",
+	"farming": "Lets you plant Fields of grain on open grassland.",
+	"haulers": "Idle Kith carry goods around, and you can lay Roads and Wooden Bridges.",
+	"storehouse": "Lets you build Storehouses where haulers drop off and pick up goods.",
+	"nets": "Lets you build a Fishing Weir on the river bank, for Fish.",
+	"grindstone": "Lets you build a Grindstone that grinds grain into flour.",
+	"smoking": "Berries are worth 2 food instead of 1.",
+	"megaliths": "Lets you raise Standing Stones: buildings beside one work twice as fast.",
+	"stone_axe": "You get 3 Wood from each harvest, and land is cleared for Farming.",
+	"irrigation": "Fields that touch the river grow twice as fast.",
+	"preservation": "The Kith eat 25% less.",
+	"carrying_poles": "Haulers carry 20 at a time instead of 10.",
+	"paved_roads": "Roads are 4 times faster than open ground.",
+	"baking": "Bake flour into bread: flour is worth 5 food instead of 3.",
+	"rafts": "Kith can cross the river without a bridge, slowly.",
+	"calendar": "Fields yield 25% more.",
+	"bronze_dawn": "The stone age ends and the land opens to the east.",
+	"prospecting": "Names the ore in the hills, and lets you dig it by hand, slowly.",
+	"tally_sticks": "The message log keeps counts, and every tech costs 10% less.",
+	"plough": "Fields yield 50% more.",
+	"mining": "Lets you build a Mine on an ore tile, dug by two Kith.",
+	"smelting": "Lets you build a Smelter that melts copper ore into Copper.",
+	"kilns_ii": "Every Kiln fires twice the Brick each time.",
+	"the_wheel": "Lets you build a Cart Shed: carts carry twice the load, on roads.",
+	"alloying": "Lets you build a Crucible that pours Copper and Tin into Bronze.",
+	"causeways": "Lets you lay stone Roads, five times as fast as open ground, and a Stone Bridge.",
+	"markets": "Lets you build a Trading Post to swap goods.",
+	"sky_watch": "Lets you build a Watchtower, and names the new light in the sky.",
+	"bronze_tools": "Workers with a Bronze Tool are 50% faster than with flint.",
+	"granaries": "Housing grows by 1 for every 20 food in store.",
+	"bronze_ploughshare": "Fields yield another 50%.",
+	"star_charts": "Traces the Wanderer's path across the sky.",
+	"falling_star": "The era ends, and the Wanderer comes down.",
+}
 
 # --- Era 2 (scripts/sim.gd, scripts/main.gd, scripts/tech_panel.gd) ---
 const LAND_GREW_EVENT := "The land opens to the east. Copper lies in the hills; tin is far off, to the north-east"

@@ -4,6 +4,7 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 const Ui = preload("res://scripts/ui.gd")
+const Rules = preload("res://scripts/rules.gd")
 
 const ICON_SIZE := Vector2(24, 24)  # a good's sprite in the top bar
 
@@ -133,6 +134,70 @@ static func chip_fit(main: Node, when: String) -> Array:
 			problems.append(
 				"%s: the %s chip runs out of the goods area (%.0f > %.0f)" % [when, id, r.end.x, goods.end.x]
 			)
+	return problems
+
+
+## The whole board in the real window: fitted (the smallest zoom, so the whole era shows), every card inside the board's
+## own rectangle, inside the research panel and inside the window, its names at least 14 px on screen, the strip below
+## it the same height whatever it says, and nothing in the panel under 14 px.
+static func board_fit(main: Node, when: String) -> Array:
+	var problems: Array = []
+	var panel = main.tech_panel
+	var board = panel.board
+	if not panel.visible or not board.is_visible_in_tree() or board.size.x < 100.0 or board.size.y < 100.0:
+		return ["%s: the whole board isn't showing (size %s)" % [when, board.size]]
+	var window := Rect2(Vector2.ZERO, main.get_viewport_rect().size)
+	var room := Rect2(Vector2.ZERO, board.size).grow(0.5)
+	var whole: Rect2 = board.board_screen_rect()
+	if not board.fitted or absf(board.zoom - board.min_zoom()) > 0.005:
+		problems.append("%s: the board isn't fitted (zoom %.3f, fit %.3f)" % [when, board.zoom, board.min_zoom()])
+	if not room.encloses(whole):
+		problems.append("%s: the fitted board %s runs out of its room %s" % [when, whole, board.size])
+	for tech in Rules.era_techs(board.era):
+		if not room.encloses(board.card_screen_rect(tech)):
+			problems.append("%s: %s's card %s is out of view" % [when, tech, board.card_screen_rect(tech)])
+	var shown := Rect2(board.get_global_rect().position + whole.position, whole.size)
+	if not panel.get_global_rect().grow(0.5).encloses(shown):
+		problems.append(
+			"%s: the fitted board %s runs out of the research panel %s" % [when, shown, panel.get_global_rect()]
+		)
+	if not window.grow(0.5).encloses(shown):
+		problems.append("%s: the fitted board %s runs out of the window %s" % [when, shown, window])
+	var px: int = board._px(board.NAME_PX)
+	if px < Ui.MIN_TEXT:
+		problems.append("%s: card names are %d px on screen, under %d" % [when, px, Ui.MIN_TEXT])
+	if absf(panel.detail.size.y - panel.STRIP_H) > 0.5:
+		problems.append("%s: the strip is %.0f px tall, not %.0f" % [when, panel.detail.size.y, panel.STRIP_H])
+	return problems
+
+
+## What to learn next in the real window: titled, explained, every card inside the panel and not cut off at the sides,
+## one card marked Suggested, and nothing in it under 14 px.
+static func next_view(main: Node, when: String) -> Array:
+	var problems: Array = []
+	var panel = main.tech_panel
+	var view = panel.next_view
+	if not panel.visible or not view.is_visible_in_tree() or panel.board.visible:
+		return ["%s: What to learn next isn't showing" % when]
+	var area: Rect2 = view.get_global_rect()
+	if not panel.get_global_rect().encloses(area):
+		problems.append("%s: the cards' area %s runs out of the panel %s" % [when, area, panel.get_global_rect()])
+	if view.cards.is_empty() and view.rows.is_empty():
+		problems.append("%s: no cards and no locked rows" % when)
+	for tech in view.cards:
+		var r: Rect2 = view.cards[tech].get_global_rect()
+		if r.position.x < area.position.x - 0.5 or r.end.x > area.end.x + 0.5:
+			problems.append("%s: %s's card %s is cut off at the sides of %s" % [when, tech, r, area])
+	if view.suggested == "" or not view.cards.has(view.suggested):
+		problems.append("%s: no card is marked Suggested" % when)
+	if panel.explain.text != Data.EXPLAIN_NEXT or panel.view_buttons["next"].text != Data.VIEW_NEXT:
+		problems.append("%s: the view isn't titled and explained" % when)
+	for l in _all(view):
+		if (l is Label or l is Button) and l.is_visible_in_tree() and l.text != "":
+			if l.get_theme_font_size("font_size") < Ui.MIN_TEXT:
+				problems.append("%s: '%s' is under %d px" % [when, l.text, Ui.MIN_TEXT])
+			if l is Label and l.autowrap_mode == TextServer.AUTOWRAP_OFF and l.size.x + 1.0 < l.get_minimum_size().x:
+				problems.append("%s: '%s' is cut off" % [when, l.text])
 	return problems
 
 
