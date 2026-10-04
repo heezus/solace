@@ -112,15 +112,28 @@ static func enough(s, b: Dictionary) -> bool:
 	return Data.BUILDINGS[b["type"]].has("makes") and tools_stocked(s, b) >= tool_goal(s)
 
 
-## A Tool Bench makes the best tool it can: the last in its `makes` that is learned and that the stockpile can pay for
-## (Flint Tools when nothing better). It changes only between batches, with nothing loaded or on the way.
+## Bronze that the research queue is still waiting for. A Tool Bench leaves it alone, so tools never take the Bronze a
+## tech needs.
+static func bronze_reserved(s) -> int:
+	var n := 0
+	for tech in s.tech_tree.queue:
+		n += s.tech_tree.cost_of(tech).get("bronze", 0)
+	return n
+
+
+## A Tool Bench makes the best tool it can: the last in its `makes` that is learned and that the stockpile can pay for,
+## keeping back the Bronze the research queue needs (Flint Tools when nothing better). It changes only between batches,
+## with nothing loaded or on the way.
 static func choose_tool(s, b: Dictionary) -> void:
 	var makes: Array = Data.BUILDINGS[b["type"]]["makes"]
 	if b["progress"] > 0.0 or Buildings.buffered(b["inbuf"]) > 0 or Buildings.buffered(b["incoming"]) > 0:
 		return
 	var pick: String = makes[0]
+	var spare_bronze: int = s.economy.inv.get("bronze", 0) - bronze_reserved(s)
 	for id in makes:
-		if Hands.recipe_unlocked(s, id) and s.economy.can_afford(Data.RECIPES[id]["in"]):
+		var cost: Dictionary = Data.RECIPES[id]["in"]
+		var bronze_ok: bool = spare_bronze >= cost.get("bronze", 0)
+		if Hands.recipe_unlocked(s, id) and s.economy.can_afford(cost) and bronze_ok:
 			pick = id
 	b["make"] = pick
 

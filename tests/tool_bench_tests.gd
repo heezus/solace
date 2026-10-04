@@ -148,6 +148,17 @@ func test_bench_switches_to_bronze() -> void:
 	t.check(Buildings.recipe_in(b) == {"bronze": 1, "wood": 2}, "from 1 Bronze and 2 Wood, as by hand")
 	_run(s, 150.0)
 	t.check(s.economy.inv.get("bronze_tools", 0) + Buildings.buffered(b["out"]) >= 1, "it made a Bronze Tool")
+	var fresh_bench: Array = bench_camp()
+	var s2: Sim = fresh_bench[0]
+	var b2: Dictionary = s2.town.buildings[fresh_bench[1]]
+	s2.tech_tree.researched["bronze_tools"] = true
+	s2.tech_tree.queue = ["star_charts"]
+	s2.economy.inv["bronze"] = Data.TECHS["star_charts"]["cost"]["bronze"]
+	Work.choose_tool(s2, b2)
+	t.check(b2["make"] == "flint_tools", "it keeps back the Bronze the research queue is waiting for")
+	s2.economy.inv["bronze"] += 1
+	Work.choose_tool(s2, b2)
+	t.check(b2["make"] == "bronze_tools", "and uses only what is left over")
 	t.check(BuildingPanel.recipe_text(s, b).contains("bronze tools"), "the panel says so")
 	var held: int = Buildings.buffered(b["inbuf"])
 	b["inbuf"]["bronze"] = 1

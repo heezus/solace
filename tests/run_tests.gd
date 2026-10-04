@@ -57,6 +57,11 @@ func _init() -> void:
 		print("FAILED: %d" % failures if failures > 0 else "STAGE 2 TESTS PASSED")
 		quit(1 if failures > 0 else 0)
 		return
+	if "bench" in OS.get_cmdline_user_args():  # `-- bench` runs only the Tool Bench tests while iterating
+		ToolBenchTests.new().run(self)
+		print("FAILED: %d" % failures if failures > 0 else "BENCH TESTS PASSED")
+		quit(1 if failures > 0 else 0)
+		return
 	test_map_has_every_resource_near_camp()
 	test_hand_gathering_and_tools()
 	test_tech_requires_its_parents()

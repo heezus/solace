@@ -358,7 +358,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 ## 2026-10-03: tools are made by a workshop (PR #n)
 - Claude, from Jon's playtest feedback: "the tools creation is pretty annoying. That I have to make them by hand and shit the entire game." A new workshop, the **Tool Bench**, makes tools so the player never has to craft by hand again.
 - It follows the arc in 14-hands-to-haulers.md: crafting by hand stays as step 1 and as a fallback, the Tool Bench is built once Knapping is learned (the tech that already gates hand crafting; no new tech, the tech tree is unchanged), you load it by clicking until a road links it, then haulers feed it and empty it.
-- One building for both ages: Flint Tools (2 Flint, 2 Wood) until Bronze Tools is learned and Bronze is in stock, then Bronze Tools (1 Bronze, 2 Wood). One Toolmaker, 6 s a tool, 10 Wood and 5 Stone.
+- One building for both ages: Flint Tools (2 Flint, 2 Wood) until Bronze Tools is learned and Bronze is in stock, then Bronze Tools (1 Bronze, 2 Wood), never using Bronze the research queue is waiting for. One Toolmaker, 6 s a tool, 10 Wood and 5 Stone.
 - It keeps 2 spare tools plus one for every working Kith without a tool, then pauses (haulers stop loading it), so it does not drain stone-age flint and wood. The panel reads "Making: flint tools, N in stock (keeps M ready)".
 - It reuses the processor machinery (`makes` list on the building, a `make` field like the Trading Post's `give` and `get`); old saves load with the bench on flint.
-- The Tool Bench borrows the Twine Post sprite; a sprite is requested in docs/art/requests.md.
+- The pacing bot builds one after Bronze Dawn (the stone-age bot still crafts by hand, so `tests/golden.json` did not move; `tests/golden_bronze.json` was re-pinned). The Tool Bench borrows the Twine Post sprite; a sprite is requested in docs/art/requests.md.
