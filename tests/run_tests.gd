@@ -25,6 +25,7 @@ const SaveTests = preload("res://tests/save_tests.gd")
 const EraTests = preload("res://tests/era_tests.gd")
 const Stage2Tests = preload("res://tests/stage2_tests.gd")
 const SkyTests = preload("res://tests/sky_tests.gd")
+const CairnTests = preload("res://tests/cairn_tests.gd")
 const DawnTests = preload("res://tests/dawn_tests.gd")
 const EraFairTests = preload("res://tests/era_fair_tests.gd")
 const StoneStallTests = preload("res://tests/stone_stall_tests.gd")
@@ -103,6 +104,7 @@ func _init() -> void:
 	EraTests.new().run(self)
 	Stage2Tests.new().run(self)
 	SkyTests.new().run(self)
+	CairnTests.new().run(self)
 	DawnTests.new().run(self)
 	EraFairTests.new().run(self)
 	HutFocusTests.new().run(self)
@@ -737,8 +739,8 @@ func test_shard_cairn() -> void:
 			check(s.place("shard_cairn", p), "cairn goes beside the shard")
 			s.tick(0.1)
 			check(
-				s.town.buildings[s.town.building_at[p]]["status"] == "It hums. Nothing more. Yet.",
-				"the cairn only hums"
+				s.town.buildings[s.town.building_at[p]]["status"] == Data.BUILDINGS["shard_cairn"]["status"],
+				"the cairn hums"
 			)
 			return
 

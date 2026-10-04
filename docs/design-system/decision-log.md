@@ -362,6 +362,12 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - **The Suggested rule** (`scripts/tech_next.gd`, first match wins): the next step on the route to the goal you queued; else on the route to the first tech the Goals list still asks for; else the cheapest tech you can pay for now (fewest items, ties in tree order); else the one with the least still to gather. The card says which rule picked it.
 - The old design page `mockups/tech-tree-v4.md` still describes the lines and lanes (unchanged); only the card is now compact. The ready-to-discover chips were dropped (gold cards and the next-steps view show the same) and the queue moved onto the stock line.
 
+## 2026-10-03: Shard Cairn gets a purpose (PR #39)
+- Claude decided this at Jon's request (his option c): the Shard Cairn did nothing, so there was no reason to build it. It now pays off twice.
+- Now: while a cairn stands every tech costs 5% less. It multiplies with Tally Sticks, rounds once, and only one cairn counts. Small enough that the 12 Stone is a fair trade, not a must-build; the bot never builds it, so both goldens are unchanged.
+- Later: a cairn raised before the Falling Star lands sets the saved run flag `cairn_before_landing` and records the story moment `cairn_raised`, for a future Chronicle. When the Lumen ship arrives, the flag will make first contact friendlier. No ship or Lumen gameplay was added.
+- The status and tooltip hint at both effects in the mystery tone ("the Kith think clearer", "something far off may hear") and name no ship or visitor, since a playtest said the old text gave the twist away.
+
 ## 2026-10-03: flax can be planted, a canon change by Jon (PR #38)
 - Claude, from Jon's request ("I think we need an ability to plant fiber"). Canon until now: flax was the only source of Fiber and grew only in wild patches. It is no longer wild-only: Flax can be sown, and wild patches stay as the early start.
 - New build card **Flax Field** on the Gathering tab beside Field. It unlocks with **Cordage** (no new tech, the stone age can use it before Farming), costs 2 Fiber a tile and no grain, and is dragged on open grassland like a grain Field.
