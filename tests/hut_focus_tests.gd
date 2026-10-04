@@ -482,11 +482,11 @@ func test_a_hut_goes_down_working_the_resource_picked() -> void:
 	t.check(
 		s.town.focus_tiles(s.town.buildings[s.town.building_at[p]]).size() == 1, "and its range holds the clay tile"
 	)
-	var q: Vector2i = p + Vector2i(3, 3)
-	_put(s, q + Vector2i(0, 1), "tree")
-	_put(s, q + Vector2i(1, 1), "clay")
-	t.check(s.place("gatherers_hut", q, "stone"), "a pick that is not in reach...")
-	t.check(s.town.buildings[s.town.building_at[q]]["focus"] == "wood", "...is ignored: the default stands")
+	var other := _arena()
+	var s2: Sim = other[0]
+	_three(s2, other[1])
+	t.check(s2.place("gatherers_hut", other[1], "stone"), "a pick that is not in reach...")
+	t.check(s2.town.buildings[s2.town.building_at[other[1]]]["focus"] == "wood", "...is ignored: the default stands")
 
 
 func test_a_pick_at_placement_is_for_that_hut_only() -> void:
@@ -589,7 +589,7 @@ func test_the_panel_picker_sets_the_focus_and_the_save_keeps_it() -> void:
 	var panel := HutFocus.new()
 	panel.setup(s)
 	panel.show_for(b)
-	panel.pick("clay")
+	panel.choose("clay")
 	t.check(b["focus"] == "clay" and b["gather_index"] == 0, "the panel picker sets Clay")
 	t.check(HutFocus.pick_at(s, p, Rect2(0, 0, 4000, 4000), Vector2.ZERO) == "", "set_focus leaves no picker behind")
 	var d := RunSave.dump(s)

@@ -82,13 +82,13 @@ func _build_buttons(options: Array) -> void:
 		b.expand_icon = true
 		b.add_theme_constant_override("icon_max_width", BUTTON_ICON)
 		b.tooltip_text = BUTTON_TIP % Data.ITEMS[item]["name"]
-		b.pressed.connect(pick.bind(item))
+		b.pressed.connect(choose.bind(item))
 		row.add_child(b)
 		_buttons[item] = b
 
 
 ## Set the hut to work `item` (a button was clicked), and say so.
-func pick(item: String) -> void:
+func choose(item: String) -> void:
 	if index < 0:
 		return
 	if state.town.set_focus(index, item):
