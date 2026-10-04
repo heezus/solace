@@ -320,13 +320,13 @@ func test_rates_count_making_and_using() -> void:
 
 
 ## Every line runs in the gutters and channels: none passes under a card, none shares a track with another,
-## and the board scrolls cleanly in a 1280 x 800 window: one tier plus the gate past the edge at most.
+## and the board is small enough to be fitted whole into a 1280 x 800 window at a readable size.
 func test_research_board_lines_stay_in_channels() -> void:
 	var lay := TechLayout.build()
 	t.check(lay["overflow"] == 0, "every line found a free track (%d did not)" % lay["overflow"])
 	t.check(
-		lay["size"].x <= 1230.0 + TechLayout.PITCH,
-		"the board is at most a tier wider than the window (%d)" % int(lay["size"].x)
+		lay["size"].x <= 1360.0 and lay["size"].y <= 540.0,
+		"the board is compact enough to fit a window whole (%s)" % lay["size"]
 	)
 	t.check(lay["edges"].size() == TechLayout.links().size(), "one line per requirement")
 	var segs: Array = []
@@ -504,11 +504,14 @@ func test_tree_gates_every_building() -> void:
 		var s: Sim = t.fresh()
 		t.give(s, 99)
 		t.check(not Hands.craft(s, r), "can't craft %s before %s" % [r, rec["tech"]])
-	# Every card's summary fits on it.
-	var font := ThemeDB.fallback_font
+	# Every tech says what it unlocks in one short plain sentence (the What to learn next cards show it).
 	for tech in Data.TECHS:
-		var w := font.get_string_size(Data.TECHS[tech]["unlock"], HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x
-		t.check(w <= TechLayout.CARD_W - 70.0, "%s's summary fits its card (%d px)" % [tech, w])
+		var blurb: String = Data.TECH_BLURBS.get(tech, "")
+		t.check(blurb != "", "%s has a one-line blurb" % tech)
+		t.check(blurb.length() <= 90, "%s's blurb is short (%d characters)" % [tech, blurb.length()])
+		t.check(blurb.ends_with(".") and blurb.count(". ") == 0, "%s's blurb is one sentence: %s" % [tech, blurb])
+	for tech in Data.TECH_BLURBS:
+		t.check(Data.TECHS.has(tech), "the blurb for %s belongs to a real tech" % tech)
 
 
 ## scripts/data.gd is a facade over the domain files in scripts/data/: every constant they define is

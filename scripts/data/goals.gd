@@ -11,6 +11,7 @@ const STORY_EVENTS := {
 	"bronze_dawn": "The stone age ended",
 	"wanderer_named": "The new light in the sky was named the Wanderer",
 	"star_falling": "The Wanderer was seen to fall",
+	"cairn_raised": "The Shard Cairn was raised",
 }
 
 ## Techs that are story moments: tech id -> the STORY_EVENTS id the Story block records when it is researched.

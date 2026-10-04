@@ -6,10 +6,9 @@ extends RefCounted
 ## `demolish`, `research`, `gather_by_hand`...), the few flags of the run itself, and the tick order:
 ##   1. Land.grow_if_due (the tick after Bronze Dawn, the map doubles east), economy.advance, then tech_tree.tick
 ##   2. people.assign_jobs, economy.feed and people.grow, then story.update and sky.tick
-##   3. every Kith takes a step (Forage in a famine, else Workers, Haulers or a plain walk), and what they see is revealed
-##   4. every building takes its turn (Workers.tick_building), then the "Needs road" alert
-## The work cycle is in Work, Bonuses, Hands, Roads, Workers and Haulers: static modules that take the Sim.
-## Blocks never call each other to report: they emit signals, and _init connects them.
+##   3. every Kith takes a step (Forage, Workers, Haulers or a walk) and reveals what it sees; then each building's turn
+## The work cycle is in Work, Bonuses, Hands, Roads, Workers and Haulers: static modules that take the Sim. Blocks
+## never call each other to report: they emit signals, and _init connects them.
 
 ## The Strange Stone was clicked (it reveals the hidden techs). Story listens.
 signal shard_found
@@ -61,6 +60,8 @@ var sky := SkyBlock.new(tech_tree, town)
 ## Wire the blocks together. Every signal connection in the game is here, so it is all in one place.
 func _init() -> void:
 	tech_tree.tech_researched.connect(story.on_tech_researched)
+	tech_tree.set_extra_discount(town.research_discount)
+	town.built.connect(story.on_built)
 	people.learned.connect(story.on_learned)
 	people.trip_started.connect(story.on_trip_started)
 	shard_found.connect(story.on_shard_found)
@@ -191,8 +192,8 @@ func _has_tech(tech: String) -> bool:
 
 
 ## Build at p and set off what that does elsewhere: the fog lifts and the walking grid updates.
-func place(type: String, p: Vector2i) -> bool:
-	var done := town.place(type, p)
+func place(type: String, p: Vector2i, focus := "") -> bool:
+	var done := town.place(type, p, focus)
 	if done.is_empty():
 		return false
 	var cleared: String = done["cleared"]

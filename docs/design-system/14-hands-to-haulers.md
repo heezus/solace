@@ -18,6 +18,9 @@ Each resource (Wood, Stone, Fiber from Flax, Berries, Flint, Clay, Grain) moves 
 
 Clicking never stops mattering: it goes from gathering, to dispatching, to rushing. In an idle game the click is the throttle.
 
+## Choosing what a hut works (2026-10-03)
+A Gatherer's Hut works **one** resource, by default the one nearest it. When two or more are in reach the player chooses, never by accident: while placing, a small picker by the ghost lists them (the chosen one lit; click one, or press Tab or R) and the hut goes down working it; afterwards the hut card shows a button per resource (icon and name, current one pressed). A hut put down without a choice says once which it works and what else is in reach.
+
 ## Hold to harvest (2026-09-30, Jon's call)
 - You gather by **holding**, not clicking. A ring fills over the tile, and when it completes the yield pops. Holding keeps harvesting.
 - Upgrades act on both parts of that: **tools shorten the hold** (Flint Tools 0.7s, Bronze 0.4s), and **ranks raise the yield**.

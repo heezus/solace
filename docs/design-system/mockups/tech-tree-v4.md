@@ -38,3 +38,6 @@ Metrics, built vs v4: links 47 → 48, links that skip a column 15 → 11, total
 
 ## Hover
 Hovering a tech lights its whole chain (ancestors and descendants) in gold #ffd166 and dims the rest. The v4 hover board shows Baking.
+
+## Update 2026-10-03: compact cards, fitted view
+Links, lanes and columns above are unchanged. The research board now draws each card as one compact line (icon, name, status mark, a price bar) so a whole era fits the window; the price and the full text are in the hover strip and in the "What to learn next" cards. Details in decision-log.md, 2026-10-03: tech board fit and next-steps clarity.
