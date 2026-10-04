@@ -280,6 +280,7 @@ func _click() -> bool:
 				return true
 	if (
 		Hands.recipe_unlocked(s, "flint_tools")
+		and _count("tool_bench") == 0
 		and Hands.tools_held(s) + s.economy.inv.get("flint_tools", 0) < _workers() + 1
 	):
 		if s.economy.inv.get("flint", 0) >= 2 and s.economy.inv.get("wood", 0) >= 2 and Hands.craft(s, "flint_tools"):
@@ -344,6 +345,14 @@ func _workshops_due() -> Array:
 		if later.get(made, 0) > s.economy.inv.get(made, 0) and s.town.unlocked(type) and _count(type) == 0:
 			out.append(type)
 	return out
+
+
+## Once Bronze Dawn is won and haulers can feed it, one Tool Bench replaces crafting tools by hand. (The stone age run keeps
+## crafting by hand, so its pinned play is the one the golden was taken from.)
+func _bench_due() -> bool:
+	return (
+		s.won and s.tech_tree.researched.has("haulers") and s.town.unlocked("tool_bench") and _count("tool_bench") == 0
+	)
 
 
 ## Out of room, and short of hands for the buildings plus a couple spare.
@@ -427,6 +436,8 @@ func _decide() -> void:
 	for type in _workshops_due() if s.tech_tree.researched.has("haulers") else []:  # the route needs these, hands or not
 		if _place_workshop(type):
 			return
+	if _bench_due() and _place_workshop("tool_bench"):
+		return
 	var fed := s.economy.food_total() >= s.people.kith.size() * 2.0 + Data.BIRTH_FOOD
 	if s.town.unlocked("gatherers_hut") and _huts_for("berries") < 1 + int(s.people.kith.size() / 6.0):
 		var room_for_hut := _workers() + _haulers_wanted() < s.people.kith.size() + 1

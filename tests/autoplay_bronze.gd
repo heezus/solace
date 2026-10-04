@@ -129,6 +129,11 @@ func _decide() -> void:
 	super._decide()
 
 
+## The Tool Bench waits for the first Bronze, so the run up to it (and the golden taken there) is as it was.
+func _bench_due() -> bool:
+	return bronze_at >= 0.0 and super._bench_due()
+
+
 ## The first Bronze needs the smelting chain to have run: copper for Alloying and for the batch, and one tin.
 func _goal_wants(want: Dictionary) -> void:
 	if not s.won:
