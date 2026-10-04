@@ -207,10 +207,13 @@ func test_rush_and_its_cooldown() -> void:
 func test_click_yield_math() -> void:
 	var s: Sim = t.fresh()
 	t.check(Hands.harvest_yield(s, "wood") == 1, "base: 1 a harvest")
-	t.check(is_equal_approx(Hands.hold_time(s, "wood"), 1.0), "held for 1 s")
+	t.check(is_equal_approx(Hands.hold_time(s, "wood"), Data.HOLD_TIME), "held for %.1f s" % Data.HOLD_TIME)
 	s.hand_tools = true
 	t.check(Hands.harvest_yield(s, "stone") == 1, "Flint Tools don't raise the yield")
-	t.check(is_equal_approx(Hands.hold_time(s, "stone"), 0.7), "they shorten the hold to 0.7 s")
+	t.check(
+		is_equal_approx(Hands.hold_time(s, "stone"), Data.HAND_TOOLS["flint_tools"]["hold"]),
+		"they shorten the hold to %.1f s" % Data.HAND_TOOLS["flint_tools"]["hold"]
+	)
 	s.tech_tree.researched["stone_axe"] = true
 	t.check(Hands.harvest_yield(s, "wood") == 3, "Stone Axe: x3 for Wood")
 	t.check(Hands.harvest_yield(s, "stone") == 1, "the Stone Axe is for Wood only")
@@ -234,27 +237,38 @@ func test_hold_to_harvest() -> void:
 	var s: Sim = t.fresh()
 	var tree: Vector2i = t.find_tile(s, "tree")
 	var rock: Vector2i = t.find_tile(s, "rock")
-	t.check(s.hold_harvest(tree, 0.5) == "", "half a second: nothing yet")
+	var need := Data.HOLD_TIME
+	t.check(s.hold_harvest(tree, need * 0.5) == "", "half the hold: nothing yet")
 	t.check(is_equal_approx(s.harvest_frac, 0.5), "the ring is half full")
-	t.check(s.hold_harvest(tree, 0.5) == "+1 Wood", "a full second: the harvest pops")
+	t.check(s.hold_harvest(tree, need * 0.5) == "+1 Wood", "a full hold: the harvest pops")
 	t.check(s.economy.inv["wood"] == 1 and is_equal_approx(s.harvest_frac, 0.0), "and the ring starts again")
 	for i in 25:
 		s.hold_harvest(tree, 0.1)
-	t.check(s.economy.inv["wood"] == 3, "holding keeps harvesting: 2 more in 2.5 s (%d)" % s.economy.inv["wood"])
-	s.hold_harvest(tree, 0.9)
+	var more := 1 + floori(2.5 / need)
+	t.check(
+		s.economy.inv["wood"] == more,
+		"holding keeps harvesting: %d in all after 2.5 s (%d)" % [more, s.economy.inv["wood"]]
+	)
+	s.hold_harvest(tree, need * 0.9)
 	s.hold_harvest(rock, 0.2)
-	t.check(s.economy.inv["stone"] == 0 and is_equal_approx(s.harvest_frac, 0.2), "moving to another tile starts over")
+	t.check(
+		s.economy.inv["stone"] == 0 and is_equal_approx(s.harvest_frac, 0.2 / need),
+		"moving to another tile starts over"
+	)
 	s.release_harvest()
 	t.check(s.harvest_frac == 0.0 and s.harvest_tile == Vector2i(-1, -1), "letting go empties the ring")
-	s.hold_harvest(rock, 0.9)
+	s.hold_harvest(rock, need * 0.9)
 	s.release_harvest()
 	s.hold_harvest(rock, 0.2)
 	t.check(s.economy.inv["stone"] == 0, "a released hold doesn't count toward the next")
 	s.hand_tools = true
-	t.check(s.hold_harvest(rock, 0.5) == "+1 Stone", "Flint Tools: 0.7 s a harvest")
+	t.check(
+		s.hold_harvest(rock, Data.HAND_TOOLS["flint_tools"]["hold"] + 0.01) == "+1 Stone",
+		"Flint Tools: %.1f s a harvest" % Data.HAND_TOOLS["flint_tools"]["hold"]
+	)
 	t.check(s.hold_harvest(s.world.camp_pos, 5.0) == "", "the Hearth isn't a resource")
 	for i in Data.LEARN_CLICKS:
-		s.hold_harvest(rock, 0.7)
+		s.hold_harvest(rock, Data.HAND_TOOLS["flint_tools"]["hold"])
 	t.check(s.people.knows("stone"), "learning takes %d harvests" % Data.LEARN_FIRST)
 
 
@@ -304,7 +318,8 @@ func test_rank_costs_and_effects() -> void:
 
 ## Tech costs grow by tier (14-hands-to-haulers.md), and each tier pays in goods earlier tiers teach.
 func test_tier_costs_scale() -> void:
-	var bands := [[10, 20], [25, 60], [80, 150], [200, 400], [200, 400], [500, 700]]
+	# Tier III starts at 60: Paths & Haulers is cheaper since 2026-10-03, so the roads come sooner.
+	var bands := [[10, 20], [25, 60], [60, 150], [200, 400], [200, 400], [500, 700]]
 	var made_by := {"rope": "cordage", "charcoal": "fire", "brick": "pottery", "flour": "grindstone"}
 	var avg: Array = []
 	for tier in bands.size():

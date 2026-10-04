@@ -23,6 +23,7 @@ func run(runner) -> void:
 	test_taps_add_up_but_a_hold_is_faster()
 	test_letting_go_for_good_empties_the_ring()
 	test_the_first_lesson_takes_fewer_harvests()
+	test_the_early_numbers_stay_quick()
 
 
 ## A game with a cleared square of grass, then a tree at A, a tree beside it at B (next door), a rock at R (beside A on
@@ -44,11 +45,11 @@ func _arena() -> Dictionary:
 	return {"s": s, "a": a, "b": b, "r": r, "f": f, "bare": c + Vector2i(0, 2)}
 
 
-## Hold `p` for `seconds`, in 0.1 s steps (the frame time), returning how much wood and stone came in.
+## Hold `p` for `seconds`, in 0.02 s steps (a frame), returning how much wood and stone came in.
 func _hold(s: Sim, p: Vector2i, seconds: float) -> int:
 	var before: int = s.economy.inv.get("wood", 0) + s.economy.inv.get("stone", 0)
-	for i in roundi(seconds * 10.0):
-		s.hold_harvest(p, 0.1)
+	for i in roundi(seconds / 0.02):
+		s.hold_harvest(p, 0.02)
 	return s.economy.inv.get("wood", 0) + s.economy.inv.get("stone", 0) - before
 
 
@@ -189,3 +190,24 @@ func test_the_first_lesson_takes_fewer_harvests() -> void:
 	t.check(not s.people.knows("stone"), "stone is not learned after %d" % (Data.LEARN_CLICKS - 1))
 	s.gather_by_hand(g["r"])
 	t.check(s.people.knows("stone"), "but after %d it is" % Data.LEARN_CLICKS)
+
+
+## Jon's playtest of 2026-10-03: the first minutes by hand were slow and roads came late. These are the numbers that keep
+## them quick; tests/tools/pace.gd (the pacing bot) says what they do to a whole run.
+func test_the_early_numbers_stay_quick() -> void:
+	var flint: float = Data.HAND_TOOLS["flint_tools"]["hold"]
+	var bronze: float = Data.HAND_TOOLS["bronze_tools"]["hold"]
+	t.check(Data.HOLD_TIME <= 0.8, "a bare-handed harvest takes at most 0.8 s (%.1f)" % Data.HOLD_TIME)
+	t.check(bronze < flint and flint < Data.HOLD_TIME, "each tool is quicker than the last")
+	var haulers: Dictionary = Data.TECHS["haulers"]
+	t.check(haulers["requires"] == ["cordage", "gatherers_hut"], "Paths & Haulers needs only Cordage and the hut")
+	var cost := 0
+	for id in haulers["cost"]:
+		cost += int(haulers["cost"][id])
+	t.check(
+		cost <= 60 and haulers["cost"].get("rope", 0) <= 20, "and costs at most 60 goods, 20 of them Rope (%d)" % cost
+	)
+	var ids: Array = Data.GOALS.map(func(g): return g["id"])
+	t.check(ids.find("twine") < ids.find("haulers"), "the Goals ask for Rope before Haulers")
+	t.check(ids.find("road") == ids.find("haulers") + 1, "and the road goal follows Haulers at once")
+	t.check(ids.find("haulers") < ids.find("charcoal"), "Roads come before the Charcoal Pit, which no road waits for")

@@ -78,7 +78,7 @@ Costs as built (`scripts/data.gd`). "R" marks a tech with ranks.
 | Tech | Lane | Needs | Cost | Effect |
 |---|---|---|---|---|
 | Cordage (R) | Fiber | nothing | 15 Fiber | Craft Rope, Twine Post |
-| Knapping (R) | Stone | nothing | 5 Flint, 10 Stone | Craft Flint Tools: a harvest by hand takes a 0.7s hold instead of 1s, and each worker holding one works 50% faster (a tool lasts 40 jobs) |
+| Knapping (R) | Stone | nothing | 5 Flint, 10 Stone | Craft Flint Tools: a harvest by hand takes a 0.6s hold instead of 0.8s, and each worker holding one works 50% faster (a tool lasts 40 jobs) |
 | Foraging (R) | Land | nothing | 5 Berries, 10 Fiber | Berries x2 (Yield), by hand and by hut |
 | Fire (R) | Hearth | nothing | 10 Wood, 5 Stone | Charcoal Pit |
 | Storytelling | Lore | nothing | 10 Berries, 10 Fiber | New Kith are born 25% faster (grow time 12s to 9s) |
@@ -100,7 +100,7 @@ Costs as built (`scripts/data.gd`). "R" marks a tech with ranks.
 | Tech | Lane | Needs | Cost | Effect |
 |---|---|---|---|---|
 | Rafts | Fiber | Nets, Stone Axe | 50 Wood, 30 Rope | *side:* Kith can cross river tiles at a slow walk (cost 4; open ground is 1) |
-| Paths & Haulers | Fiber | Cordage, Gatherer's Hut | 30 Rope, 50 Wood | Road, Wooden Bridge. Idle Kith haul, but only for buildings a Road links to the Hearth or a Storehouse; a linked hut loops on its own |
+| Paths & Haulers | Fiber | Cordage, Gatherer's Hut | 20 Rope, 40 Wood | Road, Wooden Bridge. Idle Kith haul, but only for buildings a Road links to the Hearth or a Storehouse; a linked hut loops on its own |
 | Water Wheel | Stone | Stone Axe, Masonry | 30 Rope, 40 Wood, 20 Stone | Water Wheel: on the river, powers machines within 3 tiles |
 | Farming (R) | Land | Gatherer's Hut, Stone Axe | 40 Grain, 30 Wood, 10 Rope | Field: sow grain on grassland |
 | Scouting | Land | Gatherer's Hut, Storytelling | 40 Berries, 30 Wood, 10 Rope | *side:* huts reach 3 tiles instead of 2, and everyone sees 2 tiles farther |

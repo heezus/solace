@@ -33,7 +33,10 @@ const GOALS_STAR_CLOSING := "The star is coming down. Keep building while you wa
 const GOALS_HEADER_ERA2 := "Dawn goals %d/%d"
 
 const GOALS := [
-	{"id": "learn_wood", "text": "Hold the mouse on trees to gather Wood, until a Kith learns it (10 harvests)"},
+	{
+		"id": "learn_wood",
+		"text": "Hold the mouse on trees to gather Wood, until a Kith learns it (6 harvests, 10 for later lessons)"
+	},
 	{
 		"id": "learn_berries",
 		"text": "Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock"
@@ -44,7 +47,7 @@ const GOALS := [
 		"text": "Find Wild Flax (tall stalks with tiny blue-violet flowers) and gather it: all Fiber comes from flax"
 	},
 	{"id": "knapping", "text": "Press T and discover Knapping", "tech": "knapping"},
-	{"id": "tools", "text": "Craft Flint Tools: each harvest takes 0.7s instead of 1s"},
+	{"id": "tools", "text": "Craft Flint Tools: each harvest takes 0.6s instead of 0.8s"},
 	{"id": "hut_tech", "text": "Discover Gatherer's Hut", "tech": "gatherers_hut"},
 	{
 		"id": "hut",
@@ -68,11 +71,11 @@ const GOALS := [
 		"text": "Build a Dwelling. Kith grow when there's room and steady food (a hut on a road feeds the Hearth)",
 		"building": "dwelling"
 	},
-	{"id": "charcoal", "text": "Discover Fire, then build a Charcoal Pit", "building": "charcoal_pit"},
 	{"id": "twine", "text": "Discover Cordage, then build a Twine Post", "building": "twine_post"},
 	{"id": "haulers", "text": "Discover Paths & Haulers: it unlocks Roads and lets idle Kith haul", "tech": "haulers"},
 	{"id": "road", "text": "Lay a Road from a hut to the Hearth: road-linked buildings run on their own"},
 	{"id": "rush", "text": "Click a working building to rush it: it finishes its cycle at once"},
+	{"id": "charcoal", "text": "Discover Fire, then build a Charcoal Pit", "building": "charcoal_pit"},
 	{"id": "kiln", "text": "Discover Pottery, then build a Kiln", "building": "kiln"},
 	{
 		"id": "wheel",

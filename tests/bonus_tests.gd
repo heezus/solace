@@ -111,11 +111,17 @@ func test_hand_gathering_keeps_its_tools() -> void:
 	s.economy.inv["wood"] = 0
 	s.gather_by_hand(tree)
 	t.check(s.economy.inv["wood"] == 1, "a Flint Tool shortens the hold, it doesn't add Wood")
-	t.check(is_equal_approx(Hands.hold_time(s, "wood"), 0.7), "you keep a tool for yourself: the hold stays 0.7 s")
+	t.check(
+		is_equal_approx(Hands.hold_time(s, "wood"), Data.HAND_TOOLS["flint_tools"]["hold"]),
+		"you keep a tool for yourself: the hold stays %.1f s" % Data.HAND_TOOLS["flint_tools"]["hold"]
+	)
 	s.tech_tree.researched["stone_axe"] = true
 	s.gather_by_hand(tree)
 	t.check(s.economy.inv["wood"] == 4, "the Stone Axe is a yield tool: 3 Wood a harvest")
-	t.check(is_equal_approx(Hands.hold_time(s, "wood"), 0.7), "and the Flint Tool still sets the hold")
+	t.check(
+		is_equal_approx(Hands.hold_time(s, "wood"), Data.HAND_TOOLS["flint_tools"]["hold"]),
+		"and the Flint Tool still sets the hold"
+	)
 	s.tech_tree.researched["ochre"] = true
 	var clay: Vector2i = t.find_tile(s, "clay")
 	s.fog.reveal_all()

@@ -276,7 +276,10 @@ func test_hand_gathering_and_tools() -> void:
 	check(s.economy.inv["flint_tools"] == 1, "have flint tools")
 	s.gather_by_hand(tree)
 	check(s.economy.inv["wood"] == 1, "flint tools don't change the yield by hand")
-	check(is_equal_approx(Hands.hold_time(s, "wood"), 0.7), "they shorten the hold to 0.7 s")
+	check(
+		is_equal_approx(Hands.hold_time(s, "wood"), Data.HAND_TOOLS["flint_tools"]["hold"]),
+		"they shorten the hold to %.1f s" % Data.HAND_TOOLS["flint_tools"]["hold"]
+	)
 	check(not s.shard_seen, "the shard starts unseen")
 	check(s.gather_by_hand(s.world.shard_pos) == Data.SHARD_TEXT, "shard shows flavor text")
 	check(s.shard_seen, "clicking the shard marks it seen")
