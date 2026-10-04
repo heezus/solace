@@ -67,7 +67,7 @@ func setup(game: Sim) -> void:
 		v.add_child(parts[key])
 	parts["pace"].add_theme_color_override("font_color", Ui.TEXT_DIM)
 	parts["pace"].mouse_filter = Control.MOUSE_FILTER_STOP  # its tooltip has the exact numbers
-	var focus := HutFocus.new()  # what a hut works: one line, one click to change (scripts/hut_focus.gd)
+	var focus := HutFocus.new()  # what a hut works: a line and a button per resource in reach (scripts/hut_focus.gd)
 	focus.setup(game)
 	focus.changed.connect(refresh)
 	v.add_child(focus)

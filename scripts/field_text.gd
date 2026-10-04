@@ -13,7 +13,7 @@ const PatchRate = preload("res://scripts/patch_rate.gd")
 ## The Info panel's lines under a sown tile: which huts reap it and how much, what a field pays over wild growth, the
 ## river, and what the crop is for. "" for a tile that is not a field.
 static func tile_text(s, p: Vector2i) -> String:
-	if not s.world.fields.has(p):
+	if not is_sown(s, p):
 		return ""
 	var item: String = Data.TILES[s.world.tile_at(p)]["yields"]
 	var lines: Array = [hut_line(s, p, item)]
@@ -21,7 +21,7 @@ static func tile_text(s, p: Vector2i) -> String:
 	if gain != "":
 		lines.append(gain)
 	lines.append(yield_line(s, p, item))
-	var river := river_line(s, p)
+	var river := river_line(s, p) if s.world.fields.has(p) else ""  # Irrigation is for grain fields
 	if river != "":
 		lines.append(river)
 	var mill := mill_line(item)
@@ -91,6 +91,8 @@ static func gain_line(s, p: Vector2i, item: String) -> String:
 ## What a field pays over the wild plant: the share Calendar and on give, or which tech would.
 static func yield_line(s, p: Vector2i, item: String) -> String:
 	var item_name: String = Data.ITEMS[item]["name"]
+	if s.world.flax_fields.has(p):
+		return Data.FIELD_SOWN_STAYS % item_name
 	var share := Patch.field_share(s, p)
 	if share > 0.0:
 		return Data.FIELD_PAYS % [roundi(share * 100.0), item_name]
@@ -106,6 +108,21 @@ static func river_line(s, p: Vector2i) -> String:
 	if s.tech_tree.researched.has("irrigation"):
 		return Data.FIELD_RIVER
 	return Data.FIELD_RIVER_LATER % Data.TECHS["irrigation"]["name"]
+
+
+## Whether tile `p` was sown by the player (a grain Field or a Flax Field), not wild.
+static func is_sown(s, p: Vector2i) -> bool:
+	return s.world.fields.has(p) or s.world.flax_fields.has(p)
+
+
+## The item a field kind's crop gives: the yield of its tile ("grain" for the Field, "fiber" for the Flax Field).
+static func crop_item(def: Dictionary) -> String:
+	return Data.TILES[def.get("crop", "grain")]["yields"]
+
+
+## The fields of one kind that stand now (the Field's grain, or the Flax Field's flax).
+static func sown_of(s, def: Dictionary) -> Dictionary:
+	return s.world.flax_fields if def.get("crop", "grain") == "flax" else s.world.fields
 
 
 ## What the crop is for, when it is not eaten raw: the workshop that mills it and into what. "" for none.
@@ -129,8 +146,9 @@ static func mill_line(item: String) -> String:
 
 
 ## The build card's tooltip lines: how many of your fields have no hut in reach, and what the crop is for.
-static func card_text(s, crop: String) -> String:
-	var fields: Array = s.world.fields.keys()
+static func card_text(s, def: Dictionary) -> String:
+	var crop := crop_item(def)
+	var fields: Array = sown_of(s, def).keys()
 	var idle := 0
 	for p in fields:
 		if Patch.huts_reaching(s, p).is_empty():
@@ -150,21 +168,20 @@ static func card_text(s, crop: String) -> String:
 
 
 ## The line the Info panel adds while a field is being placed at `p`: the huts that would reap it, or how to get one.
-static func placing_text(s, p: Vector2i) -> String:
+static func placing_text(s, p: Vector2i, def: Dictionary) -> String:
 	var huts := Patch.huts_reaching(s, p)
 	if huts.is_empty():
 		return Data.FIELD_NO_HUT % s.town.hut_radius()
 	var line: String = Data.FIELD_PLACE_HUT % ("1 hut" if huts.size() == 1 else "%d huts" % huts.size())
-	var item: String = Data.BUILDINGS["field"].get("crop", "grain")
-	var gain := gain_line(s, p, item)
+	var gain := gain_line(s, p, crop_item(def))
 	return line + ("\n" + gain if gain != "" else "")
 
 
 ## What a dragged line of fields adds to the pill: how many of its tiles a hut reaches.
-static func drag_note(s, tiles: Array) -> String:
+static func drag_note(s, type: String, tiles: Array) -> String:
 	var in_reach := 0
 	for p in tiles:
-		if s.town.placement_error("field", p) == "" and not Patch.huts_reaching(s, p).is_empty():
+		if s.town.placement_error(type, p) == "" and not Patch.huts_reaching(s, p).is_empty():
 			in_reach += 1
 	return Data.FIELD_DRAG_SOME % in_reach if in_reach > 0 else Data.FIELD_DRAG_NONE
 

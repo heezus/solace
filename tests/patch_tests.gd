@@ -217,12 +217,17 @@ func test_the_panel_and_the_pill() -> void:
 	s.world.set_tile(p + Vector2i(0, 2), "grass")
 	s.world.add_field(p + Vector2i(0, 2))
 	t.check(PatchText.panel_text(s, b) == panel, "a Field of another crop is not this hut's patch")
-	t.check(PatchText.placement_text(s, p).contains("4 Clay tiles in range"), "the placement line names the resource")
-	t.check(PatchText.pill_text(s, p).begins_with("Clay x4"), "and the pill: " + PatchText.pill_text(s, p))
-	t.check(PatchText.pill_text(s, p + Vector2i(0, 2)) == "", "a spot with nothing in reach has no pill")
-	t.check(PatchText.with_pill(s, "twine_post", p, "note") == "note", "only a hut's ghost gets the pill")
 	t.check(
-		PatchText.with_pill(s, "gatherers_hut", p + Vector2i(0, 2), "note") == "note",
+		PatchText.placement_text(s, p, "clay").contains("4 Clay tiles in range"),
+		"the placement line names the resource"
+	)
+	t.check(
+		PatchText.pill_text(s, p, "clay").begins_with("Clay x4"), "and the pill: " + PatchText.pill_text(s, p, "clay")
+	)
+	t.check(PatchText.pill_text(s, p + Vector2i(0, 2), "clay") == "", "a spot with nothing in reach has no pill")
+	t.check(PatchText.with_pill(s, "twine_post", p, "clay", "note") == "note", "only a hut's ghost gets the pill")
+	t.check(
+		PatchText.with_pill(s, "gatherers_hut", p + Vector2i(0, 2), "clay", "note") == "note",
 		"and none when there is nothing to say"
 	)
 	var grain := _arena(0)
@@ -233,3 +238,9 @@ func test_the_panel_and_the_pill() -> void:
 	_hut(grain)["focus"] = "grain"
 	var gpanel := PatchText.panel_text(gs, _hut(grain))
 	t.check(gpanel.contains("3 of its 3 tiles are Fields."), "a hut on Fields says so: " + gpanel)
+	var with := PatchText.with_pill(s, "gatherers_hut", p, "clay", "To Hearth")
+	t.check(with == "To Hearth · Clay x4 · +30% speed", "the pill follows the picked resource: " + with)
+	t.check(
+		PatchText.with_pill(s, "gatherers_hut", p, "berries", "To Hearth") == "To Hearth",
+		"another pick: nothing in reach"
+	)

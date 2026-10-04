@@ -369,37 +369,33 @@ func _tech_board() -> void:
 		problems.append("T didn't open the research board")
 		return
 	var board = panel.board
-	_expect(board.view == "next", "the board didn't open on Next steps")
+	_expect(panel.view == "next" and not board.visible, "the board didn't open on What to learn next")
 	_expect(panel.stock_row.visible, "the stock strip isn't shown while the board is open")
-	for tech in board.grid:
-		_move(board.get_global_transform() * board.card_rect(tech).get_center())
+	_expect(not panel.next_view.cards.is_empty(), "What to learn next shows no card")
+	for tech in panel.next_view.cards:
+		_move(panel.next_view.cards[tech].get_global_rect().get_center())
 	panel._pick_view("all")
 
 
-## The whole board, once its view has been laid out: hover every card and scroll to the Calendar.
+## The whole board, once its view has been laid out: fitted, every card in reach of the mouse. Hover each one.
 func _tech_board_all() -> void:
 	var panel = main.tech_panel
 	var board = panel.board
-	for tech in Data.TECH_ORDER:
-		var r: Rect2 = board.card_rect(tech)
-		var at: Vector2 = board.get_global_transform() * r.get_center()
-		_move(at)
-	panel.scroll.scroll_horizontal = int(board.card_rect("calendar").position.x - 200.0)
-	panel.scroll.scroll_vertical = int(board.card_rect("calendar").position.y - 100.0)
+	_expect(board.fitted and board.visible, "the whole board didn't open fitted")
+	for tech in Rules.era_techs(board.era):
+		_move(board.get_global_transform() * board.card_screen_rect(tech).get_center())
 
 
 func _show_rank(tech: String) -> void:
 	var s = main.state
 	for item in Ranks.next_cost(s, tech):
 		s.economy.inv[item] = s.economy.inv.get(item, 0) + int(Ranks.next_cost(s, tech)[item])
-	var board = main.tech_panel.board
-	main.tech_panel.scroll.scroll_horizontal = int(board.card_rect(tech).position.x - 200.0)
-	main.tech_panel.scroll.scroll_vertical = int(board.card_rect(tech).position.y - 100.0)
+	_expect(main.tech_panel.board.shows(tech), "%s has no card to buy a rank on" % tech)
 
 
 func _click_card(tech: String) -> void:
 	var board = main.tech_panel.board
-	_click(board.get_global_transform() * board.card_rect(tech).get_center())
+	_click(board.get_global_transform() * board.card_screen_rect(tech).get_center())
 
 
 func _demolish_first_hut() -> void:
@@ -441,7 +437,7 @@ func _era_two_script() -> void:
 			_expect(not panel.era_buttons[2].disabled, "the second era's tab is still locked after Bronze Dawn")
 			panel._pick_view("all")
 			for tech in Rules.era_techs(2):
-				_move(panel.board.get_global_transform() * panel.board.card_rect(tech).get_center()),
+				_move(panel.board.get_global_transform() * panel.board.card_screen_rect(tech).get_center()),
 		5
 	)
 	_then(
@@ -581,9 +577,6 @@ func _board_click_through() -> void:
 			var ready: Array = s.tech_tree.ready_list()
 			if not ready.is_empty():
 				var tech: String = ready[0]
-				var board = panel.board
-				panel.scroll.scroll_horizontal = int(board.card_rect(tech).position.x - 200.0)
-				panel.scroll.scroll_vertical = int(board.card_rect(tech).position.y - 100.0)
 				probe["tech"] = tech
 	)
 	_then(

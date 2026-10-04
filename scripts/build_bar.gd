@@ -287,7 +287,7 @@ func _tooltip(type: String) -> String:
 	if not def["cost"].is_empty():
 		s += "\nPrice (have/need): " + Ui.progress_text(state.economy.inv, def["cost"], 99)
 	if def["kind"] == "field":
-		s += "\n" + FieldText.card_text(state, def.get("crop", "grain"))
+		s += "\n" + FieldText.card_text(state, def)
 	if def["tech"] == "":
 		s += "\nAlways available."
 	elif not state.town.unlocked(type):

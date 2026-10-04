@@ -26,15 +26,13 @@ static func tiles_line(item: String, n: int) -> String:
 	return Data.PATCH_SOME % [count, roundi(Patch.bonus(n) * 100.0), step, most, Data.PATCH_MAX_TILES]
 
 
-## The Info panel's line while a hut is being placed at `p`: the tiles of the resource it would start on.
-static func placement_text(s, p: Vector2i) -> String:
-	var item: String = s.town.default_focus(p)
+## The Info panel's line while a hut is being placed at `p` to work `item` (the picker's choice, or its default).
+static func placement_text(s, p: Vector2i, item: String) -> String:
 	return tiles_line(item, s.town.tiles_of(p, item).size()) if item != "" else ""
 
 
 ## The short pill on the map under the placement ghost: "Clay x4 · +30% speed".
-static func pill_text(s, p: Vector2i) -> String:
-	var item: String = s.town.default_focus(p)
+static func pill_text(s, p: Vector2i, item: String) -> String:
 	var n: int = s.town.tiles_of(p, item).size() if item != "" else 0
 	if n < 2:
 		return ""
@@ -62,8 +60,8 @@ static func panel_text(s, b: Dictionary) -> String:
 
 
 ## The pill under the placement ghost with the hut's patch added to `note`: "To Hearth · 11 tiles · 22 s a trip · Clay x4 · +30% speed".
-static func with_pill(s, placing: String, p: Vector2i, note: String) -> String:
+static func with_pill(s, placing: String, p: Vector2i, item: String, note: String) -> String:
 	if placing != "gatherers_hut":
 		return note
-	var pill := pill_text(s, p)
+	var pill := pill_text(s, p, item)
 	return note if pill == "" else (pill if note == "" else note + " · " + pill)

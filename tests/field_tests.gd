@@ -24,6 +24,7 @@ func run(runner) -> void:
 	test_placing_and_dragging_say_whether_a_hut_reaches()
 	test_the_growth_readout_walks_through_its_states()
 	test_the_readout_stays_quiet_before_a_hut_and_a_dwelling()
+	test_a_flax_field_reads_as_flax()
 
 
 ## A game with a cleared square of grass (radius 4) away from the Hearth. Returns [game, centre].
@@ -125,14 +126,17 @@ func test_the_build_card_counts_fields_with_no_hut() -> void:
 	var a := _arena()
 	var s: Sim = a[0]
 	var p: Vector2i = a[1]
-	t.check(FieldText.card_text(s, "grain").begins_with(Data.FIELD_CARD_NONE), "no fields yet says so")
+	t.check(FieldText.card_text(s, Data.BUILDINGS["field"]).begins_with(Data.FIELD_CARD_NONE), "no fields yet says so")
 	_hut_on_fields(s, p, 2)
 	s.world.add_field(p + Vector2i(4, 4))
-	var text := FieldText.card_text(s, "grain")
+	var text := FieldText.card_text(s, Data.BUILDINGS["field"])
 	t.check(text.begins_with("1 of your 3 fields have no hut within 2 tiles."), "one idle of three: " + text)
 	t.check(text.contains("Gatherer's Hut within 2 tiles that works Grain"), "and what a field needs: " + text)
 	s.world.remove_field(p + Vector2i(4, 4))
-	t.check(FieldText.card_text(s, "grain").begins_with("All 2 of your fields are in reach of a hut."), "all reached")
+	t.check(
+		FieldText.card_text(s, Data.BUILDINGS["field"]).begins_with("All 2 of your fields are in reach of a hut."),
+		"all reached"
+	)
 
 
 func test_placing_and_dragging_say_whether_a_hut_reaches() -> void:
@@ -140,18 +144,20 @@ func test_placing_and_dragging_say_whether_a_hut_reaches() -> void:
 	var s: Sim = a[0]
 	var p: Vector2i = a[1]
 	t.check(
-		FieldText.placing_text(s, p) == Data.FIELD_NO_HUT % 2,
-		"placing with no hut near: " + FieldText.placing_text(s, p)
+		FieldText.placing_text(s, p, Data.BUILDINGS["field"]) == Data.FIELD_NO_HUT % 2,
+		"placing with no hut near: " + FieldText.placing_text(s, p, Data.BUILDINGS["field"])
 	)
 	_hut_on_fields(s, p, 1)
 	t.check(
-		FieldText.placing_text(s, p + Vector2i(0, 2)).begins_with("In reach of 1 hut: a hut works it."),
+		FieldText.placing_text(s, p + Vector2i(0, 2), Data.BUILDINGS["field"]).begins_with(
+			"In reach of 1 hut: a hut works it."
+		),
 		"placing next to a hut"
 	)
 	s.tech_tree.researched["farming"] = true
 	var line: Array = [p + Vector2i(0, 1), p + Vector2i(0, 2), p + Vector2i(0, 4)]
-	t.check(FieldText.drag_note(s, line) == "2 in reach of a hut", "a drag counts the tiles a hut reaches")
-	t.check(FieldText.drag_note(s, [p + Vector2i(0, 4)]) == Data.FIELD_DRAG_NONE, "and says none when none")
+	t.check(FieldText.drag_note(s, "field", line) == "2 in reach of a hut", "a drag counts the tiles a hut reaches")
+	t.check(FieldText.drag_note(s, "field", [p + Vector2i(0, 4)]) == Data.FIELD_DRAG_NONE, "and says none when none")
 
 
 ## A camp with a hut and a Dwelling (the readout waits for both), fed by hand second by second.
@@ -229,3 +235,46 @@ func test_the_readout_stays_quiet_before_a_hut_and_a_dwelling() -> void:
 	t.check(GrowthNote.progress_tip(s) == "", "and no tooltip line")
 	t.check(t.place_free(s, "gatherers_hut", s.world.camp_pos + Vector2i(0, 2)), "a hut alone")
 	t.check(GrowthNote.progress_text(s) == "", "still nothing without a Dwelling")
+
+
+## The Flax Field sows flax (yield: Fiber): its text names Fiber, not Grain, with no Calendar or river talk.
+func test_a_flax_field_reads_as_flax() -> void:
+	var a := _arena()
+	var s: Sim = a[0]
+	var p: Vector2i = a[1]
+	var def: Dictionary = Data.BUILDINGS["flax_field"]
+	t.check(FieldText.crop_item(def) == "fiber" and FieldText.crop_item(Data.BUILDINGS["field"]) == "grain", "crops")
+	s.world.add_flax_field(p + Vector2i(1, 0))
+	t.check(FieldText.is_sown(s, p + Vector2i(1, 0)), "a sown flax tile is a field")
+	t.check(not FieldText.is_sown(s, p), "grass is not")
+	var text := FieldText.tile_text(s, p + Vector2i(1, 0))
+	t.check(text.begins_with(Data.FIELD_NO_HUT % 2), "no hut: " + text)
+	t.check(text.contains("Sown Fiber never runs out"), "it says it stays: " + text)
+	t.check(not text.contains("Calendar") and not text.contains("river"), "no grain-field talk: " + text)
+	t.check(text.contains("Twine Post"), "and what fiber is for: " + text)
+	t.check(
+		(
+			FieldText.card_text(s, def).begins_with("All 1 of your fields")
+			or FieldText.card_text(s, def).begins_with("1 of your 1")
+		),
+		"card counts flax fields"
+	)
+	t.check(
+		FieldText.card_text(s, Data.BUILDINGS["field"]).begins_with(Data.FIELD_CARD_NONE), "and not as grain fields"
+	)
+	t.check(FieldText.card_text(s, def).contains("works Fiber"), "card names Fiber: " + FieldText.card_text(s, def))
+	var b := _hut_on_fields(s, p, 0)
+	s.tech_tree.researched["cordage"] = true
+	s.world.add_flax_field(p + Vector2i(-1, 0))
+	s.town.set_focus(s.town.building_at[p], "fiber")
+	b["worker"] = 0
+	var line := FieldText.hut_line(s, p + Vector2i(1, 0), "fiber")
+	t.check(
+		line.begins_with("A hut with a worker reaps it") and line.contains("Fiber"), "a hut on flax reaps it: " + line
+	)
+	t.check(
+		FieldText.placing_text(s, p + Vector2i(0, 2), def).begins_with("In reach of 1 hut"), "placing flax near a hut"
+	)
+	t.check(
+		FieldText.drag_note(s, "flax_field", [p + Vector2i(0, 1), p + Vector2i(0, 4)]) == "1 in reach of a hut", "drag"
+	)

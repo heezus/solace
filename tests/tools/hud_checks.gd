@@ -4,6 +4,7 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 const Ui = preload("res://scripts/ui.gd")
+const Rules = preload("res://scripts/rules.gd")
 
 const ICON_SIZE := Vector2(24, 24)  # a good's sprite in the top bar
 
@@ -44,12 +45,15 @@ static func end_card(main: Node, when: String) -> Array:
 	return problems
 
 
-## The second era's row of chips: each is the sprite (as big as the other rows'), the good's name in readable text and
-## the count, on one line, with a tooltip that carries the rate, and none touches the bar's edge or is cut off.
+## The second era's row of chips is the same widget as the stone age's rows (a chip is a chip in every era): the same
+## size, sprite size, count and rate font sizes, padding, gap and tooltip with the rate in it, each under the column of
+## the chip above it, and none touches the bar's edge or is cut off.
 static func third_row(main: Node, when: String) -> Array:
 	var problems: Array = []
 	var tb = main.top_bar
+	var ref: Dictionary = tb.chips["wood"]
 	var seen := 0
+	var col := 0
 	for id in tb.chips:
 		if int(Data.ITEMS[id].get("era", 1)) != 2:
 			continue
@@ -58,23 +62,48 @@ static func third_row(main: Node, when: String) -> Array:
 			problems.append("%s: the %s chip isn't showing in the third row" % [when, id])
 			continue
 		seen += 1
-		var item: Dictionary = Data.ITEMS[id]
-		var short: String = item.get("short", item["name"])
-		var names: Array = _all(c["box"]).filter(func(l): return l is Label and l.text == short)
-		if names.is_empty():
-			problems.append("%s: the %s chip has no name (%s) beside its count" % [when, id, short])
-		for l in names:
-			if l.get_theme_font_size("font_size") < Ui.MIN_TEXT:
-				problems.append("%s: the %s chip's name is under %d px" % [when, id, Ui.MIN_TEXT])
-		if c["icon"].size != ICON_SIZE or c["icon"].size != tb.chips["wood"]["icon"].size:
-			problems.append(
-				"%s: the %s sprite is %s, not %s like the first row" % [when, id, c["icon"].size, ICON_SIZE]
-			)
-		if not String(c["box"].tooltip_text).contains("per second"):
-			problems.append("%s: the %s chip's tooltip lost the rate" % [when, id])
+		problems.append_array(_same_chip(ref, c, id, when))
+		var above: Control = tb.chips[Data.ITEM_ORDER[col]]["box"]  # the same column of the first row
+		var lined_up := absf(c["box"].get_global_rect().position.x - above.get_global_rect().position.x) <= 0.5
+		if above.is_visible_in_tree() and not lined_up:
+			problems.append("%s: the %s chip isn't under the first row's column %d" % [when, id, col])
+		col += 1
 	if seen != 5:
 		problems.append("%s: %d chips in the third row, not 5" % [when, seen])
+	var rows: Array = []
+	for id in ["wood", "rope", "copper_ore"]:
+		rows.append(tb.chips[id]["box"].get_global_rect())
+	if absf(rows[1].position.y - rows[0].position.y - (rows[2].position.y - rows[1].position.y)) > 0.5:
+		problems.append("%s: the three rows of chips aren't evenly spaced (%s)" % [when, rows])
 	return problems + chip_fit(main, when)
+
+
+## Chip `c` against the reference chip `ref`: every measured property of the widget is the same.
+static func _same_chip(ref: Dictionary, c: Dictionary, id: String, when: String) -> Array:
+	var problems: Array = []
+	var a: Control = ref["box"]
+	var b: Control = c["box"]
+	if a.size != b.size:
+		problems.append("%s: the %s chip is %s, the first row's are %s" % [when, id, b.size, a.size])
+	if c["icon"].size != ICON_SIZE or c["icon"].size != ref["icon"].size:
+		problems.append("%s: the %s sprite is %s, not %s like the first row" % [when, id, c["icon"].size, ICON_SIZE])
+	for part in ["count", "rate"]:
+		if c[part] == null:
+			problems.append("%s: the %s chip has no %s line like the first row's" % [when, id, part])
+		elif c[part].get_theme_font_size("font_size") != ref[part].get_theme_font_size("font_size"):
+			problems.append("%s: the %s chip's %s is a different size from the first row's" % [when, id, part])
+	if c["rate"] != null and c["rate"].get_theme_font_size("font_size") < Ui.MIN_TEXT:
+		problems.append("%s: the %s chip's rate is under %d px" % [when, id, Ui.MIN_TEXT])
+	var pa: StyleBox = a.get_theme_stylebox("panel")
+	var pb: StyleBox = b.get_theme_stylebox("panel")
+	for side in 4:
+		if pa.get_margin(side) != pb.get_margin(side):
+			problems.append("%s: the %s chip's padding differs from the first row's (side %d)" % [when, id, side])
+	if _all(a).size() != _all(b).size():
+		problems.append("%s: the %s chip is built differently from the first row's" % [when, id])
+	if not String(b.tooltip_text).contains("per second"):
+		problems.append("%s: the %s chip's tooltip lost the rate" % [when, id])
+	return problems
 
 
 ## Every chip keeps TopBar.EDGE_PAD from the bar's top and bottom edge (the bottom rule sits inside that) and stays
@@ -146,6 +175,107 @@ static func food_readout(main: Node, when: String) -> Array:
 			problems.append(
 				'%s: "%s" takes %d lines: the Food block would be %.0f px tall' % [when, text, lines, block]
 			)
+	return problems
+
+
+## The whole board in the real window: fitted (the smallest zoom, so the whole era shows), every card inside the board's
+## own rectangle, inside the research panel and inside the window, its names at least 14 px on screen, the strip below
+## it the same height whatever it says, and nothing in the panel under 14 px.
+static func board_fit(main: Node, when: String) -> Array:
+	var problems: Array = []
+	var panel = main.tech_panel
+	var board = panel.board
+	if not panel.visible or not board.is_visible_in_tree() or board.size.x < 100.0 or board.size.y < 100.0:
+		return ["%s: the whole board isn't showing (size %s)" % [when, board.size]]
+	var window := Rect2(Vector2.ZERO, main.get_viewport_rect().size)
+	var room := Rect2(Vector2.ZERO, board.size).grow(0.5)
+	var whole: Rect2 = board.board_screen_rect()
+	if not board.fitted or absf(board.zoom - board.min_zoom()) > 0.005:
+		problems.append("%s: the board isn't fitted (zoom %.3f, fit %.3f)" % [when, board.zoom, board.min_zoom()])
+	if not room.encloses(whole):
+		problems.append("%s: the fitted board %s runs out of its room %s" % [when, whole, board.size])
+	for tech in Rules.era_techs(board.era):
+		if not room.encloses(board.card_screen_rect(tech)):
+			problems.append("%s: %s's card %s is out of view" % [when, tech, board.card_screen_rect(tech)])
+	var shown := Rect2(board.get_global_rect().position + whole.position, whole.size)
+	if not panel.get_global_rect().grow(0.5).encloses(shown):
+		problems.append(
+			"%s: the fitted board %s runs out of the research panel %s" % [when, shown, panel.get_global_rect()]
+		)
+	if not window.grow(0.5).encloses(shown):
+		problems.append("%s: the fitted board %s runs out of the window %s" % [when, shown, window])
+	var px: int = board._px(board.NAME_PX)
+	if px < Ui.MIN_TEXT:
+		problems.append("%s: card names are %d px on screen, under %d" % [when, px, Ui.MIN_TEXT])
+	if absf(panel.detail.size.y - panel.STRIP_H) > 0.5:
+		problems.append("%s: the strip is %.0f px tall, not %.0f" % [when, panel.detail.size.y, panel.STRIP_H])
+	return problems
+
+
+## What to learn next in the real window: titled, explained, every card inside the panel and not cut off at the sides,
+## one card marked Suggested, and nothing in it under 14 px.
+static func next_view(main: Node, when: String) -> Array:
+	var problems: Array = []
+	var panel = main.tech_panel
+	var view = panel.next_view
+	if not panel.visible or not view.is_visible_in_tree() or panel.board.visible:
+		return ["%s: What to learn next isn't showing" % when]
+	var area: Rect2 = view.get_global_rect()
+	if not panel.get_global_rect().encloses(area):
+		problems.append("%s: the cards' area %s runs out of the panel %s" % [when, area, panel.get_global_rect()])
+	if view.cards.is_empty() and view.rows.is_empty():
+		problems.append("%s: no cards and no locked rows" % when)
+	for tech in view.cards:
+		var r: Rect2 = view.cards[tech].get_global_rect()
+		if r.position.x < area.position.x - 0.5 or r.end.x > area.end.x + 0.5:
+			problems.append("%s: %s's card %s is cut off at the sides of %s" % [when, tech, r, area])
+	if view.suggested == "" or not view.cards.has(view.suggested):
+		problems.append("%s: no card is marked Suggested" % when)
+	if panel.explain.text != Data.EXPLAIN_NEXT or panel.view_buttons["next"].text != Data.VIEW_NEXT:
+		problems.append("%s: the view isn't titled and explained" % when)
+	for l in _all(view):
+		if (l is Label or l is Button) and l.is_visible_in_tree() and l.text != "":
+			if l.get_theme_font_size("font_size") < Ui.MIN_TEXT:
+				problems.append("%s: '%s' is under %d px" % [when, l.text, Ui.MIN_TEXT])
+			if l is Label and l.autowrap_mode == TextServer.AUTOWRAP_OFF and l.size.x + 1.0 < l.get_minimum_size().x:
+				problems.append("%s: '%s' is cut off" % [when, l.text])
+	return problems
+
+
+## The Gathering tab's four cards (Gatherer's Hut, Field, Flax Field, Fishing Weir) all show, each whole inside the
+## bottom bar and the window, clear of one another and of the Craft by hand buttons and the Demolish button.
+static func gathering_tab(main: Node, when: String) -> Array:
+	var problems: Array = []
+	var bar: Control = main.bottom_bar
+	if bar.tab != "Gathering":
+		return ["%s: the Gathering tab isn't the one showing" % when]
+	var window := Rect2(Vector2.ZERO, main.get_viewport_rect().size)
+	var cards: Array = []
+	for type in Data.BUILD_TABS["Gathering"]:
+		var card: Control = bar.build_buttons[type]["button"]
+		if not card.is_visible_in_tree():
+			problems.append("%s: the %s card isn't showing on the Gathering tab" % [when, type])
+			continue
+		cards.append({"type": type, "rect": card.get_global_rect()})
+	if cards.size() != 4:
+		problems.append("%s: the Gathering tab shows %d cards (want 4)" % [when, cards.size()])
+	var others: Array = [{"type": "Demolish", "rect": bar.demolish_button.get_global_rect()}]
+	for r in bar.craft_buttons:
+		others.append({"type": "Craft " + r, "rect": bar.craft_buttons[r].get_global_rect()})
+	for a in cards:
+		var r: Rect2 = a["rect"]
+		if not bar.get_global_rect().encloses(r) or not window.encloses(r):
+			problems.append("%s: the %s card (%s) runs out of the bottom bar or the window" % [when, a["type"], r])
+		for b in cards + others:
+			if a["type"] != b["type"] and r.intersects(b["rect"]) and (b in others or a["type"] < b["type"]):
+				problems.append("%s: the %s card overlaps %s" % [when, a["type"], b["type"]])
+	if bar.get_combined_minimum_size().x > window.size.x:
+		problems.append(
+			(
+				"%s: the bottom bar needs %.0f px of a %.0f px window"
+				% [when, bar.get_combined_minimum_size().x, window.size.x]
+			)
+		)
 	return problems
 
 
