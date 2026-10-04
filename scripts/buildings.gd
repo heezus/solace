@@ -116,6 +116,8 @@ func built_type(p: Vector2i) -> String:
 		return "bridge" if _world.tile_at(p) == "river" else "road"
 	if _world.fields.has(p):
 		return "field"
+	if _world.flax_fields.has(p):
+		return "flax_field"
 	return ""
 
 
@@ -140,7 +142,10 @@ func place(type: String, p: Vector2i) -> Dictionary:
 		else:
 			_world.add_road(p)  # a bridge is a road over the river
 	elif kind == "field":
-		_world.add_field(p)
+		if Data.BUILDINGS[type].get("crop", "") == "flax":
+			_world.add_flax_field(p)
+		else:
+			_world.add_field(p)
 	else:
 		add_building(type, p)
 	built.emit(type, p)
@@ -278,6 +283,8 @@ func demolish(p: Vector2i) -> Dictionary:
 		_world.remove_road(p)
 	elif _world.fields.has(p):
 		_world.remove_field(p)
+	elif _world.flax_fields.has(p):
+		_world.remove_flax_field(p)
 	else:
 		index = building_at[p]
 	demolished.emit(type, p)

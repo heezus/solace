@@ -355,6 +355,13 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Claude and Codex both edit it in `docs/design-system/` via PRs; the project-folder copy is retired. Decided by Jon.
 - Sprites live only in `art/sprites/`. Codex owns art; Claude owns code and mechanics pages (06/09/10/11/14/15).
 
+## 2026-10-03: flax can be planted, a canon change by Jon (PR #38)
+- Claude, from Jon's request ("I think we need an ability to plant fiber"). Canon until now: flax was the only source of Fiber and grew only in wild patches. It is no longer wild-only: Flax can be sown, and wild patches stay as the early start.
+- New build card **Flax Field** on the Gathering tab beside Field. It unlocks with **Cordage** (no new tech, the stone age can use it before Farming), costs 2 Fiber a tile and no grain, and is dragged on open grassland like a grain Field.
+- A sown tile is a flax tile (`World.flax_fields` remembers which), so a hut set to Fiber and a hand gatherer treat it exactly as wild flax. The yield per harvest is the same, it never runs out (wild tiles do not either), and Calendar, Plough and Irrigation do not touch it.
+- Demolish returns 1 Fiber and the grass. Saves keep the list; older saves load with none. Map generation, fairness and the bots are unchanged, so both goldens are unchanged.
+- Placeholder art: the wild flax sprite tinted pale blue-green with furrows; a Flax Field sprite is asked of Codex in `docs/art/requests.md`.
+
 ## 2026-10-03: clear any resource tile (PR #37)
 - Claude, from Jon's playtest feedback: only Forest and Rocks could be cleared (by laying a road over them), so clay beside flint left the hut on flint and he built roads just to clear room. Demolish now clears any gatherable tile to grass.
 - Clearable (a `clearable` flag per tile in `scripts/data/tiles.gd`): Flax, Forest, Rocks, Gravel, Clay, Berries, Wild Grain. Never: the river, the Hearth, the Strange Stone, Copper Hills, Tin Stream, unexplored tiles (each has a plain "it stays" pill) and anything built (that is demolished as before). The new rule is in `scripts/clearing.gd`.

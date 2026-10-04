@@ -77,7 +77,7 @@ Costs as built (`scripts/data.gd`). "R" marks a tech with ranks.
 ### Tier I: roots
 | Tech | Lane | Needs | Cost | Effect |
 |---|---|---|---|---|
-| Cordage (R) | Fiber | nothing | 15 Fiber | Craft Rope, Twine Post |
+| Cordage (R) | Fiber | nothing | 15 Fiber | Craft Rope, Twine Post, Flax Field |
 | Knapping (R) | Stone | nothing | 5 Flint, 10 Stone | Craft Flint Tools: a harvest by hand takes a 0.7s hold instead of 1s, and each worker holding one works 50% faster (a tool lasts 40 jobs) |
 | Foraging (R) | Land | nothing | 5 Berries, 10 Fiber | Berries x2 (Yield), by hand and by hut |
 | Fire (R) | Hearth | nothing | 10 Wood, 5 Stone | Charcoal Pit |
@@ -191,5 +191,6 @@ Lore gates the era through Calendar, so story is part of progress, not flavor. T
 
 ## Open
 - Costs are tuned with the pacing bot, not yet with a human playthrough.
+- Flax can be sown (Jon, 2026-10-03): Cordage opens the Flax Field, 2 Fiber a tile, no grain. A hut set to Fiber cuts it exactly as it cuts wild flax and it never runs out; Calendar, Plough and Irrigation do not touch it.
 - Calendar's +25% applies to hut harvests of sown Fields, not wild grain or hand gathering. Irrigation's "grow faster" means a hut worker harvests that Field in half the time.
 - Spoiling doesn't exist, so preserving food is a flat bonus (Preservation).
