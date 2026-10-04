@@ -33,6 +33,7 @@ func run(runner) -> void:
 	test_the_suggested_tech_follows_its_rule()
 	test_locked_techs_say_what_they_wait_for()
 	test_the_panel_opens_on_what_to_learn_next()
+	test_the_panel_never_asks_for_more_room_than_the_window_has()
 	test_a_next_card_discovers_or_queues()
 	test_the_words_are_plain()
 
@@ -370,6 +371,44 @@ func test_the_panel_opens_on_what_to_learn_next() -> void:
 	panel._pick_view("all")
 	panel._on_open()
 	t.check(panel.view == "all", "the panel keeps the view the player picked")
+	panel.free()
+
+
+## The layout pass found the panel 1548 px wide in a 1280 window: with every good seen and a long queue, the stock
+## line asked for more room than the window has. The panel's smallest size, in both views and eras, must fit the
+## smallest canvas (1280x800 less the panel's 8 px insets). The layout pass checks the real laid-out board.
+func test_the_panel_never_asks_for_more_room_than_the_window_has() -> void:
+	var s: Sim = t.fresh()
+	t.give(s, 500)
+	for id in Data.ITEM_ORDER:
+		s.economy.seen[id] = true
+	s.tech_tree.researched["bronze_dawn"] = true
+	s.shard_seen = true
+	var window := Vector2(1264.0, 784.0)
+	var panel := TechPanel.new()
+	panel.setup(s)
+	panel.visible = true
+	panel._on_open()
+	for goal in ["", "bronze_dawn", "falling_star"]:
+		for era in [1, 2]:
+			s.tech_tree.clear()
+			if goal != "":
+				s.tech_tree.researched.erase(goal)
+				s.tech_tree.set_goal(goal)
+			panel._pick_era(era)
+			for view in ["next", "all"]:
+				panel._pick_view(view)
+				var where := "goal %s, era %d, %s view" % [goal, era, view]
+				var least := panel.get_combined_minimum_size()
+				t.check(
+					least.x <= window.x,
+					"the panel asks for %.0f px of width, the window has %.0f: %s" % [least.x, window.x, where]
+				)
+				t.check(
+					least.y <= window.y,
+					"the panel asks for %.0f px of height, the window has %.0f: %s" % [least.y, window.y, where]
+				)
+				t.check(panel.board.get_combined_minimum_size().x == 0.0, "the board imposes no width: " + where)
 	panel.free()
 
 

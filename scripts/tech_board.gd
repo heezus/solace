@@ -7,8 +7,8 @@ extends Control
 ## board is open, and Fit (F) snaps back. The view eases to where it is going, and it is clamped so the tree can never
 ## be moved out of sight: zoomed out it is centred, zoomed in its edges stop at the edges of the board.
 ##
-## Everything is drawn in screen space, so text stays sharp at any zoom. A label is never drawn under MIN_PX: at a low
-## zoom the icon goes first, so the name keeps the room.
+## Everything is drawn in screen space, so text stays sharp at any zoom. A label is never drawn under MIN_PX (14): at a
+## low zoom the icon goes first so the name keeps the room, and a name too long for its card is trimmed with an ellipsis.
 
 signal card_clicked(tech: String)
 signal hover_changed(tech: String)
@@ -43,7 +43,7 @@ const PAN_GESTURE := 14.0  # a trackpad's two-finger scroll, in px per unit of i
 const EASE := 14.0  # how fast the view eases to its goal
 const DRAG_START := 5.0  # px the pointer moves with the button down before a press becomes a pan
 const NAME_PX := 15.0  # a card's name, in board px (its screen size is this times the zoom)
-const MIN_PX := 12  # no label is drawn smaller than this on screen
+const MIN_PX := 14  # no label is drawn smaller than this on screen (the HUD's own minimum)
 const ICON_ZOOM := 0.8  # below this zoom a card drops its icon to leave room for the name
 
 var state: Sim
@@ -401,7 +401,7 @@ func _draw_or_pills() -> void:
 		if shown.size() < 2:
 			continue
 		var c: Vector2 = lay["pills"][tech]
-		var r := _r(Rect2(c - Vector2(12, 8), Vector2(24, 16)))
+		var r := _r(Rect2(c - Vector2(14, 9), Vector2(28, 18)))
 		var box := StyleBoxFlat.new()
 		box.bg_color = Ui.BAR
 		box.border_color = GOLD if chain.has(tech) else NEEDED

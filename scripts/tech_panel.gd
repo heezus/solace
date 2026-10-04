@@ -115,7 +115,6 @@ func setup(game: Sim) -> void:
 	queue_row = HBoxContainer.new()  # the queue sits at the end of the same line
 	queue_row.add_theme_constant_override("separation", 6)
 	queue_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	queue_row.alignment = BoxContainer.ALIGNMENT_END
 	stock_row.add_child(queue_row)
 	v.add_child(stock_row)
 
@@ -304,7 +303,7 @@ func refresh() -> void:
 	var key := "%s|%s|%s" % [state.tech_tree.queue, ready_now, state.tech_tree.goal]
 	if key != rows_key:
 		rows_key = key
-		_fill_row(queue_row, Data.QUEUE_CAPTION, state.tech_tree.queue, Data.QUEUE_EMPTY)
+		_fill_queue()
 	if view == "next":
 		next_view.refresh(board.era)
 		return
@@ -318,48 +317,39 @@ func refresh() -> void:
 	board.queue_redraw()
 
 
-## A caption and a chip per tech (or a hint when there are none).
-func _fill_row(row: HBoxContainer, caption: String, techs: Array, empty: String) -> void:
+## The queue, on the stock line: its caption, then the techs in order as one line that is trimmed to the room left (the
+## line can never widen the panel), with the costs in its tooltip, and Clear when a goal is set.
+func _fill_queue() -> void:
+	var row := queue_row
 	for c in row.get_children():
 		row.remove_child(c)
 		c.queue_free()
-	var cap := Ui.label(caption, Ui.MIN_TEXT)
+	var cap := Ui.label(Data.QUEUE_CAPTION, Ui.MIN_TEXT)
 	cap.add_theme_color_override("font_color", Ui.TEXT_DIM)
 	row.add_child(cap)
-	if techs.is_empty():
-		var hint := Ui.label(empty, Ui.MIN_TEXT)
-		hint.add_theme_color_override("font_color", Ui.TEXT_DIM)
-		row.add_child(hint)
-		return
-	for tech in techs:
-		var b := Ui.button(Data.TECHS[tech]["name"])
-		b.custom_minimum_size = Vector2(0, 24)
-		var style := Ui.panel_style(Ui.CARD, 4)
-		style.border_color = TechBoard.GOLD if state.tech_tree.can_research(tech) else Ui.OUTLINE
-		style.set_border_width_all(2)
-		b.add_theme_stylebox_override("normal", style)
-		b.pressed.connect(_on_card.bind(tech))
-		b.tooltip_text = _chip_tip(tech)
-		row.add_child(b)
-	if caption == Data.QUEUE_CAPTION and state.tech_tree.goal != "":
+	var techs: Array = state.tech_tree.queue
+	var text := Data.QUEUE_EMPTY
+	if not techs.is_empty():
+		text = " › ".join(techs.map(func(t): return Data.TECHS[t]["name"]))
+	var line := Ui.label(text, Ui.MIN_TEXT)
+	line.clip_text = true
+	line.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	line.mouse_filter = Control.MOUSE_FILTER_PASS
+	line.tooltip_text = "\n".join(
+		techs.map(func(t): return "%s: %s" % [Data.TECHS[t]["name"], Ui.cost_text(state.tech_tree.cost_of(t))])
+	)
+	line.add_theme_color_override("font_color", Ui.TEXT_DIM if techs.is_empty() else Ui.TEXT)
+	row.add_child(line)
+	if state.tech_tree.goal != "":
 		var clear := Ui.button("Clear")
-		clear.pressed.connect(
-			func():
-				state.tech_tree.clear()
-				refresh()
-		)
+		clear.pressed.connect(_clear_queue)
 		row.add_child(clear)
 
 
-## A queue or ready chip's tooltip: the cost, what the building will cost after, and a heads-up when paying leaves too little.
-func _chip_tip(tech: String) -> String:
-	var lines: Array = ["Cost: " + Ui.cost_text(state.tech_tree.cost_of(tech))]
-	if Ui.then_builds_text(tech) != "":
-		lines.append(Ui.then_builds_text(tech))
-		var warning := Ui.build_warning(state.economy.inv, tech, state.tech_tree.cost_of(tech))
-		if state.tech_tree.can_research(tech) and warning != "":
-			lines.append(warning)
-	return "\n".join(lines)
+func _clear_queue() -> void:
+	state.tech_tree.clear()
+	refresh()
 
 
 func _show_frontier(ready_now: Array) -> void:
