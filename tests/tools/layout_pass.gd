@@ -17,6 +17,7 @@ const UiTests = preload("res://tests/ui_tests.gd")
 const Ui = preload("res://scripts/ui.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
 const HudChecks = preload("res://tests/tools/hud_checks.gd")
+const PickerChecks = preload("res://tests/tools/picker_checks.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
 const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
 
@@ -49,6 +50,7 @@ var saved := {}  # the stockpile as it was, put back after them
 var row_at: Array = []  # the buildings placed by hand for the badge check
 var goals_height := 0.0  # the Goals list's height before a card opens
 var frozen := false  # the bot's ticking is paused while a check sets the state by hand
+var picker := PickerChecks.new()  # the hut picker's checks (tests/tools/picker_checks.gd)
 
 
 func _init() -> void:
@@ -356,6 +358,19 @@ func _hud_checks() -> void:
 		64:
 			frozen = true
 			_build_a_row_of_buildings()
+		68, 460:
+			frozen = true
+			_report(picker.hold_a_hut(main))
+		70, 462:
+			_report(picker.check_placing(main, size_name()))
+			_shot("hut_picker_placing_" + size_name())
+			_report(picker.place_picked(main))
+		72, 464:
+			_report(picker.check_card(main, size_name()))
+			_shot("hut_picker_card_" + size_name())
+		73, 465:
+			picker.cleanup(main)
+			frozen = false
 		66:
 			_check_pills("a row of six adjacent buildings, each blocked")
 			for p in row_at:
@@ -922,6 +937,10 @@ func _texts(node: Node) -> Array:
 
 
 ## Take in the problems another check found, and count it as a HUD check.
+func size_name() -> String:
+	return "%dx%d" % [root.size.x, root.size.y]
+
+
 func _report(found: Array) -> void:
 	hud_checks += 1
 	problems.append_array(found)
