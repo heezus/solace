@@ -7,11 +7,13 @@ const Data = preload("res://scripts/data.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Buildings = preload("res://scripts/buildings.gd")
+const Patch = preload("res://scripts/patch.gd")
 
 
-## Seconds for one work cycle at this building: its base time, shortened by the Speed group.
+## Seconds for one work cycle at this building: its base time, shortened by the Speed group and, for a hut, by the
+## Speed its patch gives (more tiles of its resource in reach: scripts/patch.gd).
 static func time(s, b: Dictionary) -> float:
-	return Data.BUILDINGS[b["type"]]["time"] / Bonuses.speed(s, b)
+	return Data.BUILDINGS[b["type"]]["time"] / (Bonuses.speed(s, b) * Patch.speed(s, b))
 
 
 ## Seconds for a hut worker to harvest `tile`. Irrigation halves it for Fields touching the river.
@@ -83,6 +85,9 @@ static func text(s, b: Dictionary) -> String:
 	var item: String = b["focus"]
 	if item != "" and s.people.knows(item):
 		line += "\nBundle: %d %s (%d x a click)" % [bundle_size(s, b, item), Data.ITEMS[item]["name"], Data.BUNDLE]
+	var tiles: int = s.town.focus_tiles(b).size()
+	if tiles > 1:
+		line += "\n" + Data.PATCH_EXACT % [tiles, str(snappedf(Patch.speed(s, b), 0.01))]
 	return line
 
 

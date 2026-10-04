@@ -42,6 +42,14 @@ const IDLE_WORD := "idle"
 const HAUL_WORD := "hauling"
 const NOTE_STARVING := "Starving: no food"
 const NOTE_NO_ROOM := "No room: build a Dwelling"
+# --- How close steady food is to the next birth (scripts/growth_note.gd), the Food readout's second line ---
+const GROW_NEXT := "Next %s in about %s"  # one, a time ("12 s")
+const GROW_STEADY := "Steady food %d of %d s, then a %s in about %s"  # seconds held, seconds wanted, one, a time
+const GROW_COUNTING := "Counting what your huts bring in: %d of %d s"  # seconds counted, window
+const GROW_NEEDS_MORE := "Needs +%s more food a minute to grow"  # a number
+const GROW_NEEDS_STOCK := "Needs %d more food in the stockpile to grow"
+## The same, in full, for the Food readout's tooltip (a number, then PEOPLE["many"], then a number).
+const GROW_FLOW_TIP := "Huts and workshops bring in %s food a minute; the %s eat %s a minute. Hands and foraging don't count."
 
 const TECH_DONE := "Discovered"
 const DISCOVERED_EVENT := "Discovered %s"  # a tech's name: the one verb for research, in toast, log, goals and cards
@@ -244,6 +252,42 @@ const PACE_WORK := "About %s s of work a trip, plus the walk."
 const PACE_MAKES := "Makes about %s %s a minute."  # "15", "Rope"
 const PACE_BOOST := "Sped up by %s."  # "Flint Tools (+50%)"
 const PACE_TIP := "Exact numbers: %s"
+
+# --- What a Field is for (scripts/field_text.gd): the Info panel, the build card and the placement pill ---
+const FIELD_TITLE := "Field (sown %s)"  # an item's name
+const FIELD_NO_HUT := "No hut in reach: put a Gatherer's Hut within %d tiles."
+const FIELD_HUT_WORKS := "A hut with a worker reaps it: about %s %s a minute from the %d tiles in its reach."
+const FIELD_HUTS_WORK := "%d huts reap it: about %s %s a minute together."
+const FIELD_HUT_OTHER := "The hut in reach works %s, not %s: click it to switch."  # item, item
+const FIELD_HUT_EMPTY := "The hut in reach has no %s to work it yet."  # one
+const FIELD_PAYS := "A field pays %d%% more %s a harvest than the wild plant."  # percent, an item's name
+const FIELD_PAYS_LATER := "Fields pay more %s a harvest once you discover %s (+%d%%)."  # item, tech name, percent
+const FIELD_SOWN_STAYS := "Sown %s never runs out, and counts toward the hut's patch like any tile."  # an item's name
+const FIELD_RIVER := "It touches the river: huts harvest it twice as fast."
+const FIELD_RIVER_LATER := "It touches the river: %s would make huts harvest it twice as fast."  # tech name
+const FIELD_MILL := "%s is not eaten raw: a %s turns %s into %s."  # item, building, "2 Grain", "1 Flour"
+const FIELD_CARD := "%d of your %d fields have no hut within %d tiles."  # count, total, radius
+const FIELD_CARD_OK := "All %d of your fields are in reach of a hut."  # total
+const FIELD_CARD_RULE := "A field pays only through a Gatherer's Hut within %d tiles that works %s."  # radius, an item's name
+const FIELD_CARD_NONE := "You have no fields yet."
+const FIELD_PLACE_HUT := "In reach of %s: a hut works it."  # "1 hut" / "2 huts"
+const FIELD_DRAG_NONE := "no hut in reach"
+const FIELD_DRAG_SOME := "%d in reach of a hut"  # tiles
+
+# --- What the tiles in a hut's reach do (scripts/patch_text.gd) ---
+## ("1 Clay tile", step, most, tiles) ("4 Clay tiles", now, step, most, tiles) ("6 Clay tiles", most)
+const PATCH_ONE := "%s in range: enough to work. Each extra tile adds +%d%% speed, up to +%d%% at %d tiles."
+const PATCH_SOME := "%s in range: +%d%% speed. Each extra tile adds +%d%%, up to +%d%% at %d tiles."
+const PATCH_FULL := "%s in range: +%d%% speed, the most a patch gives. More tiles will not help this hut."
+const PATCH_EXACT := "Patch: %d tiles in reach, Speed x%s"  # tiles, a multiplier
+const PATCH_PILL := "%s x%d · +%d%% speed"  # "Clay", tiles, percent
+const PATCH_FIELDS := "%d of its %d tiles are Fields."
+const PATCH_RATE := "About %s %s a minute while its worker is at it."  # a number, an item's name
+## (step, a number, an item's name)
+const FIELD_GAIN := "Each field adds +%d%% to the hut's speed: this one is worth about +%s %s a minute."
+## (an item's name, a number, an item's name, step)
+const FIELD_GAIN_FIRST := "It is the only %s tile this hut has: worth about +%s %s a minute, each extra one adds +%d%% speed."
+const FIELD_GAIN_FULL := "The hut already has %d tiles in reach, the most that help: this field adds nothing to it."  # tiles
 const TRIPS_HINT := (
 	"Click the hut to send its %s for a bundle: until a road links it, it works only when you click it."
 	+ " Trips waiting: %d of %d."
