@@ -79,13 +79,14 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 
 
 ## Where an idle hauler waits. Haulers are born at the Hearth, so left to stand where they are none would ever
-## serve a Storehouse's workshops: they spread over the depots that have road-linked buildings to serve (by their
-## name, so it never changes on them and never depends on chance). With none, the nearest depot a road touches,
-## or the Hearth when none does.
+## serve a Storehouse's workshops: they spread over the depots that have road-linked buildings to serve, in turn by
+## the order they were born in (read off their name, so it never changes on them and never depends on chance: a hash
+## of the name once left a post with one hauler of forty-five, and the workshops behind it stood idle). With none,
+## the nearest depot a road touches, or the Hearth when none does.
 static func _home_depot(s, k: Dictionary, here: Vector2i) -> Vector2i:
 	var posts := Roads.posts(s)
 	if not posts.is_empty():
-		return posts[absi(hash(k["name"])) % posts.size()]
+		return posts[birth_order(k["name"]) % posts.size()]
 	var best: Vector2i = s.world.camp_pos
 	var best_d := INF
 	for depot in Roads.depots(s):
@@ -96,6 +97,16 @@ static func _home_depot(s, k: Dictionary, here: Vector2i) -> Vector2i:
 			best = depot
 			best_d = d
 	return best
+
+
+## The order a Kith was born in, from their name: Data.PEOPLE_NAMES in turn, then round again as "Name II", "Name III".
+static func birth_order(kith_name: String) -> int:
+	var parts := kith_name.split(" ")
+	var at: int = Data.PEOPLE_NAMES.find(parts[0])
+	if at < 0:
+		return absi(hash(kith_name))
+	var round_no: int = maxi(Data.RANK_NAMES.find(parts[1]), 1) if parts.size() > 1 else 1
+	return at + (round_no - 1) * Data.PEOPLE_NAMES.size()
 
 
 ## From the depot the hauler waits at, pick the closest useful trip on a road network that depot

@@ -57,8 +57,9 @@ func _init() -> void:
 		print("FAILED: %d" % failures if failures > 0 else "STAGE 2 TESTS PASSED")
 		quit(1 if failures > 0 else 0)
 		return
-	if "hold" in OS.get_cmdline_user_args():  # `-- hold` runs just the hold-to-harvest tests while iterating
+	if "hold" in OS.get_cmdline_user_args():  # `-- hold` runs just the hold-to-harvest and hauler tests while iterating
 		HoldTests.new().run(self)
+		HaulerTests.new().run(self)
 		print("FAILED: %d" % failures if failures > 0 else "HOLD TESTS PASSED")
 		quit(1 if failures > 0 else 0)
 		return
