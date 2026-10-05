@@ -241,7 +241,10 @@ const LOG_TIP := "The last messages (L)"
 # --- The building panel (scripts/building_panel.gd) ---
 const WORKER_HERE := "%s works here."  # "Aro the Woodcutter"
 const WORKER_TOOL := "Their %s has %d uses left."  # a tool's name in lower case ("flint tool"), uses
-const WORKER_NO_TOOL := "They have no %s: craft %s to work %d%% faster."  # "flint tool", "Flint Tools", the share
+const WORKER_NO_TOOL := "They have no %s: make %s to work %d%% faster."  # "flint tool", "Flint Tools", the share
+## A Tool Bench's line in its panel: what it is making (lower case), tools in the stockpile, tools it keeps ready.
+const BENCH_MAKING := "Making: %s, %d in stock (keeps %d ready)."
+const BENCH_ENOUGH := "Enough %s: %d in stock. It starts again when more are needed."
 const WORKER_NONE := "No one works here yet: waiting for a free %s."  # one
 const WORKER_PAUSED := "Paused: no %s works here."  # one
 const PACE_TRIP := "Each trip brings back %s."  # "6 Berries"

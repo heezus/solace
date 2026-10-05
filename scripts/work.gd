@@ -67,6 +67,8 @@ static func finish_cycle(s, b: Dictionary) -> void:
 		b["inbuf"][id] -= used[id]
 		s.economy.note(id, -used[id], b["type"])
 	var made := Buildings.recipe_out(b)
+	if made.has("flint_tools"):
+		s.hand_tools = true  # the first Flint Tool made by anyone doubles hand gathering, as a hand-crafted one does
 	var more := Bonuses.output(s, b)
 	for id in made:
 		var n := roundi(made[id] * more)
@@ -87,3 +89,64 @@ static func text(s, b: Dictionary) -> String:
 	if tiles > 1:
 		line += "\n" + Data.PATCH_EXACT % [tiles, str(snappedf(Patch.speed(s, b), 0.01))]
 	return line
+
+
+# --- The Tool Bench ----------------------------------------------------------------
+
+
+## Tools the stockpile holds, and the Tool Bench `b`'s own output waiting to be hauled.
+static func tools_stocked(s, b: Dictionary) -> int:
+	var n := 0
+	for id in Data.TOOL_ITEMS:
+		n += s.economy.inv.get(id, 0) + b["out"].get(id, 0)
+	return n
+
+
+## How many tools a Tool Bench keeps ready: Data.TOOL_SPARES, and one for each working Kith who holds none.
+static func tool_goal(s) -> int:
+	var n: int = Data.TOOL_SPARES
+	for k in s.people.kith:
+		if k["job"] == "work" and k["tool"] <= 0:
+			n += 1
+	return n
+
+
+## True when Tool Bench `b` has made enough: the stockpile holds as many tools as are wanted. It pauses until some are
+## taken, so it never drains the flint and wood the stone age needs.
+static func enough(s, b: Dictionary) -> bool:
+	return Data.BUILDINGS[b["type"]].has("makes") and tools_stocked(s, b) >= tool_goal(s)
+
+
+## Bronze that the research queue is still waiting for. A Tool Bench leaves it alone, so tools never take the Bronze a
+## tech needs.
+static func bronze_reserved(s) -> int:
+	var n := 0
+	for tech in s.tech_tree.queue:
+		n += s.tech_tree.cost_of(tech).get("bronze", 0)
+	return n
+
+
+## A Tool Bench makes the best tool it can: the last in its `makes` that is learned and that the stockpile can pay for,
+## keeping back the Bronze the research queue needs (Flint Tools when nothing better). It changes only between batches,
+## with nothing loaded or on the way.
+static func choose_tool(s, b: Dictionary) -> void:
+	var makes: Array = Data.BUILDINGS[b["type"]]["makes"]
+	if b["progress"] > 0.0 or Buildings.buffered(b["inbuf"]) > 0 or Buildings.buffered(b["incoming"]) > 0:
+		return
+	var pick: String = makes[0]
+	var spare_bronze: int = s.economy.inv.get("bronze", 0) - bronze_reserved(s)
+	for id in makes:
+		var cost: Dictionary = Data.RECIPES[id]["in"]
+		var bronze_ok: bool = spare_bronze >= cost.get("bronze", 0)
+		if Hands.recipe_unlocked(s, id) and s.economy.can_afford(cost) and bronze_ok:
+			pick = id
+	b["make"] = pick
+
+
+## "Making: flint tools, 3 in stock (keeps 5 ready)." (or "Enough flint tools: ...") for a Tool Bench's panel.
+static func bench_text(s, b: Dictionary) -> String:
+	var tool_name: String = Data.ITEMS[b["make"]]["name"].to_lower()
+	var stocked := tools_stocked(s, b)
+	if enough(s, b):
+		return Data.BENCH_ENOUGH % [tool_name, stocked]
+	return Data.BENCH_MAKING % [tool_name, stocked, tool_goal(s)]

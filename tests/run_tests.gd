@@ -43,6 +43,7 @@ const PatchTests = preload("res://tests/patch_tests.gd")
 const ForageTests = preload("res://tests/forage_tests.gd")
 const HaulerTests = preload("res://tests/hauler_tests.gd")
 const FlaxFieldTests = preload("res://tests/flax_field_tests.gd")
+const ToolBenchTests = preload("res://tests/tool_bench_tests.gd")
 const World = preload("res://scripts/world.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const Buildings = preload("res://scripts/buildings.gd")
@@ -60,6 +61,11 @@ func _init() -> void:
 		Stage2Tests.new().run(self)
 		SkyTests.new().run(self)
 		print("FAILED: %d" % failures if failures > 0 else "STAGE 2 TESTS PASSED")
+		quit(1 if failures > 0 else 0)
+		return
+	if "bench" in OS.get_cmdline_user_args():  # `-- bench` runs only the Tool Bench tests while iterating
+		ToolBenchTests.new().run(self)
+		print("FAILED: %d" % failures if failures > 0 else "BENCH TESTS PASSED")
 		quit(1 if failures > 0 else 0)
 		return
 	test_map_has_every_resource_near_camp()
@@ -117,6 +123,7 @@ func _init() -> void:
 	ForageTests.new().run(self)
 	HaulerTests.new().run(self)
 	FlaxFieldTests.new().run(self)
+	ToolBenchTests.new().run(self)
 	NewcomerTests.new().run(self)
 	UiTests.new().run(self)
 	TechBoardTests.new().run(self)

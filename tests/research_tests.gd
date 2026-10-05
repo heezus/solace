@@ -396,7 +396,8 @@ func test_sim_queue_ticks() -> void:
 func test_a_tech_says_what_its_building_costs() -> void:
 	t.check(Rules.buildings_of("gatherers_hut") == ["gatherers_hut"], "the Gatherer's Hut tech unlocks the hut")
 	t.check(Rules.buildings_of("haulers") == ["road", "bridge"], "Paths & Haulers unlocks the Road and the Bridge")
-	t.check(Rules.buildings_of("knapping").is_empty(), "Knapping unlocks no building")
+	t.check(Rules.buildings_of("knapping") == ["tool_bench"], "Knapping unlocks the Tool Bench")
+	t.check(Rules.buildings_of("foraging").is_empty(), "Foraging unlocks no building")
 	for type in Data.BUILD_ORDER:
 		var tech: String = Data.BUILDINGS[type]["tech"]
 		t.check(tech == "" or type in Rules.buildings_of(tech), "%s is listed under its tech" % type)
@@ -412,7 +413,7 @@ func test_a_tech_says_what_its_building_costs() -> void:
 		),
 		"two buildings, both named"
 	)
-	t.check(Ui.then_builds_text("knapping") == "", "and nothing for a tech with no building")
+	t.check(Ui.then_builds_text("foraging") == "", "and nothing for a tech with no building")
 	var tech_cost: Dictionary = Data.TECHS["gatherers_hut"]["cost"]
 	var inv := tech_cost.duplicate()
 	t.check(
@@ -423,7 +424,7 @@ func test_a_tech_says_what_its_building_costs() -> void:
 	t.check(Ui.build_warning(inv, "gatherers_hut") == "", "enough for both: no warning")
 	inv["wood"] -= 1
 	t.check(Ui.build_warning(inv, "gatherers_hut").contains("1 Wood"), "one Wood short of the building: it says so")
-	t.check(Ui.build_warning({}, "knapping") == "", "no building, no warning")
+	t.check(Ui.build_warning({}, "foraging") == "", "no building, no warning")
 	t.check(
 		Rules.left_after({"wood": 5}, {"wood": 9, "stone": 2}) == {"wood": 0, "stone": 0},
 		"what is left never goes below zero"
