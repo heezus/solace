@@ -442,3 +442,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Kept the 48 px default and gameplay footprints. One cached world-space ground surface replaces checkerboard tiles; neighbor-connected roads and blended riverbanks soften tile edges without changing occupancy or pathing. Single-span bridge sampling avoids repeated end posts.
 - Selected Kith appearances by stable name and map art by coordinate/family seed. Regression checks protect global simulation RNG, hidden terrain and world state; existing simulation golden digests remain unchanged.
 - Extended the rendered style to workshops, industry, transport and all 18 item icons. Real Godot captures and remaining animation/terrain polish are documented in the [engine integration](../art/overhaul/misty-highlands/engine/README.md); four walking poses are not a full directional rig.
+
+## 2026-10-04: rebuild terrain materials and modular crossings (PR #33)
+- Codex responded to Jon's rejection of the integrated ground, water, roads and bridges. Replaced downsampled surface colors with new full-resolution moss/turf, earth and river materials on a separate world-space shader canvas. The cached texture now carries geometry masks rather than baked visual detail.
+- Reduced grass scale/contrast after reviewing actual game captures. Added flowing reflections, river-depth shading, damp banks and stable shoreline breakup. Road texture follows connected, slightly offset centers; gameplay cells, fog, pathing and global RNG remain unchanged.
+- Replaced span-wide bridge stretching with fixed-scale wood/stone modules, separate bank ends and distinct horizontal/vertical art. Added single-cell end handling and tests for both axes, multi-cell span anchors and hidden-road privacy.
+- Saved exact built-in generation prompts and unmodified sources, refreshed real Godot captures, and labeled the separate crossing fixture as staged. Retained earlier assets for provenance and comparison.

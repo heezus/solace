@@ -2,6 +2,21 @@ extends RefCounted
 ## Rendered miniature atlas presentation. Pure visual hashing never consumes the simulation RNG.
 
 const REGIONS := {
+	"crossings-v2":
+	[
+		[91, 8, 419, 224],
+		[569, 36, 400, 173],
+		[1032, 9, 414, 223],
+		[91, 244, 419, 210],
+		[570, 268, 397, 163],
+		[1031, 245, 414, 209],
+		[235, 450, 219, 244],
+		[682, 458, 175, 236],
+		[1091, 458, 216, 235],
+		[235, 706, 219, 294],
+		[676, 707, 188, 293],
+		[1084, 708, 226, 292]
+	],
 	"trees": [[183, 59, 525, 476], [838, 32, 414, 504], [150, 558, 574, 479], [724, 628, 572, 409]],
 	"rocks":
 	[
@@ -140,7 +155,7 @@ const SINGLE_BUILDINGS := {
 	"cart_shed": ["industry", 3],
 	"trading_post": ["industry", 4],
 	"watchtower": ["industry", 5],
-	"stone_bridge": ["extras", 3],
+	"stone_bridge": ["crossings-v2", 4],
 }
 const ITEM_IDS := [
 	"wood",
@@ -240,6 +255,8 @@ static func named(name: String) -> Texture2D:
 		var spec: Array = SINGLE_BUILDINGS[name]
 		return sprite(spec[0], spec[1])
 	match name:
+		"tile_bridge_wood":
+			return sprite("crossings-v2", 1)
 		"hearth":
 			return sprite("buildings", 6)
 		"dwelling":

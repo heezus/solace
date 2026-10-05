@@ -6,9 +6,17 @@ Codex, 2026-10-04, PR #33. This pass implements the approved rendered miniature 
 
 - Transparent raster atlases replace map resources, core buildings, workshops, industry and all 18 item icons through the existing art interface. Legacy SVG fallbacks remain. New slots have Godot-generated import metadata.
 - Trees, rocks, ore, plants, clay, dwellings, Gatherer's Huts and Hearths choose stable variants from map seed, coordinates and family. Three Kith appearances use stable names. Rendering never consumes simulation RNG.
-- One cached world-space meadow surface replaces checkerboard ground. Connected riverbanks blend grass and water; roads join neighboring cells. A river crossing samples one bridge along its span instead of repeating end posts on every tile. Hidden rivers remain hidden until revealed.
+- A cached world-space terrain mask drives a separate full-resolution material shader. Fine moss/turf, textured earth roads, damp irregular banks and layered flowing water replace the downsampled first pass. Mirrored material sampling and an offset second sample suppress texture seams. Roads join neighboring centers with small stable offsets. Hidden rivers and roads remain hidden until revealed.
 - Four walking poses per Kith appearance animate at seven frames per second, with fixed cell anchors, side mirroring, existing work movement and actual carried-item icons. Cart operators draw the cart only when their gameplay state supplies it. Foliage moves subtly; working charcoal pits retain smoke.
 - Placement ghosts, selection, gathering ranges, fog, camera zoom and UI callers keep their existing behavior. Terrain caching responds to road placement, discovery and world growth.
+
+## Terrain and crossing revision
+
+Jon rejected the first pass's blurry grass, flat water and roads, and stretched bridges. New original materials and exact prompts are in [terrain-prompts.json](../../../../../art/rendered/terrain-prompts.json). `world_ground.gd` now caches geometry masks; `terrain.gdshader` shades detail, flowing reflections, depth, shoreline and road texture on a separate child canvas beneath the map objects. All original generated PNGs remain unmodified.
+
+`bridge_art.gd` assembles deck modules at fixed tile size. Wood/stone, horizontal/vertical and single-cell crossings have separate bank-end handling. Interior pieces repeat without stretching an entire bridge or repeating bank posts. Below is a staged renderer fixture, distinct from the gameplay screenshots.
+
+![Wood/stone crossing fixture, both axes and multiple lengths](crossing-qa.png)
 
 ## Actual game captures
 
@@ -22,6 +30,6 @@ The screenshots below come directly from Godot's main scene, played by the exist
 
 Visual regression tests cover deterministic variation, atlas bounds, cache reuse, road invalidation, discovery privacy, unchanged world data and independent simulation RNG. Full logic goldens, strict Godot warnings, lint, formatting, and graphical play/layout passes validate integration; final CI status lives on PR #33.
 
-This is the first integrated pass. The four-pose walking loop is not a full directional animation rig. Fire is part of the generated Hearth art; full layered fire animation, directional work cycles and water-wheel rotation remain polish work. Unique workshops and industry currently have one appearance each. Grass sampling is continuous across logical tiles, but long-range texture repetition and the simple river/road masks can still be refined. Tile-based fog remains visible at the exploration frontier. No global tile-scale change was made.
+This is the first integrated pass. The four-pose walking loop is not a full directional animation rig. Fire is part of the generated Hearth art; full layered fire animation, directional work cycles and water-wheel rotation remain polish work. Unique workshops and industry currently have one appearance each. Terrain materials now render at viewport resolution rather than being baked into a low-resolution ground image. Logical road topology remains orthogonal; its shape and material are softened without changing pathing. Further biome and environmental art can extend this base. Tile-based fog remains visible at the exploration frontier. No global tile-scale change was made.
 
 Sources and exact generation prompts: [art/rendered](../../../../../art/rendered/README.md).

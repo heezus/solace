@@ -1,5 +1,5 @@
 extends RefCounted
-## One cached world-space terrain surface, shared at every zoom. No independently tiled ground plates.
+## Cached terrain masks with full-resolution world-space material shading.
 
 const Rendered = preload("res://scripts/rendered_art.gd")
 const NEIGHBORS := [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]
@@ -9,8 +9,9 @@ const TILE := 48.0
 var texture: ImageTexture
 var revision := 0
 var builds := 0
-var _grass: Image
-var _water: Image
+var _surface: Node2D
+var _material: ShaderMaterial
+var _rect := Rect2()
 var _noise := FastNoiseLite.new()
 var _image: Image
 var _tile_stamps := {}
@@ -32,14 +33,34 @@ func draw(ci: CanvasItem, s, seen: Rect2i) -> void:
 	if texture == null or stamp != revision:
 		_rebuild(s)
 		revision = stamp
+	if _surface == null:
+		_surface = Node2D.new()
+		_surface.name = "TerrainSurface"
+		_surface.z_index = -1
+		_material = ShaderMaterial.new()
+		_material.shader = load("res://art/rendered/terrain.gdshader")
+		_material.set_shader_parameter("turf_texture", Rendered.sheet("turf-v2"))
+		_material.set_shader_parameter("water_texture", Rendered.sheet("river-v2"))
+		_material.set_shader_parameter("earth_texture", Rendered.sheet("earth-v2"))
+		_surface.material = _material
+		_surface.draw.connect(_draw_surface)
+		ci.add_child(_surface)
+	_material.set_shader_parameter("terrain_mask", texture)
+	_material.set_shader_parameter("world_size", Vector2(s.world.width, s.world.height) * TILE)
+	_material.set_shader_parameter("stone_paths", s.tech_tree.researched.has("causeways"))
+	_material.set_shader_parameter("map_seed", float(s.world.map_seed % 10007))
 	var rect := Rect2(Vector2(seen.position) * TILE, Vector2(seen.size) * TILE)
-	ci.draw_texture_rect_region(texture, rect, Rect2(Vector2(seen.position) * SAMPLES, Vector2(seen.size) * SAMPLES))
+	if _rect != rect or _surface.get_meta("builds", -1) != builds:
+		_rect = rect
+		_surface.set_meta("builds", builds)
+		_surface.queue_redraw()
+
+
+func _draw_surface() -> void:
+	_surface.draw_rect(_rect, Color.WHITE)
 
 
 func _rebuild(s) -> void:
-	if _grass == null:
-		_grass = Rendered.sheet("meadow").get_image()
-		_water = Rendered.sheet("water").get_image()
 	_noise.seed = s.world.map_seed
 	_noise.frequency = 0.12
 	var size := Vector2i(s.world.width, s.world.height) * SAMPLES
@@ -72,7 +93,7 @@ func _tile_key(s, tile: Vector2i) -> int:
 		for x in range(-1, 2):
 			var q := tile + Vector2i(x, y)
 			values.append(s.fog.is_revealed(q) and s.world.tile_at(q) == "river")
-			values.append(s.world.roads.has(q))
+			values.append(s.fog.is_revealed(q) and s.world.roads.has(q))
 			values.append(s.town.building_at.has(q))
 	return hash(values)
 
@@ -83,22 +104,9 @@ func _paint_tile(s, tile: Vector2i) -> void:
 			var pixel := tile * SAMPLES + Vector2i(x, y)
 			var p := (Vector2(pixel) + Vector2(0.5, 0.5)) / SAMPLES
 			var n := _noise.get_noise_2dv(p)
-			var turf := _sample(_grass, p * 48.0)
-			turf = turf.lerp(Color("486956"), 0.32).lightened(n * 0.065)
-			var wet := _river(s, p) + n * 0.025
-			var bank := smoothstep(0.32, 0.48, wet) * (1.0 - smoothstep(0.48, 0.64, wet))
-			turf = turf.lerp(Color("879077"), bank * 0.45)
-			var water := _sample(_water, p * 56.0).lerp(Color("47747c"), 0.25)
-			var col := turf.lerp(water, smoothstep(0.44, 0.56, wet))
-			var path := _road(s, p) * (1.0 - smoothstep(0.4, 0.6, wet))
-			var dirt := Color("9e9479").lightened(n * 0.08)
-			if s.tech_tree.researched.has("causeways"):
-				dirt = Color("93988b").lightened(n * 0.06)
-			_image.set_pixelv(pixel, col.lerp(dirt, path * 0.9))
-
-
-func _sample(img: Image, p: Vector2) -> Color:
-	return img.get_pixel(posmod(int(p.x), img.get_width()), posmod(int(p.y), img.get_height()))
+			var wet := clampf(_river(s, p) + n * 0.025, 0.0, 1.0)
+			var path := _road(s, p)
+			_image.set_pixelv(pixel, Color(wet, path, (n + 1.0) * 0.5))
 
 
 func _river(s, p: Vector2) -> float:
@@ -116,12 +124,17 @@ func _river(s, p: Vector2) -> float:
 
 func _road(s, p: Vector2) -> float:
 	var tile := Vector2i(p.floor())
-	if not s.world.roads.has(tile):
+	if not s.fog.is_revealed(tile) or not s.world.roads.has(tile):
 		return 0.0
-	var center := Vector2(tile) + Vector2(0.5, 0.5)
+	var center := _road_center(tile, s.world.map_seed)
 	var distance := p.distance_to(center)
 	for n in NEIGHBORS:
-		if s.world.roads.has(tile + n) or s.town.building_at.has(tile + n):
-			var end: Vector2 = center + Vector2(n) * 0.51
+		if s.fog.is_revealed(tile + n) and (s.world.roads.has(tile + n) or s.town.building_at.has(tile + n)):
+			var end: Vector2 = _road_center(tile + n, s.world.map_seed)
 			distance = minf(distance, p.distance_to(Geometry2D.get_closest_point_to_segment(p, center, end)))
-	return 1.0 - smoothstep(0.17, 0.25, distance)
+	return 1.0 - smoothstep(0.12, 0.22, distance)
+
+
+func _road_center(tile: Vector2i, map_seed: int) -> Vector2:
+	var offset := Vector2(Rendered.variant(tile, 7, 19, map_seed) - 3, Rendered.variant(tile, 7, 23, map_seed) - 3)
+	return Vector2(tile) + Vector2(0.5, 0.5) + offset * 0.012

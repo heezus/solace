@@ -274,9 +274,7 @@ static func feature(ci: CanvasItem, t: String, c: Vector2, p: Vector2i, time: fl
 					head.append(tip + Vector2(cos(a) * 2.6, sin(a) * 4.0 - 3.0))
 				outlined_poly(ci, head, Color("f2c14e"))
 		"river":
-			var w := sin(time * 2.0 + p.y * 0.9) * 3.0
-			ci.draw_line(c + Vector2(-10 + w, -4), c + Vector2(-2 + w, -4), Color(0.72, 0.88, 0.88, 0.12), 0.7)
-			ci.draw_line(c + Vector2(2 - w, 5), c + Vector2(10 - w, 5), Color(0.72, 0.88, 0.88, 0.12), 0.7)
+			pass  # Flow and reflections belong to the continuous terrain shader.
 		"copper_hills", "tin_stream":
 			var tex := sprite("tile_" + t)
 			if tex != null:

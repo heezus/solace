@@ -35,6 +35,7 @@ const Profile = preload("res://scripts/profile.gd")
 const Clearing = preload("res://scripts/clearing.gd")
 const WorldGround = preload("res://scripts/world_ground.gd")
 const Rendered = preload("res://scripts/rendered_art.gd")
+const BridgeArt = preload("res://scripts/bridge_art.gd")
 
 const TILE: float = Overlays.TILE
 const MAP_ORIGIN := Vector2.ZERO  # the node's transform pans and zooms the map
@@ -901,29 +902,5 @@ func _draw_rush(b: Dictionary, r: Rect2) -> void:
 func _draw_roads() -> void:
 	var seen := _visible_tiles()
 	for p in state.world.roads:
-		if not seen.has_point(p) or not state.fog.is_revealed(p):
-			continue
-		if state.world.tile_at(p) == "river":
-			var vertical := state.world.roads.has(p + Vector2i.UP) or state.world.roads.has(p + Vector2i.DOWN)
-			var anchor: Vector2i = p
-			var axis := Vector2i.UP if vertical else Vector2i.LEFT
-			while state.world.roads.has(anchor + axis) and state.world.tile_at(anchor + axis) == "river":
-				anchor += axis
-			var step := -axis
-			var length := 1
-			while (
-				state.world.roads.has(anchor + step * length) and state.world.tile_at(anchor + step * length) == "river"
-			):
-				length += 1
-			var index := Rendered.variant(anchor, 3, 81, state.world.map_seed)
-			var tex := (
-				Rendered.sprite("extras", 3) if state.world.stone_bridges.has(p) else Rendered.sprite("bridges", index)
-			)
-			var part := absi(p.y - anchor.y) if vertical else absi(p.x - anchor.x)
-			var source := tex.region
-			source.position.x += source.size.x * part / length
-			source.size.x /= length
-			draw_set_transform(_tile_center(p), PI * 0.5 if vertical else 0.0)
-			draw_texture_rect_region(tex.atlas, Rect2(-TILE * 0.5, -TILE * 0.3, TILE, TILE * 0.6), source)
-			draw_set_transform(Vector2.ZERO)
-			continue
+		if seen.has_point(p) and state.fog.is_revealed(p) and state.world.tile_at(p) == "river":
+			BridgeArt.draw(self, state, p)
