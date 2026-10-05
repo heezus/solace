@@ -490,3 +490,10 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - All research illustrations now use miniature atlas art, preserving aspect ratio and existing icon IDs. New transparent research atlases affect UI only; original map sprites remain unchanged.
 - Unify brass primary actions, charcoal icon frames and scrollbars, muted lane accents and ember persistent alerts. Reduce excessive dependency-hover dimming and the gate's heavy double border.
 - Preserve established layout, input, progression and save behavior. Terrain quality remains a separate draft hold; technical UI validation does not constitute terrain approval.
+
+## 2026-10-05: Clarify research selection and dependencies (PR #33)
+- Codex followed Jon's request for the tech-tree readability pass. Preserve card activation and progression rules while improving presentation.
+- Keep clicked discovery focus after hover ends; use brass for incoming dependencies and moss for outgoing unlocks. Context remains immediate neighbours, with existing either-or labels. Era changes clear focus.
+- Give names priority over card pictures, retain opaque 14 px minimum labels, wrap gate destinations and provide full-name tooltips.
+- Reorganize the fixed-height inspector around a separate illustration/name/state/action header and grouped explanation/costs versus dependencies/route. Long details expose full-text tooltips.
+- Verify that inspection changes no resources, research or queue; retain actual Godot previews and exercise fitted layouts and existing discover/queue/upgrade input. Terrain remains on visual review hold.

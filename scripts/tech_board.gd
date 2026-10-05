@@ -49,6 +49,7 @@ const ICON_ZOOM := 0.8  # below this zoom a card drops its icon to leave room fo
 var state: Sim
 var lay: Dictionary
 var era := 1  # the era whose board is shown
+var selected := ""  # persistent presentation focus after a card click
 var hovered := ""
 var chain := {}  # techs lit by the hover: the hovered one, what it directly needs and what directly needs it
 var bold: Font
@@ -117,8 +118,10 @@ func set_era(e: int) -> void:
 	if e == era:
 		return
 	era = e
+	selected = ""
 	lay = TechLayout.build(era)
 	_set_hover("")
+	_rebuild_chain()
 	fit(true)
 
 
@@ -283,14 +286,30 @@ func _notification(what: int) -> void:
 		_set_hover("")
 
 
+func focus_tech() -> String:
+	return hovered if hovered != "" else selected
+
+
+func set_selected(tech: String) -> void:
+	selected = tech if shows(tech) and state.tech_tree.tech_visible(tech) else ""
+	_rebuild_chain()
+	queue_redraw()
+
+
+func _rebuild_chain() -> void:
+	chain = {}
+	var tech := focus_tech()
+	if tech != "":
+		chain[tech] = true
+		_add_neighbors(tech)
+
+
 func _set_hover(tech: String) -> void:
 	if tech == hovered:
 		return
 	hovered = tech
-	chain = {}
-	if tech != "":
-		chain[tech] = true
-		_add_neighbors(tech)
+	tooltip_text = Data.TECHS[tech]["name"] if tech != "" else ""
+	_rebuild_chain()
 	hover_changed.emit(tech)
 	queue_redraw()
 
@@ -371,18 +390,19 @@ func _edge_visible(e: Dictionary) -> bool:
 	return state.tech_tree.tech_visible(e["from"]) and state.tech_tree.tech_visible(e["to"])
 
 
-## Lines under the hover chain are drawn last, in gold, over the rest.
+## Focused prerequisites use brass, outgoing unlocks moss; other connections recede.
 func _draw_edge(e: Dictionary, lit_pass: bool) -> void:
 	if not _edge_visible(e):
 		return
-	var lit: bool = hovered != "" and (e["from"] == hovered or e["to"] == hovered)
+	var focused := focus_tech()
+	var lit: bool = focused != "" and (e["from"] == focused or e["to"] == focused)
 	if lit != lit_pass:
 		return
 	var met: bool = state.tech_tree.researched.has(e["from"])
 	var col := MET if met else NEEDED
 	var w := 2.5 if met else 2.0
 	if lit:
-		col = GOLD
+		col = Ui.GOOD if e["from"] == focused else GOLD
 		w = 3.5
 	elif not chain.is_empty():
 		col.a = 0.25
@@ -427,16 +447,18 @@ func _draw_card(tech: String) -> void:
 	var is_ready := state.tech_tree.can_research(tech)
 	var unbuilt := not Rules.tech_enabled(tech)  # its effect ships in the next update: shown, locked, never bought
 	var open := state.tech_tree.requirements_met(tech) and not unbuilt
-	var bg := DONE_BG if done else (READY_BG if open else LOCKED_BG)
+	var bg := Ui.SELECTED if tech == selected else (DONE_BG if done else (READY_BG if open else LOCKED_BG))
 	var box := StyleBoxFlat.new()
 	box.bg_color = Color(bg, a)
-	box.border_color = Color(GOLD if is_ready else Ui.EDGE, a)
-	box.set_border_width_all(2 if is_ready else 1)
+	box.border_color = GOLD if tech == selected else Color(GOLD if is_ready or tech == hovered else Ui.EDGE, a)
+	box.set_border_width_all(2 if is_ready or tech == selected or tech == hovered else 1)
 	box.set_corner_radius_all(Ui.RADIUS)
 	draw_style_box(box, sr)
+	if tech == selected:
+		draw_rect(Rect2(sr.position + Vector2(1, 1), Vector2(2, sr.size.y - 2)), GOLD)
 	var pad := 6.0 * clampf(zoom, 0.8, 1.3)
 	var x := sr.position.x + pad
-	if zoom >= ICON_ZOOM:
+	if card_icon_fits(tech, sr):
 		var side := minf(sr.size.y - 8.0, 24.0 * zoom)
 		var icon := Rect2(Vector2(x, sr.position.y + (sr.size.y - side) / 2.0 - 1.0), Vector2(side, side))
 		draw_rect(icon, Color(Ui.BAR, a))
@@ -449,13 +471,40 @@ func _draw_card(tech: String) -> void:
 		x += side + pad
 	var ranked := Ranks.has_ranks(tech)
 	var right := sr.end.x - (34.0 if ranked else 24.0) * clampf(zoom, 0.8, 1.3)
-	var text := Color(Ui.TEXT, a) if open or done else Color(LOCKED_TEXT, a)
+	var text := Ui.TEXT if open or done else LOCKED_TEXT
 	var px := _px(NAME_PX)
 	var mid := sr.position.y + sr.size.y * 0.5 - 1.0
 	_text(Vector2(x, mid + px * 0.35), t["name"], px, text, maxf(right - x, 10.0), true)
 	if open and not done and not unbuilt:
 		_draw_afford(tech, sr, is_ready, a)
 	_draw_marks(tech, sr, a, is_ready, open, done)
+
+
+## Names take priority over pictures. Keep status marks and 14 px text at every zoom.
+func card_icon_fits(tech: String, sr: Rect2) -> bool:
+	if zoom < ICON_ZOOM:
+		return false
+	var k := clampf(zoom, 0.8, 1.3)
+	var side := minf(sr.size.y - 8.0, 24.0 * zoom)
+	var reserve := (34.0 if Ranks.has_ranks(tech) else 24.0) * k
+	var room := sr.size.x - 18.0 * k - side - reserve
+	return bold.get_string_size(Data.TECHS[tech]["name"], HORIZONTAL_ALIGNMENT_LEFT, -1, _px(NAME_PX)).x <= room
+
+
+## Gate titles wrap rather than losing the era's destination to an ellipsis.
+func title_lines(text: String, width: float, px: int) -> PackedStringArray:
+	var lines := PackedStringArray()
+	var line := ""
+	for word in text.split(" "):
+		var next := word if line == "" else line + " " + word
+		if line != "" and bold.get_string_size(next, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x > width:
+			lines.append(line)
+			line = word
+		else:
+			line = next
+	if line != "":
+		lines.append(line)
+	return lines
 
 
 ## A thin bar along the foot of a card that can be discovered: how much of its price is in the stockpile. Gold, and full,
@@ -531,7 +580,7 @@ func _draw_gate(tech: String, sr: Rect2, a: float) -> void:
 	var is_ready := state.tech_tree.can_research(tech)
 	var box := StyleBoxFlat.new()
 	box.bg_color = Color(GATE_BG, a)
-	box.border_color = Color(GOLD if is_ready else Ui.EDGE, a)
+	box.border_color = GOLD if tech == selected else Color(GOLD if is_ready or tech == hovered else Ui.EDGE, a)
 	box.set_border_width_all(1)
 	box.set_corner_radius_all(8)
 	draw_style_box(box, sr)
@@ -546,7 +595,10 @@ func _draw_gate(tech: String, sr: Rect2, a: float) -> void:
 	var px := _px(NAME_PX)
 	var line := float(px) + 4.0
 	y += side + line
-	_text(Vector2(x, y), t["name"], px, Color(GATE, a), width, true)
+	for title_line in title_lines(t["name"], width, px):
+		_text(Vector2(x, y), title_line, px, GATE, width, true)
+		y += line
+	y -= line
 	var needs: Array = t["requires"]
 	var left := needs.filter(func(n): return not state.tech_tree.researched.has(n)).size()
 	var small := _px(NAME_PX - 2.0)

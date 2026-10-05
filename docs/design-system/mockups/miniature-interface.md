@@ -44,3 +44,16 @@ Shared themed scrollbars now serve research, the message log and other scroll co
 
 ![Stone Age research board after the theme audit](../../art/overhaul/misty-highlands/interface/research-board-stone.png)
 ![Matching milestone card](../../art/overhaul/misty-highlands/interface/milestone.png)
+
+## Research readability and persistent focus (2026-10-05)
+
+A clicked discovery now retains a distinct selected surface, brass selection rim/left rail and its immediate dependency context after the pointer leaves. Hovering another discovery previews that branch; leaving it restores the clicked branch. Incoming dependencies use brass and outgoing unlocks moss, matching the Needs/Leads to inspector labels. Other connections recede while card names remain opaque and at least 14 px. Either-or junctions retain their existing labels and rules; highlighting does not choose a new prerequisite route. Switching eras clears presentation focus.
+
+Names take priority over pictures on compact board cards: hide a picture if it would force the name to truncate. The tall gate's destination wraps onto multiple lines. Every hovered visible card has a full-name tooltip. Extreme zoom can still trim a compact label; the inspector always separates its full name from state, lane and optional-branch context.
+
+The fixed-height inspector now places an illustration, full title/state and existing action in a header, with explanation/costs on the left and Needs/Leads to/route on the right. Long detail text has full-text tooltips. The last hover inspection remains available while moving to the action when no clicked selection exists; a clicked selection returns when hover ends. Existing card clicks still discover, queue or buy an upgrade. No research rules, prices, queue ordering or save state changed.
+
+These actual Godot main-scene captures stage stock levels and selected cards for review; they are interface previews, not economy/balance playtest results.
+
+![Selected Masonry with incoming and outgoing paths](../../art/overhaul/misty-highlands/interface/research-selection.png)
+![Wrapped Falling Star destination and full-name inspector](../../art/overhaul/misty-highlands/interface/research-gate-selection.png)

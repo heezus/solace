@@ -8,6 +8,7 @@ extends PanelContainer
 
 const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
+const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Rules = preload("res://scripts/rules.gd")
 const TechBoard = preload("res://scripts/tech_board.gd")
@@ -37,6 +38,7 @@ var view_chosen := false  # the player picked a view: the panel keeps it from th
 var strip := {}
 var shown := ""  # the tech in the strip, "" for the frontier
 var rows_key := ""  # what the queue and ready rows show, so they're only rebuilt when it changes
+var previewed := ""  # keep the last inspected details while the pointer moves to its action
 var selected := ""
 
 
@@ -143,46 +145,67 @@ func _build_strip(parent: VBoxContainer) -> void:
 	detail.size_flags_vertical = Control.SIZE_SHRINK_END
 	detail.clip_contents = true
 	parent.add_child(detail)
-	var dh := HBoxContainer.new()
-	dh.add_theme_constant_override("separation", 16)
-	detail.add_child(dh)
+	var body := VBoxContainer.new()
+	body.add_theme_constant_override("separation", 8)
+	detail.add_child(body)
+	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", 10)
+	body.add_child(header)
+	var icon := TextureRect.new()
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.custom_minimum_size = Vector2(32, 32)
+	header.add_child(icon)
+	strip["icon"] = icon
+	var identity := VBoxContainer.new()
+	identity.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(identity)
+	strip["title"] = Ui.label("", 18)
+	identity.add_child(strip["title"])
+	strip["state"] = Ui.label("", Ui.MIN_TEXT)
+	strip["state"].mouse_filter = Control.MOUSE_FILTER_PASS
+	identity.add_child(strip["state"])
+	var act := Ui.button("")
+	act.custom_minimum_size = Vector2(200, 36)
+	act.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	act.pressed.connect(_on_action)
+	header.add_child(act)
+	strip["button"] = act
+	var columns := HBoxContainer.new()
+	columns.add_theme_constant_override("separation", 16)
+	body.add_child(columns)
 	var left := VBoxContainer.new()
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.add_theme_constant_override("separation", 2)
-	dh.add_child(left)
+	columns.add_child(left)
 	var right := VBoxContainer.new()
 	right.custom_minimum_size = Vector2(STRIP_SIDE_W, 0)
 	right.add_theme_constant_override("separation", 2)
-	dh.add_child(right)
-	strip["title"] = Ui.label("", 16)
-	strip["title"].text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	strip["title"].clip_text = true
-	left.add_child(strip["title"])
+	columns.add_child(right)
 	for part in [
 		["desc", left, 2],
 		["cost", left, 3],
 		["warn", left, 1],
 		["needs", right, 2],
 		["leads", right, 2],
-		["route", right, 3]
+		["route", right, 2]
 	]:
 		var l := Ui.label("", Ui.MIN_TEXT)
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		l.max_lines_visible = part[2]
 		l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		l.mouse_filter = Control.MOUSE_FILTER_PASS
 		part[1].add_child(l)
 		strip[part[0]] = l
-	var act := Ui.button("")
-	act.custom_minimum_size = Vector2(200, 44)
-	act.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	act.pressed.connect(_on_action)
-	dh.add_child(act)
-	strip["button"] = act
+	strip["needs"].add_theme_color_override("font_color", Ui.ACTION)
+	strip["leads"].add_theme_color_override("font_color", Ui.GOOD)
+	strip["route"].add_theme_color_override("font_color", Ui.TEXT_DIM)
 
 
 ## Research a ready tech; any other becomes the goal, with its missing chain queued.
 func _on_card(tech: String) -> void:
 	selected = tech
+	board.set_selected(tech)
 	if state.tech_tree.can_research(tech):
 		state.research(tech)
 		state.tech_tree.refill()
@@ -206,6 +229,8 @@ func _pick_era(e: int) -> void:
 		return
 	era_chosen = true
 	board.set_era(e)
+	selected = ""
+	previewed = ""
 	rows_key = ""
 	refresh()
 
@@ -231,7 +256,11 @@ func _apply_view(which: String) -> void:
 	detail.visible = whole
 	for b in board_buttons:
 		b.visible = whole
-	explain.text = Data.EXPLAIN_ALL if whole else Data.EXPLAIN_NEXT
+	explain.text = (
+		"Brass lines: needs. Moss lines: leads to. Click to discover or queue. Drag to move, wheel to zoom, F to fit."
+		if whole
+		else Data.EXPLAIN_NEXT
+	)
 	if not whole:
 		board._set_hover("")
 	rows_key = ""
@@ -307,13 +336,17 @@ func refresh() -> void:
 	if view == "next":
 		next_view.refresh(board.era)
 		return
-	shown = board.hovered if board.hovered != "" else selected
+	if board.hovered != "":
+		previewed = board.hovered
+	shown = board.hovered if board.hovered != "" else (selected if selected != "" else previewed)
 	if shown != "" and (not state.tech_tree.tech_visible(shown) or not board.shows(shown)):
 		shown = ""
 	if shown == "":
 		_show_frontier(ready_now)
 	else:
 		_show_tech(shown)
+	for part in ["desc", "cost", "warn", "needs", "leads", "route"]:
+		strip[part].tooltip_text = strip[part].text
 	board.queue_redraw()
 
 
@@ -354,8 +387,14 @@ func _clear_queue() -> void:
 
 func _show_frontier(ready_now: Array) -> void:
 	var names: Array = ready_now.map(func(t): return Data.TECHS[t]["name"])
-	strip["title"].text = Data.STRIP_READY % ", ".join(names) if not names.is_empty() else Data.STRIP_NONE
-	strip["title"].add_theme_color_override("font_color", TechBoard.GOLD if not names.is_empty() else Ui.TEXT)
+	strip["title"].text = "Choose a discovery"
+	strip["title"].add_theme_color_override("font_color", Ui.TEXT)
+	strip["state"].text = "Ready now: " + ", ".join(names) if not names.is_empty() else Data.STRIP_NONE
+	strip["state"].text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	strip["state"].clip_text = true
+	strip["state"].tooltip_text = strip["state"].text
+	strip["state"].add_theme_color_override("font_color", Ui.ACTION)
+	strip["icon"].visible = false
 	strip["desc"].text = Data.STRIP_HELP
 	strip["cost"].text = Data.RANK_HELP
 	strip["warn"].visible = false
@@ -379,7 +418,19 @@ func _show_tech(tech: String) -> void:
 		else:
 			state_text = Data.STATE_LOCKED
 	var side := "  ·  " + Data.TECH_OPTIONAL if t.get("side", false) else ""
-	strip["title"].text = "%s  ·  %s  ·  %s%s" % [t["name"], lane, state_text, side]
+	strip["title"].text = t["name"]
+	strip["state"].text = "%s · %s%s" % [lane, state_text, side]
+	strip["state"].add_theme_color_override(
+		"font_color",
+		(
+			Ui.GOOD
+			if state.tech_tree.researched.has(tech)
+			else (Ui.ACTION if state.tech_tree.can_research(tech) else Ui.TEXT_DIM)
+		)
+	)
+	strip["state"].tooltip_text = strip["state"].text
+	strip["icon"].texture = Art.research_sprite(t["icon"])
+	strip["icon"].visible = true
 	strip["title"].add_theme_color_override("font_color", Ui.TEXT)
 	strip["desc"].text = t["desc"]
 	var unbuilt := not Rules.tech_enabled(tech)

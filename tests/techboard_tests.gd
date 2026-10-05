@@ -36,6 +36,7 @@ func run(runner) -> void:
 	test_the_panel_never_asks_for_more_room_than_the_window_has()
 	test_a_next_card_discovers_or_queues()
 	test_the_words_are_plain()
+	test_focus_and_names_stay_readable()
 
 
 func _board(s: Sim, room: Vector2, era := 1) -> TechBoard:
@@ -363,7 +364,7 @@ func test_the_panel_opens_on_what_to_learn_next() -> void:
 	# The toggle swaps the views, and the whole board has its own line and its zoom buttons.
 	panel._pick_view("all")
 	t.check(panel.board.visible and not next_view.visible and panel.view == "all", "the toggle opens the whole board")
-	t.check(panel.explain.text == Data.EXPLAIN_ALL and panel.detail.visible, "with its own line and strip")
+	t.check(panel.explain.text.contains("Brass") and panel.detail.visible, "with its own line and strip")
 	t.check(panel.board_buttons.all(func(b): return b.visible), "and its Fit and zoom buttons")
 	panel._pick_view("next")
 	t.check(next_view.visible and not panel.board.visible and not panel.board_buttons[0].visible, "and back")
@@ -474,3 +475,53 @@ func test_the_words_are_plain() -> void:
 		Data.EXPLAIN_NEXT.length() <= 160 and Data.EXPLAIN_ALL.length() <= 160,
 		"the explanation lines are one line long"
 	)
+
+
+## Selection stays after hover ends; inspecting never reveals hidden cards or mutates progression.
+func test_focus_and_names_stay_readable() -> void:
+	var s: Sim = t.fresh()
+	var board := _board(s, ROOM_TIGHT)
+	board.set_selected("masonry")
+	t.check(
+		board.focus_tech() == "masonry" and board.chain.has("knapping"), "selected discovery keeps its dependency focus"
+	)
+	board._set_hover("cordage")
+	t.check(board.focus_tech() == "cordage", "hover previews another branch")
+	board._set_hover("")
+	t.check(board.focus_tech() == "masonry" and board.chain.has("fire"), "leaving hover restores the selected branch")
+	board.set_era(2)
+	t.check(board.focus_tech() == "" and board.chain.is_empty(), "switching era clears persistent branch focus")
+	board.set_era(1)
+	board.set_selected("star_lore")
+	t.check(board.selected == "" and board.chain.is_empty(), "hidden discovery cannot become presentation focus")
+	for name in ["The Falling Star", "Bronze Dawn"]:
+		var lines := board.title_lines(name, 85, 14)
+		t.check(" ".join(lines) == name, "gate title preserves every word")
+		for line in lines:
+			t.check(
+				board.bold.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x <= 85, "wrapped gate title fits"
+			)
+	board.fit(true)
+	var r := board.card_screen_rect("gatherers_hut")
+	var fits := board.card_icon_fits("gatherers_hut", r)
+	t.check(not fits, "a long fitted name gets the icon's room")
+	board.free()
+	var panel := TechPanel.new()
+	panel.setup(s)
+	panel.visible = true
+	panel._pick_view("all")
+	var known := s.tech_tree.researched.duplicate(true)
+	var inv := s.economy.inv.duplicate(true)
+	panel.board._set_hover("masonry")
+	panel.board._set_hover("")
+	t.check(panel.shown == "masonry", "inspector stays available while moving to its action")
+	t.check(panel.strip["title"].text == "Masonry", "full name has its own inspector heading")
+	t.check(
+		panel.strip["state"].text != "" and panel.strip["icon"].texture != null,
+		"inspector separates state and illustration"
+	)
+	t.check(
+		s.tech_tree.researched == known and s.economy.inv == inv and s.tech_tree.queue.is_empty(),
+		"inspection changes no purchases or queue"
+	)
+	panel.free()
