@@ -1,5 +1,7 @@
 # Look and scale: make the game read as chunky and warm
 
+> The rendered miniature world and [miniature interface](miniature-interface.md) now supersede this page’s original vector and cocoa palette. Its map-scale and control-layout guidance remains applicable.
+
 Status: approved by Jon on 2026-09-30 ("Apply it"). The design system artifact tokens and the new hearth.svg are done. It answers items 23 to 31 of playtests/2026-09-30-newcomer-1/ui-ux.md. Sprite art itself is fine: sprites/*.svg are already chunky with 2px outlines on a 32-unit grid. The game draws them too small, thin and on a cold, loud palette.
 Baseline screen: 1280×800. Everything scales from that.
 

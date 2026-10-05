@@ -1,0 +1,17 @@
+{
+  "tool": "built-in image_gen",
+  "alpha": "Preserved original RGBA output; native AtlasTexture regions only.",
+  "assets": [
+    {
+      "file": "research-symbols.png",
+      "source": "/Users/jhowell/.codex/generated_images/01a102c1-2f03-7f12-aa4a-15cac6f76c52/exec-11269a02-3e58-4756-9feb-6b155a217b7d.png",
+      "prompt": "Use case: stylized-concept. Asset type: one transparent research-symbol atlas for Solace's grounded atmospheric miniature game UI. Reference image is art/rendered/items.png: STYLE ONLY, match its carved dimensional timber, warm material lighting, sculpted natural surfaces, chunky readable silhouette. Generate a square atlas divided into exactly 2 columns and 2 rows, four independent isolated subjects centered in their own quadrants, generous fully transparent gutters and margins. Top left: a golden rustic round loaf of bread with three scoring cuts, no plate. Top right: two split wooden tally sticks with four clear carved notches, crossed slightly, primitive cord binding. Bottom left: miniature irrigation vignette, small shallow water channel curving beside three rows of grain shoots on a compact irregular earth patch, no square background. Bottom right: primitive star calendar, small dark slate disk etched with pale brass moon phases and star dots, no writing or numerals. Entire surroundings genuinely transparent including between all quadrants, preserve alpha; no backplates, colored squares, labels, frames, text, grids, extra subjects or giant cast shadows. Three-quarter view lit from upper left, same scale and polish per icon, detailed materials but broad clear shapes readable at 24 to 40 pixels."
+    },
+    {
+      "file": "research-landmarks.png",
+      "source": "/Users/jhowell/.codex/generated_images/01a102c1-2f03-7f12-aa4a-15cac6f76c52/exec-74981d0b-7f3d-41c1-a52d-6d9efba98f0b.png",
+      "prompt": "Use case: stylized-concept. Asset type: one transparent 2x2 research-illustration atlas for Solace. Reference image art/rendered/items.png is STYLE reference only: grounded atmospheric miniature game art, dimensional carved timber, thatch, warm light from upper left, sculpted gray stone, natural ochre brass sage palette, chunky readable silhouettes. Square composition exactly two equal columns and two equal rows with transparent gutters: top left small rustic granary, raised timber storage shed with thatched roof and clearly visible golden grain sacks; top right small primitive smokehouse, squat timber shed with dark thatch, stone chimney with subtle smoke curl and hanging fish under roof; bottom left small stone quarry vignette, irregular exposed stone outcrop with a wooden pickaxe resting against it and a few squared blocks; bottom right a beautiful mysterious falling star, pale cyan glowing stone meteor with short curved luminous tail, no landscape or disk. Each subject centered inside its own quadrant, silhouette fully contained with generous margins, visible when scaled to 24 to 40px. Genuinely transparent surroundings and gutters. No text, lettering, backplates, borders, ground squares, labels or other objects. Match the quality, perspective and materials of existing miniature icons; illustration only, no interface mockup."
+    }
+  ],
+  "scope": "UI research illustrations only. Existing map sprites and gameplay IDs unchanged."
+}

@@ -16,7 +16,7 @@ func setup() -> void:
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_STOP  # the map behind it takes no clicks while it is up
 	var dim := ColorRect.new()
-	dim.color = Color(0.05, 0.06, 0.12, 0.72)
+	dim.color = Ui.SCRIM
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(dim)
 	var centre := CenterContainer.new()
@@ -42,7 +42,8 @@ func setup() -> void:
 	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	note.add_theme_color_override("font_color", Ui.TEXT_DIM)
 	v.add_child(note)
-	var go := Button.new()
+	var go := Ui.button(Data.ERA_END_BUTTON)
+	Ui.action_button(go)
 	go.text = Data.ERA_END_BUTTON
 	go.add_theme_font_size_override("font_size", 18)
 	go.pressed.connect(close)

@@ -355,6 +355,12 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Claude and Codex both edit it in `docs/design-system/` via PRs; the project-folder copy is retired. Decided by Jon.
 - Sprites live only in `art/sprites/`. Codex owns art; Claude owns code and mechanics pages (06/09/10/11/14/15).
 
+## 2026-10-03: visual overhaul direction studies (PR #33)
+- Codex proposed Folkwood (curved storybook timber), Emberwork (angular carved forms), and Claybound (rounded ceramic forms), with the same Hearth, Kith, Gatherer's Hut and Wood icon in each. Jon will choose the direction before production work.
+- Samples and a comparison board live only in `docs/art/overhaul/`; a `.gdignore` keeps them out of Godot imports. Existing game sprites, import files and approved art direction remain unchanged.
+- Each study retains current subject identities, the top-down map convention, 64-unit Hearth and 32-unit other viewBoxes. The board compares the documented 96/34/48/24 px display sizes to support the choice.
+- Proposed palettes, silhouettes and future terrain/UI applications are exploratory, not new canon or approved tokens. See [the proposal](../art/overhaul/README.md).
+
 ## 2026-10-03: choose what a hut works (PR #40)
 - Claude, from Jon's playtest feedback: clay and flint stood side by side, the Gatherer's Hut defaulted to flint, and the only way to clay was to demolish round it (two roads built just to do that). The change existed (one text line, "click to change") but nobody found it.
 - While placing a hut over a spot with two or more resources in reach, a picker by the ghost shows one row per resource (icon and name, the chosen one gold). Click a row, or press Tab or R. The hut goes down working that, with no extra click. With no choice made the default stands (the nearest resource), and a pick never carries over to the next hut.
@@ -429,6 +435,107 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - **Pacing and pins.** Stone age on maps 1 to 8: 14.8, 13.1, 12.8, 13.2, 16.5, 14.4, 13.3, 13.3 min (mean 13.9, was 14.3); seeds 1 to 40 win in 12.7 to 19.8 min (seed 19 is the slow one, 19.8: its bot stops building workshops while every Kith is staffed or hauling). Era 2 after the dawn: first Bronze in 11.0, 8.5, 12.0, 9.7 min and the Falling Star 15.3, 11.0, 13.6, 14.0 min later (maps 1, 2, 3, 12). Goldens re-pinned in their own commit; after merging main (Tool Bench, tile-count speed, field pay) they are stone age 871, 814, 794 s (main 881, 843, 778) and first Bronze 1470, 1270, 1447 s (main 1405, 1377, 1375); the bot reaches the Falling Star on maps 1 to 3 (17.0, 10.1, 12.5 min after the first Bronze), and stone age maps 1 to 8 win in 13.2 to 19.3 min.
 - **Two finds on the way, both fixed.** (1) Idle haulers picked their waiting post by a hash of their name; after the timeline shifted, one Storehouse post got 1 of 45 haulers on map 3 and the Smelters behind it stood starved for an hour (the star never came). Posts are now taken in turn by birth order (read off the name), so any run of Kith spreads evenly. (2) The era-2 bot counted the stone age as won on the very step that wins it, so two bots could give different golden hashes when that step was a thinking step; it now takes over only after `begin_era_two`. The save test's moments (200 s, and restores at 252, 503, 702 s) moved to ones where the JSON text round trip is exact.
 - **Not done, for Jon.** The Goals panel's next steps are unchanged (the "not really intuitive" part is a UI task), and a bot-only stall remains on seed 19 as noted. Question: is 6 harvests for the first lesson enough of a lesson, or should it stay a clear 10?
+
+## 2026-10-04: rendered miniature direction tested on dense tiles (PR #33)
+- Codex followed Jon's preference for grounded, atmospheric miniature rendering and sturdy stylized Kith; the earlier three SVG alternatives did not capture the intended material richness. The [Misty Highlands kit](../art/overhaul/misty-highlands/README.md) is a new direction proposal, not production-ready approval.
+- Reviewed Jon's gameplay recording and replaced sparse scenic assumptions with an orthogonal tile-map art test: dense resource groups, compact adjacent buildings, roads, bridges and illustrative hauling traffic. Tiles govern occupancy; square visual plates are not required.
+- Generated a transparent 12-subject raster atlas plus grass and water studies, isolated in documentation under `.gdignore`. Compared 48 and 64 px tiles while retaining the 2×2 Hearth footprint. No production sprites, imports, engine files or mechanics changed.
+- Retained the SVG-only production baseline pending Claude's pipeline review. Documented camera/atlas alignment, terrain transitions, harvested states and real directional animations as unfinished production work rather than claiming the prototype solves them.
+
+## 2026-10-04: coordinated variants blend across tile boundaries (PR #33)
+- Codex followed Jon's request for variety within the rendered miniature direction: 40 documentation-only subjects across trees, stone/ore, plants/clay, buildings, Kith and bridges, sharing palette, camera and lighting. See the [coordinated variants study](../art/overhaul/misty-highlands/variants/README.md).
+- Assign appearances deterministically from tile coordinates and family seed, or stable Kith ID, so panning and resizing do not shuffle the world. Small resource offsets and scale variation soften repetition while preserving cell occupancy and the 2×2 Hearth.
+- Test continuous grass sampling, connected feathered road masks and softly irregular riverbanks instead of separate square surface patches. A crossing keeps the same bridge treatment along its span; separate deck/end pieces remain production work.
+- Retain the current SVG production contract pending Claude's pipeline review. These are art references and browser assembly tests, not engine changes or completed directional animations; 64 px remains a scale comparison, not a decision to resize the game.
+
+## 2026-10-04: Codex owns visual engine implementation (PR #33)
+- Codex recorded Jon's explicit authorization to make engine changes needed for visuals. Updated `AGENTS.md` and the handoff so visual work can proceed end to end without waiting for Claude to wire assets.
+- Codex may change visual portions of scripts, scenes, project settings and associated tests/resources for imports, atlases, stable random variants, terrain blending, shaders, lighting, animation and presentation. Raster assets and new visual slots are allowed with generated metadata and validation.
+- Claude retains gameplay, simulation, economy, progression, save semantics, CI/releases and merging. Shared engine files require coordination and focused diffs; visual RNG must be independent of simulation RNG. Tile footprints stay stable, and a global tile-scale change still needs discussion with Jon and Claude.
+- Moved the rendered pipeline and connected terrain work into the Codex implementation queue. Current study images remain documentation-only until production assets and their engine wiring are validated.
+
+## 2026-10-04: rendered miniatures integrated into Godot (PR #33)
+- Codex implemented the approved direction in the actual renderer: transparent resource/building/item atlases, stable map-seeded variants and three neutral Kith appearances with fixed-anchor walking poses. Existing SVG callers retain fallbacks.
+- Kept the 48 px default and gameplay footprints. One cached world-space ground surface replaces checkerboard tiles; neighbor-connected roads and blended riverbanks soften tile edges without changing occupancy or pathing. Single-span bridge sampling avoids repeated end posts.
+- Selected Kith appearances by stable name and map art by coordinate/family seed. Regression checks protect global simulation RNG, hidden terrain and world state; existing simulation golden digests remain unchanged.
+- Extended the rendered style to workshops, industry, transport and all 18 item icons. Real Godot captures and remaining animation/terrain polish are documented in the [engine integration](../art/overhaul/misty-highlands/engine/README.md); four walking poses are not a full directional rig.
+
+## 2026-10-04: rebuild terrain materials and modular crossings (PR #33)
+- Codex responded to Jon's rejection of the integrated ground, water, roads and bridges. Replaced downsampled surface colors with new full-resolution moss/turf, earth and river materials on a separate world-space shader canvas. The cached texture now carries geometry masks rather than baked visual detail.
+- Reduced grass scale/contrast after reviewing actual game captures. Added flowing reflections, river-depth shading, damp banks and stable shoreline breakup. Road texture follows connected, slightly offset centers; gameplay cells, fog, pathing and global RNG remain unchanged.
+- Replaced span-wide bridge stretching with fixed-scale wood/stone modules, separate bank ends and distinct horizontal/vertical art. Added single-cell end handling and tests for both axes, multi-cell span anchors and hidden-road privacy.
+- Saved exact built-in generation prompts and unmodified sources, refreshed real Godot captures, and labeled the separate crossing fixture as staged. Retained earlier assets for provenance and comparison.
+
+## 2026-10-04: Interface for the rendered miniature world (PR #33)
+- Codex brought the HUD, research board, build controls and selection panels into Jon’s accepted grounded, atmospheric miniature direction.
+- Use charcoal green surfaces, ivory text, restrained brass action emphasis, moss success and ember warnings; avoid decorative textures behind small text.
+- Give the current goal and recommended research a shared brass emphasis; keep demolish quiet until activated.
+- Preserve existing controls, layout behavior and map scale. Verify small-text contrast and actual Godot layout/input passes; broader UX restructuring remains separate work.
+
+## 2026-10-04: Review terrain grounding before further integration (PR #33)
+- Codex followed Jon’s request to pause terrain integration and show paintovers beside the approved subjects first.
+- The oversized grass/material experiment was reverted from the production renderer. Quiet meadow and worn woodland-floor studies compare scale, foundation contact, softer paths and shaded riverbanks.
+- These are review concepts, not approved terrain or pixel-exact gameplay captures. Record the chosen direction before wiring another terrain revision.
+
+## 2026-10-04: Study blended landscape regions (PR #33)
+- Codex made a combined paintover after Jon liked both meadow and woodland treatments and requested a biome study.
+- Place meadow around settlement clearings, woodland soil beneath tree groups and damp ground beside water; use irregular transitions and locally colored paths for a coherent landscape.
+- This is a visual proposal for review. No biome gameplay rules or production terrain changes are included. The paintover and exact prompt are saved with the grounding studies.
+
+## 2026-10-05: Buildings should connect through roads (PR #33)
+- Codex recorded Jon’s requirement that buildings join incoming and outgoing roads and support through travel, instead of only acting as destinations.
+- The visual design should express the route with entrance aprons and an open yard or service passage, preserving the miniature subjects and their footprints.
+- Current road topology does not support this behavior. Gameplay connectivity, overlap, demolition and save/load semantics are requested from Claude in the art handoff queue; no gameplay implementation is claimed here.
+
+## 2026-10-05: Translate the blended terrain study into playable layers (PR #33)
+- Codex continued the playable terrain test after Jon accepted the blended meadow/woodland/riverbank reference.
+- Replace the oversized ground experiment with small-scale generated meadow and woodland materials plus calmer river water. Blend woodland beneath revealed tree groups, without adding biome state or consuming simulation RNG.
+- Add irregular worn foundation aprons and tight contact shadows beneath buildings and map subjects; paths use softer verges and local coloration. Keep subject sprites, footprints, pathing and resource rules unchanged.
+- Validate fog privacy, ground refresh after clearing/demolition, apron footprint changes and road seam continuity. Functional roads through buildings remain a separate Claude gameplay request.
+
+## 2026-10-05: Hold the playable terrain pass for visual quality (PR #33)
+- Codex acknowledged Jon’s report that the playable terrain looks weaker than the approved paintover. PR #33 stays in draft; technical checks do not constitute visual approval.
+- Corrected a concrete grounding error: the subject textures are bottom-anchored, but extra shadows and worn aprons had been placed near their centers. Move contact treatment to the feet/foundation baseline without altering sprites or gameplay.
+- The current materials and road silhouettes still need an art pass against the blended reference. The miniature subjects remain approved; do not replace them to compensate for weak terrain.
+
+## 2026-10-05: Review exact sprites with foundation patches (PR #33)
+- Codex isolated ground contact using the unchanged production sprites in a native Godot preview, rather than another full-map paintover.
+- Generated transparent meadow and woodland foundation patches remain review-only under docs/art/. Their visible edges still need blending; this study does not establish visual approval or change runtime assets.
+
+## 2026-10-05: Match the whole interface to miniature art (PR #33)
+- Codex audited the HUD, build/selection controls, research recommendations and both era boards, notifications, messages, tooltips and milestone card against the approved miniature direction.
+- All research illustrations now use miniature atlas art, preserving aspect ratio and existing icon IDs. New transparent research atlases affect UI only; original map sprites remain unchanged.
+- Unify brass primary actions, charcoal icon frames and scrollbars, muted lane accents and ember persistent alerts. Reduce excessive dependency-hover dimming and the gate's heavy double border.
+- Preserve established layout, input, progression and save behavior. Terrain quality remains a separate draft hold; technical UI validation does not constitute terrain approval.
+
+## 2026-10-05: Clarify research selection and dependencies (PR #33)
+- Codex followed Jon's request for the tech-tree readability pass. Preserve card activation and progression rules while improving presentation.
+- Keep clicked discovery focus after hover ends; use brass for incoming dependencies and moss for outgoing unlocks. Context remains immediate neighbours, with existing either-or labels. Era changes clear focus.
+- Give names priority over card pictures, retain opaque 14 px minimum labels, wrap gate destinations and provide full-name tooltips.
+- Reorganize the fixed-height inspector around a separate illustration/name/state/action header and grouped explanation/costs versus dependencies/route. Long details scroll inside the inspector and expose full-text tooltips; they cannot resize the board.
+- Verify that inspection changes no resources, research or queue; retain actual Godot previews and exercise fitted layouts and existing discover/queue/upgrade input. Terrain remains on visual review hold.
+
+## 2026-10-05: Research materials identify themselves (PR #33)
+- Codex added material illustrations beside the selected technology's actual discounted research price or next-rank price; hover identifies the resource and available/required amounts.
+- Shared item illustrations carry resource-name tooltips. Long research details scroll within the fixed-height inspector so the board does not shift.
+- Jon's discovery-gating and hut interaction requests are queued for Claude. Optional Hearth visual milestones remain a proposal until the technology-to-appearance mapping is agreed.
+
+## 2026-10-05: Withdraw flat terrain experiment (PR #33)
+- Codex withdrew the quiet-turf/matte-water experiment after Jon called the native result a visual regression; all production changes from that experiment were restored to the prior PR head.
+- Preserve the richer blended paintover as the target, explicitly labeled AI concept art rather than a previous playable render.
+- Keep generated materials and native trial captures only in review docs. Next integration must demonstrate the reference's ground relief, water depth and sculpted bank detail at actual sprite scale.
+
+## 2026-10-05: Preserve terrain relief in native studies (PR #33)
+- Codex retained the richer blended paintover as the target and produced an isolated main-scene study at the actual 48 px baseline and existing 64 px zoom.
+- Use authored moss relief, embedded pebbles, warm path wear, jade depth/reflections and larger bank clusters with irregular spacing and land-side contact; preserve the accepted subject art.
+- Keep the study under review docs and out of normal play. Native captures and AI target are labeled separately; the remaining repetition, orthogonal paths and bank composition still need visual review.
+
+## 2026-10-05: Study bank orientation and dry bridge seats (PR #33)
+- Codex follows Jon’s request to relate bridge and rock orientation to water edges. Keep this new local fixture separate from normal play until native capture and visual review succeed.
+- Arrange separate bank stones and upright reeds along the blended wet contour; preserve fixed upper-left lighting instead of rotating shaded sprites. Keep bridge entrances clear.
+- Test both bridge axes, dry-bank terminal seating and aligned road approaches at 48 px, without changing crossing connectivity, pathing or resource rules. Native capture and focused checks now pass; this remains a review study, not an integration decision.
+
+- Native follow-up: sample opaque deck edges at internal module joins; preserve complete outer footings. This removes transparent gaps caused by atlas padding and longer rail posts. No bridge connectivity changes.
 
 ## 2026-10-05: Codex's gameplay asks, bundled (PR #44)
 - Claude: Jon passed four gameplay asks from Codex's request list to me and asked for one PR, with a commit per ask.

@@ -202,20 +202,12 @@ static func _text(text: String, font_size: int, at: Vector2, extent: Vector2) ->
 	return l
 
 
-## The Tech tree button: Kith orange, filled, and the only filled button on screen.
+## Research is the primary brass action; other controls stay quiet.
 func _tech_button() -> Button:
 	var b := Ui.button("Tech tree\nT")
 	b.custom_minimum_size = Vector2(112, BUTTON.y)
 	b.add_theme_font_size_override("font_size", Ui.LABEL_TEXT)
-	var style := Ui.panel_style(Ui.KITH, 6)
-	b.add_theme_stylebox_override("normal", style)
-	b.add_theme_stylebox_override("pressed", style)
-	var hover := style.duplicate()
-	hover.bg_color = Ui.KITH.lightened(0.12)
-	hover.border_color = Ui.HIGHLIGHT
-	b.add_theme_stylebox_override("hover", hover)
-	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
-		b.add_theme_color_override(key, Ui.LINE)  # dark cocoa text: cream would not read on orange
+	Ui.action_button(b)
 	return b
 
 
@@ -247,10 +239,10 @@ func refresh(placing: String, ready_count: int) -> void:
 		var style := Ui.panel_style(Ui.CARD if unlocked else LOCKED_BG, 4)
 		if placing == type:
 			style.border_color = Ui.HIGHLIGHT  # the card being placed is ringed in gold
-			style.set_border_width_all(3)
+			style.set_border_width_all(2)
 		b.add_theme_stylebox_override("normal", style)
 		var hover := style.duplicate()
-		hover.bg_color = style.bg_color.lightened(0.1)
+		hover.bg_color = style.bg_color.lightened(0.06)
 		b.add_theme_stylebox_override("hover", hover)
 		b.add_theme_stylebox_override("pressed", style)
 		var text_col: Color = Ui.TEXT if unlocked else LOCKED_TEXT
@@ -267,8 +259,10 @@ func refresh(placing: String, ready_count: int) -> void:
 		Ui.update_pips(parts["pips"], def["cost"], state.economy.inv)
 		parts["icon"].modulate = Color(1, 1, 1, 1.0 if unlocked else 0.4)
 		b.tooltip_text = _tooltip(type)
-	var demo := Ui.panel_style(Ui.BAD if placing == "demolish" else Ui.CARD, 4)
+	var demo := Ui.panel_style(Ui.BAD if placing == "demolish" else Ui.CARD_LOCKED, 4)
 	demolish_button.add_theme_stylebox_override("normal", demo)
+	for key in ["font_color", "font_hover_color", "font_pressed_color"]:
+		demolish_button.add_theme_color_override(key, Ui.LINE if placing == "demolish" else Ui.TEXT_DIM)
 	var demo_hover := demo.duplicate()
 	demo_hover.border_color = Ui.HIGHLIGHT
 	demolish_button.add_theme_stylebox_override("hover", demo_hover)

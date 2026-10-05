@@ -1,6 +1,14 @@
 # Art Direction
 
-## Visual style
+## Current overhaul direction (2026-10-04, PR #33)
+
+Jon selected grounded, atmospheric rendered miniatures: beautiful and mysterious, with cool moss/grass/water, warm thatch and timber, sculpted stone and readable warm Kith. Codex is implementing this direction in the visual-overhaul branch; the older vector direction below records the shipped baseline.
+
+Use transparent rendered subjects, coherent three-quarter miniature lighting and chunky silhouettes that remain readable on a dense orthogonal map. Ground should flow continuously beneath occupied cells rather than giving every object a square base. Appearance variants stay stable across redraws; animation and decorative motion must not alter simulation. Keep the 48 px default and existing footprints until a scale change is discussed.
+
+See the [real Godot integration and captures](../art/overhaul/misty-highlands/engine/README.md) and [asset provenance](../../art/rendered/README.md). Full directional animation, separate Hearth fire and water-wheel motion remain follow-up work. Terrain uses small-scale meadow and woodland ground with soft transitions derived from revealed tree groups, damp banks and flowing water with modular crossings. Worn aprons and tight contact shadows seat subjects in the ground. These are visual regions, not new biome gameplay rules. The interface now follows the [miniature interface specification](mockups/miniature-interface.md): charcoal green surfaces, ivory text, restrained brass actions, moss success and ember warnings. This supersedes the cocoa-and-cream UI palette while preserving the established controls and map scale.
+
+## Original visual style
 **Decided (2026-09-29): clean vector, in the spirit of Advance Wars.** The look is a bright, toy-like tactical cartoon:
 - Flat, saturated colors with minimal shading
 - Bold dark outlines so every building and unit reads instantly

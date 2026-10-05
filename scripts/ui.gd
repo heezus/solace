@@ -9,27 +9,38 @@ const GrowthNote = preload("res://scripts/growth_note.gd")
 
 const OUTLINE: Color = Art.OUTLINE  # the sprite outline, also the map's
 
-## The warm UI palette (mockups/look-and-scale.md): cocoa surfaces, cream text, four accents with one job each.
-const BAR := Color("3b2a24")  # `ui-bar`: the top and bottom bars
-const PANEL := Color("4a372e")  # `ui-panel`: Goals, Info, popovers
-const CARD := Color("6a4c3b")  # `ui-card`: cards and buttons at rest
-const CARD_DONE := Color("57703f")  # `card-done`: a researched card (moss)
-const CARD_LOCKED := Color("3f2f28")  # `card-locked`
-const TEXT := Color("f6ead7")  # `ui-text`: cream
-const TEXT_DIM := Color("c9b59b")  # `ui-text-dim`: secondary text
-const LINE := Color("211510")  # `ui-line`: the 2 px outline of a card and of the map frame
-const KITH := Color("e76f51")  # the one primary action, the selected tab, the Hearth
-const HIGHLIGHT := Color("ffd166")  # gold: the current goal, ready to research, hover, range highlights
-const GOOD := Color("7fb069")  # moss, the `positive` token: enough of a cost, done goals, researched
-const BAD := Color("d64550")  # `alert`: shortage and danger only
-const SHORT := Color("ee8189")  # `alert` lifted to read as text on cocoa: a count the stockpile falls short of
-const RADIUS := 8  # `radius-panel`
+## The miniature world's field-journal UI: charcoal green, ivory, brass and restrained status colors.
+const BAR := Color("17272a")
+const PANEL := Color("213337")
+const CARD := Color("30464a")
+const CARD_DONE := Color("29433b")
+const CARD_LOCKED := Color("1c2b2e")
+const TEXT := Color("eee7d6")
+const TEXT_DIM := Color("bac7bd")
+const LINE := Color("0b1618")
+const EDGE := Color("536968")
+const HOVER := Color("3c5155")
+const SELECTED := Color("3a5354")
+const ACTION := Color("dcc08a")
+const KITH := Color("e76f51")  # faction identity; interface actions use brass
+const HIGHLIGHT := ACTION
+const GOOD := Color("a4c199")
+const BAD := Color("c96062")
+const SHORT := Color("ec9a8c")
+const SCRIM := Color("0b1618b8")
+const LANE_COLORS := {
+	"hearth": Color("e4af83"),
+	"stone": Color("bac7bd"),
+	"fiber": Color("dcc08a"),
+	"land": Color("a4c199"),
+	"lore": Color("bbc4de"),
+}
+const RADIUS := 4
 const MIN_TEXT := 14  # nothing on screen is smaller
 const LABEL_TEXT := 16  # UI labels; numbers are 18
 
 
-## Warm defaults for every Control that doesn't set its own: cream text, cocoa buttons (gold-rimmed on hover,
-## Kith orange when pressed or selected), cocoa tooltips and bars. Call once, before the UI is built.
+## Shared legible field-journal theme. Selected and hover controls keep ivory text and a brass edge.
 static func apply_theme() -> void:
 	var t := ThemeDB.get_default_theme()
 	t.set_default_font_size(MIN_TEXT)
@@ -44,13 +55,27 @@ static func apply_theme() -> void:
 	t.set_font_size("font_size", "Button", MIN_TEXT)
 	var normal := panel_style(CARD, 6)
 	t.set_stylebox("normal", "Button", normal)
-	var hover := panel_style(CARD.lightened(0.12), 6)
+	var hover := panel_style(HOVER, 6)
 	hover.border_color = HIGHLIGHT
 	t.set_stylebox("hover", "Button", hover)
-	t.set_stylebox("pressed", "Button", panel_style(KITH, 6))
-	t.set_stylebox("hover_pressed", "Button", panel_style(KITH.lightened(0.1), 6))
+	var selected := panel_style(SELECTED, 6)
+	selected.border_color = HIGHLIGHT
+	selected.border_width_bottom = 2
+	t.set_stylebox("pressed", "Button", selected)
+	t.set_stylebox("hover_pressed", "Button", selected)
 	t.set_stylebox("disabled", "Button", panel_style(CARD_LOCKED, 6))
 	t.set_stylebox("focus", "Button", StyleBoxEmpty.new())
+	for type in ["HScrollBar", "VScrollBar"]:
+		var track_style := StyleBoxFlat.new()
+		track_style.bg_color = BAR
+		track_style.set_content_margin_all(6)
+		track_style.set_corner_radius_all(RADIUS)
+		t.set_stylebox("scroll", type, track_style)
+		for state in ["grabber", "grabber_highlight", "grabber_pressed"]:
+			var grabber := panel_style(ACTION if state == "grabber_pressed" else EDGE, 4)
+			grabber.shadow_size = 0
+			grabber.border_color = ACTION if state == "grabber_highlight" else EDGE
+			t.set_stylebox(state, type, grabber)
 	var tip := panel_style(PANEL, 8)
 	tip.set_border_width_all(2)
 	t.set_stylebox("panel", "TooltipPanel", tip)
@@ -66,8 +91,8 @@ static func apply_theme() -> void:
 	t.set_stylebox("background", "ProgressBar", track)
 	for type in ["HSeparator", "VSeparator"]:
 		var line := StyleBoxLine.new()
-		line.color = LINE
-		line.thickness = 2
+		line.color = Color(EDGE, 0.55)
+		line.thickness = 1
 		line.vertical = type == "VSeparator"
 		t.set_stylebox("separator", type, line)
 
@@ -94,6 +119,19 @@ static func button(text: String) -> Button:
 	return b
 
 
+## The same brass action treatment in research, the build bar and milestone cards.
+static func action_button(b: Button, active: bool = true) -> void:
+	for state in ["normal", "hover", "pressed", "hover_pressed"]:
+		var bg := ACTION if active else CARD
+		var style := panel_style(bg.lightened(0.06) if state == "hover" else bg, 6)
+		style.border_color = ACTION if active else EDGE
+		b.add_theme_stylebox_override(state, style)
+	for state in [
+		"font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color"
+	]:
+		b.add_theme_color_override(state, LINE if active else TEXT)
+
+
 ## WCAG contrast ratio between two opaque colours, 1 (none) to 21.
 static func contrast(a: Color, b: Color) -> float:
 	var la := _luminance(a)
@@ -106,24 +144,28 @@ static func _luminance(c: Color) -> float:
 	return 0.2126 * lin.call(c.r) + 0.7152 * lin.call(c.g) + 0.0722 * lin.call(c.b)
 
 
-## A cocoa panel with the 2 px `ui-line` outline and `radius-panel` corners.
+## A restrained material panel: fine rim, small corners and a soft contact shadow.
 static func panel_style(color: Color, margin: int = 8) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
 	s.bg_color = color
-	s.border_color = LINE
-	s.set_border_width_all(2)
+	s.border_color = EDGE
+	s.set_border_width_all(1)
+	s.border_width_bottom = 2
+	s.shadow_color = Color(LINE, 0.3)
+	s.shadow_size = 3
+	s.shadow_offset = Vector2(0, 2)
 	s.set_corner_radius_all(RADIUS)
 	s.set_content_margin_all(margin)
 	return s
 
 
-## A bar that runs edge to edge: one 3 px `ui-line` rule on the side facing the map, no rounded corners.
+## A bar that runs edge to edge: one fine rim on the side facing the map, no rounded corners.
 static func bar_style(color: Color, rule_on_bottom: bool) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
 	s.bg_color = color
-	s.border_color = LINE
-	s.border_width_bottom = 3 if rule_on_bottom else 0
-	s.border_width_top = 0 if rule_on_bottom else 3
+	s.border_color = EDGE
+	s.border_width_bottom = 1 if rule_on_bottom else 0
+	s.border_width_top = 0 if rule_on_bottom else 1
 	s.set_content_margin_all(6)
 	s.content_margin_top = 4
 	s.content_margin_bottom = 4
@@ -142,6 +184,7 @@ static func swatch_texture(color: Color) -> ImageTexture:
 static func item_swatch(id: String, size: float) -> ColorRect:
 	var r := ColorRect.new()
 	r.color = Data.ITEMS[id]["color"]
+	r.tooltip_text = Data.ITEMS[id]["name"]
 	r.custom_minimum_size = Vector2(size, size)
 	r.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	r.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -166,6 +209,7 @@ static func item_icon(id: String, size: float) -> Control:
 	r.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	r.mouse_filter = Control.MOUSE_FILTER_PASS
 	r.set_meta("item", id)
+	r.tooltip_text = Data.ITEMS[id]["name"]
 	return r
 
 
@@ -195,7 +239,7 @@ static func update_pips(row: HBoxContainer, cost: Dictionary, inv: Dictionary) -
 
 
 static func tech_color(tech: String) -> Color:
-	return Data.TECHS[tech]["color"] if Data.TECHS.has(tech) else Color("e76f51")
+	return LANE_COLORS.get(Data.TECHS[tech]["lane"], ACTION) if Data.TECHS.has(tech) else ACTION
 
 
 ## "10 Wood, 5 Stone".
@@ -229,21 +273,21 @@ static func rate_text(per_min: float) -> String:
 static func rate_color(per_min: float) -> Color:
 	if roundi(per_min) == 0:
 		return Color(TEXT_DIM, 0.8)
-	return GOOD if per_min > 0.0 else BAD
+	return GOOD if per_min > 0.0 else SHORT
 
 
 ## A tech's colored square with its two-letter code.
 static func badge(tech: String) -> PanelContainer:
 	var p := PanelContainer.new()
-	var s := panel_style(tech_color(tech), 2)
+	var s := panel_style(BAR, 2)
+	s.border_color = tech_color(tech)
 	s.set_border_width_all(2)
 	s.set_corner_radius_all(4)
 	p.add_theme_stylebox_override("panel", s)
 	p.custom_minimum_size = Vector2(30, 24)
 	var l := label(Data.TECHS[tech]["abbr"], MIN_TEXT)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.add_theme_color_override("font_outline_color", OUTLINE)
-	l.add_theme_constant_override("outline_size", 4)
+	l.add_theme_color_override("font_color", TEXT)
 	p.add_child(l)
 	return p
 

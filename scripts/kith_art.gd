@@ -1,13 +1,14 @@
 extends RefCounted
 ## Drawing the Kith on the map: every one of them, all the time. Walking, gathering, hauling, working at a
 ## building (drawn beside it, not hidden inside) or standing about (spread in a ring, so nobody stacks).
-## They use the Kith sprite (art/sprites/kith.svg) drawn at tile scale (3 px outline) with its soft oval shadow:
-## the figure is about 0.7 tile tall. A carried item shows above the head.
+## Rendered walk poses use stable names for appearance and fixed anchors at tile scale.
+## The figure is about 0.7 tile tall. A carried item shows above the head.
 ## Static: `ci` is the map (a CanvasItem drawing in map px, Overlays.TILE a tile), `s` the Sim.
 
 const Data = preload("res://scripts/data.gd")
 const Art = preload("res://scripts/art.gd")
 const Overlays = preload("res://scripts/overlays.gd")
+const Rendered = preload("res://scripts/rendered_art.gd")
 
 const KITH := Color("e76f51")
 const SPRITE := Overlays.TILE  # the sprite's square: drawn at 1.5x, so its 2-unit outline is 3 px
@@ -62,7 +63,13 @@ static func draw_all(ci: CanvasItem, s, time: float) -> void:
 			at.y += sin(time * 12.0 + at.x) * 2.25
 		elif spot["working"]:
 			at.y += absf(sin(time * 5.0 + i)) * -3.0  # a little hop while it works
-		draw_one(ci, at, k["job"] == "haul", k.get("cart", false))
+		var flip: bool = moving and k["path"][0].x > k["pos"].x
+		var with_cart: bool = k.get("cart", false)
+		var facing := 1.0 if flip else -1.0
+		var person_at := at - Vector2(facing * 6, 0) if with_cart else at
+		Rendered.kith(ci, person_at, k.get("name", str(i)), moving, time, flip)
+		if with_cart:
+			Rendered.fit(ci, Rendered.sprite("extras", 4), Rect2(at + Vector2(facing * 7 - 13, -14), Vector2(26, 25)))
 		var above := at + Vector2(-10, -SPRITE * 1.08)  # over the head
 		for id in k["carry"]:
 			Art.item_icon(ci, id, Rect2(above, Vector2(20, 20)), 1.0)

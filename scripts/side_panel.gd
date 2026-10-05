@@ -25,7 +25,7 @@ var wrap_width := 260.0
 static func _style() -> StyleBoxFlat:
 	var s := Ui.bar_style(Ui.PANEL, true)
 	s.border_width_bottom = 0
-	s.border_width_left = 3
+	s.border_width_left = 1
 	s.set_content_margin_all(12)
 	return s
 
@@ -43,7 +43,20 @@ func setup(game: Sim, width: float) -> void:
 		var g := Ui.label("", 14)
 		g.autowrap_mode = TextServer.AUTOWRAP_WORD
 		g.custom_minimum_size = Vector2(wrap_width, 0)
-		v.add_child(g)
+		if i == 0:
+			var current := PanelContainer.new()
+			var style := Ui.panel_style(Ui.CARD, 6)
+			style.border_color = Ui.HIGHLIGHT
+			style.border_width_left = 3
+			style.border_width_top = 0
+			style.border_width_right = 0
+			style.border_width_bottom = 0
+			current.add_theme_stylebox_override("panel", style)
+			g.custom_minimum_size.x = wrap_width - 12.0
+			current.add_child(g)
+			v.add_child(current)
+		else:
+			v.add_child(g)
 		goal_labels.append(g)
 	sky_view = SkyView.new()
 	v.add_child(sky_view)

@@ -33,6 +33,9 @@ const HutFocus = preload("res://scripts/hut_focus.gd")
 const EraCard = preload("res://scripts/era_card.gd")
 const Profile = preload("res://scripts/profile.gd")
 const Clearing = preload("res://scripts/clearing.gd")
+const WorldGround = preload("res://scripts/world_ground.gd")
+const Rendered = preload("res://scripts/rendered_art.gd")
+const BridgeArt = preload("res://scripts/bridge_art.gd")
 
 const TILE: float = Overlays.TILE
 const MAP_ORIGIN := Vector2.ZERO  # the node's transform pans and zooms the map
@@ -67,6 +70,7 @@ var pick_focus := ""  # what the Gatherer's Hut being placed will work, once the
 var hover := Vector2i(-1, -1)
 var drag_from := Vector2i(-1, -1)  # where a road, bridge or field drag started
 var time := 0.0
+var ground := WorldGround.new()
 var popups: Array = []  # {pos: Vector2, text: String, t: float}
 var rubble: Array = []  # {pos: Vector2i, t: float}, torn-down buildings fading out
 
@@ -648,6 +652,8 @@ func _visible_tiles() -> Rect2i:
 
 func _draw() -> void:
 	var seen := _visible_tiles()
+	Rendered.map_seed = state.world.map_seed
+	ground.draw(self, state, seen)
 	# Ground.
 	for y in range(seen.position.y, seen.end.y):
 		for x in range(seen.position.x, seen.end.x):
@@ -657,15 +663,6 @@ func _draw() -> void:
 				draw_rect(_tile_rect(p), Data.FOG)
 				draw_texture_rect(Art.fog_hatch(int(TILE)), _tile_rect(p), false)
 				continue
-			var t := state.world.tile_at(p)
-			var base: Color = (
-				Data.TILES["grass"]["color"]
-				if t in ["tree", "rock", "berry", "grain", "flax", "shard"]
-				else Data.TILES[t]["color"]
-			)
-			if t == "grass" and (x + y) % 2 == 0:
-				base = Data.GRASS_ALT  # the checker: two grass shades, 4% apart
-			draw_rect(_tile_rect(p), base)
 	_draw_roads()
 
 	# Features.
@@ -675,6 +672,12 @@ func _draw() -> void:
 			if not state.fog.is_revealed(p):
 				continue
 			Art.map_feature(self, _feature_name(p), _tile_center(p), p, time, TILE / Art.DESIGN)
+			if state.world.fields.has(p):
+				var r := _tile_rect(p).grow(-6.0)
+				for row in 3:
+					draw_line(
+						r.position + Vector2(0, r.size.y - row * 3), r.end - Vector2(0, row * 3), Color("63594570"), 1.0
+					)
 
 	# Ranges: a hut's gathering tiles, power range for wheels, Standing Stone reach.
 	var hovered_type := ""
@@ -811,6 +814,7 @@ func _draw_building(b: Dictionary) -> void:
 	var k := TILE / Art.DESIGN
 	var r := Overlays.footprint(state, p)  # a tile, or the Hearth's 2x2
 	var working: bool = b["status"] == "Working"
+	Art.contact_shadow(self, Vector2(r.get_center().x, r.end.y - 2.0), r.size * Vector2(0.38, 0.055))
 	Art.map_building(self, b["type"], r, working, time)
 	if b["type"] == "shard_cairn":
 		Art.cairn_glow(self, r, state.sky.approach(), time)
@@ -913,25 +917,7 @@ func _draw_rush(b: Dictionary, r: Rect2) -> void:
 
 
 func _draw_roads() -> void:
-	var dirt: Color = Data.BUILDINGS["road"]["color"]
-	if state.tech_tree.researched.has("causeways"):
-		dirt = dirt.lerp(Data.BUILDINGS["stone_bridge"]["color"], 0.7)  # the roads are laid in stone now
-	var k := TILE / Art.DESIGN
 	var seen := _visible_tiles()
 	for p in state.world.roads:
-		if not seen.has_point(p) or not state.fog.is_revealed(p):
-			continue
-		var c := _tile_center(p)
-		if state.world.tile_at(p) == "river":
-			var bridge := Art.sprite("stone_bridge" if state.world.stone_bridges.has(p) else "tile_bridge_wood")
-			if bridge != null:
-				draw_texture_rect(bridge, _tile_rect(p), false)
-				continue
-			draw_rect(_tile_rect(p).grow_individual(0, -5 * k, 0, -5 * k), Color("8d6e63"))
-			continue
-		draw_circle(c, 8.0 * k, dirt)
-		for n in World.NEIGHBORS:
-			if state.world.roads.has(p + n) or state.town.building_at.has(p + n):
-				var half := Vector2(n) * TILE * 0.5
-				var w := Vector2(absf(n.y), absf(n.x)) * 8.0 * k
-				draw_colored_polygon(PackedVector2Array([c - w, c + w, c + half + w, c + half - w]), dirt)
+		if seen.has_point(p) and state.fog.is_revealed(p) and state.world.tile_at(p) == "river":
+			BridgeArt.draw(self, state, p)

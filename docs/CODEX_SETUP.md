@@ -5,7 +5,7 @@ Two ways. Option A needs nothing installed beyond a browser and is the recommend
 ## Option A: Codex cloud (no local install)
 1. Sign in at chatgpt.com/codex with your ChatGPT account.
 2. Connect GitHub when prompted and grant access to the private repo `heezus/solace`.
-3. Create an environment for `heezus/solace` (default settings are fine; it only edits SVG and docs).
+3. Create an environment for `heezus/solace` (configure Godot 4.7 for import and visual engine validation).
 4. Start a task with the prompt below. Codex works on its own branch and opens a PR for you.
 
 ## Option B: Codex CLI or app on the machine
@@ -22,4 +22,4 @@ Two ways. Option A needs nothing installed beyond a browser and is the recommend
 ## Starting prompt
 > Read AGENTS.md and docs/HANDOFF.md, then pick up the first item in docs/art/requests.md on a codex/ branch and open a PR.
 
-Godot is only needed to preview art in the game (Godot 4.7 standard build from godotengine.org); Codex does not need it to edit SVGs.
+For visual engine work, install Godot 4.7 standard from godotengine.org. Run import, strict warning checks, lint, logic tests and the scripted graphical play/layout passes before publication. SVG-only edits can be made without Godot, but new raster assets and engine changes require generated import metadata and actual game validation. See AGENTS.md for the expanded visual lane; gameplay and releases remain Claude-owned.
