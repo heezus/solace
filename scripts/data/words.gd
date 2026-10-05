@@ -96,7 +96,7 @@ const GATE_COUNT := "%d of %d done"
 const GATE_COST := "COST"
 
 # --- "What to learn next" (scripts/tech_next.gd, scripts/tech_next_view.gd) ---
-const NEXT_NONE := "Nothing new to learn right now. Look at the whole board to see what is left."
+const NEXT_NONE := "Nothing new to learn yet. Gather something new by hand, like flax or clay, and more ideas will show up."
 const NEXT_ALL_DONE := "Every tech in this age is discovered."
 const NEXT_SUGGESTED := "Suggested"
 ## The rule behind "Suggested", in the badge's tooltip. Keep it in step with TechNext.suggested().

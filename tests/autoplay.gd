@@ -80,6 +80,8 @@ func play(map_seed: int, max_seconds: float) -> Dictionary:
 ## Play `game` from here on: step() then advances it (tests/tools/play_pass.gd runs it under the live UI).
 func attach(game: Sim) -> void:
 	s = game
+	for id in Data.ITEM_ORDER:  # the bot knows the whole tree, so every tech shows from the start (see Research.tech_visible)
+		s.economy.seen[id] = true
 	s.tech_tree.set_goal(goal_tech)
 
 

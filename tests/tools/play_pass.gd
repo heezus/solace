@@ -371,6 +371,9 @@ func _tech_board() -> void:
 	var board = panel.board
 	_expect(panel.view == "next" and not board.visible, "the board didn't open on What to learn next")
 	_expect(panel.stock_row.visible, "the stock strip isn't shown while the board is open")
+	for id in Data.ITEM_ORDER:  # the cards are the point here: finding items is tested in tests/discovery_tests.gd
+		main.state.economy.seen[id] = true
+	panel.refresh()
 	_expect(not panel.next_view.cards.is_empty(), "What to learn next shows no card")
 	for tech in panel.next_view.cards:
 		_move(panel.next_view.cards[tech].get_global_rect().get_center())
