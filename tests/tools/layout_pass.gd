@@ -23,7 +23,7 @@ const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
 
 const BOT_STEPS_PER_FRAME := 20
 const MAX_FRAMES := 9000
-const ERA_FRAMES := 520  # frames played on after Bronze Dawn: the land grows, the era-2 bot digs, smelts and pours
+const ERA_FRAMES := 900  # frames played on after Bronze Dawn at most (it stops at the first Bronze): the land grows, the era-2 bot digs, smelts and pours
 const RESIZE_AT := 400  # frame: the window is resized once, and the map must refit
 const SHRINK_AT := 450  # frame: and made smaller than the design size
 const WALL := "A long line of text that has to wrap onto several lines inside the Info panel. "
