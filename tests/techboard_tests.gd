@@ -497,6 +497,8 @@ func test_the_words_are_plain() -> void:
 ## Selection stays after hover ends; inspecting never reveals hidden cards or mutates progression.
 func test_focus_and_names_stay_readable() -> void:
 	var s: Sim = t.fresh()
+	for id in Data.ITEM_ORDER:  # these tests are about the rules for the cards: every item has been found
+		s.economy.seen[id] = true
 	var board := _board(s, ROOM_TIGHT)
 	board.set_selected("masonry")
 	t.check(
