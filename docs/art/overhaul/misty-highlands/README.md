@@ -1,6 +1,6 @@
 # Misty Highlands: rendered tile kit
 
-2026-10-04, Codex. **Proposal and documentation-only raster studies.** Jon prefers the miniature diorama rendering, misty highlands / twilight atmosphere, and sturdy stylized Kith. The earlier three SVG directions did not capture that intent. Production remains unchanged.
+2026-10-04, Codex. **Original direction studies; now implemented in the visual-overhaul branch.** Jon prefers the miniature diorama rendering, misty highlands / twilight atmosphere, and sturdy stylized Kith. The earlier three SVG directions did not capture that intent. See the [Godot integration](engine/README.md) for actual engine captures, asset mappings and remaining limits. The images on this page are the earlier browser studies.
 
 ## Actual game constraints
 
@@ -20,7 +20,7 @@ The atlas contains tree, stone, berries, blue-flowered fiber, grain, clay, coppe
 
 Direction: dimensional thatch and timber, sculpted mossy stone, cool green ground, readable warm clothing and fire. Keep the square placement model; avoid decorative square object plates. Quiet ground supports dense objects. Scale is still an evaluation, not an approved engine change.
 
-## Limits and next production work
+## Original study limits (before engine integration)
 
 - This is an art test, not an engine screenshot or a Godot playtest. The map is representative, not reconstructed from a save.
 - The accompanying browser prototype has 64 illustrative road-following haulers, selection, fake resource-state toggles, placement previews, grid/fog toggles, and camera navigation. It does not implement gameplay. Kith uses one translated pose; there is no validated walk cycle or directional animation.
@@ -33,4 +33,4 @@ The interactive study lives in the conversation. These source images and scale s
 
 ## Validation
 
-Browser preview checks passed: assets loaded, pause holds, resource state toggles, occupied placement is blocked in the illustrative preview, camera navigation, 48/64 px sizing, grid/fog controls, no script errors, and no horizontal overflow at 338 px content width. No engine behavior or imports changed. CI status is reported on the PR.
+Browser preview checks passed: assets loaded, pause holds, resource state toggles, occupied placement is blocked in the illustrative preview, camera navigation, 48/64 px sizing, grid/fog controls, no script errors, and no horizontal overflow at 338 px content width. These browser checks describe the original study. Engine behavior, imports and regression validation are now documented in the [Godot integration](engine/README.md). CI status is reported on the PR.

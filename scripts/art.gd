@@ -1,8 +1,9 @@
 extends RefCounted
-## Flat, bold-outlined vector art: map features, building shapes and tech-tree arrows.
+## Rendered map art and icons, with vector fallbacks and interface drawing helpers.
 ## Static helpers that draw onto whichever CanvasItem is passed in, during its draw.
 
 const Data = preload("res://scripts/data.gd")
+const Rendered = preload("res://scripts/rendered_art.gd")
 
 const OUTLINE := Color("1b1b1f")
 ## The pale-cyan light of the Strange Stone and its cairn.
@@ -26,12 +27,17 @@ static var _hatch: Texture2D = null
 
 
 static func building_sprite(type: String) -> Texture2D:
+	if Rendered.BUILDINGS.has(type):
+		return Rendered.sprite("buildings", Rendered.BUILDINGS[type])
 	return sprite(SPRITE_OF.get(type, type))
 
 
-## The imported SVG sprite `name` from art/sprites, or null if it isn't there
+## A rendered atlas sprite or the imported legacy SVG, preserving existing caller IDs.
 ## (callers then draw the shapes themselves).
 static func sprite(name: String) -> Texture2D:
+	var rendered := Rendered.named(name)
+	if rendered != null:
+		return rendered
 	if not _sprites.has(name):
 		var path := SPRITE_DIR + name + ".svg"
 		var tex: Texture2D = null
@@ -59,7 +65,7 @@ static func fog_hatch(tile_px: int) -> Texture2D:
 static func item_icon(ci: CanvasItem, id: String, r: Rect2, a: float) -> void:
 	var tex := sprite("item_" + id)
 	if tex != null:
-		ci.draw_texture_rect(tex, r, false, Color(1, 1, 1, a))
+		Rendered.fit(ci, tex, r, Color(1, 1, 1, a))
 		return
 	var box := r.grow(-r.size.x * 0.2)
 	ci.draw_rect(box, Color(Data.ITEMS[id]["color"], a))
@@ -184,6 +190,8 @@ static func map_feature(ci: CanvasItem, t: String, c: Vector2, p: Vector2i, time
 
 ## A map tile's feature (tree, rock, river ripple...) centered on c, in design units.
 static func feature(ci: CanvasItem, t: String, c: Vector2, p: Vector2i, time: float) -> void:
+	if Rendered.feature(ci, t, c, p, time):
+		return
 	var jitter := Vector2(((p.x * 7 + p.y * 3) % 5) - 2, ((p.x * 3 + p.y * 5) % 5) - 2)
 	match t:
 		"tree":
@@ -267,8 +275,8 @@ static func feature(ci: CanvasItem, t: String, c: Vector2, p: Vector2i, time: fl
 				outlined_poly(ci, head, Color("f2c14e"))
 		"river":
 			var w := sin(time * 2.0 + p.y * 0.9) * 3.0
-			ci.draw_line(c + Vector2(-10 + w, -4), c + Vector2(-2 + w, -4), Color(1, 1, 1, 0.5), 2.0)
-			ci.draw_line(c + Vector2(2 - w, 5), c + Vector2(10 - w, 5), Color(1, 1, 1, 0.5), 2.0)
+			ci.draw_line(c + Vector2(-10 + w, -4), c + Vector2(-2 + w, -4), Color(0.72, 0.88, 0.88, 0.12), 0.7)
+			ci.draw_line(c + Vector2(2 - w, 5), c + Vector2(10 - w, 5), Color(0.72, 0.88, 0.88, 0.12), 0.7)
 		"copper_hills", "tin_stream":
 			var tex := sprite("tile_" + t)
 			if tex != null:
@@ -318,6 +326,17 @@ static func cairn_glow_alpha(approach: float, time: float) -> float:
 ## A building drawn in `r` (a tile, or the Hearth's 2x2): its SVG sprite at native scale (the sprite brings its own
 ## plate), or a plain plate in the building's color when it has none. `working` adds the charcoal pit's smoke.
 static func map_building(ci: CanvasItem, type: String, r: Rect2, working: bool, time: float) -> void:
+	if Rendered.building(ci, type, r):
+		if type == "charcoal_pit" and working:
+			var k := r.size.x / DESIGN
+			for i in 3:
+				var phase := fmod(time * 0.6 + i / 3.0, 1.0)
+				ci.draw_circle(
+					r.get_center() + Vector2(sin(phase * 6.0) * 2, -phase * 12) * k,
+					(1.0 + phase * 2) * k,
+					Color(0.6, 0.65, 0.65, (1.0 - phase) * 0.3)
+				)
+		return
 	var tex := building_sprite(type)
 	if tex != null:
 		ci.draw_texture_rect(tex, r, false)
