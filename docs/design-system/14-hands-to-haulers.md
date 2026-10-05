@@ -90,3 +90,8 @@ Jon: "the tools creation is pretty annoying. That I have to make them by hand an
 - It shows at three places: under the placement preview (and as a pill on the map: "Clay x4 · +30% speed"), on the hut's panel ("4 Clay tiles in range: +30% speed", with a live "About 51 Clay a minute"), and on a Field's Info panel ("Each field adds +10% to the hut's speed: this one is worth about +N Grain a minute", or "adds nothing" once the hut has all 8 it can use).
 - Speed only shortens the harvest, not the walk, so a clay hut with 1 tile makes about 41 a minute, with 4 tiles 51 and with 8 tiles 61 (+49%). More tiles than the cap do not help and, since the hut takes them in turn, the far ones lengthen its walk: 12 tiles make 54 a minute, 24 make 48.
 - A Field's other payoffs stand: +25% (Calendar), +50% (Plough), +50% (Bronze Ploughshare) more grain a harvest from sown tiles, and half the harvest time on the river bank with Irrigation. Grain is not eaten raw: a Grindstone mills 2 Grain into 1 Flour.
+
+## Roads through buildings (2026-10-05)
+- A road can run through a building: road, building, road is one network, so a hut past another hut is served. Huts, workshops, houses, sheds, towers and water wheels are passages. Depots (the Hearth, Storehouses), fields, monuments and bridges still end a road.
+- A hauler or cart walks through the building's cell at 2x the open road (`Data.PASSAGE_COST`); carts still can't cross Wooden Bridges. Roads still can't be laid on a building's cell.
+- Nothing is stored for it: the networks are rebuilt from the roads and buildings, so demolish, rebuild and saves agree.
