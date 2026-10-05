@@ -37,6 +37,6 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 Install Godot 4.7 (standard, not .NET), import `project.godot`, press F5. Windows builds come from CI at the repo's `latest` release. Screenshots of the game from CI playtests are shared in the Claude project, not in this repo; ask Jon for them if needed.
 
 ## Style quick facts
-- Outline `#1b1b1f`, 2 units on the 32-unit grid. Flat colors, little shading.
-- Warm "cocoa and cream" UI; Kith are warm (orange, red, iron). Lumen are pale gold and cyan. Bloom are magenta and sickly green.
+- Current overhaul: grounded, atmospheric rendered miniatures with warm timber/thatch, sculpted stone and cool natural surroundings. Preserve readable silhouettes and the 48 px baseline. Original SVG/vector outline rules below the art-direction overhaul section are historical compatibility guidance.
+- Current interface: charcoal green, ivory labels, restrained brass actions, moss success and ember shortfalls. Use `scripts/ui.gd` tokens and the [miniature interface specification](design-system/mockups/miniature-interface.md), including miniature research illustrations. Cocoa-and-cream is the historical baseline. Faction identities remain Kith warm orange/red/iron, Lumen pale gold/cyan, Bloom magenta/sickly green.
 - Full detail: `docs/design-system/05-art-direction.md`, `docs/design-system/mockups/look-and-scale.md`.

@@ -41,7 +41,7 @@ The source of truth for our game's universe. If something is written here, it's 
 - [Tech tree v4](mockups/tech-tree-v4.md): corrected links and layout on board B (approved)
 - [Units and buildings](mockups/units-and-buildings.md): sprite recipes, with the 32px SVGs in mockups/sprites/
 - [Miniature interface](mockups/miniature-interface.md): current UI palette, hierarchy and actual Godot captures
-- [Look and scale](mockups/look-and-scale.md): 48 px tiles, the 2x2 Hearth, a scrolling map view, fog without ghost icons, the cocoa and cream palette (approved, applied)
+- [Look and scale](mockups/look-and-scale.md): 48 px tiles, the 2x2 Hearth, a scrolling map view, fog without ghost icons, the historical cocoa-and-cream palette (superseded by Miniature interface)
 
 ### Research
 - [Mechanics and tech trees](research/mechanics-and-tech-trees.md): genre research behind multipliers, the research queue, and Knowledge Is Progress
