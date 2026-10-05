@@ -440,7 +440,7 @@ func _copy_mind(from: Autoplay, to: Autoplay) -> void:
 ## steps: they must stay the same, second for second.
 func test_a_loaded_game_carries_on_the_same() -> void:
 	var golden := GoldenTests.new()
-	var original := _bot_at(2, 600.0)
+	var original := _bot_at(2, 602.0)
 	var s := original.s
 	t.check(
 		not s.won and s.tech_tree.researched.has("haulers"),
