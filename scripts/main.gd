@@ -362,8 +362,8 @@ func _click_tile(p: Vector2i) -> void:
 		var first_look := not state.shard_seen
 		_toast(state.gather_by_hand(p) + ("\nA new idea stirs in the tech tree: Star Lore." if first_look else ""), 8.0)
 		return
-	# Everything else is gathered by holding: _process fills the ring while the button stays down.
-	state.release_harvest()
+	# Everything else is gathered by holding: _process fills the ring while the button stays down. A ring that is
+	# still waiting on this tile from a tap or a slip (Data.HOLD_KEEP) is taken up again.
 	holding = true
 	press_tile = p
 	press_harvested = false
@@ -433,7 +433,7 @@ func _hold(delta: float) -> void:
 		_stop_holding()
 		return
 	if get_viewport().gui_get_hovered_control() != null or not state.world.in_bounds(hover):
-		state.release_harvest()
+		state.release_harvest(true)  # a slip onto a bar or off the map: the progress waits a moment
 		return
 	var msg := state.hold_harvest(hover, delta)
 	if msg != "":
@@ -448,7 +448,7 @@ func _stop_holding() -> void:
 		nudge = {"tile": press_tile, "frac": frac, "t": 0.0}
 	holding = false
 	press_harvested = false
-	state.release_harvest()
+	state.release_harvest(true)  # let go early and the next press on the tile carries on
 
 
 ## Demolish on unbuilt ground: a resource tile is cleared to grass for good, anything else says why it stays.
@@ -756,6 +756,7 @@ func _draw() -> void:
 
 	_draw_hut_picker()
 	_draw_hold_ring()
+	_draw_waiting_ring()
 	_draw_nudge()
 	if paused:
 		var top_mid := (Vector2(view.get_center().x, view.position.y + 12.0) - position) / scale.x
@@ -848,6 +849,21 @@ func _draw_hold_ring() -> void:
 	if state.harvest_frac > 0.0:
 		var to := -PI / 2.0 + TAU * state.harvest_frac
 		draw_arc(c, radius, -PI / 2.0, to, maxi(4, int(40 * state.harvest_frac)), GOAL_COLOR, 4.0, true)
+
+
+## A ring that is waiting (a tap that let go early, a slip off the tile): it stays on its tile, fading as its time runs out.
+func _draw_waiting_ring() -> void:
+	var w: Dictionary = state.harvest_ring["aside"]
+	if w.is_empty() or Hands.item_at(state, w["tile"]) == "" or (not nudge.is_empty() and nudge["tile"] == w["tile"]):
+		return  # (a quick click's hint already draws that ring)
+	var fade: float = clampf(w["left"] / Data.HOLD_KEEP, 0.0, 1.0)
+	var c := _tile_center(w["tile"])
+	var radius := TILE * 0.42
+	draw_arc(c, radius, 0.0, TAU, 40, Color(OUTLINE, 0.6 * fade), 7.0, true)
+	draw_arc(c, radius, 0.0, TAU, 40, Color(1, 1, 1, 0.2 * fade), 3.0, true)
+	var frac: float = w["held"] / Hands.hold_time(state, Hands.item_at(state, w["tile"]))
+	var to := -PI / 2.0 + TAU * clampf(frac, 0.0, 1.0)
+	draw_arc(c, radius, -PI / 2.0, to, maxi(4, int(40 * frac)), Color(GOAL_COLOR, fade), 4.0, true)
 
 
 ## A quick click on a resource: the ring shows how far the hold got and fades, with a hint to keep the button down.

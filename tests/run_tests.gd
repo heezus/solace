@@ -20,6 +20,7 @@ const PathingTests = preload("res://tests/pathing_tests.gd")
 const BuildingsTests = preload("res://tests/buildings_tests.gd")
 const KithTests = preload("res://tests/kith_tests.gd")
 const ArcTests = preload("res://tests/arc_tests.gd")
+const HoldTests = preload("res://tests/hold_tests.gd")
 const StoryTests = preload("res://tests/story_tests.gd")
 const SaveTests = preload("res://tests/save_tests.gd")
 const EraTests = preload("res://tests/era_tests.gd")
@@ -61,6 +62,12 @@ func _init() -> void:
 		Stage2Tests.new().run(self)
 		SkyTests.new().run(self)
 		print("FAILED: %d" % failures if failures > 0 else "STAGE 2 TESTS PASSED")
+		quit(1 if failures > 0 else 0)
+		return
+	if "hold" in OS.get_cmdline_user_args():  # `-- hold` runs just the hold-to-harvest and hauler tests while iterating
+		HoldTests.new().run(self)
+		HaulerTests.new().run(self)
+		print("FAILED: %d" % failures if failures > 0 else "HOLD TESTS PASSED")
 		quit(1 if failures > 0 else 0)
 		return
 	if "bench" in OS.get_cmdline_user_args():  # `-- bench` runs only the Tool Bench tests while iterating
@@ -108,6 +115,7 @@ func _init() -> void:
 	KithTests.new().run(self)
 	StoryTests.new().run(self)
 	ArcTests.new().run(self)
+	HoldTests.new().run(self)
 	SaveTests.new().run(self)
 	EraTests.new().run(self)
 	Stage2Tests.new().run(self)
@@ -288,7 +296,10 @@ func test_hand_gathering_and_tools() -> void:
 	check(s.economy.inv["flint_tools"] == 1, "have flint tools")
 	s.gather_by_hand(tree)
 	check(s.economy.inv["wood"] == 1, "flint tools don't change the yield by hand")
-	check(is_equal_approx(Hands.hold_time(s, "wood"), 0.7), "they shorten the hold to 0.7 s")
+	check(
+		is_equal_approx(Hands.hold_time(s, "wood"), Data.HAND_TOOLS["flint_tools"]["hold"]),
+		"they shorten the hold to %.1f s" % Data.HAND_TOOLS["flint_tools"]["hold"]
+	)
 	check(not s.shard_seen, "the shard starts unseen")
 	check(s.gather_by_hand(s.world.shard_pos) == Data.SHARD_TEXT, "shard shows flavor text")
 	check(s.shard_seen, "clicking the shard marks it seen")

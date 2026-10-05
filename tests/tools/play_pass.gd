@@ -507,6 +507,11 @@ func _hold_checks() -> void:
 	_wait_for(func(): return s.harvest_frac > 0.2, "the ring didn't fill on the second press", 3000)
 	_then(func(): _button(_screen_of(rock), MOUSE_BUTTON_LEFT, false))
 	_then(func(): _expect(s.harvest_frac == 0.0 and not main.holding, "letting go early didn't empty the ring"))
+	# ...but its progress waits a moment (a shaky hand is forgiven): pressing again at once carries on from there.
+	_then(func(): _expect(not s.harvest_ring["aside"].is_empty(), "letting go early dropped the progress at once"))
+	_then(func(): _hold_on(_screen_of(rock)))
+	_then(func(): _expect(s.harvest_frac > 0.15, "pressing again at once started the ring over"), 3)
+	_then(func(): _button(_screen_of(rock), MOUSE_BUTTON_LEFT, false))
 	_then(func(): _expect(s.hand_counts.get("stone", 0) == probe["stone"], "letting go early still paid out"), 90)
 
 

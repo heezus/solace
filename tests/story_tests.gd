@@ -214,7 +214,7 @@ func test_learning_by_watching_records_a_lesson() -> void:
 	var people := Monitor.new()
 	people.watch(s.people, "learned")
 	var tree: Vector2i = t.find_tile(s, "tree")
-	for i in Data.LEARN_CLICKS - 1:
+	for i in Data.LEARN_FIRST - 1:
 		s.gather_by_hand(tree)
 	t.check(people.count() == 0 and s.story.events.is_empty(), "nothing learned before the last click")
 	s.gather_by_hand(tree)
@@ -348,6 +348,6 @@ func test_the_goal_order_researches_before_it_lays() -> void:
 		done_early = done_early or s.story.goals_done.has(id)
 	t.check(not done_early, "neither is done at the start")
 	var stable := ["learn_wood", "learn_berries", "learn_stone", "flax", "knapping", "tools", "hut_tech", "hut"]
-	stable += ["trip", "berries", "dwelling", "charcoal", "twine", "haulers", "road", "rush", "kiln", "wheel"]
+	stable += ["trip", "berries", "dwelling", "twine", "haulers", "road", "rush", "charcoal", "kiln", "wheel"]
 	stable += ["grind", "storehouse", "calendar", "bronze"]
 	t.check(ids == stable, "the goal ids and their order are the stable ones a save keeps")

@@ -10,6 +10,7 @@ const Kith = preload("res://scripts/kith.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Work = preload("res://scripts/work.gd")
+const Hands = preload("res://scripts/hands.gd")
 const GrowthNote = preload("res://scripts/growth_note.gd")
 
 
@@ -138,7 +139,7 @@ static func click(s, i: int) -> String:
 static func dispatch(s, i: int) -> String:
 	var b: Dictionary = s.town.buildings[i]
 	if not s.people.knows_focus(b):
-		return "Nothing learned yet: %s" % teach_note(b)
+		return "Nothing learned yet: %s" % teach_note(s, b)
 	if b["trips"] >= Data.TRIP_QUEUE:
 		return "Trips full (%d)" % Data.TRIP_QUEUE
 	b["trips"] += 1
@@ -146,10 +147,10 @@ static func dispatch(s, i: int) -> String:
 
 
 ## What a hut needs before it can work: its focus taught by hand, or something in reach to focus on.
-static func teach_note(b: Dictionary) -> String:
+static func teach_note(s, b: Dictionary) -> String:
 	if b["focus"] == "":
 		return "nothing in reach to gather"
-	return "gather %s by hand %dx to teach it" % [Data.ITEMS[b["focus"]]["name"], Data.LEARN_CLICKS]
+	return "gather %s by hand %dx to teach it" % [Data.ITEMS[b["focus"]]["name"], Hands.learn_needed(s)]
 
 
 ## True while building b is partway through a cycle that a rush can finish.
@@ -245,7 +246,7 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 				b["status"] = Data.FORAGE_STATUS
 			"home":
 				if not s.people.knows_focus(b):
-					b["status"] = "Can't work it yet: " + teach_note(b)
+					b["status"] = "Can't work it yet: " + teach_note(s, b)
 				elif not Roads.automated(s, b) and b["trips"] <= 0:
 					b["status"] = "Waiting: click to send a trip" + road_note(s, b)
 				else:

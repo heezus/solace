@@ -329,7 +329,7 @@ static func gather_text(s: Sim, tiles: Array, short := false) -> String:
 	var item: String = Data.TILES[s.world.tile_at(tiles[0])]["yields"]
 	var known := ""
 	if not s.people.knows(item):
-		known = " (not learned yet)" if short else " not yet learned (gather by hand %dx)" % Data.LEARN_CLICKS
+		known = " (not learned yet)" if short else " not yet learned (gather by hand %dx)" % Hands.learn_needed(s)
 	var what := "%s x%d%s" % [Data.ITEMS[item]["name"], tiles.size(), known]
 	if short:
 		return "Gathers from the %d highlighted tiles: %s." % [tiles.size(), what]

@@ -4,6 +4,8 @@ extends RefCounted
 
 ## Harvest a resource by hand this many times and a watching Kith learns it: huts may then gather it.
 const LEARN_CLICKS := 10
+## ...but the very first resource the Kith learn takes only this many, so the first lesson comes quickly.
+const LEARN_FIRST := 6
 ## A hut trip brings back a bundle: this many times your harvest yield for that resource.
 const BUNDLE := 3
 ## Trips a hut can have queued before Paths & Haulers (the one under way counts).
@@ -12,15 +14,19 @@ const TRIP_QUEUE := 3
 const RUSH_COOLDOWN := 5.0
 ## Gathering by hand is a hold: a ring fills over the tile for HOLD_TIME seconds, then the harvest pops,
 ## and it repeats while you hold. A harvest's yield is base x tool x rank.
-const HOLD_TIME := 1.0
+const HOLD_TIME := 0.8
+## A hold forgives a shaky hand: progress on a ring that was let go early, or that slipped off its tile (onto bare
+## ground, a bar, another kind of tile), waits this many seconds for the pointer to come back. Sliding to the next tile of
+## the same kind keeps the ring at once.
+const HOLD_KEEP := 0.6
 ## Ore is dug slowly by hand: seconds of holding for one harvest of these items (HOLD_TIME for everything else).
 ## A hand tool's hold is a share of HOLD_TIME, so Flint Tools shorten these in the same proportion.
-const HAND_HOLD := {"copper_ore": 3.0, "tin": 4.0}
+const HAND_HOLD := {"copper_ore": 2.4, "tin": 3.2}
 ## Hand tools: the best one that applies counts for each part. `hold` shortens the hold (seconds),
 ## `mult` multiplies the yield. `crafted` needs a Flint Tool made once, `tech` a researched tech
 ## (Bronze Tools is era 2's slot), `item` limits it to one resource.
 const HAND_TOOLS := {
-	"flint_tools": {"name": "Flint Tools", "hold": 0.7, "crafted": true},
+	"flint_tools": {"name": "Flint Tools", "hold": 0.6, "crafted": true},
 	"stone_axe": {"name": "Stone Axe", "mult": 3, "tech": "stone_axe", "item": "wood"},
 	"bronze_tools": {"name": "Bronze Tools", "hold": 0.4, "tech": "bronze_tools"},
 }
