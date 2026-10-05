@@ -1,6 +1,6 @@
 extends RefCounted
 ## Working by hand (design-system/14-hands-to-haulers.md): what a hold-to-harvest gives and how long it
-## takes, teach by doing (a Kith who watches you harvest a resource Data.LEARN_CLICKS times learns to
+## takes, teach by doing (a Kith who watches you harvest a resource Data.LEARN_CLICKS times, 6 for the first, learns to
 ## gather it), and crafting. Static, and works on the Sim passed in.
 
 const Data = preload("res://scripts/data.gd")
@@ -31,6 +31,70 @@ static func hold_time(s, item: String) -> float:
 	if Data.HAND_HOLD.has(item):  # slow work (ore): the tools shorten it by the same share
 		return Data.HAND_HOLD[item] * t_min / Data.HOLD_TIME
 	return t_min
+
+
+## Hold on `p` for `delta` more seconds: the ring fills and, when full, the tile is harvested (its text, else "").
+## A shaky hand costs nothing. Sliding to a neighbouring tile of the same kind keeps the ring's progress; any other
+## move (a tile of another kind, bare ground, off the map) puts the progress aside for Data.HOLD_KEEP seconds, and
+## it comes back if the pointer returns to that tile in time (a press after an early release does the same).
+static func hold(s, p: Vector2i, delta: float) -> String:
+	if p != s.harvest_tile:
+		_move_ring(s, p)
+	var item := item_at(s, p)
+	if item == "":
+		s.harvest_frac = 0.0
+		return ""
+	var need := hold_time(s, item)
+	s.harvest_ring["held"] += delta
+	if s.harvest_ring["held"] < need:
+		s.harvest_frac = s.harvest_ring["held"] / need
+		return ""
+	s.harvest_ring["held"] -= need
+	s.harvest_frac = s.harvest_ring["held"] / need
+	return s.gather_by_hand(p)
+
+
+## Let go of the ring: it empties, or with `keep` its progress waits Data.HOLD_KEEP seconds (see hold).
+static func release(s, keep: bool) -> void:
+	if not keep:
+		s.harvest_ring["aside"] = {}
+	elif s.harvest_ring["held"] > 0.0:
+		_set_aside(s)
+	s.harvest_tile = Vector2i(-1, -1)
+	s.harvest_ring["held"] = 0.0
+	s.harvest_frac = 0.0
+
+
+## Waiting progress runs down in game time, and is gone when its time is out.
+static func age_stash(s, delta: float) -> void:
+	if s.harvest_ring["aside"].is_empty():
+		return
+	s.harvest_ring["aside"]["left"] -= delta
+	if s.harvest_ring["aside"]["left"] <= 0.0:
+		s.harvest_ring["aside"] = {}
+
+
+## The pointer is on a new tile `p`: the ring goes with it (same kind, next door), or its progress is put aside and
+## p's own waiting progress, if there is any, comes back.
+static func _move_ring(s, p: Vector2i) -> void:
+	var back: Dictionary = s.harvest_ring["aside"]
+	if s.harvest_ring["held"] > 0.0:
+		var from: Vector2i = s.harvest_tile
+		var item := item_at(s, from)
+		if item != "" and item == item_at(s, p) and maxi(absi(p.x - from.x), absi(p.y - from.y)) <= 1:
+			s.harvest_tile = p
+			return
+		_set_aside(s)
+	s.harvest_tile = p
+	s.harvest_ring["held"] = 0.0
+	if back.get("tile", Vector2i(-1, -1)) == p:
+		s.harvest_ring["held"] = back["held"]
+		if s.harvest_ring["aside"] == back:
+			s.harvest_ring["aside"] = {}
+
+
+static func _set_aside(s) -> void:
+	s.harvest_ring["aside"] = {"tile": s.harvest_tile, "held": s.harvest_ring["held"], "left": Data.HOLD_KEEP}
 
 
 ## The hand tools that apply to `item` now.
@@ -67,12 +131,18 @@ static func tools_held(s) -> int:
 	return n
 
 
-## Count a harvest toward teaching `item`; at Data.LEARN_CLICKS the next Kith in Data.PEOPLE_NAMES learns it.
+## Harvests by hand before a Kith learns the next resource: Data.LEARN_CLICKS, but only Data.LEARN_FIRST for the very first
+## resource anyone learns, so the first lesson comes quickly.
+static func learn_needed(s) -> int:
+	return Data.LEARN_FIRST if s.people.learned_by.is_empty() else Data.LEARN_CLICKS
+
+
+## Count a harvest toward teaching `item`; at learn_needed the next Kith in Data.PEOPLE_NAMES learns it.
 static func teach(s, item: String) -> void:
 	if Data.HAND_HOLD.has(item):
 		return  # ore isn't taught: a Mine digs it
 	s.hand_counts[item] = s.hand_counts.get(item, 0) + 1
-	if s.people.knows(item) or s.hand_counts[item] < Data.LEARN_CLICKS:
+	if s.people.knows(item) or s.hand_counts[item] < learn_needed(s):
 		return
 	var who: String = (
 		s.people.kith[s.people.learned_by.size() % s.people.kith.size()]["name"]

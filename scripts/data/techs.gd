@@ -74,13 +74,16 @@ const TECHS := {
 		"lane": "stone",
 		"tier": 0,
 		"slot": 0,
-		"unlock": "Flint Tools",
+		"unlock": "Flint Tools, Tool Bench",
 		"icon": "@flint",
 		"requires": [],
 		"cost": {"flint": 5, "stone": 10},
 		"rank": {"item": "flint"},
 		"desc":
-		"Shape flint. Craft Flint Tools: a harvest by hand takes 0.7s, and each Kith holding one works 50% faster.",
+		(
+			"Shape flint. Craft Flint Tools: a harvest by hand takes 0.6s, and each Kith holding one works 50% faster."
+			+ " A Tool Bench makes them for you."
+		),
 	},
 	"cordage":
 	{
@@ -277,7 +280,7 @@ const TECHS := {
 		"unlock": "Road, Wooden Bridge",
 		"icon": "hauler",
 		"requires": ["cordage", "gatherers_hut"],
-		"cost": {"rope": 30, "wood": 50},
+		"cost": {"rope": 20, "wood": 40},
 		"desc": "Idle Kith carry goods between buildings and the stockpile. Unlocks Roads and Wooden Bridges.",
 	},
 	"storehouse":

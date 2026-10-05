@@ -24,7 +24,7 @@ This is the **first playable**: the stone age loop with a lite tech tree, ending
 
 ## How the loop works
 - Follow the **Goals** panel on the right. The **Info** panel explains whatever you point at.
-- Gather by hand at first. Harvest a resource 10 times and a watching Kith learns it: its Gatherer's Hut then works it.
+- Gather by hand at first. Harvest a resource 10 times (6 for the first one) and a watching Kith learns it: its Gatherer's Hut then works it.
   Knapping lets you craft Flint Tools, which shorten the hold. A harvest yields base x tool x rank, and ranks II and III
   on a tech's card raise it further.
 - The **Kith** are your people, and each one is on the map. Every building needs one Kith to work it.

@@ -315,7 +315,10 @@ func test_bronze_tools_speed_work() -> void:
 	t.check(Bonuses.tool_bonus("bronze_tools") == 1.0 and Bonuses.tool_bonus("flint_tools") == 0.5, "the two shares")
 	t.check(Bonuses.tool_bonus("wood") == 0.0, "no other item is a tool")
 	s.hand_tools = true
-	t.check(is_equal_approx(Hands.hold_time(s, "wood"), 0.7), "by hand, with Flint Tools: 0.7 s")
+	t.check(
+		is_equal_approx(Hands.hold_time(s, "wood"), Data.HAND_TOOLS["flint_tools"]["hold"]),
+		"by hand, with Flint Tools: %.1f s" % Data.HAND_TOOLS["flint_tools"]["hold"]
+	)
 	s.tech_tree.researched["bronze_tools"] = true
 	t.check(is_equal_approx(Hands.hold_time(s, "wood"), 0.4), "after Bronze Tools: 0.4 s")
 	k["tool"] = 10

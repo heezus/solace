@@ -8,6 +8,7 @@ const Data = preload("res://scripts/data.gd")
 const Kith = preload("res://scripts/kith.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Buildings = preload("res://scripts/buildings.gd")
+const Work = preload("res://scripts/work.gd")
 
 
 ## Items a hauler carries per trip: Carrying Poles double it, and a cart (`k`, if given) carries Data.CART_LOAD times.
@@ -79,13 +80,14 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 
 
 ## Where an idle hauler waits. Haulers are born at the Hearth, so left to stand where they are none would ever
-## serve a Storehouse's workshops: they spread over the depots that have road-linked buildings to serve (by their
-## name, so it never changes on them and never depends on chance). With none, the nearest depot a road touches,
-## or the Hearth when none does.
+## serve a Storehouse's workshops: they spread over the depots that have road-linked buildings to serve, in turn by
+## the order they were born in (read off their name, so it never changes on them and never depends on chance: a hash
+## of the name once left a post with one hauler of forty-five, and the workshops behind it stood idle). With none,
+## the nearest depot a road touches, or the Hearth when none does.
 static func _home_depot(s, k: Dictionary, here: Vector2i) -> Vector2i:
 	var posts := Roads.posts(s)
 	if not posts.is_empty():
-		return posts[absi(hash(k["name"])) % posts.size()]
+		return posts[birth_order(k["name"]) % posts.size()]
 	var best: Vector2i = s.world.camp_pos
 	var best_d := INF
 	for depot in Roads.depots(s):
@@ -96,6 +98,16 @@ static func _home_depot(s, k: Dictionary, here: Vector2i) -> Vector2i:
 			best = depot
 			best_d = d
 	return best
+
+
+## The order a Kith was born in, from their name: Data.PEOPLE_NAMES in turn, then round again as "Name II", "Name III".
+static func birth_order(kith_name: String) -> int:
+	var parts := kith_name.split(" ")
+	var at: int = Data.PEOPLE_NAMES.find(parts[0])
+	if at < 0:
+		return absi(hash(kith_name))
+	var round_no: int = maxi(Data.RANK_NAMES.find(parts[1]), 1) if parts.size() > 1 else 1
+	return at + (round_no - 1) * Data.PEOPLE_NAMES.size()
 
 
 ## From the depot the hauler waits at, pick the closest useful trip on a road network that depot
@@ -123,7 +135,7 @@ static func _find_task(s, k: Dictionary) -> bool:
 			best = {"kind": "pickup", "building": i}
 			best_d = d
 			continue
-		var inputs: Dictionary = {} if cand["paused"] else Buildings.recipe_in(cand)
+		var inputs: Dictionary = {} if cand["paused"] or Work.enough(s, cand) else Buildings.recipe_in(cand)
 		for id in inputs:
 			var want: int = inputs[id] * 2 - cand["inbuf"].get(id, 0) - cand["incoming"].get(id, 0)
 			var n := mini(mini(want, s.economy.inv.get(id, 0)), carry_cap(s, k))

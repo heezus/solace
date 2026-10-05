@@ -9,6 +9,9 @@ extends RefCounted
 ## Data.TRADE_GET of the one it is set to get (the building's `give` and `get`). `sight` is how far a building sees.
 ## `story` buildings stay off the build bar until their tech is on the board and reachable (nothing to spoil early).
 ## Processors turn `in` into `out` every `time` seconds (a processor with no `in` just makes `out`).
+## A processor with `makes` is a tool bench: a list of tool recipes (Data.RECIPES ids, worst first), and it makes
+## the best one the people have the tech and the stock for (the building's `make`), only while the stockpile holds
+## fewer tools than they need (Work.enough). Its own `in` and `out` stay empty.
 ## A processor with `dig` is a mine: it stands on one of its `on_tiles` and digs `dig` of whatever that tile yields
 ## each cycle, with no input and without walking. `crew` is how many people it needs (default 1); it works only
 ## while all of them are at it.
@@ -123,6 +126,20 @@ const BUILDINGS := {
 		"time": 4.0,
 		"color": Color("bc8a5f"),
 		"desc": "Twists fiber into rope.",
+	},
+	"tool_bench":
+	{
+		"name": "Tool Bench",
+		"kind": "processor",
+		"job": "Toolmaker",
+		"tech": "knapping",
+		"cost": {"wood": 10, "stone": 5},
+		"in": {},
+		"out": {},
+		"makes": ["flint_tools", "bronze_tools"],
+		"time": 6.0,
+		"color": Color("8a8d91"),
+		"desc": "Makes tools so you do not have to. Keeps a spare or two ready, then waits until more are needed.",
 	},
 	"gatherers_hut":
 	{
@@ -306,7 +323,7 @@ const BUILDINGS := {
 const BUILD_TABS := {
 	"Homes": ["dwelling"],
 	"Gathering": ["gatherers_hut", "field", "flax_field", "fishing_weir"],
-	"Workshops": ["charcoal_pit", "twine_post", "kiln", "water_wheel", "grindstone"],
+	"Workshops": ["tool_bench", "charcoal_pit", "twine_post", "kiln", "water_wheel", "grindstone"],
 	"Metal": ["mine", "smelter", "crucible"],
 	"Logistics": ["road", "bridge", "stone_bridge", "storehouse", "cart_shed", "trading_post"],
 	"Lore": ["standing_stone", "shard_cairn", "watchtower"],
@@ -322,6 +339,7 @@ const BUILD_ORDER := [
 	"storehouse",
 	"charcoal_pit",
 	"twine_post",
+	"tool_bench",
 	"gatherers_hut",
 	"kiln",
 	"water_wheel",

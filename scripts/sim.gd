@@ -36,8 +36,9 @@ var shard_seen := false  # the player has clicked the Strange Stone, revealing h
 var hand_counts: Dictionary = {}  # item -> times harvested by hand
 ## Hold to harvest: the tile being held, seconds held so far, and 0 to 1 of the current harvest.
 var harvest_tile := Vector2i(-1, -1)
-var harvest_held := 0.0
 var harvest_frac := 0.0
+## The live ring's seconds held, and "aside": progress waiting to be taken up again ({tile, held, left}, or {}).
+var harvest_ring: Dictionary = {"held": 0.0, "aside": {}}
 var rushes := 0  # buildings rushed so far
 var ranks: Dictionary = {}  # tech -> rank bought on its card (2 or 3); a researched tech is rank 1
 var events: Array = []  # messages for the UI to show and clear
@@ -93,31 +94,17 @@ func _sight(base: int) -> int:
 
 
 ## Hold the mouse on tile p for `delta` more seconds (real time, not game speed). The ring fills over
-## Hands.hold_time; when it's full the tile is harvested and the ring starts again. Moving to another
-## tile starts over. Returns the harvest's text when one completes, else "".
+## Hands.hold_time; when it's full the tile is harvested and the ring starts again. A hold forgives a shaky
+## hand (Hands.hold): sliding to the next tile of the same kind keeps the ring, and a slip off the tile keeps
+## its progress waiting for Data.HOLD_KEEP seconds. Returns the harvest's text when one completes, else "".
 func hold_harvest(p: Vector2i, delta: float) -> String:
-	if p != harvest_tile:
-		release_harvest()
-		harvest_tile = p
-	var item := Hands.item_at(self, p)
-	if item == "":
-		harvest_frac = 0.0
-		return ""
-	var need := Hands.hold_time(self, item)
-	harvest_held += delta
-	if harvest_held < need:
-		harvest_frac = harvest_held / need
-		return ""
-	harvest_held -= need
-	harvest_frac = harvest_held / need
-	return gather_by_hand(p)
+	return Hands.hold(self, p, delta)
 
 
-## Let go: the ring empties.
-func release_harvest() -> void:
-	harvest_tile = Vector2i(-1, -1)
-	harvest_held = 0.0
-	harvest_frac = 0.0
+## Let go: the ring empties. With `keep`, its progress waits Data.HOLD_KEEP seconds for the next press on the same
+## tile (a click that let go early, a pointer that slipped onto a bar) before it is gone.
+func release_harvest(keep := false) -> void:
+	Hands.release(self, keep)
 
 
 ## Harvest tile p by hand: the item goes to the stockpile and the Kith watching learn from it. The Strange
@@ -260,6 +247,7 @@ func set_paused(i: int, on: bool) -> void:
 
 
 func tick(delta: float) -> void:
+	Hands.age_stash(self, delta)
 	Land.grow_if_due(self)
 	economy.advance(delta)
 	for tech in tech_tree.tick():
