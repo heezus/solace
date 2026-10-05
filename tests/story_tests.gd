@@ -296,6 +296,9 @@ func test_kith_messages_reach_the_player() -> void:
 
 func test_a_hidden_tech_waits_for_the_stone() -> void:
 	var s: Sim = t.fresh()
+	for id in Data.ITEM_ORDER:  # everything has been found, so only the Strange Stone is missing
+		s.economy.seen[id] = true
+	s.tech_tree.researched["storytelling"] = true
 	t.check(not s.tech_tree.tech_visible("star_lore"), "hidden before the Strange Stone")
 	s.gather_by_hand(s.world.shard_pos)
 	t.check(s.tech_tree.tech_visible("star_lore"), "visible after: the signal did not replace the flag")

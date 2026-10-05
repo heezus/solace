@@ -37,7 +37,7 @@ static func ready_now(s, era: int) -> Array:
 static func suggested(s, techs: Array) -> Dictionary:
 	if techs.is_empty():
 		return {}
-	var seen := Rules.visible_techs(s.shard_seen)
+	var seen := s.tech_tree.visible_set()
 	var queued: String = s.tech_tree.goal
 	if queued != "":
 		var pick := _on_route(s, queued, techs, seen)

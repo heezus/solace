@@ -142,6 +142,8 @@ func test_card_line_always_fits() -> void:
 ## The Lore cards (Standing Stone, Shard Cairn) stay off the build bar until their tech is on the board and reachable.
 func test_story_cards_stay_hidden_until_revealed() -> void:
 	var s = t.fresh()
+	for id in Data.ITEM_ORDER:  # everything has been found: only the research decides which cards show
+		s.economy.seen[id] = true
 	t.check(not CardText.shown(s, "shard_cairn"), "the Shard Cairn is hidden at the start")
 	t.check(not CardText.shown(s, "standing_stone"), "so is the Standing Stone")
 	t.check(CardText.shown(s, "gatherers_hut") and CardText.shown(s, "dwelling"), "ordinary cards always show")

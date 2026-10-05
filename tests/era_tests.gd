@@ -555,6 +555,8 @@ func test_a_grown_game_saves_and_loads() -> void:
 
 func test_the_tech_panel_has_a_tab_per_era() -> void:
 	var s: Sim = t.fresh()
+	for id in Data.ITEM_ORDER:  # everything has been found, so the board shows whole
+		s.economy.seen[id] = true
 	var panel := TechPanel.new()
 	panel.setup(s)
 	panel.visible = true
