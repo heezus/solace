@@ -41,3 +41,11 @@ The playable translation fell short of the paintover; PR #33 remains in draft. T
 ![Exact sprites with foundation patches](exact-sprite-grounding-study.png)
 
 The patches improve contact but retain visible edges. They are review-only, are not loaded by the game, and do not resolve whole-map terrain, water or road continuity. The atlas is preserved unchanged from image generation; provenance and prompt are in [foundation-patches-prompts.json](foundation-patches-prompts.json).
+
+## Withdrawn material experiment (2026-10-05)
+
+Jon rejected the flatter native terrain/water comparison. [Review-only experiment and explanation](terrain-refinement/README.md) are retained; production was restored to the pre-experiment renderer. The blended paintover above remains a concept target, not a prior playable result.
+
+## Sculpted native study (2026-10-05)
+
+[Actual Godot previews at 48 px and existing 64 px zoom](sculpted-native-study/README.md) use authored moss relief, jade water and irregular rendered bank dressing. This is an isolated renderer study with the real main scene; production terrain is unchanged. The richer paintover remains the target and is shown separately for comparison.

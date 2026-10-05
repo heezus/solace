@@ -502,3 +502,13 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Codex added material illustrations beside the selected technology's actual discounted research price or next-rank price; hover identifies the resource and available/required amounts.
 - Shared item illustrations carry resource-name tooltips. Long research details scroll within the fixed-height inspector so the board does not shift.
 - Jon's discovery-gating and hut interaction requests are queued for Claude. Optional Hearth visual milestones remain a proposal until the technology-to-appearance mapping is agreed.
+
+## 2026-10-05: Withdraw flat terrain experiment (PR #33)
+- Codex withdrew the quiet-turf/matte-water experiment after Jon called the native result a visual regression; all production changes from that experiment were restored to the prior PR head.
+- Preserve the richer blended paintover as the target, explicitly labeled AI concept art rather than a previous playable render.
+- Keep generated materials and native trial captures only in review docs. Next integration must demonstrate the reference's ground relief, water depth and sculpted bank detail at actual sprite scale.
+
+## 2026-10-05: Preserve terrain relief in native studies (PR #33)
+- Codex retained the richer blended paintover as the target and produced an isolated main-scene study at the actual 48 px baseline and existing 64 px zoom.
+- Use authored moss relief, embedded pebbles, warm path wear, jade depth/reflections and larger bank clusters with irregular spacing and land-side contact; preserve the accepted subject art.
+- Keep the study under review docs and out of normal play. Native captures and AI target are labeled separately; the remaining repetition, orthogonal paths and bank composition still need visual review.
