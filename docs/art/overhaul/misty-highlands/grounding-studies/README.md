@@ -49,3 +49,5 @@ Jon rejected the flatter native terrain/water comparison. [Review-only experimen
 ## Sculpted native study (2026-10-05)
 
 [Actual Godot previews at 48 px and existing 64 px zoom](sculpted-native-study/README.md) use authored moss relief, jade water and irregular rendered bank dressing. This is an isolated renderer study with the real main scene; production terrain is unchanged. The richer paintover remains the target and is shown separately for comparison.
+
+- [Native shoreline/crossing study](shoreline-crossings-study/README.md): actual 48 px Godot capture, focused checks, both bridge axes and bank corners; review-only.

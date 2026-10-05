@@ -512,3 +512,10 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Codex retained the richer blended paintover as the target and produced an isolated main-scene study at the actual 48 px baseline and existing 64 px zoom.
 - Use authored moss relief, embedded pebbles, warm path wear, jade depth/reflections and larger bank clusters with irregular spacing and land-side contact; preserve the accepted subject art.
 - Keep the study under review docs and out of normal play. Native captures and AI target are labeled separately; the remaining repetition, orthogonal paths and bank composition still need visual review.
+
+## 2026-10-05: Study bank orientation and dry bridge seats (PR #33)
+- Codex follows Jon’s request to relate bridge and rock orientation to water edges. Keep this new local fixture separate from normal play until native capture and visual review succeed.
+- Arrange separate bank stones and upright reeds along the blended wet contour; preserve fixed upper-left lighting instead of rotating shaded sprites. Keep bridge entrances clear.
+- Test both bridge axes, dry-bank terminal seating and aligned road approaches at 48 px, without changing crossing connectivity, pathing or resource rules. Native capture and focused checks now pass; this remains a review study, not an integration decision.
+
+- Native follow-up: sample opaque deck edges at internal module joins; preserve complete outer footings. This removes transparent gaps caused by atlas padding and longer rail posts. No bridge connectivity changes.
