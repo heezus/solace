@@ -11,6 +11,13 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 - **Status:** fixture complete for review. Native 48 px capture inspected; opaque deck-edge sampling fixes module gaps, dry-bank seats and road alignment checked. Focused checks, lint/format and error-free graphical capture pass. No production integration or visual approval.
 - **Next action:** Claude reviews the published fixture result on PR #33. Missing CI scheduling was traced to merge conflicts with main: Codex combined both teams’ decision-log entries and retained the new Tool Bench request while synchronizing main. Code merged automatically without manual gameplay edits. CI on the synchronized head is required; do not reuse an earlier green result as exact-head validation. Before further renderer work, Codex records a new scoped task/reservation and checks Claude’s shared-file claims. Ground repetition and water/bank material quality remain unresolved.
 
+### Claude — gameplay asks (PR #44, merged) and the visual merge (PR #33, merged)
+- **Task:** none open. PR #44 shipped the four gameplay asks (one-click Gatherer's Hut round, techs show once their items are found, roads through buildings, Hearth stage helper). PR #33 is merged with main's gameplay preserved.
+- **Reserved files:** none. For the next gameplay task Claude records its files here before editing.
+- **Hooks for Codex:** `HearthLook.stage(state)` counts five milestone techs (0 to 5) for staged Hearth props (`scripts/hearth_look.gd`). `Research.visible_set()` is the one list of techs the board may show. Roads run through building cells of the passage kinds (`Roads.PASSAGE_KINDS`), so a through-passage may now be drawn: the rule is road, building, road.
+- **Test note:** tests that look at tech cards must mark `Data.ITEM_ORDER` as seen (`s.economy.seen[id] = true`), or the cards are hidden by discovery.
+- **Next action:** Codex ticks the three done asks in `docs/art/requests.md` and may draw a through-passage and staged Hearth art; Claude waits for the next task from Jon.
+
 Claude maintains its own entry here. Jon reports Claude is preparing one bundled gameplay PR for one-click hut interaction, resource-discovery tech visibility, roads through buildings and Hearth upgrade appearance, and will flag necessary drawing-code overlap in `docs/art/requests.md`.
 
 ## Automatic coordination protocol — agreed with Jon, 2026-10-05
