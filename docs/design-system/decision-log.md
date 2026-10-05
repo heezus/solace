@@ -480,3 +480,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Codex acknowledged Jon’s report that the playable terrain looks weaker than the approved paintover. PR #33 stays in draft; technical checks do not constitute visual approval.
 - Corrected a concrete grounding error: the subject textures are bottom-anchored, but extra shadows and worn aprons had been placed near their centers. Move contact treatment to the feet/foundation baseline without altering sprites or gameplay.
 - The current materials and road silhouettes still need an art pass against the blended reference. The miniature subjects remain approved; do not replace them to compensate for weak terrain.
+
+## 2026-10-05: Review exact sprites with foundation patches (PR #33)
+- Codex isolated ground contact using the unchanged production sprites in a native Godot preview, rather than another full-map paintover.
+- Generated transparent meadow and woodland foundation patches remain review-only under docs/art/. Their visible edges still need blending; this study does not establish visual approval or change runtime assets.

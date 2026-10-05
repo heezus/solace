@@ -33,3 +33,11 @@ See the [actual Godot captures](../engine/README.md#blended-grounding-test). The
 Preserve gameplay tiles, pathing, resource layouts and the approved subject art. The review paintovers above remain concepts, distinct from the actual captures.
 
 Exact prompts, tool and source paths: [prompts.json](prompts.json).
+
+## Isolated foundation study (2026-10-05)
+
+The playable translation fell short of the paintover; PR #33 remains in draft. This next study composites the exact production Hearth, Gatherer's Hut and rock sprites in Godot with generated transparent foundation patches, at twice the existing 48 px tile scale. It is an isolated native preview, not a gameplay capture.
+
+![Exact sprites with foundation patches](exact-sprite-grounding-study.png)
+
+The patches improve contact but retain visible edges. They are review-only, are not loaded by the game, and do not resolve whole-map terrain, water or road continuity. The atlas is preserved unchanged from image generation; provenance and prompt are in [foundation-patches-prompts.json](foundation-patches-prompts.json).
