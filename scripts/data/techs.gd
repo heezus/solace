@@ -74,13 +74,16 @@ const TECHS := {
 		"lane": "stone",
 		"tier": 0,
 		"slot": 0,
-		"unlock": "Flint Tools",
+		"unlock": "Flint Tools, Tool Bench",
 		"icon": "@flint",
 		"requires": [],
 		"cost": {"flint": 5, "stone": 10},
 		"rank": {"item": "flint"},
 		"desc":
-		"Shape flint. Craft Flint Tools: a harvest by hand takes 0.6s, and each Kith holding one works 50% faster.",
+		(
+			"Shape flint. Craft Flint Tools: a harvest by hand takes 0.6s, and each Kith holding one works 50% faster."
+			+ " A Tool Bench makes them for you."
+		),
 	},
 	"cordage":
 	{
@@ -90,12 +93,12 @@ const TECHS := {
 		"lane": "fiber",
 		"tier": 0,
 		"slot": 0,
-		"unlock": "Rope, Twine Post",
+		"unlock": "Rope, Twine Post, Flax Field",
 		"icon": "twine_post",
 		"requires": [],
 		"cost": {"fiber": 15},
 		"rank": {"building": "twine_post"},
-		"desc": "Twist fiber into rope, by hand or at a Twine Post.",
+		"desc": "Twist fiber into rope, by hand or at a Twine Post. Keep some back to sow Flax Fields.",
 	},
 	"fire":
 	{

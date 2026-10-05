@@ -1,11 +1,10 @@
 extends PanelContainer
 ## The top bar: Kith and jobs, food with its time left (flashing red when it is about to run out), and a
-## chip per good in three rows. The first two rows' chips are fixed-width: a sprite that carries the good's color, its
-## count in cream and its net rate per second under it (moss up, alert red down; the name is in the tooltip). The
-## third row, the second era's goods, has the sprite, the good's short name and the count on one line, and leaves
-## the rate to the tooltip and the hover panel. Hovering a chip drops a panel explaining where that good comes from
-## and where it goes. Every chip keeps EDGE_PAD from the bar's edges. No line in the bar is ever cut short: long
-## ones wrap onto a second line.
+## chip per good in three rows. Every chip is the same fixed-width widget in every era: a sprite that carries the
+## good's color, its count in cream and its net rate per second under it (moss up, alert red down; the name is in the
+## tooltip). The third row, the second era's goods, lines up under the first two rows' columns. Hovering a chip drops
+## a panel explaining where that good comes from and where it goes. Every chip keeps EDGE_PAD from the bar's edges.
+## No line in the bar is ever cut short: long ones wrap onto a second line.
 
 signal speed_picked(value: int)  # 0 toggles pause
 signal log_pressed  # the Messages button
@@ -31,10 +30,11 @@ const FLAT := Ui.TEXT_DIM
 const MINUS := "−"
 const CHIP_W := 80.0
 const ICON := 24.0  # a good's sprite, with nothing behind it
-const ROW_H := 42.0  # a row of chips keeps this height whether or not its goods have appeared yet
-const ROW3_H := 30.0  # the second era's row: each chip is one line (sprite, name, count), so the row is shorter
-const ROW3_GAP := 10  # between the second era's chips, which are as wide as their words
-const NAME_COLOR := Ui.TEXT_DIM  # a one-line chip's name, under the count's cream
+## A row of chips keeps this height whether or not its goods have appeared yet. Three rows fill the bar's goods area.
+const ROW_H := 38.0
+const CHIP_GAP := 3  # between the chips of a row, the same in every row
+const CHIP_STACK := -10  # the rate sits this close under the count
+const CHIP_VPAD := 1  # a chip keeps this much above and below, so it is 38 px tall and three rows fit the bar
 const EDGE_PAD := 6.0  # the goods keep this much clear of the bar's top and bottom edge (the bottom rule is on top of it)
 const RULE_W := 3  # the rule along the bar's bottom edge
 ## The bar is never shorter than its tallest block, the Kith block with its name, jobs line and three lines of note,
@@ -123,10 +123,10 @@ func setup(game: Sim) -> void:
 	for r in ROWS.size() - 1:
 		var group: Array = Data.ITEM_ORDER.slice(ROWS[r], ROWS[r + 1])
 		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", ROW3_GAP if r == 2 else 3)
-		row.custom_minimum_size = Vector2(0, ROW3_H if r == 2 else ROW_H)
+		row.add_theme_constant_override("separation", CHIP_GAP)
+		row.custom_minimum_size = Vector2(0, ROW_H)
 		for id in group:
-			row.add_child(_chip(id, CHIP_W, r == 2))
+			row.add_child(_chip(id, CHIP_W))
 		if r == 1:
 			tools_label = Ui.label("", Ui.MIN_TEXT)
 			tools_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -169,39 +169,27 @@ func setup(game: Sim) -> void:
 	flow_panel.add_child(flow_box)
 
 
-## A fixed-width chip: the item's sprite, the count and the net rate under it (the name is in its tooltip). A
-## `one_line` chip is the sprite, the good's short name and the count, as wide as they are, and has no rate label.
-func _chip(id: String, width: float, one_line := false) -> PanelContainer:
+## A fixed-width chip: the item's sprite, the count and the net rate under it (the name is in its tooltip).
+func _chip(id: String, width: float) -> PanelContainer:
 	var box := PanelContainer.new()
-	box.custom_minimum_size = Vector2(0.0 if one_line else width, 0)
+	box.custom_minimum_size = Vector2(width, 0)
 	box.mouse_filter = Control.MOUSE_FILTER_PASS
-	box.add_theme_stylebox_override("panel", _outline(Color(0, 0, 0, 0)))
+	box.add_theme_stylebox_override("panel", _outline(Color(0, 0, 0, 0), CHIP_VPAD))
 	var h := HBoxContainer.new()
 	h.add_theme_constant_override("separation", 3)
 	box.add_child(h)
 	var icon := Ui.item_icon(id, ICON)
 	h.add_child(icon)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", CHIP_STACK)
 	var count := Ui.label("", COUNT_SIZE)
-	var rate: Label = null
-	if one_line:
-		var item: Dictionary = Data.ITEMS[id]
-		var title := Ui.label(item.get("short", item["name"]), Ui.MIN_TEXT)
-		title.add_theme_color_override("font_color", NAME_COLOR)
-		title.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		h.add_child(title)
-		h.add_child(count)
-		Ui.ignore_mouse(h)
-		_fix_width(count, [count], 42.0)
-	else:
-		var v := VBoxContainer.new()
-		v.add_theme_constant_override("separation", -8)
-		rate = Ui.label("", Ui.MIN_TEXT)
-		v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		v.add_child(count)
-		v.add_child(rate)
-		h.add_child(v)
-		Ui.ignore_mouse(h)
-		_fix_width(box, [count, rate], width)
+	var rate := Ui.label("", Ui.MIN_TEXT)
+	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	v.add_child(count)
+	v.add_child(rate)
+	h.add_child(v)
+	Ui.ignore_mouse(h)
+	_fix_width(box, [count, rate], width)
 	box.tooltip_text = item_tip(id)
 	box.mouse_entered.connect(_show_flow.bind(id))
 	box.mouse_exited.connect(_hide_flow.bind(id))
@@ -210,13 +198,15 @@ func _chip(id: String, width: float, one_line := false) -> PanelContainer:
 
 
 ## A panel style that keeps the same margins whether or not its outline shows, so a ring never moves anything.
-static func _outline(color: Color) -> StyleBoxFlat:
+static func _outline(color: Color, vpad := 2) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
 	s.draw_center = false
 	s.border_color = color
 	s.set_border_width_all(2)
 	s.set_corner_radius_all(4)
 	s.set_content_margin_all(2)
+	s.content_margin_top = vpad
+	s.content_margin_bottom = vpad
 	return s
 
 
@@ -310,11 +300,12 @@ func refresh(paused: bool, speed: int) -> void:
 		c["box"].visible = state.economy.seen.has(id)
 		c["count"].text = str(n)
 		c["count"].modulate = Color(1, 1, 1, 0.5 if n == 0 and absf(r) < 0.005 else 1.0)
-		if c["rate"] != null:
-			c["rate"].text = rate_text(r) + "/s"
-			c["rate"].add_theme_color_override("font_color", rate_color(r))
+		c["rate"].text = rate_text(r) + "/s"
+		c["rate"].add_theme_color_override("font_color", rate_color(r))
 		c["box"].tooltip_text = "" if flow_item == id else chip_tip(id, n, r)
-		c["box"].add_theme_stylebox_override("panel", _outline(Ui.HIGHLIGHT if flow_item == id else Color(0, 0, 0, 0)))
+		c["box"].add_theme_stylebox_override(
+			"panel", _outline(Ui.HIGHLIGHT if flow_item == id else Color(0, 0, 0, 0), CHIP_VPAD)
+		)
 	for v in speed_buttons:
 		speed_buttons[v].button_pressed = paused if v == 0 else (not paused and v == speed)
 	if flow_item != "":
@@ -335,7 +326,10 @@ func _refresh_food() -> void:
 		sub = Data.STARVING_TEXT % Data.PEOPLE["many"]
 	elif eco.low:
 		sub = Data.FOOD_LOW_TEXT % _duration(minf(eco.seconds_of_food(), 3600.0), true)
-	food_sub.text = sub
+	var growth := GrowthNote.progress_text(state)
+	food_sub.text = sub + ("\n" + growth if growth != "" else "")
+	var more := GrowthNote.progress_tip(state)
+	food_box.tooltip_text = Data.FOOD_TIP % Data.PEOPLE["one"] + ("\n\n" + more if more != "" else "")
 	var alarm := eco.low or eco.starving
 	food_label.add_theme_color_override("font_color", ALARM_TEXT if alarm else Ui.TEXT)
 	food_sub.add_theme_color_override("font_color", ALARM_TEXT if alarm else rate_color(fr))

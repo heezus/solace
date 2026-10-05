@@ -17,6 +17,7 @@ const UiTests = preload("res://tests/ui_tests.gd")
 const Ui = preload("res://scripts/ui.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
 const HudChecks = preload("res://tests/tools/hud_checks.gd")
+const PickerChecks = preload("res://tests/tools/picker_checks.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
 const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
 
@@ -49,6 +50,7 @@ var saved := {}  # the stockpile as it was, put back after them
 var row_at: Array = []  # the buildings placed by hand for the badge check
 var goals_height := 0.0  # the Goals list's height before a card opens
 var frozen := false  # the bot's ticking is paused while a check sets the state by hand
+var picker := PickerChecks.new()  # the hut picker's checks (tests/tools/picker_checks.gd)
 
 
 func _init() -> void:
@@ -75,6 +77,10 @@ func _process(_delta: float) -> bool:
 		main.ui_refresh = 0.0  # refresh the bars every frame, so any wobble shows
 	if frame == RESIZE_AT:
 		root.size = Vector2i(1600, 800)  # wider: the map must refit (re-centre; the bars keep their heights)
+	if frame == RESIZE_AT + 10:
+		_report(HudChecks.gathering_tab(main, "at 1600x800"))
+	if frame == SHRINK_AT + 10:
+		_report(HudChecks.gathering_tab(main, "at 1100x700"))
 	if frame == SHRINK_AT:
 		root.size = Vector2i(1100, 700)  # then a window of another shape: everything must still fit
 	if frame > 5:
@@ -135,6 +141,9 @@ func _era_two_checks() -> void:
 		main.tech_panel.visible = true
 	if frame == dawn_frame + 62:
 		_check_era_board()
+	if frame == dawn_frame + 64:
+		_report(HudChecks.board_fit(main, "the second era's board"))
+		_shot("tech_board_era2")
 		main.tech_panel.visible = false
 		frozen = false
 	if frame == dawn_frame + 70:
@@ -236,9 +245,14 @@ func _check() -> void:
 
 ## The HUD checks, on fixed frames. Those that set the state by hand freeze the bot for a frame or two.
 func _hud_checks() -> void:
+	_board_at_the_shrunk_window()
+	if frame == 9 or frame == SHRINK_AT + 4:  # at 1280 x 800, then at 1100 x 700
+		_report(HudChecks.food_readout(main, "at %dx%d" % [root.size.x, root.size.y]))
 	match frame:
 		7:
 			goals_height = _goals_height()
+		9:
+			_report(HudChecks.gathering_tab(main, "at 1280x800"))
 		8:
 			frozen = true
 			_show_hearth_panel()
@@ -334,14 +348,31 @@ func _hud_checks() -> void:
 		60:
 			_check_min_text("with the research board open")
 			_check_board_open()
+			_report(HudChecks.next_view(main, "What to learn next at 1280x800"))
+			_shot("tech_next")
 			main.tech_panel._pick_view("all")
 		62:
 			_check_board_hover()
+			_report(HudChecks.board_fit(main, "the whole board at 1280x800"))
+			_shot("tech_board")
 			main.tech_panel.visible = false
 			frozen = false
 		64:
 			frozen = true
 			_build_a_row_of_buildings()
+		68, 460:
+			frozen = true
+			_report(picker.hold_a_hut(main))
+		70, 462:
+			_report(picker.check_placing(main, size_name()))
+			_shot("hut_picker_placing_" + size_name())
+			_report(picker.place_picked(main))
+		72, 464:
+			_report(picker.check_card(main, size_name()))
+			_shot("hut_picker_card_" + size_name())
+		73, 465:
+			picker.cleanup(main)
+			frozen = false
 		66:
 			_check_pills("a row of six adjacent buildings, each blocked")
 			for p in row_at:
@@ -833,12 +864,33 @@ func _check_log_opens() -> void:
 		problems.append("the newest message isn't in the log")
 
 
-## The research board on first open: the Next steps view, the stock strip showing, all inside the window.
+## The research board again in the 1100x700 window (the canvas never goes under 1280x800: its longer side grows):
+## What to learn next, then the whole board, both fitted and inside the panel.
+func _board_at_the_shrunk_window() -> void:
+	var panel = main.tech_panel
+	match frame - SHRINK_AT:
+		6:
+			frozen = true
+			panel.era_chosen = false
+			panel.view_chosen = false
+			panel.visible = true
+		8:
+			_report(HudChecks.next_view(main, "What to learn next at 1100x700"))
+			_shot("tech_next_1100x700")
+			panel._pick_view("all")
+		10:
+			_report(HudChecks.board_fit(main, "the whole board at 1100x700"))
+			_shot("tech_board_1100x700")
+			panel.visible = false
+			frozen = false
+
+
+## The research board on first open: the What to learn next view, the stock strip showing, all inside the window.
 func _check_board_open() -> void:
 	hud_checks += 1
 	var panel = main.tech_panel
-	if panel.board.view != "next" and panel.state.tech_tree.researched.size() < panel.WHOLE_BOARD_FROM:
-		problems.append("the board didn't open on Next steps")
+	if panel.view != "next":
+		problems.append("the board didn't open on What to learn next")
 	if not panel.stock_row.visible or panel.stock_row.get_global_rect().size.y < 8.0:
 		problems.append("the stock strip isn't visible while the board is open")
 	if not Rect2(Vector2.ZERO, main.get_viewport_rect().size).encloses(panel.get_global_rect()):
@@ -887,6 +939,10 @@ func _texts(node: Node) -> Array:
 
 
 ## Take in the problems another check found, and count it as a HUD check.
+func size_name() -> String:
+	return "%dx%d" % [root.size.x, root.size.y]
+
+
 func _report(found: Array) -> void:
 	hud_checks += 1
 	problems.append_array(found)

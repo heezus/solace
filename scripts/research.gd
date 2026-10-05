@@ -20,6 +20,7 @@ var goal := ""  # the tech the queue is working toward, "" for none
 var queue: Array = []  # the next techs on the way there, researched as soon as affordable
 var _economy: Economy
 var _hidden_shown: Callable  # () -> bool: true once hidden techs are on show (the Strange Stone was clicked)
+var _extra_discount: Callable  # () -> float: a share (0 to 1) off every tech, from what stands in the town; may be unset
 
 
 ## `researched_set` is the dictionary the Economy also holds (built first, since each needs the other).
@@ -27,6 +28,11 @@ func _init(economy: Economy, researched_set: Dictionary, hidden_shown: Callable)
 	_economy = economy
 	researched = researched_set
 	_hidden_shown = hidden_shown
+
+
+## `discount` is a () -> float: the share (0 to 1) the town takes off every tech (the Sim passes the Buildings block's).
+func set_extra_discount(discount: Callable) -> void:
+	_extra_discount = discount
 
 
 # --- Requirements ------------------------------------------------------------
@@ -65,14 +71,20 @@ static func enabled(tech: String) -> bool:
 	return Rules.tech_enabled(tech)
 
 
-## What `tech` costs now: Tally Sticks makes every tech a tenth cheaper (never less than 1 of an item).
+## What `tech` costs now: Tally Sticks makes every tech a tenth cheaper, and whatever the town reports as an extra
+## discount (a Shard Cairn) takes a little more off. The two multiply and the item is rounded once, never to less than 1.
 func cost_of(tech: String) -> Dictionary:
 	var cost: Dictionary = Data.TECHS[tech]["cost"]
-	if not researched.has("tally_sticks"):
+	var share := 1.0
+	if researched.has("tally_sticks"):
+		share *= Data.TALLY_DISCOUNT
+	if _extra_discount.is_valid():
+		share *= 1.0 - float(_extra_discount.call())
+	if share == 1.0:
 		return cost
 	var out := {}
 	for id in cost:
-		out[id] = maxi(roundi(cost[id] * Data.TALLY_DISCOUNT), 1)
+		out[id] = maxi(roundi(cost[id] * share), 1)
 	return out
 
 

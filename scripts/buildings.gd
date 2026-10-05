@@ -116,6 +116,8 @@ func built_type(p: Vector2i) -> String:
 		return "bridge" if _world.tile_at(p) == "river" else "road"
 	if _world.fields.has(p):
 		return "field"
+	if _world.flax_fields.has(p):
+		return "flax_field"
 	return ""
 
 
@@ -123,7 +125,7 @@ func built_type(p: Vector2i) -> String:
 ## clears the tile first). Returns {} when it can't go here, otherwise {"kind": the building's kind,
 ## "cleared": "rock" or "tree" when a road cut through one, else ""}. The owner lifts the fog, refreshes the
 ## walking cell and tells the player.
-func place(type: String, p: Vector2i) -> Dictionary:
+func place(type: String, p: Vector2i, focus := "") -> Dictionary:
 	if placement_error(type, p) != "":
 		return {}
 	var tile := _world.tile_at(p)
@@ -140,9 +142,14 @@ func place(type: String, p: Vector2i) -> Dictionary:
 		else:
 			_world.add_road(p)  # a bridge is a road over the river
 	elif kind == "field":
-		_world.add_field(p)
+		if Data.BUILDINGS[type].get("crop", "") == "flax":
+			_world.add_flax_field(p)
+		else:
+			_world.add_field(p)
 	else:
 		add_building(type, p)
+		if focus != "":
+			set_focus(building_at[p], focus)  # a hut set to work something in reach as it went down; else the default
 	built.emit(type, p)
 	return {"kind": kind, "cleared": cleared}
 
@@ -164,6 +171,7 @@ func add_building(type: String, p: Vector2i) -> void:
 		"ore": "",  # what a Mine digs: the item its tile yields, "" for any other building
 		"give": "",  # what a Trading Post gives up (Data.TRADE_GIVE of it), "" for none yet
 		"get": "",  # ...and what it gets for it (Data.TRADE_GET of it)
+		"make": "",  # the tool a Tool Bench is making now (a Data.RECIPES id), "" for any other building
 		"claimed": false,  # a hauler is on its way to empty it
 		"incoming": {},  # inputs haulers are carrying here
 		"unreachable": 0.0,  # seconds left to show "can't reach"
@@ -175,6 +183,8 @@ func add_building(type: String, p: Vector2i) -> void:
 	}
 	if Data.BUILDINGS[type].has("dig"):
 		b["ore"] = Data.TILES[_world.tile_at(p)]["yields"]
+	if Data.BUILDINGS[type].has("makes"):
+		b["make"] = Data.BUILDINGS[type]["makes"][0]
 	if Data.BUILDINGS[type]["kind"] == "gatherer":
 		for t in gather_tiles(p):
 			b["gather_items"].append(Data.TILES[_world.tile_at(t)]["yields"])
@@ -278,6 +288,8 @@ func demolish(p: Vector2i) -> Dictionary:
 		_world.remove_road(p)
 	elif _world.fields.has(p):
 		_world.remove_field(p)
+	elif _world.flax_fields.has(p):
+		_world.remove_flax_field(p)
 	else:
 		index = building_at[p]
 	demolished.emit(type, p)
@@ -305,6 +317,14 @@ func set_paused(i: int, on: bool) -> void:
 func set_status(b: Dictionary, status: String, alert: String) -> void:
 	b["status"] = status
 	b["alert"] = alert
+
+
+## The share off every tech that the standing buildings give: the best single one (0 to 1), so two cairns count as one.
+func research_discount() -> float:
+	var best := 0.0
+	for b in buildings:
+		best = maxf(best, float(Data.BUILDINGS[b["type"]].get("research_discount", 0.0)))
+	return best
 
 
 func is_powered(p: Vector2i) -> bool:
@@ -374,9 +394,11 @@ static func is_staffed(b: Dictionary) -> bool:
 
 
 ## What a cycle at `b` makes: the building's `out`, for a Mine its `dig` of the ore on its tile, for a Trading Post
-## what it is set to get.
+## what it is set to get, for a Tool Bench the tool it is making.
 static func recipe_out(b: Dictionary) -> Dictionary:
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
+	if def.has("makes"):
+		return Data.RECIPES[b["make"]]["out"]
 	if def.has("dig"):
 		return {b["ore"]: def["dig"]}
 	if def.get("trade", false):
@@ -384,9 +406,12 @@ static func recipe_out(b: Dictionary) -> Dictionary:
 	return def["out"]
 
 
-## What a cycle at `b` uses: the building's `in`, or for a Trading Post what it is set to give.
+## What a cycle at `b` uses: the building's `in`, for a Trading Post what it is set to give, for a Tool Bench what
+## its tool takes.
 static func recipe_in(b: Dictionary) -> Dictionary:
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
+	if def.has("makes"):
+		return Data.RECIPES[b["make"]]["in"]
 	if def.get("trade", false):
 		return {b["give"]: Data.TRADE_GIVE} if is_trading(b) else {}
 	return def.get("in", {})
@@ -514,4 +539,6 @@ static func _building_from_dict(d: Dictionary) -> Dictionary:
 	b["ore"] = String(d.get("ore", ""))
 	b["give"] = String(d.get("give", ""))
 	b["get"] = String(d.get("get", ""))
+	var def: Dictionary = Data.BUILDINGS[b["type"]]
+	b["make"] = String(d.get("make", def["makes"][0] if def.has("makes") else ""))
 	return b

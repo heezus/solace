@@ -60,7 +60,16 @@ func test_story_ids_are_stable_and_unique() -> void:
 	for tech in Data.STORY_TECHS:
 		t.check(Data.TECHS.has(tech), tech + " (a story tech) is a real tech")
 		t.check(Data.STORY_EVENTS.has(Data.STORY_TECHS[tech]), tech + " records an id listed in STORY_EVENTS")
-	var ids := ["first_lesson", "first_trip", "shard_found", "haulers", "bronze_dawn", "wanderer_named", "star_falling"]
+	var ids := [
+		"first_lesson",
+		"first_trip",
+		"shard_found",
+		"haulers",
+		"bronze_dawn",
+		"wanderer_named",
+		"star_falling",
+		"cairn_raised"
+	]
 	t.check(Data.STORY_EVENTS.keys() == ids, "the ids are the stable ones a profile save will keep")
 
 

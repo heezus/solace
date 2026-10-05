@@ -14,6 +14,7 @@ const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Hands = preload("res://scripts/hands.gd")
 const CardText = preload("res://scripts/card_text.gd")
+const FieldText = preload("res://scripts/field_text.gd")
 
 const BUTTON := Vector2(172, 64)
 const TEXT_X := 42.0  # the title and state line start here, beside the 30 px icon
@@ -285,6 +286,8 @@ func _tooltip(type: String) -> String:
 	var s: String = def["name"] + "\n" + def["desc"]
 	if not def["cost"].is_empty():
 		s += "\nPrice (have/need): " + Ui.progress_text(state.economy.inv, def["cost"], 99)
+	if def["kind"] == "field":
+		s += "\n" + FieldText.card_text(state, def)
 	if def["tech"] == "":
 		s += "\nAlways available."
 	elif not state.town.unlocked(type):

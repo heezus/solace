@@ -11,12 +11,18 @@ const Workers = preload("res://scripts/workers.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Hands = preload("res://scripts/hands.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
+const FieldText = preload("res://scripts/field_text.gd")
+const PatchText = preload("res://scripts/patch_text.gd")
+const HutFocus = preload("res://scripts/hut_focus.gd")
 
 
 static func text(m) -> String:
 	var s = m.state
 	if m.placing == "demolish":
-		return "Demolish: click a building, road or field to tear it down for half its cost back. Right-click to stop."
+		return (
+			"Demolish: click a building, road or field to tear it down for half its cost back, or a resource tile "
+			+ "(forest, rocks, clay...) to clear it to grass for good. Right-click to stop."
+		)
 	if m.placing != "":
 		return _placing_text(m)
 	if not s.world.in_bounds(m.hover):
@@ -41,11 +47,18 @@ static func _placing_text(m) -> String:
 		var err: String = s.town.placement_error(m.placing, m.hover)
 		if err != "":
 			t += "\n\nCan't build here: " + err + "."
+		if def["kind"] == "field" and err == "":
+			t += "\n\n" + FieldText.placing_text(s, m.hover, def)
 		if m.placing == "gatherers_hut":
-			var tiles: Array = s.town.tiles_of(m.hover, s.town.default_focus(m.hover))
+			var chosen := HutFocus.pick_chosen(s, m.hover, m.pick_focus)
+			var tiles: Array = s.town.tiles_of(m.hover, chosen)
 			t += "\n\n" + BuildingPanel.gather_text(s, tiles)
+			var patch := PatchText.placement_text(s, m.hover, chosen)
+			t += "\n" + patch if patch != "" else ""
 			if not tiles.is_empty():
-				t += "\nIt will work the resource nearest it: click the hut afterwards to change."
+				t += "\nIt works the resource nearest it, unless you pick another."
+			if not HutFocus.pick_options(s, m.hover).is_empty():
+				t += " Click one in the picker by the hut, or press Tab or R."
 		if s.tech_tree.researched.has("haulers") and def["kind"] in ["gatherer", "processor"]:
 			t += "\n" + _road_preview(s, m.hover)
 	return t
@@ -89,10 +102,17 @@ static func _tile_text(m) -> String:
 		var how := "Hold the mouse on it to gather."
 		if not m.nudge.is_empty() and m.nudge["tile"] == p:
 			how = "You let go too soon: keep the mouse down until the ring fills."
-		var out := "%s\n%s. %s" % [t["name"], hold_hint(s, item), how]
+		var tile_name: String = t["name"]
+		if s.world.flax_fields.has(p):
+			tile_name = Data.BUILDINGS["flax_field"]["name"]
+		elif s.world.fields.has(p):
+			tile_name = Data.FIELD_TITLE % Data.ITEMS[item]["name"]
+		var out := "%s\n%s. %s" % [tile_name, hold_hint(s, item), how]
 		if Data.FOOD_VALUE.has(item):
 			out += " It's food: the %s eat it." % Data.PEOPLE["many"]
 		out += "\n" + (Data.MINE_TIP if t.get("mine_only", false) else learn_text(s, item))
+		if FieldText.is_sown(s, p):
+			out += "\n\n" + FieldText.tile_text(s, p)
 		return out + ("\n" + hint + "." if hint != "" else "")
 	var info: String = t["name"]
 	if t.has("hint"):

@@ -125,11 +125,18 @@ const BONUSES := {
 ## A tool lasts this many jobs (harvests or work cycles) in a worker's hands: flint, then bronze (one per 200 jobs).
 const TOOL_JOBS := 40
 const BRONZE_TOOL_JOBS := 200
+## A Tool Bench keeps this many tools spare in the stockpile, on top of one for each working Kith who holds none.
+const TOOL_SPARES := 2
 ## The tool items a worker takes from the stockpile, best first.
 const TOOL_ITEMS := ["bronze_tools", "flint_tools"]
 const CALENDAR_FIELD_BONUS := 0.25  # extra yield from Fields
 const PLOUGH_FIELD_BONUS := 0.5  # ...and the Plough's share, on top
 const PLOUGHSHARE_FIELD_BONUS := 0.5  # ...and the Bronze Ploughshare's, on top of that
+## Rich patch: a Gatherer's Hut works faster the more tiles of its one resource lie in its reach (its worker walks to the
+## ripest, and has more to choose from). Each tile beyond the first adds PATCH_STEP to its Speed, up to PATCH_MAX_TILES tiles
+## in all: more tiles than that do not help. Wild tiles and Fields count alike (see scripts/patch.gd).
+const PATCH_STEP := 0.1
+const PATCH_MAX_TILES := 8
 
 ## Era 2, stage 2.
 ## Carts (The Wheel): each Cart Shed turns CARTS_PER_SHED haulers into carts. A cart carries CART_LOAD times what a

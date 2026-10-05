@@ -10,8 +10,14 @@ const STONE_GLOW := Color(0.6, 0.95, 1.0)
 const SPRITE_DIR := "res://art/sprites/"
 const FOREST: Color = Data.TILES["tree"]["color"]
 
-## Buildings whose sprite has another name.
-const SPRITE_OF := {"camp": "hearth", "road": "tile_path", "bridge": "tile_bridge_wood"}
+## Buildings whose sprite has another name. The Tool Bench borrows the Twine Post until it has its own (docs/art/requests.md).
+const SPRITE_OF := {
+	"camp": "hearth",
+	"road": "tile_path",
+	"bridge": "tile_bridge_wood",
+	"flax_field": "flax",
+	"tool_bench": "twine_post",
+}
 
 ## Map art is drawn in a 32-unit design space (`DESIGN`) and scaled up to the tile, so a 2-unit outline is 3 px at
 ## 48 px tiles. Sprites are drawn at their native scale, never redrawn thin.
@@ -244,6 +250,15 @@ static func feature(ci: CanvasItem, t: String, c: Vector2, p: Vector2i, time: fl
 				ci.draw_line(c + Vector2(x, 11), top, Color("6f9a3c"), 1.6)
 				outlined_circle(ci, top, 2.5, Color("6d8fe0"))
 				ci.draw_circle(top, 1.0, Color("f2c14e"))
+		"flax_field":
+			# Sown flax: the wild flax sprite in a pale blue-green with seed furrows under it, until it has its own art.
+			var sown := sprite("flax")
+			if sown != null:
+				ci.draw_texture_rect(sown, Rect2(c - Vector2(16, 16), Vector2(32, 32)), false, Color(0.82, 1.0, 0.96))
+			else:
+				feature(ci, "flax", c, p, time)
+			for i in 3:
+				ci.draw_line(c + Vector2(-12 + i * 12, 14), c + Vector2(-8 + i * 12, 14), Color(OUTLINE, 0.55), 1.5)
 		"grain":
 			# Gold heads on slender stalks, as in the Field sprite.
 			for i in 5:

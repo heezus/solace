@@ -3,11 +3,15 @@ extends RefCounted
 
 ## kind: "camp" | "house" | "road" | "bridge" | "field" | "depot" | "gatherer" | "processor" | "power" | "aura" | "cairn"
 ##   | "shed" (a Cart Shed) | "tower" (a Watchtower)
+## A "field" with `crop` "flax" sows flax instead of grain (World.flax_fields); it yields fiber as wild flax does.
 ## A `stone` bridge bears carts and walks at the Causeway pace; the Wooden Bridge bears the Kith only.
 ## A processor with `trade` has no fixed recipe: it swaps Data.TRADE_GIVE of the good it is set to give for
 ## Data.TRADE_GET of the one it is set to get (the building's `give` and `get`). `sight` is how far a building sees.
 ## `story` buildings stay off the build bar until their tech is on the board and reachable (nothing to spoil early).
 ## Processors turn `in` into `out` every `time` seconds (a processor with no `in` just makes `out`).
+## A processor with `makes` is a tool bench: a list of tool recipes (Data.RECIPES ids, worst first), and it makes
+## the best one the people have the tech and the stock for (the building's `make`), only while the stockpile holds
+## fewer tools than they need (Work.enough). Its own `in` and `out` stay empty.
 ## A processor with `dig` is a mine: it stands on one of its `on_tiles` and digs `dig` of whatever that tile yields
 ## each cycle, with no input and without walking. `crew` is how many people it needs (default 1); it works only
 ## while all of them are at it.
@@ -78,6 +82,16 @@ const BUILDINGS := {
 		"color": Color("d4b44a"),
 		"desc": "Plant wild grain on open grassland, for huts to gather. Drag to sow.",
 	},
+	"flax_field":
+	{
+		"name": "Flax Field",
+		"kind": "field",
+		"crop": "flax",
+		"tech": "cordage",
+		"cost": {"fiber": 2},
+		"color": Color("8fbf9f"),
+		"desc": "Sow flax seed on open grassland, for huts and hands to cut as fiber. It never runs out. Drag to sow.",
+	},
 	"storehouse":
 	{
 		"name": "Storehouse",
@@ -112,6 +126,20 @@ const BUILDINGS := {
 		"time": 4.0,
 		"color": Color("bc8a5f"),
 		"desc": "Twists fiber into rope.",
+	},
+	"tool_bench":
+	{
+		"name": "Tool Bench",
+		"kind": "processor",
+		"job": "Toolmaker",
+		"tech": "knapping",
+		"cost": {"wood": 10, "stone": 5},
+		"in": {},
+		"out": {},
+		"makes": ["flint_tools", "bronze_tools"],
+		"time": 6.0,
+		"color": Color("8a8d91"),
+		"desc": "Makes tools so you do not have to. Keeps a spare or two ready, then waits until more are needed.",
 	},
 	"gatherers_hut":
 	{
@@ -280,16 +308,22 @@ const BUILDINGS := {
 		"cost": {"stone": 12},
 		"needs_shard": true,
 		"color": Color("caf0f8"),
-		"desc": "A ring of stones beside the Strange Stone. Must go next to it.",
-		"status": "It hums. Nothing more. Yet.",
+		"research_discount": 0.05,
+		"desc":
+		(
+			"A ring of stones beside the Strange Stone. Must go next to it."
+			+ " Its hum steadies the Kith's thinking: every tech costs 5% less (one is enough)."
+			+ " Something far off may hear it."
+		),
+		"status": "It hums. The Kith think clearer. Something far off may hear.",
 	},
 }
 
 ## The build bar's tabs, in order. Craft by hand has its own small group beside them.
 const BUILD_TABS := {
 	"Homes": ["dwelling"],
-	"Gathering": ["gatherers_hut", "field", "fishing_weir"],
-	"Workshops": ["charcoal_pit", "twine_post", "kiln", "water_wheel", "grindstone"],
+	"Gathering": ["gatherers_hut", "field", "flax_field", "fishing_weir"],
+	"Workshops": ["tool_bench", "charcoal_pit", "twine_post", "kiln", "water_wheel", "grindstone"],
 	"Metal": ["mine", "smelter", "crucible"],
 	"Logistics": ["road", "bridge", "stone_bridge", "storehouse", "cart_shed", "trading_post"],
 	"Lore": ["standing_stone", "shard_cairn", "watchtower"],
@@ -301,9 +335,11 @@ const BUILD_ORDER := [
 	"bridge",
 	"stone_bridge",
 	"field",
+	"flax_field",
 	"storehouse",
 	"charcoal_pit",
 	"twine_post",
+	"tool_bench",
 	"gatherers_hut",
 	"kiln",
 	"water_wheel",
