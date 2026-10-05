@@ -2,17 +2,35 @@
 
 Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2026-10-04 Jon authorized Codex to make the engine changes needed for visuals as well as creating the art. Visual work no longer requires a Claude wiring handoff.
 
+## Active work
+
+### Codex — shoreline/crossing fixture
+- **Task:** complete the review-only 48 px fixture for contour-following bank props, both bridge axes, dry-bank seating and aligned road approaches. Branch `codex/visual-overhaul`, draft PR #33. No production integration in this task.
+- **Reserved files:** `docs/art/overhaul/misty-highlands/grounding-studies/shoreline-crossings-study/**`; the study link in `grounding-studies/README.md`. Update only Codex’s own Active work entry and append its design decision/status when needed. Production `art.gd`, `main.gd` and `ui.gd` are not currently being edited for this fixture; any later integration requires a new reservation.
+- **Acceptance criteria:** one inspected native Godot capture at 48 px; both wood/stone bridge axes and narrow/broad spans; seated ends and clear approaches; stones/reeds following corners with fixed lighting; focused geometry, fog privacy and world/RNG checks; concise documented result. Keep normal play unchanged and PR #33 draft until Jon signs off on visuals.
+- **Next action:** run the graphical fixture, inspect bridge seams/shore contacts, repair only this study, then validate and publish its result. The prior capture attempt was blocked by approval-service usage limits; it must be retried, not counted as validation.
+
+Claude maintains its own entry here. Jon reports Claude is preparing one bundled gameplay PR for one-click hut interaction, resource-discovery tech visibility, roads through buildings and Hearth upgrade appearance, and will flag necessary drawing-code overlap in `docs/art/requests.md`.
+
+## Automatic coordination protocol — agreed with Jon, 2026-10-05
+
+1. Shared state lives under **Active work**, with one entry per agent: task, reserved files, acceptance criteria and next action. Update your entry on task start, completion or blockage; preserve the other agent’s entry.
+2. Messages go in PR comments. To reach Claude, comment on one of Claude’s open PRs; Jon confirms this wakes Claude automatically. Claude reads Codex PR comments at task boundaries and before shared-file edits. Check messages at those boundaries, without constant polling.
+3. Before editing a shared file, check the current handoff. If another agent has reserved it, ask in a PR comment before changing it. Reservation changes and necessary overlap must be explicit.
+4. Post a short PR comment on completion or blockage: result, commit/files, validation, blocker and next owner/action.
+5. Claude is preparing this protocol in a small AGENTS.md PR. Once merged, that text is the source of truth. PR #33 remains draft until Jon’s visual sign-off.
+
 ## Token discipline and task coordination — Jon, 2026-10-05
 
 - Work on one active deliverable at a time. Record its owner, scope, files, acceptance criteria and next action here; finish or report a concrete blocker before expanding scope.
 - Codex’s active deliverable is the **48 px shoreline/crossing fixture**: both bridge axes, dry-bank seating, aligned road approaches and contour-following bank props. Done means one inspected native capture, focused geometry/privacy/RNG checks and a documented result. No additional concept directions, UI redesign, biome expansion or animation work in this task.
-- Claude owns discovery gating, hut interaction and road-through-building gameplay. Claude should identify the single task being taken and shared files before editing; Codex will avoid those files. No duplicate investigation or implementation across teams.
+- Claude owns discovery gating, hut interaction and road-through-building gameplay. Claude is implementing Jon’s four gameplay asks in one bundled PR and will record its reserved files; Codex will avoid those files. No duplicate investigation or implementation across teams.
 - Reuse the existing approved subject assets, target reference and prior validation. Read relevant sections/diffs rather than repeatedly loading whole documents. Batch independent reads, cap outputs and use focused checks first; run required full checks once for the final candidate and repeat only after a relevant change or failure.
 - Keep updates short and substantive: result, blocker or next decision. Avoid unchanged CI polling narration and repeated plans. Use one compact completion handoff: commit/PR, files touched, validation, limitations and next owner.
 - New image generation must address a specific missing asset in the active deliverable. No open-ended variant generation or delegation unless Jon requests it. When blocked, report what can resume the task; do not burn tokens on unrelated work.
 - No numeric token budget was specified. These are workflow constraints, not an invented token cap. Both teams should flag expected substantial extra work before widening the task.
 
-**Coordination status:** Codex has prepared this protocol and the return briefing. No direct Claude chat connection is available in the current Codex tools; coordination uses PR #33 and this handoff. Claude acknowledgement is pending; Claude should record its chosen task/shared-file reservation here.
+**Coordination status:** Jon has relayed Claude’s agreement and current bundled gameplay scope. No Claude-owned open PR was visible when Codex checked on 2026-10-05; send the next wake-up message on Claude’s PR once it exists. The agreed protocol above replaces the earlier pending-acknowledgement note.
 
 ## Claude return briefing — 2026-10-05
 
