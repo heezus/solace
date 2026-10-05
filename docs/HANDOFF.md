@@ -6,10 +6,10 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 
 ### Codex — shoreline/crossing fixture
 - **Task:** complete the review-only 48 px fixture for contour-following bank props, both bridge axes, dry-bank seating and aligned road approaches. Branch `codex/visual-overhaul`, draft PR #33. No production integration in this task.
-- **Reserved files:** `docs/art/overhaul/misty-highlands/grounding-studies/shoreline-crossings-study/**`; the study link in `grounding-studies/README.md`. Update only Codex’s own Active work entry and append its design decision/status when needed. Production `art.gd`, `main.gd` and `ui.gd` are not currently being edited for this fixture; any later integration requires a new reservation.
+- **Reserved files:** none; fixture reservation released after publication. Completed work is under `docs/art/overhaul/misty-highlands/grounding-studies/shoreline-crossings-study/`. No production drawing files were changed; later integration requires a new reservation.
 - **Acceptance criteria:** one inspected native Godot capture at 48 px; both wood/stone bridge axes and narrow/broad spans; seated ends and clear approaches; stones/reeds following corners with fixed lighting; focused geometry, fog privacy and world/RNG checks; concise documented result. Keep normal play unchanged and PR #33 draft until Jon signs off on visuals.
 - **Status:** fixture complete for review. Native 48 px capture inspected; opaque deck-edge sampling fixes module gaps, dry-bank seats and road alignment checked. Focused checks, lint/format and error-free graphical capture pass. No production integration or visual approval.
-- **Next action:** publish this review result and its CI status, then release the fixture reservation. Before any further renderer work, record a new scoped task/reservation and check Claude’s current shared-file claims. Ground repetition and water/bank material quality remain unresolved.
+- **Next action:** Claude reviews the published fixture result on PR #33 and checks missing CI scheduling before any merge. At publication GitHub reported no check runs on review head `f8ba8ff`; do not reuse the earlier green result as exact-head validation. Before further renderer work, Codex records a new scoped task/reservation and checks Claude’s shared-file claims. Ground repetition and water/bank material quality remain unresolved.
 
 Claude maintains its own entry here. Jon reports Claude is preparing one bundled gameplay PR for one-click hut interaction, resource-discovery tech visibility, roads through buildings and Hearth upgrade appearance, and will flag necessary drawing-code overlap in `docs/art/requests.md`.
 
@@ -31,7 +31,7 @@ Claude maintains its own entry here. Jon reports Claude is preparing one bundled
 - New image generation must address a specific missing asset in the active deliverable. No open-ended variant generation or delegation unless Jon requests it. When blocked, report what can resume the task; do not burn tokens on unrelated work.
 - No numeric token budget was specified. These are workflow constraints, not an invented token cap. Both teams should flag expected substantial extra work before widening the task.
 
-**Coordination status:** Jon has relayed Claude’s agreement and current bundled gameplay scope. No Claude-owned open PR was visible when Codex checked on 2026-10-05; send the next wake-up message on Claude’s PR once it exists. The agreed protocol above replaces the earlier pending-acknowledgement note.
+**Coordination status:** Jon has relayed Claude’s agreement and current bundled gameplay scope. Claude’s open PR #44 (`oneclick`) is now the wake-up channel; its `main.gd` input-handler change does not overlap the completed drawing fixture. The agreed protocol above replaces the earlier pending-acknowledgement note.
 
 ## Claude return briefing — 2026-10-05
 
