@@ -12,7 +12,7 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 - New image generation must address a specific missing asset in the active deliverable. No open-ended variant generation or delegation unless Jon requests it. When blocked, report what can resume the task; do not burn tokens on unrelated work.
 - No numeric token budget was specified. These are workflow constraints, not an invented token cap. Both teams should flag expected substantial extra work before widening the task.
 
-**Coordination status:** Codex has prepared this protocol and the return briefing. No direct Claude messaging connection is available in the current Codex tools; Claude acknowledgement is pending. Publish this handoff through PR #33 when available, and have Claude record its chosen task/shared-file reservation here.
+**Coordination status:** Codex has prepared this protocol and the return briefing. No direct Claude chat connection is available in the current Codex tools; coordination uses PR #33 and this handoff. Claude acknowledgement is pending; Claude should record its chosen task/shared-file reservation here.
 
 ## Claude return briefing — 2026-10-05
 
@@ -20,7 +20,7 @@ Start from [draft PR #33](https://github.com/heezus/solace/pull/33), branch `cod
 
 ### What is implemented versus under review
 - **Implemented in the PR:** rendered miniature map subjects/items, stable visual variants independent of simulation RNG, four-pose walking, modular wood/stone bridges, continuous terrain rendering, matching HUD/build/selection/research theme, research readability and material-symbol hover identification. These are presentation changes; the PR does not implement the gameplay requests below.
-- **Last published head:** `0bfd64149bbb125e379b4cc72e015b15a7896e3d`. [Exact-head CI run 37319336078](https://github.com/heezus/solace/actions/runs/37319336078) passed import, metadata, strict warnings, logic tests, input play-through and long layout checks. Production art/scripts/tests/scenes/project settings are unchanged since `36239f34d992f8eaccb65ffd5911d5ea31324d9e`; later published commits add isolated review studies/captures.
+- **Last fully CI-validated head:** `0bfd64149bbb125e379b4cc72e015b15a7896e3d`. [Exact-head CI run 37319336078](https://github.com/heezus/solace/actions/runs/37319336078) passed import, metadata, strict warnings, logic tests, input play-through and long layout checks. Production art/scripts/tests/scenes/project settings are unchanged since `36239f34d992f8eaccb65ffd5911d5ea31324d9e`; later published commits add isolated review studies/captures.
 - **Visual target:** [blended regions paintover](art/overhaul/misty-highlands/grounding-studies/blended-regions.png) is AI concept art, **not** a screenshot of a better previous game build. Jon explicitly wants the native game to approach it. The flatter quiet-terrain experiment was withdrawn and archived, not integrated.
 - **Latest published native review:** [sculpted terrain study](art/overhaul/misty-highlands/grounding-studies/sculpted-native-study/README.md), with actual main-scene captures at 48 px and the existing 64 px zoom. Normal play does not load this study. Ground repetition, orthogonal paths and shoreline composition remain unresolved; successful CI does not constitute visual approval.
 - **Current local work, not yet validated/published:** `docs/art/overhaul/misty-highlands/grounding-studies/shoreline-crossings-study/`. Jon requested bridges and rocks oriented relative to water edges. The draft fixture uses separate stone/reed props placed along the blended wet contour, fixed upper-left lighting, bridge entrance clearance, dry-bank end seating and aligned road approaches. Do not treat its output as integrated or approved. Native graphical capture was blocked when automatic approval review became unavailable due to account usage limits; the initial headless attempt cannot produce a viewport image. New draft scripts and atlas require validation before integration.
@@ -33,7 +33,7 @@ The full requirements and acceptance criteria are in [art requests](art/requests
 3. **Roads through buildings:** implement actual network and route continuity through occupied connector cells, including both axes, carts/bridge restrictions, demolition and saves. Codex must not draw a through passage until it is functional.
 4. **Optional Hearth visual milestones:** agree a mapping from existing non-building research/ranks to modest visual improvements. Codex can supply staged art afterward; no new capacity/cost/progression mechanic is authorized by this idea.
 
-Codex continues terrain/shoreline/bridge visual studies and owns their eventual renderer integration. Preserve the 48 px default, existing gameplay footprints and independent visual RNG; discuss any global scale change with Jon and Claude. This briefing is a local documentation update until pushed to PR #33.
+Codex continues terrain/shoreline/bridge visual studies and owns their eventual renderer integration. Preserve the 48 px default, existing gameplay footprints and independent visual RNG; discuss any global scale change with Jon and Claude. This briefing is published through PR #33; newer documentation-only commits require their own CI status check before merge.
 
 ## Ownership
 | Area | Owner | Notes |
