@@ -10,6 +10,8 @@ const LEARN_FIRST := 6
 const BUNDLE := 3
 ## Trips a hut can have queued before Paths & Haulers (the one under way counts).
 const TRIP_QUEUE := 3
+## Walking through a building's cell on a road costs this many times the open road (a road may run through a building).
+const PASSAGE_COST := 2.0
 ## Clicking a working building finishes its cycle now, then it can't be rushed for this long.
 const RUSH_COOLDOWN := 5.0
 ## Gathering by hand is a hold: a ring fills over the tile for HOLD_TIME seconds, then the harvest pops,

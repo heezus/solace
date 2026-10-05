@@ -351,7 +351,7 @@ func _click_tile(p: Vector2i) -> void:
 			_toast(err, 2.0)
 		return
 	if state.town.building_at.has(p):
-		var note := Workers.click(state, state.town.building_at[p])
+		var note := Workers.click(state, state.town.building_at[p], true)
 		if note != "":
 			popups.append({"pos": _tile_center(p), "text": note, "t": 0.0})
 		building_panel.select(p)

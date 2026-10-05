@@ -61,6 +61,8 @@ func _block(stock: Dictionary = {}, done: Array = []) -> Research:
 		_eco.inv[id] = 0
 	for id in stock:
 		_eco.inv[id] = stock[id]
+	for id in _eco.inv:  # every item has been found, so these tests are about requirements, stock and the shard
+		_eco.seen[id] = true
 	return Research.new(_eco, _techs, _shard_seen)
 
 
@@ -348,6 +350,9 @@ func test_sim_shares_the_techs_with_the_blocks() -> void:
 		"requirements"
 	)
 	t.check(not s.tech_tree.tech_visible("star_lore"), "hidden until the shard is seen")
+	for id in Data.ITEM_ORDER:  # everything has been found, so only the Strange Stone is missing
+		s.economy.seen[id] = true
+	s.tech_tree.researched["storytelling"] = true
 	s.shard_seen = true
 	t.check(s.tech_tree.tech_visible("star_lore"), "Sim.shard_seen is what the block reads")
 	t.check(not s.tech_tree.can_research("cordage"), "cordage is unaffordable with nothing in the stockpile")

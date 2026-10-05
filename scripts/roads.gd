@@ -17,6 +17,8 @@ const Kith = preload("res://scripts/kith.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 
 const SIDES := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+## The kinds of building a road can run through (see _passage).
+const PASSAGE_KINDS := ["gatherer", "processor", "house", "shed", "tower", "power"]
 
 
 ## True once a road links building b to a depot.
@@ -151,18 +153,23 @@ static func _cache(s) -> Dictionary:
 
 static func _build(s) -> Dictionary:
 	var net := {}
+	var through := {}  # building cells a road runs through, visited once per network
 	var next_id := 0
 	for start in s.world.roads:
 		if net.has(start):
 			continue
 		var todo: Array = [start]
 		net[start] = next_id
+		through.clear()
 		while not todo.is_empty():
 			var p: Vector2i = todo.pop_back()
 			for n in SIDES:
 				var q: Vector2i = p + n
 				if s.world.roads.has(q) and not net.has(q):
 					net[q] = next_id
+					todo.append(q)
+				elif _passage(s, q) and not through.has(q):
+					through[q] = true  # a building's courtyard: the roads on its other sides are the same network
 					todo.append(q)
 		next_id += 1
 	var at_depot := {}
@@ -229,4 +236,18 @@ static func _road_grid(s, cart: bool) -> AStarGrid2D:
 			continue
 		grid.set_point_solid(p, false)
 		grid.set_point_weight_scale(p, s.pathing.walk_cost(p))
+	for p in s.town.building_at:  # a road runs through a building's cell, slower than on the open road
+		if _passage(s, p):
+			grid.set_point_solid(p, false)
+			grid.set_point_weight_scale(p, s.pathing.walk_cost(p) * Data.PASSAGE_COST)
 	return grid
+
+
+## True for a building's cell a road can run through: a hut, workshop, house, shed, tower or water wheel. A road ends at
+## the Hearth and Storehouses (depots), fields, monuments and bridges. Walking through one costs Data.PASSAGE_COST times
+## the open road.
+static func _passage(s, p: Vector2i) -> bool:
+	if not s.town.building_at.has(p):
+		return false
+	var b: Dictionary = s.town.buildings[s.town.building_at[p]]
+	return Data.BUILDINGS[b["type"]]["kind"] in PASSAGE_KINDS

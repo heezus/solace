@@ -96,7 +96,7 @@ const GATE_COUNT := "%d of %d done"
 const GATE_COST := "COST"
 
 # --- "What to learn next" (scripts/tech_next.gd, scripts/tech_next_view.gd) ---
-const NEXT_NONE := "Nothing new to learn right now. Look at the whole board to see what is left."
+const NEXT_NONE := "Nothing new to learn yet. Gather something new by hand, like flax or clay, and more ideas will show up."
 const NEXT_ALL_DONE := "Every tech in this age is discovered."
 const NEXT_SUGGESTED := "Suggested"
 ## The rule behind "Suggested", in the badge's tooltip. Keep it in step with TechNext.suggested().
@@ -289,7 +289,7 @@ const FIELD_GAIN := "Each field adds +%d%% to the hut's speed: this one is worth
 const FIELD_GAIN_FIRST := "It is the only %s tile this hut has: worth about +%s %s a minute, each extra one adds +%d%% speed."
 const FIELD_GAIN_FULL := "The hut already has %d tiles in reach, the most that help: this field adds nothing to it."  # tiles
 const TRIPS_HINT := (
-	"Click the hut to send its %s for a bundle: until a road links it, it works only when you click it."
+	"Click the hut to send its %s out for a round of bundles: until a road links it, it works only when you click it."
 	+ " Trips waiting: %d of %d."
 )  # one
 ## Heading the click hint of a food hut while its food is comfortable (formatted with PEOPLE["many"]).
