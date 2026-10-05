@@ -127,7 +127,7 @@ func test_grounding_masks(t) -> void:
 	t.check(ground._image.get_data() == hidden, "hidden woods and foundations do not leak through ground")
 	fog.reveal_all()
 	ground._rebuild(s)
-	var pixel := Vector2i(2, 2) * Ground.SAMPLES + Vector2i(8, 12)
+	var pixel := Vector2i(2, 2) * Ground.SAMPLES + Vector2i(8, 18)
 	var center := ground._image.get_pixelv(pixel)
 	t.check(center.b > 0.5 and center.a > 0.8, "visible woods blend beneath a worn foundation")
 	var outer := Vector2i(3, 2) * Ground.SAMPLES + Vector2i(0, 12)

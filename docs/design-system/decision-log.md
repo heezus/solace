@@ -475,3 +475,8 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Replace the oversized ground experiment with small-scale generated meadow and woodland materials plus calmer river water. Blend woodland beneath revealed tree groups, without adding biome state or consuming simulation RNG.
 - Add irregular worn foundation aprons and tight contact shadows beneath buildings and map subjects; paths use softer verges and local coloration. Keep subject sprites, footprints, pathing and resource rules unchanged.
 - Validate fog privacy, ground refresh after clearing/demolition, apron footprint changes and road seam continuity. Functional roads through buildings remain a separate Claude gameplay request.
+
+## 2026-10-05: Hold the playable terrain pass for visual quality (PR #33)
+- Codex acknowledged Jon’s report that the playable terrain looks weaker than the approved paintover. PR #33 stays in draft; technical checks do not constitute visual approval.
+- Corrected a concrete grounding error: the subject textures are bottom-anchored, but extra shadows and worn aprons had been placed near their centers. Move contact treatment to the feet/foundation baseline without altering sprites or gameplay.
+- The current materials and road silhouettes still need an art pass against the blended reference. The miniature subjects remain approved; do not replace them to compensate for weak terrain.

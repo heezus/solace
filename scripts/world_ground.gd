@@ -174,5 +174,7 @@ func _aprons(s, tile: Vector2i) -> Array[Vector4]:
 				continue
 			var b: Dictionary = s.town.buildings[s.town.building_at[q]]
 			var hearth: bool = b["type"] == "camp"
-			result.append(Vector4(q.x + 0.5, q.y + 0.72, 1.0 if hearth else 0.56, 0.65 if hearth else 0.38))
+			result.append(
+				Vector4(q.x + 0.5, q.y + (1.15 if hearth else 0.94), 1.0 if hearth else 0.56, 0.52 if hearth else 0.28)
+			)
 	return result

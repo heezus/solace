@@ -44,3 +44,7 @@ Actual main-scene captures of the 2026-10-05 playable terrain and interface pass
 The [review paintovers](../grounding-studies/README.md) include decorative shoreline details beyond this first runtime pass. No new biome rules, map-generation logic, global scale change or road-through-building mechanics are implemented. The existing route semantics still apply. Native interface surfaces now use quiet charcoal green, ivory, brass, moss and ember; [specification and UI captures](../../../../design-system/mockups/miniature-interface.md).
 
 Validation: strict editor warnings on 117 scripts; import/metadata; GDScript lint and format; visual regressions and UI behavior/contrast; graphical input pass to Bronze Dawn (5,280 frames, 17.9 simulated minutes); layout pass (1,015 HUD checks, 20.5 simulated minutes, zero scale changes/problems). CI status is on PR #33.
+
+### Visual review status
+
+Jon found the playable translation visually weaker than the reviewed paintover. PR #33 is in draft. The technical prototype is not visually approved: repetitive ground detail, strip-like road silhouettes and insufficient local grounding remain concerns. Contact shadows/aprons were corrected to the bottom-anchored sprite baseline after this review; the captures above show the initial test, not that subsequent correction. Retain the approved subject art and use the blended paintover as the visual target.

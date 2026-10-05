@@ -813,7 +813,7 @@ func _draw_building(b: Dictionary) -> void:
 	var k := TILE / Art.DESIGN
 	var r := Overlays.footprint(state, p)  # a tile, or the Hearth's 2x2
 	var working: bool = b["status"] == "Working"
-	Art.contact_shadow(self, r.get_center() + Vector2(0, r.size.y * 0.30), r.size * Vector2(0.39, 0.10))
+	Art.contact_shadow(self, Vector2(r.get_center().x, r.end.y - 2.0), r.size * Vector2(0.38, 0.055))
 	Art.map_building(self, b["type"], r, working, time)
 	if b["type"] == "shard_cairn":
 		Art.cairn_glow(self, r, state.sky.approach(), time)

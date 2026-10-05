@@ -185,7 +185,7 @@ static func tech_icon(ci: CanvasItem, icon: String, r: Rect2, time: float) -> vo
 static func map_feature(ci: CanvasItem, t: String, c: Vector2, p: Vector2i, time: float, k: float) -> void:
 	ci.draw_set_transform(c, 0.0, Vector2(k, k))
 	if t not in ["grass", "river", ""]:
-		contact_shadow(ci, Vector2(0, 9), Vector2(10, 3.4))
+		contact_shadow(ci, Vector2(0, 14), Vector2(10, 2.5))
 	feature(ci, t, Vector2.ZERO, p, time)
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
@@ -488,4 +488,4 @@ static func contact_shadow(ci: CanvasItem, center: Vector2, radius: Vector2) -> 
 		var scale := 1.0 - layer * 0.18
 		for i in 24:
 			points.append(center + Vector2(cos(TAU * i / 24.0), sin(TAU * i / 24.0)) * radius * scale)
-		ci.draw_colored_polygon(points, Color(0.08, 0.12, 0.09, 0.05 + layer * 0.025))
+		ci.draw_colored_polygon(points, Color(0.08, 0.12, 0.09, 0.07 + layer * 0.035))
