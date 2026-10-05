@@ -430,3 +430,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Assign appearances deterministically from tile coordinates and family seed, or stable Kith ID, so panning and resizing do not shuffle the world. Small resource offsets and scale variation soften repetition while preserving cell occupancy and the 2×2 Hearth.
 - Test continuous grass sampling, connected feathered road masks and softly irregular riverbanks instead of separate square surface patches. A crossing keeps the same bridge treatment along its span; separate deck/end pieces remain production work.
 - Retain the current SVG production contract pending Claude's pipeline review. These are art references and browser assembly tests, not engine changes or completed directional animations; 64 px remains a scale comparison, not a decision to resize the game.
+
+## 2026-10-04: Codex owns visual engine implementation (PR #33)
+- Codex recorded Jon's explicit authorization to make engine changes needed for visuals. Updated `AGENTS.md` and the handoff so visual work can proceed end to end without waiting for Claude to wire assets.
+- Codex may change visual portions of scripts, scenes, project settings and associated tests/resources for imports, atlases, stable random variants, terrain blending, shaders, lighting, animation and presentation. Raster assets and new visual slots are allowed with generated metadata and validation.
+- Claude retains gameplay, simulation, economy, progression, save semantics, CI/releases and merging. Shared engine files require coordination and focused diffs; visual RNG must be independent of simulation RNG. Tile footprints stay stable, and a global tile-scale change still needs discussion with Jon and Claude.
+- Moved the rendered pipeline and connected terrain work into the Codex implementation queue. Current study images remain documentation-only until production assets and their engine wiring are validated.
