@@ -21,16 +21,16 @@ const TechLayout = preload("res://scripts/tech_layout.gd")
 const Ranks = preload("res://scripts/ranks.gd")
 const Rules = preload("res://scripts/rules.gd")
 
-const MET := Color("c9b59b")
-const NEEDED := Color("8a6d5a")
-const GOLD := Color("ffd166")
+const MET := Ui.TEXT_DIM
+const NEEDED := Ui.EDGE
+const GOLD := Ui.HIGHLIGHT
 const DONE_BG := Ui.CARD_DONE
 const READY_BG := Ui.CARD
 const LOCKED_BG := Ui.CARD_LOCKED
-const LOCKED_TEXT := Color("b5a08a")
-const HIDDEN_EDGE := Color("c9b59b")
-const GATE := Color("e3a857")
-const GATE_BG := Color("3a2f1f")
+const LOCKED_TEXT := Ui.TEXT_DIM
+const HIDDEN_EDGE := Ui.TEXT_DIM
+const GATE := Ui.HIGHLIGHT
+const GATE_BG := Ui.BAR
 
 const MIN_ZOOM := 0.25  # a floor for the fit, so a tiny window never divides by nothing
 const MAX_ZOOM := 2.0
@@ -430,8 +430,8 @@ func _draw_card(tech: String) -> void:
 	var bg := DONE_BG if done else (READY_BG if open else LOCKED_BG)
 	var box := StyleBoxFlat.new()
 	box.bg_color = Color(bg, a)
-	box.border_color = Color(GOLD if is_ready else Art.OUTLINE, a)
-	box.set_border_width_all(3 if is_ready or not t.get("side", false) else 2)
+	box.border_color = Color(GOLD if is_ready else Ui.EDGE, a)
+	box.set_border_width_all(2 if is_ready else 1)
 	box.set_corner_radius_all(6)
 	draw_style_box(box, sr)
 	var pad := 6.0 * clampf(zoom, 0.8, 1.3)
@@ -439,12 +439,12 @@ func _draw_card(tech: String) -> void:
 	if zoom >= ICON_ZOOM:
 		var side := minf(sr.size.y - 8.0, 24.0 * zoom)
 		var icon := Rect2(Vector2(x, sr.position.y + (sr.size.y - side) / 2.0 - 1.0), Vector2(side, side))
-		draw_rect(icon, Color(0.13, 0.08, 0.06, a))
+		draw_rect(icon, Color(Ui.BAR, a))
 		Art.tech_icon(self, t["icon"], icon, 0.0)
 		if not open and not done:
-			draw_rect(icon, Color(0.13, 0.09, 0.07, 0.55))  # locked: washed out
+			draw_rect(icon, Color(Ui.BAR, 0.55))  # locked: washed out
 		if dim:
-			draw_rect(icon, Color(0.13, 0.08, 0.06, 0.75))
+			draw_rect(icon, Color(Ui.BAR, 0.75))
 		draw_rect(icon, Color(Art.OUTLINE, a), false, 1.5)
 		x += side + pad
 	var ranked := Ranks.has_ranks(tech)
@@ -531,7 +531,7 @@ func _draw_gate(tech: String, sr: Rect2, a: float) -> void:
 	var is_ready := state.tech_tree.can_research(tech)
 	var box := StyleBoxFlat.new()
 	box.bg_color = Color(GATE_BG, a)
-	box.border_color = Color(GOLD if is_ready else Art.OUTLINE, a)
+	box.border_color = Color(GOLD if is_ready else Ui.EDGE, a)
 	box.set_border_width_all(3)
 	box.set_corner_radius_all(8)
 	draw_style_box(box, sr)

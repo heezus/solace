@@ -41,6 +41,7 @@ func run(runner) -> void:
 	test_the_bar_hides_the_food_note_until_a_hut_and_a_dwelling_stand()
 	test_a_building_waiting_for_kith_points_at_the_fix()
 	test_the_food_flash_stays_legible()
+	test_interface_text_stays_legible()
 	test_the_goal_list_shows_the_current_goal_and_the_next()
 	test_every_skill_text_says_what_they_gather()
 
@@ -523,3 +524,12 @@ func test_a_row_of_buildings_gets_alert_badges_that_never_overlap() -> void:
 		var problems := badge_problems(s)
 		t.check(problems.is_empty(), "at ui scale %.2f: %s" % [k, problems])
 	Art.ui_k = keep
+
+
+## Small HUD text must remain legible on all shared surfaces, including selected controls.
+func test_interface_text_stays_legible() -> void:
+	for bg in [Ui.BAR, Ui.PANEL, Ui.CARD, Ui.CARD_LOCKED, Ui.CARD_DONE, Ui.SELECTED, Ui.HOVER]:
+		t.check(Ui.contrast(Ui.TEXT, bg) >= 4.5, "primary interface text meets 4.5:1")
+		t.check(Ui.contrast(Ui.TEXT_DIM, bg) >= 4.5, "secondary interface text meets 4.5:1")
+	t.check(Ui.contrast(Ui.LINE, Ui.ACTION) >= 4.5, "primary action label meets 4.5:1")
+	t.check(Ui.contrast(Ui.SHORT, Ui.CARD) >= 4.5, "shortfall text meets 4.5:1")

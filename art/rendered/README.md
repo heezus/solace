@@ -15,3 +15,9 @@ See the [engine integration](../../docs/art/overhaul/misty-highlands/engine/READ
 `terrain.gdshader` samples detail in world space at viewport resolution, independently of the cached topology masks. Mirrored UV sampling gives continuous wrap at the source-image boundaries; secondary sampling reduces obvious reflection/repeat patterns. It animates shallow reflections and water flow. Road materials and shore breakup are world anchored, so camera movement does not reshuffle them.
 
 The crossing atlas has twelve modules: three horizontal wood, three horizontal stone, three vertical wood and three vertical stone. Bounds exclude unrelated atlas cells. The engine handles single-cell crossings by combining the two end halves; longer spans use fixed-scale ends and repeatable center modules.
+
+## Blended grounding pass, 2026-10-05
+
+`meadow-ground.png`, `woodland-ground.png` and `calm-river.png` are new unmodified built-in imagegen outputs guided by the reviewed blended paintover. Exact prompts and original sources: [grounding-prompts.json](grounding-prompts.json). Godot import metadata accompanies each image. Earlier materials remain for provenance.
+
+`world_ground.gd` now caches an RGBA presentation mask: R water, G road wear, B revealed-tree density, A visible foundation wear. The shader blends visual regions and locally colored paths; foundation aprons and native contact shadows anchor subjects without changing game state. See actual captures in the [engine integration](../../docs/art/overhaul/misty-highlands/engine/README.md).

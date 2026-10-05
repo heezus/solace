@@ -14,7 +14,7 @@ const Rules = preload("res://scripts/rules.gd")
 const TechNext = preload("res://scripts/tech_next.gd")
 
 const CARD_W := 396.0
-const GOLD := Color("ffd166")
+const GOLD := Ui.HIGHLIGHT
 
 var state: Sim
 var era := 1
@@ -111,8 +111,8 @@ func _card(tech: String, is_pick: bool, why: String) -> PanelContainer:
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(CARD_W, 0)
 	var style := Ui.panel_style(Ui.CARD, 12)
-	style.border_color = GOLD if is_pick else Art.OUTLINE
-	style.set_border_width_all(4 if is_pick else 2)
+	style.border_color = GOLD if is_pick else Ui.EDGE
+	style.set_border_width_all(2 if is_pick else 1)
 	card.add_theme_stylebox_override("panel", style)
 	card.set_meta("tech", tech)
 	var v := VBoxContainer.new()

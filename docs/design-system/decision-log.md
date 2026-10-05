@@ -448,3 +448,30 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Reduced grass scale/contrast after reviewing actual game captures. Added flowing reflections, river-depth shading, damp banks and stable shoreline breakup. Road texture follows connected, slightly offset centers; gameplay cells, fog, pathing and global RNG remain unchanged.
 - Replaced span-wide bridge stretching with fixed-scale wood/stone modules, separate bank ends and distinct horizontal/vertical art. Added single-cell end handling and tests for both axes, multi-cell span anchors and hidden-road privacy.
 - Saved exact built-in generation prompts and unmodified sources, refreshed real Godot captures, and labeled the separate crossing fixture as staged. Retained earlier assets for provenance and comparison.
+
+## 2026-10-04: Interface for the rendered miniature world (PR #33)
+- Codex brought the HUD, research board, build controls and selection panels into Jon’s accepted grounded, atmospheric miniature direction.
+- Use charcoal green surfaces, ivory text, restrained brass action emphasis, moss success and ember warnings; avoid decorative textures behind small text.
+- Give the current goal and recommended research a shared brass emphasis; keep demolish quiet until activated.
+- Preserve existing controls, layout behavior and map scale. Verify small-text contrast and actual Godot layout/input passes; broader UX restructuring remains separate work.
+
+## 2026-10-04: Review terrain grounding before further integration (PR #33)
+- Codex followed Jon’s request to pause terrain integration and show paintovers beside the approved subjects first.
+- The oversized grass/material experiment was reverted from the production renderer. Quiet meadow and worn woodland-floor studies compare scale, foundation contact, softer paths and shaded riverbanks.
+- These are review concepts, not approved terrain or pixel-exact gameplay captures. Record the chosen direction before wiring another terrain revision.
+
+## 2026-10-04: Study blended landscape regions (PR #33)
+- Codex made a combined paintover after Jon liked both meadow and woodland treatments and requested a biome study.
+- Place meadow around settlement clearings, woodland soil beneath tree groups and damp ground beside water; use irregular transitions and locally colored paths for a coherent landscape.
+- This is a visual proposal for review. No biome gameplay rules or production terrain changes are included. The paintover and exact prompt are saved with the grounding studies.
+
+## 2026-10-05: Buildings should connect through roads (PR #33)
+- Codex recorded Jon’s requirement that buildings join incoming and outgoing roads and support through travel, instead of only acting as destinations.
+- The visual design should express the route with entrance aprons and an open yard or service passage, preserving the miniature subjects and their footprints.
+- Current road topology does not support this behavior. Gameplay connectivity, overlap, demolition and save/load semantics are requested from Claude in the art handoff queue; no gameplay implementation is claimed here.
+
+## 2026-10-05: Translate the blended terrain study into playable layers (PR #33)
+- Codex continued the playable terrain test after Jon accepted the blended meadow/woodland/riverbank reference.
+- Replace the oversized ground experiment with small-scale generated meadow and woodland materials plus calmer river water. Blend woodland beneath revealed tree groups, without adding biome state or consuming simulation RNG.
+- Add irregular worn foundation aprons and tight contact shadows beneath buildings and map subjects; paths use softer verges and local coloration. Keep subject sprites, footprints, pathing and resource rules unchanged.
+- Validate fog privacy, ground refresh after clearing/demolition, apron footprint changes and road seam continuity. Functional roads through buildings remain a separate Claude gameplay request.

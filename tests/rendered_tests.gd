@@ -9,6 +9,8 @@ const Bridge = preload("res://scripts/bridge_art.gd")
 
 
 func run(t) -> void:
+	test_grounding_masks(t)
+	test_roads_join_across_cells(t)
 	var choices := {}
 	for y in 12:
 		for x in 18:
@@ -82,3 +84,62 @@ func run(t) -> void:
 	bridge_world.roads[Vector2i(3, 2)] = true
 	var short := Bridge.span(bridge_state, Vector2i(2, 2))
 	t.check(short["length"] == 1 and short["axis"] == Vector2i.RIGHT, "single-cell bridge follows its bank roads")
+
+
+## Visual meanders must remain joined at cell boundaries in either axis.
+func test_roads_join_across_cells(t) -> void:
+	var world := World.new(6, 5)
+	var fog := Fog.new()
+	fog.setup(6, 5)
+	fog.reveal_all()
+	var s := {"world": world, "fog": fog, "town": {"building_at": {}}}
+	var ground := Ground.new()
+	for map_seed in 20:
+		world.map_seed = map_seed
+		for side in [Vector2i.RIGHT, Vector2i.DOWN]:
+			var start := Vector2i(1, 1)
+			world.roads = {start: true, start + side: true}
+			var a := ground._road_center(start, map_seed)
+			var b := ground._road_center(start + side, map_seed)
+			var axis := 0 if side == Vector2i.RIGHT else 1
+			var f := (2.0 - a[axis]) / (b[axis] - a[axis])
+			var seam := a.lerp(b, f)
+			for offset in [-0.001, 0.001]:
+				t.check(ground._road(s, seam + Vector2(side) * offset) > 0.99, "meandering road joins both cell edges")
+
+
+## Ground regions and foundation wear must be private, removable and independent of gameplay.
+func test_grounding_masks(t) -> void:
+	var world := World.new(6, 5)
+	var fog := Fog.new()
+	fog.setup(6, 5)
+	var town := {"building_at": {}, "buildings": []}
+	var s := {"world": world, "fog": fog, "town": town, "tech_tree": {"researched": {}}}
+	var ground := Ground.new()
+	ground._rebuild(s)
+	var hidden := ground._image.get_data()
+	for y in range(1, 4):
+		for x in range(1, 4):
+			world.set_tile(Vector2i(x, y), "tree")
+	town.buildings.append({"type": "camp"})
+	town.building_at[Vector2i(2, 2)] = 0
+	ground._rebuild(s)
+	t.check(ground._image.get_data() == hidden, "hidden woods and foundations do not leak through ground")
+	fog.reveal_all()
+	ground._rebuild(s)
+	var pixel := Vector2i(2, 2) * Ground.SAMPLES + Vector2i(8, 12)
+	var center := ground._image.get_pixelv(pixel)
+	t.check(center.b > 0.5 and center.a > 0.8, "visible woods blend beneath a worn foundation")
+	var outer := Vector2i(3, 2) * Ground.SAMPLES + Vector2i(0, 12)
+	var hearth_wear := ground._image.get_pixelv(outer).a
+	town.buildings[0]["type"] = "gatherers_hut"
+	ground._rebuild(s)
+	t.check(ground._image.get_pixelv(outer).a < hearth_wear, "apron follows visual building footprint changes")
+	town.building_at.clear()
+	ground._rebuild(s)
+	t.check(ground._image.get_pixelv(pixel).a == 0.0, "demolition removes foundation wear")
+	for y in range(1, 4):
+		for x in range(1, 4):
+			world.set_tile(Vector2i(x, y), "grass")
+	ground._rebuild(s)
+	t.check(ground._image.get_pixelv(pixel).b == 0.0, "clearing trees refreshes woodland ground")

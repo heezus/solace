@@ -5,6 +5,7 @@ uniform sampler2D terrain_mask : filter_linear, repeat_disable;
 uniform sampler2D turf_texture : source_color, filter_linear, repeat_enable;
 uniform sampler2D water_texture : source_color, filter_linear, repeat_enable;
 uniform sampler2D earth_texture : source_color, filter_linear, repeat_enable;
+uniform sampler2D woodland_texture : source_color, filter_linear, repeat_enable;
 uniform vec2 world_size;
 uniform float map_seed;
 uniform bool stone_paths = false;
@@ -31,43 +32,46 @@ void vertex() {
 }
 
 void fragment() {
-	vec3 masks = texture(terrain_mask, map_px / world_size).rgb;
-	vec2 detail_uv = map_px / 300.0;
-	vec3 turf = texture(turf_texture, mirrored(detail_uv)).rgb;
-	vec3 secondary = texture(turf_texture, mirrored(detail_uv.yx * 0.73 + vec2(0.37, 0.19))).rgb;
-	turf = mix(turf, secondary, 0.22);
-	turf = (turf - vec3(0.26, 0.34, 0.20)) * 0.52 + vec3(0.28, 0.37, 0.28);
-	turf *= 0.92 + noise_field(map_px / 260.0) * 0.13;
-
-	float edge_noise = (noise_field(map_px / 9.0) - 0.5) * 0.035
-		+ (noise_field(map_px / 57.0) - 0.5) * 0.18;
-	float wet = masks.r + edge_noise;
-	float river = smoothstep(0.465, 0.535, wet);
-	float damp = smoothstep(0.25, 0.44, wet) * (1.0 - river);
-	float bank = smoothstep(0.35, 0.455, wet) * (1.0 - smoothstep(0.485, 0.54, wet));
-	vec3 earth = texture(earth_texture, mirrored(map_px / 260.0)).rgb;
-	turf = mix(turf, turf * vec3(0.66, 0.72, 0.69), damp * 0.7);
-	turf = mix(turf, earth * vec3(0.76, 0.81, 0.76), bank * 0.75);
-
-	vec2 flow = vec2(0.0018 * sin(TIME * 0.21), -TIME * 0.006);
-	vec3 water = texture(water_texture, mirrored(map_px / 420.0 + flow)).rgb;
-	vec3 reflection = texture(water_texture, mirrored(map_px.yx / 690.0 + vec2(TIME * 0.002, 0.27))).rgb;
-	water = mix(water, reflection, 0.22);
+	vec2 uv = map_px / world_size;
+	vec4 masks = texture(terrain_mask, uv);
+	vec3 meadow = texture(turf_texture, mirrored(map_px / 320.0)).rgb;
+	vec3 woodland = texture(woodland_texture, mirrored(map_px / 350.0)).rgb;
+	float forest = smoothstep(0.12, 0.72, masks.b + (noise_field(map_px / 75.0) - 0.5) * 0.14);
+	vec3 ground = mix(meadow * vec3(0.90, 0.96, 0.91), woodland * vec3(0.86, 0.92, 0.89), forest);
+	ground *= 0.96 + noise_field(map_px / 300.0) * 0.08;
+	vec3 earth = texture(earth_texture, mirrored(map_px / 350.0)).rgb;
+	vec3 road = mix(earth, vec3(0.56, 0.46, 0.32), 0.65);
+	road = mix(road, road * vec3(0.76, 0.83, 0.80), forest * 0.65);
+	// Worn aprons are independent of road topology: they never pretend to connect networks.
+	ground = mix(ground, road, masks.a * 0.72);
+	float wet = masks.r + (noise_field(map_px / 14.0) - 0.5) * 0.035 + (noise_field(map_px / 65.0) - 0.5) * 0.14;
+	float river = smoothstep(0.475, 0.535, wet);
+	float damp = smoothstep(0.25, 0.45, wet) * (1.0 - river);
+	float bank = smoothstep(0.38, 0.46, wet) * (1.0 - smoothstep(0.49, 0.55, wet));
+	vec2 grad = vec2(texture(terrain_mask, uv + vec2(3.0 / world_size.x, 0.0)).r - texture(terrain_mask, uv - vec2(3.0 / world_size.x, 0.0)).r,
+		texture(terrain_mask, uv + vec2(0.0, 3.0 / world_size.y)).r - texture(terrain_mask, uv - vec2(0.0, 3.0 / world_size.y)).r);
+	float light = clamp(dot(grad * 8.0, vec2(-0.6, -0.8)), -0.25, 0.25);
+	ground = mix(ground, ground * vec3(0.70, 0.78, 0.73), damp * 0.65);
+	ground = mix(ground, earth * vec3(0.75, 0.82, 0.77) * (1.0 + light), bank * 0.85);
+	vec2 flow = vec2(sin(TIME * 0.19) * 0.001, -TIME * 0.0035);
+	vec3 water = texture(water_texture, mirrored(map_px / 440.0 + flow)).rgb;
 	float depth = smoothstep(0.54, 0.96, wet);
-	water = mix(water * vec3(1.02, 1.12, 1.07), water * vec3(0.63, 0.77, 0.84), depth * 0.62);
-	float glint = smoothstep(0.63, 0.82, reflection.g) * (0.55 + 0.45 * sin(TIME * 0.7 + map_px.y * 0.05));
-	water += vec3(0.035, 0.06, 0.065) * glint;
-	float shore = (1.0 - smoothstep(0.025, 0.065, abs(wet - 0.525))) * (0.12 + 0.16 * noise_field(map_px / 14.0 + vec2(0.0, TIME * 0.18)));
-	water += vec3(0.15, 0.2, 0.18) * shore;
-	vec3 color = mix(turf, water, river);
-
-	float path = smoothstep(0.1, 0.86, masks.g + (noise_field(map_px / 6.0) - 0.5) * 0.19);
-	path *= 1.0 - smoothstep(0.42, 0.54, wet);
-	vec3 road = earth * vec3(0.91, 0.88, 0.81);
+	water = mix(water * vec3(0.98, 1.05, 0.94), water * vec3(0.54, 0.75, 0.79), depth * 0.70);
+	float contact = (1.0 - smoothstep(0.54, 0.62, wet)) * river;
+	water *= 1.0 - contact * 0.20;
+	float ripple = sin(map_px.y * 0.10 + sin(map_px.x * 0.025) * 2.0 - TIME * 0.7);
+	float shore = (1.0 - smoothstep(0.012, 0.045, abs(wet - 0.55))) * (0.12 + ripple * 0.07);
+	water += vec3(0.10, 0.16, 0.15) * shore;
+	vec3 color = mix(ground, water, river);
+	float wear = masks.g + (noise_field(map_px / 17.0) - 0.5) * 0.23;
+	float verge = smoothstep(0.025, 0.48, wear);
+	float path = smoothstep(0.30, 0.91, wear);
+	float dry = 1.0 - smoothstep(0.42, 0.54, wet);
 	if (stone_paths) {
-		float joints = smoothstep(0.055, 0.12, min(fract(map_px.x / 11.0), fract(map_px.y / 9.0)));
-		road = mix(road * 0.68, road * vec3(0.97, 1.05, 1.09), joints);
+		float joints = smoothstep(0.05, 0.13, min(fract(map_px.x / 13.0), fract(map_px.y / 11.0)));
+		road = mix(road * 0.72, road * vec3(0.97, 1.05, 1.09), joints);
 	}
-	color = mix(color, road, path * 0.94);
+	color = mix(color, mix(ground, road, 0.3), verge * dry * 0.6);
+	color = mix(color, road, path * dry * 0.96);
 	COLOR = vec4(color, 1.0);
 }

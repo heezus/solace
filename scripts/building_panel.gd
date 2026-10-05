@@ -21,7 +21,7 @@ const HutFocus = preload("res://scripts/hut_focus.gd")
 const TradePicker = preload("res://scripts/trade_picker.gd")
 const PatchText = preload("res://scripts/patch_text.gd")
 
-const INSET := Color("3b2a24")  # the `ui-bar` cocoa, sunk into the `ui-panel` card
+const INSET := Ui.BAR
 
 var state: Sim
 var pos := Vector2i(-1, -1)  # the selected building's tile
@@ -139,7 +139,7 @@ func _button(text: String, bg: Color, border: Color) -> Button:
 	style.set_border_width_all(2)
 	b.add_theme_stylebox_override("normal", style)
 	var hover := style.duplicate()
-	hover.bg_color = bg.lightened(0.15)
+	hover.bg_color = bg.lightened(0.06)
 	b.add_theme_stylebox_override("hover", hover)
 	return b
 

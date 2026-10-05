@@ -8,3 +8,5 @@ These are specs for the screens in the Solace visual design canvas (https://clau
 - [tech-tree-v4.md](tech-tree-v4.md): approved. Logical link fixes and a cleaner lane order for the 28 built techs, in the board B style.
 - [look-and-scale.md](look-and-scale.md): approved. Tile and sprite scale, map framing, warmer UI palette and a four-accent set, from the newcomer playtest.
 - [units-and-buildings.md](units-and-buildings.md): every sprite, including Bronze Dawn. The source SVGs are in [sprites/](sprites/).
+
+- [miniature-interface.md](miniature-interface.md): field-journal theme for the rendered world, with actual Godot previews.
