@@ -117,7 +117,7 @@ static func next_gather_tile(s, k: Dictionary, b: Dictionary) -> Vector2i:
 
 ## A click on building i. Before Paths & Haulers a hut sends out a trip and a workshop is loaded and
 ## emptied by hand; a working building is also rushed. Returns a short note for the map, or "".
-static func click(s, i: int) -> String:
+static func click(s, i: int, full := false) -> String:
 	var b: Dictionary = s.town.buildings[i]
 	var kind: String = Data.BUILDINGS[b["type"]]["kind"]
 	if not Buildings.needs_worker(b):
@@ -126,7 +126,7 @@ static func click(s, i: int) -> String:
 		var held: int = Buildings.buffered(b["out"])
 		s.town.haul(i)
 		if kind == "gatherer":
-			var note := dispatch(s, i)
+			var note := dispatch(s, i, full)
 			return note if held == 0 else "+%d · %s" % [held, note]
 	if rush(s, i):
 		return "Rushed!"
@@ -135,15 +135,16 @@ static func click(s, i: int) -> String:
 	return ""
 
 
-## Queue one trip at hut i (up to Data.TRIP_QUEUE). Returns what happened, for the map.
-static func dispatch(s, i: int) -> String:
+## Queue one trip at hut i (up to Data.TRIP_QUEUE). With `full`, a hut with nothing waiting gets all of them, so one
+## click from the player sends the Kith out for a whole round. Returns what happened, for the map.
+static func dispatch(s, i: int, full := false) -> String:
 	var b: Dictionary = s.town.buildings[i]
 	if not s.people.knows_focus(b):
 		return "Nothing learned yet: %s" % teach_note(s, b)
 	if b["trips"] >= Data.TRIP_QUEUE:
 		return "Trips full (%d)" % Data.TRIP_QUEUE
-	b["trips"] += 1
-	return "Trip %d/%d" % [b["trips"], Data.TRIP_QUEUE]
+	b["trips"] = Data.TRIP_QUEUE if full and b["trips"] == 0 else b["trips"] + 1
+	return "Trip%s %d/%d" % ["s" if full and b["trips"] == Data.TRIP_QUEUE else "", b["trips"], Data.TRIP_QUEUE]
 
 
 ## What a hut needs before it can work: its focus taught by hand, or something in reach to focus on.

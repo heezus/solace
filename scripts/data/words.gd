@@ -289,7 +289,7 @@ const FIELD_GAIN := "Each field adds +%d%% to the hut's speed: this one is worth
 const FIELD_GAIN_FIRST := "It is the only %s tile this hut has: worth about +%s %s a minute, each extra one adds +%d%% speed."
 const FIELD_GAIN_FULL := "The hut already has %d tiles in reach, the most that help: this field adds nothing to it."  # tiles
 const TRIPS_HINT := (
-	"Click the hut to send its %s for a bundle: until a road links it, it works only when you click it."
+	"Click the hut to send its %s out for a round of bundles: until a road links it, it works only when you click it."
 	+ " Trips waiting: %d of %d."
 )  # one
 ## Heading the click hint of a food hut while its food is comfortable (formatted with PEOPLE["many"]).

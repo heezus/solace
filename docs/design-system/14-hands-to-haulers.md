@@ -13,7 +13,7 @@ Each resource (Wood, Stone, Fiber from Flax, Berries, Flint, Clay, Grain) moves 
 |---|---|---|---|
 | 1. **Hands** | **Hold** on a resource tile | A progress ring fills (0.8s base). When it completes you get +yield, and it repeats while you keep holding | Harvest that resource 10 times (6 for the very first one). A Kith has watched and learned it (teach by doing, file 12) |
 | 2. **Taught** | Build a hut for that resource | Its hut is unlocked, and the toast says "Aro can gather Wood now" | Place the hut |
-| 3. **Dispatched** | Click the hut | Its Kith walks out, gathers a **bundle** (3x your click yield) and carries it back. One click is one trip. Clicking again while the Kith is out queues up to 3 trips | Research Paths & Haulers |
+| 3. **Dispatched** | Click the hut | Its Kith walks out, gathers a **bundle** (3x your click yield) and carries it back. One click from the player on an idle hut queues a whole round of 3 trips (2026-10-05, Jon: it took three clicks); a hut with trips waiting takes one more per click, up to 3. The pacing bots still click once per trip | Research Paths & Haulers |
 | 4. **Automated** | Lay roads, then nothing, or click to **rush** | Huts loop on their own and haulers move the goods. Clicking a working building **rushes** it: it finishes the current cycle instantly (5s cooldown per building) | Done |
 
 Clicking never stops mattering: it goes from gathering, to dispatching, to rushing. In an idle game the click is the throttle.
