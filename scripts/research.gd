@@ -21,6 +21,8 @@ var queue: Array = []  # the next techs on the way there, researched as soon as 
 var _economy: Economy
 var _hidden_shown: Callable  # () -> bool: true once hidden techs are on show (the Strange Stone was clicked)
 var _extra_discount: Callable  # () -> float: a share (0 to 1) off every tech, from what stands in the town; may be unset
+var _vis: Dictionary = {}  # tech id -> true: the techs in view, worked out again whenever what they depend on changes
+var _vis_key := ""
 
 
 ## `researched_set` is the dictionary the Economy also holds (built first, since each needs the other).
@@ -38,9 +40,49 @@ func set_extra_discount(discount: Callable) -> void:
 # --- Requirements ------------------------------------------------------------
 
 
-## Hidden techs (Star Lore) only show once the Strange Stone has been clicked.
+## A tech is in view once the Kith have had every item it costs in their hands (the Economy's `seen`, or what is in the
+## stockpile now: the start items, whatever was gathered by hand or hauled in, whatever was crafted) and every tech
+## it needs is in view too. A researched tech always is. Hidden techs (Star Lore) also wait for the Strange Stone to
+## be clicked. Nothing about a tech shows before then: not its card, a route through it, a suggestion or a tooltip.
 func tech_visible(tech: String) -> bool:
-	return _hidden_shown.call() or not Data.TECHS[tech].get("hidden", false)
+	return visible_set().has(tech)
+
+
+## Every tech in view (see tech_visible), as tech id -> true. Cached until an item is first seen, a tech is researched
+## or the Strange Stone is clicked.
+func visible_set() -> Dictionary:
+	var shown: bool = _hidden_shown.call()
+	var held := 0
+	for id in _economy.inv:
+		if _economy.inv[id] > 0:
+			held += 1
+	var key := "%d|%d|%d|%s" % [_economy.seen.size(), held, researched.size(), shown]
+	if key == _vis_key:
+		return _vis
+	_vis_key = key
+	_vis = {}
+	var changed := true
+	while changed:  # parents first, however the tree is ordered
+		changed = false
+		for tech in Data.TECHS:
+			if not _vis.has(tech) and (researched.has(tech) or _discovered(tech, shown)):
+				_vis[tech] = true
+				changed = true
+	return _vis
+
+
+func _discovered(tech: String, shown: bool) -> bool:
+	var def: Dictionary = Data.TECHS[tech]
+	if def.get("hidden", false) and not shown:
+		return false
+	for item in def["cost"]:
+		if not _economy.seen.has(item) and _economy.inv.get(item, 0) <= 0:
+			return false
+	for r in def["requires"]:
+		if not _vis.has(r):
+			return false
+	var any: Array = def.get("requires_any", [])
+	return any.is_empty() or any.any(func(r): return _vis.has(r))
 
 
 ## How many requirements are still open. A `requires_any` list counts as one.
@@ -123,7 +165,7 @@ func refill() -> void:
 	if goal == "":
 		queue = []
 		return
-	var route := Rules.route_to(goal, researched, Rules.visible_techs(_hidden_shown.call()))
+	var route := Rules.route_to(goal, researched, visible_set())
 	queue = route.slice(0, Data.QUEUE_SLOTS)
 	if route.is_empty():
 		goal = ""

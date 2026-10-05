@@ -128,6 +128,22 @@ func test_dispatch_trips_and_queue_cap() -> void:
 	t.check(s.economy.inv["wood"] == wood + bundle * Data.TRIP_QUEUE, "then the hut waits for the next click")
 
 
+func test_player_click_sends_a_round() -> void:
+	var r := hut_camp()
+	var s: Sim = r[0]
+	var i: int = r[1]
+	var b: Dictionary = s.town.buildings[i]
+	s.people.learned_by["wood"] = "Aro"
+	run_for(s, 3.0)
+	t.check(Workers.click(s, i, true) == "Trips %d/%d" % [Data.TRIP_QUEUE, Data.TRIP_QUEUE], "one click queues a round")
+	t.check(Workers.click(s, i, true).begins_with("Trips full"), "clicking again doesn't pile on")
+	t.check(b["trips"] == Data.TRIP_QUEUE, "the queue still holds just %d" % Data.TRIP_QUEUE)
+	run_for(s, 90.0)
+	t.check(b["trips"] == 0, "the whole round was gathered")
+	b["trips"] = 1
+	t.check(Workers.click(s, i, true) == "Trip 2/%d" % Data.TRIP_QUEUE, "a hut with a trip waiting takes one more")
+
+
 func test_no_loop_before_haulers_loop_after() -> void:
 	var r := hut_camp()
 	var s: Sim = r[0]

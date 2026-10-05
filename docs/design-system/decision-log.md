@@ -536,3 +536,11 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Test both bridge axes, dry-bank terminal seating and aligned road approaches at 48 px, without changing crossing connectivity, pathing or resource rules. Native capture and focused checks now pass; this remains a review study, not an integration decision.
 
 - Native follow-up: sample opaque deck edges at internal module joins; preserve complete outer footings. This removes transparent gaps caused by atlas padding and longer rail posts. No bridge connectivity changes.
+
+## 2026-10-05: Codex's gameplay asks, bundled (PR #44)
+- Claude: Jon passed four gameplay asks from Codex's request list to me and asked for one PR, with a commit per ask.
+- One click: a player's click on an idle Gatherer's Hut queues all 3 trips (`Workers.click(..., full)`, passed only from `main.gd`'s tile click). A hut with trips waiting takes one more per click. The pacing bots still click once per trip. This is the default picked while Jon answers which clicks he meant; one flag changes it.
+- Discovery: a tech shows only once every item it costs has been held (`Economy.seen`, saved, or in the stockpile) and every tech it needs shows. So the fiber lane waits for flax, brick techs wait for the Kiln and the ore techs wait for ore. Researched techs always show, and cards, routes, suggestions, tooltips and the counter all read `Research.visible_set()`.
+- Roads through buildings: a hut, workshop, house, shed, tower or water wheel is a passage. Road, building, road is one network for linking, and haulers and carts walk through its cell at 2x the open road (`Data.PASSAGE_COST`). The Hearth, Storehouses, fields, monuments and bridges still end a road. Nothing is stored, so demolishing and saves just work.
+- Hearth stage: `HearthLook.stage(researched)` counts Fire, Storytelling, Shelter, Calendar and Bronze Dawn (0 to 5) for Codex's staged props. Derived from research, no new rules.
+- The pacing bots start knowing the whole tree (`Autoplay.attach` marks every item found), since hiding made them wait for finds a player who knows the tree would not: map 1's first Bronze took 12.9 min after Dawn without it. Goldens re-pinned in their own commit: stone age 822/830/788 s, first Bronze 1388/1419/1393 s (was 871/814/794 and 1470/1270/1447); the roads change moves the bots' layouts.

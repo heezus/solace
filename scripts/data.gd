@@ -109,6 +109,7 @@ const LEARN_CLICKS := DataTuning.LEARN_CLICKS
 const LEARN_FIRST := DataTuning.LEARN_FIRST
 const BUNDLE := DataTuning.BUNDLE
 const TRIP_QUEUE := DataTuning.TRIP_QUEUE
+const PASSAGE_COST := DataTuning.PASSAGE_COST
 const RUSH_COOLDOWN := DataTuning.RUSH_COOLDOWN
 const HOLD_TIME := DataTuning.HOLD_TIME
 const HOLD_KEEP := DataTuning.HOLD_KEEP

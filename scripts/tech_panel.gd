@@ -461,7 +461,7 @@ func _show_tech(tech: String) -> void:
 			strip["cost"].text += (" · next: " + Ui.progress_text(state.economy.inv, Ranks.next_cost(state, tech), 99))
 	strip["needs"].text = "NEEDS: " + _needs_text(tech)
 	strip["leads"].text = "LEADS TO: " + _leads_text(tech)
-	var route := Rules.route_to(tech, state.tech_tree.researched, Rules.visible_techs(state.shard_seen))
+	var route := Rules.route_to(tech, state.tech_tree.researched, state.tech_tree.visible_set())
 	if route.is_empty() or unbuilt:
 		strip["route"].text = ""
 	else:

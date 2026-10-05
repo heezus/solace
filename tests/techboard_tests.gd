@@ -69,6 +69,8 @@ func _inside(r: Rect2, room: Vector2) -> bool:
 
 func test_the_board_is_fitted_whole_in_each_window() -> void:
 	var s: Sim = t.fresh()
+	for id in Data.ITEM_ORDER:  # these tests are about the rules for the cards: every item has been found
+		s.economy.seen[id] = true
 	for room in [ROOM_WIDE, ROOM_TIGHT]:
 		for era in [1, 2]:
 			var era_board := _board(s, room, era)
@@ -99,6 +101,8 @@ func test_the_board_is_fitted_whole_in_each_window() -> void:
 
 func test_zoom_and_pan_never_lose_the_board() -> void:
 	var s: Sim = t.fresh()
+	for id in Data.ITEM_ORDER:  # these tests are about the rules for the cards: every item has been found
+		s.economy.seen[id] = true
 	var board := _board(s, ROOM_WIDE)
 	var middle := ROOM_WIDE / 2.0
 	var fit_zoom := board.zoom
@@ -134,6 +138,8 @@ func test_zoom_and_pan_never_lose_the_board() -> void:
 
 func test_the_view_follows_the_window_and_the_era() -> void:
 	var s: Sim = t.fresh()
+	for id in Data.ITEM_ORDER:  # these tests are about the rules for the cards: every item has been found
+		s.economy.seen[id] = true
 	var board := _board(s, ROOM_WIDE)
 	board.size = ROOM_TIGHT
 	board._on_resized()
@@ -165,6 +171,8 @@ func _clear_goals(s: Sim) -> void:
 ## list's tech's route, then the cheapest the stockpile can pay for, then the one with the least left to gather.
 func test_the_suggested_tech_follows_its_rule() -> void:
 	var s: Sim = t.fresh()
+	for id in Data.ITEM_ORDER:  # these tests are about the rules for the cards: every item has been found
+		s.economy.seen[id] = true
 	for id in Data.ITEM_ORDER:
 		s.economy.inv[id] = 0
 	var roots := TechNext.ready_now(s, 1)
@@ -247,6 +255,8 @@ func test_the_suggested_tech_follows_its_rule() -> void:
 
 func test_locked_techs_say_what_they_wait_for() -> void:
 	var s: Sim = t.fresh()
+	for id in Data.ITEM_ORDER:  # these tests are about the rules for the cards: every item has been found
+		s.economy.seen[id] = true
 	var ready := TechNext.ready_now(s, 1)
 	var behind := TechNext.locked_behind(s, 1, ready)
 	t.check(
@@ -295,6 +305,8 @@ func _texts(node: Node) -> Array:
 
 func test_the_panel_opens_on_what_to_learn_next() -> void:
 	var s: Sim = t.fresh()
+	for id in Data.ITEM_ORDER:  # these tests are about the rules for the cards: every item has been found
+		s.economy.seen[id] = true
 	for id in Data.ITEM_ORDER:
 		s.economy.inv[id] = 0
 	s.economy.inv["wood"] = 12
@@ -381,6 +393,8 @@ func test_the_panel_opens_on_what_to_learn_next() -> void:
 ## smallest canvas (1280x800 less the panel's 8 px insets). The layout pass checks the real laid-out board.
 func test_the_panel_never_asks_for_more_room_than_the_window_has() -> void:
 	var s: Sim = t.fresh()
+	for id in Data.ITEM_ORDER:  # these tests are about the rules for the cards: every item has been found
+		s.economy.seen[id] = true
 	t.give(s, 500)
 	for id in Data.ITEM_ORDER:
 		s.economy.seen[id] = true
@@ -416,6 +430,8 @@ func test_the_panel_never_asks_for_more_room_than_the_window_has() -> void:
 
 func test_a_next_card_discovers_or_queues() -> void:
 	var s: Sim = t.fresh()
+	for id in Data.ITEM_ORDER:  # these tests are about the rules for the cards: every item has been found
+		s.economy.seen[id] = true
 	for id in Data.ITEM_ORDER:
 		s.economy.inv[id] = 0
 	s.economy.inv["fiber"] = 15
