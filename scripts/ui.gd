@@ -184,6 +184,7 @@ static func swatch_texture(color: Color) -> ImageTexture:
 static func item_swatch(id: String, size: float) -> ColorRect:
 	var r := ColorRect.new()
 	r.color = Data.ITEMS[id]["color"]
+	r.tooltip_text = Data.ITEMS[id]["name"]
 	r.custom_minimum_size = Vector2(size, size)
 	r.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	r.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -208,6 +209,7 @@ static func item_icon(id: String, size: float) -> Control:
 	r.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	r.mouse_filter = Control.MOUSE_FILTER_PASS
 	r.set_meta("item", id)
+	r.tooltip_text = Data.ITEMS[id]["name"]
 	return r
 
 

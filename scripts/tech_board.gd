@@ -51,6 +51,7 @@ var lay: Dictionary
 var era := 1  # the era whose board is shown
 var selected := ""  # persistent presentation focus after a card click
 var hovered := ""
+var material_hits: Array = []  # screen-space gate price symbols from the latest draw
 var chain := {}  # techs lit by the hover: the hovered one, what it directly needs and what directly needs it
 var bold: Font
 var zoom := 1.0  # the view now: board px to screen px
@@ -250,6 +251,11 @@ func _gui_input(event: InputEvent) -> void:
 			pan_by(event.relative)
 			return
 		_set_hover(_tech_at(event.position))
+		tooltip_text = Data.TECHS[hovered]["name"] if hovered != "" else ""
+		for hit in material_hits:
+			if hit["rect"].has_point(event.position):
+				tooltip_text = hit["tip"]
+				break
 	elif event is InputEventMouseButton:
 		_on_button(event)
 	elif event is InputEventMagnifyGesture:
@@ -361,6 +367,7 @@ func _text(at: Vector2, s: String, px: int, col: Color, width := -1.0, heavy := 
 
 
 func _draw() -> void:
+	material_hits.clear()
 	if lay.is_empty() or state == null:
 		return
 	var board_w: float = lay["size"].x
@@ -623,5 +630,7 @@ func _draw_gate(tech: String, sr: Rect2, a: float) -> void:
 		var have: int = state.economy.inv.get(id, 0)
 		var need: int = cost[id]
 		var col := Color(Ui.TEXT, a) if have >= need else Color(Ui.SHORT, a)
-		Art.item_icon(self, id, Rect2(x, y - small - 1.0, small + 2.0, small + 2.0), a)
+		var icon_rect := Rect2(x, y - small - 1.0, small + 2.0, small + 2.0)
+		Art.item_icon(self, id, icon_rect, a)
+		material_hits.append({"rect": icon_rect, "tip": "%s: have %d / need %d" % [Data.ITEMS[id]["name"], have, need]})
 		_text(Vector2(x + small + 6.0, y), "%d/%d" % [mini(have, need), need], small, col, width - small - 6.0)

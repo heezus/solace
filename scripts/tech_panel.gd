@@ -136,8 +136,8 @@ func setup(game: Sim) -> void:
 
 
 ## The strip about one tech, under the board: a fixed height, so hovering never resizes (and so never refits) the board.
-## Left, what it is and costs; right, what it needs, leads to and the route there; far right, the one button. A line that
-## runs long is trimmed, never allowed to grow the strip.
+## The identity and action stay in a header. Explanation/costs and dependency/route columns scroll below it,
+## so long text stays available without growing the strip or refitting the board.
 func _build_strip(parent: VBoxContainer) -> void:
 	detail = PanelContainer.new()
 	detail.add_theme_stylebox_override("panel", Ui.panel_style(Ui.BAR, 10))
@@ -173,7 +173,12 @@ func _build_strip(parent: VBoxContainer) -> void:
 	strip["button"] = act
 	var columns := HBoxContainer.new()
 	columns.add_theme_constant_override("separation", 16)
-	body.add_child(columns)
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.add_child(scroll)
+	columns.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(columns)
 	var left := VBoxContainer.new()
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.add_theme_constant_override("separation", 2)
@@ -182,21 +187,16 @@ func _build_strip(parent: VBoxContainer) -> void:
 	right.custom_minimum_size = Vector2(STRIP_SIDE_W, 0)
 	right.add_theme_constant_override("separation", 2)
 	columns.add_child(right)
-	for part in [
-		["desc", left, 2],
-		["cost", left, 3],
-		["warn", left, 1],
-		["needs", right, 2],
-		["leads", right, 2],
-		["route", right, 2]
-	]:
+	for part in [["desc", left], ["cost", left], ["warn", left], ["needs", right], ["leads", right], ["route", right]]:
 		var l := Ui.label("", Ui.MIN_TEXT)
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		l.max_lines_visible = part[2]
-		l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		l.mouse_filter = Control.MOUSE_FILTER_PASS
 		part[1].add_child(l)
 		strip[part[0]] = l
+		if part[0] == "cost":
+			var prices := HFlowContainer.new()
+			left.add_child(prices)
+			strip["prices"] = prices
 	strip["needs"].add_theme_color_override("font_color", Ui.ACTION)
 	strip["leads"].add_theme_color_override("font_color", Ui.GOOD)
 	strip["route"].add_theme_color_override("font_color", Ui.TEXT_DIM)
@@ -395,6 +395,7 @@ func _show_frontier(ready_now: Array) -> void:
 	strip["state"].tooltip_text = strip["state"].text
 	strip["state"].add_theme_color_override("font_color", Ui.ACTION)
 	strip["icon"].visible = false
+	_show_prices({})
 	strip["desc"].text = Data.STRIP_HELP
 	strip["cost"].text = Data.RANK_HELP
 	strip["warn"].visible = false
@@ -440,6 +441,7 @@ func _show_tech(tech: String) -> void:
 		else "Cost (have/need): " + Ui.progress_text(state.economy.inv, state.tech_tree.cost_of(tech), 99)
 	)
 	var researched: bool = state.tech_tree.researched.has(tech)
+	_show_prices({} if unbuilt else (Ranks.next_cost(state, tech) if researched else state.tech_tree.cost_of(tech)))
 	if not researched and not unbuilt and Ui.then_builds_text(tech) != "":
 		strip["cost"].text += "     " + Ui.then_builds_text(tech)
 	var warn := (
@@ -481,6 +483,27 @@ func _show_tech(tech: String) -> void:
 		b.text = "Buy rank %s" % Data.RANK_NAMES[Ranks.rank(state, tech) + 1]
 		b.disabled = not Ranks.can_buy(state, tech)
 		Ui.action_button(b, not b.disabled)
+
+
+## Resource illustrations identify the actual discounted research or next-rank price.
+func _show_prices(cost: Dictionary) -> void:
+	var row: HFlowContainer = strip["prices"]
+	if row.get_meta("cost", {}) != cost:
+		for child in row.get_children():
+			row.remove_child(child)
+			child.queue_free()
+		for id in cost:
+			row.add_child(Ui.cost_pips({id: cost[id]}, 22, Ui.MIN_TEXT))
+		row.set_meta("cost", cost.duplicate())
+	row.visible = not cost.is_empty()
+	var i := 0
+	for id in cost:
+		var pip: HBoxContainer = row.get_child(i)
+		Ui.update_pips(pip, {id: cost[id]}, state.economy.inv)
+		var detail_text := "%s: have %d / need %d" % [Data.ITEMS[id]["name"], state.economy.inv.get(id, 0), cost[id]]
+		pip.get_child(0).tooltip_text = detail_text
+		pip.get_child(0).get_child(0).tooltip_text = detail_text
+		i += 1
 
 
 func _needs_text(tech: String) -> String:

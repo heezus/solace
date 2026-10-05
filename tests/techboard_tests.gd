@@ -37,6 +37,7 @@ func run(runner) -> void:
 	test_a_next_card_discovers_or_queues()
 	test_the_words_are_plain()
 	test_focus_and_names_stay_readable()
+	test_inspector_has_a_fixed_height_with_long_details()
 
 
 func _board(s: Sim, room: Vector2, era := 1) -> TechBoard:
@@ -524,4 +525,34 @@ func test_focus_and_names_stay_readable() -> void:
 		s.tech_tree.researched == known and s.economy.inv == inv and s.tech_tree.queue.is_empty(),
 		"inspection changes no purchases or queue"
 	)
+	var prices: HFlowContainer = panel.strip["prices"]
+	t.check(prices.get_child_count() == s.tech_tree.cost_of("masonry").size(), "research displays each cost symbol")
+	for price in prices.get_children():
+		var icon: Control = price.get_child(0).get_child(0)
+		t.check(
+			"have" in icon.tooltip_text and "need" in icon.tooltip_text, "price symbols identify stock and requirement"
+		)
+	panel.free()
+
+
+## Expanded explanations must scroll inside the inspector rather than refitting the board.
+func test_inspector_has_a_fixed_height_with_long_details() -> void:
+	var s: Sim = t.fresh()
+	t.give(s, 500)
+	s.shard_seen = true
+	s.tech_tree.researched["bronze_dawn"] = true
+	var panel := TechPanel.new()
+	panel.setup(s)
+	panel.visible = true
+	panel._pick_view("all")
+	for tech in Data.TECH_ORDER:
+		for parent in Data.TECHS[tech]["requires"]:
+			s.tech_tree.researched[parent] = true
+		panel._pick_era(Data.TECHS[tech].get("era", 1))
+		panel.board._set_hover(tech)
+		panel.refresh()
+		t.check(
+			panel.detail.get_combined_minimum_size().y == TechPanel.STRIP_H,
+			"inspector retains its fixed minimum: " + tech
+		)
 	panel.free()

@@ -51,9 +51,11 @@ A clicked discovery now retains a distinct selected surface, brass selection rim
 
 Names take priority over pictures on compact board cards: hide a picture if it would force the name to truncate. The tall gate's destination wraps onto multiple lines. Every hovered visible card has a full-name tooltip. Extreme zoom can still trim a compact label; the inspector always separates its full name from state, lane and optional-branch context.
 
-The fixed-height inspector now places an illustration, full title/state and existing action in a header, with explanation/costs on the left and Needs/Leads to/route on the right. Long detail text has full-text tooltips. The last hover inspection remains available while moving to the action when no clicked selection exists; a clicked selection returns when hover ends. Existing card clicks still discover, queue or buy an upgrade. No research rules, prices, queue ordering or save state changed.
+The fixed-height inspector now places an illustration, full title/state and existing action in a header, with explanation/costs on the left and Needs/Leads to/route on the right. Long detail text scrolls inside the inspector and has full-text tooltips; it cannot expand the inspector and refit the board. The last hover inspection remains available while moving to the action when no clicked selection exists; a clicked selection returns when hover ends. Existing card clicks still discover, queue or buy an upgrade. No research rules, prices, queue ordering or save state changed.
 
 These actual Godot main-scene captures stage stock levels and selected cards for review; they are interface previews, not economy/balance playtest results.
 
 ![Selected Masonry with incoming and outgoing paths](../../art/overhaul/misty-highlands/interface/research-selection.png)
 ![Wrapped Falling Star destination and full-name inspector](../../art/overhaul/misty-highlands/interface/research-gate-selection.png)
+
+Research material symbols show the current research price (including discounts), or the next rank price for a researched upgrade. Hover identifies the resource and have/need amounts; shortage color supports the numeric comparison. Item illustrations elsewhere also identify their resource on hover.

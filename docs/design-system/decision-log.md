@@ -495,5 +495,10 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Codex followed Jon's request for the tech-tree readability pass. Preserve card activation and progression rules while improving presentation.
 - Keep clicked discovery focus after hover ends; use brass for incoming dependencies and moss for outgoing unlocks. Context remains immediate neighbours, with existing either-or labels. Era changes clear focus.
 - Give names priority over card pictures, retain opaque 14 px minimum labels, wrap gate destinations and provide full-name tooltips.
-- Reorganize the fixed-height inspector around a separate illustration/name/state/action header and grouped explanation/costs versus dependencies/route. Long details expose full-text tooltips.
+- Reorganize the fixed-height inspector around a separate illustration/name/state/action header and grouped explanation/costs versus dependencies/route. Long details scroll inside the inspector and expose full-text tooltips; they cannot resize the board.
 - Verify that inspection changes no resources, research or queue; retain actual Godot previews and exercise fitted layouts and existing discover/queue/upgrade input. Terrain remains on visual review hold.
+
+## 2026-10-05: Research materials identify themselves (PR #33)
+- Codex added material illustrations beside the selected technology's actual discounted research price or next-rank price; hover identifies the resource and available/required amounts.
+- Shared item illustrations carry resource-name tooltips. Long research details scroll within the fixed-height inspector so the board does not shift.
+- Jon's discovery-gating and hut interaction requests are queued for Claude. Optional Hearth visual milestones remain a proposal until the technology-to-appearance mapping is agreed.
