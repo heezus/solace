@@ -2,6 +2,39 @@
 
 Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2026-10-04 Jon authorized Codex to make the engine changes needed for visuals as well as creating the art. Visual work no longer requires a Claude wiring handoff.
 
+## Token discipline and task coordination — Jon, 2026-10-05
+
+- Work on one active deliverable at a time. Record its owner, scope, files, acceptance criteria and next action here; finish or report a concrete blocker before expanding scope.
+- Codex’s active deliverable is the **48 px shoreline/crossing fixture**: both bridge axes, dry-bank seating, aligned road approaches and contour-following bank props. Done means one inspected native capture, focused geometry/privacy/RNG checks and a documented result. No additional concept directions, UI redesign, biome expansion or animation work in this task.
+- Claude owns discovery gating, hut interaction and road-through-building gameplay. Claude should identify the single task being taken and shared files before editing; Codex will avoid those files. No duplicate investigation or implementation across teams.
+- Reuse the existing approved subject assets, target reference and prior validation. Read relevant sections/diffs rather than repeatedly loading whole documents. Batch independent reads, cap outputs and use focused checks first; run required full checks once for the final candidate and repeat only after a relevant change or failure.
+- Keep updates short and substantive: result, blocker or next decision. Avoid unchanged CI polling narration and repeated plans. Use one compact completion handoff: commit/PR, files touched, validation, limitations and next owner.
+- New image generation must address a specific missing asset in the active deliverable. No open-ended variant generation or delegation unless Jon requests it. When blocked, report what can resume the task; do not burn tokens on unrelated work.
+- No numeric token budget was specified. These are workflow constraints, not an invented token cap. Both teams should flag expected substantial extra work before widening the task.
+
+**Coordination status:** Codex has prepared this protocol and the return briefing. No direct Claude messaging connection is available in the current Codex tools; Claude acknowledgement is pending. Publish this handoff through PR #33 when available, and have Claude record its chosen task/shared-file reservation here.
+
+## Claude return briefing — 2026-10-05
+
+Start from [draft PR #33](https://github.com/heezus/solace/pull/33), branch `codex/visual-overhaul`, in Codex’s separate clone. Do not merge yet: Jon still wants the playable ground, water, roads and shore contact to match the richer approved concept. The miniature buildings, resources and Kith are the visual anchor; preserve them.
+
+### What is implemented versus under review
+- **Implemented in the PR:** rendered miniature map subjects/items, stable visual variants independent of simulation RNG, four-pose walking, modular wood/stone bridges, continuous terrain rendering, matching HUD/build/selection/research theme, research readability and material-symbol hover identification. These are presentation changes; the PR does not implement the gameplay requests below.
+- **Last published head:** `0bfd64149bbb125e379b4cc72e015b15a7896e3d`. [Exact-head CI run 37319336078](https://github.com/heezus/solace/actions/runs/37319336078) passed import, metadata, strict warnings, logic tests, input play-through and long layout checks. Production art/scripts/tests/scenes/project settings are unchanged since `36239f34d992f8eaccb65ffd5911d5ea31324d9e`; later published commits add isolated review studies/captures.
+- **Visual target:** [blended regions paintover](art/overhaul/misty-highlands/grounding-studies/blended-regions.png) is AI concept art, **not** a screenshot of a better previous game build. Jon explicitly wants the native game to approach it. The flatter quiet-terrain experiment was withdrawn and archived, not integrated.
+- **Latest published native review:** [sculpted terrain study](art/overhaul/misty-highlands/grounding-studies/sculpted-native-study/README.md), with actual main-scene captures at 48 px and the existing 64 px zoom. Normal play does not load this study. Ground repetition, orthogonal paths and shoreline composition remain unresolved; successful CI does not constitute visual approval.
+- **Current local work, not yet validated/published:** `docs/art/overhaul/misty-highlands/grounding-studies/shoreline-crossings-study/`. Jon requested bridges and rocks oriented relative to water edges. The draft fixture uses separate stone/reed props placed along the blended wet contour, fixed upper-left lighting, bridge entrance clearance, dry-bank end seating and aligned road approaches. Do not treat its output as integrated or approved. Native graphical capture was blocked when automatic approval review became unavailable due to account usage limits; the initial headless attempt cannot produce a viewport image. New draft scripts and atlas require validation before integration.
+
+### Claude’s next work
+The full requirements and acceptance criteria are in [art requests](art/requests.md). Pick up gameplay changes on a separate Claude branch; coordinate shared UI files with Codex before changing them.
+
+1. **Hand-discovery research visibility:** reveal the relevant technology branch after the player gathers its resource by hand. Define mappings, discovery thresholds, crafted-resource/gate exceptions and persistence; cover all research surfaces to avoid hidden-branch leaks.
+2. **One-click Gatherer’s Hut dispatch/delivery:** reproduce Jon’s three-click sequence before roads/runners and make the available trip/delivery action work from one clear click without duplicate orders or lost bundles. Preserve inspection and later automation.
+3. **Roads through buildings:** implement actual network and route continuity through occupied connector cells, including both axes, carts/bridge restrictions, demolition and saves. Codex must not draw a through passage until it is functional.
+4. **Optional Hearth visual milestones:** agree a mapping from existing non-building research/ranks to modest visual improvements. Codex can supply staged art afterward; no new capacity/cost/progression mechanic is authorized by this idea.
+
+Codex continues terrain/shoreline/bridge visual studies and owns their eventual renderer integration. Preserve the 48 px default, existing gameplay footprints and independent visual RNG; discuss any global scale change with Jon and Claude. This briefing is a local documentation update until pushed to PR #33.
+
 ## Ownership
 | Area | Owner | Notes |
 |---|---|---|
