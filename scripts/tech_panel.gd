@@ -422,12 +422,14 @@ func _show_tech(tech: String) -> void:
 	var b: Button = strip["button"]
 	b.visible = not unbuilt and (not researched or not Ranks.next_cost(state, tech).is_empty())
 	b.disabled = false
+	Ui.action_button(b, state.tech_tree.can_research(tech))
 	b.text = Data.DISCOVER_BUTTON % t["name"] if state.tech_tree.can_research(tech) else Data.QUEUE_BUTTON
 	if state.tech_tree.goal == tech:
 		b.text = Data.QUEUED
 	if state.tech_tree.researched.has(tech) and b.visible:
 		b.text = "Buy rank %s" % Data.RANK_NAMES[Ranks.rank(state, tech) + 1]
 		b.disabled = not Ranks.can_buy(state, tech)
+		Ui.action_button(b, not b.disabled)
 
 
 func _needs_text(tech: String) -> String:

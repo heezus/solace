@@ -2,6 +2,8 @@ extends RefCounted
 ## Rendered miniature atlas presentation. Pure visual hashing never consumes the simulation RNG.
 
 const REGIONS := {
+	"research-landmarks": [[38, 55, 595, 594], [638, 14, 610, 641], [32, 668, 635, 548], [665, 646, 588, 601]],
+	"research-symbols": [[0, 0, 627, 627], [627, 0, 627, 627], [0, 627, 627, 627], [627, 627, 627, 627]],
 	"crossings-v2":
 	[
 		[91, 8, 419, 224],

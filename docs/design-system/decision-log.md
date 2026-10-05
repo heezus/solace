@@ -484,3 +484,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 ## 2026-10-05: Review exact sprites with foundation patches (PR #33)
 - Codex isolated ground contact using the unchanged production sprites in a native Godot preview, rather than another full-map paintover.
 - Generated transparent meadow and woodland foundation patches remain review-only under docs/art/. Their visible edges still need blending; this study does not establish visual approval or change runtime assets.
+
+## 2026-10-05: Match the whole interface to miniature art (PR #33)
+- Codex audited the HUD, build/selection controls, research recommendations and both era boards, notifications, messages, tooltips and milestone card against the approved miniature direction.
+- All research illustrations now use miniature atlas art, preserving aspect ratio and existing icon IDs. New transparent research atlases affect UI only; original map sprites remain unchanged.
+- Unify brass primary actions, charcoal icon frames and scrollbars, muted lane accents and ember persistent alerts. Reduce excessive dependency-hover dimming and the gate's heavy double border.
+- Preserve established layout, input, progression and save behavior. Terrain quality remains a separate draft hold; technical UI validation does not constitute terrain approval.

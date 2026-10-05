@@ -207,15 +207,7 @@ func _tech_button() -> Button:
 	var b := Ui.button("Tech tree\nT")
 	b.custom_minimum_size = Vector2(112, BUTTON.y)
 	b.add_theme_font_size_override("font_size", Ui.LABEL_TEXT)
-	var style := Ui.panel_style(Ui.ACTION, 6)
-	b.add_theme_stylebox_override("normal", style)
-	b.add_theme_stylebox_override("pressed", style)
-	var hover := style.duplicate()
-	hover.bg_color = Ui.ACTION.lightened(0.08)
-	hover.border_color = Ui.HIGHLIGHT
-	b.add_theme_stylebox_override("hover", hover)
-	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
-		b.add_theme_color_override(key, Ui.LINE)  # dark text reads on the brass action
+	Ui.action_button(b)
 	return b
 
 

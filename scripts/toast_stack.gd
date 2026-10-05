@@ -45,7 +45,7 @@ func _panel(m: Dictionary) -> PanelContainer:
 	var p := PanelContainer.new()
 	p.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	var style := Ui.panel_style(Color(Ui.BAR, 0.94), 8)
-	style.set_border_width_all(2)
+	style.set_border_width_all(1)
 	p.add_theme_stylebox_override("panel", style)
 	var l := Ui.label("", Ui.LABEL_TEXT)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -67,7 +67,7 @@ func _fill(p: PanelContainer, m: Dictionary) -> void:
 	p.tooltip_text = "Click to dismiss" if sticky else ""
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var style: StyleBoxFlat = p.get_theme_stylebox("panel")
-	style.border_color = Ui.BAD if sticky else Ui.LINE
+	style.border_color = Ui.SHORT if sticky else Ui.EDGE
 
 
 func _on_click(event: InputEvent, id: int) -> void:

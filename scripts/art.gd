@@ -120,65 +120,50 @@ static func dashed_rect(ci: CanvasItem, r: Rect2, col: Color, width: float, on: 
 		ci.draw_polyline(part, col, width)
 
 
-## A small tech icon in `r`: its sprite, or a few shapes for the "@" icons and missing sprites.
-static func tech_icon(ci: CanvasItem, icon: String, r: Rect2, time: float) -> void:
-	var c := r.get_center()
-	var k := r.size.x / 32.0
-	if not icon.begins_with("@"):
-		var tex := sprite(icon)
-		if tex != null:
-			ci.draw_texture_rect(tex, r, false)
-			return
-	ci.draw_set_transform(c, 0.0, Vector2(k, k))
+## Research illustrations share map/item art; their IDs do not change gameplay or map sprites.
+static func research_sprite(icon: String) -> Texture2D:
 	match icon:
+		"granary":
+			return Rendered.sprite("research-landmarks", 0)
+		"smokehouse":
+			return Rendered.sprite("research-landmarks", 1)
+		"quarry":
+			return Rendered.sprite("research-landmarks", 2)
+		"wanderer":
+			return Rendered.sprite("research-landmarks", 3)
 		"@flint":
-			outlined_poly(
-				ci,
-				PackedVector2Array([Vector2(-9, 8), Vector2(-4, -10), Vector2(6, -6), Vector2(10, 7), Vector2(0, 11)]),
-				Color("4a4e69")
-			)
-			ci.draw_line(Vector2(-2, -6), Vector2(3, 6), Color("9aa0c0"), 1.5)
-		"@clay", "@rock":
-			ci.draw_rect(Rect2(-14, -14, 28, 28), Color("7cb342"))
-			feature(ci, icon.substr(1), Vector2.ZERO, Vector2i.ZERO, time)
-		"@irrigation", "@calendar":
-			ci.draw_rect(Rect2(-14, -14, 28, 28), Color("3a86c8") if icon == "@irrigation" else Color("14213d"))
-			if icon == "@calendar":
-				for p in [Vector2(-9, -9), Vector2(8, -10), Vector2(10, 6)]:
-					ci.draw_circle(p, 1.2, Color.WHITE)
-				outlined_circle(ci, Vector2(-6, 6), 5.0, Color("f1e3c8"))
-			else:
-				ci.draw_rect(Rect2(-8, -8, 16, 16), Color("8a6a44"))
-				for x in [-5, 0, 5]:
-					ci.draw_line(Vector2(x, 5), Vector2(x, -5), Color("f2c14e"), 2.0)
+			return sprite("item_flint")
+		"@clay":
+			return sprite("item_clay")
+		"@rock":
+			return Rendered.sprite("rocks", 0)
 		"@axe":
-			# A wooden haft with a flint head lashed on with cord.
-			ci.draw_line(Vector2(-9, 12), Vector2(6, -9), OUTLINE, 6.0)
-			ci.draw_line(Vector2(-9, 12), Vector2(6, -9), Color("a47148"), 3.0)
-			outlined_poly(
-				ci,
-				PackedVector2Array([Vector2(1, -13), Vector2(12, -11), Vector2(13, 0), Vector2(5, -3)]),
-				Color("4a4e69")
-			)
-			ci.draw_line(Vector2(1, -8), Vector2(6, -4), Color("e9c46a"), 2.0)
+			return sprite("item_flint_tools")
 		"@bread":
-			var loaf := PackedVector2Array()
-			for i in 16:
-				var a := PI + PI * i / 15.0
-				loaf.append(Vector2(cos(a) * 11.0, sin(a) * 8.0 + 4.0))
-			outlined_poly(ci, loaf, Color("d4a373"))
-			for x in [-5, 0, 5]:
-				ci.draw_line(Vector2(x - 2, -1), Vector2(x + 2, -3), Color("8d5a3b"), 1.5)
+			return Rendered.sprite("research-symbols", 0)
 		"@tally":
-			# A split stick with a row of notches cut across it.
-			ci.draw_line(Vector2(-12, 10), Vector2(12, -10), OUTLINE, 8.0)
-			ci.draw_line(Vector2(-12, 10), Vector2(12, -10), Color("c9a26b"), 5.0)
-			for i in 4:
-				var at := Vector2(-6 + i * 5, 5 - i * 4)
-				ci.draw_line(at + Vector2(-2, -3), at + Vector2(2, 3), OUTLINE, 1.5)
-		_:
-			outlined_circle(ci, Vector2.ZERO, 10.0, Color("9aa0a6"))
-	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+			return Rendered.sprite("research-symbols", 1)
+		"@irrigation":
+			return Rendered.sprite("research-symbols", 2)
+		"@calendar":
+			return Rendered.sprite("research-symbols", 3)
+		"kith", "hauler":
+			return Rendered.sprite("walk", 1)
+		"hauler_pack":
+			return Rendered.sprite("extras", 4)
+		"tile_road":
+			return Rendered.sprite("crossings-v2", 0)
+	return sprite(icon)
+
+
+## Centered, aspect-preserving illustrations on board cards and research recommendations.
+static func tech_icon(ci: CanvasItem, icon: String, r: Rect2, _time: float) -> void:
+	var tex := research_sprite(icon)
+	if tex == null:
+		return
+	var factor := minf(r.size.x / tex.get_width(), r.size.y / tex.get_height())
+	var extent := tex.get_size() * factor
+	ci.draw_texture_rect(tex, Rect2(r.get_center() - extent * 0.5, extent), false)
 
 
 ## A map tile's feature drawn at tile scale `k` (tile px / DESIGN), centered on c.

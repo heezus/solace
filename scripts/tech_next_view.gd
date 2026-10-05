@@ -139,6 +139,7 @@ func _card(tech: String, is_pick: bool, why: String) -> PanelContainer:
 		v.add_child(_wrapped(Ui.build_warning(state.economy.inv, tech, state.tech_tree.cost_of(tech)), Ui.SHORT))
 	var button := Ui.button(Data.DISCOVER_BUTTON % def["name"] if paid else Data.NEXT_QUEUE)
 	button.custom_minimum_size = Vector2(0, 36)
+	Ui.action_button(button, paid)
 	button.tooltip_text = "" if paid else Data.NEXT_QUEUE_TIP
 	if not paid and state.tech_tree.goal == tech:
 		button.text = Data.QUEUED
@@ -185,7 +186,7 @@ func _wrapped(text: String, col: Color) -> Label:
 func _badge() -> PanelContainer:
 	var badge := PanelContainer.new()
 	var style := Ui.panel_style(GOLD, 4)
-	style.set_corner_radius_all(10)
+	style.set_corner_radius_all(Ui.RADIUS)
 	badge.add_theme_stylebox_override("panel", style)
 	badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	badge.tooltip_text = Data.NEXT_RULE
@@ -208,9 +209,8 @@ func _icon(icon: String, side := 40.0) -> Control:
 
 func _draw_icon(c: Control, icon: String) -> void:
 	var r := Rect2(Vector2.ZERO, c.size)
-	c.draw_rect(r, Color(0.13, 0.08, 0.06))
-	Art.tech_icon(c, icon, r, 0.0)
-	c.draw_rect(r, Art.OUTLINE, false, 2.0)
+	c.draw_style_box(Ui.panel_style(Ui.BAR, 0), r)
+	Art.tech_icon(c, icon, r.grow(-3), 0.0)
 
 
 ## The price, one chip per item: its picture and "Wood 12 of 20", green when you have enough of it, red when short.

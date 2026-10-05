@@ -33,3 +33,14 @@ These are viewport captures from the main scene and its existing layout harness,
 ## Scope and remaining design work
 
 This pass changes shared theming and visual hierarchy across the HUD, research, cards and selection panels. Layout and input remain the established gameplay interface. Resource-density reduction, richer contextual guidance and broader information architecture need separate gameplay UX design; this pass does not claim to resolve them. Do not add ornamental wood or parchment textures that reduce small-text contrast. No global map-scale change was made.
+
+## Whole-interface audit (2026-10-05)
+
+Research now uses miniature atlas illustrations for every tech, including the former drawn symbols, people, storage, quarry and falling star. Illustrations preserve aspect ratio in charcoal inset frames. These UI illustrations do not replace corresponding map sprites. Original generated RGBA atlases and exact built-in-tool prompts are preserved in [research asset provenance](../../../art/rendered/research-prompts.json).
+
+Lane captions use muted ochre, stone, moss and pale lavender instead of the baseline saturated colors. Both research views share brass discover/buy actions, quiet queue actions, moss completion and ember shortfalls. Hovering a dependency branch retains more context in unrelated cards. The gate uses a single brass rail instead of a double heavy frame.
+
+Shared themed scrollbars now serve research, the message log and other scroll containers. The milestone card uses the same charcoal scrim and brass action; notifications use a fine rim and ember emphasis for persistent alerts. HUD chips, resource flow detail, building/trade controls, goals, research recommendations, both era boards, messages, tooltips and the milestone card were included in the audit. Existing layouts, controls, shortcuts, research rules and save behavior remain unchanged. Dense stock strips and long fitted-board titles remain limits of the established layout; the normal tech detail panel retains full names.
+
+![Stone Age research board after the theme audit](../../art/overhaul/misty-highlands/interface/research-board-stone.png)
+![Matching milestone card](../../art/overhaul/misty-highlands/interface/milestone.png)

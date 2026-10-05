@@ -349,7 +349,7 @@ func _draw() -> void:
 		var lane: Dictionary = lay["lanes"][i]
 		var band := _r(Rect2(0, lane["top"] - 6.0, board_w, lane["bottom"] - lane["top"] + 12.0))
 		draw_rect(band, Color(0, 0, 0, 0.14 if i % 2 == 0 else 0.07))
-		var col: Color = Data.LANES[lane["id"]]["color"]
+		var col: Color = Ui.LANE_COLORS[lane["id"]]
 		draw_rect(Rect2(band.position, Vector2(4, band.size.y)), col)
 		var spaced := ""
 		for ch in Data.LANES[lane["id"]]["name"].to_upper():
@@ -416,7 +416,7 @@ func _draw_card(tech: String) -> void:
 	var sr := _r(card_rect(tech))
 	var t: Dictionary = Data.TECHS[tech]
 	var dim := not chain.is_empty() and not chain.has(tech)
-	var a := 0.25 if dim else 1.0
+	var a := 0.55 if dim else 1.0
 	if not state.tech_tree.tech_visible(tech):
 		_draw_hidden(sr, a)
 		return
@@ -432,7 +432,7 @@ func _draw_card(tech: String) -> void:
 	box.bg_color = Color(bg, a)
 	box.border_color = Color(GOLD if is_ready else Ui.EDGE, a)
 	box.set_border_width_all(2 if is_ready else 1)
-	box.set_corner_radius_all(6)
+	box.set_corner_radius_all(Ui.RADIUS)
 	draw_style_box(box, sr)
 	var pad := 6.0 * clampf(zoom, 0.8, 1.3)
 	var x := sr.position.x + pad
@@ -445,7 +445,7 @@ func _draw_card(tech: String) -> void:
 			draw_rect(icon, Color(Ui.BAR, 0.55))  # locked: washed out
 		if dim:
 			draw_rect(icon, Color(Ui.BAR, 0.75))
-		draw_rect(icon, Color(Art.OUTLINE, a), false, 1.5)
+		draw_rect(icon, Color(Ui.EDGE, a), false, 1.0)
 		x += side + pad
 	var ranked := Ranks.has_ranks(tech)
 	var right := sr.end.x - (34.0 if ranked else 24.0) * clampf(zoom, 0.8, 1.3)
@@ -532,10 +532,10 @@ func _draw_gate(tech: String, sr: Rect2, a: float) -> void:
 	var box := StyleBoxFlat.new()
 	box.bg_color = Color(GATE_BG, a)
 	box.border_color = Color(GOLD if is_ready else Ui.EDGE, a)
-	box.set_border_width_all(3)
+	box.set_border_width_all(1)
 	box.set_corner_radius_all(8)
 	draw_style_box(box, sr)
-	draw_rect(sr.grow(-5), Color(GATE, a), false, 3.0)
+	draw_rect(Rect2(sr.position + Vector2(1, 1), Vector2(3, sr.size.y - 2)), Color(GATE, a))
 	var side := clampf(34.0 * zoom, 24.0, 48.0)
 	var x := sr.position.x + 12.0
 	var width := sr.size.x - 22.0

@@ -27,6 +27,14 @@ const HIGHLIGHT := ACTION
 const GOOD := Color("a4c199")
 const BAD := Color("c96062")
 const SHORT := Color("ec9a8c")
+const SCRIM := Color("0b1618b8")
+const LANE_COLORS := {
+	"hearth": Color("e4af83"),
+	"stone": Color("bac7bd"),
+	"fiber": Color("dcc08a"),
+	"land": Color("a4c199"),
+	"lore": Color("bbc4de"),
+}
 const RADIUS := 4
 const MIN_TEXT := 14  # nothing on screen is smaller
 const LABEL_TEXT := 16  # UI labels; numbers are 18
@@ -57,6 +65,17 @@ static func apply_theme() -> void:
 	t.set_stylebox("hover_pressed", "Button", selected)
 	t.set_stylebox("disabled", "Button", panel_style(CARD_LOCKED, 6))
 	t.set_stylebox("focus", "Button", StyleBoxEmpty.new())
+	for type in ["HScrollBar", "VScrollBar"]:
+		var track_style := StyleBoxFlat.new()
+		track_style.bg_color = BAR
+		track_style.set_content_margin_all(6)
+		track_style.set_corner_radius_all(RADIUS)
+		t.set_stylebox("scroll", type, track_style)
+		for state in ["grabber", "grabber_highlight", "grabber_pressed"]:
+			var grabber := panel_style(ACTION if state == "grabber_pressed" else EDGE, 4)
+			grabber.shadow_size = 0
+			grabber.border_color = ACTION if state == "grabber_highlight" else EDGE
+			t.set_stylebox(state, type, grabber)
 	var tip := panel_style(PANEL, 8)
 	tip.set_border_width_all(2)
 	t.set_stylebox("panel", "TooltipPanel", tip)
@@ -98,6 +117,19 @@ static func button(text: String) -> Button:
 	b.focus_mode = Control.FOCUS_NONE
 	b.add_theme_font_size_override("font_size", MIN_TEXT)
 	return b
+
+
+## The same brass action treatment in research, the build bar and milestone cards.
+static func action_button(b: Button, active: bool = true) -> void:
+	for state in ["normal", "hover", "pressed", "hover_pressed"]:
+		var bg := ACTION if active else CARD
+		var style := panel_style(bg.lightened(0.06) if state == "hover" else bg, 6)
+		style.border_color = ACTION if active else EDGE
+		b.add_theme_stylebox_override(state, style)
+	for state in [
+		"font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color"
+	]:
+		b.add_theme_color_override(state, LINE if active else TEXT)
 
 
 ## WCAG contrast ratio between two opaque colours, 1 (none) to 21.
@@ -205,7 +237,7 @@ static func update_pips(row: HBoxContainer, cost: Dictionary, inv: Dictionary) -
 
 
 static func tech_color(tech: String) -> Color:
-	return Data.TECHS[tech]["color"] if Data.TECHS.has(tech) else Color("e76f51")
+	return LANE_COLORS.get(Data.TECHS[tech]["lane"], ACTION) if Data.TECHS.has(tech) else ACTION
 
 
 ## "10 Wood, 5 Stone".
@@ -245,15 +277,15 @@ static func rate_color(per_min: float) -> Color:
 ## A tech's colored square with its two-letter code.
 static func badge(tech: String) -> PanelContainer:
 	var p := PanelContainer.new()
-	var s := panel_style(tech_color(tech), 2)
+	var s := panel_style(BAR, 2)
+	s.border_color = tech_color(tech)
 	s.set_border_width_all(2)
 	s.set_corner_radius_all(4)
 	p.add_theme_stylebox_override("panel", s)
 	p.custom_minimum_size = Vector2(30, 24)
 	var l := label(Data.TECHS[tech]["abbr"], MIN_TEXT)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.add_theme_color_override("font_outline_color", OUTLINE)
-	l.add_theme_constant_override("outline_size", 4)
+	l.add_theme_color_override("font_color", TEXT)
 	p.add_child(l)
 	return p
 
