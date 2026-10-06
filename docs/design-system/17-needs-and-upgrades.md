@@ -1,6 +1,6 @@
 # 17. Needs and upgrades: keeping the long game alive
 
-Status: approved by Jon on 2026-10-06 with the defaults below, in build. PR 1 (Logistics) is built; Needs and Tree are not. Written 2026-10-06 from Jon's playtest of the 2026-10-05 release.
+Status: approved by Jon on 2026-10-06 with the defaults below, in build. PR 1 (Logistics) and PR 2 (Needs) are built; Tree is not. Written 2026-10-06 from Jon's playtest of the 2026-10-05 release.
 
 ## The problem
 Late in a run the Kith are so automated that the game becomes a waiting game, and food stops mattering (Jon's screenshot: 144 Kith, 14,380 food, +9.5/s). Everything is free once unlocked: paved roads, bigger homes, more of the same building. The tech tree is a single lane, so there is nothing to choose. Pacing is almost too fast.
@@ -85,3 +85,11 @@ Jon approved the page on 2026-10-06 and took every default.
 - **Copy cost** counts the Workshops and Metal tabs (kilns, pits, posts, benches, wheels, grindstones, mines, smelters, crucibles). Gatherer's Huts, Fields, Storehouses, the Cart Shed and the Lore buildings stay flat.
 - **Hand cart.** One Cart Shed turns one hauler into a hand cart at 3x load (was two haulers at 2x).
 - **Scouting.** Clicking fog sends the nearest idle Kith (a hauler with an empty hand counts); they look in a 5 tile radius (Scouting research adds to it) and walk home.
+
+## How PR 2 (Needs) differs from the sketch above
+- **Tiers and needs as built.** A home houses 3, 4 or 5 Kith at Dwelling, Homestead and Longhouse. Tier 1 needs one kind of food held in the stockpile (8 of it counts as in stock). Tier 2 needs two kinds of food and keeps 2 Rope in the home. Tier 3 needs three kinds of food and keeps 2 Brick and 2 Charcoal in the home. A household uses its goods once every 45 s, and haulers keep two rounds of them in the home.
+- **Looks are slow.** A home checks its needs every 20 s. `met` counts up while they are met and down while they are not, and never drops a tier. Once it has run down to nothing the home houses only a Dwelling's worth, so no new Kith are born into it until the needs are met again.
+- **Upgrades cost.** A Dwelling asks for the Homestead after 2 minutes of met needs: 24 Wood and 16 Clay. A Homestead asks for the Longhouse after 5 minutes: 70 Wood, 50 Brick and 10 Bronze. Haulers carry the materials, a scaffold stands while they arrive and then while the build runs (45 s and 150 s), and at most 2 scaffolds stand at once. The player sets a cap per tier on the Homes tab.
+- **Art.** The map draws Codex's Homestead and Longhouse (`GrowthArt.draw_house`) and the open scaffold (`GrowthArt.draw_scaffold`) with a progress bar under it.
+- **Pacing.** The bot's stone age is now 1091, 936 and 923 s on maps 1 to 3 (was 843, 843 and 777), and the whole run is about 43 to 61 min by bot (about 36 before). The pacing windows in the tests moved to match.
+- **Saves.** Old saves load every home at tier 1 with all caps open. Home timers are kept to a thousandth so a save reads back the same numbers.

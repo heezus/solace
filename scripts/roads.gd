@@ -181,7 +181,7 @@ static func _build(s) -> Dictionary:
 		at_depot[depot] = ids
 	var link := {}
 	for b in s.town.buildings:
-		if not Buildings.needs_worker(b):
+		if not Buildings.served(b):
 			continue
 		var best: Array = []
 		var best_d := INF

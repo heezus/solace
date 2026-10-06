@@ -31,7 +31,7 @@ The source of truth for our game's universe. If something is written here, it's 
 14. [From Hands to Haulers](14-hands-to-haulers.md): one arc from clicking to automation, with scaling click yield, ranks and tiered costs (being built)
 15. [Architecture](15-architecture.md): blocks, interfaces and a testbench, with a step-by-step refactor plan (all steps merged; the code is split into economy, research, map, walking, buildings, Kith, story and fog blocks)
 16. [Era 3: Starfall](16-starfall.md): the Lumen ship lands; glyph deciphering, set-and-forget expeditions, a hidden trust meter plus three big moments (designed, not built)
-17. [Needs and upgrades](17-needs-and-upgrades.md): dwelling tiers and needs, road and bridge tiers, copy cost, tech forks, hand carts, scouting (approved by Jon with the defaults; in build: PR 1 Logistics is built, Needs and Tree follow)
+17. [Needs and upgrades](17-needs-and-upgrades.md): dwelling tiers and needs, road and bridge tiers, copy cost, tech forks, hand carts, scouting (approved by Jon with the defaults; in build: PR 1 Logistics and PR 2 Needs are built, Tree follows)
 - [Decision Log](decision-log.md)
 
 ### Mockups (visual specs from the visual design thread)

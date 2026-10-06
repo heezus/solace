@@ -49,6 +49,7 @@ const ToolBenchTests = preload("res://tests/tool_bench_tests.gd")
 const PassageTests = preload("res://tests/passage_tests.gd")
 const DiscoveryTests = preload("res://tests/discovery_tests.gd")
 const LogisticsTests = preload("res://tests/logistics_tests.gd")
+const HomesTests = preload("res://tests/homes_tests.gd")
 const World = preload("res://scripts/world.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const Buildings = preload("res://scripts/buildings.gd")
@@ -77,6 +78,16 @@ func _init() -> void:
 	if "logistics" in OS.get_cmdline_user_args():  # `-- logistics` runs only the Logistics tests while iterating
 		LogisticsTests.new().run(self)
 		print("FAILED: %d" % failures if failures > 0 else "LOGISTICS TESTS PASSED")
+		quit(1 if failures > 0 else 0)
+		return
+	if "homes" in OS.get_cmdline_user_args():  # `-- homes` runs only the Needs tests while iterating
+		HomesTests.new().run(self)
+		print("FAILED: %d" % failures if failures > 0 else "HOMES TESTS PASSED")
+		quit(1 if failures > 0 else 0)
+		return
+	if "save" in OS.get_cmdline_user_args():  # `-- save` runs only the save and load tests while iterating
+		SaveTests.new().run(self)
+		print("FAILED: %d" % failures if failures > 0 else "SAVE TESTS PASSED")
 		quit(1 if failures > 0 else 0)
 		return
 	if "bench" in OS.get_cmdline_user_args():  # `-- bench` runs only the Tool Bench tests while iterating
@@ -144,6 +155,7 @@ func _init() -> void:
 	PassageTests.new().run(self)
 	DiscoveryTests.new().run(self)
 	LogisticsTests.new().run(self)
+	HomesTests.new().run(self)
 	NewcomerTests.new().run(self)
 	UiTests.new().run(self)
 	TechBoardTests.new().run(self)
@@ -158,8 +170,9 @@ func _init() -> void:
 
 ## A headless player (tests/autoplay_bronze.gd) plays the stone age on a few maps. It should reach Bronze Dawn
 ## in 8 to 25 simulated minutes; data.gd is tuned so it takes about 12 to 16. The game at that moment must match
-## tests/golden.json. It then plays on to its first Bronze, which should come 7 to 14 minutes later (the target is about
-## 8 to 12), and the game at that moment must match tests/golden_bronze.json.
+## tests/golden.json. It then plays on to its first Bronze, which should come 7 to 16 minutes later (the target is about
+## 10 to 14), and the game at that moment must match tests/golden_bronze.json. The Falling Star follows 8 to 36 minutes after
+## that: homes ask for more as they grow (page 17), so a whole run is about 45 to 60 minutes by bot.
 func test_pacing_bot() -> void:
 	var golden := GoldenTests.new()
 	var have_golden := golden.load_golden(self)
@@ -181,12 +194,12 @@ func test_pacing_bot() -> void:
 		check(r["won"], "the bot reaches Bronze Dawn on map %d" % map_seed)
 		check(minutes >= 8.0 and minutes <= 25.0, "map %d takes 8 to 25 minutes (%.1f)" % [map_seed, minutes])
 		check(
-			r["minutes"] >= 7.0 and r["minutes"] <= 14.0,
-			"map %d: the first Bronze takes 7 to 14 minutes more (%.1f)" % [map_seed, r["minutes"]]
+			r["minutes"] >= 7.0 and r["minutes"] <= 16.0,
+			"map %d: the first Bronze takes 7 to 16 minutes more (%.1f)" % [map_seed, r["minutes"]]
 		)
 		check(
-			star >= 8.0 and star <= 20.0,
-			"map %d: the Falling Star comes 8 to 20 minutes after it (%.1f)" % [map_seed, star]
+			star >= 8.0 and star <= 36.0,
+			"map %d: the Falling Star comes 8 to 36 minutes after it (%.1f)" % [map_seed, star]
 		)
 		if not r["won"] or r["minutes"] < 0.0 or star < 0.0:
 			for line in r["log"]:

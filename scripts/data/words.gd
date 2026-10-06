@@ -310,3 +310,40 @@ const SCOUT_SENT := "%s sets out to look."  # a name
 const SCOUT_NOBODY := "No one is free to scout: every %s has a job."  # many
 const SCOUT_BUSY := "A scout is already on the way there."
 const SCOUT_NO_WAY := "There is no way there on foot."
+
+# --- Dwelling tiers and what each needs (scripts/homes.gd, scripts/home_text.gd) ---
+## The tier names, lowest first (Data.HOME_TIERS has the numbers).
+const HOME_NAMES := ["Dwelling", "Homestead", "Longhouse"]
+const HOME_MISSING_FOOD := "%d more kinds of food in stock"  # a number
+const HOME_MISSING_FOOD_ONE := "one more kind of food in stock"
+const HOME_MISSING_GOOD := "%d %s"  # how many more, an item's name
+const HOME_MISSING_ROAD := "a road to the Hearth"
+const HOME_MISSING_HAULERS := "Paths & Haulers, to carry goods in"
+const HOME_CAPPED := "Held at your cap on %ss"  # a tier name
+const HOME_CAP_ROW := "%s or better"  # a tier name
+const HOME_CAP_VALUE := "%d of %s"  # homes that have reached it, the cap
+const HOME_CAP_NONE := "any"
+const HOME_CAP_TIP := (
+	"The most homes you allow to reach %s or better. Homes grow on their own while the settlement keeps them supplied;"
+	+ " lower this to keep it small. Homes already there stay."
+)  # a tier name
+const HOME_BUSY := "Waiting for the builders: %d scaffolds are already up"  # a number
+
+const HOME_NO_STOCK := "Waiting for %s in the stockpile"  # item names, "Bronze, Brick"
+# --- What a home says about its needs (scripts/home_text.gd, scripts/home_needs.gd) ---
+const HOME_NEED_FOODS := "Food: %d of %d kinds in stock"  # kinds held, kinds needed
+const HOME_NEED_GOOD := "%s: %d of %d"  # an item's name, held, needed
+const HOME_STALLED := "Stalled, it needs %s"  # what is missing
+const HOME_HELD := "Content, but held back: %s"  # what holds it
+const HOME_COUNTING := "Content: %d of %d s before it asks to grow"  # seconds, seconds
+const HOME_READY := "Content, and about to ask to grow"
+const HOME_TOP := "Content: nowhere higher to grow"
+const HOME_HAULING := "Growing into a %s: materials %d%% in"  # a tier name, a percent
+const HOME_BUILDING := "Growing into a %s: building, %d s left"  # a tier name, seconds
+const HOME_HOUSES := "Houses %d"
+const HOME_HOUSES_LAPSED := "Houses %d for now, %d once its needs are met"
+const HOME_NEXT := "Next: a %s, for %s"  # a tier name, a cost
+const HOME_PLURALS := ["Dwellings", "Homesteads", "Longhouses"]
+const HOME_READOUT := "%d homes: %s."  # a count, "2 Dwellings, 3 Homesteads"
+const HOME_ALL_MET := "All of them have what they need."
+const HOME_READOUT_STALLED := "%d stalled, most for: %s."  # a count, the commonest missing thing

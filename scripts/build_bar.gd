@@ -16,6 +16,7 @@ const Ui = preload("res://scripts/ui.gd")
 const Hands = preload("res://scripts/hands.gd")
 const CardText = preload("res://scripts/card_text.gd")
 const FieldText = preload("res://scripts/field_text.gd")
+const HomesStrip = preload("res://scripts/homes_strip.gd")
 
 const BUTTON := Vector2(172, 64)
 const TEXT_X := 42.0  # the title and state line start here, beside the 30 px icon
@@ -37,6 +38,7 @@ var pulses := {}  # building type or tab name -> seconds of glow left
 var tech_button: Button
 var demolish_button: Button
 var row: HBoxContainer
+var homes_strip: HomesStrip  # the Homes tab's caps (scripts/homes_strip.gd)
 var build_scroll: ScrollContainer
 
 
@@ -89,6 +91,9 @@ func setup(game: Sim) -> void:
 			parts["button"].pressed.connect(func(): build_picked.emit(type))
 			row.add_child(parts["button"])
 			build_buttons[type] = parts
+	homes_strip = HomesStrip.new()
+	homes_strip.setup(game)
+	row.add_child(homes_strip)
 
 	h.add_child(VSeparator.new())
 
@@ -125,6 +130,7 @@ func _apply_visibility() -> void:
 		tab_buttons[t].visible = tab_shown(t)
 	for type in build_buttons:
 		build_buttons[type]["button"].visible = type in Data.BUILD_TABS[tab] and CardText.shown(state, type)
+	homes_strip.visible = tab == "Homes"
 
 
 ## Whether a tab has any card to show.
@@ -243,6 +249,7 @@ func _demolish_button() -> Button:
 func refresh(placing: String, ready_count: int) -> void:
 	tech_button.text = "Tech tree\n%d ready · T" % ready_count
 	_apply_visibility()
+	homes_strip.refresh()
 	for type in build_buttons:
 		var parts: Dictionary = build_buttons[type]
 		var b: Button = parts["button"]

@@ -29,6 +29,7 @@ const Roads = preload("res://scripts/roads.gd")
 const Scouting = preload("res://scripts/scouting.gd")
 const Forage = preload("res://scripts/forage.gd")
 const Land = preload("res://scripts/land.gd")
+const Homes = preload("res://scripts/homes.gd")
 const SkyBlock = preload("res://scripts/sky.gd")
 
 var won := false
@@ -278,6 +279,7 @@ func tick(delta: float) -> void:
 			fog.reveal(here, _sight(Data.SIGHT_KITH))
 	for b in town.buildings:
 		town.tick_timers(b, delta)
+		Homes.tick(self, b, delta)
 		Workers.tick_building(self, b, delta, fed)
 		if (
 			tech_tree.researched.has("haulers")
