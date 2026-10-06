@@ -561,3 +561,10 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Production buildings (the Workshops and Metal tabs) cost 15% more per standing copy up to 4x; homes, huts, fields, storage, roads and bridges stay flat. A Cart Shed makes one hand cart (3x load, roads only) instead of two 2x carts that gained nothing. Clicking fog sends the nearest idle Kith to scout a 5 tile radius with no road needed.
 - Pacing moved a little, as the page expected: the stone age bots now win at 843, 843 and 777 s on maps 1 to 3 (was 822, 830 and 788) and make the first Bronze at 1491, 1468 and 1409 s (was 1388, 1419 and 1393), 16 to 103 s later, mostly from the lost free paved speed and the dearer workshops. The goldens are re-pinned in their own commit. Old saves load with their land roads paved if Paved Roads or Causeways was known.
 - Art for the tiers, hand cart and scaffolding is still Codex's (docs/art/requests.md); until it lands the tiers are tinted on the map and borrow the path sprite.
+
+## 2026-10-05: Growth visual kit and build-bar fit (PR #51)
+- Codex: Jon assigned path/gravel/paved art, Dwelling upgrades, scaffold and one-Kith hand cart, plus the build-bar clipping fix. This subset supersedes the older asset approval hold; no beast/canon or gameplay decision is added.
+- Keep readable build cards at their existing width and scroll the center; pin Craft and Demolish. Reserve scrollbar space so tabs do not vary the bar height.
+- Reuse the original Dwelling, add broader Homestead/longer Longhouse silhouettes within the 1×1 footprint, and use an open rope-lashed construction overlay. Warm timber/thatch and cool stone preserve the miniature family.
+- One Kith pulls an empty two-wheel cart; goods remain a separate illustration. Roads use connected world-anchored earth/gravel/stone materials instead of opaque square stamps.
+- New imported assets and pure visual calls are supplied; Claude selects tier/construction/cart state in gameplay PRs. Native size/layout and bounds/alpha/RNG/seam checks pass; terrain beauty study remains separate.

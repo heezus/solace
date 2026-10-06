@@ -37,6 +37,7 @@ const RAW_TILE := {
 }
 ## A hut is paused while everything it gathers is past this and not needed.
 const HUT_SURPLUS := 150
+const HUT_WAIT := 60.0  # seconds a food hut may stand unstaffed, with every Kith in a workshop, before one lets go
 ## Road tiles laid toward an unlinked building per decision.
 const LANE_ARM := 10  # how far the kept-open arms run out from the Hearth
 const HAULER_PER := 3.0  # buildings per hauler the bot keeps free
@@ -58,6 +59,7 @@ const MADE_ORDER := ["bronze", "copper", "flour", "brick", "charcoal", "rope"]
 
 var s: Sim
 var clock := 0.0
+var hut_unstaffed_since := -1.0  # game seconds the food huts have stood without a worker, -1 if they have one
 var clicks := 0.0
 var think := 0.0
 var lines: Array = []
@@ -437,6 +439,14 @@ func _no_food_hut() -> bool:
 	return _huts_for("berries") < 1.0
 
 
+## Some Berries hut has its worker.
+func _food_hut_staffed() -> bool:
+	for b in s.town.buildings:
+		if b["type"] == "gatherers_hut" and b["focus"] == "berries" and Buildings.is_staffed(b):
+			return true
+	return false
+
+
 ## Huts set to gather `item` (a hut works one resource).
 func _huts_for(item: String) -> float:
 	var n := 0.0
@@ -628,6 +638,14 @@ func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
 		for id in house:
 			if s.economy.inv.get(id, 0) < house[id]:
 				saving[id] = true
+	# Births need food coming in, and a hut nobody staffs feeds no one: a start that gave its few Kith to
+	# workshops first lets one workshop go until the first food hut has its hand.
+	var no_hand := _huts_for("berries") >= 1.0 and not _food_hut_staffed() and _workers() >= s.people.kith.size()
+	if not no_hand:
+		hut_unstaffed_since = -1.0
+	elif hut_unstaffed_since < 0.0:
+		hut_unstaffed_since = clock
+	var needs_hand := no_hand and clock - hut_unstaffed_since > HUT_WAIT  # a Kith walking to the hut doesn't count
 	for i in s.town.buildings.size():
 		var b: Dictionary = s.town.buildings[i]
 		var def: Dictionary = Data.BUILDINGS[b["type"]]
@@ -646,6 +664,9 @@ func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
 		var surplus: bool = s.economy.inv.get(made, 0) >= later.get(made, 0) + 10 and not short.has(made)
 		for id in def["in"]:
 			surplus = surplus or saving.has(id)
+		if needs_hand and Buildings.is_staffed(b):
+			surplus = true
+			needs_hand = false  # one workshop is enough to free a Kith
 		if surplus != b["paused"]:
 			s.set_paused(i, surplus)
 
