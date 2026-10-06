@@ -582,3 +582,8 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Granaries is the one fork: Markets or Kilns II. Taking one sets the other aside until Granaries is learned, then it costs 1.5x. Nothing the eras need is gated by a fork.
 - Calendar stays a plain either-or: forcing it into a fork broke the Bronze Dawn goals, so it was left alone.
 - Hand carts draw with Codex's cart art from #51. Road tier art stays a tint until the connected road material is wired.
+
+## 2026-10-06: Road and cart art polish (PR #n)
+- Claude: gravel and paved roads now draw with Codex's connected road material instead of a tint. A small layer (`scripts/road_layer.gd`) puts one node on each revealed gravel or paved land tile; a path is still the terrain's own strip, and bridges keep their art.
+- The hand cart is drawn a little smaller (1.04 of a Kith sprite, was 1.2) after a look on a real map, so the Kith pulling it matches the others.
+- No gameplay or pacing change: goldens are unchanged.
