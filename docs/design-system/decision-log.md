@@ -554,3 +554,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Roads become path, gravel, paved and bridges go wood to stone in place, both paid per tile; the build bar shows the real tier cost. Production buildings cost 15% more per copy (homes, roads, bridges flat). Carts become one Kith with 3x carry on roads; beast carts wait for Starfall.
 - Tech tree gets forks (two routes to one goal, the other learnable later at +50%) and megaliths open only from the start lore. Clicking fog sends a scout, so scouting needs no road.
 - Canon note, pending Jon's OK: starstuff touches native animals and makes them tameable beasts in Starfall, foreshadowing the Bloom. Design only; nothing is built until Jon approves page 17.
+
+## 2026-10-05: Tool Bench miniature (PR pending)
+- Codex supplied one transparent low timber Tool Bench, matching the accepted rendered Twine Post and Kiln rather than the historical flat SVG style.
+- Large contrasting flint, stone hammer and unfinished axe head communicate tool making; stone feet and upper-left light match adjacent workshop subjects. The 1×1 gameplay footprint remains the interface.
+- Native 48/24/96 px comparisons use the existing aspect-preserving fit helper. At 24 px the bench silhouette survives while individual tool details rely on its label.
+- Art-only delivery under `docs/art/tool-bench/`; production slot/loading/imports remain with Claude. Growth assets stay pending Jon's approval of page 17.

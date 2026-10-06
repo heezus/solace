@@ -1,0 +1,7 @@
+{
+  "tool": "Built-in image_gen",
+  "date": "2026-10-05",
+  "source": "/Users/jhowell/.codex/generated_images/01a102c1-2f03-7f12-aa4a-15cac6f76c52/exec-b9e30e88-9f07-488f-b661-5ab31b3cee45.png",
+  "reference": "art/rendered/workshops.png",
+  "prompt": "Create ONE transparent game sprite: a low prehistoric Tool Bench for Solace, a top-down orthogonal settlement game with 48 px map tiles. Match the attached workshops' sculpted painterly miniature art, warm honey timber, chunky readable silhouettes, moss-flecked cool stone, soft light from upper left, three-quarter overhead view with front and right sides visible. Reference is style only; produce a new single subject. A stout low rectangular timber workbench, four thick legs with cross brace, rope lashings. On its clearly visible tabletop: one oversized dark charcoal flint core on the left, a short wooden-handled stone hammer diagonally on the right, and a pale half-shaped stone axe head in the middle. A few simple flint chips, one leather pad. No roof, building enclosure, machines, metal tools, people, labels or extra furniture. Small stone feet and tight soft contact shadow; no square earth base or background terrain. Fill most of square canvas with generous transparent margins, all edges uncut. Actual transparent RGBA background. One compact 1x1 building, readable at 48px and as 24px UI icon. Avoid tiny clutter and excessive texture. Output only the isolated new sprite, not the reference sheet."
+}
