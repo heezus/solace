@@ -149,6 +149,12 @@ const CART_LOAD := 2
 ## Road tiers (design-system/17-needs-and-upgrades.md): path, gravel, paved. A road tile's walk cost is the open road's
 ## (WALK_COST "road") divided by its tier's speed, so higher tiers are faster. A Stone Bridge walks at the top tier.
 const ROAD_SPEEDS := [1.0, 1.25, 1.5]
+## Copy cost: every standing copy of a production building makes the next one cost this share more, up to
+## COPY_COST_CEILING times the listed price. The build bar tabs that hold production buildings are COPY_COST_TABS.
+## Homes, roads, bridges, fields, storage and the Lore buildings stay flat.
+const COPY_COST_STEP := 0.15
+const COPY_COST_CEILING := 4.0
+const COPY_COST_TABS := ["Workshops", "Metal"]
 ## Granaries: every GRANARY_FOOD food in the stockpile houses one more person, up to GRANARY_HOMES.
 const GRANARY_FOOD := 20.0
 const GRANARY_HOMES := 30

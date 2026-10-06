@@ -97,7 +97,7 @@ func placement_error(type: String, p: Vector2i) -> String:
 		return "Must go next to the Strange Stone"
 	if def.get("near_hearth", false) and not near_hearth(p):
 		return "Must be within %d tiles of the Hearth" % int(Data.HEARTH_RADIUS)
-	if not _economy.can_afford(def["cost"]):
+	if not _economy.can_afford(price(type)):
 		return "Not enough materials"
 	return ""
 
@@ -105,7 +105,24 @@ func placement_error(type: String, p: Vector2i) -> String:
 ## What `type` costs at p now: a road costs what its tile asks (a pass through Rocks costs more), and a road or bridge
 ## laid over one that stands there costs only the difference.
 func cost_here(type: String, p: Vector2i) -> Dictionary:
-	return Rules.cost_at(type, _world.tile_at(p), built_type(p) if _world.roads.has(p) else "")
+	if Data.BUILDINGS[type]["kind"] in ["road", "bridge"]:
+		return Rules.cost_at(type, _world.tile_at(p), built_type(p) if _world.roads.has(p) else "")
+	return price(type)
+
+
+## How many of building `type` stand.
+func copies(type: String) -> int:
+	var n := 0
+	for b in buildings:
+		if b["type"] == type:
+			n += 1
+	return n
+
+
+## What the next building of `type` costs: its listed price, with 15% more for each production copy already standing
+## (never past 4 times, see Rules.price). Homes, roads, bridges and the rest stay flat.
+func price(type: String) -> Dictionary:
+	return Rules.price(type, copies(type))
 
 
 ## Why `type` can't be laid over the road or bridge already at p, or "" when it upgrades it: a higher road tier over a

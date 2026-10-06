@@ -4,6 +4,7 @@ extends RefCounted
 ## `placing`, `nudge` and the building panel. The one place a hint about the tile under the mouse is shown.
 
 const Data = preload("res://scripts/data.gd")
+const Rules = preload("res://scripts/rules.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Overlays = preload("res://scripts/overlays.gd")
 const Roads = preload("res://scripts/roads.gd")
@@ -41,6 +42,9 @@ static func _placing_text(m) -> String:
 		t = "Laying %s: click, or drag and release to lay a line. Right-click to stop." % def["name"]
 	var cost: Dictionary = s.town.cost_here(m.placing, m.hover) if s.world.in_bounds(m.hover) else def["cost"]
 	t += "\nCost (have/need): " + (Ui.progress_text(s.economy.inv, cost, 99) if not cost.is_empty() else "free")
+	var copies: int = s.town.copies(m.placing)
+	if Rules.is_production(m.placing) and copies > 0:
+		t += "\n" + Data.COPY_COST_NOTE % [copies, roundi((Rules.copy_multiplier(m.placing, copies) - 1.0) * 100.0)]
 	if s.world.in_bounds(m.hover):
 		var err: String = s.town.placement_error(m.placing, m.hover)
 		if err != "":

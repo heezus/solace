@@ -351,7 +351,7 @@ func _click_tile(p: Vector2i) -> void:
 		var err := state.town.placement_error(placing, p)
 		if err == "":
 			_place_at(p)
-			if not state.economy.can_afford(Data.BUILDINGS[placing]["cost"]):
+			if not state.economy.can_afford(state.town.price(placing)):
 				placing = ""
 		else:
 			_toast(err, 2.0)

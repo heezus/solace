@@ -11,6 +11,7 @@ const Rules = preload("res://scripts/rules.gd")
 const RunSave = preload("res://scripts/run_save.gd")
 const Overlays = preload("res://scripts/overlays.gd")
 const HoverText = preload("res://scripts/hover_text.gd")
+const BuildBar = preload("res://scripts/build_bar.gd")
 
 var t  # the runner, tests/run_tests.gd
 
@@ -24,6 +25,9 @@ func run(runner) -> void:
 	test_the_stone_bridge_upgrades_a_wooden_one_in_place()
 	test_tiers_save_and_old_saves_keep_their_pace()
 	test_the_bar_and_the_hover_show_the_real_cost_of_a_tier()
+	test_each_copy_of_a_production_building_costs_more()
+	test_flat_buildings_never_cost_more()
+	test_the_bar_and_hover_show_the_current_copy_price()
 
 
 # --- Hidden until learned ------------------------------------------------------
@@ -276,3 +280,133 @@ func test_the_bar_and_the_hover_show_the_real_cost_of_a_tier() -> void:
 	t.check(HoverText.road_name(s, row[0]) == "Road", "the hover names a path")
 	s.place("paved_road", row[0])
 	t.check(HoverText.road_name(s, row[0]) == "Paved Road", "and a paved tile")
+
+
+# --- Copy cost -----------------------------------------------------------------
+
+
+func test_each_copy_of_a_production_building_costs_more() -> void:
+	var base: Dictionary = Data.BUILDINGS["kiln"]["cost"]
+	t.check(
+		Rules.is_production("kiln") and Rules.is_production("smelter") and Rules.is_production("water_wheel"),
+		"kilns, smelters and wheels are production"
+	)
+	t.check(Rules.price("kiln", 0) == base, "the first copy is the listed price")
+	t.check(Rules.price("kiln", 1) == {"stone": 12, "clay": 12}, "one standing: 15% more (10 becomes 12 once rounded)")
+	t.check(Rules.price("kiln", 2) == {"stone": 13, "clay": 13}, "two standing: 30% more")
+	t.check(Rules.price("kiln", 10) == {"stone": 25, "clay": 25}, "ten standing: 2.5 times")
+	t.check(Rules.price("kiln", 20) == {"stone": 40, "clay": 40}, "twenty standing: the 4x ceiling")
+	t.check(Rules.price("kiln", 60) == {"stone": 40, "clay": 40}, "and no more after it")
+	t.check(is_equal_approx(Rules.copy_multiplier("kiln", 100), Data.COPY_COST_CEILING), "the ceiling is 4x")
+	var s: Sim = t.fresh()
+	t.give(s, 400)
+	s.tech_tree.researched["pottery"] = true
+	var camp: Vector2i = s.world.camp_pos
+	var spots: Array = []
+	for dy in range(-6, 7):
+		for dx in range(-6, 7):
+			var p := camp + Vector2i(dx, dy)
+			if s.world.tile_at(p) == "grass" and p != camp and spots.size() < 4:
+				spots.append(p)
+	t.check(s.town.price("kiln") == base and s.town.copies("kiln") == 0, "no kiln stands: the listed price")
+	var before: int = s.economy.inv["stone"]
+	t.check(s.place("kiln", spots[0]), "the first kiln")
+	t.check(s.economy.inv["stone"] == before - 10, "cost the listed 10 Stone")
+	t.check(s.town.copies("kiln") == 1 and s.town.price("kiln") == {"stone": 12, "clay": 12}, "the second asks 12")
+	before = s.economy.inv["stone"]
+	t.check(s.place("kiln", spots[1]), "the second kiln")
+	t.check(
+		s.economy.inv["stone"] == before - 12 and s.economy.inv["clay"] == 400 - 10 - 12, "and charges 12, as quoted"
+	)
+	s.economy.inv["stone"] = 12
+	s.economy.inv["clay"] = 13
+	t.check(
+		s.town.placement_error("kiln", spots[2]) == "Not enough materials",
+		"13 Stone are asked for the third: 12 are not enough"
+	)
+	s.economy.inv["stone"] = 13
+	t.check(s.town.placement_error("kiln", spots[2]) == "", "13 are")
+	s.demolish(spots[1])
+	t.check(s.town.price("kiln") == {"stone": 12, "clay": 12}, "tearing one down lowers the price again")
+	t.check(Rules.refund_of("kiln") == {"stone": 5, "clay": 5}, "the refund stays half of the listed price")
+
+
+func test_flat_buildings_never_cost_more() -> void:
+	for type in [
+		"dwelling",
+		"road",
+		"gravel_road",
+		"paved_road",
+		"bridge",
+		"stone_bridge",
+		"field",
+		"flax_field",
+		"storehouse",
+		"gatherers_hut",
+		"cart_shed",
+		"watchtower"
+	]:
+		t.check(not Rules.is_production(type), "%s is not production" % type)
+		t.check(
+			Rules.price(type, 12) == Data.BUILDINGS[type]["cost"], "so a twelfth copy costs the listed price: %s" % type
+		)
+	for type in Data.BUILD_TABS["Workshops"] + Data.BUILD_TABS["Metal"]:
+		t.check(Rules.is_production(type), "%s is production" % type)
+	t.check(Data.COPY_COST_STEP == 0.15 and Data.COPY_COST_CEILING == 4.0, "15% a copy, 4x at most")
+	var s: Sim = t.fresh()
+	t.give(s, 400)
+	s.tech_tree.researched["haulers"] = true
+	var spot: Vector2i = s.world.camp_pos + Vector2i(-1, 2)
+	for i in 4:
+		s.town.add_building("dwelling", spot + Vector2i(i, 0))
+	t.check(
+		s.town.price("dwelling") == Data.BUILDINGS["dwelling"]["cost"],
+		"four Dwellings stand and the next is still flat"
+	)
+
+
+func test_the_bar_and_hover_show_the_current_copy_price() -> void:
+	var s: Sim = t.fresh()
+	t.give(s, 400)
+	s.tech_tree.researched["pottery"] = true
+	var camp: Vector2i = s.world.camp_pos
+	s.town.add_building("kiln", camp + Vector2i(2, 0))
+	s.town.add_building("kiln", camp + Vector2i(3, 0))
+	var price: Dictionary = s.town.price("kiln")
+	t.check(price == {"stone": 13, "clay": 13}, "two kilns stand: 30% more")
+	var bar = BuildBar.new()
+	bar.setup(s)
+	bar.refresh("", 0)
+	var pips: HBoxContainer = bar.build_buttons["kiln"]["pips"]
+	t.check(pips.get_child(0).get_child(1).text == "13", "the card's pips say 13, not the listed 10")
+	var tip: String = bar.build_buttons["kiln"]["button"].tooltip_text
+	t.check(tip.contains("13") and tip.contains(Data.COPY_COST_NOTE % [2, 30]), "and the tooltip says why: %s" % tip)
+	s.economy.inv["stone"] = 12
+	bar.refresh("", 0)
+	t.check(bar.build_buttons["kiln"]["sub"].text == "Need 1 Stone", "a card is short by the real price")
+	bar.free()
+	var m := _fake_main(s, "kiln", camp + Vector2i(5, 3))
+	var hover: String = HoverText.text(m)
+	t.check(
+		hover.contains(Data.COPY_COST_NOTE % [2, 30]) and hover.contains("13"),
+		"the placement hover quotes it too: %s" % hover
+	)
+
+
+## Just enough of the main scene for HoverText: the state, the tile under the mouse and the building being placed.
+func _fake_main(s: Sim, placing: String, hover: Vector2i) -> Object:
+	var m := FakeMain.new()
+	m.state = s
+	m.placing = placing
+	m.hover = hover
+	return m
+
+
+class FakeMain:
+	extends RefCounted
+	var state
+	var placing := ""
+	var hover := Vector2i(-1, -1)
+	var pick_focus := ""
+	var nudge := 0.0
+	var building_panel: Object = null

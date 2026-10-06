@@ -73,12 +73,13 @@ static func state_line(s, type: String, placing: String, max_w: float) -> String
 		return Data.CARD_LOCKED
 	if placing == type:
 		return Data.CARD_PLACING
-	var short := shortfall(s.economy.inv, def["cost"])
+	var price: Dictionary = s.town.price(type)
+	var short := shortfall(s.economy.inv, price)
 	if short.is_empty():
 		return Data.CARD_DRAG if def["kind"] in ["road", "bridge", "field"] else Data.CARD_READY
 	var options: Array = [Data.CARD_NEED % ", ".join(short)]
 	if short.size() > 1:
-		options.append(Data.CARD_NEED_NAMES % ", ".join(short_names(s.economy.inv, def["cost"])))
+		options.append(Data.CARD_NEED_NAMES % ", ".join(short_names(s.economy.inv, price)))
 		options.append(Data.CARD_NEED_COUNT % short.size())
 	for line in options:
 		if width(line) <= max_w:

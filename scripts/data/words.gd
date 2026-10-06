@@ -38,6 +38,8 @@ const JOBS_TIP := (
 	"%s\n%s work buildings and haul goods. Each building is one job and needs one. "
 	+ "They grow when there is room and steady food."
 )
+## The build card's note on a production building that already stands: copies standing, the percent more it costs.
+const COPY_COST_NOTE := "%d standing: this one costs %d%% more."
 const IDLE_WORD := "idle"
 const HAUL_WORD := "hauling"
 const NOTE_STARVING := "Starving: no food"

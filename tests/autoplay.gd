@@ -166,7 +166,7 @@ func _short() -> Dictionary:
 	if _house_wanted():
 		_want(want, Data.BUILDINGS["dwelling"]["cost"], 1)
 	for type in _workshops_due():
-		_want(want, Data.BUILDINGS[type]["cost"], 1)
+		_want(want, s.town.price(type), 1)
 	_goal_wants(want)
 	var tools: int = _workers() + 1 - Hands.tools_held(s) - s.economy.inv.get("flint_tools", 0)
 	if Hands.recipe_unlocked(s, "flint_tools") and tools > 0:
@@ -634,7 +634,7 @@ func _water_wheel() -> bool:
 ## A Water Wheel on the bank with room for workshops around it, near the Hearth; explore toward
 ## the nearest bank if none is in sight.
 func _place_wheel() -> bool:
-	if not s.economy.can_afford(Data.BUILDINGS["water_wheel"]["cost"]):
+	if not s.economy.can_afford(s.town.price("water_wheel")):
 		return false
 	var radius: float = Data.BUILDINGS["water_wheel"]["radius"]
 	var room_around := func(p):
@@ -691,7 +691,7 @@ func _place_workshop(type: String) -> bool:
 	if Data.BUILDINGS[type].get("needs_power", false):
 		if _count("water_wheel") == 0:
 			return false
-		if not s.economy.can_afford(Data.BUILDINGS[type]["cost"]):
+		if not s.economy.can_afford(s.town.price(type)):
 			return false
 		var placed := _place_best(
 			type, func(p): return -Vector2(p).distance_to(Vector2(s.world.camp_pos)) if s.town.is_powered(p) else -INF
@@ -730,7 +730,7 @@ func _flood_reach() -> void:
 ## Place `type` on the revealed tile with the best score (skipping -INF), if it can be afforded.
 ## Buildings go only where the Kith can walk; roads may push out from there.
 func _place_best(type: String, score: Callable, focus := "") -> bool:
-	if not s.town.unlocked(type) or not s.economy.can_afford(Data.BUILDINGS[type]["cost"]):
+	if not s.town.unlocked(type) or not s.economy.can_afford(s.town.price(type)):
 		return false
 	var best := Vector2i(-1, -1)
 	var best_score := -INF
@@ -760,7 +760,7 @@ func _spare(item: String) -> int:
 	if not s.tech_tree.queue.is_empty():
 		keep += int(Data.TECHS[s.tech_tree.queue[0]]["cost"].get(item, 0))
 	for type in _workshops_due():
-		keep += int(Data.BUILDINGS[type]["cost"].get(item, 0))
+		keep += int(s.town.price(type).get(item, 0))
 	return s.economy.inv.get(item, 0) - keep
 
 

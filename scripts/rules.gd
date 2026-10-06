@@ -92,6 +92,35 @@ static func road_type(tier: int) -> String:
 	return "road"
 
 
+## True for a production building, whose copies cost more (Data.COPY_COST_TABS: the workshops and the metal works).
+static func is_production(type: String) -> bool:
+	for tab in Data.COPY_COST_TABS:
+		if type in Data.BUILD_TABS[tab]:
+			return true
+	return false
+
+
+## How many times its listed price the next copy of a production building costs with `copies` of it standing: 15% more
+## for each, never past Data.COPY_COST_CEILING. 1.0 for anything else.
+static func copy_multiplier(type: String, copies: int) -> float:
+	if not is_production(type):
+		return 1.0
+	return minf(1.0 + Data.COPY_COST_STEP * copies, Data.COPY_COST_CEILING)
+
+
+## What the next `type` costs with `copies` of it standing: the listed price times copy_multiplier, each item rounded
+## and never below 1.
+static func price(type: String, copies: int) -> Dictionary:
+	var cost: Dictionary = Data.BUILDINGS[type]["cost"]
+	var mult := copy_multiplier(type, copies)
+	if mult == 1.0:
+		return cost
+	var out := {}
+	for id in cost:
+		out[id] = maxi(1, roundi(cost[id] * mult))
+	return out
+
+
 ## What is still owed for `cost` when `paid` has been spent already: the difference in each item, never below zero
 ## (what was paid in another item is not given back).
 static func difference(cost: Dictionary, paid: Dictionary) -> Dictionary:
