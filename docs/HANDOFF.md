@@ -5,7 +5,7 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 ## Active work
 
 ### Codex — Tool Bench art
-- **Task:** supply one Tool Bench miniature matching the existing workshops, on `codex/tool-bench-art`; leave growth art pending Jon's approval.
+- **Task:** supply one Tool Bench miniature matching the existing workshops, on `codex/tool-bench-art`, PR #49; leave growth art pending Jon's approval.
 - **Reserved files:** none; art reservation released on publication. Delivered files are `docs/art/tool-bench/`, the queue note and this handoff entry.
 - **Acceptance criteria:** transparent low wooden workbench with flint, stone hammer and half-shaped tool; inspect beside existing workshop art at 48 px and 24 px; document exact source/prompt and wiring needs. Preserve the 1×1 logical footprint.
 - **Status:** art complete for review; transparent Tool Bench and native 48/24/96 px comparison inspected. Capture and focused lint/format checks passed. Production loading is unchanged.

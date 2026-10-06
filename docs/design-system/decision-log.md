@@ -555,7 +555,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Tech tree gets forks (two routes to one goal, the other learnable later at +50%) and megaliths open only from the start lore. Clicking fog sends a scout, so scouting needs no road.
 - Canon note, pending Jon's OK: starstuff touches native animals and makes them tameable beasts in Starfall, foreshadowing the Bloom. Design only; nothing is built until Jon approves page 17.
 
-## 2026-10-05: Tool Bench miniature (PR pending)
+## 2026-10-05: Tool Bench miniature (PR #49)
 - Codex supplied one transparent low timber Tool Bench, matching the accepted rendered Twine Post and Kiln rather than the historical flat SVG style.
 - Large contrasting flint, stone hammer and unfinished axe head communicate tool making; stone feet and upper-left light match adjacent workshop subjects. The 1×1 gameplay footprint remains the interface.
 - Native 48/24/96 px comparisons use the existing aspect-preserving fit helper. At 24 px the bench silhouette survives while individual tool details rely on its label.
