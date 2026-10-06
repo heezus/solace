@@ -17,7 +17,7 @@ var _techs: Dictionary = {}  # stands in for the researched techs
 func run(runner) -> void:
 	t = runner
 	test_walk_cost_per_tile()
-	test_roads_are_fast_and_paving_doubles_it()
+	test_roads_are_fast_and_each_tier_is_faster()
 	test_a_bridge_costs_a_road_not_a_river()
 	test_grid_weights_follow_walk_cost()
 	test_rivers_are_solid_without_a_road_or_raft()
@@ -35,7 +35,7 @@ func run(runner) -> void:
 	test_pathing_does_not_write_the_world()
 	test_sim_builds_the_walking_grid()
 	test_placing_a_road_updates_the_grid()
-	test_paved_roads_refresh_the_grid()
+	test_paving_a_road_refreshes_the_grid()
 	test_kith_walk_around_water()
 
 
@@ -77,7 +77,7 @@ func test_walk_cost_per_tile() -> void:
 	t.check(p.walk_cost(Vector2i(1, 0)) > 1.0 and p.walk_cost(Vector2i(3, 0)) > p.walk_cost(Vector2i(1, 0)), "in order")
 
 
-func test_roads_are_fast_and_paving_doubles_it() -> void:
+func test_roads_are_fast_and_each_tier_is_faster() -> void:
 	var w := World.new(7, 5)
 	w.set_tile(Vector2i(1, 0), "tree")
 	w.add_road(Vector2i(0, 0))
@@ -86,11 +86,14 @@ func test_roads_are_fast_and_paving_doubles_it() -> void:
 	t.check(is_equal_approx(p.walk_cost(Vector2i(0, 0)), Data.WALK_COST["road"]), "a road is fast")
 	t.check(p.walk_cost(Vector2i(0, 0)) < 1.0, "faster than open ground")
 	t.check(is_equal_approx(p.walk_cost(Vector2i(1, 0)), Data.WALK_COST["road"]), "and a road over forest is a road")
-	_techs["paved_roads"] = true
-	t.check(is_equal_approx(p.walk_cost(Vector2i(0, 0)), Data.WALK_COST["road"] / 2.0), "paving halves the cost")
-	t.check(is_equal_approx(p.walk_cost(Vector2i(2, 0)), 1.0), "and does nothing off the road")
-	_techs.erase("paved_roads")
-	t.check(is_equal_approx(p.walk_cost(Vector2i(0, 0)), Data.WALK_COST["road"]), "the block reads the techs each time")
+	w.set_road_tier(Vector2i(0, 0), 1)
+	t.check(is_equal_approx(p.walk_cost(Vector2i(0, 0)), Data.WALK_COST["road"] / 1.25), "gravel is 25% faster")
+	w.set_road_tier(Vector2i(0, 0), 2)
+	t.check(is_equal_approx(p.walk_cost(Vector2i(0, 0)), Data.WALK_COST["road"] / 1.5), "paved is 50% faster")
+	t.check(is_equal_approx(p.walk_cost(Vector2i(1, 0)), Data.WALK_COST["road"]), "the next tile keeps its own tier")
+	t.check(is_equal_approx(p.walk_cost(Vector2i(2, 0)), 1.0), "and the tier does nothing off the road")
+	w.set_road_tier(Vector2i(0, 0), 0)
+	t.check(is_equal_approx(p.walk_cost(Vector2i(0, 0)), Data.WALK_COST["road"]), "tier 0 is the plain path again")
 
 
 func test_a_bridge_costs_a_road_not_a_river() -> void:
@@ -248,7 +251,8 @@ func test_path_prefers_roads_to_forest() -> void:
 	t.check(path.has(Vector2i(3, 0)), "the walk takes the road")
 	t.check(not path.has(Vector2i(3, 1)), "and not the forest")
 	t.check(path[0] == Vector2i(0, 1) and path[path.size() - 1] == Vector2i(6, 1), "between the same two ends")
-	_techs["paved_roads"] = true
+	for x in range(1, 6):
+		w.set_road_tier(Vector2i(x, 0), 2)
 	p.refresh()
 	t.check(p.path(Vector2i(0, 1), Vector2i(6, 1)).has(Vector2i(3, 0)), "paved, still the road")
 
@@ -301,15 +305,16 @@ func test_placing_a_road_updates_the_grid() -> void:
 	t.check(s.world.tile_at(grass) == "grass" and not s.world.fields.has(grass), "and clearing it restores the grass")
 
 
-func test_paved_roads_refresh_the_grid() -> void:
+func test_paving_a_road_refreshes_the_grid() -> void:
 	var s: Sim = t.fresh()
 	s.tech_tree.researched["haulers"] = true
 	var p: Vector2i = s.world.camp_pos + Vector2i(0, 2)
 	t.check(t.place_free(s, "road", p), "a road on grass")
 	var slow := s.pathing.astar.get_point_weight_scale(p)
 	s.tech_tree.researched["paved_roads"] = true
-	s._tech_done("paved_roads")
-	t.check(s.pathing.astar.get_point_weight_scale(p) < slow, "finishing Paved Roads refreshes the grid at once")
+	s.economy.add("brick", 5)
+	t.check(s.place("paved_road", p), "a Paved Road laid over it")
+	t.check(s.pathing.astar.get_point_weight_scale(p) < slow, "paving it makes the walking cell faster at once")
 
 
 func test_kith_walk_around_water() -> void:

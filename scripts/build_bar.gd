@@ -10,6 +10,7 @@ signal demolish_pressed
 
 const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
+const Rules = preload("res://scripts/rules.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Hands = preload("res://scripts/hands.gd")
@@ -245,7 +246,6 @@ func refresh(placing: String, ready_count: int) -> void:
 	for type in build_buttons:
 		var parts: Dictionary = build_buttons[type]
 		var b: Button = parts["button"]
-		var def: Dictionary = Data.BUILDINGS[type]
 		var unlocked := state.town.unlocked(type)
 		var style := Ui.panel_style(Ui.CARD if unlocked else LOCKED_BG, 4)
 		if placing == type:
@@ -261,13 +261,14 @@ func refresh(placing: String, ready_count: int) -> void:
 		b.disabled = not unlocked
 		var sub: Label = parts["sub"]
 		sub.text = CardText.state_line(state, type, placing, sub.size.x) if unlocked else ""  # the reason says it
-		var short := not CardText.shortfall(state.economy.inv, def["cost"]).is_empty()
+		var price: Dictionary = state.town.price(type)
+		var short := not CardText.shortfall(state.economy.inv, price).is_empty()
 		sub.add_theme_color_override("font_color", Ui.SHORT if short and placing != type else Ui.TEXT_DIM)
 		var why: Label = parts["why"]
 		why.text = CardText.locked_reason(type, why.size.x) if not unlocked else ""
 		why.add_theme_color_override("font_color", LOCKED_TEXT)
 		parts["pips"].visible = unlocked
-		Ui.update_pips(parts["pips"], def["cost"], state.economy.inv)
+		Ui.update_pips(parts["pips"], price, state.economy.inv)
 		parts["icon"].modulate = Color(1, 1, 1, 1.0 if unlocked else 0.4)
 		b.tooltip_text = _tooltip(type)
 	var demo := Ui.panel_style(Ui.BAD if placing == "demolish" else Ui.CARD_LOCKED, 4)
@@ -289,8 +290,12 @@ func refresh(placing: String, ready_count: int) -> void:
 func _tooltip(type: String) -> String:
 	var def: Dictionary = Data.BUILDINGS[type]
 	var s: String = def["name"] + "\n" + def["desc"]
-	if not def["cost"].is_empty():
-		s += "\nPrice (have/need): " + Ui.progress_text(state.economy.inv, def["cost"], 99)
+	var price: Dictionary = state.town.price(type)
+	if not price.is_empty():
+		s += "\nPrice (have/need): " + Ui.progress_text(state.economy.inv, price, 99)
+	var copies: int = state.town.copies(type)
+	if Rules.is_production(type) and copies > 0:
+		s += "\n" + Data.COPY_COST_NOTE % [copies, roundi((Rules.copy_multiplier(type, copies) - 1.0) * 100.0)]
 	if def["kind"] == "field":
 		s += "\n" + FieldText.card_text(state, def)
 	if def["tech"] == "":

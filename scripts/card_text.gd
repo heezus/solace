@@ -8,13 +8,17 @@ const Data = preload("res://scripts/data.gd")
 const FONT_SIZE := 14  # the state line's size on the card
 
 
-## Whether the card for `type` is on the build bar. A `story` building stays off it until its tech is on the
-## research board and its parents are done (or it is built), so the Lore tab doesn't give the reveal away.
+## Whether the card for `type` is on the build bar. A building with no tech, or whose tech is learned, always shows.
+## Any other card stays off the bar until the tech tree has revealed its tech (`Research.visible_set()`), so a Cart
+## Shed or a Trading Post doesn't appear before the Kith have found what it needs. A `story` building waits longer:
+## until its tech is also reachable (its parents are done), so the Lore tab doesn't give the reveal away.
 static func shown(s, type: String) -> bool:
 	var def: Dictionary = Data.BUILDINGS[type]
-	if not def.get("story", false):
+	if def["tech"] == "" or s.town.unlocked(type):
 		return true
-	return s.town.unlocked(type) or s.tech_tree.requirements_met(def["tech"])
+	if not def.get("story", false):
+		return s.tech_tree.tech_visible(def["tech"])
+	return s.tech_tree.requirements_met(def["tech"])
 
 
 ## "4 Wood" for each item of `cost` the stockpile `inv` is short of, in cost order (empty when it is enough).
@@ -69,12 +73,13 @@ static func state_line(s, type: String, placing: String, max_w: float) -> String
 		return Data.CARD_LOCKED
 	if placing == type:
 		return Data.CARD_PLACING
-	var short := shortfall(s.economy.inv, def["cost"])
+	var price: Dictionary = s.town.price(type)
+	var short := shortfall(s.economy.inv, price)
 	if short.is_empty():
 		return Data.CARD_DRAG if def["kind"] in ["road", "bridge", "field"] else Data.CARD_READY
 	var options: Array = [Data.CARD_NEED % ", ".join(short)]
 	if short.size() > 1:
-		options.append(Data.CARD_NEED_NAMES % ", ".join(short_names(s.economy.inv, def["cost"])))
+		options.append(Data.CARD_NEED_NAMES % ", ".join(short_names(s.economy.inv, price)))
 		options.append(Data.CARD_NEED_COUNT % short.size())
 	for line in options:
 		if width(line) <= max_w:

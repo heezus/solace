@@ -38,6 +38,8 @@ const JOBS_TIP := (
 	"%s\n%s work buildings and haul goods. Each building is one job and needs one. "
 	+ "They grow when there is room and steady food."
 )
+## The build card's note on a production building that already stands: copies standing, the percent more it costs.
+const COPY_COST_NOTE := "%d standing: this one costs %d%% more."
 const IDLE_WORD := "idle"
 const HAUL_WORD := "hauling"
 const NOTE_STARVING := "Starving: no food"
@@ -148,7 +150,7 @@ const TECH_BLURBS := {
 	"irrigation": "Fields that touch the river grow twice as fast.",
 	"preservation": "The Kith eat 25% less.",
 	"carrying_poles": "Haulers carry 20 at a time instead of 10.",
-	"paved_roads": "Roads are 4 times faster than open ground.",
+	"paved_roads": "Lets you lay Paved Roads, 3 times faster than open ground, over any road.",
 	"baking": "Bake flour into bread: flour is worth 5 food instead of 3.",
 	"rafts": "Kith can cross the river without a bridge, slowly.",
 	"calendar": "Fields yield 25% more.",
@@ -159,9 +161,9 @@ const TECH_BLURBS := {
 	"mining": "Lets you build a Mine on an ore tile, dug by two Kith.",
 	"smelting": "Lets you build a Smelter that melts copper ore into Copper.",
 	"kilns_ii": "Every Kiln fires twice the Brick each time.",
-	"the_wheel": "Lets you build a Cart Shed: carts carry twice the load, on roads.",
+	"the_wheel": "Lets you build a Cart Shed: a hand cart carries three times the load, on roads.",
 	"alloying": "Lets you build a Crucible that pours Copper and Tin into Bronze.",
-	"causeways": "Lets you lay stone Roads, five times as fast as open ground, and a Stone Bridge.",
+	"causeways": "Lets you build a Stone Bridge, over a Wooden Bridge or a new crossing: carts can cross it.",
 	"markets": "Lets you build a Trading Post to swap goods.",
 	"sky_watch": "Lets you build a Watchtower, and names the new light in the sky.",
 	"bronze_tools": "Workers with a Bronze Tool are 50% faster than with flint.",
@@ -302,4 +304,9 @@ const CLOSE_TIP := "Close (Esc)"
 const SELECT_HINT := "Click a building to see its details here."
 
 # --- The Info panel (scripts/hover_text.gd) ---
-const UNEXPLORED_INFO := "Unexplored. Build a Gatherer's Hut, or discover Scouting, to see farther."
+const UNEXPLORED_INFO := "Unexplored. Click it to send the nearest idle Kith to look, or build a Gatherer's Hut, or discover Scouting."
+const UNEXPLORED_PILL := "Unexplored · click to scout"
+const SCOUT_SENT := "%s sets out to look."  # a name
+const SCOUT_NOBODY := "No one is free to scout: every %s has a job."  # many
+const SCOUT_BUSY := "A scout is already on the way there."
+const SCOUT_NO_WAY := "There is no way there on foot."

@@ -147,11 +147,11 @@ func _goal_wants(want: Dictionary) -> void:
 	if bronze_at >= 0.0:  # past the first Bronze: the Cart Shed, the Watchtower and one more Mine are to be paid for
 		for type in ["cart_shed", "watchtower"]:
 			if s.town.unlocked(type) and _count(type) < 1:
-				_want(want, Data.BUILDINGS[type]["cost"], 1)
+				_want(want, s.town.price(type), 1)
 		for type in STAR_WORKSHOPS:
 			if s.town.unlocked(type) and _count(type) < STAR_WORKSHOPS[type]:
-				_want(want, Data.BUILDINGS[type]["cost"], 1)
-		_want(want, Data.BUILDINGS["mine"]["cost"], 1)
+				_want(want, s.town.price(type), 1)
+		_want(want, s.town.price("mine"), 1)
 
 
 ## The era's workshops are due once their tech is in and the first Bronze still needs them.

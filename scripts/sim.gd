@@ -26,6 +26,7 @@ const Research = preload("res://scripts/research.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Workers = preload("res://scripts/workers.gd")
 const Roads = preload("res://scripts/roads.gd")
+const Scouting = preload("res://scripts/scouting.gd")
 const Forage = preload("res://scripts/forage.gd")
 const Land = preload("res://scripts/land.gd")
 const SkyBlock = preload("res://scripts/sky.gd")
@@ -142,7 +143,7 @@ func research(tech: String) -> bool:
 
 ## What a finished tech sets off in the rest of the game (Research only reports that it finished).
 func _tech_done(tech: String) -> void:
-	if tech in ["paved_roads", "rafts", "causeways"]:
+	if tech == "rafts":
 		pathing.refresh()
 	if tech == "scouting":
 		for b in town.buildings:
@@ -266,6 +267,8 @@ func tick(delta: float) -> void:
 					Workers.tick(self, k, delta)
 				"haul":
 					Haulers.tick(self, k, delta)
+				"scout":
+					Scouting.tick(self, k, delta)
 				_:
 					people.step(k, delta)
 	for k in people.kith:

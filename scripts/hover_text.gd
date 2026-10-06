@@ -4,6 +4,7 @@ extends RefCounted
 ## `placing`, `nudge` and the building panel. The one place a hint about the tile under the mouse is shown.
 
 const Data = preload("res://scripts/data.gd")
+const Rules = preload("res://scripts/rules.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Overlays = preload("res://scripts/overlays.gd")
 const Roads = preload("res://scripts/roads.gd")
@@ -39,10 +40,11 @@ static func _placing_text(m) -> String:
 	var t := "Placing %s. Left-click open grassland, right-click to stop." % def["name"]
 	if def["kind"] in ["road", "bridge", "field"]:
 		t = "Laying %s: click, or drag and release to lay a line. Right-click to stop." % def["name"]
-	t += (
-		"\nCost (have/need): "
-		+ (Ui.progress_text(s.economy.inv, def["cost"], 99) if not def["cost"].is_empty() else "free")
-	)
+	var cost: Dictionary = s.town.cost_here(m.placing, m.hover) if s.world.in_bounds(m.hover) else def["cost"]
+	t += "\nCost (have/need): " + (Ui.progress_text(s.economy.inv, cost, 99) if not cost.is_empty() else "free")
+	var copies: int = s.town.copies(m.placing)
+	if Rules.is_production(m.placing) and copies > 0:
+		t += "\n" + Data.COPY_COST_NOTE % [copies, roundi((Rules.copy_multiplier(m.placing, copies) - 1.0) * 100.0)]
 	if s.world.in_bounds(m.hover):
 		var err: String = s.town.placement_error(m.placing, m.hover)
 		if err != "":
@@ -82,6 +84,11 @@ static func _kith_here(s, p: Vector2i) -> String:
 	return ", ".join(names)
 
 
+## The name of the road or bridge at p: "Road", "Gravel Road", "Paved Road", "Wooden Bridge" or "Stone Bridge".
+static func road_name(s, p: Vector2i) -> String:
+	return Data.BUILDINGS[s.town.built_type(p)]["name"]
+
+
 ## What's on the hovered tile: a building, a road, a resource or open ground.
 static func _tile_text(m) -> String:
 	var s = m.state
@@ -92,8 +99,9 @@ static func _tile_text(m) -> String:
 	var plain: bool = t.has("tech") and not s.tech_tree.researched.has(t["tech"])  # ore not yet known
 	if s.world.roads.has(p):
 		if s.world.tile_at(p) == "river":
-			return Data.BRIDGE_HINT % Data.PEOPLE["many"]
-		return Data.ROAD_HINT % [t["name"], Data.PEOPLE["many"]]
+			return Data.BRIDGE_HINT % [road_name(s, p), Data.PEOPLE["many"]]
+		var tier: int = s.world.road_tier(p)
+		return Data.ROAD_HINT % [road_name(s, p), t["name"], Data.PEOPLE["many"], Data.ROAD_PACE[tier]]
 	var hint := Overlays.blocked_hint(s, p)
 	if plain:
 		return "%s\n%s" % [t["plain_name"], Data.ORE_PLAIN_HINT % Data.TECHS[t["tech"]]["name"]]

@@ -48,6 +48,7 @@ const FlaxFieldTests = preload("res://tests/flax_field_tests.gd")
 const ToolBenchTests = preload("res://tests/tool_bench_tests.gd")
 const PassageTests = preload("res://tests/passage_tests.gd")
 const DiscoveryTests = preload("res://tests/discovery_tests.gd")
+const LogisticsTests = preload("res://tests/logistics_tests.gd")
 const World = preload("res://scripts/world.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const Buildings = preload("res://scripts/buildings.gd")
@@ -71,6 +72,11 @@ func _init() -> void:
 		HoldTests.new().run(self)
 		HaulerTests.new().run(self)
 		print("FAILED: %d" % failures if failures > 0 else "HOLD TESTS PASSED")
+		quit(1 if failures > 0 else 0)
+		return
+	if "logistics" in OS.get_cmdline_user_args():  # `-- logistics` runs only the Logistics tests while iterating
+		LogisticsTests.new().run(self)
+		print("FAILED: %d" % failures if failures > 0 else "LOGISTICS TESTS PASSED")
 		quit(1 if failures > 0 else 0)
 		return
 	if "bench" in OS.get_cmdline_user_args():  # `-- bench` runs only the Tool Bench tests while iterating
@@ -137,6 +143,7 @@ func _init() -> void:
 	ToolBenchTests.new().run(self)
 	PassageTests.new().run(self)
 	DiscoveryTests.new().run(self)
+	LogisticsTests.new().run(self)
 	NewcomerTests.new().run(self)
 	UiTests.new().run(self)
 	TechBoardTests.new().run(self)
@@ -712,7 +719,9 @@ func test_tech_effects() -> void:
 	var slow := s.pathing.walk_cost(road)
 	s.research("paved_roads")
 	s.tech_tree.researched["paved_roads"] = true
-	s.pathing.update_cell(road)
+	check(s.pathing.walk_cost(road) == slow, "the tech alone does not pave a road")
+	give(s, 50)
+	check(s.place("paved_road", road), "dragging a Paved Road over it does")
 	check(s.pathing.walk_cost(road) < slow, "paved roads are faster")
 	var grass := find_grass(s, false)
 	check(place_free(s, "field", grass), "sow a field")

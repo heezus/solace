@@ -14,6 +14,7 @@ const Bonuses = preload("res://scripts/bonuses.gd")
 const Rules = preload("res://scripts/rules.gd")
 const Workers = preload("res://scripts/workers.gd")
 const Roads = preload("res://scripts/roads.gd")
+const Scouting = preload("res://scripts/scouting.gd")
 const Hands = preload("res://scripts/hands.gd")
 const World = preload("res://scripts/world.gd")
 const Buildings = preload("res://scripts/buildings.gd")
@@ -51,8 +52,10 @@ const KITH: Color = Ui.KITH
 const SIDE_W := 264.0
 const BAD: Color = Ui.BAD
 const GOAL_COLOR: Color = Ui.HIGHLIGHT
-const LINE_TYPES := ["road", "bridge", "stone_bridge", "field"]  # laid by dragging
+const LINE_TYPES := ["road", "gravel_road", "paved_road", "bridge", "stone_bridge", "field"]  # laid by dragging
 const AURA_FILL := Color(0.55, 0.45, 0.6, 0.2)
+## The wash over a road tile by tier (index 0, the plain path, has none) while the tiers have no art of their own.
+const ROAD_TINTS := [Color(0, 0, 0, 0), Color(0.62, 0.68, 0.74, 0.55), Color(0.93, 0.95, 1.0, 0.7)]
 const NUDGE_TIME := 2.0  # seconds the "hold it down" hint stays after a click that let go too soon
 
 var fit_vp := Vector2.ZERO  # the window size the map was last fit to
@@ -349,7 +352,7 @@ func _click_tile(p: Vector2i) -> void:
 		var err := state.town.placement_error(placing, p)
 		if err == "":
 			_place_at(p)
-			if not state.economy.can_afford(Data.BUILDINGS[placing]["cost"]):
+			if not state.economy.can_afford(state.town.price(placing)):
 				placing = ""
 		else:
 			_toast(err, 2.0)
@@ -359,6 +362,11 @@ func _click_tile(p: Vector2i) -> void:
 		if note != "":
 			popups.append({"pos": _tile_center(p), "text": note, "t": 0.0})
 		building_panel.select(p)
+		return
+	if not state.fog.is_revealed(p):
+		var note := Scouting.send(state, p)  # clicking fog sends the nearest idle Kith to look: no road, no building needed
+		if note != "":
+			_toast(note, 3.0)
 		return
 	if Hands.item_at(state, p) == "" and state.world.tile_at(p) != "shard":
 		building_panel.select(Vector2i(-1, -1))  # clicking bare ground puts the card away; holding a resource keeps it
@@ -730,13 +738,12 @@ func _draw() -> void:
 		var note := ""
 		if Data.BUILDINGS[placing]["kind"] in ["gatherer", "processor"]:
 			note = BuildingPanel.trip_text(state, hover)
-		elif placing == "road" and state.world.tile_at(hover) == "rock":
-			note = "Cut a pass · %s" % Ui.cost_text(Data.PASS_COST)
-		elif placing == "road" and state.world.tile_at(hover) == "tree":
-			note = (
-				"Fell the trees · %s"
-				% Ui.cost_text(Rules.cost_at("road", "tree", state.tech_tree.researched.has("causeways")))
-			)
+		elif Data.BUILDINGS[placing]["kind"] == "road" and state.world.tile_at(hover) == "rock":
+			note = "Cut a pass · %s" % Ui.cost_text(state.town.cost_here(placing, hover))
+		elif Data.BUILDINGS[placing]["kind"] == "road" and state.world.tile_at(hover) == "tree":
+			note = "Fell the trees · %s" % Ui.cost_text(state.town.cost_here(placing, hover))
+		elif state.world.roads.has(hover) and state.town.placement_error(placing, hover) == "":
+			note = "Upgrade · %s" % Ui.cost_text(state.town.cost_here(placing, hover))
 		Overlays.placement_ghost(
 			self,
 			state,
@@ -747,7 +754,7 @@ func _draw() -> void:
 	elif state.world.in_bounds(hover) and not state.fog.is_revealed(hover):
 		var fr := _tile_rect(hover)
 		Art.dashed_rect(self, fr.grow(-1), Color(1, 1, 1, 0.6), 2.0, 5.0, 4.0)
-		Art.pill(self, Vector2(fr.get_center().x, fr.end.y + 4), "Unexplored", Ui.TEXT, OUTLINE, 14)
+		Art.pill(self, Vector2(fr.get_center().x, fr.end.y + 4), Data.UNEXPLORED_PILL, Ui.TEXT, OUTLINE, 14)
 	elif state.world.in_bounds(hover) and state.fog.is_revealed(hover) and Overlays.blocked_hint(state, hover) != "":
 		draw_rect(_tile_rect(hover).grow(-1), Color(1, 1, 1, 0.8), false, 2.0)
 		var r := _tile_rect(hover)
@@ -919,5 +926,21 @@ func _draw_rush(b: Dictionary, r: Rect2) -> void:
 func _draw_roads() -> void:
 	var seen := _visible_tiles()
 	for p in state.world.roads:
-		if seen.has_point(p) and state.fog.is_revealed(p) and state.world.tile_at(p) == "river":
+		if not seen.has_point(p) or not state.fog.is_revealed(p):
+			continue
+		if state.world.tile_at(p) == "river":
 			BridgeArt.draw(self, state, p)
+		elif state.world.road_tier(p) > 0:
+			_tint_road(p, state.world.road_tier(p))
+
+
+## A gravel or paved tile: its stretch of path washed over in the tier's color, until the tiers have art of their own.
+func _tint_road(p: Vector2i, tier: int) -> void:
+	var col: Color = ROAD_TINTS[tier]
+	var c := _tile_center(p)
+	var width := TILE * 0.3
+	draw_rect(Rect2(c - Vector2(width, width) * 0.5, Vector2(width, width)), col)
+	for n in Roads.SIDES:
+		var q: Vector2i = p + n
+		if state.world.roads.has(q) or state.town.building_at.has(q):
+			draw_line(c, c + Vector2(n) * TILE * 0.5, col, width)
