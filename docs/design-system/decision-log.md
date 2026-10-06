@@ -548,3 +548,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 ## 2026-10-05: Layout pass gets more frames to see the first Bronze (PR #46)
 - Claude: after #33 landed, CI's long layout pass failed three runs out of four on identical code with "the era-2 bot made no Bronze in 520 frames" (it passed locally at 791 frames in total, and on #33's own run). The bot is deterministic in steps but the real window's frame pace varies, so 520 was too tight a budget.
 - The pass still stops at the first Bronze, so the cap only costs time when something is truly wrong: it is now 900 frames after Bronze Dawn. Pacing itself is checked by `tests/tools/pace.gd` and the goldens, not by this pass.
+
+## 2026-10-05: Layered native beauty slice (PR #48)
+- Codex follows Jon’s request to test layered ground against the richer concept; keep this comparison under review docs with no production renderer changes.
+- Hold the world, approved subjects, 48 px scale and bridge geometry fixed. Separate quieter ground, contextual moss/soil/pebble patches, damp bank transitions and restrained water effects.
+- Preserve generated overlay pixels; Godot handles source regions, feathering and water/road/foundation clipping. Use deterministic placement and suppress patches touching hidden cells.
+- Native capture and focused checks pass; the result improves local context but still needs less geometric paths/river edges, reduced repetition and stronger composition/light. No concept parity or visual approval is claimed.

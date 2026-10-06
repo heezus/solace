@@ -5,11 +5,11 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 ## Active work
 
 ### Codex — layered terrain beauty slice
-- **Task:** review-only native comparison of the current terrain against a layered landscape: quieter ground, soil/moss transitions, wider banks, calmer water and local grounding. Branch `codex/terrain-beauty-slice`. Jon authorized this experiment after PR #33 merged.
-- **Reserved files:** `docs/art/overhaul/misty-highlands/grounding-studies/beauty-slice/**`; its link in the grounding-studies index. Own Active work entry, request-status updates and appended design decision. No production drawing/gameplay files are reserved or changed.
+- **Task:** review-only native comparison of the current terrain against a layered landscape: quieter ground, soil/moss transitions, wider banks, calmer water and local grounding. Branch `codex/terrain-beauty-slice`, draft PR #48. Jon authorized this experiment after PR #33 merged.
+- **Reserved files:** none; the comparison is complete and published for review in PR #48. No production drawing/gameplay files were changed. Further iterations require a new reservation.
 - **Acceptance criteria:** identical world, subjects, 48 px scale and camera in native before/after captures; Hearth, hut, road, bridge, bend and resource cluster; preserve gameplay/RNG and fog privacy; inspect native output and document remaining gaps. Review first, no production integration.
 - **Status:** native side-by-side capture reviewed; focused checks pass for 42 patches/all six families, transparency/bounds, Hearth contact, fog privacy and unchanged world/RNG. Review-only; no production files changed.
-- **Next action:** publish the draft comparison and CI result for Jon’s visual review, then release the study reservation. Orthogonal paths/river shape, repetition and authored composition/light remain unresolved. No unrelated UI, animation or gameplay work.
+- **Next action:** report exact-head CI on PR #48 and collect Jon’s visual feedback before integration. Orthogonal paths/river shape, repetition and authored composition/light remain unresolved. No unrelated UI, animation or gameplay work.
 
 ### Claude — gameplay asks (PR #44, merged) and the visual merge (PR #33, merged)
 - **Task:** none open. PR #44 shipped the four gameplay asks (one-click Gatherer's Hut round, techs show once their items are found, roads through buildings, Hearth stage helper). PR #33 is merged with main's gameplay preserved.
