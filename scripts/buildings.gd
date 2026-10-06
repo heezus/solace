@@ -32,6 +32,8 @@ const CREW_SLOTS := ["worker", "mate"]
 ## each: {type, pos, progress, inbuf, out, status, gather_items, focus, gather_index, worker, ...}
 var buildings: Array = []
 var building_at: Dictionary = {}  # Vector2i -> index into buildings
+## The most homes the player allows at each tier or above (index = tier; a Dwelling is always allowed). Saved.
+var home_caps: Array = [Data.HOME_CAP_OPEN, Data.HOME_CAP_OPEN, Data.HOME_CAP_OPEN]
 var road_rev := 0  # bumped whenever roads or buildings change, so Roads rebuilds its networks
 var road_net: Dictionary = {}  # Roads' cache of the road networks and which buildings they link
 var _world: World
@@ -229,6 +231,10 @@ func add_building(type: String, p: Vector2i) -> void:
 		"tier": 0,  # a home's tier (Data.HOME_TIERS): 0 Dwelling, 1 Homestead, 2 Longhouse
 		"check": 0.0,  # seconds since a home last looked at its needs (scripts/homes.gd)
 		"met": 0.0,  # seconds its needs have been met, counted up and down by those looks
+		"content": true,  # false once its needs have lapsed (met run down to nothing): it houses a Dwelling's worth until they are met
+		"pantry": 0.0,  # seconds since the household last used its goods
+		"site": "",  # "" or the scaffold's state: "waiting" for materials, "building" once they are in (scripts/homes.gd)
+		"site_t": 0.0,  # seconds the scaffold has stood
 	}
 	if Data.BUILDINGS[type].has("dig"):
 		b["ore"] = Data.TILES[_world.tile_at(p)]["yields"]
@@ -396,7 +402,7 @@ func housing() -> int:
 	for b in buildings:
 		var def: Dictionary = Data.BUILDINGS[b["type"]]
 		if def["kind"] == "house":
-			total += int(Data.HOME_TIERS[b["tier"]]["housing"])  # a home houses what its tier does
+			total += int(Data.HOME_TIERS[b["tier"] if b["content"] else 0]["housing"])  # what its tier houses, while content
 		else:
 			total += def.get("housing", 0)
 		if b["type"] == "dwelling" and _research.unlocked("shelter"):
@@ -409,6 +415,19 @@ func granary_homes() -> int:
 	if not _research.unlocked("granaries"):
 		return 0
 	return mini(floori(_economy.food_total() / Data.GRANARY_FOOD), Data.GRANARY_HOMES)
+
+
+## The most homes allowed at `tier` (0 to 2) or above.
+func home_cap(tier: int) -> int:
+	return home_caps[clampi(tier, 0, home_caps.size() - 1)]
+
+
+## Set the cap on `tier` (1 or 2: a Dwelling needs none), kept between 0 and Data.HOME_CAP_OPEN. False for any other tier.
+func set_home_cap(tier: int, n: int) -> bool:
+	if tier < 1 or tier >= home_caps.size():
+		return false
+	home_caps[tier] = clampi(n, 0, Data.HOME_CAP_OPEN)
+	return true
 
 
 ## How many Cart Sheds stand, and so how many haulers pull hand carts (Data.CARTS_PER_SHED each).
@@ -426,6 +445,11 @@ func carts_allowed() -> int:
 ## True for the buildings a Kith staffs.
 static func needs_worker(b: Dictionary) -> bool:
 	return Data.BUILDINGS[b["type"]]["kind"] in ["gatherer", "processor"]
+
+
+## True for the buildings haulers serve: the ones a Kith staffs, and homes (goods in, upgrade materials in).
+static func served(b: Dictionary) -> bool:
+	return needs_worker(b) or Data.BUILDINGS[b["type"]]["kind"] == "house"
 
 
 ## How many people building `b` needs at work: 1, or its `crew`.
@@ -553,7 +577,7 @@ func to_dict() -> Dictionary:
 	var list: Array = []
 	for b in buildings:
 		list.append(_building_to_dict(b))
-	return {"buildings": list, "road_rev": road_rev}
+	return {"buildings": list, "road_rev": road_rev, "home_caps": home_caps.duplicate()}
 
 
 ## Restore what to_dict wrote, in place, and rebuild `building_at`. The road cache is dropped.
@@ -568,6 +592,10 @@ func from_dict(d: Dictionary) -> void:
 		buildings.append(b)
 	road_rev = int(d.get("road_rev", 0))
 	road_net = {}
+	home_caps = []
+	var saved: Array = d.get("home_caps", [])
+	for i in Data.HOME_TIERS.size():
+		home_caps.append(int(saved[i]) if i < saved.size() else Data.HOME_CAP_OPEN)  # an old save has no caps: all open
 
 
 static func _building_to_dict(b: Dictionary) -> Dictionary:
@@ -592,6 +620,10 @@ static func _building_from_dict(d: Dictionary) -> Dictionary:
 	b["tier"] = clampi(int(d.get("tier", 0)), 0, Data.HOME_TIERS.size() - 1)  # a save from before dwelling tiers has every home at the first
 	b["check"] = float(d.get("check", 0.0))
 	b["met"] = float(d.get("met", 0.0))
+	b["content"] = bool(d.get("content", true))
+	b["pantry"] = float(d.get("pantry", 0.0))
+	b["site"] = String(d.get("site", ""))
+	b["site_t"] = float(d.get("site_t", 0.0))
 	b["ore"] = String(d.get("ore", ""))
 	b["give"] = String(d.get("give", ""))
 	b["get"] = String(d.get("get", ""))

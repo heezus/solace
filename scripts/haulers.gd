@@ -9,6 +9,7 @@ const Kith = preload("res://scripts/kith.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Work = preload("res://scripts/work.gd")
+const Homes = preload("res://scripts/homes.gd")
 
 
 ## Items a hauler carries per trip: Carrying Poles double it, and a cart (`k`, if given) carries Data.CART_LOAD times.
@@ -110,6 +111,20 @@ static func birth_order(kith_name: String) -> int:
 	return at + (round_no - 1) * Data.PEOPLE_NAMES.size()
 
 
+## What building `cand` wants stocked, item -> the amount its stock should reach (haulers bring the difference): a workshop
+## two rounds of its recipe, unless it is paused or has made enough; a home its goods and upgrade materials.
+static func _stock_wanted(s, cand: Dictionary) -> Dictionary:
+	if Homes.is_home(cand):
+		return Homes.wanted(cand)
+	if cand["paused"] or Work.enough(s, cand):
+		return {}
+	var recipe := Buildings.recipe_in(cand)
+	var out := {}
+	for id in recipe:
+		out[id] = recipe[id] * 2
+	return out
+
+
 ## From the depot the hauler waits at, pick the closest useful trip on a road network that depot
 ## touches: empty a building's output, or bring a processor its inputs. A building that has stopped
 ## (a workshop with nothing to work, or one full up) counts as a third as far, so busy huts near the
@@ -123,7 +138,7 @@ static func _find_task(s, k: Dictionary) -> bool:
 	var best_d := INF
 	for i in s.town.buildings.size():
 		var cand: Dictionary = s.town.buildings[i]
-		if not Buildings.needs_worker(cand) or cand["unreachable"] > 0.0 or not Roads.net_of(s, cand) in nets:
+		if not Buildings.served(cand) or cand["unreachable"] > 0.0 or not Roads.net_of(s, cand) in nets:
 			continue
 		var d := Vector2(here).distance_to(Vector2(cand["pos"]))
 		var starved: bool = not Buildings.recipe_in(cand).is_empty() and Buildings.buffered(cand["inbuf"]) == 0
@@ -135,9 +150,9 @@ static func _find_task(s, k: Dictionary) -> bool:
 			best = {"kind": "pickup", "building": i}
 			best_d = d
 			continue
-		var inputs: Dictionary = {} if cand["paused"] or Work.enough(s, cand) else Buildings.recipe_in(cand)
+		var inputs := _stock_wanted(s, cand)
 		for id in inputs:
-			var want: int = inputs[id] * 2 - cand["inbuf"].get(id, 0) - cand["incoming"].get(id, 0)
+			var want: int = inputs[id] - cand["inbuf"].get(id, 0) - cand["incoming"].get(id, 0)
 			var n := mini(mini(want, s.economy.inv.get(id, 0)), carry_cap(s, k))
 			if n > 0:
 				best = {"kind": "deliver", "building": i, "item": id, "amount": n}

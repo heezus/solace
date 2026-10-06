@@ -15,6 +15,7 @@ const Ranks = preload("res://scripts/ranks.gd")
 const Roads = preload("res://scripts/roads.gd")
 const World = preload("res://scripts/world.gd")
 const Buildings = preload("res://scripts/buildings.gd")
+const Homes = preload("res://scripts/homes.gd")
 
 const DT := 0.1
 const THINK := 1.0  # seconds between decisions
@@ -167,6 +168,7 @@ func _short() -> Dictionary:
 		_want(want, Data.BUILDINGS["dwelling"]["cost"], 1)
 	for type in _workshops_due():
 		_want(want, s.town.price(type), 1)
+	_home_wants(want)
 	_goal_wants(want)
 	var tools: int = _workers() + 1 - Hands.tools_held(s) - s.economy.inv.get("flint_tools", 0)
 	if Hands.recipe_unlocked(s, "flint_tools") and tools > 0:
@@ -183,6 +185,45 @@ func _short() -> Dictionary:
 	if s.economy.food_total() < s.people.kith.size() * 4.0:
 		short["berries"] = short.get("berries", 0) + 10
 	return short
+
+
+## What the homes ask of the settlement (design-system/17-needs-and-upgrades.md), so the bot keeps it coming: the materials
+## of the next upgrade (for the lowest home that can still grow), a round of goods for every home above the first tier,
+## and flour stocked as the second food kind once any home needs two. Fish and the Longhouse's third food are left alone: a
+## Longhouse has nowhere higher to go, so its needs gate nothing the bot wants.
+func _home_wants(want: Dictionary) -> void:
+	var low := -1
+	var goods_homes := 0
+	for b in s.town.buildings:
+		if not Homes.is_home(b):
+			continue
+		var tier := Homes.tier_of(b)
+		if tier < Data.HOME_TIERS.size() - 1 and Homes.cap_allows(s, tier + 1) and (low < 0 or tier < low):
+			low = tier
+		if tier >= 1:
+			goods_homes += 1
+			_want(want, Data.HOME_TIERS[tier]["goods"], mini(goods_homes, 3) * Data.HOME_GOOD_ROUNDS)
+	if low >= 0 and s.tech_tree.researched.has("haulers"):
+		_want(want, Data.HOME_TIERS[low]["up"], 1)
+	if goods_homes > 0:
+		want["flour"] = maxi(want.get("flour", 0), Data.HOME_FOOD_STOCK + 2)
+
+
+## A Longhouse is content only with a third food, Fish: once a home has grown past the first tier the bot learns Nets and keeps
+## a Fishing Weir on the river bank for every few of them.
+func _fish() -> bool:
+	var grown := 0
+	for b in s.town.buildings:
+		if Homes.is_home(b) and Homes.tier_of(b) >= 1:
+			grown += 1
+	if grown == 0:
+		return false
+	if not s.town.unlocked("fishing_weir"):
+		return s.tech_tree.can_research("nets") and s.research("nets")
+	if _count("fishing_weir") >= mini(1 + int(grown / 4.0), 3):
+		return false
+	var near := func(p): return -Vector2(p).distance_to(Vector2(s.world.camp_pos)) if s.world.touches_river(p) else -INF
+	return _place_best("fishing_weir", near)
 
 
 ## More goods the bot wants than the techs and buildings above say (a later era's bot adds its own).
@@ -422,6 +463,8 @@ func _decide() -> void:
 			return  # no room left by the Hearth: Thatched Roofs make each Dwelling house more
 	if s.town.unlocked("storehouse") and _place_storehouse():
 		return
+	if _fish():
+		return
 	if _explore(short):
 		return
 	if _water_wheel():
@@ -592,6 +635,8 @@ func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
 			# A hut whose goods pile up unneeded only keeps the haulers busy: its Kith can carry instead.
 			var id: String = b["focus"]
 			var idle: bool = s.economy.inv.get(id, 0) >= HUT_SURPLUS and not short.has(id)
+			if Data.FOOD_VALUE.has(id) and s.people.kith.size() < s.town.housing():
+				idle = false  # births need food the huts bring in, so a food hut keeps working while there is room
 			if idle != b["paused"]:
 				s.set_paused(i, idle)
 			continue
@@ -777,7 +822,7 @@ func _road_affordable(p: Vector2i) -> bool:
 ## nearest road network that reaches a depot (or to a depot), a few tiles a decision. True if any went down.
 func _link_roads() -> bool:
 	for b in s.town.buildings:
-		if not Buildings.needs_worker(b) or b["paused"] or Roads.linked(s, b):
+		if not Buildings.served(b) or b["paused"] or Roads.linked(s, b):
 			continue
 		var path := _road_path(b["pos"])
 		var laid := 0
