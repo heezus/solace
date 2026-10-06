@@ -49,6 +49,7 @@ const ToolBenchTests = preload("res://tests/tool_bench_tests.gd")
 const PassageTests = preload("res://tests/passage_tests.gd")
 const DiscoveryTests = preload("res://tests/discovery_tests.gd")
 const LogisticsTests = preload("res://tests/logistics_tests.gd")
+const ForksTests = preload("res://tests/forks_tests.gd")
 const HomesTests = preload("res://tests/homes_tests.gd")
 const World = preload("res://scripts/world.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
@@ -78,6 +79,11 @@ func _init() -> void:
 	if "logistics" in OS.get_cmdline_user_args():  # `-- logistics` runs only the Logistics tests while iterating
 		LogisticsTests.new().run(self)
 		print("FAILED: %d" % failures if failures > 0 else "LOGISTICS TESTS PASSED")
+		quit(1 if failures > 0 else 0)
+		return
+	if "forks" in OS.get_cmdline_user_args():  # `-- forks` runs only the fork tests while iterating
+		ForksTests.new().run(self)
+		print("FAILED: %d" % failures if failures > 0 else "FORKS TESTS PASSED")
 		quit(1 if failures > 0 else 0)
 		return
 	if "homes" in OS.get_cmdline_user_args():  # `-- homes` runs only the Needs tests while iterating
@@ -155,6 +161,7 @@ func _init() -> void:
 	PassageTests.new().run(self)
 	DiscoveryTests.new().run(self)
 	LogisticsTests.new().run(self)
+	ForksTests.new().run(self)
 	HomesTests.new().run(self)
 	NewcomerTests.new().run(self)
 	UiTests.new().run(self)
@@ -658,13 +665,16 @@ func test_tech_tree_is_a_web() -> void:
 	for tech in stone:
 		colors[Data.TECHS[tech]["color"].to_html()] = true
 	check(colors.size() == stone.size(), "every stone-age tech has its own color")
-	for tech in Data.TECHS:
-		check("star_lore" not in Data.TECHS[tech]["requires"], tech + " doesn't strictly need hidden Star Lore")
+	for tech in Data.TECHS:  # Megaliths is the one side branch behind the hidden Star Lore (Jon, 2026-10-06)
+		check(
+			tech == "megaliths" or "star_lore" not in Data.TECHS[tech]["requires"],
+			tech + " doesn't strictly need hidden Star Lore"
+		)
 
 
 ## Tech tree v4 (mockups/tech-tree-v4.md): each link reads "you need X to invent Y".
 func test_tech_tree_v4() -> void:
-	check(TechLayout.links(1).size() == 51, "v4 plus the Storehouse has 51 links (%d)" % TechLayout.links(1).size())
+	check(TechLayout.links(1).size() == 50, "v4 plus the Storehouse has 50 links (%d)" % TechLayout.links(1).size())
 	check(Data.LANE_ORDER == ["fiber", "stone", "land", "hearth", "lore"], "lanes run Fiber, Stone, Land, Hearth, Lore")
 	check(Data.TECHS["bronze_dawn"]["tier"] == 5, "the gate sits after Tier V")
 	check(Data.TIER_NAMES.size() == 6, "every column has a caption")
@@ -741,24 +751,19 @@ func test_tech_effects() -> void:
 	check(s.world.tile_at(grass) == "grain", "field grows grain")
 
 
-## Megaliths needs Masonry and one of Storytelling or Star Lore; either one alone is enough.
+## Megaliths needs Masonry and the Star Lore, which is hidden until the Strange Stone is clicked.
 func test_requires_any() -> void:
 	var s := fresh()
 	give(s, 999)
-	for t in ["knapping", "fire", "masonry"]:
+	for t in ["knapping", "fire", "masonry", "storytelling"]:
 		check(s.research(t), "research " + t)
-	check(not s.tech_tree.requirements_met("megaliths"), "Megaliths needs Storytelling or Star Lore too")
-	check(s.tech_tree.missing_requirements("megaliths") == 1, "an either-or counts as one missing tech")
-	check(s.research("storytelling"), "research Storytelling")
-	check(s.tech_tree.can_research("megaliths"), "Storytelling alone unlocks Megaliths")
-	var s2 := fresh()
-	give(s2, 999)
-	s2.gather_by_hand(s2.world.shard_pos)
-	for t in ["knapping", "fire", "masonry", "star_lore"]:
-		s2.tech_tree.researched[t] = true
-	check(not s2.tech_tree.researched.has("storytelling"), "no Storytelling in the second camp")
-	check(s2.tech_tree.can_research("megaliths"), "Star Lore alone unlocks Megaliths")
-	check(s2.research("megaliths"), "research Megaliths through Star Lore")
+	check(not s.tech_tree.requirements_met("megaliths"), "Megaliths needs the Star Lore, not Storytelling")
+	check(s.tech_tree.missing_requirements("megaliths") == 1, "the Star Lore is the one missing tech")
+	check(not s.tech_tree.can_research("megaliths"), "Storytelling alone does not unlock Megaliths")
+	s.gather_by_hand(s.world.shard_pos)
+	check(s.research("star_lore"), "research Star Lore once the stone is clicked")
+	check(s.tech_tree.can_research("megaliths"), "Masonry and Star Lore unlock Megaliths")
+	check(s.research("megaliths"), "research Megaliths")
 
 
 func test_star_lore_is_hidden_until_the_shard_is_clicked() -> void:
@@ -767,7 +772,7 @@ func test_star_lore_is_hidden_until_the_shard_is_clicked() -> void:
 	check(s.research("storytelling"), "research Storytelling")
 	check(not s.tech_tree.tech_visible("star_lore"), "Star Lore is hidden at first")
 	check(not s.tech_tree.can_research("star_lore"), "hidden Star Lore can't be researched")
-	check(s.tech_tree.tech_visible("megaliths"), "other techs are visible")
+	check(s.tech_tree.tech_visible("cordage"), "other techs are visible")
 	s.gather_by_hand(s.world.shard_pos)
 	check(s.tech_tree.tech_visible("star_lore"), "clicking the Strange Stone reveals Star Lore")
 	check(s.research("star_lore"), "then it can be researched")

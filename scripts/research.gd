@@ -75,6 +75,8 @@ func _discovered(tech: String, shown: bool) -> bool:
 	var def: Dictionary = Data.TECHS[tech]
 	if def.get("hidden", false) and not shown:
 		return false
+	if passed_over(tech):
+		return false
 	for item in def["cost"]:
 		if not _economy.seen.has(item) and _economy.inv.get(item, 0) <= 0:
 			return false
@@ -103,6 +105,32 @@ func unlocked(tech: String) -> bool:
 	return researched.has(tech)
 
 
+## The forks `tech` is a route of: the goals (techs with `fork`) whose `requires_any` names it.
+static func fork_goals(tech: String) -> Array:
+	return Data.TECH_ORDER.filter(
+		func(g): return Data.TECHS[g].get("fork", false) and tech in Data.TECHS[g].get("requires_any", [])
+	)
+
+
+## True while `tech` is set aside by a fork: another route to the same goal is learned and the goal is not yet.
+func passed_over(tech: String) -> bool:
+	if researched.has(tech):
+		return false
+	for goal in fork_goals(tech):
+		if researched.has(goal):
+			continue
+		if Data.TECHS[goal]["requires_any"].any(func(r): return r != tech and researched.has(r)):
+			return true
+	return false
+
+
+## True when `tech` is a route the fork's goal has already been learned without: it costs Data.FORK_LATER_COST times as much.
+func comes_later(tech: String) -> bool:
+	if researched.has(tech):
+		return false
+	return fork_goals(tech).any(func(g): return researched.has(g))
+
+
 func requirements_met(tech: String) -> bool:
 	return tech_visible(tech) and missing_requirements(tech) == 0
 
@@ -118,6 +146,8 @@ static func enabled(tech: String) -> bool:
 func cost_of(tech: String) -> Dictionary:
 	var cost: Dictionary = Data.TECHS[tech]["cost"]
 	var share := 1.0
+	if comes_later(tech):
+		share *= Data.FORK_LATER_COST
 	if researched.has("tally_sticks"):
 		share *= Data.TALLY_DISCOUNT
 	if _extra_discount.is_valid():

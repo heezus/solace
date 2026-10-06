@@ -21,7 +21,7 @@ Late in a run the Kith are so automated that the game becomes a waiting game, an
 | 8 | Dwellings | Upgrade themselves when their needs are met, under a player cap |
 | 9 | Carts | One Kith, 3x carry, roads only |
 | 10 | Beasts | Shard-touched animals; Starfall era; note only |
-| 11 | Megaliths | Start lore is the only way in |
+| 11 | Megaliths | Star lore is the only way in |
 | 12 | Scouting | Click fog to send a scout; no road needed |
 
 ## 1 to 3. Needs, dwelling tiers, pacing
@@ -53,7 +53,7 @@ Production buildings (workshops, mills, kilns, smelters and the like) cost 15% m
 - **Beasts.** The starstuff from the fall touches native animals, which become tameable. It is the first hint of magic in living things and foreshadows the Bloom. This is a canon addition for page 16 (Starfall), pending Jon's OK; it is a note, not a build.
 
 ## 11. Megaliths
-`megaliths` requires the start lore (Storytelling) and, as now, Masonry. The `star_lore` route is removed. It opens a small branch: Standing Stone and Shard Cairn.
+`megaliths` requires the **star lore** (the hidden `star_lore` tech, found by clicking the Strange Stone) and, as now, Masonry. Storytelling (the start lore) is no longer a way in. Jon first wrote "start lore" and corrected it to star lore on 2026-10-06. It opens a small branch: Standing Stone and Shard Cairn.
 
 ## 12. Scouting
 Clicking fog sends the nearest idle Kith out to look, so no road is needed. The scout reveals a radius around the tile and walks home. Lookouts come later: a Watchtower or a hill reveals a radius without a trip.
@@ -67,7 +67,7 @@ Clicking fog sends the nearest idle Kith out to look, so no road is needed. The 
 ## Build plan (three bundled PRs)
 1. **Logistics:** hidden-until-learned buildings, jobs count, road and bridge tiers with in-place upgrade, copy cost, hand cart, fog scouting.
 2. **Needs:** dwelling tiers, needs, auto-upgrade with caps, pacing pass and golden re-pin.
-3. **Tree:** forks, more branches, megalith gating.
+3. **Tree:** forks, megalith gating on the star lore.
 Each PR is one commit per ask, with tests and the decision log. Art ships as Codex's slots land; until then the new tiers reuse current sprites with a tint.
 
 ## Open questions for Jon (decided: defaults)
@@ -93,3 +93,10 @@ Jon approved the page on 2026-10-06 and took every default.
 - **Art.** The map draws Codex's Homestead and Longhouse (`GrowthArt.draw_house`) and the open scaffold (`GrowthArt.draw_scaffold`) with a progress bar under it.
 - **Pacing.** The bot's stone age is now 1091, 936 and 923 s on maps 1 to 3 (was 843, 843 and 777), and the whole run is about 43 to 61 min by bot (about 36 before). The pacing windows in the tests moved to match.
 - **Saves.** Old saves load every home at tier 1 with all caps open. Home timers are kept to a thousandth so a save reads back the same numbers.
+
+## How PR 3 (Tree) differs from the sketch above
+- **One fork, Granaries.** Granaries has two routes, Markets and Kilns II. Taking one sets the other aside (out of the tech board and not for sale) until Granaries is learned; then the passed-over route costs 1.5x (`Data.FORK_LATER_COST`). The tech card says so. A fork never gates a goal the eras need.
+- **Calendar is not a fork.** Calendar still takes Megaliths or Storytelling. Making it a fork broke the Bronze Dawn goal count and the side-branch links, so it stays a plain either-or.
+- **Megaliths** require Masonry and the star lore; the hidden Strange Stone still has to be clicked first.
+- **Hand cart art.** Hand-cart haulers draw with Codex's `GrowthArt.draw_hand_cart` (size and position to be eyeballed on a real run).
+- **Deferred.** Road tiers keep their tint; Codex's connected road material is not wired yet.

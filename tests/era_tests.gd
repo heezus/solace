@@ -570,7 +570,7 @@ func test_the_tech_panel_has_a_tab_per_era() -> void:
 	t.check(panel.board.era == 1 and panel.title.text == Data.BOARD_TITLE % "Stone Age", "the board is the stone age's")
 	panel._pick_era(2)
 	t.check(panel.board.era == 1, "a locked tab does nothing")
-	t.check(panel.counter.text.contains("of 28"), "the counter counts the era's techs (%s)" % panel.counter.text)
+	t.check(panel.counter.text.contains("of 27"), "the counter counts the era's techs (%s)" % panel.counter.text)
 	s.tech_tree.researched["bronze_dawn"] = true
 	panel.refresh()
 	t.check(not panel.era_buttons[2].disabled, "Bronze Dawn opens the second tab")

@@ -7,6 +7,7 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 const Art = preload("res://scripts/art.gd")
+const GrowthArt = preload("res://scripts/growth_art.gd")
 const Overlays = preload("res://scripts/overlays.gd")
 const Rendered = preload("res://scripts/rendered_art.gd")
 
@@ -65,11 +66,17 @@ static func draw_all(ci: CanvasItem, s, time: float) -> void:
 			at.y += absf(sin(time * 5.0 + i)) * -3.0  # a little hop while it works
 		var flip: bool = moving and k["path"][0].x > k["pos"].x
 		var with_cart: bool = k.get("cart", false)
-		var facing := 1.0 if flip else -1.0
-		var person_at := at - Vector2(facing * 6, 0) if with_cart else at
-		Rendered.kith(ci, person_at, k.get("name", str(i)), moving, time, flip)
 		if with_cart:
-			Rendered.fit(ci, Rendered.sprite("extras", 4), Rect2(at + Vector2(facing * 7 - 13, -14), Vector2(26, 25)))
+			# One Kith and the cart are one picture (Codex's hand cart); what it carries rides in the bed.
+			var cargo: Texture2D = null
+			for id in k["carry"]:
+				cargo = Rendered.named("item_" + id)
+				break
+			GrowthArt.draw_hand_cart(
+				ci, Rect2(at + Vector2(-SPRITE * 0.6, -SPRITE * 0.95), Vector2(SPRITE * 1.2, SPRITE * 1.2)), cargo
+			)
+			continue
+		Rendered.kith(ci, at, k.get("name", str(i)), moving, time, flip)
 		var above := at + Vector2(-10, -SPRITE * 1.08)  # over the head
 		for id in k["carry"]:
 			Art.item_icon(ci, id, Rect2(above, Vector2(20, 20)), 1.0)

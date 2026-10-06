@@ -150,12 +150,14 @@ func test_story_cards_stay_hidden_until_revealed() -> void:
 	t.check(not CardText.shown(s, "standing_stone"), "so is the Standing Stone")
 	t.check(CardText.shown(s, "gatherers_hut") and CardText.shown(s, "dwelling"), "ordinary cards always show")
 	s.tech_tree.researched["masonry"] = true
-	t.check(not CardText.shown(s, "standing_stone"), "Masonry alone doesn't show it: Megaliths needs Storytelling too")
+	t.check(not CardText.shown(s, "standing_stone"), "Masonry alone doesn't show it: Megaliths needs the Star Lore too")
 	s.tech_tree.researched["storytelling"] = true
-	t.check(CardText.shown(s, "standing_stone"), "it shows once Megaliths is reachable")
+	t.check(not CardText.shown(s, "standing_stone"), "Storytelling is no way in")
 	t.check(not CardText.shown(s, "shard_cairn"), "the Cairn stays hidden until the Strange Stone has been clicked")
 	s.shard_seen = true
 	t.check(CardText.shown(s, "shard_cairn"), "and shows after, when Star Lore is reachable")
+	s.tech_tree.researched["star_lore"] = true
+	t.check(CardText.shown(s, "standing_stone"), "the Standing Stone shows once Megaliths is reachable")
 	for type in Data.BUILDINGS:
 		var def: Dictionary = Data.BUILDINGS[type]
 		var era_two: bool = def.get("tech", "") != "" and int(Data.TECHS[def["tech"]].get("era", 1)) == 2
