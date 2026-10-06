@@ -600,3 +600,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Everything is a proposal with a default under "Open"; nothing is canon until Jon answers. Era names and the Bloom's role in particular wait on him.
 - Stone-age and Bronze Dawn text is untouched; Starfall stage 2 is separate and waits for Jon's go.
 
+## 2026-10-06: Roadmap answers (PR #59)
+- Jon picked on cards: three eras after Starfall, named Ironfall, Livewire and Skyreach (replacing the working names); the Bloom builds slowly (signs, then tide, then arrival); the Kith learn only a small branch of the life tree; the Lumen lean opens one reset and the player confirms it.
+- Claude: recorded these as "Decided" on page 18. Map change per reset and pacing keep their defaults.
+
