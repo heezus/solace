@@ -437,3 +437,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Roads through buildings: a hut, workshop, house, shed, tower or water wheel is a passage. Road, building, road is one network for linking, and haulers and carts walk through its cell at 2x the open road (`Data.PASSAGE_COST`). The Hearth, Storehouses, fields, monuments and bridges still end a road. Nothing is stored, so demolishing and saves just work.
 - Hearth stage: `HearthLook.stage(researched)` counts Fire, Storytelling, Shelter, Calendar and Bronze Dawn (0 to 5) for Codex's staged props. Derived from research, no new rules.
 - The pacing bots start knowing the whole tree (`Autoplay.attach` marks every item found), since hiding made them wait for finds a player who knows the tree would not: map 1's first Bronze took 12.9 min after Dawn without it. Goldens re-pinned in their own commit: stone age 822/830/788 s, first Bronze 1388/1419/1393 s (was 871/814/794 and 1470/1270/1447); the roads change moves the bots' layouts.
+
+## 2026-10-06: Roadmap past Starfall (PR #n)
+- Claude: wrote page 18 on Jon's yes: a one-page map of eras 4 to 6 (working names Ember, Wire, Reach), the Bloom as a spreading tide and the three resets. Each era gets one new way of knowing, per the pillar.
+- Everything is a proposal with a default under "Open"; nothing is canon until Jon answers. Era names and the Bloom's role in particular wait on him.
+- Stage 2 of Starfall is separate and waits for Jon's go.
+
