@@ -555,7 +555,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Tech tree gets forks (two routes to one goal, the other learnable later at +50%) and megaliths open only from the start lore. Clicking fog sends a scout, so scouting needs no road.
 - Canon note, pending Jon's OK: starstuff touches native animals and makes them tameable beasts in Starfall, foreshadowing the Bloom. Design only; nothing is built until Jon approves page 17.
 
-## 2026-10-05: Growth visual kit and build-bar fit (PR pending)
+## 2026-10-05: Growth visual kit and build-bar fit (PR #51)
 - Codex: Jon assigned path/gravel/paved art, Dwelling upgrades, scaffold and one-Kith hand cart, plus the build-bar clipping fix. This subset supersedes the older asset approval hold; no beast/canon or gameplay decision is added.
 - Keep readable build cards at their existing width and scroll the center; pin Craft and Demolish. Reserve scrollbar space so tabs do not vary the bar height.
 - Reuse the original Dwelling, add broader Homestead/longer Longhouse silhouettes within the 1×1 footprint, and use an open rope-lashed construction overlay. Warm timber/thatch and cool stone preserve the miniature family.
