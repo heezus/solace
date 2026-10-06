@@ -116,10 +116,10 @@ static func fork_goals(tech: String) -> Array:
 func passed_over(tech: String) -> bool:
 	if researched.has(tech):
 		return false
-	for goal in fork_goals(tech):
-		if researched.has(goal):
+	for fork in fork_goals(tech):
+		if researched.has(fork):
 			continue
-		if Data.TECHS[goal]["requires_any"].any(func(r): return r != tech and researched.has(r)):
+		if Data.TECHS[fork]["requires_any"].any(func(r): return r != tech and researched.has(r)):
 			return true
 	return false
 
