@@ -15,7 +15,6 @@ const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const GrowthNote = preload("res://scripts/growth_note.gd")
 const Hands = preload("res://scripts/hands.gd")
-const Buildings = preload("res://scripts/buildings.gd")
 
 const RAW := ["wood", "stone", "flint", "fiber", "clay", "berries", "grain", "fish", "copper_ore", "tin"]
 const ROWS := [0, 7, 13, 18]  # where each row of goods starts in ITEM_ORDER: raw, made, the second era's five
@@ -260,10 +259,8 @@ func food_rate() -> float:
 
 func refresh(paused: bool, speed: int) -> void:
 	var idle := Ui.idle_kith(state)
-	var workers := state.people.kith.size() - idle
-	var jobs := 0
-	for b in state.town.buildings:
-		jobs += 1 if Buildings.needs_worker(b) and not b["paused"] else 0
+	var workers := Ui.jobs_filled(state)
+	var jobs := Ui.job_slots(state)
 	kith_label.text = Data.KITH_LABEL % [Data.PEOPLE["many"], state.people.kith.size(), state.town.housing()]
 	var note := GrowthNote.bar_note(state)
 	kith_label.get_parent().tooltip_text = (

@@ -28,6 +28,7 @@ var camp_pos := Vector2i.ZERO
 var shard_pos := Vector2i(-1, -1)
 var roads: Dictionary = {}  # Vector2i -> true (a bridge is a road over the river)
 var stone_bridges: Dictionary = {}  # Vector2i -> true, the bridges among them that are stone (they bear carts)
+var road_tiers: Dictionary = {}  # Vector2i -> 1 (gravel) or 2 (paved) for the roads laid above the plain path (tier 0)
 var fields: Dictionary = {}  # Vector2i -> true, grain tiles that were sown
 var flax_fields: Dictionary = {}  # Vector2i -> true, flax tiles that were sown (wild flax is not in here)
 
@@ -125,19 +126,38 @@ func gather_tiles(p: Vector2i, radius: int) -> Array:
 # --- Roads and fields ----------------------------------------------------------
 
 
-## Lay a road (or a bridge, on a river tile) at p. The tile itself is left as it is.
-func add_road(p: Vector2i) -> void:
+## Lay a road (or a bridge, on a river tile) at p, of tier `tier` (0 path, 1 gravel, 2 paved). The tile itself is left as
+## it is.
+func add_road(p: Vector2i, tier := 0) -> void:
 	roads[p] = true
+	set_road_tier(p, tier)
 
 
 func remove_road(p: Vector2i) -> void:
 	roads.erase(p)
 	stone_bridges.erase(p)
+	road_tiers.erase(p)
 
 
-## Lay a stone bridge at p: a road over the river that is also remembered as stone.
+## Make the road at p tier `tier` (0 keeps no entry: a path is the default).
+func set_road_tier(p: Vector2i, tier: int) -> void:
+	if tier > 0:
+		road_tiers[p] = tier
+	else:
+		road_tiers.erase(p)
+
+
+## The tier of the road at p: 0 path, 1 gravel, 2 paved. A Stone Bridge is the top tier. 0 where there is no road.
+func road_tier(p: Vector2i) -> int:
+	if stone_bridges.has(p):
+		return Data.ROAD_SPEEDS.size() - 1
+	return int(road_tiers.get(p, 0))
+
+
+## Lay a stone bridge at p: a road over the river that is also remembered as stone. A Wooden Bridge there becomes stone.
 func add_stone_bridge(p: Vector2i) -> void:
 	roads[p] = true
+	road_tiers.erase(p)
 	stone_bridges[p] = true
 
 
@@ -186,6 +206,7 @@ func to_dict() -> Dictionary:
 		"shard_pos": Codec.vec(shard_pos),
 		"roads": Codec.vec_keys(roads),
 		"stone_bridges": Codec.vec_keys(stone_bridges),
+		"road_tiers": _tiers_to_list(),
 		"fields": Codec.vec_keys(fields),
 		"flax_fields": Codec.vec_keys(flax_fields),
 	}
@@ -205,5 +226,23 @@ func from_dict(d: Dictionary) -> void:
 	shard_pos = Codec.to_vec(d.get("shard_pos", [-1, -1]))
 	roads = Codec.to_vec_set(d.get("roads", []))
 	stone_bridges = Codec.to_vec_set(d.get("stone_bridges", []))
+	road_tiers = _tiers_from_list(d.get("road_tiers", []))
 	fields = Codec.to_vec_set(d.get("fields", []))
 	flax_fields = Codec.to_vec_set(d.get("flax_fields", []))
+
+
+## The tiered roads as [x, y, tier] triples, in the order they were laid.
+func _tiers_to_list() -> Array:
+	var out: Array = []
+	for p in road_tiers:
+		out.append([p.x, p.y, road_tiers[p]])
+	return out
+
+
+## What _tiers_to_list wrote. A save from before road tiers has no list: every road is a path (RunSave lifts them on load
+## to match what its techs gave).
+func _tiers_from_list(a: Array) -> Dictionary:
+	var out := {}
+	for triple in a:
+		out[Vector2i(int(triple[0]), int(triple[1]))] = int(triple[2])
+	return out

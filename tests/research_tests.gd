@@ -400,7 +400,10 @@ func test_sim_queue_ticks() -> void:
 ## would leave too little to build it (the Gatherer's Hut costs 20 Wood, 10 Stone, then 10 Wood, 5 Stone more).
 func test_a_tech_says_what_its_building_costs() -> void:
 	t.check(Rules.buildings_of("gatherers_hut") == ["gatherers_hut"], "the Gatherer's Hut tech unlocks the hut")
-	t.check(Rules.buildings_of("haulers") == ["road", "bridge"], "Paths & Haulers unlocks the Road and the Bridge")
+	t.check(
+		Rules.buildings_of("haulers") == ["road", "gravel_road", "bridge"],
+		"Paths & Haulers unlocks the Road, the Gravel Road and the Bridge"
+	)
 	t.check(Rules.buildings_of("knapping") == ["tool_bench"], "Knapping unlocks the Tool Bench")
 	t.check(Rules.buildings_of("foraging").is_empty(), "Foraging unlocks no building")
 	for type in Data.BUILD_ORDER:

@@ -22,7 +22,7 @@ var t  # the runner, tests/run_tests.gd
 
 func run(runner) -> void:
 	t = runner
-	test_causeways_make_roads_stone_and_fast()
+	test_causeways_no_longer_change_roads()
 	test_the_stone_bridge()
 	test_a_cart_shed_makes_carts()
 	test_a_cart_keeps_to_the_roads()
@@ -67,31 +67,19 @@ func spot(s: Sim, n: int) -> Vector2i:
 # --- Causeways and the Stone Bridge --------------------------------------------
 
 
-func test_causeways_make_roads_stone_and_fast() -> void:
+func test_causeways_no_longer_change_roads() -> void:
 	var s := game(["haulers"])
 	var grass: Vector2i = t.find_grass(s, false)
 	t.check(Rules.cost_at("road", "grass") == Data.BUILDINGS["road"]["cost"], "a road is wood before Causeways")
-	t.check(Rules.cost_at("road", "grass", true) == {"stone": 1, "brick": 1}, "and 1 Stone and 1 Brick after")
-	t.check(Rules.cost_at("road", "rock", true) == Data.PASS_COST, "a pass through Rocks costs the same either way")
 	s.economy.inv["wood"] = 2
-	s.economy.inv["stone"] = 0
-	s.economy.inv["brick"] = 0
-	t.check(s.town.placement_error("road", grass) == "", "wood buys a road before Causeways")
 	s.tech_tree.researched["causeways"] = true
-	t.check(s.town.placement_error("road", grass) == "Not enough materials", "after it, wood no longer does")
-	s.economy.inv["stone"] = 1
-	s.economy.inv["brick"] = 1
-	t.check(s.place("road", grass), "1 Stone and 1 Brick lay a road")
 	t.check(
-		s.economy.inv["stone"] == 0 and s.economy.inv["brick"] == 0 and s.economy.inv["wood"] == 2, "and only those"
+		Rules.cost_at("road", "grass") == Data.BUILDINGS["road"]["cost"], "and after: Causeways opens the Stone Bridge"
 	)
-	# Five times as fast as open ground, paved or not.
-	t.check(is_equal_approx(s.pathing.walk_cost(grass), Data.CAUSEWAY_WALK_COST), "a road walks at the Causeway cost")
-	t.check(is_equal_approx(1.0 / Data.CAUSEWAY_WALK_COST, 5.0), "which is 5x open ground")
-	s.tech_tree.researched["paved_roads"] = true
-	s.pathing.refresh()
-	t.check(is_equal_approx(s.pathing.walk_cost(grass), Data.CAUSEWAY_WALK_COST), "paving does not slow it again")
-	# A Kith really covers five tiles in half a second.
+	t.check(s.town.placement_error("road", grass) == "", "wood still buys a road")
+	t.check(s.place("road", grass), "a road is laid")
+	t.check(is_equal_approx(s.pathing.walk_cost(grass), Data.WALK_COST["road"]), "at the plain road pace, tech or not")
+	# A Kith covers 2 tiles of plain road in half a second (open ground is 1 tile a second).
 	var row: Array = []
 	for i in 7:
 		var p := grass + Vector2i(i, 0)
@@ -104,14 +92,11 @@ func test_causeways_make_roads_stone_and_fast() -> void:
 	k["pos"] = Vector2(row[0])
 	t.check(s.people.walk_to(k, row[6]), "there is a way along it")
 	s.people.step(k, 0.5)
+	var plain: float = 0.5 * Data.KITH_SPEED / Data.WALK_COST["road"]
 	t.check(
-		absf(Vector2(k["pos"]).distance_to(Vector2(row[0])) - 5.0) < 0.01, "5 tiles in half a second: %s" % [k["pos"]]
+		absf(Vector2(k["pos"]).distance_to(Vector2(row[0])) - plain) < 0.01,
+		"a plain road in half a second: %s" % [k["pos"]]
 	)
-	var plain := game(["haulers"])
-	var q: Vector2i = t.find_grass(plain, false)
-	plain.world.roads[q] = true
-	plain.pathing.update_cell(q)
-	t.check(is_equal_approx(plain.pathing.walk_cost(q), Data.WALK_COST["road"]), "without it a road keeps its own pace")
 
 
 func test_the_stone_bridge() -> void:
@@ -131,7 +116,7 @@ func test_the_stone_bridge() -> void:
 	t.check(s.world.roads.has(river) and s.world.stone_bridges.has(river), "it is a road over the river, and stone")
 	t.check(s.town.built_type(river) == "stone_bridge", "it is told apart from a Wooden Bridge")
 	t.check(not s.world.is_wooden_bridge(river), "which it is not")
-	t.check(is_equal_approx(s.pathing.walk_cost(river), Data.CAUSEWAY_WALK_COST), "it walks at the Causeway pace")
+	t.check(is_equal_approx(s.pathing.walk_cost(river), Data.WALK_COST["road"] / 1.5), "it walks at the paved pace")
 	var other: Vector2i = river + cross["side"]
 	t.check(s.place("bridge", other), "a Wooden Bridge goes beside it")
 	t.check(s.town.built_type(other) == "bridge" and s.world.is_wooden_bridge(other), "and is wooden")
@@ -164,15 +149,18 @@ func test_a_cart_shed_makes_carts() -> void:
 	s.tick(0.1)
 	carts = s.people.kith.filter(func(k): return k["cart"])
 	t.check(carts.size() == Data.CARTS_PER_SHED, "that many are carts (%d)" % carts.size())
-	t.check(s.people.kith[0]["cart"] and s.people.kith[1]["cart"], "the first haulers in the list push them")
-	t.check(Haulers.carry_cap(s, carts[0]) == Data.CARRY * Data.CART_LOAD, "a cart carries 20")
+	t.check(
+		s.people.kith[0]["cart"] and not s.people.kith[1]["cart"], "the first hauler in the list pulls it, one Kith"
+	)
+	t.check(Data.CARTS_PER_SHED == 1 and Data.CART_LOAD == 3, "a shed makes one hand cart, and it carries 3x")
+	t.check(Haulers.carry_cap(s, carts[0]) == Data.CARRY * 3, "a hand cart carries 30")
 	t.check(Haulers.carry_cap(s, s.people.kith[5]) == Data.CARRY, "a hauler carries 10")
 	t.check(Haulers.carry_cap(s) == Data.CARRY, "and carry_cap with no one named is a hauler's")
 	s.tech_tree.researched["carrying_poles"] = true
-	t.check(Haulers.carry_cap(s, carts[0]) == Data.CARRY * 4, "Carrying Poles double a cart's load too")
+	t.check(Haulers.carry_cap(s, carts[0]) == Data.CARRY * 6, "Carrying Poles double a cart's load too")
 	t.check(t.place_free(s, "cart_shed", shed2), "a second Cart Shed")
 	s.tick(0.1)
-	t.check(s.people.kith.filter(func(k): return k["cart"]).size() == 4, "makes two more carts")
+	t.check(s.people.kith.filter(func(k): return k["cart"]).size() == 2, "makes one more hand cart")
 	t.check(Data.BUILDINGS["cart_shed"]["tech"] == "the_wheel", "the Cart Shed comes with The Wheel")
 	s.demolish(shed)
 	s.demolish(shed2)

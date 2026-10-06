@@ -166,7 +166,7 @@ func _short() -> Dictionary:
 	if _house_wanted():
 		_want(want, Data.BUILDINGS["dwelling"]["cost"], 1)
 	for type in _workshops_due():
-		_want(want, Data.BUILDINGS[type]["cost"], 1)
+		_want(want, s.town.price(type), 1)
 	_goal_wants(want)
 	var tools: int = _workers() + 1 - Hands.tools_held(s) - s.economy.inv.get("flint_tools", 0)
 	if Hands.recipe_unlocked(s, "flint_tools") and tools > 0:
@@ -634,7 +634,7 @@ func _water_wheel() -> bool:
 ## A Water Wheel on the bank with room for workshops around it, near the Hearth; explore toward
 ## the nearest bank if none is in sight.
 func _place_wheel() -> bool:
-	if not s.economy.can_afford(Data.BUILDINGS["water_wheel"]["cost"]):
+	if not s.economy.can_afford(s.town.price("water_wheel")):
 		return false
 	var radius: float = Data.BUILDINGS["water_wheel"]["radius"]
 	var room_around := func(p):
@@ -656,10 +656,9 @@ func _place_wheel() -> bool:
 	var bank := _nearest_bank()
 	if bank.x >= 0 and _explore_to(bank):
 		return true
-	if _count("water_wheel") > 0:
-		return false
 	# No bank tile with room round it and nothing to explore: any free bank tile will do (a Grindstone then
-	# tears down a road beside it), else tear down a bank road.
+	# tears down a road beside it), else tear down a bank road. A second wheel takes this road too, when the first one's
+	# reach has no site left for a workshop (a wheel in a corner of the bank, on a map where the roads came later).
 	return _place_near_hearth("water_wheel") or _tear_down_for("water_wheel", s.world.touches_river)
 
 
@@ -692,7 +691,7 @@ func _place_workshop(type: String) -> bool:
 	if Data.BUILDINGS[type].get("needs_power", false):
 		if _count("water_wheel") == 0:
 			return false
-		if not s.economy.can_afford(Data.BUILDINGS[type]["cost"]):
+		if not s.economy.can_afford(s.town.price(type)):
 			return false
 		var placed := _place_best(
 			type, func(p): return -Vector2(p).distance_to(Vector2(s.world.camp_pos)) if s.town.is_powered(p) else -INF
@@ -731,7 +730,7 @@ func _flood_reach() -> void:
 ## Place `type` on the revealed tile with the best score (skipping -INF), if it can be afforded.
 ## Buildings go only where the Kith can walk; roads may push out from there.
 func _place_best(type: String, score: Callable, focus := "") -> bool:
-	if not s.town.unlocked(type) or not s.economy.can_afford(Data.BUILDINGS[type]["cost"]):
+	if not s.town.unlocked(type) or not s.economy.can_afford(s.town.price(type)):
 		return false
 	var best := Vector2i(-1, -1)
 	var best_score := -INF
@@ -761,13 +760,13 @@ func _spare(item: String) -> int:
 	if not s.tech_tree.queue.is_empty():
 		keep += int(Data.TECHS[s.tech_tree.queue[0]]["cost"].get(item, 0))
 	for type in _workshops_due():
-		keep += int(Data.BUILDINGS[type]["cost"].get(item, 0))
+		keep += int(s.town.price(type).get(item, 0))
 	return s.economy.inv.get(item, 0) - keep
 
 
 ## True if a road on `p` fits in what we can spare.
 func _road_affordable(p: Vector2i) -> bool:
-	var cost: Dictionary = Rules.cost_at("road", s.world.tile_at(p), s.tech_tree.researched.has("causeways"))
+	var cost: Dictionary = Rules.cost_at("road", s.world.tile_at(p))
 	for id in cost:
 		if cost[id] > _spare(id):
 			return false

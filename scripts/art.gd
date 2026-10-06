@@ -15,6 +15,8 @@ const FOREST: Color = Data.TILES["tree"]["color"]
 const SPRITE_OF := {
 	"camp": "hearth",
 	"road": "tile_path",
+	"gravel_road": "tile_path",  # the road tiers borrow the path tile, tinted, until they have art (docs/art/requests.md)
+	"paved_road": "tile_path",
 	"bridge": "tile_bridge_wood",
 	"flax_field": "flax",
 	"tool_bench": "twine_post",
