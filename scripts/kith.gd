@@ -370,6 +370,8 @@ func job_of(k: Dictionary) -> String:
 			return building_job(_town.buildings[k["building"]])
 		"haul":
 			return Data.JOB_HAULER
+		"scout":
+			return Data.JOB_SCOUT
 	return Data.JOB_IDLE
 
 

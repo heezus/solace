@@ -155,6 +155,9 @@ const ROAD_SPEEDS := [1.0, 1.25, 1.5]
 const COPY_COST_STEP := 0.15
 const COPY_COST_CEILING := 4.0
 const COPY_COST_TABS := ["Workshops", "Metal"]
+## Scouting by clicking fog: the nearest idle Kith walks there, lifts the fog this many tiles around it (Scouting research
+## adds to it, like every sight) and walks home.
+const SCOUT_SIGHT := 5
 ## Granaries: every GRANARY_FOOD food in the stockpile houses one more person, up to GRANARY_HOMES.
 const GRANARY_FOOD := 20.0
 const GRANARY_HOMES := 30

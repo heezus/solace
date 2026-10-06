@@ -304,4 +304,9 @@ const CLOSE_TIP := "Close (Esc)"
 const SELECT_HINT := "Click a building to see its details here."
 
 # --- The Info panel (scripts/hover_text.gd) ---
-const UNEXPLORED_INFO := "Unexplored. Build a Gatherer's Hut, or discover Scouting, to see farther."
+const UNEXPLORED_INFO := "Unexplored. Click it to send the nearest idle Kith to look, or build a Gatherer's Hut, or discover Scouting."
+const UNEXPLORED_PILL := "Unexplored · click to scout"
+const SCOUT_SENT := "%s sets out to look."  # a name
+const SCOUT_NOBODY := "No one is free to scout: every %s has a job."  # many
+const SCOUT_BUSY := "A scout is already on the way there."
+const SCOUT_NO_WAY := "There is no way there on foot."

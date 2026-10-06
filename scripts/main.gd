@@ -14,6 +14,7 @@ const Bonuses = preload("res://scripts/bonuses.gd")
 const Rules = preload("res://scripts/rules.gd")
 const Workers = preload("res://scripts/workers.gd")
 const Roads = preload("res://scripts/roads.gd")
+const Scouting = preload("res://scripts/scouting.gd")
 const Hands = preload("res://scripts/hands.gd")
 const World = preload("res://scripts/world.gd")
 const Buildings = preload("res://scripts/buildings.gd")
@@ -361,6 +362,11 @@ func _click_tile(p: Vector2i) -> void:
 		if note != "":
 			popups.append({"pos": _tile_center(p), "text": note, "t": 0.0})
 		building_panel.select(p)
+		return
+	if not state.fog.is_revealed(p):
+		var note := Scouting.send(state, p)  # clicking fog sends the nearest idle Kith to look: no road, no building needed
+		if note != "":
+			_toast(note, 3.0)
 		return
 	if Hands.item_at(state, p) == "" and state.world.tile_at(p) != "shard":
 		building_panel.select(Vector2i(-1, -1))  # clicking bare ground puts the card away; holding a resource keeps it
@@ -748,7 +754,7 @@ func _draw() -> void:
 	elif state.world.in_bounds(hover) and not state.fog.is_revealed(hover):
 		var fr := _tile_rect(hover)
 		Art.dashed_rect(self, fr.grow(-1), Color(1, 1, 1, 0.6), 2.0, 5.0, 4.0)
-		Art.pill(self, Vector2(fr.get_center().x, fr.end.y + 4), "Unexplored", Ui.TEXT, OUTLINE, 14)
+		Art.pill(self, Vector2(fr.get_center().x, fr.end.y + 4), Data.UNEXPLORED_PILL, Ui.TEXT, OUTLINE, 14)
 	elif state.world.in_bounds(hover) and state.fog.is_revealed(hover) and Overlays.blocked_hint(state, hover) != "":
 		draw_rect(_tile_rect(hover).grow(-1), Color(1, 1, 1, 0.8), false, 2.0)
 		var r := _tile_rect(hover)

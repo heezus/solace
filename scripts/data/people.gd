@@ -45,6 +45,7 @@ const HUT_JOBS := {
 const JOB_ANY := {"title": "Gatherer", "craft": "to gather"}  # for an item with no entry above
 const JOB_HAULER := "Hauler"
 const JOB_IDLE := "Idle"
+const JOB_SCOUT := "Scout"
 
 ## Messages and labels that name the people. Each is formatted with PEOPLE["one"] or PEOPLE["many"]
 ## (the noun they use is noted beside it).

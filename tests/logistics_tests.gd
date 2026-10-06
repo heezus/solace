@@ -14,6 +14,8 @@ const HoverText = preload("res://scripts/hover_text.gd")
 const BuildBar = preload("res://scripts/build_bar.gd")
 const Haulers = preload("res://scripts/haulers.gd")
 const Roads = preload("res://scripts/roads.gd")
+const Scouting = preload("res://scripts/scouting.gd")
+const Kith = preload("res://scripts/kith.gd")
 
 var t  # the runner, tests/run_tests.gd
 
@@ -31,6 +33,9 @@ func run(runner) -> void:
 	test_flat_buildings_never_cost_more()
 	test_the_bar_and_hover_show_the_current_copy_price()
 	test_a_hand_cart_is_one_kith_carrying_triple()
+	test_clicking_fog_sends_the_nearest_idle_kith_to_look()
+	test_a_scout_needs_no_road_and_comes_home_a_hauler_again()
+	test_a_scout_has_edge_cases_and_survives_a_save()
 
 
 # --- Hidden until learned ------------------------------------------------------
@@ -77,7 +82,7 @@ func test_jobs_filled_never_passes_jobs() -> void:
 	t.check(Ui.jobs_filled(s) == 3, "a hauler or a scout holds no place")
 	s.people.kith[5]["job"] = "work"  # at work by the Kith list, but no building holds them
 	t.check(Ui.jobs_filled(s) == 3, "a Kith no building holds is not counted: never 4 of 3")
-	t.check(Ui.idle_kith(s) == 3, "the rest are the other three")
+	t.check(Ui.idle_kith(s) == 2, "the rest are the other two, with the scout counted apart")
 	s.set_paused(2, true)
 	t.check(Ui.job_slots(s) == 2 and Ui.jobs_filled(s) == 2, "a paused building is not a job and its worker is off it")
 	t.check(Ui.jobs_filled(s) <= Ui.job_slots(s), "filled never passes jobs")
@@ -450,3 +455,136 @@ func test_a_hand_cart_is_one_kith_carrying_triple() -> void:
 		s.town.price("cart_shed") == Data.BUILDINGS["cart_shed"]["cost"],
 		"a Cart Shed is a flat price: it is not a production building"
 	)
+
+
+# --- Fog scouting ----------------------------------------------------------------
+
+
+## A new camp with only the start of the map seen, five Kith at the Hearth and food for the walk.
+func _fogged() -> Sim:
+	var s := Sim.new()
+	s.generate(42)
+	s.people.found(5)
+	s.economy.inv["berries"] = 200
+	return s
+
+
+## The fogged tile the Kith can walk to that is `dist` tiles from the camp or a little more (the nearest such, east first).
+func _fog_tile(s: Sim, dist: int) -> Vector2i:
+	var best := Vector2i(-1, -1)
+	var best_d := INF
+	for y in s.world.height:
+		for x in s.world.width:
+			var p := Vector2i(x, y)
+			var d := Vector2(p).distance_to(Vector2(s.world.camp_pos))
+			if d < dist or s.fog.is_revealed(p) or s.pathing.astar.is_point_solid(p):
+				continue
+			var score := d + (0.0 if x > s.world.camp_pos.x else 0.5)
+			if score < best_d and not s.pathing.path(s.world.camp_pos, p).is_empty():
+				best = p
+				best_d = score
+	return best
+
+
+func test_clicking_fog_sends_the_nearest_idle_kith_to_look() -> void:
+	var s := _fogged()
+	var target := _fog_tile(s, 8)
+	t.check(target.x >= 0 and not s.fog.is_revealed(target), "a fogged tile to look at")
+	t.check(Scouting.send(s, s.world.camp_pos) == "", "a click on a revealed tile sends nobody")
+	for k in s.people.kith:
+		k["pos"] = Vector2(s.world.camp_pos)
+	s.people.kith[3]["pos"] = Vector2(s.world.camp_pos) + Vector2(5, 0)  # one Kith is already out that way
+	var note := Scouting.send(s, target)
+	t.check(note == Data.SCOUT_SENT % s.people.kith[3]["name"], "the nearest idle Kith goes: %s" % note)
+	t.check(s.people.kith[3]["job"] == "scout" and Scouting.count(s) == 1, "and is a scout now")
+	t.check(Data.JOB_SCOUT == "Scout" and s.people.job_of(s.people.kith[3]) == "Scout", "with the job title Scout")
+	t.check(s.people.job_counts().contains("1 Scout"), "the job list names it")
+	t.check(not s.people.kith[3]["path"].is_empty(), "walking")
+	t.check(Ui.idle_kith(s) == 4 and Ui.jobs_filled(s) == 0, "a scout is neither idle nor at a job")
+	t.check(
+		not s.tech_tree.researched.has("haulers") and s.world.roads.is_empty(), "with no haulers and not one road laid"
+	)
+
+
+func test_a_scout_needs_no_road_and_comes_home_a_hauler_again() -> void:
+	var s := _fogged()
+	s.tech_tree.researched["haulers"] = true
+	s.people.assign_jobs()
+	t.check(
+		s.people.kith.all(func(k): return k["job"] == "haul"),
+		"every Kith hauls with Paths & Haulers: all are idle haulers"
+	)
+	var target := _fog_tile(s, 9)
+	var seen_before := s.fog.count()
+	t.check(Scouting.send(s, target) != "", "an idle hauler can be sent")
+	var scout: Dictionary = s.people.kith.filter(func(k): return k["job"] == "scout")[0]
+	t.check(not scout["cart"], "not a cart: carts keep to the roads")
+	var arrived := false
+	var home := false
+	for i in 2000:
+		s.tick(0.1)
+		if not arrived and scout["phase"] == "scout_home":
+			arrived = true
+			t.check(
+				Vector2(scout["pos"]).distance_to(Vector2(target)) <= 1.5,
+				"it went to the tile (at %s)" % [scout["pos"]]
+			)
+			t.check(s.fog.is_revealed(target), "the fog is lifted there")
+			t.check(s.fog.is_revealed(target + Vector2i(Data.SCOUT_SIGHT - 1, 0)), "out to the scout's radius")
+			t.check(s.fog.count() > seen_before, "more of the map is seen")
+		if arrived and scout["job"] != "scout":
+			home = true
+			break
+	t.check(arrived and home, "it looked, then walked home")
+	t.check(Vector2(scout["pos"]).distance_to(Vector2(s.world.camp_pos)) < 1.5, "to the Hearth")
+	s.tick(0.1)
+	t.check(scout["job"] == "haul" and Scouting.count(s) == 0, "and hauls again")
+
+
+func test_a_scout_has_edge_cases_and_survives_a_save() -> void:
+	var s := _fogged()
+	var target := _fog_tile(s, 8)
+	t.check(
+		Scouting.send(s, target) != "" and Scouting.send(s, target) == Data.SCOUT_BUSY,
+		"a second click on the same fog sends no second scout"
+	)
+	var far := _fog_tile(s, 14)
+	t.check(Scouting.send(s, far) != "" and Scouting.count(s) == 2, "a click elsewhere sends another")
+	# Everyone busy: the message says so.
+	var busy := _fogged()
+	for k in busy.people.kith:
+		k["job"] = "work"
+	t.check(
+		Scouting.send(busy, _fog_tile(busy, 8)) == Data.SCOUT_NOBODY % Data.PEOPLE["many"], "no idle Kith, no scout"
+	)
+	var carrying := _fogged()
+	for k in carrying.people.kith:
+		k["job"] = "haul"
+		k["carry"] = {"wood": 3}
+	t.check(
+		Scouting.send(carrying, _fog_tile(carrying, 8)) == Data.SCOUT_NOBODY % Data.PEOPLE["many"],
+		"a hauler with a load is busy"
+	)
+	# A click on fogged river goes to the nearest dry tile.
+	var wet := _fogged()
+	var river := Vector2i(-1, -1)
+	for y in wet.world.height:
+		for x in wet.world.width:
+			var p := Vector2i(x, y)
+			if river.x < 0 and wet.world.tile_at(p) == "river" and not wet.fog.is_revealed(p):
+				river = p
+	t.check(
+		river.x >= 0 and Scouting.goal(wet, river) != Vector2i(-1, -1), "a fogged river tile has dry ground near it"
+	)
+	t.check(not wet.pathing.astar.is_point_solid(Scouting.goal(wet, river)), "and the scout is sent there")
+	# It survives a save mid-trip and goes on.
+	var d := RunSave.from_json(RunSave.to_json(RunSave.dump(s)))
+	var copy := Sim.new()
+	t.check(RunSave.restore(copy, d), "a save with scouts out restores")
+	t.check(Scouting.count(copy) == 2, "both are still scouts")
+	var one: Dictionary = copy.people.kith.filter(func(k): return k["job"] == "scout")[0]
+	t.check(one["task"]["tile"] is Vector2i and one["phase"] == "scout_out", "with their target and phase")
+	copy.economy.inv["berries"] = 200
+	for i in 3000:
+		copy.tick(0.1)
+	t.check(Scouting.count(copy) == 0, "and they come home")

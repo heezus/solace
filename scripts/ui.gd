@@ -6,6 +6,7 @@ const Data = preload("res://scripts/data.gd")
 const Art = preload("res://scripts/art.gd")
 const Rules = preload("res://scripts/rules.gd")
 const Buildings = preload("res://scripts/buildings.gd")
+const Scouting = preload("res://scripts/scouting.gd")
 const GrowthNote = preload("res://scripts/growth_note.gd")
 
 const OUTLINE: Color = Art.OUTLINE  # the sprite outline, also the map's
@@ -332,9 +333,9 @@ static func build_warning(inv: Dictionary, tech: String, cost: Dictionary = {}) 
 	)
 
 
-## Kith not staffing a building: they haul once Paths & Haulers is known, or wait at the Hearth.
+## Kith not staffing a building or out scouting: they haul once Paths & Haulers is known, or wait at the Hearth.
 static func idle_kith(s) -> int:
-	return s.people.kith.size() - jobs_filled(s)
+	return s.people.kith.size() - jobs_filled(s) - Scouting.count(s)
 
 
 ## The places to work: one for each person a building needs (a Mine needs two), not counting a paused building.
