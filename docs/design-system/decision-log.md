@@ -604,3 +604,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Jon picked on cards: three eras after Starfall, named Ironfall, Livewire and Skyreach (replacing the working names); the Bloom builds slowly (signs, then tide, then arrival); the Kith learn only a small branch of the life tree; the Lumen lean opens one reset and the player confirms it.
 - Claude: recorded these as "Decided" on page 18. Map change per reset and pacing keep their defaults.
 
+## 2026-10-06: Cross-faction carry-over idea (PR #60)
+- Jon (project chat): with each playthrough, some tech from the other factions should carry into the Kith, and later the reverse once Lumen and Bloom runs exist. Claude added it to page 18, tied to the Chronicle and profile save from page 13.
+- It is canon-pending: the details (what carries, how much, free or not, after which runs) are open forks with defaults. Nothing is built.
+

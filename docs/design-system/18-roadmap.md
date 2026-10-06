@@ -53,5 +53,13 @@ Each reset ends a run, keeps knowledge (not stock) and changes the map, as the T
 - **Does every reset change the map.** *Default:* yes (Exodus means a new region).
 - **Pacing.** About 20 minutes per era, the whole run about 2 hours. *Default:* yes, revisit after Starfall.
 
+## Cross-faction carry-over (Jon's idea, 2026-10-06; canon-pending until he OKs the details)
+Jon: with each playthrough, some tech from the other factions carries into the Kith, and later the reverse into the other factions once Lumen and Bloom runs exist.
+- **How it fits.** It rides on the Chronicle and the profile save from [13](13-three-perspectives.md): a run records named events (ids plus an outcome), and the profile, not the run save, holds what carries. The Chronicle stays a list of bookmarks, not a simulation. It is a second kind of carry-over beside the reset kinds above (knowledge, relics, memory).
+- **The Kith side.** What the Kith learn about the Lumen and the Bloom (glyphs read, sets locked, Bloom samples taken apart) could unlock a small number of echoes in later Kith runs: a Lumen-style recipe or a Bloom-style trick, shown as "known" from the start.
+- **The reverse, later.** Once Lumen and Bloom runs exist, the Kith's finished techs (iron, power) would echo into them the same way. Nothing to build until those runs do; keep the profile faction-neutral so it can.
+- **Rules to keep.** Carry kinds of knowledge, not stock or places. An echo never skips an era's own mechanic. It is optional flavor, not a power curve.
+- **Open forks (not asked yet, defaults proposed):** what carries (*default:* one echo per fully read Lumen glyph set and one per Bloom sample type); how much (*default:* small, a handful of techs, never a whole branch); whether an echo is free or costs a Teardown/decipher on the new run (*default:* it shows as known but still needs its normal materials); and whether echoes appear only after a reset or after any finished run (*default:* any finished run).
+
 ## Not decided here
 Anything that changes canon (the Bloom's nature, what the resets mean for the Lumen) goes to [open-questions](open-questions.md) for Jon's OK before it is built.
