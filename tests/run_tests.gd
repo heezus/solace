@@ -719,7 +719,9 @@ func test_tech_effects() -> void:
 	var slow := s.pathing.walk_cost(road)
 	s.research("paved_roads")
 	s.tech_tree.researched["paved_roads"] = true
-	s.pathing.update_cell(road)
+	check(s.pathing.walk_cost(road) == slow, "the tech alone does not pave a road")
+	give(s, 50)
+	check(s.place("paved_road", road), "dragging a Paved Road over it does")
 	check(s.pathing.walk_cost(road) < slow, "paved roads are faster")
 	var grass := find_grass(s, false)
 	check(place_free(s, "field", grass), "sow a field")

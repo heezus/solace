@@ -4,7 +4,9 @@ extends RefCounted
 ## kind: "camp" | "house" | "road" | "bridge" | "field" | "depot" | "gatherer" | "processor" | "power" | "aura" | "cairn"
 ##   | "shed" (a Cart Shed) | "tower" (a Watchtower)
 ## A "field" with `crop` "flax" sows flax instead of grain (World.flax_fields); it yields fiber as wild flax does.
-## A `stone` bridge bears carts and walks at the Causeway pace; the Wooden Bridge bears the Kith only.
+## A `stone` bridge bears carts and walks at the top road tier; the Wooden Bridge bears the Kith only. A road has a
+## `tier` (0 path, 1 gravel, 2 paved; Data.ROAD_SPEEDS): dragging a higher tier over a lower one upgrades it in place for
+## the difference in cost, and the Stone Bridge does the same over a Wooden Bridge.
 ## A processor with `trade` has no fixed recipe: it swaps Data.TRADE_GIVE of the good it is set to give for
 ## Data.TRADE_GET of the one it is set to get (the building's `give` and `get`). `sight` is how far a building sees.
 ## `story` buildings stay off the build bar until their tech is on the board and reachable (nothing to spoil early).
@@ -42,6 +44,7 @@ const BUILDINGS := {
 	{
 		"name": "Road",
 		"kind": "road",
+		"tier": 0,
 		"tech": "haulers",
 		"cost": {"wood": 2},
 		"color": Color("c8a36a"),
@@ -50,6 +53,34 @@ const BUILDINGS := {
 			"A timber trackway. Kith walk twice as fast on roads, and haulers serve only road-linked buildings."
 			+ " Through Forest, a Road fells the trees; on Rocks, it cuts a pass for 3 Stone."
 			+ " Roads can't cross the river: build a Wooden Bridge. Drag to lay."
+		),
+	},
+	"gravel_road":
+	{
+		"name": "Gravel Road",
+		"kind": "road",
+		"tier": 1,
+		"tech": "haulers",
+		"cost": {"wood": 2, "flint": 2},
+		"color": Color("a9a395"),
+		"desc":
+		(
+			"A road bedded in riverbed gravel: Kith and haulers move 25% faster than on a Road."
+			+ " Drag over a Road to upgrade it in place: you pay only the difference for each tile."
+		),
+	},
+	"paved_road":
+	{
+		"name": "Paved Road",
+		"kind": "road",
+		"tier": 2,
+		"tech": "paved_roads",
+		"cost": {"wood": 2, "stone": 2, "brick": 1},
+		"color": Color("8e9aa6"),
+		"desc":
+		(
+			"A road laid in dressed stone: Kith and haulers move 50% faster than on a Road."
+			+ " Drag over a Road or a Gravel Road to upgrade it in place: you pay only the difference for each tile."
 		),
 	},
 	"bridge":
@@ -70,7 +101,10 @@ const BUILDINGS := {
 		"cost": {"stone": 6, "brick": 4},
 		"color": Color("b3aca2"),
 		"desc":
-		"Goes on a river tile. The Kith cross at Causeway pace, and carts can cross too. Drag to span the river.",
+		(
+			"Goes on a river tile. The Kith cross at paved pace, and carts can cross too. Drag to span the river,"
+			+ " or drag over a Wooden Bridge to rebuild it in stone."
+		),
 	},
 	"field":
 	{
@@ -325,13 +359,16 @@ const BUILD_TABS := {
 	"Gathering": ["gatherers_hut", "field", "flax_field", "fishing_weir"],
 	"Workshops": ["tool_bench", "charcoal_pit", "twine_post", "kiln", "water_wheel", "grindstone"],
 	"Metal": ["mine", "smelter", "crucible"],
-	"Logistics": ["road", "bridge", "stone_bridge", "storehouse", "cart_shed", "trading_post"],
+	"Logistics":
+	["road", "gravel_road", "paved_road", "bridge", "stone_bridge", "storehouse", "cart_shed", "trading_post"],
 	"Lore": ["standing_stone", "shard_cairn", "watchtower"],
 }
 
 const BUILD_ORDER := [
 	"dwelling",
 	"road",
+	"gravel_road",
+	"paved_road",
 	"bridge",
 	"stone_bridge",
 	"field",

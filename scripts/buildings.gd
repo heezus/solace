@@ -64,15 +64,20 @@ func placement_error(type: String, p: Vector2i) -> String:
 		return "Off the map"
 	if not _is_revealed.call(p):
 		return "Unexplored: build or walk closer to see it"
-	if building_at.has(p) or _world.roads.has(p):
+	if building_at.has(p):
 		return "Something is already there"
 	var tile := _world.tile_at(p)
+	if _world.roads.has(p):
+		var upgrade := upgrade_error(type, p)
+		if upgrade != "":
+			return upgrade
+		return "" if _economy.can_afford(cost_here(type, p)) else "Not enough materials"
 	if def["kind"] == "road":
 		if tile == "river":
 			return "Roads can't cross the river: build a Wooden Bridge"
 		if tile not in ["grass", "rock", "tree"]:
 			return "Roads go on grassland or through Forest, or cut a pass through Rocks"
-		return "" if _economy.can_afford(Rules.cost_at(type, tile, _causeways())) else "Not enough materials"
+		return "" if _economy.can_afford(cost_here(type, p)) else "Not enough materials"
 	if def["kind"] == "bridge":
 		if tile != "river":
 			return "Bridges go on river tiles"
@@ -97,9 +102,33 @@ func placement_error(type: String, p: Vector2i) -> String:
 	return ""
 
 
-## True once Causeways is known: Roads are laid in stone and brick.
-func _causeways() -> bool:
-	return _research.unlocked("causeways")
+## What `type` costs at p now: a road costs what its tile asks (a pass through Rocks costs more), and a road or bridge
+## laid over one that stands there costs only the difference.
+func cost_here(type: String, p: Vector2i) -> Dictionary:
+	return Rules.cost_at(type, _world.tile_at(p), built_type(p) if _world.roads.has(p) else "")
+
+
+## Why `type` can't be laid over the road or bridge already at p, or "" when it upgrades it: a higher road tier over a
+## lower one, a Stone Bridge over a Wooden Bridge. Everything else (the same tier, a worse one, a building) is refused.
+func upgrade_error(type: String, p: Vector2i) -> String:
+	var kind: String = Data.BUILDINGS[type]["kind"]
+	var river := _world.tile_at(p) == "river"
+	if kind == "road" and not river:
+		var here := _world.road_tier(p)
+		if Rules.tier_of(type) > here:
+			return ""
+		return (
+			"Already a %s" % Data.BUILDINGS[type]["name"]
+			if here == Rules.tier_of(type)
+			else "A better road is already here"
+		)
+	if kind == "bridge" and river:
+		if _world.stone_bridges.has(p):
+			return "Already a Stone Bridge"
+		if Data.BUILDINGS[type].get("stone", false):
+			return ""
+		return "Already a bridge"
+	return "Something is already there"
 
 
 func near_hearth(p: Vector2i) -> bool:
@@ -113,7 +142,7 @@ func built_type(p: Vector2i) -> String:
 	if _world.roads.has(p):
 		if _world.stone_bridges.has(p):
 			return "stone_bridge"
-		return "bridge" if _world.tile_at(p) == "river" else "road"
+		return "bridge" if _world.tile_at(p) == "river" else Rules.road_type(_world.road_tier(p))
 	if _world.fields.has(p):
 		return "field"
 	if _world.flax_fields.has(p):
@@ -129,7 +158,7 @@ func place(type: String, p: Vector2i, focus := "") -> Dictionary:
 	if placement_error(type, p) != "":
 		return {}
 	var tile := _world.tile_at(p)
-	_economy.pay(Rules.cost_at(type, tile, _causeways()))
+	_economy.pay(cost_here(type, p))
 	road_rev += 1
 	var kind: String = Data.BUILDINGS[type]["kind"]
 	var cleared := ""
@@ -140,7 +169,7 @@ func place(type: String, p: Vector2i, focus := "") -> Dictionary:
 		if Data.BUILDINGS[type].get("stone", false):
 			_world.add_stone_bridge(p)
 		else:
-			_world.add_road(p)  # a bridge is a road over the river
+			_world.add_road(p, Rules.tier_of(type))  # a bridge is a road over the river
 	elif kind == "field":
 		if Data.BUILDINGS[type].get("crop", "") == "flax":
 			_world.add_flax_field(p)

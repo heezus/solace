@@ -146,10 +146,9 @@ const PATCH_MAX_TILES := 8
 ## when the roads do not reach.
 const CARTS_PER_SHED := 2
 const CART_LOAD := 2
-## Causeways: every road walks at this cost (the Road's WALK_COST is 0.5, paved 0.25; 0.2 is five times open ground),
-## and a new Road costs this instead of its Wood. A Road cut through Rocks still costs PASS_COST.
-const CAUSEWAY_WALK_COST := 0.2
-const CAUSEWAY_ROAD_COST := {"stone": 1, "brick": 1}
+## Road tiers (design-system/17-needs-and-upgrades.md): path, gravel, paved. A road tile's walk cost is the open road's
+## (WALK_COST "road") divided by its tier's speed, so higher tiers are faster. A Stone Bridge walks at the top tier.
+const ROAD_SPEEDS := [1.0, 1.25, 1.5]
 ## Granaries: every GRANARY_FOOD food in the stockpile houses one more person, up to GRANARY_HOMES.
 const GRANARY_FOOD := 20.0
 const GRANARY_HOMES := 30

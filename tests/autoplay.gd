@@ -656,10 +656,9 @@ func _place_wheel() -> bool:
 	var bank := _nearest_bank()
 	if bank.x >= 0 and _explore_to(bank):
 		return true
-	if _count("water_wheel") > 0:
-		return false
 	# No bank tile with room round it and nothing to explore: any free bank tile will do (a Grindstone then
-	# tears down a road beside it), else tear down a bank road.
+	# tears down a road beside it), else tear down a bank road. A second wheel takes this road too, when the first one's
+	# reach has no site left for a workshop (a wheel in a corner of the bank, on a map where the roads came later).
 	return _place_near_hearth("water_wheel") or _tear_down_for("water_wheel", s.world.touches_river)
 
 
@@ -767,7 +766,7 @@ func _spare(item: String) -> int:
 
 ## True if a road on `p` fits in what we can spare.
 func _road_affordable(p: Vector2i) -> bool:
-	var cost: Dictionary = Rules.cost_at("road", s.world.tile_at(p), s.tech_tree.researched.has("causeways"))
+	var cost: Dictionary = Rules.cost_at("road", s.world.tile_at(p))
 	for id in cost:
 		if cost[id] > _spare(id):
 			return false

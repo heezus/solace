@@ -142,7 +142,7 @@ func research(tech: String) -> bool:
 
 ## What a finished tech sets off in the rest of the game (Research only reports that it finished).
 func _tech_done(tech: String) -> void:
-	if tech in ["paved_roads", "rafts", "causeways"]:
+	if tech == "rafts":
 		pathing.refresh()
 	if tech == "scouting":
 		for b in town.buildings:

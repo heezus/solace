@@ -277,11 +277,12 @@ const TECHS := {
 		"lane": "fiber",
 		"tier": 2,
 		"slot": 1,
-		"unlock": "Road, Wooden Bridge",
+		"unlock": "Road, Gravel Road, Wooden Bridge",
 		"icon": "hauler",
 		"requires": ["cordage", "gatherers_hut"],
 		"cost": {"rope": 20, "wood": 40},
-		"desc": "Idle Kith carry goods between buildings and the stockpile. Unlocks Roads and Wooden Bridges.",
+		"desc":
+		"Idle Kith carry goods between buildings and the stockpile. Unlocks Roads, Gravel Roads and Wooden Bridges.",
 	},
 	"storehouse":
 	{
@@ -429,12 +430,13 @@ const TECHS := {
 		"lane": "stone",
 		"tier": 3,
 		"slot": 0,
-		"unlock": "Roads 4x",
+		"unlock": "Paved Road",
 		"icon": "tile_road",
 		"requires": ["haulers", "masonry"],
 		"cost": {"stone": 100, "wood": 60, "brick": 20, "rope": 20},
 		"effect": "paved_roads",
-		"desc": "Roads are 4x faster than open ground, up from 2x.",
+		"desc":
+		"Lay Paved Roads, 3x faster than open ground (a Road is 2x, Gravel 2.5x). Drag over a road to pave it in place.",
 	},
 	"baking":
 	{
@@ -633,12 +635,12 @@ const TECHS := {
 		"lane": "stone",
 		"tier": 2,
 		"slot": 0,
-		"unlock": "Stone Bridge, Roads 5x",
+		"unlock": "Stone Bridge",
 		"icon": "stone_bridge",
 		"requires": ["the_wheel", "mining"],
 		"cost": {"stone": 120, "brick": 80, "copper": 20},
 		"desc":
-		"Roads are laid in stone: 1 Stone and 1 Brick, five times as fast as open ground. The Stone Bridge spans the river and bears carts.",
+		"The Stone Bridge spans the river, walks at paved pace and bears carts. Click a Wooden Bridge with it to rebuild it in stone.",
 	},
 	"markets":
 	{

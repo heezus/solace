@@ -53,8 +53,10 @@ const LEARNED_LINE := "%s learned %s and is now the %s."  # name, "to chop wood"
 const BORN_POPUP := "+1 %s"  # one
 const BORN_TOAST := "New %s arrive at the Hearth while food lasts"  # many
 const NAMELESS := "A %s"  # one: who learns a job when no one is named
-const BRIDGE_HINT := "Wooden Bridge. %s and haulers cross the river here."  # many
-const ROAD_HINT := "Road on %s. %s walk twice as fast here."  # tile name, many
+const BRIDGE_HINT := "%s. %s and haulers cross the river here."  # bridge name, many
+const ROAD_HINT := "%s on %s. %s walk %s here."  # road name, tile name, many, how fast ("twice as fast")
+## How fast each road tier is walked, as ROAD_HINT says it (Data.ROAD_SPEEDS times the road's twice the open ground).
+const ROAD_PACE := ["twice as fast", "2.5 times as fast", "three times as fast"]
 const FOOD_TIP := "Every %s eats food: Berries, then Fish, then any Flour that isn't in use."  # one
 ## The Food readout while the warning is up, formatted with the time left ("45 s").
 const FOOD_LOW_TEXT := "Low: %s left. Gather berries!"
