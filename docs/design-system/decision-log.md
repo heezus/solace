@@ -594,3 +594,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Guessing is free: no penalty for a wrong word and no confirm button; the Kith simply read a set when all three marks are right.
 - The third tech tab was left for stage 2 (the page puts it there), so the magic tree still waits.
 - Strangers and the two buildings use placeholder art; Codex slots are in docs/art/requests.md.
+
+## 2026-10-06: Roadmap past Starfall (PR #58)
+- Claude: wrote page 18 on Jon's yes: a one-page map of eras 4 to 6 (working names Ember, Wire, Reach), the Bloom as a spreading tide and the three resets. Each era gets one new way of knowing, per the pillar.
+- Everything is a proposal with a default under "Open"; nothing is canon until Jon answers. Era names and the Bloom's role in particular wait on him.
+- Stone-age and Bronze Dawn text is untouched; Starfall stage 2 is separate and waits for Jon's go.
+
