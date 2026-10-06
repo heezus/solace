@@ -5,6 +5,9 @@ name: Desktop builds
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
   pull_request:
     paths:
       - export_presets.cfg
