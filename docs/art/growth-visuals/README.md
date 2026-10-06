@@ -56,7 +56,7 @@ The native preview exercises straight, corner, junction and mixed-tier boundarie
 - Godot import generated four `.png.import` files and new script/shader UIDs.
 - Focused native build-bar fit and slot/alpha/bounds/RNG/road-seam checks pass.
 - Native preview inspected at 24/48/96 px. At 24 px silhouettes remain distinct; item details rely on labels.
-- GDScript lint/format and diff checks pass. Full repository CI is required before merge.
+- GDScript lint/format and diff checks pass. CI run 37405354942 on 9a0f2b9 passed import/metadata/warnings/main load/all logic tests, but its play-through bot stalled before Bronze Dawn (6001 frames, three Kith); the same failure reproduced locally without failed UI-click or asset assertions. Long layout CI did not run. Claude has the failure/reproduction on PRs #50/#51; full green CI remains required before merge.
 
 From repository root, with your Godot binary:
 
