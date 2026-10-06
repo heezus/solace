@@ -1,6 +1,6 @@
 extends RefCounted
 ## Sim: the whole simulation, with no rendering, so it runs headless in tests. It is a thin owner. It holds
-## one of each block (`fog`, `world`, `pathing`, `economy`, `tech_tree`, `town`, `people`, `story`, `sky`) and
+## one of each block (`fog`, `world`, `pathing`, `economy`, `tech_tree`, `town`, `people`, `story`, `sky`, `starfall`) and
 ## nothing else about them: callers reach a block through its name (`sim.economy.inv`, `sim.world.tile_at(p)`).
 ## What stays here is what no single block can do: the commands that touch several blocks at once (`place`,
 ## `demolish`, `research`, `gather_by_hand`...), the few flags of the run itself, and the tick order:
@@ -31,6 +31,7 @@ const Forage = preload("res://scripts/forage.gd")
 const Land = preload("res://scripts/land.gd")
 const Homes = preload("res://scripts/homes.gd")
 const SkyBlock = preload("res://scripts/sky.gd")
+const StarfallBlock = preload("res://scripts/starfall.gd")
 
 var won := false
 var hand_tools := false  # you've made a Flint Tool, so hand gathering is doubled for good
@@ -58,6 +59,7 @@ var town := Buildings.new(world, economy, tech_tree, fog.is_revealed)
 var people := Kith.new(world, pathing, economy, tech_tree, town)
 var story := Story.new()  # story moments and the opening checklist
 var sky := SkyBlock.new(tech_tree, town)
+var starfall := StarfallBlock.new(town)  # the era after the Falling Star: the landing, the strangers, the glyphs
 
 
 ## Wire the blocks together. Every signal connection in the game is here, so it is all in one place.
@@ -72,6 +74,10 @@ func _init() -> void:
 	people.announce.connect(_announce)
 	sky.sighted.connect(_announce)
 	economy.food_low.connect(_on_food_low)
+	town.story_has = story.has_event
+	story.recorded.connect(_on_story)
+	starfall.said.connect(_announce)
+	starfall.moment.connect(story.record)
 
 
 # --- Map ---------------------------------------------------------------------
@@ -160,6 +166,12 @@ func _tech_done(tech: String) -> void:
 ## Connected to Kith.announce: tell the player something (the UI shows and clears `events`).
 func _announce(message: String) -> void:
 	events.append(message)
+
+
+## Connected to Story.recorded: the Falling Star starts the era after it (a Cairn built first means friendly strangers).
+func _on_story(id: String) -> void:
+	if id == "star_falling":
+		starfall.begin(story.cairn_before_landing)
 
 
 ## Connected to Economy.food_low: the early warning, before anyone leaves.
@@ -259,6 +271,7 @@ func tick(delta: float) -> void:
 	people.grow(delta, fed)
 	story.update(self)
 	sky.tick(delta)
+	starfall.tick(delta)
 	if fed:
 		for k in people.kith:
 			if Forage.tick(self, k, delta):

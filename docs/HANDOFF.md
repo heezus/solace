@@ -12,6 +12,12 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 - **Next action:** Claude investigates the pacing-bot/fixture failure reported on PRs #50/#51; Codex fixes any demonstrated presentation/input defect and reruns CI after a relevant fix. Claude then reviews/merges the visual PR and uses `docs/art/growth-visuals/README.md` for exact state hooks in logistics/needs; new assets are imported and ready but normal play does not select tier/scaffold/cart state yet. Beast art remains outside this task.
 
 
+### Claude — Starfall stage 1
+- **Task:** Jon's 2026-10-06 go. Page 16 stage 1: the landing, strangers, Glyph Wall with set 1, Lumen Camp, hidden trust. PR `starfall`.
+- **Reserved files:** `scripts/starfall.gd`, `scripts/data/starfall.gd`, `scripts/glyph_*.gd`, `scripts/sim.gd`, `scripts/run_save.gd`, `scripts/build_bar.gd` (card text only), `scripts/kith_art.gd` (`draw_strangers`), `scripts/rendered_art.gd` (two placeholder slots), tests. Codex: please avoid these until it merges.
+- **Hooks for Codex:** `glyph_wall` and `lumen_camp` sprite slots and the stranger figures, listed in `docs/art/requests.md`.
+- **Next action:** CI green, merge, then Codex may replace the placeholders.
+
 ### Claude — gameplay asks (PR #44, merged) and the visual merge (PR #33, merged)
 - **Task:** none open. PR #44 shipped the four gameplay asks (one-click Gatherer's Hut round, techs show once their items are found, roads through buildings, Hearth stage helper). PR #33 is merged with main's gameplay preserved.
 - **Reserved files:** none. For the next gameplay task Claude records its files here before editing.

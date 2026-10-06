@@ -50,6 +50,7 @@ const PassageTests = preload("res://tests/passage_tests.gd")
 const DiscoveryTests = preload("res://tests/discovery_tests.gd")
 const LogisticsTests = preload("res://tests/logistics_tests.gd")
 const ForksTests = preload("res://tests/forks_tests.gd")
+const StarfallTests = preload("res://tests/starfall_tests.gd")
 const HomesTests = preload("res://tests/homes_tests.gd")
 const World = preload("res://scripts/world.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
@@ -79,6 +80,11 @@ func _init() -> void:
 	if "logistics" in OS.get_cmdline_user_args():  # `-- logistics` runs only the Logistics tests while iterating
 		LogisticsTests.new().run(self)
 		print("FAILED: %d" % failures if failures > 0 else "LOGISTICS TESTS PASSED")
+		quit(1 if failures > 0 else 0)
+		return
+	if "starfall" in OS.get_cmdline_user_args():  # `-- starfall` runs only the Starfall tests while iterating
+		StarfallTests.new().run(self)
+		print("FAILED: %d" % failures if failures > 0 else "STARFALL TESTS PASSED")
 		quit(1 if failures > 0 else 0)
 		return
 	if "forks" in OS.get_cmdline_user_args():  # `-- forks` runs only the fork tests while iterating
@@ -162,6 +168,7 @@ func _init() -> void:
 	DiscoveryTests.new().run(self)
 	LogisticsTests.new().run(self)
 	ForksTests.new().run(self)
+	StarfallTests.new().run(self)
 	HomesTests.new().run(self)
 	NewcomerTests.new().run(self)
 	UiTests.new().run(self)

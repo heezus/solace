@@ -128,6 +128,7 @@ static func _game_to_dict(s) -> Dictionary:
 		"ranks": Codec.int_dict(s.ranks),
 		"events": s.events.duplicate(),
 		"sky": s.sky.to_dict(),
+		"starfall": s.starfall.to_dict(),
 	}
 
 
@@ -143,3 +144,4 @@ static func _game_from_dict(s, d: Dictionary) -> void:
 	s.ranks = Codec.int_dict(d.get("ranks", {}))
 	s.events = Codec.strings(d.get("events", []))
 	s.sky.from_dict(d.get("sky", {}))
+	s.starfall.from_dict(d.get("starfall", {}))

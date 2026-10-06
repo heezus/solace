@@ -19,6 +19,7 @@ const Buildings = preload("res://scripts/buildings.gd")
 const Work = preload("res://scripts/work.gd")
 const HutFocus = preload("res://scripts/hut_focus.gd")
 const TradePicker = preload("res://scripts/trade_picker.gd")
+const GlyphPicker = preload("res://scripts/glyph_picker.gd")
 const PatchText = preload("res://scripts/patch_text.gd")
 
 const INSET := Ui.BAR
@@ -79,6 +80,12 @@ func setup(game: Sim) -> void:
 	v.add_child(trade)
 	v.move_child(trade, parts["recipe"].get_index())
 	parts["trade"] = trade
+	var glyphs := GlyphPicker.new()  # a Glyph Wall: the marks copied so far and a guess for each (scripts/glyph_picker.gd)
+	glyphs.setup(game)
+	glyphs.changed.connect(refresh)
+	v.add_child(glyphs)
+	v.move_child(glyphs, parts["recipe"].get_index())
+	parts["glyphs"] = glyphs
 	parts["holding"] = Ui.label("", Ui.MIN_TEXT)
 	v.add_child(parts["holding"])
 	var bar := ProgressBar.new()
@@ -191,6 +198,7 @@ func refresh() -> void:
 	parts["desc"].visible = def["kind"] not in ["gatherer", "processor"]  # what it gathers or makes says it better
 	parts["focus"].show_for(b)
 	parts["trade"].show_for(b)
+	parts["glyphs"].show_for(b)
 	parts["recipe"].text = recipe_text(state, b)
 	parts["recipe"].visible = parts["recipe"].text != ""
 	parts["worker"].text = worker_text(state, b)
