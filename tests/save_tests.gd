@@ -470,7 +470,12 @@ func test_a_loaded_game_carries_on_the_same() -> void:
 			var at := 0
 			while at < mini(dump_a.length(), dump_b.length()) and dump_a[at] == dump_b[at]:
 				at += 1
-			print("first difference at %d: %s | %s" % [at, dump_a.substr(maxi(at - 60, 0), 140), dump_b.substr(maxi(at - 60, 0), 140)])
+			print(
+				(
+					"first difference at %d: %s | %s"
+					% [at, dump_a.substr(maxi(at - 60, 0), 140), dump_b.substr(maxi(at - 60, 0), 140)]
+				)
+			)
 			t.check(
 				false,
 				"the copy went its own way within %d s (hash %s vs %s)" % [(chunk + 1) * 15, h1.left(10), h2.left(10)]

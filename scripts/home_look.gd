@@ -5,7 +5,7 @@ extends RefCounted
 
 const Homes = preload("res://scripts/homes.gd")
 
-## The sprite name each tier is drawn with (Art.building_sprite): all three borrow the Dwelling until Codex's tier art lands.
+## The sprite name each tier is drawn with when it is a plain sprite; tiers above the first are drawn by GrowthArt.draw_house.
 const SPRITES := ["dwelling", "dwelling", "dwelling"]
 ## While a scaffold stands, the sprite name of the overlay drawn over the home ("" until Codex draws one; the map then draws its
 ## own tint and beams).

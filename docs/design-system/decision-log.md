@@ -568,3 +568,11 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Reuse the original Dwelling, add broader Homestead/longer Longhouse silhouettes within the 1×1 footprint, and use an open rope-lashed construction overlay. Warm timber/thatch and cool stone preserve the miniature family.
 - One Kith pulls an empty two-wheel cart; goods remain a separate illustration. Roads use connected world-anchored earth/gravel/stone materials instead of opaque square stamps.
 - New imported assets and pure visual calls are supplied; Claude selects tier/construction/cart state in gameplay PRs. Native size/layout and bounds/alpha/RNG/seam checks pass; terrain beauty study remains separate.
+
+## 2026-10-06: Needs build (PR #52)
+- Claude: built PR 2 of page 17 on Jon's approval with the default answers. Homes now stand at three tiers (Dwelling, Homestead, Longhouse) and ask for variety of food and goods in the home. A missed need only stalls growth: nothing drops a tier.
+- Upgrades are no longer free: Homestead costs 24 Wood and 16 Clay after 2 minutes of met needs, Longhouse 70 Wood, 50 Brick and 10 Bronze after 5. Haulers carry the materials to a scaffold, at most 2 stand at once, and the player sets a cap per tier on the Homes tab.
+- The map shows the tiers with Codex's house and scaffold art from #51, wired through `GrowthArt`.
+- Pacing moved as the page expected: stone age wins at 1091, 936 and 923 s on maps 1 to 3 and the whole bot run is about 43 to 61 min. Goldens are re-pinned in their own commit and the pacing windows in the tests widened.
+- The #51 stall was the test bot, not the build bar: with every Kith in a workshop the food hut had no worker and nobody was born, so the bot now pauses one workshop after 60 s of that.
+

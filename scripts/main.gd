@@ -39,6 +39,7 @@ const Rendered = preload("res://scripts/rendered_art.gd")
 const BridgeArt = preload("res://scripts/bridge_art.gd")
 const Homes = preload("res://scripts/homes.gd")
 const HomeView = preload("res://scripts/home_view.gd")
+const GrowthArt = preload("res://scripts/growth_art.gd")
 
 const TILE: float = Overlays.TILE
 const MAP_ORIGIN := Vector2.ZERO  # the node's transform pans and zooms the map
@@ -824,9 +825,12 @@ func _draw_building(b: Dictionary) -> void:
 	var r := Overlays.footprint(state, p)  # a tile, or the Hearth's 2x2
 	var working: bool = b["status"] == "Working"
 	Art.contact_shadow(self, Vector2(r.get_center().x, r.end.y - 2.0), r.size * Vector2(0.38, 0.055))
-	Art.map_building(self, b["type"], r, working, time)
+	if Homes.is_home(b) and Homes.tier_of(b) > 0:
+		GrowthArt.draw_house(self, Homes.tier_of(b) + 1, r)  # a Homestead or a Longhouse has its own roof
+	else:
+		Art.map_building(self, b["type"], r, working, time)
 	if Homes.is_home(b):
-		HomeView.draw(self, b, r)  # its tier and any scaffold (scripts/home_look.gd)
+		HomeView.draw(self, b, r)  # any scaffold, over the house (scripts/home_look.gd)
 	if b["type"] == "shard_cairn":
 		Art.cairn_glow(self, r, state.sky.approach(), time)
 	var tile := _tile_rect(p).grow(-2.0 * k)
