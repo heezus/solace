@@ -2,7 +2,9 @@ extends RefCounted
 ## Every building, the build bar's tabs and order. Read through the `Data` facade (scripts/data.gd).
 
 ## kind: "camp" | "house" | "road" | "bridge" | "field" | "depot" | "gatherer" | "processor" | "power" | "aura" | "cairn"
-##   | "shed" (a Cart Shed) | "tower" (a Watchtower)
+##   | "shed" (a Cart Shed) | "tower" (a Watchtower) | "wall" (the Glyph Wall) | "refuge" (the Lumen Camp)
+## A building with an `event` (and no tech) opens when that story event has happened (Data.STORY_EVENTS): the era of the
+## Lumen has no research to gate it, and the card stays off the build bar until then.
 ## A "field" with `crop` "flax" sows flax instead of grain (World.flax_fields); it yields fiber as wild flax does.
 ## A `stone` bridge bears carts and walks at the top road tier; the Wooden Bridge bears the Kith only. A road has a
 ## `tier` (0 path, 1 gravel, 2 paved; Data.ROAD_SPEEDS): dragging a higher tier over a lower one upgrades it in place for
@@ -351,6 +353,30 @@ const BUILDINGS := {
 		),
 		"status": "It hums. The Kith think clearer. Something far off may hear.",
 	},
+	"glyph_wall":
+	{
+		"name": "Glyph Wall",
+		"kind": "wall",
+		"tech": "",
+		"event": "lumen_arrived",
+		"cost": {"stone": 40, "brick": 20},
+		"color": Color("7aa6c2"),
+		"desc":
+		"A smooth wall where the Kith copy every mark the strangers show them. Click it to guess what each one means.",
+		"status": "Copying marks.",
+	},
+	"lumen_camp":
+	{
+		"name": "Lumen Camp",
+		"kind": "refuge",
+		"tech": "",
+		"event": "name_read",
+		"cost": {"wood": 60, "stone": 30, "rope": 20},
+		"color": Color("9fd8e8"),
+		"desc":
+		"A place for the strangers to sit by their own fire. They trust the Kith a little more while it stands.",
+		"status": "The strangers rest here.",
+	},
 }
 
 ## The build bar's tabs, in order. Craft by hand has its own small group beside them.
@@ -361,7 +387,7 @@ const BUILD_TABS := {
 	"Metal": ["mine", "smelter", "crucible"],
 	"Logistics":
 	["road", "gravel_road", "paved_road", "bridge", "stone_bridge", "storehouse", "cart_shed", "trading_post"],
-	"Lore": ["standing_stone", "shard_cairn", "watchtower"],
+	"Lore": ["standing_stone", "shard_cairn", "watchtower", "glyph_wall", "lumen_camp"],
 }
 
 const BUILD_ORDER := [
@@ -390,6 +416,8 @@ const BUILD_ORDER := [
 	"cart_shed",
 	"trading_post",
 	"watchtower",
+	"glyph_wall",
+	"lumen_camp",
 ]
 
 ## Output a building holds before it stops, when nobody hauls it away.

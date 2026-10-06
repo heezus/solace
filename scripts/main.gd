@@ -729,6 +729,7 @@ func _draw() -> void:
 			_draw_gather_range(sel["pos"])
 		Overlays.flow_arrows(self, state, sel, time)
 	KithArt.draw_all(self, state, time)
+	KithArt.draw_strangers(self, state, time)
 	Overlays.fog_edges(self, state, seen)
 	Overlays.alert_badges(self, state)
 

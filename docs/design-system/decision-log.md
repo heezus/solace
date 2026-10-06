@@ -582,3 +582,10 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Granaries is the one fork: Markets or Kilns II. Taking one sets the other aside until Granaries is learned, then it costs 1.5x. Nothing the eras need is gated by a fork.
 - Calendar stays a plain either-or: forcing it into a fork broke the Bronze Dawn goals, so it was left alone.
 - Hand carts draw with Codex's cart art from #51. Road tier art stays a tint until the connected road material is wired.
+
+## 2026-10-06: Starfall stage 1 (PR #n)
+- Claude: built stage 1 of page 16 on Jon's go ("Then B"): the landing, strangers, Glyph Wall with set 1, the Lumen Camp and the hidden trust meter. Details in the page's "Stage 1 as built".
+- The Glyph Wall and Lumen Camp are the first buildings gated by a story event instead of a tech ("event" in the building data), so their cards show only once the strangers walk out of the fog.
+- Guessing is free: no penalty for a wrong word and no confirm button; the Kith simply read a set when all three marks are right.
+- The third tech tab was left for stage 2 (the page puts it there), so the magic tree still waits.
+- Strangers and the two buildings use placeholder art; Codex slots are in docs/art/requests.md.

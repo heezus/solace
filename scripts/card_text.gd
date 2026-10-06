@@ -14,7 +14,9 @@ const FONT_SIZE := 14  # the state line's size on the card
 ## until its tech is also reachable (its parents are done), so the Lore tab doesn't give the reveal away.
 static func shown(s, type: String) -> bool:
 	var def: Dictionary = Data.BUILDINGS[type]
-	if def["tech"] == "" or s.town.unlocked(type):
+	if def["tech"] == "":
+		return s.town.unlocked(type)  # an `event` building waits for its story moment
+	if s.town.unlocked(type):
 		return true
 	if not def.get("story", false):
 		return s.tech_tree.tech_visible(def["tech"])
@@ -43,6 +45,8 @@ static func short_names(inv: Dictionary, cost: Dictionary) -> Array:
 ## Why a locked card is locked: the tech to discover. With `max_w` it is shortened to fit two lines of that width at
 ## FONT_SIZE (just the tech's name when "Discover ..." would need three); the card's tooltip has the whole sentence.
 static func locked_reason(type: String, max_w := 0.0) -> String:
+	if Data.BUILDINGS[type]["tech"] == "":
+		return Data.CARD_WAIT  # an `event` building: no tech to name, and the card is hidden until then
 	var tech_name: String = Data.TECHS[Data.BUILDINGS[type]["tech"]]["name"]
 	if repeats_name(type, tech_name):
 		return Data.CARD_DISCOVER_IT  # the title above already says which

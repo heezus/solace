@@ -68,7 +68,10 @@ func test_story_ids_are_stable_and_unique() -> void:
 		"bronze_dawn",
 		"wanderer_named",
 		"star_falling",
-		"cairn_raised"
+		"cairn_raised",
+		"star_landed",
+		"lumen_arrived",
+		"name_read"
 	]
 	t.check(Data.STORY_EVENTS.keys() == ids, "the ids are the stable ones a profile save will keep")
 

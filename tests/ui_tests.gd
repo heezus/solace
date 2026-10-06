@@ -113,6 +113,8 @@ func test_card_line_always_fits() -> void:
 		if Data.BUILDINGS[type]["cost"].is_empty():
 			continue
 		s.tech_tree.researched[Data.BUILDINGS[type]["tech"]] = true
+		if Data.BUILDINGS[type].has("event"):
+			s.story.record(Data.BUILDINGS[type]["event"])  # the era after the star opens with its story
 		for width in [CARD_TEXT_W, 70.0, 40.0]:
 			var line: String = CardText.state_line(s, type, "", width)
 			t.check(
@@ -133,9 +135,12 @@ func test_card_line_always_fits() -> void:
 		CardText.short_names({"wood": 9}, hut_cost) == ["Wood", "Stone"], "the names of what is short, in cost order"
 	)
 	for type in Data.BUILDINGS:
-		if Data.BUILDINGS[type]["tech"] == "":
-			continue  # always available: never locked
 		var why: String = CardText.locked_reason(type, 100.0)
+		if Data.BUILDINGS[type]["tech"] == "":
+			t.check(
+				why == Data.CARD_WAIT or Data.BUILDINGS[type].has("event") == false, "%s: waits on the story" % type
+			)
+			continue  # no tech to name
 		t.check(CardText.lines(why, 100.0) <= 2, "%s: the reason fits two lines: %s" % [type, why])
 		t.check(not why.contains("..."), "and never with dots: " + why)
 		t.check(not why.contains(Data.BUILDINGS[type]["name"]), "%s: and never its own title again: %s" % [type, why])

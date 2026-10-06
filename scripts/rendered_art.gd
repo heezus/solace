@@ -158,6 +158,10 @@ const SINGLE_BUILDINGS := {
 	"trading_post": ["industry", 4],
 	"watchtower": ["industry", 5],
 	"stone_bridge": ["crossings-v2", 4],
+	# Era 3 stand-ins until Codex draws them (docs/art/requests.md): the Glyph Wall borrows the Standing Stone and the Lumen Camp
+	# the Gatherer's Hut.
+	"glyph_wall": ["workshops", 7],
+	"lumen_camp": ["buildings", 3],
 }
 const ITEM_IDS := [
 	"wood",

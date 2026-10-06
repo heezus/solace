@@ -306,7 +306,7 @@ func _tooltip(type: String) -> String:
 	if def["kind"] == "field":
 		s += "\n" + FieldText.card_text(state, def)
 	if def["tech"] == "":
-		s += "\nAlways available."
+		s += "\nAlways available." if def.get("event", "") == "" else ""
 	elif not state.town.unlocked(type):
 		s += "\n%s to unlock it." % (Data.CARD_DISCOVER % Data.TECHS[def["tech"]]["name"])
 	return s

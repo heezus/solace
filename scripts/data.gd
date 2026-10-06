@@ -13,6 +13,7 @@ const DataHomes = preload("res://scripts/data/homes.gd")
 const DataGoals = preload("res://scripts/data/goals.gd")
 const DataTuning = preload("res://scripts/data/tuning.gd")
 const DataWords = preload("res://scripts/data/words.gd")
+const DataStarfall = preload("res://scripts/data/starfall.gd")
 
 # --- Items: data/items.gd ---
 const ITEMS := DataItems.ITEMS
@@ -391,3 +392,39 @@ const HOME_PLURALS := DataWords.HOME_PLURALS
 const HOME_READOUT := DataWords.HOME_READOUT
 const HOME_ALL_MET := DataWords.HOME_ALL_MET
 const HOME_READOUT_STALLED := DataWords.HOME_READOUT_STALLED
+
+# --- Era 3, Starfall: data/starfall.gd ---
+const CARD_WAIT := DataStarfall.CARD_WAIT
+const LANDING_DELAY := DataStarfall.LANDING_DELAY
+const ARRIVAL_DELAY := DataStarfall.ARRIVAL_DELAY
+const SURVIVORS := DataStarfall.SURVIVORS
+const LANDED_LINE := DataStarfall.LANDED_LINE
+const ARRIVED_GUESTS := DataStarfall.ARRIVED_GUESTS
+const ARRIVED_WARY := DataStarfall.ARRIVED_WARY
+const STRANGERS_NAME := DataStarfall.STRANGERS_NAME
+const LUMEN_NAME := DataStarfall.LUMEN_NAME
+const TRUST_MAX := DataStarfall.TRUST_MAX
+const TRUST_START_GUESTS := DataStarfall.TRUST_START_GUESTS
+const TRUST_START_WARY := DataStarfall.TRUST_START_WARY
+const TRUST_CAMP := DataStarfall.TRUST_CAMP
+const TRUST_CAMP_PER_MINUTE := DataStarfall.TRUST_CAMP_PER_MINUTE
+const TRUST_SET := DataStarfall.TRUST_SET
+const CONTEXT_TRUST := DataStarfall.CONTEXT_TRUST
+const COPY_SECONDS := DataStarfall.COPY_SECONDS
+const CHECK_SECONDS := DataStarfall.CHECK_SECONDS
+const GLYPH_WORDS := DataStarfall.GLYPH_WORDS
+const NO_GUESS := DataStarfall.NO_GUESS
+const WALL_NEED_SURVIVORS := DataStarfall.WALL_NEED_SURVIVORS
+const WALL_COPYING := DataStarfall.WALL_COPYING
+const WALL_SET_LINE := DataStarfall.WALL_SET_LINE
+const WALL_SET_LOCKED := DataStarfall.WALL_SET_LOCKED
+const WALL_HINT := DataStarfall.WALL_HINT
+const WALL_FOUND := DataStarfall.WALL_FOUND
+const COPIED_LINE := DataStarfall.COPIED_LINE
+const READ_LINE := DataStarfall.READ_LINE
+const GLYPH_SETS := DataStarfall.GLYPH_SETS
+const GLYPHS := DataStarfall.GLYPHS
+const CAMP_BUILT_LINE := DataStarfall.CAMP_BUILT_LINE
+const SURVIVOR_STAND := DataStarfall.SURVIVOR_STAND
+const SURVIVOR_CLOSE := DataStarfall.SURVIVOR_CLOSE
+const SURVIVOR_AT_CAMP := DataStarfall.SURVIVOR_AT_CAMP

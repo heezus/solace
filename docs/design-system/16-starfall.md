@@ -111,3 +111,12 @@ Jon said the early game is slow, tools by hand are annoying, and roads were the 
 1. **Stage 1:** the landing, the Lumen Camp, trust meter, set 1 and the Glyph Wall.
 2. **Stage 2:** the Expedition Post, the Wreck, sets 2 to 5 and the third tab.
 3. **Stage 3:** the three big moments, set 6 and the ending card.
+
+## Stage 1 as built (Claude, 2026-10-06)
+- **The landing.** The Falling Star card closes, 20 s of silence pass, the star lands (log line), 40 s later three strangers walk out of the fog. A Shard Cairn built before the star fell makes them arrive close (trust 20, "guests"); without one they stop far from the Hearth (trust 0, "wary").
+- **Strangers.** Three plain figures drawn by `KithArt.draw_strangers`, standing 6 tiles from the Hearth at trust 0 and 2.5 at trust 100 (or 1.6 tiles from a Lumen Camp once one stands). They borrow the Kith art with the Wanderer glow until Codex draws them.
+- **Glyph Wall** (Lore tab, opens once the strangers have arrived, event-gated). Copies one more mark every 45 s while it stands and a stranger is alive. Click a mark on the Wall panel to cycle the word guess. Every 20 s the Kith talk it over; when all three marks of a set are right at once the set is read. A wrong guess is never punished and never hinted at, apart from the context line each mark shows.
+- **Set 1, "The Name":** Star, Come, Kin. Reading it names the strangers (the Kith start saying "the Lumen") and opens the **Lumen Camp** (Lore tab, event-gated).
+- **Trust** is hidden (0 to 100): +8 when the Camp goes up, +1 per minute it stands, +6 per set read. From 40 the strangers say a little more about each mark. Nothing else moves it yet.
+- **Save:** the block lives inside "game" in the run save and the three story moments (`star_landed`, `lumen_arrived`, `name_read`) are absorbed by the profile.
+- **Not in stage 1:** sets 2 to 6, trade, Guard Post and shared-food trust movers, the third (magic) tech tab, expeditions and the Wreck, the three big moments and the ending (stages 2 and 3). Beasts and the beast cart come after.

@@ -36,6 +36,8 @@ var building_at: Dictionary = {}  # Vector2i -> index into buildings
 var home_caps: Array = [Data.HOME_CAP_OPEN, Data.HOME_CAP_OPEN, Data.HOME_CAP_OPEN]
 var road_rev := 0  # bumped whenever roads or buildings change, so Roads rebuilds its networks
 var road_net: Dictionary = {}  # Roads' cache of the road networks and which buildings they link
+## (String) -> bool: has this story event happened? Sim connects it to the Story block; it opens a building's `event`.
+var story_has: Callable = func(_id): return false
 var _world: World
 var _economy: Economy
 var _research: Research
@@ -53,8 +55,11 @@ func _init(world: World, economy: Economy, research: Research, is_revealed: Call
 
 
 func unlocked(type: String) -> bool:
-	var tech: String = Data.BUILDINGS[type]["tech"]
-	return tech == "" or _research.unlocked(tech)
+	var def: Dictionary = Data.BUILDINGS[type]
+	var tech: String = def["tech"]
+	if tech == "":
+		return def.get("event", "") == "" or story_has.call(def["event"])
+	return _research.unlocked(tech)
 
 
 ## Returns "" if the building can go here, otherwise the reason it can't.

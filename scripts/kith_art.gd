@@ -82,6 +82,24 @@ static func draw_all(ci: CanvasItem, s, time: float) -> void:
 			Art.item_icon(ci, id, Rect2(above, Vector2(20, 20)), 1.0)
 
 
+## The strangers of the era after the Falling Star (Starfall.survivor_spots): the same figure as a Kith, in a soft light
+## so nobody takes them for one. They stand about and sway a little; they come closer as they trust the Kith.
+static func draw_strangers(ci: CanvasItem, s, time: float) -> void:
+	if not s.starfall.arrived():
+		return
+	var camp := Vector2i(-1, -1)
+	for b in s.town.buildings:
+		if b["type"] == "lumen_camp":
+			camp = b["pos"]
+	var spot_list: Array = s.starfall.survivor_spots(s.world.camp_pos, camp)
+	for i in spot_list.size():
+		var sway := Vector2(sin(time * 0.8 + i * 2.1), cos(time * 0.6 + i * 1.3)) * 3.0
+		var at: Vector2 = spot_list[i] * Overlays.TILE + sway
+		ci.draw_circle(at - Vector2(0, SPRITE * 0.3), SPRITE * 0.62, Color(0.6, 0.92, 1.0, 0.1))
+		ci.draw_circle(at - Vector2(0, SPRITE * 0.3), SPRITE * 0.4, Color(0.6, 0.92, 1.0, 0.14))
+		Rendered.kith(ci, at, "stranger-%d" % i, false, time, i % 2 == 1)
+
+
 ## One Kith standing at `at` (the middle of its feet): its shadow, body and head. A hauler is a shade lighter, and
 ## one pushing a cart is drawn with it.
 static func draw_one(ci: CanvasItem, at: Vector2, hauler: bool, cart := false) -> void:
