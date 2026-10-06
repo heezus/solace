@@ -185,20 +185,25 @@ static func stalled(s, b: Dictionary) -> String:
 	return ""
 
 
+## Timers are kept to a thousandth, so a saved game reads back the very same numbers (sums of tenths drift).
+static func _tidy(x: float) -> float:
+	return snappedf(x, 0.001)
+
+
 ## One tick of a home (any other building is left alone): count up to the next look at its needs and take it, then
 ## move a scaffold along.
 static func tick(s, b: Dictionary, delta: float) -> void:
 	if not is_home(b):
 		return
-	b["check"] += delta
+	b["check"] = _tidy(b["check"] + delta)
 	while b["check"] >= Data.HOME_CHECK_SECONDS:
-		b["check"] -= Data.HOME_CHECK_SECONDS
+		b["check"] = _tidy(b["check"] - Data.HOME_CHECK_SECONDS)
 		look(s, b)
 	if b["site"] == "waiting" and materials_in(b):
 		b["site"] = "building"
 		b["site_t"] = 0.0
 	if b["site"] == "building":
-		b["site_t"] += delta
+		b["site_t"] = _tidy(b["site_t"] + delta)
 		if b["site_t"] >= build_of(b):
 			finish(s, b)
 
@@ -211,9 +216,9 @@ static func look(s, b: Dictionary) -> void:
 	var ok: bool = status(s, b)["met"]
 	b["met"] = clampf(b["met"] + (step if ok else -step), 0.0, after_of(b) * 2.0)
 	b["content"] = ok or b["met"] > 0.0
-	b["pantry"] += step
+	b["pantry"] = _tidy(b["pantry"] + step)
 	if b["pantry"] >= Data.HOME_GOOD_SECONDS:
-		b["pantry"] -= Data.HOME_GOOD_SECONDS
+		b["pantry"] = _tidy(b["pantry"] - Data.HOME_GOOD_SECONDS)
 		use_goods(s, b)
 	if b["site"] == "waiting" and not cap_allows(s, tier_of(b) + 1):
 		b["site"] = ""  # the player lowered the cap: the materials stay in the home, ready for later

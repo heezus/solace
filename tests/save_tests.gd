@@ -427,6 +427,7 @@ func _clone(bot: Autoplay, game: Sim) -> Autoplay:
 
 func _copy_mind(from: Autoplay, to: Autoplay) -> void:
 	to.clock = from.clock
+	to.hut_unstaffed_since = from.hut_unstaffed_since
 	to.clicks = from.clicks
 	to.think = from.think
 	to.hold_tile = from.hold_tile
@@ -462,8 +463,14 @@ func test_a_loaded_game_carries_on_the_same() -> void:
 			loaded.step(true)
 		var h1 := golden.state_hash(original.s)
 		var h2 := golden.state_hash(loaded.s)
-		if h1 != h2 or text(RunSave.dump(original.s)) != text(RunSave.dump(loaded.s)):
+		var dump_a := text(RunSave.dump(original.s))
+		var dump_b := text(RunSave.dump(loaded.s))
+		if h1 != h2 or dump_a != dump_b:
 			same = false
+			var at := 0
+			while at < mini(dump_a.length(), dump_b.length()) and dump_a[at] == dump_b[at]:
+				at += 1
+			print("first difference at %d: %s | %s" % [at, dump_a.substr(maxi(at - 60, 0), 140), dump_b.substr(maxi(at - 60, 0), 140)])
 			t.check(
 				false,
 				"the copy went its own way within %d s (hash %s vs %s)" % [(chunk + 1) * 15, h1.left(10), h2.left(10)]
