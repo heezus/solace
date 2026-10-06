@@ -583,7 +583,12 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Calendar stays a plain either-or: forcing it into a fork broke the Bronze Dawn goals, so it was left alone.
 - Hand carts draw with Codex's cart art from #51. Road tier art stays a tint until the connected road material is wired.
 
-## 2026-10-06: Starfall stage 1 (PR #n)
+## 2026-10-06: Road and cart art polish (PR #56)
+- Claude: gravel and paved roads now draw with Codex's connected road material instead of a tint. A small layer (`scripts/road_layer.gd`) puts one node on each revealed gravel or paved land tile; a path is still the terrain's own strip, and bridges keep their art.
+- The hand cart is drawn a little smaller (1.04 of a Kith sprite, was 1.2) after a look on a real map, so the Kith pulling it matches the others.
+- No gameplay or pacing change: goldens are unchanged.
+
+## 2026-10-06: Starfall stage 1 (PR #57)
 - Claude: built stage 1 of page 16 on Jon's go ("Then B"): the landing, strangers, Glyph Wall with set 1, the Lumen Camp and the hidden trust meter. Details in the page's "Stage 1 as built".
 - The Glyph Wall and Lumen Camp are the first buildings gated by a story event instead of a tech ("event" in the building data), so their cards show only once the strangers walk out of the fog.
 - Guessing is free: no penalty for a wrong word and no confirm button; the Kith simply read a set when all three marks are right.

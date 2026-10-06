@@ -5,8 +5,8 @@ const Rendered = preload("res://scripts/rendered_art.gd")
 const NEIGHBORS := [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]
 const SAMPLES := 16
 const TILE := 48.0
-## Every road is drawn as a path here: the gravel and paved tiers are tinted on the map (Main._draw_roads) until their
-## own art lands (docs/art/requests.md), so Causeways no longer turns every road to stone.
+## Every road is drawn as a path here: the gravel and paved tiers lie over it as their own material (RoadLayer), so
+## Causeways no longer turns every road to stone.
 const STONE_PATHS := false
 
 var texture: ImageTexture

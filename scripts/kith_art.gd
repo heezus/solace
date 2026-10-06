@@ -73,7 +73,7 @@ static func draw_all(ci: CanvasItem, s, time: float) -> void:
 				cargo = Rendered.named("item_" + id)
 				break
 			GrowthArt.draw_hand_cart(
-				ci, Rect2(at + Vector2(-SPRITE * 0.6, -SPRITE * 0.95), Vector2(SPRITE * 1.2, SPRITE * 1.2)), cargo
+				ci, Rect2(at + Vector2(-SPRITE * 0.52, -SPRITE * 0.82), Vector2(SPRITE * 1.04, SPRITE * 1.04)), cargo
 			)
 			continue
 		Rendered.kith(ci, at, k.get("name", str(i)), moving, time, flip)

@@ -99,4 +99,4 @@ Jon approved the page on 2026-10-06 and took every default.
 - **Calendar is not a fork.** Calendar still takes Megaliths or Storytelling. Making it a fork broke the Bronze Dawn goal count and the side-branch links, so it stays a plain either-or.
 - **Megaliths** require Masonry and the star lore; the hidden Strange Stone still has to be clicked first.
 - **Hand cart art.** Hand-cart haulers draw with Codex's `GrowthArt.draw_hand_cart` (size and position to be eyeballed on a real run).
-- **Deferred.** Road tiers keep their tint; Codex's connected road material is not wired yet.
+- **Road tiers.** Tinted in PR 3; the polish PR wired Codex's connected road material (`scripts/road_layer.gd`), so gravel and paved have real art.

@@ -16,6 +16,7 @@ const Haulers = preload("res://scripts/haulers.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Scouting = preload("res://scripts/scouting.gd")
 const Kith = preload("res://scripts/kith.gd")
+const RoadLayer = preload("res://scripts/road_layer.gd")
 
 var t  # the runner, tests/run_tests.gd
 
@@ -28,6 +29,7 @@ func run(runner) -> void:
 	test_dragging_a_higher_tier_over_a_road_upgrades_it_for_the_difference()
 	test_the_stone_bridge_upgrades_a_wooden_one_in_place()
 	test_tiers_save_and_old_saves_keep_their_pace()
+	test_gravel_and_paved_lie_over_the_path_as_tile_nodes()
 	test_the_bar_and_the_hover_show_the_real_cost_of_a_tier()
 	test_each_copy_of_a_production_building_costs_more()
 	test_flat_buildings_never_cost_more()
@@ -238,6 +240,40 @@ func test_the_stone_bridge_upgrades_a_wooden_one_in_place() -> void:
 		"a Wooden Bridge over a Wooden Bridge is refused"
 	)
 	t.check(wood_bridge.town.placement_error("road", spot) != "", "and a road can't go over the river")
+
+
+## Each revealed gravel or paved land tile gets one node carrying its tier and which sides join; a path, a bridge and
+## fogged ground get none, and a tile that goes back to a path or is torn up loses its node.
+func test_gravel_and_paved_lie_over_the_path_as_tile_nodes() -> void:
+	var s: Sim = t.fresh()
+	s.fog.reveal_all()
+	var c: Vector2i = s.world.camp_pos + Vector2i(0, 3)
+	for i in 4:
+		s.world.roads[c + Vector2i(i, 0)] = true
+	s.world.set_road_tier(c + Vector2i(1, 0), 1)
+	s.world.set_road_tier(c + Vector2i(2, 0), 2)
+	var host := Node2D.new()
+	var layer := RoadLayer.new()
+	layer.sync(host, s)
+	var holder: Node = host.get_child(0)
+	t.check(
+		holder.get_child_count() == 2, "one node each for the gravel and paved tiles (%d)" % holder.get_child_count()
+	)
+	var gravel: ShaderMaterial = layer._tiles[c + Vector2i(1, 0)].material
+	t.check(gravel.get_shader_parameter("tier") == 1.0, "the gravel tile carries its tier")
+	t.check(gravel.get_shader_parameter("connections") == Vector4(1, 1, 0, 0), "and joins the roads either side of it")
+	t.check(not layer._tiles.has(c), "a plain path gets none: the terrain draws it")
+	s.world.set_road_tier(c + Vector2i(1, 0), 2)
+	s.town.road_rev += 1
+	layer.sync(host, s)
+	t.check(gravel.get_shader_parameter("tier") == 2.0, "a tier change updates the same node")
+	s.world.set_road_tier(c + Vector2i(1, 0), 0)
+	s.world.roads.erase(c + Vector2i(2, 0))
+	s.world.road_tiers.erase(c + Vector2i(2, 0))
+	s.town.road_rev += 1
+	layer.sync(host, s)
+	t.check(layer._tiles.is_empty(), "a tile back to a path, or torn up, loses its node")
+	host.free()
 
 
 func test_tiers_save_and_old_saves_keep_their_pace() -> void:

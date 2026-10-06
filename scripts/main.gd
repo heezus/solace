@@ -35,6 +35,7 @@ const EraCard = preload("res://scripts/era_card.gd")
 const Profile = preload("res://scripts/profile.gd")
 const Clearing = preload("res://scripts/clearing.gd")
 const WorldGround = preload("res://scripts/world_ground.gd")
+const RoadLayer = preload("res://scripts/road_layer.gd")
 const Rendered = preload("res://scripts/rendered_art.gd")
 const BridgeArt = preload("res://scripts/bridge_art.gd")
 const Homes = preload("res://scripts/homes.gd")
@@ -57,8 +58,6 @@ const BAD: Color = Ui.BAD
 const GOAL_COLOR: Color = Ui.HIGHLIGHT
 const LINE_TYPES := ["road", "gravel_road", "paved_road", "bridge", "stone_bridge", "field"]  # laid by dragging
 const AURA_FILL := Color(0.55, 0.45, 0.6, 0.2)
-## The wash over a road tile by tier (index 0, the plain path, has none) while the tiers have no art of their own.
-const ROAD_TINTS := [Color(0, 0, 0, 0), Color(0.62, 0.68, 0.74, 0.55), Color(0.93, 0.95, 1.0, 0.7)]
 const NUDGE_TIME := 2.0  # seconds the "hold it down" hint stays after a click that let go too soon
 
 var fit_vp := Vector2.ZERO  # the window size the map was last fit to
@@ -77,6 +76,7 @@ var hover := Vector2i(-1, -1)
 var drag_from := Vector2i(-1, -1)  # where a road, bridge or field drag started
 var time := 0.0
 var ground := WorldGround.new()
+var road_tiers := RoadLayer.new()
 var popups: Array = []  # {pos: Vector2, text: String, t: float}
 var rubble: Array = []  # {pos: Vector2i, t: float}, torn-down buildings fading out
 
@@ -665,6 +665,7 @@ func _draw() -> void:
 	var seen := _visible_tiles()
 	Rendered.map_seed = state.world.map_seed
 	ground.draw(self, state, seen)
+	road_tiers.sync(self, state)
 	# Ground.
 	for y in range(seen.position.y, seen.end.y):
 		for x in range(seen.position.x, seen.end.x):
@@ -939,17 +940,3 @@ func _draw_roads() -> void:
 			continue
 		if state.world.tile_at(p) == "river":
 			BridgeArt.draw(self, state, p)
-		elif state.world.road_tier(p) > 0:
-			_tint_road(p, state.world.road_tier(p))
-
-
-## A gravel or paved tile: its stretch of path washed over in the tier's color, until the tiers have art of their own.
-func _tint_road(p: Vector2i, tier: int) -> void:
-	var col: Color = ROAD_TINTS[tier]
-	var c := _tile_center(p)
-	var width := TILE * 0.3
-	draw_rect(Rect2(c - Vector2(width, width) * 0.5, Vector2(width, width)), col)
-	for n in Roads.SIDES:
-		var q: Vector2i = p + n
-		if state.world.roads.has(q) or state.town.building_at.has(q):
-			draw_line(c, c + Vector2(n) * TILE * 0.5, col, width)
