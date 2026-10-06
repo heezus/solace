@@ -51,6 +51,7 @@ const DiscoveryTests = preload("res://tests/discovery_tests.gd")
 const LogisticsTests = preload("res://tests/logistics_tests.gd")
 const ForksTests = preload("res://tests/forks_tests.gd")
 const StarfallTests = preload("res://tests/starfall_tests.gd")
+const ExpeditionTests = preload("res://tests/expedition_tests.gd")
 const HomesTests = preload("res://tests/homes_tests.gd")
 const World = preload("res://scripts/world.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
@@ -84,6 +85,7 @@ func _init() -> void:
 		return
 	if "starfall" in OS.get_cmdline_user_args():  # `-- starfall` runs only the Starfall tests while iterating
 		StarfallTests.new().run(self)
+		ExpeditionTests.new().run(self)
 		print("FAILED: %d" % failures if failures > 0 else "STARFALL TESTS PASSED")
 		quit(1 if failures > 0 else 0)
 		return

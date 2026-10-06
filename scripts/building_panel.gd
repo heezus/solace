@@ -20,6 +20,7 @@ const Work = preload("res://scripts/work.gd")
 const HutFocus = preload("res://scripts/hut_focus.gd")
 const TradePicker = preload("res://scripts/trade_picker.gd")
 const GlyphPicker = preload("res://scripts/glyph_picker.gd")
+const ExpeditionPicker = preload("res://scripts/expedition_picker.gd")
 const PatchText = preload("res://scripts/patch_text.gd")
 
 const INSET := Ui.BAR
@@ -86,6 +87,12 @@ func setup(game: Sim) -> void:
 	v.add_child(glyphs)
 	v.move_child(glyphs, parts["recipe"].get_index())
 	parts["glyphs"] = glyphs
+	var post := ExpeditionPicker.new()  # an Expedition Post: target, pack, Send and Keep sending (scripts/expedition_picker.gd)
+	post.setup(game)
+	post.changed.connect(refresh)
+	v.add_child(post)
+	v.move_child(post, parts["recipe"].get_index())
+	parts["post"] = post
 	parts["holding"] = Ui.label("", Ui.MIN_TEXT)
 	v.add_child(parts["holding"])
 	var bar := ProgressBar.new()
@@ -199,6 +206,7 @@ func refresh() -> void:
 	parts["focus"].show_for(b)
 	parts["trade"].show_for(b)
 	parts["glyphs"].show_for(b)
+	parts["post"].show_for(b)
 	parts["recipe"].text = recipe_text(state, b)
 	parts["recipe"].visible = parts["recipe"].text != ""
 	parts["worker"].text = worker_text(state, b)

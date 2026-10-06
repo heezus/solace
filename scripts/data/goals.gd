@@ -15,6 +15,11 @@ const STORY_EVENTS := {
 	"star_landed": "Something came down in the east",
 	"lumen_arrived": "Strangers came out of the fog",
 	"name_read": "The first set of marks was read",
+	"wreck_found": "The crash site was reached",
+	"light_read": "The marks of Light were read",
+	"body_read": "The marks of the Body were read",
+	"growth_read": "The marks of Growth were read",
+	"craft_read": "The marks of Craft were read",
 }
 
 ## Techs that are story moments: tech id -> the STORY_EVENTS id the Story block records when it is researched.

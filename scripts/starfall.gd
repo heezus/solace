@@ -24,6 +24,10 @@ var locked: Dictionary = {}  # set id (Data.GLYPH_SETS' "id") -> true once the s
 var copy_clock := 0.0
 var check_clock := 0.0
 var camp_seen := false  # the Lumen Camp has been counted once (the one-time trust step)
+var wreck := Vector2i(-1, -1)  # where the ship came down (set when the star falls): hidden in the fog until a party reaches it
+var wreck_found := false
+var post_clock := 0.0  # seconds since a standing order last looked for a chance to send (Expedition.auto)
+var orders := {"target": "wreck", "pack": "standard", "keep": false}  # the Expedition Post's standing choices
 var _town: Buildings
 
 
@@ -32,9 +36,10 @@ func _init(town: Buildings) -> void:
 
 
 ## The Falling Star fell: the silence starts. `friendly` is the run flag of a Cairn built first.
-func begin(friendly: bool) -> void:
+func begin(friendly: bool, wreck_tile := Vector2i(-1, -1)) -> void:
 	if stage != "":
 		return
+	wreck = wreck_tile
 	stage = "falling"
 	clock = 0.0
 	guests = friendly
@@ -104,11 +109,12 @@ func has_building(type: String) -> bool:
 	return false
 
 
-## The first glyph of the first unread set that is not on the Wall yet, "" when every mark is copied.
+## The first glyph of the first unread set that is not on the Wall yet, "" when every mark is copied. Only the sets the
+## survivors show are copied by the Wall itself; the rest come home from the Wreck (add_finds).
 func _next_to_copy() -> String:
 	for n in Data.GLYPH_SETS:
 		var gset: Dictionary = Data.GLYPH_SETS[n]
-		if locked.has(gset["id"]):
+		if locked.has(gset["id"]) or gset["source"] != "survivors":
 			continue
 		for g in gset["glyphs"]:
 			if not copied.has(g):
@@ -133,8 +139,41 @@ func check() -> bool:
 			read = true
 			if n == 1:
 				said.emit(Data.READ_LINE % Data.LUMEN_NAME)
-				moment.emit("name_read")
+			else:
+				said.emit(Data.LUMEN_GIFTS[gset["id"]]["line"])
+			moment.emit("%s_read" % gset["id"])
 	return read
+
+
+## True once the set called `set_id` is read: its gift (Data.LUMEN_GIFTS) is in effect.
+func gift(set_id: String) -> bool:
+	return locked.has(set_id)
+
+
+## A party came back from the Wreck: put up to `count` more of its marks on the Wall (the first unread sets first). Returns
+## how many were added, 0 once every mark of the sets the Wreck holds is known.
+func add_finds(count: int) -> int:
+	var added := 0
+	for n in Data.GLYPH_SETS:
+		var gset: Dictionary = Data.GLYPH_SETS[n]
+		if gset["source"] != "wreck" or locked.has(gset["id"]):
+			continue
+		for g in gset["glyphs"]:
+			if added < count and not copied.has(g):
+				copied.append(g)
+				added += 1
+	return added
+
+
+## True while the Wreck still holds a mark nobody has copied.
+func wreck_has_more() -> bool:
+	for n in Data.GLYPH_SETS:
+		var gset: Dictionary = Data.GLYPH_SETS[n]
+		if gset["source"] == "wreck" and not locked.has(gset["id"]):
+			for g in gset["glyphs"]:
+				if not copied.has(g):
+					return true
+	return false
 
 
 ## Move the guess on mark `glyph` to the next word of the list. Only a copied mark in an unread set can be guessed.
@@ -142,10 +181,29 @@ func check() -> bool:
 func cycle_guess(glyph: String) -> String:
 	if not copied.has(glyph) or set_of(glyph) == "" or locked.has(set_of(glyph)):
 		return ""
+	var taken := _read_words()
 	var at: int = Data.GLYPH_WORDS.find(guesses.get(glyph, ""))
-	var word: String = Data.GLYPH_WORDS[(at + 1) % Data.GLYPH_WORDS.size()]
+	var word := ""
+	for i in range(1, Data.GLYPH_WORDS.size() + 1):
+		var next: String = Data.GLYPH_WORDS[(at + i) % Data.GLYPH_WORDS.size()]
+		if next not in taken:
+			word = next
+			break
+	if word == "":
+		return ""
 	guesses[glyph] = word
 	return word
+
+
+## The words of every mark already read: they are settled, so a guess on another mark skips them.
+func _read_words() -> Array:
+	var out: Array = []
+	for n in Data.GLYPH_SETS:
+		var gset: Dictionary = Data.GLYPH_SETS[n]
+		if locked.has(gset["id"]):
+			for g in gset["glyphs"]:
+				out.append(Data.GLYPHS[g]["word"])
+	return out
 
 
 ## The id of the set `glyph` belongs to, "" for an unknown mark.
@@ -201,6 +259,9 @@ func to_dict() -> Dictionary:
 		"copy_clock": snappedf(copy_clock, 0.001),
 		"check_clock": snappedf(check_clock, 0.001),
 		"camp_seen": camp_seen,
+		"wreck": [wreck.x, wreck.y],
+		"wreck_found": wreck_found,
+		"orders": orders.duplicate(),
 	}
 
 
@@ -221,3 +282,9 @@ func from_dict(d: Dictionary) -> void:
 	copy_clock = float(d.get("copy_clock", 0.0))
 	check_clock = float(d.get("check_clock", 0.0))
 	camp_seen = bool(d.get("camp_seen", false))
+	var w: Array = d.get("wreck", [-1, -1])
+	wreck = Vector2i(int(w[0]), int(w[1]))
+	wreck_found = bool(d.get("wreck_found", false))
+	orders = {"target": "wreck", "pack": "standard", "keep": false}
+	for k in d.get("orders", {}):
+		orders[String(k)] = d["orders"][k]

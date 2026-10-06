@@ -42,6 +42,7 @@ var learned_by: Dictionary = {}  # item -> name of the person who learned to gat
 var births := 0  # people named so far, for the next name
 var grow_timer := 0.0
 var starve_timer := 0.0
+var gift: Callable = func(_set_id: String) -> bool: return false  # (set id) -> true once that glyph set is read (Starfall)
 var _world: World
 var _pathing: Pathing
 var _economy: Economy
@@ -99,7 +100,8 @@ func _next_name() -> String:
 
 ## Seconds between births. Storytelling shortens it.
 func grow_time() -> float:
-	return Data.GROW_TIME * (Data.STORYTELLING_GROW if _research.unlocked("storytelling") else 1.0)
+	var healed: float = Data.HEALER_GROW if gift.call("body") else 1.0  # the Lumen Healer's leaves
+	return Data.GROW_TIME * (Data.STORYTELLING_GROW if _research.unlocked("storytelling") else 1.0) * healed
 
 
 ## True when there is food enough for one more mouth: the stockpile covers the birth (and a small reserve
@@ -333,7 +335,10 @@ func wear(b: Dictionary) -> void:
 	var k: Dictionary = kith[b["worker"]]
 	if k["tool"] > 0:
 		var id := tool_of(k)
-		k["tool"] -= 1
+		k["wear_acc"] = float(k.get("wear_acc", 0.0)) + (Data.HEALER_WEAR if gift.call("body") else 1.0)
+		if k["wear_acc"] >= 1.0:
+			k["wear_acc"] -= 1.0
+			k["tool"] -= 1
 		if k["tool"] == 0:
 			k["tool_id"] = ""
 			announce.emit(Data.TOOL_WORE_OUT % Data.ITEMS[id]["one"])
@@ -372,6 +377,8 @@ func job_of(k: Dictionary) -> String:
 			return Data.JOB_HAULER
 		"scout":
 			return Data.JOB_SCOUT
+		"expedition":
+			return Data.JOB_PARTY
 	return Data.JOB_IDLE
 
 
@@ -437,6 +444,19 @@ func step(k: Dictionary, delta: float) -> bool:
 
 
 # --- Trips -------------------------------------------------------------------
+
+
+## Seconds to walk from `from` to `to` and back (roads shorten it), or -1.0 when water cuts the way off.
+func round_trip(from: Vector2i, to: Vector2i) -> float:
+	if from == to:
+		return 0.0
+	var path := _pathing.path(from, to)
+	if path.is_empty():
+		return -1.0
+	var secs := 0.0
+	for i in range(1, path.size()):
+		secs += Vector2(path[i - 1]).distance_to(Vector2(path[i])) * _pathing.walk_cost(path[i]) / Data.KITH_SPEED
+	return secs * 2.0
 
 
 ## The Camp or Storehouse closest to p.

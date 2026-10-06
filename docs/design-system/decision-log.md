@@ -608,3 +608,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Jon (project chat): with each playthrough, some tech from the other factions should carry into the Kith, and later the reverse once Lumen and Bloom runs exist. Claude added it to page 18, tied to the Chronicle and profile save from page 13.
 - It is canon-pending: the details (what carries, how much, free or not, after which runs) are open forks with defaults. Nothing is built.
 
+## 2026-10-06: Starfall stage 2 (PR #n)
+- Claude: built stage 2 of page 16 on Jon's go: the Expedition Post, parties to the crash site, the Wreck, glyph sets 2 to 5 and what reading each gives.
+- The third tech tab is not in this PR: the research board assumes every tech is bought with goods, so the four set gifts (Shardlight, Lumen Healer, Starfruit, Shardwork) ship as effects on the Wall's panel instead. The tab can follow.
+- Expeditions use the walking Scouting already has: two Kith, a pack from the stockpile, an 80 s day, half the finds if late. Alternate recipes and Bloom samples as finds wait for later stages.
+- The Wreck and Post use placeholder art; the slots are in docs/art/requests.md.
+

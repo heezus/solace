@@ -27,6 +27,7 @@ const Hands = preload("res://scripts/hands.gd")
 const Workers = preload("res://scripts/workers.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Scouting = preload("res://scripts/scouting.gd")
+const Expedition = preload("res://scripts/expedition.gd")
 const Forage = preload("res://scripts/forage.gd")
 const Land = preload("res://scripts/land.gd")
 const Homes = preload("res://scripts/homes.gd")
@@ -76,6 +77,7 @@ func _init() -> void:
 	economy.food_low.connect(_on_food_low)
 	town.story_has = story.has_event
 	story.recorded.connect(_on_story)
+	people.gift = starfall.gift
 	starfall.said.connect(_announce)
 	starfall.moment.connect(story.record)
 
@@ -168,10 +170,17 @@ func _announce(message: String) -> void:
 	events.append(message)
 
 
+## Where the ship comes down: the far east of the map, on the nearest ground a party can reach.
+func _wreck_tile() -> Vector2i:
+	var far := Vector2i(world.width - 5, roundi(world.height / 2.0))
+	var near := Scouting.goal(self, far)
+	return near if near.x >= 0 else far
+
+
 ## Connected to Story.recorded: the Falling Star starts the era after it (a Cairn built first means friendly strangers).
 func _on_story(id: String) -> void:
 	if id == "star_falling":
-		starfall.begin(story.cairn_before_landing)
+		starfall.begin(story.cairn_before_landing, _wreck_tile())
 
 
 ## Connected to Economy.food_low: the early warning, before anyone leaves.
@@ -272,6 +281,7 @@ func tick(delta: float) -> void:
 	story.update(self)
 	sky.tick(delta)
 	starfall.tick(delta)
+	Expedition.auto(self, delta)
 	if fed:
 		for k in people.kith:
 			if Forage.tick(self, k, delta):
@@ -283,6 +293,8 @@ func tick(delta: float) -> void:
 					Haulers.tick(self, k, delta)
 				"scout":
 					Scouting.tick(self, k, delta)
+				"expedition":
+					Expedition.tick(self, k, delta)
 				_:
 					people.step(k, delta)
 	for k in people.kith:

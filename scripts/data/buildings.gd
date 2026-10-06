@@ -365,6 +365,17 @@ const BUILDINGS := {
 		"A smooth wall where the Kith copy every mark the strangers show them. Click it to guess what each one means.",
 		"status": "Copying marks.",
 	},
+	"expedition_post":
+	{
+		"name": "Expedition Post",
+		"kind": "post",
+		"tech": "",
+		"event": "name_read",
+		"cost": {"wood": 80, "stone": 40, "rope": 30},
+		"color": Color("d9a066"),
+		"desc": "Where parties leave for the fog and the crash site. Choose a target and a pack, then send two Kith.",
+		"status": "Waiting for a party.",
+	},
 	"lumen_camp":
 	{
 		"name": "Lumen Camp",
@@ -387,7 +398,7 @@ const BUILD_TABS := {
 	"Metal": ["mine", "smelter", "crucible"],
 	"Logistics":
 	["road", "gravel_road", "paved_road", "bridge", "stone_bridge", "storehouse", "cart_shed", "trading_post"],
-	"Lore": ["standing_stone", "shard_cairn", "watchtower", "glyph_wall", "lumen_camp"],
+	"Lore": ["standing_stone", "shard_cairn", "watchtower", "glyph_wall", "lumen_camp", "expedition_post"],
 }
 
 const BUILD_ORDER := [
@@ -418,6 +429,7 @@ const BUILD_ORDER := [
 	"watchtower",
 	"glyph_wall",
 	"lumen_camp",
+	"expedition_post",
 ]
 
 ## Output a building holds before it stops, when nobody hauls it away.

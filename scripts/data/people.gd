@@ -46,6 +46,7 @@ const JOB_ANY := {"title": "Gatherer", "craft": "to gather"}  # for an item with
 const JOB_HAULER := "Hauler"
 const JOB_IDLE := "Idle"
 const JOB_SCOUT := "Scout"
+const JOB_PARTY := "Traveller"  # a Kith out with an expedition party
 
 ## Messages and labels that name the people. Each is formatted with PEOPLE["one"] or PEOPLE["many"]
 ## (the noun they use is noted beside it).
