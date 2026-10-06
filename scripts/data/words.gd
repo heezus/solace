@@ -310,3 +310,12 @@ const SCOUT_SENT := "%s sets out to look."  # a name
 const SCOUT_NOBODY := "No one is free to scout: every %s has a job."  # many
 const SCOUT_BUSY := "A scout is already on the way there."
 const SCOUT_NO_WAY := "There is no way there on foot."
+
+# --- Dwelling tiers and what each needs (scripts/homes.gd, scripts/home_text.gd) ---
+## The tier names, lowest first (Data.HOME_TIERS has the numbers).
+const HOME_NAMES := ["Dwelling", "Homestead", "Longhouse"]
+const HOME_MISSING_FOOD := "%d more kinds of food in stock"  # a number
+const HOME_MISSING_FOOD_ONE := "one more kind of food in stock"
+const HOME_MISSING_GOOD := "%d %s"  # how many more, an item's name
+const HOME_MISSING_ROAD := "a road to the Hearth"
+const HOME_MISSING_HAULERS := "Paths & Haulers, to carry goods in"

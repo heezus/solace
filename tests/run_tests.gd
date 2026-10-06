@@ -49,6 +49,7 @@ const ToolBenchTests = preload("res://tests/tool_bench_tests.gd")
 const PassageTests = preload("res://tests/passage_tests.gd")
 const DiscoveryTests = preload("res://tests/discovery_tests.gd")
 const LogisticsTests = preload("res://tests/logistics_tests.gd")
+const HomesTests = preload("res://tests/homes_tests.gd")
 const World = preload("res://scripts/world.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const Buildings = preload("res://scripts/buildings.gd")
@@ -77,6 +78,11 @@ func _init() -> void:
 	if "logistics" in OS.get_cmdline_user_args():  # `-- logistics` runs only the Logistics tests while iterating
 		LogisticsTests.new().run(self)
 		print("FAILED: %d" % failures if failures > 0 else "LOGISTICS TESTS PASSED")
+		quit(1 if failures > 0 else 0)
+		return
+	if "homes" in OS.get_cmdline_user_args():  # `-- homes` runs only the Needs tests while iterating
+		HomesTests.new().run(self)
+		print("FAILED: %d" % failures if failures > 0 else "HOMES TESTS PASSED")
 		quit(1 if failures > 0 else 0)
 		return
 	if "bench" in OS.get_cmdline_user_args():  # `-- bench` runs only the Tool Bench tests while iterating
@@ -144,6 +150,7 @@ func _init() -> void:
 	PassageTests.new().run(self)
 	DiscoveryTests.new().run(self)
 	LogisticsTests.new().run(self)
+	HomesTests.new().run(self)
 	NewcomerTests.new().run(self)
 	UiTests.new().run(self)
 	TechBoardTests.new().run(self)

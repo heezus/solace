@@ -226,6 +226,9 @@ func add_building(type: String, p: Vector2i) -> void:
 		"alert": "",  # a short warning for the pill under the building, "" when all is well
 		"trips": 0,  # hut trips queued by clicking it, before Paths & Haulers (the one under way counts)
 		"rush_cd": 0.0,  # seconds until it can be rushed again
+		"tier": 0,  # a home's tier (Data.HOME_TIERS): 0 Dwelling, 1 Homestead, 2 Longhouse
+		"check": 0.0,  # seconds since a home last looked at its needs (scripts/homes.gd)
+		"met": 0.0,  # seconds its needs have been met, counted up and down by those looks
 	}
 	if Data.BUILDINGS[type].has("dig"):
 		b["ore"] = Data.TILES[_world.tile_at(p)]["yields"]
@@ -391,7 +394,11 @@ func in_range_of(kind: String, p: Vector2i) -> bool:
 func housing() -> int:
 	var total := 0
 	for b in buildings:
-		total += Data.BUILDINGS[b["type"]].get("housing", 0)
+		var def: Dictionary = Data.BUILDINGS[b["type"]]
+		if def["kind"] == "house":
+			total += int(Data.HOME_TIERS[b["tier"]]["housing"])  # a home houses what its tier does
+		else:
+			total += def.get("housing", 0)
 		if b["type"] == "dwelling" and _research.unlocked("shelter"):
 			total += 2
 	return total + granary_homes()
@@ -582,6 +589,9 @@ static func _building_from_dict(d: Dictionary) -> Dictionary:
 	for key in ["gather_index", "worker", "trips"]:
 		b[key] = int(d[key])
 	b["mate"] = int(d.get("mate", -1))  # a save from before the Mine has no second place
+	b["tier"] = clampi(int(d.get("tier", 0)), 0, Data.HOME_TIERS.size() - 1)  # a save from before dwelling tiers has every home at the first
+	b["check"] = float(d.get("check", 0.0))
+	b["met"] = float(d.get("met", 0.0))
 	b["ore"] = String(d.get("ore", ""))
 	b["give"] = String(d.get("give", ""))
 	b["get"] = String(d.get("get", ""))

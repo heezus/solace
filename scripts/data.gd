@@ -9,6 +9,7 @@ const DataPeople = preload("res://scripts/data/people.gd")
 const DataTiles = preload("res://scripts/data/tiles.gd")
 const DataTechs = preload("res://scripts/data/techs.gd")
 const DataBuildings = preload("res://scripts/data/buildings.gd")
+const DataHomes = preload("res://scripts/data/homes.gd")
 const DataGoals = preload("res://scripts/data/goals.gd")
 const DataTuning = preload("res://scripts/data/tuning.gd")
 const DataWords = preload("res://scripts/data/words.gd")
@@ -95,6 +96,16 @@ const BUILDINGS := DataBuildings.BUILDINGS
 const BUILD_TABS := DataBuildings.BUILD_TABS
 const BUILD_ORDER := DataBuildings.BUILD_ORDER
 const BUFFER_CAP := DataBuildings.BUFFER_CAP
+
+# --- Homes: data/homes.gd ---
+const HOME_TIERS := DataHomes.HOME_TIERS
+const HOME_CHECK_SECONDS := DataHomes.HOME_CHECK_SECONDS
+const HOME_FOOD_STOCK := DataHomes.HOME_FOOD_STOCK
+const HOME_GOOD_SECONDS := DataHomes.HOME_GOOD_SECONDS
+const HOME_GOOD_ROUNDS := DataHomes.HOME_GOOD_ROUNDS
+const HOME_UPGRADE_AFTER := DataHomes.HOME_UPGRADE_AFTER
+const HOME_BUILD_SECONDS := DataHomes.HOME_BUILD_SECONDS
+const HOME_CAP_OPEN := DataHomes.HOME_CAP_OPEN
 
 # --- Goals: data/goals.gd ---
 const STORY_EVENTS := DataGoals.STORY_EVENTS
@@ -350,3 +361,9 @@ const STATE_DONE := DataWords.STATE_DONE
 const STATE_READY := DataWords.STATE_READY
 const STATE_MORE := DataWords.STATE_MORE
 const STATE_LOCKED := DataWords.STATE_LOCKED
+const HOME_NAMES := DataWords.HOME_NAMES
+const HOME_MISSING_FOOD := DataWords.HOME_MISSING_FOOD
+const HOME_MISSING_FOOD_ONE := DataWords.HOME_MISSING_FOOD_ONE
+const HOME_MISSING_GOOD := DataWords.HOME_MISSING_GOOD
+const HOME_MISSING_ROAD := DataWords.HOME_MISSING_ROAD
+const HOME_MISSING_HAULERS := DataWords.HOME_MISSING_HAULERS
