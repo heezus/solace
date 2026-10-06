@@ -1,6 +1,6 @@
 # 17. Needs and upgrades: keeping the long game alive
 
-Status: design only, waiting on Jon's OK. Nothing here is built. Written 2026-10-06 from Jon's playtest of the 2026-10-05 release.
+Status: approved by Jon on 2026-10-06 with the defaults below, in build. PR 1 (Logistics) is built; Needs and Tree are not. Written 2026-10-06 from Jon's playtest of the 2026-10-05 release.
 
 ## The problem
 Late in a run the Kith are so automated that the game becomes a waiting game, and food stops mattering (Jon's screenshot: 144 Kith, 14,380 food, +9.5/s). Everything is free once unlocked: paved roads, bigger homes, more of the same building. The tech tree is a single lane, so there is nothing to choose. Pacing is almost too fast.
@@ -70,9 +70,18 @@ Clicking fog sends the nearest idle Kith out to look, so no road is needed. The 
 3. **Tree:** forks, more branches, megalith gating.
 Each PR is one commit per ask, with tests and the decision log. Art ships as Codex's slots land; until then the new tiers reuse current sprites with a tint.
 
-## Open questions for Jon
-1. Unmet needs: (a) the home only stops growing (default) (b) it drops a tier.
-2. Pacing target for the full run: (a) about 50 min (default) (b) about 65 min.
-3. Copy cost ceiling: (a) 4x (default) (b) no ceiling.
-4. A passed-over fork route: (a) learnable later at +50% (default) (b) never.
-5. Megaliths: (a) still need Masonry (default) (b) start lore only.
+## Open questions for Jon (decided: defaults)
+Jon approved the page on 2026-10-06 and took every default.
+1. Unmet needs: (a) the home only stops growing. **Decided.**
+2. Pacing target for the full run: (a) about 50 min. **Decided.**
+3. Copy cost ceiling: (a) 4x. **Decided.**
+4. A passed-over fork route: (a) learnable later at +50%. **Decided.**
+5. Megaliths: (a) still need Masonry. **Decided.**
+
+## How PR 1 (Logistics) differs from the sketch above
+- **Road tiers are build cards.** Gravel Road and Paved Road sit beside the Road in the Logistics tab, so the bar shows each tier's real price. Path costs 2 Wood; gravel 2 Wood and 2 Flint (flint comes off the river gravel); paved 2 Wood, 2 Stone and 1 Brick, with the Paved Roads tech. An upgrade pays the difference per item, so Wood is never owed twice.
+- **Speed.** Path 1.0, gravel 1.25, paved 1.5 times the road pace (a path is 2x open ground, so paved is 3x). Paved Roads and Causeways no longer speed every road for free: Paved Roads unlocks the paved tier, and Causeways only the Stone Bridge, which walks at the paved pace.
+- **Old saves.** A save from before tiers has none: with Paved Roads or Causeways known its land roads load as paved, otherwise as paths.
+- **Copy cost** counts the Workshops and Metal tabs (kilns, pits, posts, benches, wheels, grindstones, mines, smelters, crucibles). Gatherer's Huts, Fields, Storehouses, the Cart Shed and the Lore buildings stay flat.
+- **Hand cart.** One Cart Shed turns one hauler into a hand cart at 3x load (was two haulers at 2x).
+- **Scouting.** Clicking fog sends the nearest idle Kith (a hauler with an empty hand counts); they look in a 5 tile radius (Scouting research adds to it) and walk home.
