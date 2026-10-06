@@ -548,3 +548,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 ## 2026-10-05: Layout pass gets more frames to see the first Bronze (PR #46)
 - Claude: after #33 landed, CI's long layout pass failed three runs out of four on identical code with "the era-2 bot made no Bronze in 520 frames" (it passed locally at 791 frames in total, and on #33's own run). The bot is deterministic in steps but the real window's frame pace varies, so 520 was too tight a budget.
 - The pass still stops at the first Bronze, so the cap only costs time when something is truly wrong: it is now 900 frames after Bronze Dawn. Pacing itself is checked by `tests/tools/pace.gd` and the goldens, not by this pass.
+
+## 2026-10-06: Needs and upgrades design (PR #47)
+- Claude: wrote page 17 from Jon's playtest of the 2026-10-05 release and his twelve picks on the decision cards. The aim is a long game that does not turn into waiting: Anno-style Kith needs gate Dwelling tiers (Dwelling, Homestead, Longhouse), and homes upgrade themselves when needs are met, under a player cap per tier.
+- Roads become path, gravel, paved and bridges go wood to stone in place, both paid per tile; the build bar shows the real tier cost. Production buildings cost 15% more per copy (homes, roads, bridges flat). Carts become one Kith with 3x carry on roads; beast carts wait for Starfall.
+- Tech tree gets forks (two routes to one goal, the other learnable later at +50%) and megaliths open only from the start lore. Clicking fog sends a scout, so scouting needs no road.
+- Canon note, pending Jon's OK: starstuff touches native animals and makes them tameable beasts in Starfall, foreshadowing the Bloom. Design only; nothing is built until Jon approves page 17.
