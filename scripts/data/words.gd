@@ -315,6 +315,7 @@ const SCOUT_NO_WAY := "There is no way there on foot."
 ## The tier names, lowest first (Data.HOME_TIERS has the numbers).
 const HOME_NAMES := ["Dwelling", "Homestead", "Longhouse"]
 const HOME_MISSING_FOOD := "%d more kinds of food in stock"  # a number
+const FORK_NOTE := " (taking one sets the other aside until this is learned)"
 const HOME_MISSING_FOOD_ONE := "one more kind of food in stock"
 const HOME_MISSING_GOOD := "%d %s"  # how many more, an item's name
 const HOME_MISSING_ROAD := "a road to the Hearth"

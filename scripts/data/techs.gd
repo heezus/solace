@@ -6,6 +6,8 @@ extends RefCounted
 ## `unlock` is the card's one-line summary, `icon` a sprite in art/sprites ("@name" for a drawn one),
 ## and `side` marks an optional branch that Bronze Dawn doesn't need.
 ## `requires` must all be researched; `requires_any` (optional) needs just one of its techs.
+## `fork` (true on a tech with a `requires_any`) makes that list a fork: two routes to one goal. Learning one sets the others
+## aside (out of view) until the goal is learned, and then they cost FORK_LATER_COST times as much. A fork never strands a run.
 ## `effect` marks a tech whose bonus Sim applies while it is researched.
 ## `hidden` techs stay out of the tree until the player has clicked the Strange Stone.
 ## `rank` gives a tech optional ranks II and III, bought on its card (never needed for Bronze Dawn):
@@ -38,6 +40,8 @@ const ERAS := {1: {"name": "Stone Age"}, 2: {"name": "Bronze Dawn"}}
 const ERA_TIER_NAMES := {1: TIER_NAMES, 2: ["TIER I", "TIER II", "TIER III", "TIER IV", "TIER V", "THE GATE"]}
 ## The latest build stage whose techs can be researched (see `stage` above).
 const BUILT_STAGE := 2
+## A route set aside by a fork costs this many times its price once the fork's goal is learned.
+const FORK_LATER_COST := 1.5
 ## Tally Sticks makes every tech this share of its cost.
 const TALLY_DISCOUNT := 0.9
 
@@ -354,8 +358,7 @@ const TECHS := {
 		"unlock": "Standing Stone",
 		"icon": "standing_stone",
 		"side": true,
-		"requires": ["masonry"],
-		"requires_any": ["storytelling", "star_lore"],
+		"requires": ["masonry", "star_lore"],
 		"cost": {"stone": 60, "rope": 20},
 		"desc": "Raise great stones. Buildings right next to a Standing Stone work twice as fast.",
 	},
@@ -708,6 +711,7 @@ const TECHS := {
 		"icon": "granary",
 		"requires": ["plough"],
 		"requires_any": ["markets", "kilns_ii"],
+		"fork": true,
 		"cost": {"brick": 100, "grain": 100, "wood": 100},
 		"desc": "Stored food holds more people: housing grows by 1 for every 20 food in store.",
 	},

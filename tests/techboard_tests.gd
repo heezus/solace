@@ -274,9 +274,10 @@ func test_locked_techs_say_what_they_wait_for() -> void:
 	)
 	s.tech_tree.researched["knapping"] = true
 	t.check(TechNext.needs_text(s, "masonry") == "Fire", "and only Fire once Knapping is known")
-	# An either-or reads as one of two, and a parent that is done ends it.
+	# An either-or reads as one of two, and a parent that is done ends it. Megaliths stay out of the words while
+	# they are out of view (they wait for the Star Lore).
 	t.check(
-		TechNext.needs_text(s, "calendar") == "Farming and one of Megaliths or Storytelling",
+		TechNext.needs_text(s, "calendar") == "Farming and Storytelling",
 		"Calendar: %s" % TechNext.needs_text(s, "calendar")
 	)
 	s.tech_tree.researched["storytelling"] = true

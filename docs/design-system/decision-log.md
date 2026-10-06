@@ -576,3 +576,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Pacing moved as the page expected: stone age wins at 1091, 936 and 923 s on maps 1 to 3 and the whole bot run is about 43 to 61 min. Goldens are re-pinned in their own commit and the pacing windows in the tests widened.
 - The #51 stall was the test bot, not the build bar: with every Kith in a workshop the food hut had no worker and nobody was born, so the bot now pauses one workshop after 60 s of that.
 
+
+## 2026-10-06: Tree build (PR #n)
+- Claude: built PR 3 of page 17. Jon corrected the megalith gate to the **star lore**, not the start lore: Megaliths now need Masonry and the hidden Star Lore, and Storytelling is no longer a route in.
+- Granaries is the one fork: Markets or Kilns II. Taking one sets the other aside until Granaries is learned, then it costs 1.5x. Nothing the eras need is gated by a fork.
+- Calendar stays a plain either-or: forcing it into a fork broke the Bronze Dawn goals, so it was left alone.
+- Hand carts draw with Codex's cart art from #51. Road tier art stays a tint until the connected road material is wired.
