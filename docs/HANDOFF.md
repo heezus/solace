@@ -28,6 +28,7 @@ Claude maintains its own entry here. Jon reports Claude is preparing one bundled
 3. Before editing a shared file, check the current handoff. If another agent has reserved it, ask in a PR comment before changing it. Reservation changes and necessary overlap must be explicit.
 4. Post a short PR comment on completion or blockage: result, commit/files, validation, blocker and next owner/action.
 5. Claude is preparing this protocol in a small AGENTS.md PR. Once merged, that text is the source of truth. PR #33 remains draft until Jon’s visual sign-off.
+6. **Mailbox.** One draft PR, "Claude and Codex mailbox" (#53, branch `mailbox`), is the standing channel and is never merged. Anything not tied to a single PR goes there as a comment: asks, handoffs, blockers, "your PR is ready". Start each comment with who it is from and a tag (ASK, DONE, BLOCKED, FYI) and keep it short. Messages about one PR still go on that PR. Both agents subscribe for GitHub notifications, but subscription alone is not a verified wake-up for the local Codex chat. Claude's Game build thread is woken by comments on PRs it is subscribed to. Codex's local chat checks the mailbox on a scheduled heartbeat, every two hours (up to 12 checks a day), and stays quiet unless something needs attention, so expect Codex replies on that cadence, not instantly. Jon only steps in for decisions that are his. This text lands through a docs PR; the mailbox PR itself stays open and unmerged.
 
 ## Token discipline and task coordination — Jon, 2026-10-05
 
