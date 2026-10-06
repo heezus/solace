@@ -141,11 +141,11 @@ const PATCH_STEP := 0.1
 const PATCH_MAX_TILES := 8
 
 ## Era 2, stage 2.
-## Carts (The Wheel): each Cart Shed turns CARTS_PER_SHED haulers into carts. A cart carries CART_LOAD times what a
-## hauler does, walks roads only (a Wooden Bridge will not bear it: it needs a Stone Bridge) and waits where it stands
-## when the roads do not reach.
-const CARTS_PER_SHED := 2
-const CART_LOAD := 2
+## Hand carts (The Wheel, Bronze Dawn): each Cart Shed turns CARTS_PER_SHED hauler into a hand cart. One Kith pulls it, and
+## it carries CART_LOAD times what a hauler does. It walks roads only (a Wooden Bridge will not bear it: it needs a Stone
+## Bridge) and waits where it stands when the roads do not reach. (The old cart took two haulers at 2x: no gain.)
+const CARTS_PER_SHED := 1
+const CART_LOAD := 3
 ## Road tiers (design-system/17-needs-and-upgrades.md): path, gravel, paved. A road tile's walk cost is the open road's
 ## (WALK_COST "road") divided by its tier's speed, so higher tiers are faster. A Stone Bridge walks at the top tier.
 const ROAD_SPEEDS := [1.0, 1.25, 1.5]

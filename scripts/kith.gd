@@ -81,7 +81,7 @@ func add_kith() -> void:
 		"seen": Vector2i(-99, -99),  # the tile they last lifted the fog around
 		"tool": 0,  # jobs left on the tool they hold, 0 for none
 		"tool_id": "",  # which tool it is (Data.TOOL_ITEMS), "" for none
-		"cart": false,  # a hauler pushing a cart (see Buildings.carts_allowed): it carries more but walks roads only
+		"cart": false,  # a hauler pulling a hand cart (see Buildings.carts_allowed): carries 3x but walks roads only
 		"trip": false,  # a hut worker out on a clicked trip, carrying the bundle to the stockpile
 		"name": _next_name(),
 	}

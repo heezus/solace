@@ -12,6 +12,8 @@ const RunSave = preload("res://scripts/run_save.gd")
 const Overlays = preload("res://scripts/overlays.gd")
 const HoverText = preload("res://scripts/hover_text.gd")
 const BuildBar = preload("res://scripts/build_bar.gd")
+const Haulers = preload("res://scripts/haulers.gd")
+const Roads = preload("res://scripts/roads.gd")
 
 var t  # the runner, tests/run_tests.gd
 
@@ -28,6 +30,7 @@ func run(runner) -> void:
 	test_each_copy_of_a_production_building_costs_more()
 	test_flat_buildings_never_cost_more()
 	test_the_bar_and_hover_show_the_current_copy_price()
+	test_a_hand_cart_is_one_kith_carrying_triple()
 
 
 # --- Hidden until learned ------------------------------------------------------
@@ -410,3 +413,40 @@ class FakeMain:
 	var pick_focus := ""
 	var nudge := 0.0
 	var building_panel: Object = null
+
+
+# --- Hand cart -----------------------------------------------------------------
+
+
+func test_a_hand_cart_is_one_kith_carrying_triple() -> void:
+	t.check(
+		int(Data.TECHS["the_wheel"].get("era", 1)) == 2 and Data.BUILDINGS["cart_shed"]["tech"] == "the_wheel",
+		"the Cart Shed comes with The Wheel, in Bronze Dawn"
+	)
+	t.check(Data.CARTS_PER_SHED == 1 and Data.CART_LOAD == 3, "a shed makes one hand cart that carries 3x")
+	var s: Sim = t.fresh()
+	t.give(s, 400)
+	for tech in ["haulers", "the_wheel"]:
+		s.tech_tree.researched[tech] = true
+	s.people.found(6)
+	t.check(s.town.carts_allowed() == 0, "no shed, no hand cart")
+	var camp: Vector2i = s.world.camp_pos
+	var shed_at: Vector2i = t.find_grass(s, false)
+	t.check(s.place("cart_shed", shed_at), "a Cart Shed")
+	s.tick(0.1)
+	var carts: Array = s.people.kith.filter(func(k): return k["cart"])
+	t.check(carts.size() == 1 and s.town.carts_allowed() == 1, "it makes one hand cart: one Kith, not two")
+	t.check(Haulers.carry_cap(s, carts[0]) == Data.CARRY * 3, "that carries 3x a hauler's load")
+	t.check(Haulers.carry_cap(s, s.people.kith[4]) == Data.CARRY, "and the others carry 1x")
+	# Roads only: with no road under it, the cart waits where it stands.
+	var cart: Dictionary = carts[0]
+	var off: Vector2i = camp + Vector2i(0, 6)
+	t.check(not s.world.roads.has(off), "an open tile off the roads")
+	cart["pos"] = Vector2(off)
+	t.check(not Roads.walk(s, cart, camp), "no road, no way: a hand cart does not cross country")
+	cart["cart"] = false
+	t.check(s.people.walk_to(cart, camp), "while a hauler on foot would")
+	t.check(
+		s.town.price("cart_shed") == Data.BUILDINGS["cart_shed"]["cost"],
+		"a Cart Shed is a flat price: it is not a production building"
+	)

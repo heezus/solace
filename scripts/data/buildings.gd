@@ -292,8 +292,8 @@ const BUILDINGS := {
 		"story": true,
 		"cost": {"wood": 60, "rope": 20, "copper": 6},
 		"color": Color("c9a45c"),
-		"desc": "Turns two haulers into carts. A cart carries twice a hauler's load, but only on roads.",
-		"status": "Two haulers push carts for it.",
+		"desc": "Turns a hauler into a hand cart: one Kith, three times a hauler's load, but only on roads.",
+		"status": "A hauler pulls a hand cart for it.",
 	},
 	"trading_post":
 	{

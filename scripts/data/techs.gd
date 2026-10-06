@@ -609,7 +609,10 @@ const TECHS := {
 		"requires": ["tally_sticks", "plough"],
 		"cost": {"wood": 100, "rope": 50, "copper": 12},
 		"desc":
-		"A Cart Shed turns haulers into carts. A cart carries twice the load, but only on roads, and a Wooden Bridge will not bear it.",
+		(
+			"A Cart Shed turns a hauler into a hand cart. One Kith pulls it and it carries three times the load,"
+			+ " but only on roads, and a Wooden Bridge will not bear it."
+		),
 	},
 	"alloying":
 	{

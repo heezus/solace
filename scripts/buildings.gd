@@ -404,7 +404,7 @@ func granary_homes() -> int:
 	return mini(floori(_economy.food_total() / Data.GRANARY_FOOD), Data.GRANARY_HOMES)
 
 
-## How many Cart Sheds stand, and so how many haulers are carts (Data.CARTS_PER_SHED each).
+## How many Cart Sheds stand, and so how many haulers pull hand carts (Data.CARTS_PER_SHED each).
 func carts_allowed() -> int:
 	var n := 0
 	for b in buildings:

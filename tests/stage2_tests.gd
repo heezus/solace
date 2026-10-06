@@ -149,15 +149,18 @@ func test_a_cart_shed_makes_carts() -> void:
 	s.tick(0.1)
 	carts = s.people.kith.filter(func(k): return k["cart"])
 	t.check(carts.size() == Data.CARTS_PER_SHED, "that many are carts (%d)" % carts.size())
-	t.check(s.people.kith[0]["cart"] and s.people.kith[1]["cart"], "the first haulers in the list push them")
-	t.check(Haulers.carry_cap(s, carts[0]) == Data.CARRY * Data.CART_LOAD, "a cart carries 20")
+	t.check(
+		s.people.kith[0]["cart"] and not s.people.kith[1]["cart"], "the first hauler in the list pulls it, one Kith"
+	)
+	t.check(Data.CARTS_PER_SHED == 1 and Data.CART_LOAD == 3, "a shed makes one hand cart, and it carries 3x")
+	t.check(Haulers.carry_cap(s, carts[0]) == Data.CARRY * 3, "a hand cart carries 30")
 	t.check(Haulers.carry_cap(s, s.people.kith[5]) == Data.CARRY, "a hauler carries 10")
 	t.check(Haulers.carry_cap(s) == Data.CARRY, "and carry_cap with no one named is a hauler's")
 	s.tech_tree.researched["carrying_poles"] = true
-	t.check(Haulers.carry_cap(s, carts[0]) == Data.CARRY * 4, "Carrying Poles double a cart's load too")
+	t.check(Haulers.carry_cap(s, carts[0]) == Data.CARRY * 6, "Carrying Poles double a cart's load too")
 	t.check(t.place_free(s, "cart_shed", shed2), "a second Cart Shed")
 	s.tick(0.1)
-	t.check(s.people.kith.filter(func(k): return k["cart"]).size() == 4, "makes two more carts")
+	t.check(s.people.kith.filter(func(k): return k["cart"]).size() == 2, "makes one more hand cart")
 	t.check(Data.BUILDINGS["cart_shed"]["tech"] == "the_wheel", "the Cart Shed comes with The Wheel")
 	s.demolish(shed)
 	s.demolish(shed2)

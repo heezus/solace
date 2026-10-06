@@ -161,7 +161,7 @@ const TECH_BLURBS := {
 	"mining": "Lets you build a Mine on an ore tile, dug by two Kith.",
 	"smelting": "Lets you build a Smelter that melts copper ore into Copper.",
 	"kilns_ii": "Every Kiln fires twice the Brick each time.",
-	"the_wheel": "Lets you build a Cart Shed: carts carry twice the load, on roads.",
+	"the_wheel": "Lets you build a Cart Shed: a hand cart carries three times the load, on roads.",
 	"alloying": "Lets you build a Crucible that pours Copper and Tin into Bronze.",
 	"causeways": "Lets you build a Stone Bridge, over a Wooden Bridge or a new crossing: carts can cross it.",
 	"markets": "Lets you build a Trading Post to swap goods.",
