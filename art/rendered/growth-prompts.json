@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-05",
+  "tool": "Built-in image_gen",
+  "assets": [
+    {
+      "name": "growth-houses",
+      "reference": "art/rendered/buildings.png",
+      "transparent_background": true,
+      "prompt": "Make a transparent sprite atlas with TWO new house tier miniatures, equally sized side-by-side cells, generous clear separation and margins. Match attached Solace buildings' warm thatch/timber sculpted painterly miniature style, cool mossy stone, upper-left lighting, three-quarter overhead with front/right sides visible, chunky readable at 48px. Left: Homestead, a more substantial compact two-room timber cottage with broad golden thatched roof, pale clay infill, stone footings, modest covered entry porch, one warm window. Right: Longhouse, visibly longer and more substantial single-storey communal timber home with a long broad golden thatched gable roof, two warm windows, stout moss-flecked stone foundations and a central timber door. Same architectural family, right bigger roof silhouette, distinct from Hearth (NO fire ring, no open bonfire), no fantasy towers or second storey. Each must visually fit one 48px gameplay tile: compact, no yard/outbuildings or protruding terrain square. Continuous alpha clear background; no ground plane beyond tight contact shadows. No text/labels, people, tools, grids, cut edges. Single row TWO sprites, one per equal half of canvas."
+    },
+    {
+      "name": "growth-scaffold",
+      "reference": "art/rendered/workshops.png",
+      "transparent_background": true,
+      "prompt": "ONE isolated reusable building-upgrade scaffold overlay for Solace. Match reference workshop warm honey timber, rope lashings, chunky sculpted painterly miniature, upper-left light, overhead three-quarter front/right visible. Open U-shaped freestanding timber scaffolding frame around an empty central footprint: short rear crossbeam, two stout side frames, narrow side working planks, short ladder at right/front. Large transparent middle allows an existing building sprite to show through. No house, roof, people, tools, ground tile or material piles inside. Rope-lashed stout poles, realistic braces; compact construction silhouette readable at 48px. Actual transparent RGBA background including center hole, clear margins, no cut edges, no text. One unoccupied scaffold only; use as overlay on buildings of varying size."
+    },
+    {
+      "name": "growth-hand-cart",
+      "reference": "art/rendered/walk.png",
+      "transparent_background": true,
+      "prompt": "ONE isolated Solace transport sprite: exactly ONE Kith worker pulls a SMALL EMPTY wooden two-wheel hand cart by two long wooden shafts. Match attached Kith's sculpted painterly miniature look, orange tunic, cream sleeves, green belt, chunky expressive head; warm honey timber cart, rope lashings, upper-left light. Three-quarter overhead front/right-visible angle, worker in front-left, cart behind-right; stance visibly pulling, hands grip both shafts. Only one person, no animals. Two chunky wooden spoked wheels on single axle, low open rectangular empty cart bed. Cargo is a separate game overlay, so leave bed completely empty. Compact silhouette readable at 48px. No ground square, scenery, labels or background; actual transparent RGBA and tight contact shadows, margins with no cut edges. Avoid a large wagon or oversized giant wheels; character's body height about twice wheel diameter."
+    },
+    {
+      "name": "growth-roads",
+      "transparent_background": false,
+      "prompt": "Create ONE game material atlas, three equal SQUARE swatches side-by-side in a single horizontal row, edge to edge, no borders, perspective, labels or margins. Each square is a seamless flat overhead surface texture for Solace's beautiful sculpted painterly miniature settlement game. Left: warm compacted earth PATH with fine irregular earth grain and tiny subtle scattered stones, smooth quiet golden brown. Center: GRAVEL road, small irregular rounded cool gray/tan pebbles packed into warm earth, clear finer gravel texture not big boulders. Right: PAVED road, chunky slightly irregular weathered gray-green stone setts, hand-laid offset masonry pattern with dark thin mortar, subtle moss specks. Equal lighting from upper left, quiet low contrast at 48px, texture scale consistent with a 48px road width containing about 5-7 paving stones. Each swatch is uniform full-bleed seamless material WITHOUT grass verges, shrubs, cast shadows, terrain tile bases, road shapes or square edge outlines: actual engine masks create connected roads, curves and junctions. Painterly rendered tactile material not photoreal photograph. Horizontal 3:1 image of three adjacent equal square texture samples."
+    }
+  ],
+  "sources": [
+    "/Users/jhowell/.codex/generated_images/01a102c1-2f03-7f12-aa4a-15cac6f76c52/exec-bc899635-6b02-42e5-b740-5463fc6c6381.png",
+    "/Users/jhowell/.codex/generated_images/01a102c1-2f03-7f12-aa4a-15cac6f76c52/exec-1588f866-e505-4933-9020-734c9057260c.png",
+    "/Users/jhowell/.codex/generated_images/01a102c1-2f03-7f12-aa4a-15cac6f76c52/exec-374768c0-e6d8-4a52-894a-f9cd98346a04.png",
+    "/Users/jhowell/.codex/generated_images/01a102c1-2f03-7f12-aa4a-15cac6f76c52/exec-f51fe0e8-bd72-432a-b827-9de4a6322377.png"
+  ]
+}
