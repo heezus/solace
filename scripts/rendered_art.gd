@@ -162,6 +162,7 @@ const SINGLE_BUILDINGS := {
 	# the Gatherer's Hut.
 	"glyph_wall": ["workshops", 7],
 	"lumen_camp": ["buildings", 3],
+	"expedition_post": ["industry", 5],  # borrows the Watchtower
 }
 const ITEM_IDS := [
 	"wood",

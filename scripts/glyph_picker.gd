@@ -37,10 +37,17 @@ func show_for(b: Dictionary) -> void:
 		remove_child(c)
 	for n in Data.GLYPH_SETS:
 		var gset: Dictionary = Data.GLYPH_SETS[n]
+		if gset["source"] == "wreck" and f.progress(gset["id"]).x == 0 and not f.locked.has(gset["id"]):
+			continue  # a set the Wreck holds shows once its first mark is home
 		add_child(_wrapped(header_text(state, gset), Ui.TEXT))
+		if f.locked.has(gset["id"]) and Data.LUMEN_GIFTS.has(gset["id"]):
+			var gift: Dictionary = Data.LUMEN_GIFTS[gset["id"]]
+			add_child(_wrapped(Data.GIFT_LINE % [gift["name"], gift["note"]], Ui.GOOD))
 		for g in gset["glyphs"]:
 			if f.copied.has(g):
 				add_child(_row(g, f.locked.has(gset["id"])))
+	if f.locked.has("name") and f.wreck_has_more():
+		add_child(_wrapped(Data.WALL_WRECK_HINT, Ui.TEXT_DIM))
 	add_child(_wrapped(Data.WALL_HINT, Ui.TEXT_DIM))
 
 

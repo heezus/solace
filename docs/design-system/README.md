@@ -30,7 +30,7 @@ The source of truth for our game's universe. If something is written here, it's 
 13. [Three Perspectives](13-three-perspectives.md): playing as each faction (idea, not canon yet)
 14. [From Hands to Haulers](14-hands-to-haulers.md): one arc from clicking to automation, with scaling click yield, ranks and tiered costs (being built)
 15. [Architecture](15-architecture.md): blocks, interfaces and a testbench, with a step-by-step refactor plan (all steps merged; the code is split into economy, research, map, walking, buildings, Kith, story and fog blocks)
-16. [Era 3: Starfall](16-starfall.md): the Lumen ship lands; glyph deciphering, set-and-forget expeditions, a hidden trust meter plus three big moments (designed, not built)
+16. [Era 3: Starfall](16-starfall.md): the Lumen ship lands; glyph deciphering, set-and-forget expeditions, a hidden trust meter plus three big moments (stages 1 and 2 built: the landing, Glyph Wall, Expedition Post, the Wreck and four gifts; stage 3 and the third tab not built)
 17. [Needs and upgrades](17-needs-and-upgrades.md): dwelling tiers and needs, road and bridge tiers, copy cost, tech forks, hand carts, scouting (approved by Jon with the defaults; built in 3 PRs: Logistics, Needs, Tree)
 18. [Roadmap](18-roadmap.md): the eras after Starfall, the Bloom and the three resets, with every open fork and its default (proposal, nothing built)
 - [Decision Log](decision-log.md)

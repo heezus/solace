@@ -123,6 +123,21 @@ const BONUSES := {
 	# Bronze Tools: the tool a worker holds is bronze, +100% Speed in place of a Flint Tool's +50% (so +50% over flint).
 	"bronze_tools":
 	{"name": "Bronze Tools", "group": "speed", "add": 1.0, "kinds": ["gatherer", "processor"], "tool": "bronze_tools"},
+	# Era 3 gifts (a glyph set read, `gift`; they work within Data.SHARDLIGHT_RADIUS of a Shard Cairn, `near_cairn`).
+	"shardlight":
+	{"name": "Shardlight", "group": "speed", "add": 0.25, "kinds": ["gatherer"], "gift": "light", "near_cairn": true},
+	"starfruit":
+	{
+		"name": "Starfruit",
+		"group": "yield",
+		"add": 0.5,
+		"item": "berries",
+		"kinds": ["gatherer"],
+		"gift": "growth",
+		"near_cairn": true
+	},
+	"shardwork":
+	{"name": "Shardwork", "group": "speed", "add": 0.25, "kinds": ["processor"], "gift": "craft", "near_cairn": true},
 }
 ## A tool lasts this many jobs (harvests or work cycles) in a worker's hands: flint, then bronze (one per 200 jobs).
 const TOOL_JOBS := 40

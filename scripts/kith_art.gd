@@ -100,6 +100,24 @@ static func draw_strangers(ci: CanvasItem, s, time: float) -> void:
 		Rendered.kith(ci, at, "stranger-%d" % i, false, time, i % 2 == 1)
 
 
+## The crash site (Starfall.wreck), once a party has lifted the fog there: a broken hull in the grass with embers about it.
+## Stand-in art until Codex draws it (docs/art/requests.md).
+static func draw_wreck(ci: CanvasItem, s, time: float) -> void:
+	var w: Vector2i = s.starfall.wreck
+	if w.x < 0 or not s.starfall.wreck_found or not s.fog.is_revealed(w):
+		return
+	var c := (Vector2(w) + Vector2(0.5, 0.5)) * Overlays.TILE
+	var hull := PackedVector2Array(
+		[c + Vector2(-38, 6), c + Vector2(-20, -14), c + Vector2(26, -10), c + Vector2(40, 4), c + Vector2(12, 16)]
+	)
+	ci.draw_circle(c + Vector2(0, 4), 46.0, Color(0.1, 0.1, 0.1, 0.18))
+	Art.outlined_poly(ci, hull, Color("6f7f94"))
+	ci.draw_line(c + Vector2(-8, -12), c + Vector2(6, 12), Color("1b1b1f"), 2.0)
+	for i in 3:
+		var flick := 0.5 + 0.5 * sin(time * 3.0 + i * 2.0)
+		ci.draw_circle(c + Vector2(-26 + i * 24, -18 - 4 * flick), 4.0 + 2.0 * flick, Color(1.0, 0.62, 0.25, 0.55))
+
+
 ## One Kith standing at `at` (the middle of its feet): its shadow, body and head. A hauler is a shade lighter, and
 ## one pushing a cart is drawn with it.
 static func draw_one(ci: CanvasItem, at: Vector2, hauler: bool, cart := false) -> void:
