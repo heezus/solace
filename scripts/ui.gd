@@ -5,6 +5,7 @@ extends RefCounted
 const Data = preload("res://scripts/data.gd")
 const Art = preload("res://scripts/art.gd")
 const Rules = preload("res://scripts/rules.gd")
+const Buildings = preload("res://scripts/buildings.gd")
 const GrowthNote = preload("res://scripts/growth_note.gd")
 
 const OUTLINE: Color = Art.OUTLINE  # the sprite outline, also the map's
@@ -333,11 +334,30 @@ static func build_warning(inv: Dictionary, tech: String, cost: Dictionary = {}) 
 
 ## Kith not staffing a building: they haul once Paths & Haulers is known, or wait at the Hearth.
 static func idle_kith(s) -> int:
+	return s.people.kith.size() - jobs_filled(s)
+
+
+## The places to work: one for each person a building needs (a Mine needs two), not counting a paused building.
+static func job_slots(s) -> int:
 	var n := 0
-	for k in s.people.kith:
-		if k["job"] != "work":
-			n += 1
+	for b in s.town.buildings:
+		if Buildings.needs_worker(b) and not b["paused"]:
+			n += Buildings.crew_size(b)
 	return n
+
+
+## The places at work that a Kith holds, never more than job_slots: a Kith with any other job (hauling, scouting,
+## waiting) holds none, and a place nobody holds is not counted.
+static func jobs_filled(s) -> int:
+	var n := 0
+	for b in s.town.buildings:
+		if not Buildings.needs_worker(b) or b["paused"]:
+			continue
+		for slot in Buildings.crew_slots(b):
+			var i: int = b[slot]
+			if i >= 0 and i < s.people.kith.size() and s.people.kith[i]["job"] == "work":
+				n += 1
+	return mini(n, job_slots(s))
 
 
 ## Why the population isn't growing, or "" when it is (see scripts/growth_note.gd).
