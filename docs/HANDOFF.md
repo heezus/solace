@@ -4,12 +4,13 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 
 ## Active work
 
-### Codex — shoreline/crossing fixture
-- **Task:** complete the review-only 48 px fixture for contour-following bank props, both bridge axes, dry-bank seating and aligned road approaches. Branch `codex/visual-overhaul`, draft PR #33. No production integration in this task.
-- **Reserved files:** none; fixture reservation released after publication. Completed work is under `docs/art/overhaul/misty-highlands/grounding-studies/shoreline-crossings-study/`. No production drawing files were changed; later integration requires a new reservation.
-- **Acceptance criteria:** one inspected native Godot capture at 48 px; both wood/stone bridge axes and narrow/broad spans; seated ends and clear approaches; stones/reeds following corners with fixed lighting; focused geometry, fog privacy and world/RNG checks; concise documented result. Keep normal play unchanged and PR #33 draft until Jon signs off on visuals.
-- **Status:** fixture complete for review. Native 48 px capture inspected; opaque deck-edge sampling fixes module gaps, dry-bank seats and road alignment checked. Focused checks, lint/format and error-free graphical capture pass. No production integration or visual approval.
-- **Next action:** Claude reviews the published fixture result on PR #33. Missing CI scheduling was traced to merge conflicts with main: Codex combined both teams’ decision-log entries and retained the new Tool Bench request while synchronizing main. Code merged automatically without manual gameplay edits. CI on the synchronized head is required; do not reuse an earlier green result as exact-head validation. Before further renderer work, Codex records a new scoped task/reservation and checks Claude’s shared-file claims. Ground repetition and water/bank material quality remain unresolved.
+### Codex — growth visuals and build-bar fit
+- **Task:** Jon's 2026-10-05 assignment: fit the bottom build bar; supply path/gravel/paved art, Dwelling/Homestead/Longhouse, reusable scaffold and one-Kith hand cart. Branch `codex/growth-visuals`. This assignment authorizes these assets despite page 17's older approval-hold text; beast carts and gameplay changes remain excluded.
+- **Reserved files:** none after publication; delivered layout-only `scripts/build_bar.gd`, new `art/rendered/growth-*` assets, `scripts/growth_art.gd`, focused visual/layout tests and related art/decision docs. Claude confirmed #50 keeps build-bar edits to price/visibility; the second merger reconciles them. No edits to Claude's drawing/gameplay hooks.
+- **Acceptance criteria:** craft and demolition controls fit default/narrow windows; every build tab remains accessible; cards keep readable dimensions with scrolling when needed. New transparent subjects/materials match current miniatures, retain logical footprints and imported metadata; native 48/24 px preview inspected; exact slot/region contract supplied to Claude.
+- **Status:** implementation complete for review. Build-bar checks pass at 800/1100/1280/1600 px across all tabs; native 24/48/96 px asset/48 px road preview inspected. Imports, strict warnings, lint/format and focused slot/alpha/bounds/RNG/seam checks passed. Full CI result is recorded on the visual PR.
+- **Next action:** Claude reviews/merges the visual PR and uses `docs/art/growth-visuals/README.md` for exact state hooks in logistics/needs; new assets are imported and ready but normal play does not select tier/scaffold/cart state yet. Beast art remains outside this task.
+
 
 ### Claude — gameplay asks (PR #44, merged) and the visual merge (PR #33, merged)
 - **Task:** none open. PR #44 shipped the four gameplay asks (one-click Gatherer's Hut round, techs show once their items are found, roads through buildings, Hearth stage helper). PR #33 is merged with main's gameplay preserved.

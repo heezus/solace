@@ -1,6 +1,6 @@
 extends PanelContainer
 ## The bottom bar: the tech tree button, build tabs (Homes, Gathering, Workshops, Logistics, Lore),
-## fixed-size build buttons, the Demolish tool and a small Craft group.
+## scrollable fixed-size build buttons, the Demolish tool and a small Craft group.
 ## Buttons never change size: costs live in their tooltips and in the placement preview.
 
 signal build_picked(type: String)
@@ -36,6 +36,7 @@ var pulses := {}  # building type or tab name -> seconds of glow left
 var tech_button: Button
 var demolish_button: Button
 var row: HBoxContainer
+var build_scroll: ScrollContainer
 
 
 func setup(game: Sim) -> void:
@@ -54,10 +55,17 @@ func setup(game: Sim) -> void:
 
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 4)
+	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	v.custom_minimum_size.x = BUTTON.x
 	h.add_child(v)
+	var tab_scroll := ScrollContainer.new()
+	tab_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	tab_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	tab_scroll.custom_minimum_size.y = 44
+	v.add_child(tab_scroll)
 	var tabs := HBoxContainer.new()
 	tabs.add_theme_constant_override("separation", 4)
-	v.add_child(tabs)
+	tab_scroll.add_child(tabs)
 	for tab_name in Data.BUILD_TABS:
 		var b := Ui.button(tab_name)
 		b.toggle_mode = true
@@ -67,7 +75,13 @@ func setup(game: Sim) -> void:
 		tab_buttons[tab_name] = b
 	row = HBoxContainer.new()
 	row.add_theme_constant_override("separation", 6)
-	v.add_child(row)
+	build_scroll = ScrollContainer.new()
+	build_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	build_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	build_scroll.follow_focus = true
+	build_scroll.custom_minimum_size.y = BUTTON.y + 16
+	v.add_child(build_scroll)
+	build_scroll.add_child(row)
 	for tab_name in Data.BUILD_TABS:
 		for type in Data.BUILD_TABS[tab_name]:
 			var parts := _build_button(type)
@@ -91,9 +105,6 @@ func setup(game: Sim) -> void:
 		craft.add_child(b)
 		craft_buttons[r] = b
 	h.add_child(craft)
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	h.add_child(spacer)
 	demolish_button = _demolish_button()  # the far right: small, ghost style, red only while it is the tool in use
 	demolish_button.pressed.connect(func(): demolish_pressed.emit())
 	h.add_child(demolish_button)
