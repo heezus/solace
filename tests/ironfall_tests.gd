@@ -36,6 +36,7 @@ func run(runner) -> void:
 	test_the_fourth_tab()
 	test_the_goals()
 	test_a_grown_south_saves_and_loads()
+	test_a_save_from_before_ironfall_loads()
 
 
 ## A game whose map has grown east and south: the stone age is behind it, `tech` has been learned and the fog is lifted.
@@ -430,3 +431,20 @@ func test_a_grown_south_saves_and_loads() -> void:
 	saved.tick(0.1)
 	t.check(saved.world.height == s.world.height, "it does not grow again")
 	t.check(saved.tech_tree.tech_visible("bloomery") == s.tech_tree.tech_visible("bloomery"), "the board is as it was")
+
+
+## A save written before Ironfall (tests/fixtures/save_before_ironfall.json, a Starfall run made by the build before this one,
+## kept as it was) still loads and plays: saves stay VERSION 1 and what Ironfall adds is optional. Do not regenerate the
+## fixture; when a later build changes the save format, add a newer fixture beside it.
+func test_a_save_from_before_ironfall_loads() -> void:
+	var text := FileAccess.get_file_as_string("res://tests/fixtures/save_before_ironfall.json")
+	var d := RunSave.from_json(text)
+	t.check(RunSave.is_run_save(d), "the older save is still a save this build reads")
+	var s := Sim.new()
+	t.check(RunSave.restore(s, d), "and it loads")
+	var homes: int = s.town.buildings.size()
+	t.check(homes > 1 and not s.world.is_grown_south(), "with its town and without the south")
+	for i in 600:
+		s.tick(0.1)
+	t.check(s.town.buildings.size() == homes, "a minute of play leaves its town as it was")
+	t.check(not s.world.is_grown_south(), "and Ironfall waits for the end of the Starfall")
