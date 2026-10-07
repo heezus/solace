@@ -57,6 +57,11 @@ func test_the_moments_are_well_formed() -> void:
 		ids.append(Data.GLYPH_SETS[n]["id"])
 	t.check(Data.ENDING_SET in ids and Data.GLYPH_SETS[6]["id"] == Data.ENDING_SET, "the Warning is the sixth set")
 	t.check(Data.MOMENT_ORDER.size() == 3, "three moments")
+	t.check(Data.LEAD_NAME != "" and Data.ENDING_SAYS.contains(Data.LEAD_NAME), "the lead stranger speaks at the end")
+	for id in Data.MOMENT_ORDER:
+		t.check(Data.MOMENTS[id]["says"].contains(Data.LEAD_NAME), id + ": the lead stranger has a line")
+		for opt in Data.MOMENTS[id]["options"]:
+			t.check(opt["line"].contains(Data.LEAD_NAME), id + ": she answers every choice")
 	for id in Data.MOMENT_ORDER:
 		var m: Dictionary = Data.MOMENTS[id]
 		t.check(m["after"] in ids and m["wait"] > 0.0, "%s follows a real set" % id)

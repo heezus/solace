@@ -644,6 +644,11 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Defaults Claude picked: trade opens once the name is read and trust reaches 8, and a Market lifts trust only to 60 (trade alone makes neighbours); the shrine is +10 and +1 a minute; the Guard Post is -6 and -1 a minute but speeds work within 4 tiles by 15%, so force pays and costs trust.
 - Shared food as an ongoing mover, the third tech tab and the beast cart stay for later.
 
+## 2026-10-07: The lead stranger (PR #74)
+- Claude: on Jon's ask, one of the three Lumen strangers is now a named lead character based on Jon's friend Briana: the tall one with long pale hair, the first to trust the Kith. Warm, playful, teasing and perceptive, and glamorous at first sight, goofy and loyal once she trusts you.
+- She speaks on each moment card and answers every choice in the event log, in the same words whether the choice is kind or not (her smile fades when it is not). The name is one constant (`LEAD_NAME`); Jon is asked on a card whether she keeps it or gets a Lumen name close to it.
+- The look is described in words in the art brief, stylized and tasteful, with a paste-ready Codex message; no reference photos go in the repo.
+
 ## 2026-10-06: Briana leads the Lumen arrival (PR #75)
 - Codex follows Jon's explicit choice: Briana is the first of the three Lumen strangers out of the fog and the first to trust the Kith. No additional stranger or progression rule is introduced.
 - Her painted likeness uses long blonde hair, an open smile, confident posture and polished pale gold/cyan travel clothing, continuing the approved miniature style. Private photo references remain outside Git.

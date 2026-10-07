@@ -277,6 +277,7 @@ func check() -> bool:
 			read = true
 			if n == 1:
 				said.emit(Data.READ_LINE % Data.LUMEN_NAME)
+				said.emit(Data.LEAD_NAMED_LINE % [Data.LEAD_NAME, Data.LEAD_NAME])
 			elif gset["id"] == Data.ENDING_SET:
 				_end_era()
 			else:
