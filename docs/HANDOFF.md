@@ -5,8 +5,8 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 ## Active work
 
 ### Codex — Starfall title painting
-- **Task:** Jon's 2026-10-06 full Starfall art assignment, starting with the title painting on `codex/starfall-title`. Keep each asset group in a separate small PR; later/canon-pending slots stay deferred as stated in the brief.
-- **Reserved files:** `art/rendered/title.png`, its Godot-generated `.import`, `docs/art/starfall-title/`, the title request line in `docs/art/requests.md`, and an append-only design decision. No gameplay or Claude-reserved renderer files.
+- **Task:** Jon's 2026-10-06 full Starfall art assignment, starting with the title painting on `codex/starfall-title`, PR #68. Keep each asset group in a separate small PR; later/canon-pending slots stay deferred as stated in the brief.
+- **Reserved files:** none after publication. PR #68 contains `art/rendered/title.png`, its generated import, native title captures, provenance and related notes. No gameplay or renderer edits.
 - **Acceptance criteria:** one approximately 2560×1600 / 16:10 painting matching Misty Highlands; warm Kith settlement first, a subtle cyan falling star and distant magenta/green Bloom hint; calm dark left third, no baked text; import succeeds and actual title menu remains readable at default and wider aspect ratios.
 - **Status:** title painted/imported and actual 1280×800 plus 1600×900 title captures inspected. Source is 1586×992, below the requested approximately 2560×1600 master; documented for review. Publishing the small title PR; full CI pending.
 - **Next action:** generate one focused painting, import it, inspect the real title screen and cropping, then publish a small PR and hand off through #53. Next asset group: current Starfall buildings; later slots remain queued.
