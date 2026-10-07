@@ -20,6 +20,18 @@ const STORY_EVENTS := {
 	"body_read": "The marks of the Body were read",
 	"growth_read": "The marks of Growth were read",
 	"craft_read": "The marks of Craft were read",
+	"hunger_shared": "The Kith shared their food with the strangers",
+	"hunger_held": "The Kith kept their food from the strangers",
+	"shards_given": "The Kith gave the strangers the shards",
+	"shards_traded": "The Kith traded the strangers a shard",
+	"shards_refused": "The Kith refused the strangers the shards",
+	"dark_kept": "The Kith went dark when the strangers asked",
+	"dark_refused": "The Kith kept their fires lit against the warning",
+	"warning_read": "The Warning was read",
+	"bloom_seen": "A strange growth was seen at the edge of the fog",
+	"lean_allies": "The Lumen and the Kith ended as allies",
+	"lean_neighbours": "The Lumen and the Kith ended as neighbours",
+	"lean_enemies": "The Lumen and the Kith ended as enemies",
 }
 
 ## Techs that are story moments: tech id -> the STORY_EVENTS id the Story block records when it is researched.

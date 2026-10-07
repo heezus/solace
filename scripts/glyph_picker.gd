@@ -28,7 +28,9 @@ func show_for(b: Dictionary) -> void:
 		key = ""
 		return
 	var f := state.starfall
-	var now := "%s|%s|%s|%s" % [f.copied, f.guesses, f.locked, f.guests or f.trust >= Data.CONTEXT_TRUST]
+	var now := (
+		"%s|%s|%s|%s|%s" % [f.copied, f.guesses, f.locked, f.guests or f.trust >= Data.CONTEXT_TRUST, f.answered.size()]
+	)
 	if now == key:
 		return
 	key = now
@@ -46,6 +48,9 @@ func show_for(b: Dictionary) -> void:
 		for g in gset["glyphs"]:
 			if f.copied.has(g):
 				add_child(_row(g, f.locked.has(gset["id"])))
+	var end: Vector2i = f.progress(Data.ENDING_SET)
+	if end.x == end.y and not f.locked.has(Data.ENDING_SET) and not f.may_end():
+		add_child(_wrapped(Data.WARNING_NEEDS, Ui.TEXT_DIM))
 	if f.locked.has("name") and f.wreck_has_more():
 		add_child(_wrapped(Data.WALL_WRECK_HINT, Ui.TEXT_DIM))
 	add_child(_wrapped(Data.WALL_HINT, Ui.TEXT_DIM))

@@ -22,6 +22,8 @@ static func active(s, b: Dictionary, item: String) -> Array:
 			continue
 		if bonus.has("gift") and not s.starfall.gift(bonus["gift"]):
 			continue
+		if bonus.get("dark", false) and not s.starfall.dark():
+			continue
 		if bonus.has("kinds") and kind not in bonus["kinds"]:
 			continue
 		if bonus.has("types") and b["type"] not in bonus["types"]:
@@ -44,7 +46,7 @@ static func active(s, b: Dictionary, item: String) -> Array:
 
 ## Checks that depend on the building itself: its worker's tool, a Standing Stone nearby.
 static func _applies(s, b: Dictionary, id: String) -> bool:
-	if Data.BONUSES[id].get("near_cairn", false) and not _near_cairn(s, b["pos"]):
+	if Data.BONUSES[id].get("near_cairn", false) and (s.starfall.dimmed() or not _near_cairn(s, b["pos"])):
 		return false
 	if Data.BONUSES[id].has("tool"):
 		return b["worker"] >= 0 and Kith.tool_of(s.people.kith[b["worker"]]) == Data.BONUSES[id]["tool"]
@@ -121,7 +123,7 @@ static func text(s, b: Dictionary) -> String:
 		var names: Array = []
 		for p in parts:
 			if p["group"] == "speed":
-				names.append("%s +%d%%" % [p["name"], roundi(p["add"] * 100.0)])
+				names.append("%s %+d%%" % [p["name"], roundi(p["add"] * 100.0)])
 		line += " x Speed %s (%s) = %s %s" % [_num(sp), ", ".join(names), _num(base * sp), unit]
 	if def["kind"] == "gatherer":
 		line += ", plus walking"

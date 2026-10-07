@@ -78,13 +78,15 @@ func _guess_right(s: Sim, ids: Array) -> void:
 
 
 func test_sets_two_to_five_are_well_formed() -> void:
-	t.check(Data.GLYPH_SETS.size() == 5, "five sets so far")
+	t.check(Data.GLYPH_SETS.size() == 6, "six sets")
 	var seen := {}
 	for n in Data.GLYPH_SETS:
 		var gset: Dictionary = Data.GLYPH_SETS[n]
 		t.check(gset["source"] in ["survivors", "wreck"], "%s has a source" % gset["id"])
 		t.check(gset["glyphs"].size() == 3, "%s has three marks" % gset["id"])
-		t.check(n == 1 or Data.LUMEN_GIFTS.has(gset["id"]), "%s has a gift" % gset["id"])
+		t.check(
+			n == 1 or gset["id"] == Data.ENDING_SET or Data.LUMEN_GIFTS.has(gset["id"]), "%s has a gift" % gset["id"]
+		)
 		for g in gset["glyphs"]:
 			t.check(Data.GLYPHS.has(g) and not seen.has(g), "%s is one mark, in one set" % g)
 			seen[g] = true
@@ -128,7 +130,7 @@ func test_finds_come_in_set_order() -> void:
 		"then on"
 	)
 	s.starfall.copied = []
-	for n in [2, 3, 4, 5]:
+	for n in [2, 3, 4, 5, 6]:
 		s.starfall.locked[Data.GLYPH_SETS[n]["id"]] = true
 	t.check(not s.starfall.wreck_has_more() and s.starfall.add_finds(3) == 0, "nothing left once every set is read")
 

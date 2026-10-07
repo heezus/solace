@@ -6,6 +6,9 @@ extends RefCounted
 ## Lumen Camp. A hidden `trust` (0 to 100, never shown) is moved by what is built and read, and shows only in how close the
 ## strangers stand and how much they say about each mark. It only reads the Buildings block; Sim starts it when the Falling
 ## Star falls (`begin`), ticks it, and connects its two signals. What it says is in Data (scripts/data/starfall.gd).
+## Stage 3 adds three moments the strangers ask (Data.MOMENTS: the Hunger, the Shards, the Warning), each a card with a
+## choice that moves trust, and the end of the era: the sixth set, the Warning, ends it with the lean (allies, neighbours or
+## enemies, read off trust) and the first Bloom sign in the east.
 ## Signals: said(message) is a line for the event log; moment(id) is a story moment (Data.STORY_EVENTS) for Story.
 
 signal said(message: String)
@@ -13,6 +16,7 @@ signal moment(id: String)
 
 const Data = preload("res://scripts/data.gd")
 const Buildings = preload("res://scripts/buildings.gd")
+const Economy = preload("res://scripts/economy.gd")
 
 var stage := ""  # "" before the star falls, then "falling", "landed" and "arrived"
 var clock := 0.0  # seconds in the stage (falling and landed)
@@ -28,11 +32,21 @@ var wreck := Vector2i(-1, -1)  # where the ship came down (set when the star fal
 var wreck_found := false
 var post_clock := 0.0  # seconds since a standing order last looked for a chance to send (Expedition.auto)
 var orders := {"target": "wreck", "pack": "standard", "keep": false}  # the Expedition Post's standing choices
+var pending := ""  # a moment (Data.MOMENT_ORDER) or "ending" that waits for the player's answer: the game is paused behind it
+var answered: Dictionary = {}  # moment id -> the index of the option chosen
+var wait_clock := 0.0  # seconds since the set the next moment follows was read
+var dim_left := 0.0  # seconds the Cairn's shardlight is lent away (the Shards)
+var dark_left := 0.0  # seconds the workshops keep dark (the Warning)
+var ended := false  # the Warning is read: the era is over
+var lean := ""  # "allies", "neighbours" or "enemies" once the era ends (Data.LEANS)
+var bloom := Vector2i(-1, -1)  # where the first Bloom sign stands
+var _stock: Economy  # for the one thing a moment can take: food
 var _town: Buildings
 
 
-func _init(town: Buildings) -> void:
+func _init(town: Buildings, stock: Economy = null) -> void:
 	_town = town
+	_stock = stock
 
 
 ## The Falling Star fell: the silence starts. `friendly` is the run flag of a Cairn built first.
@@ -81,6 +95,9 @@ func tick(delta: float) -> void:
 
 
 func _tick_arrived(delta: float) -> void:
+	dim_left = maxf(dim_left - delta, 0.0)
+	dark_left = maxf(dark_left - delta, 0.0)
+	_tick_moments(delta)
 	if has_building("glyph_wall"):
 		copy_clock += delta
 		if copy_clock >= Data.COPY_SECONDS:
@@ -99,6 +116,90 @@ func _tick_arrived(delta: float) -> void:
 			nudge(Data.TRUST_CAMP)
 			said.emit(Data.CAMP_BUILT_LINE)
 		nudge(Data.TRUST_CAMP_PER_MINUTE * delta / 60.0)
+
+
+## The next moment to ask, "" when none is left (or the era is over).
+func next_moment() -> String:
+	if ended:
+		return ""
+	for id in Data.MOMENT_ORDER:
+		if not answered.has(id):
+			return id
+	return ""
+
+
+## Count down to the next moment once the set it follows is read, and put it up (pending) when the time comes.
+func _tick_moments(delta: float) -> void:
+	var id := next_moment()
+	if pending != "" or id == "" or not locked.has(Data.MOMENTS[id]["after"]):
+		return
+	wait_clock += delta
+	if wait_clock >= Data.MOMENTS[id]["wait"]:
+		wait_clock = 0.0
+		pending = id
+		said.emit(Data.MOMENT_ASKED_LINE % Data.MOMENTS[id]["title"])
+
+
+## The options of the moment waiting for an answer, [] when none is (the ending has its one button).
+func pending_options() -> Array:
+	if pending == "ending":
+		return [{"label": Data.ENDING_BUTTON, "note": ""}]
+	return Data.MOMENTS[pending]["options"] if pending != "" else []
+
+
+## Answer the waiting moment with option `index`. Moves trust, takes what the option costs, says its line and records its
+## story id. The ending's one button only puts the card away. False when nothing waits or the index is wrong.
+func choose(index: int) -> bool:
+	if pending == "":
+		return false
+	if pending == "ending":
+		pending = ""
+		return true
+	var options: Array = Data.MOMENTS[pending]["options"]
+	if index < 0 or index >= options.size():
+		return false
+	var opt: Dictionary = options[index]
+	nudge(opt["trust"])
+	if opt.has("food"):
+		_take_food(opt["food"])
+	dim_left = maxf(dim_left, opt.get("dim", 0.0))
+	dark_left = maxf(dark_left, opt.get("dark", 0.0))
+	said.emit(opt["line"])
+	moment.emit(opt["story"])
+	answered[pending] = index
+	pending = ""
+	return true
+
+
+## Take food worth about `amount` out of the stockpile: berries first, then fish, then flour. Short stores give what they have.
+func _take_food(amount: float) -> void:
+	if _stock == null:
+		return
+	var left := amount
+	for id in ["berries", "fish", "flour"]:
+		var each: float = Data.FOOD_VALUE[id]
+		var n := mini(_stock.inv.get(id, 0), ceili(left / each))
+		_stock.add(id, -n)
+		left -= n * each
+		if left <= 0.0:
+			return
+
+
+## True while the Cairn's light is lent away (the Shards): the shardlight gifts do nothing.
+func dimmed() -> bool:
+	return dim_left > 0.0
+
+
+## True while the Kith keep dark (the Warning): workshops run slower.
+func dark() -> bool:
+	return dark_left > 0.0
+
+
+## The lean at this trust: allies, neighbours or enemies (Data.LEANS), never a number.
+func lean_now() -> String:
+	if trust >= Data.LEAN_ALLIES:
+		return "allies"
+	return "neighbours" if trust >= Data.LEAN_NEIGHBOURS else "enemies"
 
 
 ## True while a building of `type` stands.
@@ -133,16 +234,46 @@ func check() -> bool:
 		var right := true
 		for g in gset["glyphs"]:
 			right = right and copied.has(g) and guesses.get(g, "") == Data.GLYPHS[g]["word"]
+		if right and gset["id"] == Data.ENDING_SET and not may_end():
+			continue
 		if right:
 			locked[gset["id"]] = true
 			nudge(Data.TRUST_SET)
 			read = true
 			if n == 1:
 				said.emit(Data.READ_LINE % Data.LUMEN_NAME)
+			elif gset["id"] == Data.ENDING_SET:
+				_end_era()
 			else:
 				said.emit(Data.LUMEN_GIFTS[gset["id"]]["line"])
 			moment.emit("%s_read" % gset["id"])
 	return read
+
+
+## The Warning cannot be read until the strangers' three questions are answered and none waits on the player.
+func may_end() -> bool:
+	return pending == "" and answered.size() == Data.MOMENT_ORDER.size()
+
+
+## The Warning is read: the era ends. The lean is the trust now, a Bloom sign stands at the edge of the fog and the ending
+## card goes up (pending "ending"). The game keeps running behind it.
+func _end_era() -> void:
+	ended = true
+	lean = lean_now()
+	bloom = _bloom_tile()
+	pending = "ending"
+	said.emit(Data.WARNING_LINE)
+	said.emit(Data.BLOOM_LINE)
+	moment.emit(Data.LEANS[lean])
+	moment.emit("bloom_seen")
+
+
+## Where the first Bloom sign grows: a few tiles from the Wreck, north of it (south when that would leave the map).
+func _bloom_tile() -> Vector2i:
+	if wreck.x < 0:
+		return Vector2i(-1, -1)
+	var up := wreck.y - Data.BLOOM_DISTANCE
+	return Vector2i(wreck.x - 1, up if up >= 1 else wreck.y + Data.BLOOM_DISTANCE)
 
 
 ## True once the set called `set_id` is read: its gift (Data.LUMEN_GIFTS) is in effect.
@@ -262,6 +393,14 @@ func to_dict() -> Dictionary:
 		"wreck": [wreck.x, wreck.y],
 		"wreck_found": wreck_found,
 		"orders": orders.duplicate(),
+		"pending": pending,
+		"answered": answered.duplicate(),
+		"wait_clock": snappedf(wait_clock, 0.001),
+		"dim_left": snappedf(dim_left, 0.001),
+		"dark_left": snappedf(dark_left, 0.001),
+		"ended": ended,
+		"lean": lean,
+		"bloom": [bloom.x, bloom.y],
 	}
 
 
@@ -288,3 +427,14 @@ func from_dict(d: Dictionary) -> void:
 	orders = {"target": "wreck", "pack": "standard", "keep": false}
 	for k in d.get("orders", {}):
 		orders[String(k)] = d["orders"][k]
+	pending = String(d.get("pending", ""))
+	answered = {}
+	for k in d.get("answered", {}):
+		answered[String(k)] = int(d["answered"][k])
+	wait_clock = float(d.get("wait_clock", 0.0))
+	dim_left = float(d.get("dim_left", 0.0))
+	dark_left = float(d.get("dark_left", 0.0))
+	ended = bool(d.get("ended", false))
+	lean = String(d.get("lean", ""))
+	var b: Array = d.get("bloom", [-1, -1])
+	bloom = Vector2i(int(b[0]), int(b[1]))

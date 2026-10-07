@@ -60,7 +60,7 @@ var town := Buildings.new(world, economy, tech_tree, fog.is_revealed)
 var people := Kith.new(world, pathing, economy, tech_tree, town)
 var story := Story.new()  # story moments and the opening checklist
 var sky := SkyBlock.new(tech_tree, town)
-var starfall := StarfallBlock.new(town)  # the era after the Falling Star: the landing, the strangers, the glyphs
+var starfall := StarfallBlock.new(town, economy)  # the era after the Falling Star: the landing, the strangers, the glyphs
 
 
 ## Wire the blocks together. Every signal connection in the game is here, so it is all in one place.
@@ -181,6 +181,8 @@ func _wreck_tile() -> Vector2i:
 func _on_story(id: String) -> void:
 	if id == "star_falling":
 		starfall.begin(story.cairn_before_landing, _wreck_tile())
+	elif id == "bloom_seen" and starfall.bloom.x >= 0:
+		fog.reveal(starfall.bloom, Data.BLOOM_SIGHT)  # the first sign shows at the edge of the fog
 
 
 ## Connected to Economy.food_low: the early warning, before anyone leaves.

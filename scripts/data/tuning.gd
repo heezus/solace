@@ -138,6 +138,8 @@ const BONUSES := {
 	},
 	"shardwork":
 	{"name": "Shardwork", "group": "speed", "add": 0.25, "kinds": ["processor"], "gift": "craft", "near_cairn": true},
+	# The Warning (a moment, scripts/starfall.gd): while the Kith keep dark the workshops run slower.
+	"lights_out": {"name": "Lights out", "group": "speed", "add": -0.5, "kinds": ["processor"], "dark": true},
 }
 ## A tool lasts this many jobs (harvests or work cycles) in a worker's hands: flint, then bronze (one per 200 jobs).
 const TOOL_JOBS := 40
