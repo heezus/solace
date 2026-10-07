@@ -659,3 +659,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Codex follows Jon's request to draw him separately as a Kith before title composition, using warm rust/cream/moss clothing, his curls, beard, smile and geometric arm tattoo as likeness cues.
 - Keep Jon and Briana as independent lower-angle character review assets; pair them later on a foreground plane over the same approved background. No new gameplay character, visitor or mechanic is implied.
 - Private reference photographs remain outside Git; generated character artwork and prompt records are saved in the art documentation.
+
+## 2026-10-06: Pair in the foreground over the original town (PR #75)
+- Codex follows Jon's authorization to pair both completed character designs: Briana Lumen and Jon Kith occupy a near foreground crop, with the town on a separate distant plane.
+- Preserve the exact approved title painting as the background texture. Generate an independent transparent paired foreground and compose the two in Godot, retaining sources and layout for future adjustment.
+- Keep the left menu area clear and preserve title/save behavior; deliver the alternate PNG and source layer, with Claude selection notes. The output remains 1586×992, the original painting's resolution.
+- This supersedes the rejected giant/middle-distance title attempts. Jon's likeness is title artwork, not a new gameplay character; the Briana map slot is reviewed independently.

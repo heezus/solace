@@ -8,4 +8,4 @@ The painted design follows his supplied references: dark curls, beard and mousta
 
 Original built-in `image_gen` output copied unchanged as `character-v1.png` (1024×1536), with transparent surrounding pixels checked. Private photos remain outside Git. [Prompt and provenance](prompt.json).
 
-The next stage places the accepted pair in a separate foreground layer with the exact original approved town painting behind. No new title composition or production wiring is supplied at this stage. PR #75 stays draft during character review.
+Jon subsequently authorized pairing both. The [foreground title composition](../title-pair/README.md) uses the original painting unchanged behind a separate generated pair. No production code wiring or new gameplay character is supplied. PR #75 carries the current title and character assets.

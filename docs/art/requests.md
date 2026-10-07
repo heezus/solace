@@ -55,9 +55,9 @@ Visual engine wiring is owned by Codex under the updated [handoff](../HANDOFF.md
 - [x] Preserve the liked standalone v1 character as a reference; private likeness photos stay outside Git. Original gameplay sprite/import retained pending review.
 - [x] Withdraw all three rejected title attempts from active review/production delivery. Last rejected title/captures archived; the other two were never production assets. Original approved title unchanged.
 - [ ] **Character stage:** Jon asks for a lower-angle v2 closer to the game's miniature style. [Current standalone character](briana/character-v2.png) is ready for visual review, with [status and references](briana/README.md).
-- [ ] **Composition stage, after character review:** place the accepted character in a clearly separate foreground plane over the exact original approved title painting; keep the town in the background and menu third clear. No replacement title delivered yet.
-- [ ] **Claude hold:** do not hook the rejected title or automatically use the lower-angle design as a top-down map sprite. Eventually Briana replaces stranger index 0, retaining the existing three visitors, footprint, aura/sway and save behavior. Dedicated idle-frame slot does not currently exist.
+- [x] **Composition stage:** Jon authorized pairing both; the [foreground pair title](title-pair/README.md) is delivered at `art/rendered/title_briana.png`, with a separate imported foreground layer and exact original background. Actual title-menu captures inspected at 1280×800/1600×900.
+- [ ] **Claude hookup:** select the current pair alternate title per `title-pair/README.md`; do not hook the rejected title or automatically use the lower-angle design as a top-down map sprite. Eventually Briana replaces stranger index 0, retaining the existing three visitors, footprint, aura/sway and save behavior. Dedicated idle-frame slot does not currently exist.
 
 ## Jon as a Kith — separate character stage, 2026-10-06 (PR #75)
 - [x] Prepare [standalone Kith likeness](jon-kith/README.md) from Jon's private supplied photos; keep those photos outside Git. Character-only review asset, not a new gameplay person.
-- [ ] After reviewing both standalone designs, pair Jon and Briana on a clear foreground plane over the unchanged original approved title background. Preserve the quiet left menu area; no new title image this stage.
+- [x] Pair Jon and Briana in the near foreground over the unchanged original approved background; preserve the menu area. [Layered result and actual menu previews](title-pair/README.md).

@@ -4,12 +4,12 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 
 ## Active work
 
-### Codex — Briana and Jon character studies
-- **Task:** Jon likes the standalone v1 as a reference but rejects its title scale. Refine Briana toward the existing chunky rendered miniature style, then compose her on a distinct foreground plane with the approved town behind. Branch `codex/lumen-briana`, PR #75 held draft during revision. Jon additionally asks for his own separate Kith likeness, then the two characters paired in the foreground.
-- **Reserved files:** `art/sprites/lumen_briana.png` and import; `art/rendered/title_briana.png` and import; `docs/art/briana/`, `docs/art/jon-kith/`; character requests and append-only design decisions. No Claude-reserved code changes.
-- **Acceptance criteria:** preserve v1 character as reference; archive rejected title/captures. v2 has coherent game miniature proportions, blonde hair, open smile and pale gold/cyan costume. Title foreground reads clearly separate from distant town, left menu third stays calm, falling star/Bloom remain. Imports and native sprite/menu previews verified.
-- **Status:** v1 reference saved; lower-angle standalone v2 prepared for character review. Rejected title removed from production delivery and archived. Jon’s separate Kith character is now saved for review with matching lower camera and warm Kith materials. No new title composed. Private photos remain outside Git.
-- **Next action:** review the two standalone lower-angle characters first, per Jon’s staged instruction. Then compose the accepted pair on a separate foreground plane using the original approved background exactly. Claude holds Briana integration meanwhile. Saved #73 art and overhaul cleanup remain queued.
+### Codex — Briana and Jon foreground title pair
+- **Task:** Jon requested separate lower-angle character studies, then authorized pairing both in the foreground with the original approved town behind. Branch `codex/lumen-briana`, PR #75.
+- **Reserved files:** none after publication; delivered Briana map sprite/import, `art/rendered/title_briana.png`, `art/rendered/title-pair-foreground.png` with imports, `docs/art/briana/`, `docs/art/jon-kith/`, `docs/art/title-pair/`, current requests and design decisions. No Claude-reserved code edits.
+- **Acceptance criteria:** two independent character studies retained; v1 Briana saved as reference, rejected title attempts archived. Pair reads as near foreground, exact original painting behind, quiet left menu third, no text. Imported production textures and actual title-menu previews verified.
+- **Status:** delivered. Built-in image generation produced a separate transparent pair; Godot rendered it over the unchanged original background. Byte-identical source checks, imports and 1280×800/1600×900 actual menu previews passed. Output 1586×992; original resolution limitation remains. Full CI tracked on #75. Private photos outside Git; Jon is title art only, not a new gameplay visitor.
+- **Next action:** Claude reviews the current pair and adds alternate-title selection per `docs/art/title-pair/README.md`; map sprite index 0 remains a separate hookup/review. Merge after CI green and visual review. Saved #73 art and overhaul documentation cleanup remain queued.
 
 ### Claude — Starfall stage 4
 - **Task:** Jon's "whatever else is next" (2026-10-07). Page 16 stage 4: Lumen Market, Shared Shrine, Guard Post. Stage 3 (#64) and the title screen, pause menu and zoom (#66) are merged. PR `stage4`.

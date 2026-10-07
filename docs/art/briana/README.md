@@ -9,18 +9,18 @@ Jon liked the original standalone character as a reference and rejected all thre
 
 The original character is saved at [reference/briana-v1.png](reference/briana-v1.png). The intermediate overhead miniature experiment is [reference/briana-v2-overhead.png](reference/briana-v2-overhead.png). Private likeness photos are not included in Git.
 
-## Next stage, after character review
-Jon also requested [his own separate Kith character](../jon-kith/README.md). The next composition pairs these two characters in the foreground.
+## Completed foreground stage
+Jon also requested [his own separate Kith character](../jon-kith/README.md). He then authorized pairing both. The [current foreground title composition](../title-pair/README.md) now contains both characters.
 
-Use the exact approved landscape from PR #68 (`art/rendered/title.png`) as the background. Add the accepted character as a separately controlled foreground layer, with the town clearly behind her. Keep the menu's left third clear. Do not regenerate the town or put a large figure on the village's middle-distance ground plane. No new title composition is delivered at this stage.
+The final title uses the exact approved landscape from PR #68 as its background, plus a separate generated foreground pair. Original painting and source layer remain unchanged; the town sits behind the cropped near characters and the left third stays clear.
 
 ## Withdrawn title attempts
-The active alternate title PNG/import and active menu captures were removed from this PR. The last rejected image and captures live only under `archive/title-v1/` as historical context; the two earlier generated attempts were never production assets. The old capture script in that folder is historical and points to the withdrawn slot; do not use it as current validation. The approved original title remains unchanged.
+The old alternate title PNG/import and menu captures were withdrawn; the production filename now contains the new pair composition. The last rejected image and captures live only under `archive/title-v1/` as historical context; the two earlier generated attempts were never production assets. The old capture script in that folder is historical and points to the withdrawn slot; do not use it as current validation. The approved original title remains unchanged.
 
 ## Gameplay sprite status
-`art/sprites/lumen_briana.png` remains the original one-pose asset with its generated import, pending review and hookup. Its region is [277,92,524,1333], fitted bottom-center in 24×24 pixels. Do not switch the map slot to the lower-angle title character automatically. The existing caller supports sway, not dedicated idle frames. Claude should hold both Briana integration and alternate-title selection until the staged review is complete.
+`art/sprites/lumen_briana.png` remains the original one-pose asset with its generated import, pending review and hookup. Its region is [277,92,524,1333], fitted bottom-center in 24×24 pixels. Do not switch the map slot to the lower-angle title character automatically. The existing caller supports sway, not dedicated idle frames. Claude should review the current pair composition before selecting the alternate title and review the map sprite separately.
 
 ![Original native sprite comparison](native-board.png)
 
 ## Provenance and checks
-Built-in `image_gen` produced all character art; [original prompts](prompts.json) and [current character prompt](character-v2-prompt.json) record generation. Originals are copied unchanged. Original gameplay sprite import/native 24/96 px preview passed. Lower-angle review output exists and has transparent surrounding pixels. No game code, save, visitor count or progression changes. Prior title menu checks apply only to the rejected version and are not acceptance evidence for the next composition. CI is tracked on PR #75.
+Built-in `image_gen` produced all character art; [original prompts](prompts.json) and [current character prompt](character-v2-prompt.json) record generation. Originals are copied unchanged. Original gameplay sprite import/native 24/96 px preview passed. Lower-angle review output exists and has transparent surrounding pixels. No game code, save, visitor count or progression changes. Current title-menu checks are in the pair composition document; archived checks apply only to the rejected version. CI is tracked on PR #75.
