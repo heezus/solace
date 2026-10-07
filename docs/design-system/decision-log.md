@@ -655,6 +655,11 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - The Wreck is a low broken matte hull with bronze ribs and embers; smoke/flare remain engine layers. No new spacecraft mechanics or lore are introduced.
 - Preserve the 2×1 Wall, 2×2 Camp, 1×1 Post and current Wreck extent/center. Supply cached-region hooks to Claude instead of touching reserved renderer/gameplay files; the native-size asset board is not a claim of gameplay integration.
 
+## 2026-10-06: Starfall traveller silhouettes (PR #71)
+- Codex: three pale ivory/gold cloaks and small cyan brooches distinguish calm Lumen visitors from warm Kith, using the same miniature camera/materials; engine aura stays separate.
+- Keep the brief's 24 px figure target and a bottom-center foot anchor. Three appearance variants are not new named identities, ranks or simulation people.
+- A 12×14 px leather/blanket pack sits behind the existing expedition Kith pose; it shares the body's bob/facing and does not imply new cargo or movement mechanics. Existing four-pose fixture inspected; full Lumen walk cycles remain optional future work.
+
 ## 2026-10-06: Starfall title painting (PR #68)
 - Codex: use the approved Misty Highlands architecture and atmosphere for the title, with a warm Kith Hearth as the visual focus and a dark quiet left third under the menu.
 - Keep the Lumen star and distant Bloom growth as environmental hints; no text is baked into the image and no new lore is introduced.
