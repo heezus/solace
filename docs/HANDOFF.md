@@ -9,7 +9,15 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 - **Reserved files:** none after publication. PR #68 contains `art/rendered/title.png`, its generated import, native title captures, provenance and related notes. No gameplay or renderer edits.
 - **Acceptance criteria:** one approximately 2560×1600 / 16:10 painting matching Misty Highlands; warm Kith settlement first, a subtle cyan falling star and distant magenta/green Bloom hint; calm dark left third, no baked text; import succeeds and actual title menu remains readable at default and wider aspect ratios.
 - **Status:** title painted/imported and actual 1280×800 plus 1600×900 title captures inspected. Source is 1586×992, below the requested approximately 2560×1600 master; documented for review. PR #68 published; synchronized with current main, with fresh CI required.
-- **Next action:** Claude merges PR #68 once its current-head CI passes. Building PR #70 and traveller PR #71 have merged; icon PR #72 is synchronized. Claude will merge #72 first, then #68, after current-head CI passes.
+- **Next action:** Claude merges PR #68 once its current-head CI passes. Building PR #70, traveller PR #71, icon PR #72 and wiring PR #76 have merged. Title PR #68 is synchronized with main `e805ea8`; fresh CI is required. PR #75 stays held for Jon’s review.
+
+#### Delivered context — Starfall current icons (PR #72, merged)
+- **Task:** current Light/Standard/Heavy pack and Shard icons, four glyph gifts and six set-heading emblems from Jon's full Starfall art assignment. Branch `codex/starfall-icons`, PR #72.
+- **Reserved files:** none after publication. PR #72 supplies the icon PNG/import, measured regions, native preview and exact caller notes; no code edits.
+- **Acceptance criteria:** fourteen readable miniature illustrations at 24/32/40 px, exact grid/visible regions supplied, no baked text, glyph emblems decorative and distinct from the real twenty glyph marks; original transparent source and generated import, native preview.
+- **Status:** fourteen icons imported and native 24/32/40 px board inspected; Warning ring correction complete and neighbor-free subject bounds verified. Asset commit published, full CI pending. Map subjects #70 and travellers #71 merged; title #68 awaiting synchronization; current code hooks remain Claude's action.
+- **Next action:** inspect/import/publish the small icon PR and pass exact hooks to Claude; then moment/ending vignettes and Bloom sign. Later goods and unlisted magic techs remain deferred.
+- **Synchronization:** merged main `e797c39` on the mailbox request, preserving Claude’s lead-stranger notes and both design-log tails. Asset/code content unchanged by this reconciliation; current-head CI must pass before Claude merges and wires the art.
 
 #### Delivered context — Starfall travellers (PR #71, merged)
 - **Task:** current Lumen strangers and expedition pack overlay from Jon's 2026-10-06 Starfall assignment, branch `codex/starfall-travellers`, PR #71.
@@ -26,10 +34,10 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 - **Next action:** inspect each subject and native preview; publish this small asset PR and send Claude the exact loading/anchor contract. Then current character/item/icon/card/Bloom groups. Later/canon-pending slots remain deferred per the brief.
 - **Synchronization:** merged main `e797c39` on the mailbox request, preserving Claude’s lead-stranger notes and both design-log tails. Asset/code content unchanged by this reconciliation; current-head CI must pass before Claude merges and wires the art.
 
-### Claude — Starfall stage 4
-- **Task:** Jon's "whatever else is next" (2026-10-07). Page 16 stage 4: Lumen Market, Shared Shrine, Guard Post. Stage 3 (#64) and the title screen, pause menu and zoom (#66) are merged. PR `stage4`.
-- **Reserved files:** `scripts/starfall.gd`, `scripts/data/starfall.gd`, `scripts/data/buildings.gd`, `scripts/data/tuning.gd`, `scripts/bonuses.gd`, `scripts/buildings.gd`, `scripts/rendered_art.gd` (three placeholder slots), tests. Codex: please avoid these until it merges.
-- **Hooks for Codex:** art slots for stages 1 to 4 are in `docs/art/starfall-art-brief.md` and `docs/art/requests.md`; Jon starts Codex on them himself.
+### Claude — Starfall art wiring
+- **Task:** wire Codex's Starfall art (PRs #70 to #72) into the map and panels. PR `starfall-art-wiring`. Stage 4 (#69) and the lead stranger lines (#74) are merged.
+- **Reserved files:** `scripts/rendered_art.gd`, `scripts/kith_art.gd`, `scripts/icon_row.gd`, `scripts/expedition_picker.gd`, `scripts/glyph_picker.gd`, `tests/rendered_tests.gd`.
+- **Hooks for Codex:** title #68 and the Briana sprite and title (#75) are held for Jon's visual review; the lead stranger's sprite slot is index 0 of the strangers once accepted.
 - **Next action:** CI green, merge.
 
 ### Claude — gameplay asks (PR #44, merged) and the visual merge (PR #33, merged)

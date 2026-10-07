@@ -293,8 +293,8 @@ func test_the_post_and_wall_panels_say_things() -> void:
 	s.starfall.locked["light"] = true
 	wall.show_for(s.town.buildings[s.town.buildings.size() - 1])
 	var found := false
-	for c in wall.get_children():
-		found = found or (c is Label and c.text.contains(Data.LUMEN_GIFTS["light"]["name"]))
+	for c in wall.find_children("*", "Label", true, false):  # the gift line sits beside its icon
+		found = found or c.text.contains(Data.LUMEN_GIFTS["light"]["name"])
 	t.check(found, "and a read set shows its gift")
 	post.free()
 	wall.free()

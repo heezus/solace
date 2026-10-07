@@ -122,6 +122,30 @@ const REGIONS := {
 		[21, 533, 491, 408],
 		[512, 559, 512, 357],
 		[1024, 599, 497, 320]
+	],
+	# Starfall: one subject per image (docs/art/starfall-buildings, -travellers, -icons).
+	"starfall-glyph-wall": [[112, 318, 1061, 707]],
+	"starfall-lumen-camp": [[162, 272, 977, 713]],
+	"starfall-expedition-post": [[146, 122, 1059, 1026]],
+	"starfall-wreck": [[80, 110, 1647, 667]],
+	"starfall-lumen-strangers": [[307, 51, 319, 620], [891, 53, 368, 618], [1537, 57, 306, 614]],
+	"starfall-party-pack": [[279, 270, 733, 725]],
+	"starfall-icons":
+	[
+		[29, 64, 267, 244],
+		[332, 44, 294, 271],
+		[648, 29, 285, 289],
+		[1014, 62, 182, 248],
+		[26, 349, 275, 262],
+		[329, 344, 301, 280],
+		[665, 346, 284, 265],
+		[998, 332, 219, 292],
+		[25, 647, 271, 269],
+		[335, 646, 268, 270],
+		[649, 646, 271, 270],
+		[964, 646, 267, 270],
+		[31, 943, 268, 269],
+		[337, 943, 276, 269]
 	]
 }
 
@@ -158,16 +182,32 @@ const SINGLE_BUILDINGS := {
 	"trading_post": ["industry", 4],
 	"watchtower": ["industry", 5],
 	"stone_bridge": ["crossings-v2", 4],
-	# Era 3 stand-ins until Codex draws them (docs/art/requests.md): the Glyph Wall borrows the Standing Stone and the Lumen Camp
-	# the Gatherer's Hut.
-	"glyph_wall": ["workshops", 7],
-	"lumen_camp": ["buildings", 3],
-	"expedition_post": ["industry", 5],  # borrows the Watchtower
+	"glyph_wall": ["starfall-glyph-wall", 0],
+	"lumen_camp": ["starfall-lumen-camp", 0],
+	"expedition_post": ["starfall-expedition-post", 0],
 	# Stage 4 stand-ins: the Market borrows the Trading Post, the Guard Post the Watchtower, the shrine the Standing Stone.
 	"lumen_market": ["industry", 4],
 	"guard_post": ["industry", 5],
 	"shared_shrine": ["workshops", 7],
 }
+## The fourteen Starfall icons, in the order of the "starfall-icons" regions: the three packs (Starfall.PACKS keys), the Shard,
+## the four gifts (LUMEN_GIFTS keys) and the six glyph-set headings (GLYPH_SETS ids).
+const STARFALL_ICONS := [
+	"pack_light",
+	"pack_standard",
+	"pack_heavy",
+	"shard",
+	"gift_light",
+	"gift_body",
+	"gift_growth",
+	"gift_craft",
+	"set_name",
+	"set_light",
+	"set_body",
+	"set_growth",
+	"set_craft",
+	"set_warning"
+]
 const ITEM_IDS := [
 	"wood",
 	"stone",
@@ -252,6 +292,29 @@ static func building(ci: CanvasItem, type: String, box: Rect2) -> bool:
 	var p := Vector2i((box.position / 48.0).round())
 	fit(ci, sprite("buildings", BUILDINGS[type] + variant(p, 3, type.hash(), map_seed)), box.grow(-1.0))
 	return true
+
+
+## One of the fourteen Starfall icons (STARFALL_ICONS), or null for an id it does not know.
+static func icon(id: String) -> Texture2D:
+	var index := STARFALL_ICONS.find(id)
+	return sprite("starfall-icons", index) if index >= 0 else null
+
+
+## A Lumen stranger standing at `at` (the middle of its feet), one of three figures, drawn at the 24 px target.
+static func stranger(ci: CanvasItem, at: Vector2, index: int) -> void:
+	fit(ci, sprite("starfall-lumen-strangers", index % 3), Rect2(at + Vector2(-12, -24), Vector2(24, 24)))
+
+
+## The expedition pack behind a Kith standing at `at`, on the side the Kith faces away from.
+static func party_pack(ci: CanvasItem, at: Vector2, flip: bool) -> void:
+	var side := -1.0 if flip else 1.0
+	var box := Rect2(at + Vector2(3 * side - (12.0 if flip else 0.0), -21), Vector2(12, 14))
+	fit(ci, sprite("starfall-party-pack", 0), box)
+
+
+## The crash hull, in a centered 96x48 box at the 48 px tile.
+static func wreck(ci: CanvasItem, center: Vector2) -> void:
+	fit(ci, sprite("starfall-wreck", 0), Rect2(center - Vector2(48, 24), Vector2(96, 48)))
 
 
 static func named(name: String) -> Texture2D:
