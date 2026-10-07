@@ -10,10 +10,21 @@ const LANDING_DELAY := 20.0  # seconds of silence after the Falling Star card be
 const ARRIVAL_DELAY := 40.0  # seconds after it lands before the survivors walk out of the fog
 const SURVIVORS := 3
 const LANDED_LINE := "Something big came down to the east. The ground shook, then it was quiet again."
-const ARRIVED_GUESTS := "Three strangers walk out of the fog toward the Hearth. They stop at the edge of the light and wait to be asked in."
-const ARRIVED_WARY := "Three strangers come out of the fog and stop far from the Hearth. They watch the Kith and do not come closer."
+const ARRIVED_GUESTS := (
+	"Three strangers walk out of the fog toward the Hearth. The tall one, with long pale hair, waves first. "
+	+ "They stop at the edge of the light and wait to be asked in."
+)
+const ARRIVED_WARY := (
+	"Three strangers come out of the fog and stop far from the Hearth. The tall one, with long pale hair, "
+	+ "smiles at the Kith anyway. They do not come closer."
+)
 const STRANGERS_NAME := "the Starfallen"  # what the Kith call them until the name is read
 const LUMEN_NAME := "the Lumen"  # what they are called once the first set is read
+## The lead stranger (Jon, 2026-10-07): the tall Lumen with long pale hair, the first to trust the Kith and the voice of
+## the trust choices. Warm, playful, quick to tease, perceptive; glamorous at first sight, goofy and loyal once she trusts you.
+const LEAD_NAME := "Briana"
+# Her name twice.
+const LEAD_NAMED_LINE := 'The tall stranger taps her chest. "%s," she says, and waits. Then, delighted: "%s! Say it back!"'
 
 # --- Trust: a hidden number 0 to 100, never shown (the Lumen's behavior shows it) ---
 const TRUST_MAX := 100.0
@@ -292,6 +303,20 @@ const GLYPHS := {
 
 # --- The Lumen Camp (a place for the survivors) ---
 const CAMP_BUILT_LINE := "The strangers look at the Camp for a long time, then one of them sits down inside it."
+# --- Trade, the Guard Post and the shared shrine (stage 4): more buildings that move trust ---
+const MARKET_OPEN_TRUST := 8.0  # the Lumen will trade once this much trust stands (guests at once, the wary after a Camp)
+const MARKET_TRUST_PER_MINUTE := 0.6  # trade alone makes neighbours: it stops lifting trust here
+const MARKET_TRUST_CAP := 60.0
+const TRUST_SHRINE := 10.0  # the shared shrine goes up
+const TRUST_SHRINE_PER_MINUTE := 1.0
+const TRUST_GUARD := -6.0  # a Guard Post goes up
+const TRUST_GUARD_PER_MINUTE := -1.0
+const GUARD_RADIUS := 4.0  # tiles round a Guard Post where the Kith work a little faster
+const MARKET_OPEN_LINE := "One of the strangers holds out a hand with a small bright thing in it. They would trade."
+const MARKET_BUILT_LINE := "The strangers lay out what they have, and the Kith lay out what they have."
+const SHRINE_BUILT_LINE := "Both peoples leave something at the shrine. Nobody says whose it is."
+const GUARD_BUILT_LINE := "The strangers see the Guard Post and move their things a little farther from the Kith."
+
 const SURVIVOR_STAND := 6.0  # tiles from the Hearth when trust is 0 ...
 const SURVIVOR_CLOSE := 2.5  # ... and when it is full
 const SURVIVOR_AT_CAMP := 1.6  # tiles from a Lumen Camp, once one stands
@@ -386,6 +411,13 @@ const MOMENTS := {
 		"wait": 150.0,
 		"text":
 		"The strangers have eaten almost nothing for days. The smallest one cannot stand. They will not ask. They only look at the stores.",
+		"says":
+		(
+			'"We\'re fine," says '
+			+ LEAD_NAME
+			+ ", which is a lie, and she knows you know. \"Okay, a little hungry. We'd never ask. "
+			+ "I'm just standing very near your food. Casually.\""
+		),
 		"options":
 		[
 			{
@@ -395,14 +427,23 @@ const MOMENTS := {
 				"trust": 14.0,
 				"food": 40.0,
 				"line":
-				"The Kith set bowls down in front of the strangers. Nobody speaks. The smallest one eats first.",
+				(
+					"The Kith set bowls down in front of the strangers. The smallest one eats first. "
+					+ LEAD_NAME
+					+ ' laughs, wipes her eyes and hugs the nearest Kith so hard they squeak. "You are officially my favourites."'
+				),
 			},
 			{
 				"label": "Hold it back",
 				"note": "Keeps the food. They will remember this too.",
 				"story": "hunger_held",
 				"trust": -12.0,
-				"line": "The Kith keep the stores. The strangers turn away from the Hearth, one by one.",
+				"line":
+				(
+					"The Kith keep the stores. "
+					+ LEAD_NAME
+					+ ' keeps smiling, but it stops reaching her eyes. "No, I understand. Everyone is careful with strangers."'
+				),
 			},
 		],
 	},
@@ -413,6 +454,12 @@ const MOMENTS := {
 		"wait": 120.0,
 		"text":
 		"The strangers kneel at the Cairn and touch the shards. Then they hold out their hands to the Kith. They are asking.",
+		"says":
+		(
+			LEAD_NAME
+			+ ' touches the Cairn as if it were alive. "Oh, you have been looking after it." She looks up. '
+			+ '"Could I borrow some? I promise I am better at sharing than I look."'
+		),
 		"options":
 		[
 			{
@@ -422,7 +469,11 @@ const MOMENTS := {
 				"trust": 14.0,
 				"dim": 150.0,
 				"line":
-				"The Kith step back from the Cairn. The strangers carry shards away in their cloaks, and the glow dims.",
+				(
+					"The Kith step back from the Cairn. The strangers carry shards away in their cloaks, and the glow dims. "
+					+ LEAD_NAME
+					+ ' squeezes a Kith hand. "I owe you one. I always pay back, and I make it fun."'
+				),
 			},
 			{
 				"label": "Trade",
@@ -431,14 +482,23 @@ const MOMENTS := {
 				"trust": 5.0,
 				"dim": 60.0,
 				"line":
-				"The Kith lay out food and rope beside the Cairn. The strangers take one shard and leave the rest.",
+				(
+					"The Kith lay out food and rope beside the Cairn. The strangers take one shard and leave the rest. "
+					+ LEAD_NAME
+					+ ' grins. "A bargain! I like you. You know what things are worth."'
+				),
 			},
 			{
 				"label": "Refuse",
 				"note": "The Cairn keeps its light. Trust drops.",
 				"story": "shards_refused",
 				"trust": -10.0,
-				"line": "The Kith stand in front of the Cairn. The strangers lower their hands, and say nothing.",
+				"line":
+				(
+					"The Kith stand in front of the Cairn. The strangers lower their hands. "
+					+ LEAD_NAME
+					+ " lets her smile thin. \"Fair. You really don't have to look at me like that. I wasn't going to run off with it.\""
+				),
 			},
 		],
 	},
@@ -449,6 +509,12 @@ const MOMENTS := {
 		"wait": 90.0,
 		"text":
 		"They point at the smoke over the kilns, then at the east, then they put a finger to their lips. They want the Kith to go dark.",
+		"says":
+		(
+			LEAD_NAME
+			+ "'s smile is gone, and it is strange to see it gone. She says the Kith word for quiet, badly. "
+			+ '"Quiet. Please. Quiet."'
+		),
 		"options":
 		[
 			{
@@ -457,14 +523,24 @@ const MOMENTS := {
 				"story": "dark_kept",
 				"trust": 14.0,
 				"dark": 90.0,
-				"line": "The Kith bank the kilns and keep the Hearth low. The strangers sit very still and listen.",
+				"line":
+				(
+					"The Kith bank the kilns and keep the Hearth low. The strangers sit very still and listen. "
+					+ LEAD_NAME
+					+ ' lets out a long breath and laughs, shakily. "You didn\'t even ask why. I could cry."'
+				),
 			},
 			{
 				"label": "Keep working",
 				"note": "The fires stay lit. Trust drops.",
 				"story": "dark_refused",
 				"trust": -12.0,
-				"line": "The Kith keep their fires. The strangers watch the east, and flinch at every spark.",
+				"line":
+				(
+					"The Kith keep their fires. The strangers watch the east, and flinch at every spark. "
+					+ LEAD_NAME
+					+ " sits down hard in the grass and stops teasing, which is worse than any words."
+				),
 			},
 		],
 	},
@@ -491,6 +567,11 @@ const ENDING_TITLE := "They Came to Hide"
 const ENDING_TEXT := (
 	"The strangers say the word at last, and the Kith understand why they ran. "
 	+ "Something is following them. It is slow, and it does not stop."
+)
+const ENDING_SAYS := (
+	LEAD_NAME
+	+ ' says it softly. "We did not come here to live. We came to hide. I am sorry. I should have told you sooner, '
+	+ 'but you were so kind, and I did not want it to be true yet."'
 )
 const ENDING_NOTE := "The Bloom has been seen. The game goes on."
 const ENDING_BUTTON := "Keep building"

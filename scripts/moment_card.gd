@@ -52,6 +52,9 @@ func open(f) -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_box.add_child(title)
 	_box.add_child(_wrapped(Data.ENDING_TEXT if ending else Data.MOMENTS[f.pending]["text"], 18, Ui.TEXT))
+	var says: String = Data.ENDING_SAYS if ending else Data.MOMENTS[f.pending].get("says", "")
+	if says != "":
+		_box.add_child(_wrapped(says, 18, Ui.HIGHLIGHT))  # the lead stranger's voice
 	if ending:
 		_box.add_child(_wrapped(Data.ENDING_NOTE, Ui.MIN_TEXT, Ui.TEXT_DIM))
 	var options: Array = f.pending_options()

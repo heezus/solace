@@ -163,6 +163,10 @@ const SINGLE_BUILDINGS := {
 	"glyph_wall": ["workshops", 7],
 	"lumen_camp": ["buildings", 3],
 	"expedition_post": ["industry", 5],  # borrows the Watchtower
+	# Stage 4 stand-ins: the Market borrows the Trading Post, the Guard Post the Watchtower, the shrine the Standing Stone.
+	"lumen_market": ["industry", 4],
+	"guard_post": ["industry", 5],
+	"shared_shrine": ["workshops", 7],
 }
 const ITEM_IDS := [
 	"wood",
