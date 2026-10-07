@@ -1,12 +1,22 @@
 # Starfall art brief
 
-For Codex, written by Claude on 2026-10-07 at Jon's ask. It gathers every picture the Starfall era (era 3, [page 16](../design-system/16-starfall.md)) needs, so one pass can cover the whole span. Stages 1 and 2 are playable on main with placeholders; stage 3 (three moments, the Warning, the ending, the first Bloom sign) is on its way, and slots for what comes after are marked **later**. It covers the whole era: characters, buildings, materials, tech icons and cards. Jon brings Codex in himself; nothing here is urgent until he says go. Per-slot notes also live in [requests.md](requests.md).
+For Codex, written by Claude on 2026-10-07 at Jon's ask. It gathers every picture the Starfall era (era 3, [page 16](../design-system/16-starfall.md)) needs, so one pass can cover the whole span. Stages 1 and 2 are playable on main with placeholders; stage 3 (three moments, the Warning, the ending, the first Bloom sign) is in review, and slots for what comes after are marked **later**. It covers the whole era: characters, buildings, materials, tech icons and cards. Jon brings Codex in himself; nothing here is urgent until he says go. Per-slot notes also live in [requests.md](requests.md).
 
 ## The mood
 Starfall is **strangers and meaning**: hopeful at first, then ominous once the Bloom is felt. The Kith stay warm and earthy (the Misty Highlands look on main). The **Lumen** are the visitors: pale gold and soft cyan starlight (`lumen-glow`, about `#9fd8e8`), calm, a little unearthly, never sci-fi chrome. Their light is gentle and cool against the Kith's warm firelight. The **Bloom** (later) is magenta and sickly green, and only hinted at: a strange patch at the edge of the fog.
 
 ## How art gets into the game
 Same as the overhaul: transparent PNG atlases, regions listed in `scripts/rendered_art.gd`, drawn code in `scripts/kith_art.gd` for things that are not buildings. Footprints are fixed by game rules; keep them. Placeholders are drawn today, so any slot can be replaced independently. A new region or sprite slot may need a small code change from Claude: ask in requests.md.
+
+## The title screen (Jon, 2026-10-07)
+The first thing the game shows. Claude is building the screen (title, save and zoom PR) with a drawn stand-in: a dusk over misty highland, a Kith fire, a pale cyan falling star and a faint magenta-and-green glow in the east. It picks up a painting by name, no code change: **`art/rendered/title.png`** (with its Godot `.import` file, like the other `art/rendered` PNGs). Jon likes the misty-highlands renderings made before (start from [the village, river and resource studies, the engine settlement captures and the blended regions](overhaul/misty-highlands/README.md)).
+- One image, 16:10, about 2560x1600. It is scaled to cover the window, so keep the important parts away from the edges.
+- The menu sits on the **left 440 px at 1280 wide** (about the left third): keep that side calm and darker so the name and three buttons read over it.
+- Show the Kith first: a settlement with a warm hearth fire at dusk. Then three hints, none of them explained: a pale cyan star falling in the sky (the Lumen), and a faint magenta-and-green glow with thin reaching growth low on the eastern horizon (the Bloom). The Kith are the hero; the others are only a promise.
+- No text in the image. The name and buttons are drawn by the game.
+
+**Paste-ready message for Codex (Jon: copy this):**
+> Jon wants a title screen painting for Solace. Read docs/art/starfall-art-brief.md, the section "The title screen". Start from the misty-highlands renderings we made before (docs/art/overhaul/misty-highlands). Make one 16:10 painted image, about 2560x1600, at art/rendered/title.png with its Godot .import file. A Kith settlement with a warm hearth fire in misty highland at dusk; a pale cyan star falling in the sky (the Lumen); and a faint magenta and green glow with thin reaching growth low on the eastern horizon (the Bloom), as hints only. Keep the left third calm and dark, because the menu sits there. No text in the image. The game loads the file by name, so no code change is needed. Work on a codex/ branch and open a PR.
 
 ## Slots playable now (stages 1 and 2)
 | Slot | Footprint | Now | What it should be |
