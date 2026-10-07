@@ -9,6 +9,8 @@ extends RefCounted
 ## Stage 3 adds three moments the strangers ask (Data.MOMENTS: the Hunger, the Shards, the Warning), each a card with a
 ## choice that moves trust, and the end of the era: the sixth set, the Warning, ends it with the lean (allies, neighbours or
 ## enemies, read off trust) and the first Bloom sign in the east.
+## Stage 4 adds the Lumen Market (trade, open once the Lumen would trade), the shared shrine and the Guard Post: the first
+## two lift trust, the last wears it down and speeds the Kith round it (Bonuses).
 ## Signals: said(message) is a line for the event log; moment(id) is a story moment (Data.STORY_EVENTS) for Story.
 
 signal said(message: String)
@@ -17,6 +19,9 @@ signal moment(id: String)
 const Data = preload("res://scripts/data.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Economy = preload("res://scripts/economy.gd")
+
+## The story id a stage 4 building records the first time it stands (the Market has its own: market_open).
+const STAND_STORY := {"shared_shrine": "shrine_raised", "guard_post": "guard_raised"}
 
 var stage := ""  # "" before the star falls, then "falling", "landed" and "arrived"
 var clock := 0.0  # seconds in the stage (falling and landed)
@@ -28,6 +33,7 @@ var locked: Dictionary = {}  # set id (Data.GLYPH_SETS' "id") -> true once the s
 var copy_clock := 0.0
 var check_clock := 0.0
 var camp_seen := false  # the Lumen Camp has been counted once (the one-time trust step)
+var seen: Dictionary = {}  # the shrine, Guard Post and Market counted once, and "market_open" once the Lumen would trade
 var wreck := Vector2i(-1, -1)  # where the ship came down (set when the star falls): hidden in the fog until a party reaches it
 var wreck_found := false
 var post_clock := 0.0  # seconds since a standing order last looked for a chance to send (Expedition.auto)
@@ -116,6 +122,35 @@ func _tick_arrived(delta: float) -> void:
 			nudge(Data.TRUST_CAMP)
 			said.emit(Data.CAMP_BUILT_LINE)
 		nudge(Data.TRUST_CAMP_PER_MINUTE * delta / 60.0)
+	_tick_standing(delta)
+
+
+## The stage 4 buildings that move trust. The Lumen would trade once the name is read and trust has reached
+## Data.MARKET_OPEN_TRUST, which opens the Market card. A standing Market lifts trust only to a ceiling (trade alone
+## makes neighbours), the shrine lifts it for good and the Guard Post wears it down.
+func _tick_standing(delta: float) -> void:
+	if not seen.has("market_open") and locked.has(Data.GLYPH_SETS[1]["id"]) and trust >= Data.MARKET_OPEN_TRUST:
+		seen["market_open"] = true
+		said.emit(Data.MARKET_OPEN_LINE)
+		moment.emit("market_open")
+	_stand("lumen_market", 0.0, Data.MARKET_TRUST_PER_MINUTE, Data.MARKET_BUILT_LINE, delta, Data.MARKET_TRUST_CAP)
+	_stand("shared_shrine", Data.TRUST_SHRINE, Data.TRUST_SHRINE_PER_MINUTE, Data.SHRINE_BUILT_LINE, delta)
+	_stand("guard_post", Data.TRUST_GUARD, Data.TRUST_GUARD_PER_MINUTE, Data.GUARD_BUILT_LINE, delta)
+
+
+## A building that moves trust: counted once when it first stands (a step, a line, a story id), then a little each minute.
+## A rise stops at `cap`, a fall never does.
+func _stand(type: String, step: float, per_minute: float, line: String, delta: float, cap := Data.TRUST_MAX) -> void:
+	if not has_building(type):
+		return
+	if not seen.has(type):
+		seen[type] = true
+		nudge(step)
+		said.emit(line)
+		if Data.STORY_EVENTS.has(STAND_STORY.get(type, "")):
+			moment.emit(STAND_STORY[type])
+	if per_minute < 0.0 or trust < cap:
+		nudge(per_minute * delta / 60.0)
 
 
 ## The next moment to ask, "" when none is left (or the era is over).
@@ -242,6 +277,7 @@ func check() -> bool:
 			read = true
 			if n == 1:
 				said.emit(Data.READ_LINE % Data.LUMEN_NAME)
+				said.emit(Data.LEAD_NAMED_LINE % [Data.LEAD_NAME, Data.LEAD_NAME])
 			elif gset["id"] == Data.ENDING_SET:
 				_end_era()
 			else:
@@ -390,6 +426,7 @@ func to_dict() -> Dictionary:
 		"copy_clock": snappedf(copy_clock, 0.001),
 		"check_clock": snappedf(check_clock, 0.001),
 		"camp_seen": camp_seen,
+		"seen": seen.duplicate(),
 		"wreck": [wreck.x, wreck.y],
 		"wreck_found": wreck_found,
 		"orders": orders.duplicate(),
@@ -421,6 +458,9 @@ func from_dict(d: Dictionary) -> void:
 	copy_clock = float(d.get("copy_clock", 0.0))
 	check_clock = float(d.get("check_clock", 0.0))
 	camp_seen = bool(d.get("camp_seen", false))
+	seen = {}
+	for k in d.get("seen", {}):
+		seen[String(k)] = true
 	var w: Array = d.get("wreck", [-1, -1])
 	wreck = Vector2i(int(w[0]), int(w[1]))
 	wreck_found = bool(d.get("wreck_found", false))
