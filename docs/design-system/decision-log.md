@@ -713,6 +713,19 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Codex: match the merged title loader with `title_alt.png` and rename the map art to `lumen_lead.png`; regenerate imports.
 - Use Sela and a Kith character in study folders and prompt records; remove personal names, reference-photo descriptions and local account paths. Artwork and its pixel data stay unchanged.
 
+## 2026-10-07: Sela's sprite and the alternate title go in (PR #78)
+- Claude: the project owner accepted the alternate title and Sela's sprite from #75. Sela draws as stranger 0 of the three Lumen (her own one-pose sprite); the title already picks between the two paintings at random.
+- The project owner closed the terrain study (#48) unmerged and confirmed **coal is finite** in Ironfall (about 500 a seam), as page 19 proposed.
+
+## 2026-10-07: Cutscenes tie the eras into one story (PR #79)
+- Claude: on the project owner's ask, the game gets short, skippable painted sequences instead of eras that just start. Page 20 holds the story spine, 12 sequences (a still has 1 to 3 lines, a slow push-in, no voice) and three phases: A for the eras that exist, B with Ironfall, C later.
+- Cutscenes are full-screen sequences between play; the vignettes in Codex's #73 stay single images on choice cards, and their Sela, Bloom-sign and arrival art is reused as stills.
+- The project owner chose that **every run plays every sequence in full** (skip is always there, and the pause menu can turn them off). Art not painted yet falls back to the lines over a dark panel.
+- The project owner also confirmed (2026-10-07, on a card) that Ironfall's Lessons are a **finite list** (about 8, one per part), as page 19 proposed.
+- The project owner also chose (2026-10-07, on a card) that Ironfall's map grows **twice**: south on Ironstone, then (Claude's default) west on Rails, which holds the Bloom patches and the rail room.
+- The project owner asked that repeat runs hint at what carried over. Page 20 now has variant lines (one swapped line, chosen from the profile's resets and echoes) and five transparent memory overlays that sit over any still, so no still is painted twice.
+- The project owner also confirmed (2026-10-07, on a card) that the Beast Pen and beast cart ship in Ironfall as one optional branch (stage 3). That closes every Ironfall fork on page 19; stage 1 can be built.
+
 ## 2026-10-07: Stage starts, save slots and debug keys (PR #80)
 - Claude follows the project owner's ask to test and debug from any stage: a new run can begin at eight stages (Stone Age to just before the Starfall ending) on a fixed map with the town built. There is no separate dev build; the starts ship in the normal game, on the Load screen next to the player's own saves.
 - Starts are built on demand, never committed: the pacing bots play to the boundary and a small script sets up the Starfall stages, so they stay deterministic and follow the balance. A start is read-only; Save writes only to one of five slots (a slot file is a run save plus a `meta` key, so the save version is unchanged, and the old single save moves into a slot).

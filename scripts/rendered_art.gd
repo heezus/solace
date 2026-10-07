@@ -229,6 +229,9 @@ const ITEM_IDS := [
 	"bronze_tools"
 ]
 
+const LEAD_SPRITE_PATH := "res://art/sprites/lumen_lead.png"
+const LEAD_SPRITE_REGION := Rect2(277, 92, 524, 1333)
+
 static var map_seed := 0
 static var _textures := {}
 static var _sheets := {}
@@ -302,7 +305,19 @@ static func icon(id: String) -> Texture2D:
 
 ## A Lumen stranger standing at `at` (the middle of its feet), one of three figures, drawn at the 24 px target.
 static func stranger(ci: CanvasItem, at: Vector2, index: int) -> void:
-	fit(ci, sprite("starfall-lumen-strangers", index % 3), Rect2(at + Vector2(-12, -24), Vector2(24, 24)))
+	var tex: Texture2D = lead_sprite() if index % 3 == 0 else sprite("starfall-lumen-strangers", index % 3)
+	fit(ci, tex, Rect2(at + Vector2(-12, -24), Vector2(24, 24)))
+
+
+## Sela, the lead stranger (stranger 0): her own one-pose sprite, cut from art/sprites/lumen_lead.png.
+static func lead_sprite() -> AtlasTexture:
+	if not _textures.has("lead"):
+		var tex := AtlasTexture.new()
+		tex.atlas = load(LEAD_SPRITE_PATH) as Texture2D
+		tex.region = LEAD_SPRITE_REGION
+		tex.filter_clip = true
+		_textures["lead"] = tex
+	return _textures["lead"]
 
 
 ## The expedition pack behind a Kith standing at `at`, on the side the Kith faces away from.

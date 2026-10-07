@@ -100,9 +100,9 @@ Three stages, each its own PR with placeholder art and the art slots logged in `
 3. **Steam and the end.** Boiler, Rails, Forge, Steel, the Shard Boiler, Bloom Sampling, the Beast Pen, the gate and the end card.
 
 ## Open (defaults stand until the project owner says otherwise)
-- **Are Lessons a finite list** (about 8, each from a part) **or repeatable.** *Default:* finite.
-- **Is coal finite.** *Default:* yes, about 500 a seam, so the Shard Boiler matters.
-- **Where does the map grow.** *Default:* once, to the south, on Ironstone.
-- **Do beasts ship in this era.** *Default:* yes, as one optional branch.
+- **Are Lessons a finite list** (about 8, each from a part) **or repeatable.** *Decided (the project owner, 2026-10-07):* a finite list.
+- **Is coal finite.** *Decided (the project owner, 2026-10-07):* yes, about 500 a seam, so the Shard Boiler matters.
+- **Where does the map grow.** *Decided (the project owner, 2026-10-07):* twice. The first growth is to the south on Ironstone (coal and iron). *Default for the second:* to the west when Rails is learned (stage 3), with room for the rails and the three Bloom patches, under fog like the others.
+- **Do beasts ship in this era.** *Decided (the project owner, 2026-10-07):* yes, as one optional branch (stage 3).
 - Costs, wear and the Lesson numbers are tuned with the pacing bot, not a human playthrough.
 - The Bloom patches here are signs. Anything that changes the Bloom's nature or what the resets mean goes to [open-questions](open-questions.md) first.
