@@ -55,6 +55,7 @@ const ExpeditionTests = preload("res://tests/expedition_tests.gd")
 const EndingTests = preload("res://tests/ending_tests.gd")
 const TradeTests = preload("res://tests/trade_tests.gd")
 const TitleTests = preload("res://tests/title_tests.gd")
+const DevTests = preload("res://tests/dev_tests.gd")
 const HomesTests = preload("res://tests/homes_tests.gd")
 const World = preload("res://scripts/world.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
@@ -92,6 +93,12 @@ func _init() -> void:
 		EndingTests.new().run(self)
 		TradeTests.new().run(self)
 		print("FAILED: %d" % failures if failures > 0 else "STARFALL TESTS PASSED")
+		quit(1 if failures > 0 else 0)
+		return
+	if "starts" in OS.get_cmdline_user_args():  # `-- starts` runs only the stage starts' tests (the bots play, so minutes)
+		DevTests.new().run(self)
+		DevTests.new().run_starts(self)
+		print("FAILED: %d" % failures if failures > 0 else "STARTS TESTS PASSED")
 		quit(1 if failures > 0 else 0)
 		return
 	if "forks" in OS.get_cmdline_user_args():  # `-- forks` runs only the fork tests while iterating
@@ -180,6 +187,7 @@ func _init() -> void:
 	EndingTests.new().run(self)
 	TradeTests.new().run(self)
 	TitleTests.new().run(self)
+	DevTests.new().run(self)
 	HomesTests.new().run(self)
 	NewcomerTests.new().run(self)
 	UiTests.new().run(self)
@@ -188,6 +196,7 @@ func _init() -> void:
 		test_pacing_bot()
 		StoneStallTests.new().run(self)
 		SaveTests.new().run_system(self)
+		DevTests.new().run_starts(self)  # builds every stage start: the bots play to each, so minutes
 	RenderedTests.new().run(self)
 	print("FAILED: %d" % failures if failures > 0 else "ALL TESTS PASSED")
 	quit(1 if failures > 0 else 0)

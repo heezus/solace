@@ -1,6 +1,7 @@
 extends RefCounted
 ## The title screen, the pause menu, the game menu and the Launch flag. Run from tests/run_tests.gd, which owns check().
-## What needs a running scene (zoom, Esc, Save then Load) is in tests/tools/menu_pass.gd.
+## What needs a running scene (zoom, Esc, Save then Load) is in tests/tools/menu_pass.gd. The slots themselves are in
+## tests/dev_tests.gd.
 
 const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
@@ -9,8 +10,10 @@ const Launch = preload("res://scripts/launch.gd")
 const TitleScreen = preload("res://scripts/title_screen.gd")
 const PauseMenu = preload("res://scripts/pause_menu.gd")
 const GameMenu = preload("res://scripts/game_menu.gd")
+const SaveSlots = preload("res://scripts/save_slots.gd")
 
 const TEMP_SAVE := "user://test_title_run.json"
+const TEMP_DIR := "user://test_title_slots/"  # the slots the title and menu tests use, apart from the player's
 
 var t  # the runner, tests/run_tests.gd
 
@@ -18,12 +21,12 @@ var t  # the runner, tests/run_tests.gd
 func run(runner) -> void:
 	t = runner
 	test_the_words_are_there()
-	test_launch_asks_once()
 	test_the_title_offers_continue_only_with_a_save()
 	test_the_title_picks_a_painting()
 	test_the_pause_menu_has_its_buttons()
 	test_saving_and_loading_a_run()
 	test_the_game_menu_saves_and_pauses()
+	_remove_dir()
 
 
 func test_the_title_picks_a_painting() -> void:
@@ -40,6 +43,15 @@ func test_the_title_picks_a_painting() -> void:
 func _clean() -> void:
 	if FileAccess.file_exists(TEMP_SAVE):
 		DirAccess.remove_absolute(TEMP_SAVE)
+	_remove_dir()
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(TEMP_DIR))
+
+
+func _remove_dir() -> void:
+	if DirAccess.dir_exists_absolute(TEMP_DIR):
+		for f in DirAccess.get_files_at(TEMP_DIR):
+			DirAccess.remove_absolute(TEMP_DIR + f)
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(TEMP_DIR))
 
 
 func _buttons(node: Node) -> Array:
@@ -63,27 +75,28 @@ func test_the_words_are_there() -> void:
 	t.check(ResourceLoader.exists("res://scenes/main.tscn"), "and the game scene is still there")
 
 
-func test_launch_asks_once() -> void:
-	t.check(not Launch.take_load(), "a game starts new unless asked")
-	Launch.ask_to_load()
-	t.check(Launch.take_load() and not Launch.take_load(), "an ask to load is read once")
-
-
 func test_the_title_offers_continue_only_with_a_save() -> void:
 	_clean()
 	var title := TitleScreen.new()
-	title.save_path = TEMP_SAVE
+	title.slot_dir = TEMP_DIR
 	title._ready()
 	var buttons := _buttons(title)
-	t.check(buttons.size() >= 2, "Continue and New game are there")
+	t.check(buttons.size() >= 4, "Continue, New game, Load game and Quit are there")
 	t.check(buttons[0].disabled and buttons[0].text == Data.TITLE_NO_SAVE, "with no save, Continue is off and says why")
 	t.check(not buttons[1].disabled and buttons[1].text == Data.TITLE_NEW, "New game is on")
+	t.check(
+		not buttons[2].disabled and buttons[2].text == Data.TITLE_LOAD,
+		"Load game is on: the stage starts are always there"
+	)
+	t.check(not title.slots.visible, "and the Load screen is put away")
+	buttons[2].pressed.emit()
+	t.check(title.slots.visible and title.slots.mode == "load", "Load game opens the Load screen")
 	title.free()
 	var s := Sim.new()
 	s.generate(3)
-	t.check(RunSave.save(s, TEMP_SAVE), "a run saves")
+	t.check(SaveSlots.save(s, 3, TEMP_DIR), "a run saves")
 	var again := TitleScreen.new()
-	again.save_path = TEMP_SAVE
+	again.slot_dir = TEMP_DIR
 	again._ready()
 	var buttons2 := _buttons(again)
 	t.check(not buttons2[0].disabled and buttons2[0].text == Data.TITLE_CONTINUE, "with a save, Continue is on")
@@ -94,28 +107,24 @@ func test_the_title_offers_continue_only_with_a_save() -> void:
 func test_the_pause_menu_has_its_buttons() -> void:
 	_clean()
 	var menu := PauseMenu.new()
-	menu.save_path = TEMP_SAVE
 	menu.setup()
 	t.check(not menu.visible, "it starts closed")
 	menu.open()
-	t.check(menu.visible and menu.load_button.disabled, "open, with no save, Load is off")
+	t.check(menu.visible and not menu.load_button.disabled, "open, Load is on: the stage starts are always there")
+	t.check(not menu.debug_toggle.button_pressed, "and the debug keys are off")
 	var got := []
 	menu.resumed.connect(func(): got.append("resume"))
 	menu.save_pressed.connect(func(): got.append("save"))
 	menu.load_pressed.connect(func(): got.append("load"))
 	menu.quit_pressed.connect(func(): got.append("quit"))
 	var buttons := _buttons(menu)
-	t.check(buttons.size() == 4, "Resume, Save, Load and Quit")
+	t.check(buttons.size() == 5, "Resume, Save, Load, Quit and the debug keys switch")
 	for b in buttons:
-		if not b.disabled:
+		if b != menu.debug_toggle:
 			b.pressed.emit()
-	t.check(got == ["resume", "save", "quit"], "each live button says what was pressed: %s" % [got])
+	t.check(got == ["resume", "save", "load", "quit"], "each button says what was pressed: %s" % [got])
 	t.check(not menu.visible, "Resume puts it away")
-	var s := Sim.new()
-	s.generate(3)
-	RunSave.save(s, TEMP_SAVE)
 	menu.open()
-	t.check(not menu.load_button.disabled, "with a save, Load is on")
 	menu.say("Game saved.")
 	t.check(menu.status.text == "Game saved.", "the menu can say what happened")
 	menu.free()
@@ -155,17 +164,27 @@ func test_the_game_menu_saves_and_pauses() -> void:
 	var s := Sim.new()
 	s.generate(5)
 	var menu := GameMenu.new()
-	menu.save_path = TEMP_SAVE
+	menu.slot_dir = TEMP_DIR
 	menu.setup(s)
 	var pauses := []
 	menu.paused_changed.connect(func(on): pauses.append(on))
 	t.check(not menu.is_open(), "closed to begin with")
 	menu.open()
 	t.check(menu.is_open() and pauses == [true], "opening pauses the game")
-	t.check(not menu.load_game(), "Load with no save does nothing")
-	t.check(menu.menu.status.text == Data.LOAD_NONE, "and says so")
-	t.check(menu.save_game() and RunSave.exists(TEMP_SAVE), "Save writes the run")
-	t.check(menu.menu.status.text == Data.SAVE_DONE, "and says so")
+	t.check(not menu.load_game(1), "Loading an empty slot does nothing")
+	t.check(menu.menu.status.text == Data.LOAD_BAD_SLOT, "and says so")
+	menu.menu.save_pressed.emit()
+	t.check(menu.slots.visible and menu.slots.mode == "save", "Save opens the slots to pick from")
+	menu.close()
+	t.check(
+		not menu.slots.visible and menu.is_open() and pauses == [true], "Esc puts the slots away first, not the menu"
+	)
+	t.check(menu.save_game(2) and not SaveSlots.read(2, TEMP_DIR).is_empty(), "Save writes the run into the slot")
+	t.check(menu.menu.status.text == Data.SAVE_SLOT_DONE % 2, "and says which")
+	t.check(SaveSlots.filled(TEMP_DIR) == [2], "and into that one only")
+	menu.menu.load_pressed.emit()
+	t.check(menu.slots.visible and menu.slots.mode == "load", "Load opens the Load screen")
+	menu.close()
 	menu.close()
 	t.check(not menu.is_open() and pauses == [true, false], "closing lets the game go on")
 	menu.free()

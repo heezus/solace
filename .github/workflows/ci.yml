@@ -2,6 +2,8 @@ name: CI
 
 # A push or pull request that only touches docs or Markdown skips the run (the mailbox PR, design pages, art notes).
 on:
+  # Manual runs, for when a push event goes missing (it happens after a GitHub error).
+  workflow_dispatch:
   push:
     branches: [main]
     paths-ignore:

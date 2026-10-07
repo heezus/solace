@@ -35,6 +35,7 @@ The source of truth for our game's universe. If something is written here, it's 
 18. [Roadmap](18-roadmap.md): the eras after Starfall, the Bloom and the three resets, with every open fork and its default (proposal, nothing built)
 19. [Ironfall](19-ironfall.md): era 4 in detail, the Teardown mechanic, iron and steam, a 16-tech tree, the Lessons list, the Bloom patches and how it is built in three stages (designed, not built)
 20. [Cutscenes](20-cutscenes.md): short skippable painted sequences that tie the eras into one story, the story spine, the sequence list, art rules and how they play (proposal, nothing built)
+21. [Stage starts, save slots and debug keys](21-stage-starts.md): begin a new run at any stage on a fixed map with the town built, five save slots, and the F1 to F4 debug keys (built)
 - [Decision Log](decision-log.md)
 
 ### Mockups (visual specs from the visual design thread)

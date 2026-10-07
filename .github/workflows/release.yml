@@ -44,6 +44,13 @@ jobs:
       - name: Import project
         run: ./godot --headless --path . --import
 
+      # The bots that make the later stage starts take minutes, so they run here once and both builds ship the result
+      # (stage_starts/ is not in the repo; the game falls back to building a start on demand without it).
+      - name: Bake the stage starts
+        run: |
+          ./godot --headless --path . -s tests/tools/bake_starts.gd
+          ls -l stage_starts
+
       - name: Export Windows build
         run: |
           mkdir -p build
