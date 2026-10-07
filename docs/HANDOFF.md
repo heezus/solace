@@ -4,7 +4,14 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 
 ## Active work
 
-### Codex — Starfall current icons
+### Codex — Starfall title painting
+- **Task:** Jon's 2026-10-06 full Starfall art assignment, starting with the title painting on `codex/starfall-title`, PR #68. Keep each asset group in a separate small PR; later/canon-pending slots stay deferred as stated in the brief.
+- **Reserved files:** none after publication. PR #68 contains `art/rendered/title.png`, its generated import, native title captures, provenance and related notes. No gameplay or renderer edits.
+- **Acceptance criteria:** one approximately 2560×1600 / 16:10 painting matching Misty Highlands; warm Kith settlement first, a subtle cyan falling star and distant magenta/green Bloom hint; calm dark left third, no baked text; import succeeds and actual title menu remains readable at default and wider aspect ratios.
+- **Status:** title painted/imported and actual 1280×800 plus 1600×900 title captures inspected. Source is 1586×992, below the requested approximately 2560×1600 master; documented for review. PR #68 published; synchronized with current main, with fresh CI required.
+- **Next action:** Claude merges PR #68 once its current-head CI passes. Building PR #70, traveller PR #71, icon PR #72 and wiring PR #76 have merged. Title PR #68 is synchronized with main `e805ea8`; fresh CI is required. PR #75 stays held for Jon’s review.
+
+#### Delivered context — Starfall current icons (PR #72, merged)
 - **Task:** current Light/Standard/Heavy pack and Shard icons, four glyph gifts and six set-heading emblems from Jon's full Starfall art assignment. Branch `codex/starfall-icons`, PR #72.
 - **Reserved files:** none after publication. PR #72 supplies the icon PNG/import, measured regions, native preview and exact caller notes; no code edits.
 - **Acceptance criteria:** fourteen readable miniature illustrations at 24/32/40 px, exact grid/visible regions supplied, no baked text, glyph emblems decorative and distinct from the real twenty glyph marks; original transparent source and generated import, native preview.
@@ -25,7 +32,7 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 - **Acceptance criteria:** original transparent miniature subjects, consistent camera/light, tight ground contact, existing logical footprints and IDs documented, native-size side-by-side preview against current buildings; imported metadata and green CI. Claude hooks listed in requests.md; no state or loader changes in this art-only group.
 - **Status:** four transparent subjects imported and their 48 px/96 px tile-scale asset board inspected. Source/alpha/region contract supplied; publishing the art-only PR, full CI pending. Title PR #68 has actual menu captures and passing import checks; full CI runs independently. Its original image is 1586×992, below the requested roughly 2560×1600 master, documented for review.
 - **Next action:** inspect each subject and native preview; publish this small asset PR and send Claude the exact loading/anchor contract. Then current character/item/icon/card/Bloom groups. Later/canon-pending slots remain deferred per the brief.
-- **Synchronization:** merged main `1df6add` on the mailbox request, preserving Claude’s lead-stranger notes and both design-log tails. Asset/code content unchanged by this reconciliation; current-head CI must pass before Claude merges and wires the art.
+- **Synchronization:** merged main `e797c39` on the mailbox request, preserving Claude’s lead-stranger notes and both design-log tails. Asset/code content unchanged by this reconciliation; current-head CI must pass before Claude merges and wires the art.
 
 ### Claude — Starfall art wiring
 - **Task:** wire Codex's Starfall art (PRs #70 to #72) into the map and panels. PR `starfall-art-wiring`. Stage 4 (#69) and the lead stranger lines (#74) are merged.

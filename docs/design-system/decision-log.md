@@ -670,3 +670,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Art stays pure presentation: no footprint, save or rule changed. The pack is drawn only on Kith whose job is `expedition`; icons sit beside existing text lines and never replace the twenty meaningful glyph marks.
 - The Wreck's code embers stay as a separate layer under the hull. The Shard icon is available but unused until a card or landmark wants it.
 
+
+## 2026-10-06: Starfall title painting (PR #68)
+- Codex: use the approved Misty Highlands architecture and atmosphere for the title, with a warm Kith Hearth as the visual focus and a dark quiet left third under the menu.
+- Keep the Lumen star and distant Bloom growth as environmental hints; no text is baked into the image and no new lore is introduced.
+- Keep the existing title loader and centered cover behavior. Actual 1280×800 and 1600×900 scene captures retain menu contrast and all three narrative cues.
+- Preserve the original generated 1586×992 PNG unchanged; the requested approximately 2560×1600 master was not returned by the tool, so higher-resolution enlargement remains an explicit review limitation.
