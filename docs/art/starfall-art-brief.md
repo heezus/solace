@@ -18,6 +18,26 @@ The first thing the game shows. Claude is building the screen (title, save and z
 **Paste-ready message for Codex (Jon: copy this):**
 > Jon wants a title screen painting for Solace. Read docs/art/starfall-art-brief.md, the section "The title screen". Start from the misty-highlands renderings we made before (docs/art/overhaul/misty-highlands). Make one 16:10 painted image, about 2560x1600, at art/rendered/title.png with its Godot .import file. A Kith settlement with a warm hearth fire in misty highland at dusk; a pale cyan star falling in the sky (the Lumen); and a faint magenta and green glow with thin reaching growth low on the eastern horizon (the Bloom), as hints only. Keep the left third calm and dark, because the menu sits there. No text in the image. The game loads the file by name, so no code change is needed. Work on a codex/ branch and open a PR.
 
+## Character: the lead stranger (Jon, 2026-10-07)
+Jon's friend Briana asked to be in the game, and Jon made her one of the three Lumen who walk out of the fog: the **lead stranger**, the first of them to trust the Kith and the face of the trust choices. The in-game name is pending Jon's pick (Briana, or a Lumen name close to it); call the slot `lead-stranger` either way. This section is the whole spec. **No photos are in the repo.** Jon can hand reference photos to Codex himself, and the words below are enough on their own.
+
+**Who she is.** Warm, playful, quick to tease, perceptive and confident. Glamorous at first glance, goofy, affectionate and loyal once she trusts you. She notices how people feel before they say it. Sweet one moment, mischievous the next; never cold, never prim.
+
+**Her look, in the game's stylized miniature style (Misty Highlands, a chunky toy-like figure, not a likeness study):**
+- A woman in her mid-30s, athletic and fit, with a bright, expressive face and a warm smile. Long blonde hair, worn loose and a little wind-caught (it sits well with the Lumen's pale gold).
+- Polished and stylish Lumen clothing: a flattering pale cloak or long coat over clean, fitted layers, in cream, pale gold and soft cyan. Jewellery-like accents (a collar clasp, a bracelet, ear drops) in pale gold with a soft cyan glint. Sophisticated and expensive-looking, not formal and not armoured.
+- Tasteful and friendly. She is glamorous because she carries herself well, not because of what she shows: full-length clothing, no exposed midriff, nothing suggestive. A confident stance and a smile do the work.
+- Readable at sprite size: the hair silhouette (long, pale gold) and the cyan-and-gold accents are what tell her apart from the other two Lumen at 24 px.
+
+**Slots (all optional, in this order):**
+1. **Figure at 24 px** (`lead-stranger`): the same four poses and foot anchor as the other pale-cloaked Lumen from the traveller kit, replacing one of the three stranger variants. She is the one who stands nearest the Hearth.
+2. **Portrait** (`lead-stranger-portrait`): head and shoulders, about 160x160 on a transparent or softly vignetted ground, for the moment cards (the Hunger, the Shards, the Warning). A warm smile as the default, with an optional second frame, worried, for the Warning.
+3. **Card header** (optional): the same figure at about 320x120 with a soft Lumen glow, if the portrait is not enough.
+
+**Paste-ready message for Codex (Jon pastes it):**
+
+> Codex, a new character for the Starfall art pass. Jon's friend Briana is in the game as the lead Lumen stranger (name pending). Please read the section "Character: the lead stranger" in docs/art/starfall-art-brief.md and do three things in the Misty Highlands miniature style: (1) a 24 px figure `lead-stranger` in the traveller kit's four poses, long pale-gold hair, cream and pale-gold cloak, cyan-and-gold jewellery accents; (2) a head-and-shoulders portrait `lead-stranger-portrait`, about 160x160, warm smile, with an optional worried frame; (3) a 320x120 card header if the portrait alone is not enough. Keep her tasteful and friendly: stylized, full-length clothing, nothing suggestive. Jon may give you reference photos; use them only as a loose guide to hair, smile and mood, not as a likeness study, and do not commit the photos to the repo. Small PR, assets and a README only; Claude wires the code.
+
 ## Slots playable now (stages 1 and 2)
 | Slot | Footprint | Now | What it should be |
 |---|---|---|---|
