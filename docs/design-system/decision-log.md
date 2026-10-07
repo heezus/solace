@@ -628,7 +628,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Defaults Claude picked: the Warning cannot be read until all three questions are answered; the lean is read off trust (70 allies, 35 neighbours); the sign stands seven tiles north of the Wreck.
 - Trade, the Guard Post, the shared shrine and the third tech tab stay for later; trust moves only on the camp, the sets read and the three answers for now.
 
-## 2026-10-07: Title screen, pause menu and save (PR #TBD)
+## 2026-10-07: Title screen, pause menu and save (PR #66)
 - Claude: built a title screen (Continue when a save exists, New game, Quit) on Jon's ask, with a drawn stand-in that hints at the three peoples (a Kith fire, a Lumen falling star, a Bloom glow in the east). Codex paints the real one from `art/rendered/title.png`; the game loads it by name.
 - Esc with nothing to cancel opens a pause menu: Resume, Save game, Load game, Quit to title. One save slot (the run save from page 15); Load starts the game scene again from it. No autosave for now.
 - Zoom: the mouse wheel worked, but a trackpad or Magic Mouse scrolls with a different event the game ignored, and there were only three zoom steps. Added trackpad scroll and the + and - keys, and seven steps (24 to 80 px, 48 px stays the default).
