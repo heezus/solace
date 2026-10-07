@@ -132,7 +132,7 @@ func canonical(s: Sim) -> String:
 	lines.append("ranks %s" % _counts(s.ranks))
 	lines.append("goals_done %s" % ",".join(_sorted_keys(_stone_age_goals(s.story.goals_done))))
 	lines.append("story %s" % ",".join(s.story.events))
-	lines.append("seen %s" % ",".join(_sorted_keys(s.economy.seen)))
+	lines.append("seen %s" % ",".join(_sorted_keys(_seen_so_far(s.economy.seen))))
 	lines.append("hand_counts %s" % _counts(s.hand_counts))
 	lines.append("learned %s" % _pairs(s.people.learned_by))
 	lines.append("flags %s %s %s %d %d" % [s.hand_tools, s.shard_seen, s.economy.starving, s.rushes, s.people.births])
@@ -163,6 +163,16 @@ func _stockpile(inv: Dictionary) -> Dictionary:
 	for id in inv:
 		if inv[id] != 0 or int(Data.ITEMS[id].get("era", 1)) == 1:
 			out[id] = inv[id]
+	return out
+
+
+## The goods seen, as the first two eras knew them: the bots mark every item seen, so a later era's goods (Ironfall's coal and
+## iron) would change the hash of a game that never touched them.
+func _seen_so_far(seen: Dictionary) -> Dictionary:
+	var out := {}
+	for id in seen:
+		if int(Data.ITEMS[id].get("era", 1)) <= 2:
+			out[id] = seen[id]
 	return out
 
 
