@@ -55,6 +55,12 @@ Phases, so art and code can run ahead of the eras:
 - Skippable at any point, and the pause menu gets a "Cutscenes" on/off. A skip still records the story id.
 - Every run plays every sequence in full, so no seen-list is needed. The on/off setting lives in a tiny file apart from the run save (`user://profile.json`, the start of the profile save from [13](13-three-perspectives.md)).
 
+## Repeat runs remember (the project owner, 2026-10-07)
+On a later run the same sequences hint at what the Kith carried over, without a new set of paintings. Two cheap tools, both chosen from the profile ([13](13-three-perspectives.md), [18](18-roadmap.md) echoes and the Chronicle):
+- **Variant lines.** A sequence may swap one line (never more than one) when the profile holds a matching echo or reset. Examples: `first_contact` line 3 after a read Lumen glyph set: "She said a word. This time a few of the Kith knew it." `bloom_sign` line 1 after a Bloom sample echo: "It was not there yesterday. Some of the Kith had seen it before." `opening` line 2 after an Exodus: "They raised a fire, the way they remembered." After a Time loop, `opening` line 3: "Something felt like déjà vu." Each variant is a hint, never a spoiler or a stat.
+- **Memory overlays.** Five transparent full-frame layers drawn over any still, so no still is painted twice: `memory_exodus` (a faint trail of footprints and a travelling haze), `memory_cataclysm` (hairline cracks and drifting ember specks at the edges), `memory_loop` (a pale second image, like an echo of the same scene), `memory_glyph` (a thin cyan glimmer, for a Lumen echo) and `memory_bloom` (a faint magenta-green tint at the edges, for a Bloom echo). The most recent reset picks one of the first three, and each held echo kind can add its own, at low opacity.
+- Both are chosen by code from the profile, so a first run shows none of them. A run with no profile data (the profile save is not built yet) plays the plain sequences. Variants change tone only; the lines and stills always still tell the same story.
+
 ## Open (defaults stand until the project owner says otherwise)
 - **Replays.** *Decided (the project owner, 2026-10-07):* every run plays every sequence in full. Skip is always there, and the pause menu can turn them all off.
 - **Wiring.** *Default:* Phase A rides along with the Ironfall stage 1 PR; Codex paints in the meantime and the lines-over-dark fallback covers the gap.
