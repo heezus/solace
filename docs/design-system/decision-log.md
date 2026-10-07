@@ -682,6 +682,50 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - The alternate title painting is `art/rendered/title_alt.png` (was a personal name); the sprite slot stays `lead-stranger`. Local home-directory paths in the Codex prompt files became `/Users/USER/`.
 - Git history and closed PR threads are not rewritten; that is a separate decision.
 
+## 2026-10-06: Sela leads the Lumen arrival (PR #75)
+- Codex follows the project owner's explicit choice: Sela is the first of the three Lumen strangers out of the fog and the first to trust the Kith. No additional stranger or progression rule is introduced.
+- Her painted design uses long blonde hair, an open smile, confident posture and polished pale gold/cyan travel clothing, continuing the approved miniature style.
+- Supply one idle pose at the existing 24 px stranger footprint; the current caller has sway but no dedicated idle-frame contract. Claude receives the measured crop and integration notes.
+- Keep Sela's companion title separate from the approved default; its quiet left third supports the menu. The original tool output is 1584×993, below the requested approximate 2560×1600; the illustration still enlarges Sela relative to background Kith and is flagged for review.
+
+## 2026-10-06: Sela character-first revision (PR #75)
+- Codex follows the project owner's correction: keep the liked standalone v1 as a reference, withdraw the three incorrectly scaled title attempts, and review a lower-angle character first.
+- The title will use the same original approved background, with Sela on a separate foreground plane and the town behind. Do not regenerate the village or insert a giant on its middle-distance ground.
+- The lower-angle character is a review asset, not an automatic replacement for the top-down 24 px gameplay sprite. Claude holds integration while this staged visual review proceeds.
+
+## 2026-10-06: Separate Kith character for the title pair (PR #75)
+- Codex follows the project owner's request to draw a separate Kith character before title composition, using warm rust/cream/moss clothing, dark curls, beard, smile and geometric arm tattoo as design cues.
+- Keep the project owner and Sela as independent lower-angle character review assets; pair them later on a foreground plane over the same approved background. No new gameplay character, visitor or mechanic is implied.
+- Private reference photographs remain outside Git; generated character artwork and prompt records are saved in the art documentation.
+
+## 2026-10-06: Pair in the foreground over the original town (PR #75)
+- Codex follows the project owner's authorization to pair both completed character designs: Sela Lumen and the project owner Kith occupy a near foreground crop, with the town on a separate distant plane.
+- Preserve the exact approved title painting as the background texture. Generate an independent transparent paired foreground and compose the two in Godot, retaining sources and layout for future adjustment.
+- Keep the left menu area clear and preserve title/save behavior; deliver the alternate PNG and source layer, with Claude selection notes. The output remains 1586×992, the original painting's resolution.
+- This supersedes the rejected giant/middle-distance title attempts. the Kith character is title artwork, not a new gameplay character; the Sela map slot is reviewed independently.
+
+## 2026-10-06: Smaller dusk-lit title pair v4 (PR #75)
+- Codex follows the project owner's v4 request: reduce pair height from 78% to 68% of the canvas, about 13%, and move them right to reveal the Hearth fire and more town behind.
+- Relight the transparent pair with cool dusk fill, quieter frontal highlights, warm village light on the left edges and pale cool rim on sky-facing edges. Preserve identities, clothing and the original approved background texture.
+- Keep both faces visible, the left menu area clear, the falling star head and distant Bloom hint present at 1280×800 and 1600×900. Right arm/shoulder crop is intentional foreground framing; v3 remains archived for comparison.
+
+## 2026-10-07: Neutral character asset names (PR #75)
+- Codex: match the merged title loader with `title_alt.png` and rename the map art to `lumen_lead.png`; regenerate imports.
+- Use Sela and a Kith character in study folders and prompt records; remove personal names, reference-photo descriptions and local account paths. Artwork and its pixel data stay unchanged.
+
+## 2026-10-07: Sela's sprite and the alternate title go in (PR #78)
+- Claude: the project owner accepted the alternate title and Sela's sprite from #75. Sela draws as stranger 0 of the three Lumen (her own one-pose sprite); the title already picks between the two paintings at random.
+- The project owner closed the terrain study (#48) unmerged and confirmed **coal is finite** in Ironfall (about 500 a seam), as page 19 proposed.
+
+## 2026-10-07: Cutscenes tie the eras into one story (PR #79)
+- Claude: on the project owner's ask, the game gets short, skippable painted sequences instead of eras that just start. Page 20 holds the story spine, 12 sequences (a still has 1 to 3 lines, a slow push-in, no voice) and three phases: A for the eras that exist, B with Ironfall, C later.
+- Cutscenes are full-screen sequences between play; the vignettes in Codex's #73 stay single images on choice cards, and their Sela, Bloom-sign and arrival art is reused as stills.
+- The project owner chose that **every run plays every sequence in full** (skip is always there, and the pause menu can turn them off). Art not painted yet falls back to the lines over a dark panel.
+- The project owner also confirmed (2026-10-07, on a card) that Ironfall's Lessons are a **finite list** (about 8, one per part), as page 19 proposed.
+- The project owner also chose (2026-10-07, on a card) that Ironfall's map grows **twice**: south on Ironstone, then (Claude's default) west on Rails, which holds the Bloom patches and the rail room.
+- The project owner asked that repeat runs hint at what carried over. Page 20 now has variant lines (one swapped line, chosen from the profile's resets and echoes) and five transparent memory overlays that sit over any still, so no still is painted twice.
+- The project owner also confirmed (2026-10-07, on a card) that the Beast Pen and beast cart ship in Ironfall as one optional branch (stage 3). That closes every Ironfall fork on page 19; stage 1 can be built.
+
 ## 2026-10-05: Tool Bench miniature (PR #49)
 - Codex supplied one transparent low timber Tool Bench, matching the accepted rendered Twine Post and Kiln rather than the historical flat SVG style.
 - Large contrasting flint, stone hammer and unfinished axe head communicate tool making; stone feet and upper-left light match adjacent workshop subjects. The 1×1 gameplay footprint remains the interface.
