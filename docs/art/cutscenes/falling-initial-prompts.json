@@ -1,0 +1,22 @@
+{
+  "mode": "built-in imagegen",
+  "note": "Early batch prompt reconstruction from saved scene plan; per-asset revision files record final edits.",
+  "prompts": [
+    [
+      "falling_star_1",
+      "Solace falling_star_1. ONE original image, output requested 2560x1600, landscape16:10, no text or lettering, no logo, no UI, no frame, no contact sheet. Match approved Misty Highlands title: beautiful grounded atmospheric sculpted painted miniatures, tactile matte surfaces, jade rivers, rounded mossy stones, pine highlands, layered mist, warm amber hearth versus cool blue dusk. Slightly lower cinematic angle than map. Subject central80%; lower third calm and darker for captions. Cyan reserved for Lumen/star; no Bloom in PhaseA. Kith rust/cream/moss traveller kit. Night highlands sky, one brilliant PALE CYAN falling star with long cyan streak arcing east over black mountain ridges. Quiet dark valley below. Use the arrival effect reference as design of star/flare if supplied; do not show a contact sheet or isolated sprite."
+    ],
+    [
+      "falling_star_2",
+      "Solace falling_star_2. ONE original image, output requested 2560x1600, landscape16:10, no text or lettering, no logo, no UI, no frame, no contact sheet. Match approved Misty Highlands title: beautiful grounded atmospheric sculpted painted miniatures, tactile matte surfaces, jade rivers, rounded mossy stones, pine highlands, layered mist, warm amber hearth versus cool blue dusk. Slightly lower cinematic angle than map. Subject central80%; lower third calm and darker for captions. Cyan reserved for Lumen/star; no Bloom in PhaseA. Kith rust/cream/moss traveller kit. Three or four Kith on a hill silently watching off-screen falling star. Faces and rolled cream/rust/moss traveller clothes catch cool CYAN directional light from upper right. Chunky adult sculpted game miniature proportions, quiet awe, no gestures or cheering."
+    ],
+    [
+      "falling_star_3",
+      "Solace falling_star_3. ONE original image, output requested 2560x1600, landscape16:10, no text or lettering, no logo, no UI, no frame, no contact sheet. Match approved Misty Highlands title: beautiful grounded atmospheric sculpted painted miniatures, tactile matte surfaces, jade rivers, rounded mossy stones, pine highlands, layered mist, warm amber hearth versus cool blue dusk. Slightly lower cinematic angle than map. Subject central80%; lower third calm and darker for captions. Cyan reserved for Lumen/star; no Bloom in PhaseA. Kith rust/cream/moss traveller kit. Far beyond misty mountain hills a distant pale CYAN crash glow with one rising grey smoke column. No visible ship close up, no huge explosion, sombre quiet night aftermath, distant scale."
+    ],
+    [
+      "falling_star_4",
+      "Solace falling_star_4. ONE original image, output requested 2560x1600, landscape16:10, no text or lettering, no logo, no UI, no frame, no contact sheet. Match approved Misty Highlands title: beautiful grounded atmospheric sculpted painted miniatures, tactile matte surfaces, jade rivers, rounded mossy stones, pine highlands, layered mist, warm amber hearth versus cool blue dusk. Slightly lower cinematic angle than map. Subject central80%; lower third calm and darker for captions. Cyan reserved for Lumen/star; no Bloom in PhaseA. Kith rust/cream/moss traveller kit. Quiet humble Hearth at FIRST LIGHT, stone-ring fire LOW with faint amber embers and slight smoke. Empty settlement clearing, no crowd. The dawn feels still and changed; no star in sky."
+    ]
+  ]
+}
