@@ -1,0 +1,21 @@
+{
+	"background": "original-background.png",
+	"canvas": [
+		1586,
+		992
+	],
+	"foreground": "res://art/rendered/title-pair-foreground.png",
+	"foreground_box": [
+		991.25,
+		317.440002441406,
+		716.72,
+		674.56
+	],
+	"foreground_region": [
+		304,
+		0,
+		1054,
+		992
+	],
+	"method": "Godot two-layer render; original source textures unchanged"
+}

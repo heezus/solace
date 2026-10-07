@@ -4,7 +4,14 @@ Owner: the project owner (heezus). Two AI teams, one repo, coordinated by respon
 
 ## Active work
 
-### Codex — Starfall title painting
+### Codex — Lead stranger and Kith title v4
+- **Task:** the project owner requested v4: slightly smaller foreground characters and dusk lighting matching the original background, retaining title-menu space, Hearth fire, falling star and Bloom hint. Branch `codex/lumen-lead-stranger`, PR #75.
+- **Reserved files:** none after publication; delivered `art/rendered/title_alt.png`, relit `title-pair-foreground.png` with imports, `docs/art/title-pair/` v4/source/layers/menu previews and v3 archive; current art requests and design decisions. No Claude-reserved code edits.
+- **Acceptance criteria:** pair about 13% smaller (canvas height 68% versus 78%), cool ambient fill with restrained warm/cool rim light, actual original background unchanged, both faces inside frame, menu clear and narrative landmarks visible.
+- **Status:** v4 complete. Original source byte check, foreground source byte check, Godot imports, native layered render and actual title-menu captures at 1280×800/1600×900 passed. Output remains 1586×992; right shoulder/arm crop is intentional foreground framing. Prior versions archived. Full CI tracked on #75; synchronization with main resolves shared docs conflicts.
+- **Next action:** Await the project owner’s visual review and green CI; Claude merges afterward. Alternate title selection already exists in #74; original-title #68 is merged, so both images are available. Sela map/portrait art remains separate; the Kith character is title art only, not a gameplay visitor. Saved #73 art and overhaul documentation cleanup remain queued.
+
+#### Delivered context — Starfall title painting (PR #68, merged)
 - **Task:** the project owner's 2026-10-06 full Starfall art assignment, starting with the title painting on `codex/starfall-title`, PR #68. Keep each asset group in a separate small PR; later/canon-pending slots stay deferred as stated in the brief.
 - **Reserved files:** none after publication. PR #68 contains `art/rendered/title.png`, its generated import, native title captures, provenance and related notes. No gameplay or renderer edits.
 - **Acceptance criteria:** one approximately 2560×1600 / 16:10 painting matching Misty Highlands; warm Kith settlement first, a subtle cyan falling star and distant magenta/green Bloom hint; calm dark left third, no baked text; import succeeds and actual title menu remains readable at default and wider aspect ratios.
