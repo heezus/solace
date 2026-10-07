@@ -34,6 +34,7 @@ The source of truth for our game's universe. If something is written here, it's 
 17. [Needs and upgrades](17-needs-and-upgrades.md): dwelling tiers and needs, road and bridge tiers, copy cost, tech forks, hand carts, scouting (approved by the project owner with the defaults; built in 3 PRs: Logistics, Needs, Tree)
 18. [Roadmap](18-roadmap.md): the eras after Starfall, the Bloom and the three resets, with every open fork and its default (proposal, nothing built)
 19. [Ironfall](19-ironfall.md): era 4 in detail, the Teardown mechanic, iron and steam, a 16-tech tree, the Lessons list, the Bloom patches and how it is built in three stages (designed, not built)
+20. [Cutscenes](20-cutscenes.md): short skippable painted sequences that tie the eras into one story, the story spine, the sequence list, art rules and how they play (proposal, nothing built)
 - [Decision Log](decision-log.md)
 
 ### Mockups (visual specs from the visual design thread)
