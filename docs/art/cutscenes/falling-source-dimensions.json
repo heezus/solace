@@ -1,0 +1,30 @@
+{
+  "falling_star_1": {
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  },
+  "falling_star_2": {
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  },
+  "falling_star_3": {
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  },
+  "falling_star_4": {
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  }
+}

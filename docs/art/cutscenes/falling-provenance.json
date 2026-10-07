@@ -1,0 +1,38 @@
+{
+  "falling_star_1": {
+    "source": "exec-63b7c075-ee22-4273-998b-b796b4882591.png",
+    "sha256": "1b4012d536f474d30d5f10fdbf7f15eeabeb87a2b3f9ba6905f803b0d197ead3",
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  },
+  "falling_star_2": {
+    "source": "exec-ab7375ab-d93a-469e-aecf-a1f318441320.png",
+    "sha256": "725f6b46c4802e199571f9bf4b7811c559695a5ba61bda2bf06941e9058d7a47",
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  },
+  "falling_star_3": {
+    "source": "exec-1e0a739f-a228-43ab-847f-64c6dc4ce870.png",
+    "sha256": "2385ee63a5b79a7e62612bfd9608716d1c93693894457244abf2d2f532a1d8c1",
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  },
+  "falling_star_4": {
+    "source": "exec-613ddb94-4311-4045-bee1-15637570b419.png",
+    "sha256": "7d9463949d183cc1df09a72420715989be834dde22bc4608ef1be76cd03bbf97",
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  }
+}
