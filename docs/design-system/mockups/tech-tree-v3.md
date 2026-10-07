@@ -1,6 +1,6 @@
 # Tech tree panel: spec (v3 transit map)
 
-Status: **default approved for building** (2026-09-30). Jon was away, so Claude picked this and he can still revise it.
+Status: **default approved for building** (2026-09-30). The project owner was away, so Claude picked this and he can still revise it.
 Mockup: https://claude.ai/artifact/9WgaSRvMp18nqHV24w96CY (the boards "Tech tree v3" and "Tech tree v3, hovering Granary").
 Node data: 09-tech-tree.md. Tokens: the Solace visual design system.
 
@@ -88,7 +88,7 @@ Node data: 09-tech-tree.md. Tokens: the Solace visual design system.
 Era 2 uses the same panel with its own 16-tech tree. Put tabs by the title, "Stone Age" and "Bronze Dawn", with the current era selected.
 
 ## Option B: research board (the serious take, 2026-09-30)
-Jon said the transit map "looks so silly lol but maybe that's ok". Board "Tech tree B" is a calmer alternative using the same layout and routing. **Jon hasn't picked A or B yet. Build A unless he picks B.** The differences:
+the project owner said the transit map "looks so silly lol but maybe that's ok". Board "Tech tree B" is a calmer alternative using the same layout and routing. **The project owner hasn't picked A or B yet. Build A unless he picks B.** The differences:
 - **Cards are 212 × 62**, with a 44px sprite icon on the left in a 2px `outline` frame.
   - Each card shows the name, the unlock, and the cost (hidden once done).
   - Locked icons are desaturated (grayscale 70%, brightness 80%).

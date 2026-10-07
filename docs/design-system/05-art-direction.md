@@ -2,7 +2,7 @@
 
 ## Current overhaul direction (2026-10-04, PR #33)
 
-Jon selected grounded, atmospheric rendered miniatures: beautiful and mysterious, with cool moss/grass/water, warm thatch and timber, sculpted stone and readable warm Kith. Codex is implementing this direction in the visual-overhaul branch; the older vector direction below records the shipped baseline.
+the project owner selected grounded, atmospheric rendered miniatures: beautiful and mysterious, with cool moss/grass/water, warm thatch and timber, sculpted stone and readable warm Kith. Codex is implementing this direction in the visual-overhaul branch; the older vector direction below records the shipped baseline.
 
 Use transparent rendered subjects, coherent three-quarter miniature lighting and chunky silhouettes that remain readable on a dense orthogonal map. Ground should flow continuously beneath occupied cells rather than giving every object a square base. Appearance variants stay stable across redraws; animation and decorative motion must not alter simulation. Keep the 48 px default and existing footprints until a scale change is discussed.
 

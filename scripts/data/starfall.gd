@@ -20,9 +20,9 @@ const ARRIVED_WARY := (
 )
 const STRANGERS_NAME := "the Starfallen"  # what the Kith call them until the name is read
 const LUMEN_NAME := "the Lumen"  # what they are called once the first set is read
-## The lead stranger (Jon, 2026-10-07): the tall Lumen with long pale hair, the first to trust the Kith and the voice of
+## The lead stranger: the tall Lumen with long pale hair, the first to trust the Kith and the voice of
 ## the trust choices. Warm, playful, quick to tease, perceptive; glamorous at first sight, goofy and loyal once she trusts you.
-const LEAD_NAME := "Briana"
+const LEAD_NAME := "Sela"
 # Her name twice.
 const LEAD_NAMED_LINE := 'The tall stranger taps her chest. "%s," she says, and waits. Then, delighted: "%s! Say it back!"'
 

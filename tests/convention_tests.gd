@@ -1,5 +1,5 @@
 extends RefCounted
-## Tests for the genre conventions from Jon's playtests: demolish, pause, the Hearth, bridges,
+## Tests for the genre conventions from the project owner's playtests: demolish, pause, the Hearth, bridges,
 ## fog and rates. Run from tests/run_tests.gd, which owns check() and the helpers.
 
 const Data = preload("res://scripts/data.gd")
@@ -456,7 +456,7 @@ func test_building_panel_texts() -> void:
 	)
 
 
-## The research board and the build bar agree (Jon: the tree "isn't following and unlocking items like
+## The research board and the build bar agree (the project owner: the tree "isn't following and unlocking items like
 ## a warehouse"): every building and recipe names a real tech (or none, like the Dwelling), can't be
 ## placed or crafted before it, and that tech's card names it.
 func test_tree_gates_every_building() -> void:

@@ -1,8 +1,8 @@
 # HUD, playtest 2: flows, rates, fog, demolish, water, settlement
 
-Status: **default approved for building** (2026-09-30). Jon was away, so Claude picked this and he can still revise it.
+Status: **default approved for building** (2026-09-30). The project owner was away, so Claude picked this and he can still revise it.
 Mockup boards: "HUD: where resources go", "HUD: placing a Dwelling" and "HUD: demolish" at https://claude.ai/artifact/9WgaSRvMp18nqHV24w96CY.
-This adds to hud.md. It answers Jon's second playtest: "I don't understand where the resources are going", "no way to demolish", "cross water", "fog of war", "+ or − rates in green or red", and "dwellings can just be put wherever".
+This adds to hud.md. It answers the project owner's second playtest: "I don't understand where the resources are going", "no way to demolish", "cross water", "fog of war", "+ or − rates in green or red", and "dwellings can just be put wherever".
 
 ## 1. Rates under every good (top bar)
 - Each chip shows the count (14px) with the **net rate per second** under it, at 10px bold.
@@ -58,4 +58,4 @@ This adds to hud.md. It answers Jon's second playtest: "I don't understand where
 - Demolish also appears as a button in every building's selection panel.
 
 ## Goal panel
-- It collapses to one line while you play: the title, the current step in a `highlight` pill, and "Show all steps (G)". Jon wanted less clutter, and the full list is one key away.
+- It collapses to one line while you play: the title, the current step in a `highlight` pill, and "Show all steps (G)". The project owner wanted less clutter, and the full list is one key away.

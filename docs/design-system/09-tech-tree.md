@@ -1,9 +1,9 @@
 # Stone Age Tech Tree (29 techs, v4 as built)
 
-Status: **v4 built** on the `stone-age-polish` branch (2026-09-30), from mockups/tech-tree-v4.md (approved by Jon).
+Status: **v4 built** on the `stone-age-polish` branch (2026-09-30), from mockups/tech-tree-v4.md (approved by the project owner).
 - v4 keeps v3's 28 techs, costs and effects. Only the links, the columns and the lane order changed, so each link reads "you need X to invent Y".
-- Jon's earlier asks: "more intricate and branching", "visually more appealing with arrows", "maybe just need more tech. Let's be creative. Tighten all of it."
-- 2026-09-30: the **Storehouse** became its own tech (Jon's playtest: the tree "isn't following and unlocking items like a warehouse"), so there are now 29. See the decision log.
+- The project owner's earlier asks: "more intricate and branching", "visually more appealing with arrows", "maybe just need more tech. Let's be creative. Tighten all of it."
+- 2026-09-30: the **Storehouse** became its own tech (the project owner's playtest: the tree "isn't following and unlocking items like a warehouse"), so there are now 29. See the decision log.
 - 2026-09-30, From Hands to Haulers (14-hands-to-haulers.md, `hands-to-haulers` branch): costs now scale by tier, nine techs have ranks II and III, and the effects below are corrected to what is built. See "Costs" and "Ranks".
 - Source of truth for numbers and layout: `scripts/data.gd` (TECHS, LANE_ORDER, TIER_NAMES, BUILDINGS, BONUSES). The research board is laid out from each tech's `lane`, `tier` and `slot` alone, so a layout change is a data edit.
 
@@ -191,7 +191,7 @@ Lore gates the era through Calendar, so story is part of progress, not flavor. T
 
 ## Open
 - Costs are tuned with the pacing bot, not yet with a human playthrough.
-- Flax can be sown (Jon, 2026-10-03): Cordage opens the Flax Field, 2 Fiber a tile, no grain. A hut set to Fiber cuts it exactly as it cuts wild flax and it never runs out; Calendar, Plough and Irrigation do not touch it.
+- Flax can be sown (the project owner, 2026-10-03): Cordage opens the Flax Field, 2 Fiber a tile, no grain. A hut set to Fiber cuts it exactly as it cuts wild flax and it never runs out; Calendar, Plough and Irrigation do not touch it.
 - Calendar's +25% applies to hut harvests of sown Fields, not wild grain or hand gathering. Irrigation's "grow faster" means a hut worker harvests that Field in half the time.
 - Spoiling doesn't exist, so preserving food is a flat bonus (Preservation).
-- Discovery (Jon via Codex, 2026-10-05): a tech stays out of the tree until the Kith have held every item it costs and every tech it needs shows. Found items are `Economy.seen` (saved), so the fiber lane waits for flax, brick techs for the Kiln and the ore techs for ore. Researched techs always show. The board, "What to learn next", routes, tooltips and the counter all use the same list (`Research.visible_set()`), so nothing leaks early.
+- Discovery (the project owner via Codex, 2026-10-05): a tech stays out of the tree until the Kith have held every item it costs and every tech it needs shows. Found items are `Economy.seen` (saved), so the fiber lane waits for flax, brick techs for the Kiln and the ore techs for ore. Researched techs always show. The board, "What to learn next", routes, tooltips and the counter all use the same list (`Research.visible_set()`), so nothing leaks early.

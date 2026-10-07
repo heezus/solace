@@ -2,7 +2,7 @@
 
 Status: **idea only** (2026-09-30). Nothing here is decided, designed in detail or scheduled. It's written down so current work doesn't rule it out.
 
-Jon, thinking out loud: "Eventually I'd like to be able to start as each race, and have different canonical events, and maybe have playthroughs bleed together where those events kinda bookmark stuff... after a few playthroughs as the Kith you unlock starting as the Lumen. And then after a few playthroughs as them you can start as the Bloom. And what happened in previous playthroughs decision wise will somehow impact it as if it were a story told out of order and simultaneously."
+The project owner, thinking out loud: "Eventually I'd like to be able to start as each race, and have different canonical events, and maybe have playthroughs bleed together where those events kinda bookmark stuff... after a few playthroughs as the Kith you unlock starting as the Lumen. And then after a few playthroughs as them you can start as the Bloom. And what happened in previous playthroughs decision wise will somehow impact it as if it were a story told out of order and simultaneously."
 
 ## The idea in one line
 One history of Solace, seen from three sides. Each playthrough fills in part of a shared **Chronicle**, and the choices you made as one faction show up as facts when you play another.
@@ -53,9 +53,9 @@ Cheap things to keep in mind now, so the door stays open:
 - Cost rises steeply. Bookmarks in Kith runs are cheap and worth adding early. A Lumen campaign is a big but reusable chunk. A playable Bloom is almost a second game.
 - **Suggested ladder:** (1) log bookmark events in Kith runs, which is nearly free, (2) the Lumen as a shorter campaign from the crash onward, and (3) the Bloom as a short final mode first, grown only if it's fun.
 
-## Jon's answers (2026-09-30)
+## The project owner's answers (2026-09-30)
 - **The Bloom:** a short finale first, with a fully playable Bloom later.
-- **The Lumen's timeline:** Jon was unsure ("as a first game maybe it's a pickup"). Claude's default is **start at the crash**:
+- **The Lumen's timeline:** the project owner was unsure ("as a first game maybe it's a pickup"). Claude's default is **start at the crash**:
   - The Lumen run opens at bookmark 3 (the Falling Star), which is the middle of the Kith story.
   - It replays the second half from the Lumen side (first words, the choice, the Bloom arriving), shaped by the Kith run's Chronicle flags.
   - It then carries on past where the Kith run ended.

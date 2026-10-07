@@ -2,7 +2,7 @@
 
 Status: **being built in priority order** (2026-09-30).
 
-From Jon's playtest: "it feels like there are so many ideas based on other games mechanics that are just things you come to expect." This is the list of things a player of Factorio, Timberborn, Anno or Civ assumes a game has, checked against Solace. Defaults were picked by Claude and can be changed.
+From the project owner's playtest: "it feels like there are so many ideas based on other games mechanics that are just things you come to expect." This is the list of things a player of Factorio, Timberborn, Anno or Civ assumes a game has, checked against Solace. Defaults were picked by Claude and can be changed.
 
 ## P1: Can I read what's happening?
 | # | Convention | Seen in | Solace default |

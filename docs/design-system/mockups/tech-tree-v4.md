@@ -1,6 +1,6 @@
 # Tech tree v4: logical links and a cleaner layout
 
-Status: approved by Jon on 2026-09-30. Ready for the code thread.
+Status: approved by the project owner on 2026-09-30. Ready for the code thread.
 Mockups: the "Tech tree v4" boards on the UI canvas (https://claude.ai/artifact/9WgaSRvMp18nqHV24w96CY).
 Built on the 28-tech tree in 09-tech-tree.md. Same techs, costs and effects. Only the links, columns and lane order change.
 

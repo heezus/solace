@@ -1,7 +1,7 @@
 extends SceneTree
 ## Editor warnings as errors. With "list" it prints each GDScript warning the editor shows (level Warn);
 ## tests/tools/check_warnings.sh raises those to errors in an override.cfg, then runs this again to load
-## every script in scripts/ and tests/, so a warning Jon would see in the editor fails CI instead.
+## every script in scripts/ and tests/, so a warning the project owner would see in the editor fails CI instead.
 
 const PREFIX := "debug/gdscript/warnings/"
 const WARN := 1

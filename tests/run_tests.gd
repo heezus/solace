@@ -683,7 +683,7 @@ func test_tech_tree_is_a_web() -> void:
 	for tech in stone:
 		colors[Data.TECHS[tech]["color"].to_html()] = true
 	check(colors.size() == stone.size(), "every stone-age tech has its own color")
-	for tech in Data.TECHS:  # Megaliths is the one side branch behind the hidden Star Lore (Jon, 2026-10-06)
+	for tech in Data.TECHS:  # Megaliths is the one side branch behind the hidden Star Lore (the project owner, 2026-10-06)
 		check(
 			tech == "megaliths" or "star_lore" not in Data.TECHS[tech]["requires"],
 			tech + " doesn't strictly need hidden Star Lore"

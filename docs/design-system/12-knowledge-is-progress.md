@@ -1,6 +1,6 @@
 # Knowledge Is Progress
 
-Status: **agreed direction** (2026-09-30). Jon: "I love that progress idea. Except we do want the map to change." The details below are defaults Claude picked, and none of this is built yet.
+Status: **agreed direction** (2026-09-30). The project owner: "I love that progress idea. Except we do want the map to change." The details below are defaults Claude picked, and none of this is built yet.
 
 Research behind it: [research/mechanics-and-tech-trees.md](research/mechanics-and-tech-trees.md), section 7.
 
@@ -51,7 +51,7 @@ Set aside for now: the Bloom as a spreading tide (its own later era), stories th
 - How many glyphs, and the word list, get designed with era 3.
 
 ## Smarter maps (proposed, 2026-09-30)
-Jon: the map is "already randomly seeded, although geographically it was kinda un-intelligent."
+the project owner: the map is "already randomly seeded, although geographically it was kinda un-intelligent."
 
 **Why it feels that way** (`scripts/map_gen.gd` on stone-age-polish):
 - The river is always one north-to-south strip in the right third of the map.

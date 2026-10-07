@@ -1,6 +1,6 @@
 # Native shoreline and crossing study
 
-Codex, 2026-10-05. Actual Godot render at 1280×800, 48 px per tile. Review-only: normal play does not load this fixture, and PR #33 remains draft pending Jon’s visual sign-off.
+Codex, 2026-10-05. Actual Godot render at 1280×800, 48 px per tile. Review-only: normal play does not load this fixture, and PR #33 remains draft pending the project owner's visual sign-off.
 
 ![Actual native 48 px fixture](native-48px.png)
 

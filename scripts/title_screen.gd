@@ -13,7 +13,7 @@ const RunSave = preload("res://scripts/run_save.gd")
 
 const GAME_SCENE := "res://scenes/main.tscn"
 const ART_PATH := "res://art/rendered/title.png"
-const ALT_ART_PATH := "res://art/rendered/title_briana.png"  # an alternate painting: the lead stranger
+const ALT_ART_PATH := "res://art/rendered/title_alt.png"  # an alternate painting: the lead stranger
 const BUTTON_WIDTH := 260.0
 
 var save_path := RunSave.PATH

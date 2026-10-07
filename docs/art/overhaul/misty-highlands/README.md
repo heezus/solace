@@ -1,10 +1,10 @@
 # Misty Highlands: rendered tile kit
 
-2026-10-04, Codex. **Original direction studies; now implemented in the visual-overhaul branch.** Jon prefers the miniature diorama rendering, misty highlands / twilight atmosphere, and sturdy stylized Kith. The earlier three SVG directions did not capture that intent. See the [Godot integration](engine/README.md) for actual engine captures, asset mappings and remaining limits. The images on this page are the earlier browser studies.
+2026-10-04, Codex. **Original direction studies; now implemented in the visual-overhaul branch.** the project owner prefers the miniature diorama rendering, misty highlands / twilight atmosphere, and sturdy stylized Kith. The earlier three SVG directions did not capture that intent. See the [Godot integration](engine/README.md) for actual engine captures, asset mappings and remaining limits. The images on this page are the earlier browser studies.
 
 ## Actual game constraints
 
-Reviewed Jon's 39-second gameplay recording: approximately 100 Kith, dense resource clusters, many adjacent buildings, orthogonal roads and bridges, continuous hauling, gathering ranges, and blocked placement feedback. The first scenic clearings failed to represent this density. This kit is assembled on a 24×16 orthogonal tile map, with a 48 px default and a 64 px comparison. Camera crops rather than scaling the whole map down. Every resource and building occupies explicit tile cells; the Hearth remains 2×2.
+Reviewed the project owner's 39-second gameplay recording: approximately 100 Kith, dense resource clusters, many adjacent buildings, orthogonal roads and bridges, continuous hauling, gathering ranges, and blocked placement feedback. The first scenic clearings failed to represent this density. This kit is assembled on a 24×16 orthogonal tile map, with a 48 px default and a 64 px comparison. Camera crops rather than scaling the whole map down. Every resource and building occupies explicit tile cells; the Hearth remains 2×2.
 
 ![Village at 48 px tiles](village-48px.png)
 ![River district at 48 px tiles](river-48px.png)
@@ -26,7 +26,7 @@ Direction: dimensional thatch and timber, sculpted mossy stone, cool green groun
 - The accompanying browser prototype has 64 illustrative road-following haulers, selection, fake resource-state toggles, placement previews, grid/fog toggles, and camera navigation. It does not implement gameplay. Kith uses one translated pose; there is no validated walk cycle or directional animation.
 - Kiln, water wheel, harvested states and riverbank transitions remain simplified placeholders; road edges still use a simple geometric mask. The generated atlas has imperfect cell spacing and a three-quarter camera despite the more overhead prompt. Camera consistency, alpha edges, repeated variants, resource depletion semantics and spritesheet layout need a controlled production pass.
 - Grass and water were requested seamless; exact edge continuity has not been proven. The browser tests repetition only. Production needs matched edge and corner tiles and a repeat/seam check.
-- Production currently uses the SVG loader. Jon authorized Codex to implement visual engine changes on 2026-10-04, including raster imports, atlas loading and rendered spritesheets; Claude reviews the resulting PR. These study PNGs remain isolated under the parent `.gdignore`. Prepare and validate production assets and metadata before adding them to the game.
+- Production currently uses the SVG loader. The project owner authorized Codex to implement visual engine changes on 2026-10-04, including raster imports, atlas loading and rendered spritesheets; Claude reviews the resulting PR. These study PNGs remain isolated under the parent `.gdignore`. Prepare and validate production assets and metadata before adding them to the game.
 - Treat animations as separate aligned directional sheets: shared anchors and sizes, restrained walk/work motion, separate fire/smoke, and reduced-motion support. Lighting and fog should remain separate layers rather than baked into every sprite.
 
 The interactive study lives in the conversation. These source images and scale screenshots make the proposal reviewable without exporting the conversation surface into the game repository.

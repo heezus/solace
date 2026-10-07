@@ -1,6 +1,6 @@
 # Units and buildings: spec
 
-Status: **default approved for building** (2026-09-30). Jon was away, so Claude picked this and he can still revise it.
+Status: **default approved for building** (2026-09-30). The project owner was away, so Claude picked this and he can still revise it.
 Mockup: https://claude.ai/artifact/9WgaSRvMp18nqHV24w96CY (the board "Units and buildings").
 
 ## The source art is in `sprites/`
@@ -84,7 +84,7 @@ The building sprites have no ground. Draw them over the tile's terrain (grass, u
 | Stepping Stones | tile_stepping_stones.svg | An idea only, not in the tree |
 
 ## Flax (2026-09-30, new stone-age resource)
-Flax was first drawn as reeds. Jon preferred a plant that is not tied to water, so it is a plain grass tile.
+Flax was first drawn as reeds. The project owner preferred a plant that is not tied to water, so it is a plain grass tile.
 | Sprite | File | Use |
 |---|---|---|
 | Flax patch (tile) | flax.svg | Source of Fiber. Wild flax grows on `grass` anywhere. Draw it as a full grass tile with five slender green stems, each topped with a small blue five-petal flower and a gold center. Same 2px `outline` strokes as the other tiles. Colors: grass, stem #6f9a3c, flower #6d8fe0, center #f2c14e. It replaces the game's placeholder. |
