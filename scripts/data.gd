@@ -14,6 +14,7 @@ const DataGoals = preload("res://scripts/data/goals.gd")
 const DataTuning = preload("res://scripts/data/tuning.gd")
 const DataWords = preload("res://scripts/data/words.gd")
 const DataStarfall = preload("res://scripts/data/starfall.gd")
+const DataMenu = preload("res://scripts/data/menu.gd")
 
 # --- Items: data/items.gd ---
 const ITEMS := DataItems.ITEMS
@@ -485,3 +486,22 @@ const ENDING_TITLE := DataStarfall.ENDING_TITLE
 const ENDING_TEXT := DataStarfall.ENDING_TEXT
 const ENDING_NOTE := DataStarfall.ENDING_NOTE
 const ENDING_BUTTON := DataStarfall.ENDING_BUTTON
+
+# --- Title screen and pause menu: data/menu.gd ---
+const TITLE_NAME := DataMenu.TITLE_NAME
+const TITLE_TAGLINE := DataMenu.TITLE_TAGLINE
+const TITLE_WHISPER := DataMenu.TITLE_WHISPER
+const TITLE_NEW := DataMenu.TITLE_NEW
+const TITLE_CONTINUE := DataMenu.TITLE_CONTINUE
+const TITLE_NO_SAVE := DataMenu.TITLE_NO_SAVE
+const TITLE_QUIT := DataMenu.TITLE_QUIT
+const TITLE_BAD_SAVE := DataMenu.TITLE_BAD_SAVE
+const PAUSE_TITLE := DataMenu.PAUSE_TITLE
+const PAUSE_RESUME := DataMenu.PAUSE_RESUME
+const PAUSE_SAVE := DataMenu.PAUSE_SAVE
+const PAUSE_LOAD := DataMenu.PAUSE_LOAD
+const PAUSE_QUIT := DataMenu.PAUSE_QUIT
+const PAUSE_HINT := DataMenu.PAUSE_HINT
+const SAVE_DONE := DataMenu.SAVE_DONE
+const SAVE_FAILED := DataMenu.SAVE_FAILED
+const LOAD_NONE := DataMenu.LOAD_NONE

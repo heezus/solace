@@ -33,6 +33,9 @@ const MessageLog = preload("res://scripts/message_log.gd")
 const HutFocus = preload("res://scripts/hut_focus.gd")
 const EraCard = preload("res://scripts/era_card.gd")
 const MomentCard = preload("res://scripts/moment_card.gd")
+const GameMenu = preload("res://scripts/game_menu.gd")
+const Launch = preload("res://scripts/launch.gd")
+const RunSave = preload("res://scripts/run_save.gd")
 const Profile = preload("res://scripts/profile.gd")
 const Clearing = preload("res://scripts/clearing.gd")
 const WorldGround = preload("res://scripts/world_ground.gd")
@@ -45,8 +48,9 @@ const GrowthArt = preload("res://scripts/growth_art.gd")
 
 const TILE: float = Overlays.TILE
 const MAP_ORIGIN := Vector2.ZERO  # the node's transform pans and zooms the map
-const ZOOM_PX := [32.0, 48.0, 64.0]  # a tile's size on screen at each zoom step (scroll or pinch)
-const DEFAULT_ZOOM := 1
+const ZOOM_PX := [24.0, 32.0, 40.0, 48.0, 56.0, 64.0, 80.0]  # a tile's size on screen at each zoom step (scroll or pinch)
+const DEFAULT_ZOOM := 3  # 48 px, the size the map is drawn for
+const SCROLL_ZOOM_STEP := 1.0  # two-finger scroll that makes one zoom step
 const PAN_SPEED := 720.0  # screen px a second while an arrow key or WASD is held
 const FRAME_W := 4.0  # the cocoa frame round the map view
 const BANNER_SECONDS := 14.0  # how long the Bronze Dawn banner stays up
@@ -69,6 +73,7 @@ var cam := Vector2.ZERO  # the map point (in map px at TILE) at the middle of th
 var view := Rect2()  # the map view on screen: between the bars, left of the side panel, edge to edge
 var panning := false  # the middle button is down: dragging pans
 var zoom_wait := 0.0  # seconds before a pinch may step the zoom again
+var scroll_zoom := 0.0  # two-finger scroll gathered towards the next zoom step
 var frame: Panel
 var state: Sim
 var placing := ""  # building type being placed, "" when not placing
@@ -93,6 +98,7 @@ var side_panel: SidePanel
 var info_label: Label  # the side panel's hover text
 var tech_panel: TechPanel
 var era_card: EraCard  # the Falling Star's card, put up once
+var game_menu: GameMenu  # Esc: Resume, Save, Load, Quit to title
 var moment_card: MomentCard  # a Starfall moment or the ending, put up when the strangers ask (Starfall.pending)
 var building_panel: BuildingPanel  # the selected building's card, docked in the side panel
 var banner_shown := false  # the Bronze Dawn banner has been shown
@@ -109,7 +115,10 @@ var nudge := {}
 func _ready() -> void:
 	Ui.apply_theme()
 	state = Sim.new()
-	state.generate(randi())
+	var loaded := Launch.take_load() and RunSave.load_into(state)
+	if not loaded:
+		state = Sim.new()
+		state.generate(randi())
 	cam = Overlays.center(state.world.camp_pos)  # start looking at the Hearth
 	_build_ui()
 	state.tech_tree.tech_researched.connect(_on_tech_researched)
@@ -195,6 +204,7 @@ func _layout() -> void:
 	msg_log.position = Vector2(16, vp.y - bottom - msg_log.size.y - 16)
 	era_card.place(view)
 	moment_card.place(view)
+	game_menu.place(view)
 	side_panel.position = Vector2(view.end.x, top)
 	side_panel.size = Vector2(SIDE_W, view.size.y)
 	var k: float = ZOOM_PX[zoom_step] / TILE
@@ -264,6 +274,15 @@ func _zoom(dir: int) -> void:
 	_layout()
 
 
+## Two-finger scroll (negative is up): gathered until it makes a zoom step, then one step in (up) or out (down).
+func _scroll(amount: float) -> void:
+	scroll_zoom += amount
+	if absf(scroll_zoom) >= SCROLL_ZOOM_STEP and zoom_wait <= 0.0:
+		zoom_wait = 0.12
+		_zoom(1 if scroll_zoom < 0.0 else -1)
+		scroll_zoom = 0.0
+
+
 # --- Input -------------------------------------------------------------------
 
 
@@ -275,6 +294,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		panning = event.pressed and view.has_point(get_global_mouse_position())
 	elif event is InputEventMouseMotion and panning:
 		cam -= event.relative / scale.x
+	elif event is InputEventPanGesture and view.has_point(get_global_mouse_position()):
+		_scroll(event.delta.y)  # a trackpad or Magic Mouse scrolls with this, not the wheel buttons
 	elif event is InputEventMagnifyGesture and zoom_wait <= 0.0 and absf(event.factor - 1.0) > 0.04:
 		zoom_wait = 0.25
 		_zoom(1 if event.factor > 1.0 else -1)
@@ -309,7 +330,16 @@ func _unhandled_input(event: InputEvent) -> void:
 				_cycle_hut_focus()
 			KEY_HOME:
 				center_on(state.world.camp_pos)
+			KEY_EQUAL, KEY_PLUS, KEY_KP_ADD:
+				_zoom(1)
+			KEY_MINUS, KEY_KP_SUBTRACT:
+				_zoom(-1)
 			KEY_ESCAPE:
+				if game_menu.is_open():
+					game_menu.close()
+				elif placing == "" and not tech_panel.visible and building_panel.selected().is_empty():
+					if not era_card.visible and not moment_card.visible:
+						game_menu.open()  # nothing to cancel: Esc is the menu
 				placing = ""
 				tech_panel.visible = false
 				building_panel.select(Vector2i(-1, -1))
@@ -317,7 +347,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 ## 0 toggles pause; 1, 2 or 3 sets the speed and unpauses. The game waits while the end card is up.
 func _set_speed(v: int) -> void:
-	if era_card.visible or moment_card.visible:
+	if era_card.visible or moment_card.visible or game_menu.is_open():
 		return
 	if v == 0:
 		paused = not paused
@@ -565,6 +595,10 @@ func _build_ui() -> void:
 	layer.add_child(moment_card)
 	moment_card.setup()
 	moment_card.chose.connect(_on_moment_chosen)
+	game_menu = GameMenu.new()
+	layer.add_child(game_menu)
+	game_menu.setup(state)
+	game_menu.paused_changed.connect(func(on: bool): paused = on)
 
 
 func _refresh_ui() -> void:
