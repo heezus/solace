@@ -712,3 +712,10 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 ## 2026-10-07: Neutral character asset names (PR #75)
 - Codex: match the merged title loader with `title_alt.png` and rename the map art to `lumen_lead.png`; regenerate imports.
 - Use Sela and a Kith character in study folders and prompt records; remove personal names, reference-photo descriptions and local account paths. Artwork and its pixel data stay unchanged.
+
+## 2026-10-07: Stage starts, save slots and debug keys (PR #80)
+- Claude follows the project owner's ask to test and debug from any stage: a new run can begin at eight stages (Stone Age to just before the Starfall ending) on a fixed map with the town built. There is no separate dev build; the starts ship in the normal game, on the Load screen next to the player's own saves.
+- Starts are built on demand, never committed: the pacing bots play to the boundary and a small script sets up the Starfall stages, so they stay deterministic and follow the balance. A start is read-only; Save writes only to one of five slots (a slot file is a run save plus a `meta` key, so the save version is unchanged, and the old single save moves into a slot).
+- The debug keys (F1 goods, F2 research, F3 speed to 30x, F4 fog) sit behind a pause-menu switch that starts off.
+- The exports ship the two bot scripts and leave out the rest of `tests/`, listed by pattern and guarded by a test.
+- The project owner asked for a calmer title screen: a left-to-clear gradient, a large name, no text under the buttons. Menus use Cinzel Decorative Bold (free, OFL; named in `scripts/menu_fonts.gd` so the family can be swapped) with plain Cinzel for small captions.
