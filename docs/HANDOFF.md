@@ -5,8 +5,8 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 ## Active work
 
 ### Codex — Starfall travellers
-- **Task:** current Lumen strangers and expedition pack overlay from Jon's 2026-10-06 Starfall assignment, branch `codex/starfall-travellers`.
-- **Reserved files:** `art/rendered/starfall-lumen-*` and `starfall-party-pack.png`/imports; `docs/art/starfall-travellers/`, relevant request notes and append-only design decision. No Claude code.
+- **Task:** current Lumen strangers and expedition pack overlay from Jon's 2026-10-06 Starfall assignment, branch `codex/starfall-travellers`, PR #71.
+- **Reserved files:** none after publication. PR #71 supplies traveller art/imports, exact regions, native preview and hook notes; no engine code.
 - **Acceptance criteria:** three slim pale-cloaked Lumen at the brief's 24 px target, consistent miniature camera/light and shared feet anchors, faint cyan accents with separate engine glow; small transparent pack overlay compatible with existing Kith poses; native-size preview, imports and loading/anchor handoff.
 - **Status:** stranger atlas and pack imported; 24 px figures and four existing Kith poses with the trial overlay inspected. Publishing art-only PR, CI pending. Title PR #68 and map-subject PR #70 are published and in CI; normal-play map hooks remain Claude's next action.
 - **Next action:** supply current traveller assets and code-hook notes in a small PR; then current item/glyph/gift illustrations, card vignettes and the Bloom sign. Later slots remain deferred.

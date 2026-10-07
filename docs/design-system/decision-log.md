@@ -639,7 +639,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Defaults Claude picked: Lessons are a finite list of about 8 (the three Bloom ones double as the three sample types for the echoes); coal is finite so the Lumen's Shard Boiler matters; the map grows once to the south on Ironstone; beasts ship as one optional Beast Pen branch.
 - Trust and the lean set how freely the Lumen hand over parts, and the Wreck always holds three, so no run is locked out of the Boiler or the Lamp.
 
-## 2026-10-06: Starfall traveller silhouettes (PR pending)
+## 2026-10-06: Starfall traveller silhouettes (PR #71)
 - Codex: three pale ivory/gold cloaks and small cyan brooches distinguish calm Lumen visitors from warm Kith, using the same miniature camera/materials; engine aura stays separate.
 - Keep the brief's 24 px figure target and a bottom-center foot anchor. Three appearance variants are not new named identities, ranks or simulation people.
 - A 12×14 px leather/blanket pack sits behind the existing expedition Kith pose; it shares the body's bob/facing and does not imply new cargo or movement mechanics. Existing four-pose fixture inspected; full Lumen walk cycles remain optional future work.
