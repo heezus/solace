@@ -141,3 +141,10 @@ Jon said the early game is slow, tools by hand are annoying, and roads were the 
 - **Guard Post** (opens when the strangers arrive): -6 trust once, then -1 a minute (never below 0). The Kith whose huts and workshops stand within 4 tiles of one work **15% faster** (the `watchful` bonus), so force pays now and costs trust. A refuge, no worker.
 - Story ids `market_open`, `shrine_raised` and `guard_raised` go in the Chronicle. The seen-once flags save in the run save (`starfall.seen`); older saves load.
 - **Still not built:** the third tech tab, shared food as an ongoing trust mover (the Hunger moment is the shared food), alternate recipes and Bloom samples as finds, the beast cart. Placeholder art borrows the Trading Post, Watchtower and Standing Stone; slots in `docs/art/requests.md`.
+
+## The lead stranger (Claude, 2026-10-07, on Jon's ask)
+- Jon's friend Briana asked to be in the game; Jon made her one of the three Lumen. She is the **tall one with long pale hair**, the first of the strangers to trust the Kith and the voice of the trust choices. Working name `Data.LEAD_NAME` (Briana), one constant, so a rename is one edit.
+- **Voice:** warm, playful, quick to tease, perceptive and confident; glamorous at first sight, goofy and loyal once she trusts you. She notices the Kith's mood before they say it, and her smile fades when the choice goes against her (the fade is the feedback).
+- **Where she speaks:** the arrival line (she waves first), the moment she gives her name when the first set is read, a line on each moment card (the Hunger, the Shards, the Warning) and her reply to every choice in the event log, and the end card. The trust meter stays hidden: her warmth shows it, not a number.
+- **Art:** a 24 px figure, a 160x160 portrait and an optional card header, in [the art brief](../art/starfall-art-brief.md). The look is stylized and tasteful; no photos are in the repo.
+
