@@ -1,0 +1,78 @@
+[
+	{
+		"anchor": "bottom_center",
+		"id": "stranger_0",
+		"path": "res://art/rendered/starfall-lumen-strangers.png",
+		"region": [
+			307,
+			51,
+			319,
+			620
+		],
+		"size": [
+			24.0,
+			24.0
+		],
+		"source_size": [
+			2172,
+			724
+		]
+	},
+	{
+		"anchor": "bottom_center",
+		"id": "stranger_1",
+		"path": "res://art/rendered/starfall-lumen-strangers.png",
+		"region": [
+			891,
+			53,
+			368,
+			618
+		],
+		"size": [
+			24.0,
+			24.0
+		],
+		"source_size": [
+			2172,
+			724
+		]
+	},
+	{
+		"anchor": "bottom_center",
+		"id": "stranger_2",
+		"path": "res://art/rendered/starfall-lumen-strangers.png",
+		"region": [
+			1537,
+			57,
+			306,
+			614
+		],
+		"size": [
+			24.0,
+			24.0
+		],
+		"source_size": [
+			2172,
+			724
+		]
+	},
+	{
+		"anchor": "bottom_center",
+		"id": "party_pack",
+		"path": "res://art/rendered/starfall-party-pack.png",
+		"region": [
+			279,
+			270,
+			733,
+			725
+		],
+		"size": [
+			12.0,
+			14.0
+		],
+		"source_size": [
+			1254,
+			1254
+		]
+	}
+]
