@@ -4,13 +4,12 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 
 ## Active work
 
-### Codex — growth visuals and build-bar fit
-- **Task:** Jon's 2026-10-05 assignment: fit the bottom build bar; supply path/gravel/paved art, Dwelling/Homestead/Longhouse, reusable scaffold and one-Kith hand cart. Branch `codex/growth-visuals`, PR #51. This assignment authorizes these assets despite page 17's older approval-hold text; beast carts and gameplay changes remain excluded.
-- **Reserved files:** none after publication; delivered layout-only `scripts/build_bar.gd`, new `art/rendered/growth-*` assets, `scripts/growth_art.gd`, focused visual/layout tests and related art/decision docs. Claude confirmed #50 keeps build-bar edits to price/visibility; the second merger reconciles them. No edits to Claude's drawing/gameplay hooks.
-- **Acceptance criteria:** craft and demolition controls fit default/narrow windows; every build tab remains accessible; cards keep readable dimensions with scrolling when needed. New transparent subjects/materials match current miniatures, retain logical footprints and imported metadata; native 48/24 px preview inspected; exact slot/region contract supplied to Claude.
-- **Status:** implementation complete for review. Build-bar checks pass at 800/1100/1280/1600 px across all tabs; native 24/48/96 px asset/48 px road preview inspected. Imports, strict warnings, lint/format and focused slot/alpha/bounds/RNG/seam checks passed. CI run 37405354942 on 9a0f2b9 passed import/metadata/warnings/main load/all logic tests, then the scripted bot stalled at 6001 frames with three Kith and no Bronze Dawn. The same stall reproduced locally with no UI-click or asset errors; long layout CI was not reached. PR #51 is blocked from merging until this progression/fixture failure is resolved.
-- **Next action:** Claude investigates the pacing-bot/fixture failure reported on PRs #50/#51; Codex fixes any demonstrated presentation/input defect and reruns CI after a relevant fix. Claude then reviews/merges the visual PR and uses `docs/art/growth-visuals/README.md` for exact state hooks in logistics/needs; new assets are imported and ready but normal play does not select tier/scaffold/cart state yet. Beast art remains outside this task.
-
+### Codex — Briana Lumen art
+- **Task:** Jon prioritizes Briana, lead Lumen stranger and first to trust the Kith: one miniature sprite and an alternate title painting. Branch `codex/lumen-briana`. Jon supplied private photo references; never commit them.
+- **Reserved files:** `art/sprites/lumen_briana.png` and its Godot import; `art/rendered/title_briana.png` and its import; `docs/art/briana/`; Briana sections in `docs/art/requests.md` and append-only design decision log. No gameplay or Claude-reserved code edits.
+- **Acceptance criteria:** painted likeness, long blonde hair, open smile, pale gold/cyan clothing; existing 24 px stranger footprint and elevated miniature angle. Alternate title preserves the approved dusk settlement, falling star and distant Bloom hints, with calm dark left third and no text. Godot-generated imports and inspected native-size previews.
+- **Status:** reference photos received; production art underway. Current stranger caller has sway but no dedicated idle-frame slot, so supply a single idle sprite and document hooks for Claude.
+- **Next action:** generate and inspect both pieces, publish a small PR with exact hooks. Starfall moments/Bloom/arrival work is safely stashed on `codex/starfall-moments` (draft #73); overhaul documentation cleanup follows Briana.
 
 ### Claude — Starfall stage 4
 - **Task:** Jon's "whatever else is next" (2026-10-07). Page 16 stage 4: Lumen Market, Shared Shrine, Guard Post. Stage 3 (#64) and the title screen, pause menu and zoom (#66) are merged. PR `stage4`.
