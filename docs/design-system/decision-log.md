@@ -725,3 +725,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - The project owner also chose (2026-10-07, on a card) that Ironfall's map grows **twice**: south on Ironstone, then (Claude's default) west on Rails, which holds the Bloom patches and the rail room.
 - The project owner asked that repeat runs hint at what carried over. Page 20 now has variant lines (one swapped line, chosen from the profile's resets and echoes) and five transparent memory overlays that sit over any still, so no still is painted twice.
 - The project owner also confirmed (2026-10-07, on a card) that the Beast Pen and beast cart ship in Ironfall as one optional branch (stage 3). That closes every Ironfall fork on page 19; stage 1 can be built.
+
+## 2026-10-07: Phase A cutscene art review (PR #PENDING)
+- Codex: nineteen stills and five separate memory layers use Misty Highlands title materials and the approved Sela/traveller kit; earthy Kith clothing stays distinct from pale Lumen clothing.
+- Keep story focal points visible through 8% push-in and captions in the lower third with the engine gradient. No text is baked into source paintings; no Bloom appears in first-run Phase A art.
+- Reuse #73 meteor/impact and Bloom-sign designs as references. The arrival atlas is not a full cinematic still; vignettes and cutscene images keep separate purposes.
+- Review memory layers at 12% normal alpha opacity and lower it when stacking. Preserve originals at their actual 1586×992 resolution; the requested 2560×1600 master criterion remains open, so publish draft art reviews rather than claim compliant masters.

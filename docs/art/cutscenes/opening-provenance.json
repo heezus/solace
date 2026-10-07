@@ -1,0 +1,29 @@
+{
+  "opening_1": {
+    "source": "exec-e1c318f3-da0f-49a4-870d-01b16b0d4f6b.png",
+    "sha256": "3f05e7244b76c9204b3bed90511128cb6e8f1ce5811a26a50a1a21575bc366ef",
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  },
+  "opening_2": {
+    "source": "exec-580d8fac-7485-4618-9f90-0e7487789029.png",
+    "sha256": "af49c79071370cfea287dfbf4b4f7f2831ba00c7810fda58636e0fbedae0798a",
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  },
+  "opening_3": {
+    "source": "exec-d53f8ffb-0fc9-421f-9e7f-e46058412a02.png",
+    "sha256": "1402aa34a8a7d956ce39801204e985cd6d8350cb08e85722c5913f41d36fbb26",
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  }
+}
