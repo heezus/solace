@@ -495,7 +495,7 @@ static func recipe_in(b: Dictionary) -> Dictionary:
 	if def.has("makes"):
 		return Data.RECIPES[b["make"]]["in"]
 	if def.get("trade", false):
-		return {b["give"]: Data.TRADE_GIVE} if is_trading(b) else {}
+		return {b["give"]: def.get("trade_give", Data.TRADE_GIVE)} if is_trading(b) else {}
 	return def.get("in", {})
 
 

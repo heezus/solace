@@ -52,7 +52,7 @@ Research cards use the illustration atlases (`research-symbols`, `research-landm
 - Keep to the current charcoal green, ivory and brass interface style.
 
 ## Slots coming in stage 3 (later)
-- **Buildings still to come**: a **Guard Post** (a watch post the Lumen dislike), a **Lumen shrine** (shared, trust-building) and a **Trade stall** at the Camp. They are not built; say if you want to start on them early, and Claude will add the slots.
+- **Stage 4 buildings (built, stand-ins in the game)**: a **Guard Post** (a watch post the Lumen dislike), a **Shared Shrine** (both peoples leave something, trust-building) and a **Lumen Market** (a trade stall by the Camp). Keys `guard_post`, `shared_shrine`, `lumen_market`; each is 1x1 on the Lore tab.
 - **The sky streak and the landing**: a streak of fire across the sky, and the thump (the screen shake and a short flare are code; a streak sprite or a brief overlay is the ask).
 - **Lumen walkers** at the Kith's 24 px size, if the strangers should walk and work: idle and walk at least.
 - **Bloom sign**: a patch of strange magenta and green growth at the edge of the fog. Stage 3 draws a stand-in at the sign's tile; one small tile-sized sprite plus a few variants replaces it.
