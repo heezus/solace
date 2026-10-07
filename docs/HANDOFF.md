@@ -5,7 +5,7 @@ Owner: the project owner (heezus). Two AI teams, one repo, coordinated by respon
 ## Active work
 
 ### Codex — Phase A cutscene paintings
-- **Task:** nineteen story stills and five transparent memory overlays, delivered as six small art-only review PRs on `codex/cutscenes-*` branches.
+- **Task:** nineteen story stills and five transparent memory overlays, delivered as six small art-only review PRs (#81–#86) on `codex/cutscenes-*` branches.
 - **Reserved files:** none after publication. Assets live in `art/rendered/cutscenes/`; prompt/provenance records and native caption previews in `docs/art/cutscenes/`. Claude owns playback code.
 - **Acceptance criteria:** Misty Highlands miniature art, no baked text or first-run Bloom, safe focal points through 8% push-in, darker caption foregrounds, Sela/traveller continuity, original alpha overlays and generated imports; requested 2560×1600.
 - **Status:** all 24 originals painted and inspected, Godot 4.7.2 imports generated, six caption/composite boards rendered. **Resolution criterion remains open: all originals are 1586×992.** Review PRs are drafts; do not call them compliant 2560×1600 masters.

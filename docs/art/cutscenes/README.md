@@ -13,6 +13,8 @@ Twenty-four original built-in imagegen outputs: nineteen story stills and five t
 | [Starfall endings](endings.md) | 5 | [Caption/push-in board](endings-review.png) |
 | [Memory layers](memory.md) | 5 | [12% opacity composite board](memory-review.png) |
 
+Review PRs: [opening #81](https://github.com/heezus/solace/pull/81), [bronze #82](https://github.com/heezus/solace/pull/82), [falling #83](https://github.com/heezus/solace/pull/83), [contact #84](https://github.com/heezus/solace/pull/84), [endings #85](https://github.com/heezus/solace/pull/85), [memory #86](https://github.com/heezus/solace/pull/86).
+
 Each batch is a separate PR into main; no gameplay or renderer edits. Review boards are documentation fixtures, not screenshots of a wired cutscene player. Text and gradients appear only in those boards, never in the source paintings.
 
 ## Resolution remains below the brief
@@ -38,4 +40,3 @@ godot --path . --script docs/art/cutscenes/preview.gd -- opening
 Replace `opening` with `bronze`, `falling`, `contact`, `endings` or `memory`. Boards use deterministic SubViewport sizes, a centered 8% crop, and a demonstration lower-third gradient. Memory previews use 12% opacity over the existing title painting; that background's star and Bloom hint belong to the title, not the overlay.
 
 Final prompts and revision prompts are beside each batch. Provenance uses generated source basenames only; personal reference photos and local account paths are excluded.
-
