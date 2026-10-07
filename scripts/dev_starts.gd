@@ -22,10 +22,16 @@ const END_FUSE := 4.0  # seconds before the Kith talk the last guesses over at t
 
 const REV := 1  # bump when a bot's play changes without a change to Data: it throws away every start kept on disk
 const CACHE_DIR := "user://stage_starts/"
+const BAKED_DIR := "res://stage_starts/"  # starts baked at release time (tests/tools/bake_starts.gd); not in the repo
+const EXT := ".run"  # not .json: an export takes such a file only through the include filter, never as a resource
 
 ## Where the slow starts (the ones a bot plays to) are kept between sessions; "" keeps none. A kept start is used only when
 ## its fingerprint (every Data constant, REV and the save version) is the same, so a balance change builds it afresh.
+## Before that cache a start is looked for in `baked_dir`: the release builds ship the slow starts baked, so the first click
+## is as quick as the rest. Neither folder need exist: the start is then built on demand.
 static var cache_dir := CACHE_DIR
+static var baked_dir := BAKED_DIR
+static var _print := ""  # the fingerprint, worked out once
 static var _memo := {}  # id -> the start as run-save text: built once a session, since five starts begin on the Falling Star
 
 
@@ -54,24 +60,29 @@ static func clear_cache() -> void:
 
 ## What the kept starts were built from: every Data constant, REV and the save version, as a short string.
 static func fingerprint() -> String:
+	if _print != "":
+		return _print
 	var script: Script = Data
 	var map: Dictionary = script.get_script_constant_map()
-	var keys := map.keys()
+	var keys := map.keys().map(func(k): return String(k))  # sorted as text: StringNames do not sort by their letters
 	keys.sort()
 	var h := REV * 1000 + RunSave.VERSION
 	for k in keys:
 		if typeof(map[k]) != TYPE_OBJECT:
 			h = (h * 31 + ("%s=%s" % [k, var_to_str(map[k])]).hash()) & 0x7fffffff
-	return str(h)
+	_print = str(h)
+	return _print
 
 
-## The start `id` as a new Sim: from this session's memo, else the file on disk, else `make` (a bot's long play, giving the
-## start as run-save text), kept in both. It is always read back from that text, so the first build and every later one are
-## the same game.
+## The start `id` as a new Sim: from this session's memo, else the baked file, else the file kept on disk, else `make` (a
+## bot's long play, giving the start as run-save text), kept in the memo and on disk. It is always read back from that text,
+## so the first build and every later one are the same game.
 static func _kept(id: String, make: Callable) -> Sim:
 	var text: String = _memo.get(id, "")
 	if text == "":
-		text = _read_file(id)
+		text = _read_file(baked_dir, id)
+	if text == "":
+		text = _read_file(cache_dir, id)
 	if text == "":
 		text = make.call()
 		_keep(id, text)
@@ -87,15 +98,15 @@ static func _keep(id: String, text: String) -> void:
 	_write_file(id, text)
 
 
-static func _file(id: String) -> String:
-	return cache_dir + id + ".json"
+static func _file(dir: String, id: String) -> String:
+	return dir + id + EXT
 
 
-## The run-save text kept for `id`, or "" when there is none or it is from another fingerprint.
-static func _read_file(id: String) -> String:
-	if cache_dir == "" or not FileAccess.file_exists(_file(id)):
+## The run-save text kept in `dir` for `id`, or "" when there is none or it is from another fingerprint.
+static func _read_file(dir: String, id: String) -> String:
+	if dir == "" or not FileAccess.file_exists(_file(dir, id)):
 		return ""
-	var kept := RunSave.from_json(FileAccess.get_file_as_string(_file(id)))
+	var kept := RunSave.from_json(FileAccess.get_file_as_string(_file(dir, id)))
 	if kept.get("fingerprint", "") != fingerprint() or not RunSave.is_run_save(kept.get("run")):
 		return ""
 	return RunSave.to_json(kept["run"])
@@ -105,7 +116,7 @@ static func _write_file(id: String, text: String) -> void:
 	if cache_dir == "":
 		return
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(cache_dir))
-	var file := FileAccess.open(_file(id), FileAccess.WRITE)
+	var file := FileAccess.open(_file(cache_dir, id), FileAccess.WRITE)
 	if file != null:
 		file.store_string('{"fingerprint": "%s", "run": %s}' % [fingerprint(), text])
 		file.close()

@@ -47,7 +47,8 @@ class FakeGame:
 
 func run(runner) -> void:
 	t = runner
-	DevStarts.cache_dir = ""  # the tests never read or write the starts the player has kept
+	DevStarts.cache_dir = ""  # the tests never read or write the starts the player has kept...
+	DevStarts.baked_dir = ""  # ...or the ones a release bakes in (a local bake would only hide what the bots make)
 	test_the_list_is_well_formed()
 	test_launch_hands_over_once()
 	test_slots_save_and_load()
@@ -66,6 +67,7 @@ func run(runner) -> void:
 func run_starts(runner) -> void:
 	t = runner
 	DevStarts.cache_dir = ""
+	DevStarts.baked_dir = ""
 	for id in DevStarts.ids():
 		test_start(id)
 	test_starts_are_deterministic()
@@ -365,19 +367,36 @@ func test_a_start_is_kept_between_sessions() -> void:
 		made[0] += 1
 		return _json(DevStarts.build("stone_age"))
 	var first: Sim = DevStarts._kept("kept_test", make)
-	t.check(made[0] == 1 and FileAccess.file_exists(DIR + "kept_test.json"), "built once and written")
+	t.check(made[0] == 1 and FileAccess.file_exists(DIR + "kept_test.run"), "built once and written")
 	var again: Sim = DevStarts._kept("kept_test", make)
 	t.check(made[0] == 1 and _json(again) == _json(first), "the same session builds nothing more")
 	DevStarts.clear_cache()
 	var next: Sim = DevStarts._kept("kept_test", make)
 	t.check(made[0] == 1 and _json(next) == _json(first), "a new session reads the file")
-	var stale := FileAccess.open(DIR + "kept_test.json", FileAccess.WRITE)
+	var stale := FileAccess.open(DIR + "kept_test.run", FileAccess.WRITE)
 	stale.store_string('{"fingerprint": "other", "run": %s}' % RunSave.to_json(RunSave.dump(first)))
 	stale.close()
 	DevStarts.clear_cache()
 	DevStarts._kept("kept_test", make)
 	t.check(made[0] == 2, "a file from other data is built afresh")
+	# A baked start (shipped in a release) is read before the kept one, by the same fingerprint rule.
 	DevStarts.cache_dir = ""
+	DevStarts.baked_dir = DIR + "baked/"
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(DevStarts.baked_dir))
+	var run_text := _json(first)
+	var baked := FileAccess.open(DevStarts.baked_dir + "baked_test.run", FileAccess.WRITE)
+	baked.store_string('{"fingerprint": "%s", "run": %s}' % [DevStarts.fingerprint(), run_text])
+	baked.close()
+	DevStarts.clear_cache()
+	var from_baked: Sim = DevStarts._kept("baked_test", make)
+	t.check(made[0] == 2 and _json(from_baked) == run_text, "a baked start is read without building")
+	baked = FileAccess.open(DevStarts.baked_dir + "baked_test.run", FileAccess.WRITE)
+	baked.store_string('{"fingerprint": "other", "run": %s}' % run_text)
+	baked.close()
+	DevStarts.clear_cache()
+	DevStarts._kept("baked_test", make)
+	t.check(made[0] == 3, "a baked start from other data is built afresh")
+	DevStarts.baked_dir = ""
 	DevStarts.clear_cache()
 	_clean()
 
@@ -393,6 +412,23 @@ func test_the_export_ships_the_bots_and_nothing_else_of_tests() -> void:
 		if section.begins_with("preset.") and not section.ends_with(".options"):
 			filters.append(String(cfg.get_value(section, "exclude_filter", "")).split(",", false))
 	t.check(filters.size() == 2 and filters[0] == filters[1], "both presets exclude the same files")
+	# The baked starts (stage_starts/*.run, made at release time and never committed) are shipped through the include filter.
+	for section in cfg.get_sections():
+		if section.begins_with("preset.") and not section.ends_with(".options"):
+			var include := String(cfg.get_value(section, "include_filter", ""))
+			t.check("stage_starts/x.run".matchn(include.strip_edges()), "%s ships the baked starts" % section)
+	t.check(
+		FileAccess.get_file_as_string("res://.gitignore").contains("/stage_starts/"),
+		"and the baked folder is not committed"
+	)
+	t.check(
+		DevStarts.BAKED_DIR == "res://stage_starts/" and DevStarts.EXT == ".run",
+		"the loader reads where the bake writes"
+	)
+	t.check(
+		FileAccess.get_file_as_string("res://.github/workflows/release.yml").contains("bake_starts.gd"),
+		"and a release bakes first"
+	)
 	var files := _files("res://tests")
 	t.check(files.size() > 50, "the tests folder was listed (%d files)" % files.size())
 	for path in files:
