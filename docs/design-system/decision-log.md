@@ -614,3 +614,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Expeditions use the walking Scouting already has: two Kith, a pack from the stockpile, an 80 s day, half the finds if late. Alternate recipes and Bloom samples as finds wait for later stages.
 - The Wreck and Post use placeholder art; the slots are in docs/art/requests.md.
 
+
+## 2026-10-07: Carry-over details (PR #62)
+- Jon picked on cards: a handful of echoes per run; an echo unlocks the tech but it still needs its normal materials; echoes bank only when a run ends in a reset.
+- Claude: recorded these on page 18 (what carries stays the default: one echo per read Lumen glyph set and per Bloom sample type). Nothing is built.
