@@ -35,7 +35,7 @@ const EraCard = preload("res://scripts/era_card.gd")
 const MomentCard = preload("res://scripts/moment_card.gd")
 const GameMenu = preload("res://scripts/game_menu.gd")
 const Launch = preload("res://scripts/launch.gd")
-const RunSave = preload("res://scripts/run_save.gd")
+const DebugKeys = preload("res://scripts/debug_keys.gd")
 const Profile = preload("res://scripts/profile.gd")
 const Clearing = preload("res://scripts/clearing.gd")
 const WorldGround = preload("res://scripts/world_ground.gd")
@@ -115,8 +115,7 @@ var nudge := {}
 func _ready() -> void:
 	Ui.apply_theme()
 	state = Sim.new()
-	var loaded := Launch.take_load() and RunSave.load_into(state)
-	if not loaded:
+	if not Launch.start_into(state):
 		state = Sim.new()
 		state.generate(randi())
 	cam = Overlays.center(state.world.camp_pos)  # start looking at the Hearth
@@ -324,6 +323,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				_set_speed(0)
 			KEY_1, KEY_2, KEY_3:
 				_set_speed(event.keycode - KEY_0)
+			KEY_F1, KEY_F2, KEY_F3, KEY_F4:
+				DebugKeys.press(self, event.keycode)  # does nothing unless the pause menu's Debug keys switch is on
 			KEY_X:
 				placing = "" if placing == "demolish" else "demolish"
 			KEY_TAB, KEY_R:

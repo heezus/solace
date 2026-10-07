@@ -1,27 +1,39 @@
 extends Control
 ## The title screen: the first thing the game shows. A backdrop (painted art when `art/rendered/title.png` exists, else a
 ## stand-in drawn here: a dusk over misty highland with a Kith fire, a falling star and a faint glow in the east), the name,
-## and three buttons: Continue (when a run save exists), New game and Quit. It starts the game scene and says, through
-## `Launch`, whether to load the run save. The hint of other peoples is in the art, not the words.
+## and the buttons: Continue (the newest save, when there is one), New game, Load game (the Load screen: every save slot and
+## the stage starts) and Quit. It starts the game scene and says, through `Launch`, what to start from. The hint of other
+## peoples is in the art, not the words.
 ## The art slot and what it should show: docs/art/starfall-art-brief.md.
 
 const Data = preload("res://scripts/data.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Art = preload("res://scripts/art.gd")
+const MenuFonts = preload("res://scripts/menu_fonts.gd")
 const Launch = preload("res://scripts/launch.gd")
-const RunSave = preload("res://scripts/run_save.gd")
+const SaveSlots = preload("res://scripts/save_slots.gd")
+const SlotScreen = preload("res://scripts/slot_screen.gd")
 
 const GAME_SCENE := "res://scenes/main.tscn"
 const ART_PATH := "res://art/rendered/title.png"
 const ALT_ART_PATH := "res://art/rendered/title_alt.png"  # an alternate painting: the lead stranger
-const BUTTON_WIDTH := 260.0
+const BUTTON_WIDTH := 300.0
+const TITLE_SIZE := 136  # the name, in the display face: about 570 px wide, inside the dark of the left band
+const BUTTON_SIZE := 21
+const MENU_LEFT := 80.0  # where the menu column starts
+const BAND_SOLID := 440.0  # the left band stays this dark (alpha BAND_ALPHA) for the menu to read over the art...
+const BAND_FADE := 520.0  # ...then fades to nothing over this many more pixels
+const BAND_ALPHA := 0.8
+const BAND_STEPS := 40
 
-var save_path := RunSave.PATH
+var slot_dir := SaveSlots.DIR
 var time := 0.0
+var slots: SlotScreen
 var _art: Texture2D
 var _stars: Array = []  # [x share, y share, twinkle offset], fixed
 var _continue: Button
 var _new_game: Button
+var _load: Button
 var _quit: Button
 
 
@@ -52,45 +64,56 @@ func _build_menu() -> void:
 	column.add_theme_constant_override("separation", 12)
 	column.custom_minimum_size = Vector2(BUTTON_WIDTH, 0)
 	column.set_anchors_and_offsets_preset(Control.PRESET_CENTER_LEFT)
-	column.offset_left = 96.0
-	column.offset_right = 96.0 + BUTTON_WIDTH
-	column.offset_top = -120.0
+	column.offset_left = MENU_LEFT
+	column.offset_right = MENU_LEFT + BUTTON_WIDTH
+	column.offset_top = -240.0
 	add_child(column)
-	var title := Ui.label(Data.TITLE_NAME, 72)
+	var title := Ui.label(Data.TITLE_NAME, TITLE_SIZE)
+	MenuFonts.style_display(title, TITLE_SIZE)
 	title.add_theme_color_override("font_color", Ui.HIGHLIGHT)
 	title.add_theme_color_override("font_outline_color", Ui.LINE)
 	title.add_theme_constant_override("outline_size", 8)
 	column.add_child(title)
 	column.add_child(_caption(Data.TITLE_TAGLINE))
-	column.add_child(_spacer(18.0))
-	var has_save := RunSave.exists(save_path)
+	column.add_child(_spacer(14.0))
+	var latest := SaveSlots.latest(slot_dir)
+	var has_save := latest > 0
 	_continue = _button(Data.TITLE_CONTINUE if has_save else Data.TITLE_NO_SAVE, has_save)
 	_continue.disabled = not has_save
-	_continue.pressed.connect(start.bind(true))
+	_continue.pressed.connect(func(): start(latest))
 	column.add_child(_continue)
 	_new_game = _button(Data.TITLE_NEW, not has_save)
-	_new_game.pressed.connect(start.bind(false))
+	_new_game.pressed.connect(start.bind(0))
 	column.add_child(_new_game)
+	_load = _button(Data.TITLE_LOAD, false)
+	_load.pressed.connect(func(): slots.open("load"))
+	column.add_child(_load)
 	if not OS.has_feature("web"):
 		_quit = _button(Data.TITLE_QUIT, false)
 		_quit.pressed.connect(func(): get_tree().quit())
 		column.add_child(_quit)
-	column.add_child(_spacer(18.0))
-	column.add_child(_caption(Data.TITLE_WHISPER))
+	slots = SlotScreen.new()
+	slots.dir = slot_dir
+	add_child(slots)
+	slots.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	slots.setup()
+	slots.slot_picked.connect(start)
+	slots.start_picked.connect(start_stage)
 
 
 func _button(text: String, primary: bool) -> Button:
 	var b := Ui.button(text)
 	Ui.action_button(b, primary)
 	b.text = text
-	b.add_theme_font_size_override("font_size", 20)
-	b.custom_minimum_size = Vector2(BUTTON_WIDTH, 46)
+	MenuFonts.style_button(b, BUTTON_SIZE)
+	b.custom_minimum_size = Vector2(BUTTON_WIDTH, 48)
+	b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN  # the name above is wider than the buttons
 	return b
 
 
 func _caption(text: String) -> Label:
 	var l := Ui.label(text, Ui.LABEL_TEXT)
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	MenuFonts.style_caption(l)
 	l.add_theme_color_override("font_color", Ui.TEXT)
 	l.add_theme_color_override("font_outline_color", Ui.LINE)
 	l.add_theme_constant_override("outline_size", 4)
@@ -103,10 +126,16 @@ func _spacer(height: float) -> Control:
 	return c
 
 
-## Start the game: from the run save when `load_save`, else on a new map.
-func start(load_save: bool) -> void:
-	if load_save:
-		Launch.ask_to_load()
+## Start the game: from save slot `slot`, or on a new map for 0.
+func start(slot := 0) -> void:
+	if slot > 0:
+		Launch.ask_to_load(slot)
+	get_tree().change_scene_to_file(GAME_SCENE)
+
+
+## Start a new run from a stage start (`dump`, built by the Load screen).
+func start_stage(dump: Dictionary) -> void:
+	Launch.ask_stage(dump)
 	get_tree().change_scene_to_file(GAME_SCENE)
 
 
@@ -122,7 +151,23 @@ func _draw() -> void:
 		_draw_cover(_art, area)
 	else:
 		_draw_standin(area)
-	draw_rect(Rect2(0, 0, 440, area.size.y), Color(Ui.LINE, 0.35))  # a quiet band under the menu
+	_draw_band(area)
+
+
+## A dark band down the left, under the menu, that fades out smoothly to the right with no edge: dark for BAND_SOLID px, then
+## eased to clear over BAND_FADE.
+func _draw_band(area: Rect2) -> void:
+	var end := BAND_SOLID + BAND_FADE
+	for i in BAND_STEPS:
+		var x0 := end * i / BAND_STEPS
+		var x1 := end * (i + 1) / BAND_STEPS
+		var a0 := BAND_ALPHA * (1.0 - smoothstep(BAND_SOLID * 0.5, end, x0))
+		var a1 := BAND_ALPHA * (1.0 - smoothstep(BAND_SOLID * 0.5, end, x1))
+		var pts := PackedVector2Array(
+			[Vector2(x0, 0), Vector2(x1, 0), Vector2(x1, area.size.y), Vector2(x0, area.size.y)]
+		)
+		var cols := PackedColorArray([Color(Ui.LINE, a0), Color(Ui.LINE, a1), Color(Ui.LINE, a1), Color(Ui.LINE, a0)])
+		draw_polygon(pts, cols)
 
 
 ## `tex` scaled to cover `area`, centred, with nothing left uncovered.

@@ -31,6 +31,7 @@ Should shift with the tone: warm, bright early eras, cooling and darkening after
 ## Shape language
 
 ## UI style
+Menu type (title, pause, Load and save screens): Cinzel Decorative Bold for the name and every button, plain Cinzel semibold for small captions, both free under the SIL Open Font License (`fonts/cinzel/`, named in one place, `scripts/menu_fonts.gd`). The family is the project owner's call and can be swapped there.
 
 ## Audio & music mood
 
