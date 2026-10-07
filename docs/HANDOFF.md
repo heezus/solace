@@ -4,12 +4,12 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 
 ## Active work
 
-### Codex — Briana and Jon foreground title pair
-- **Task:** Jon requested separate lower-angle character studies, then authorized pairing both in the foreground with the original approved town behind. Branch `codex/lumen-briana`, PR #75.
-- **Reserved files:** none after publication; delivered Briana map sprite/import, `art/rendered/title_briana.png`, `art/rendered/title-pair-foreground.png` with imports, `docs/art/briana/`, `docs/art/jon-kith/`, `docs/art/title-pair/`, current requests and design decisions. No Claude-reserved code edits.
-- **Acceptance criteria:** two independent character studies retained; v1 Briana saved as reference, rejected title attempts archived. Pair reads as near foreground, exact original painting behind, quiet left menu third, no text. Imported production textures and actual title-menu previews verified.
-- **Status:** delivered. Built-in image generation produced a separate transparent pair; Godot rendered it over the unchanged original background. Byte-identical source checks, imports and 1280×800/1600×900 actual menu previews passed. Output 1586×992; original resolution limitation remains. Full CI tracked on #75. Private photos outside Git; Jon is title art only, not a new gameplay visitor.
-- **Next action:** Claude reviews the current pair and adds alternate-title selection per `docs/art/title-pair/README.md`; map sprite index 0 remains a separate hookup/review. Merge after CI green and visual review. Saved #73 art and overhaul documentation cleanup remain queued.
+### Codex — Briana and Jon title v4
+- **Task:** Jon requested v4: slightly smaller foreground characters and dusk lighting matching the original background, retaining title-menu space, Hearth fire, falling star and Bloom hint. Branch `codex/lumen-briana`, PR #75.
+- **Reserved files:** none after publication; delivered `art/rendered/title_briana.png`, relit `title-pair-foreground.png` with imports, `docs/art/title-pair/` v4/source/layers/menu previews and v3 archive; current art requests and design decisions. No Claude-reserved code edits.
+- **Acceptance criteria:** pair about 13% smaller (canvas height 68% versus 78%), cool ambient fill with restrained warm/cool rim light, actual original background unchanged, both faces inside frame, menu clear and narrative landmarks visible.
+- **Status:** v4 complete. Original source byte check, foreground source byte check, Godot imports, native layered render and actual title-menu captures at 1280×800/1600×900 passed. Output remains 1586×992; right shoulder/arm crop is intentional foreground framing. Prior versions archived. Full CI tracked on #75; synchronization with main resolves shared docs conflicts.
+- **Next action:** Claude reviews v4 and merges after CI green. Alternate title selection already exists in #74; also merge original-title #68 so both images are available. Briana map/portrait art remains separate; Jon is title art only, not a gameplay visitor. Saved #73 art and overhaul documentation cleanup remain queued.
 
 ### Claude — Starfall stage 4
 - **Task:** Jon's "whatever else is next" (2026-10-07). Page 16 stage 4: Lumen Market, Shared Shrine, Guard Post. Stage 3 (#64) and the title screen, pause menu and zoom (#66) are merged. PR `stage4`.

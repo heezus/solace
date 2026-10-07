@@ -6,16 +6,16 @@
 	],
 	"foreground": "res://art/rendered/title-pair-foreground.png",
 	"foreground_box": [
-		991.25,
-		317.440002441406,
-		716.72,
-		674.56
+		764.224365234375,
+		218.240005493164,
+		821.775625635809,
+		773.76
 	],
 	"foreground_region": [
-		304,
-		0,
-		1054,
-		992
+		305,
+		9,
+		1044,
+		983
 	],
 	"method": "Godot two-layer render; original source textures unchanged"
 }

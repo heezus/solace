@@ -42,9 +42,9 @@ func compose() -> void:
  artwork.background = ImageTexture.create_from_image(background_image)
  artwork.foreground = atlas
  artwork.canvas_size = viewport.size
- var height := viewport.size.y * 0.78
+ var height := viewport.size.y * 0.68
  var width := height * bounds.size.x / bounds.size.y
- artwork.foreground_box = Rect2(Vector2(viewport.size.x-width,viewport.size.y-height),Vector2(width,height))
+ artwork.foreground_box = Rect2(Vector2(viewport.size.x * 0.625,viewport.size.y-height),Vector2(width,height))
  viewport.add_child(artwork)
  for i in 6:
   await process_frame

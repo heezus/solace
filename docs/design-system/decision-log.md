@@ -665,3 +665,8 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Preserve the exact approved title painting as the background texture. Generate an independent transparent paired foreground and compose the two in Godot, retaining sources and layout for future adjustment.
 - Keep the left menu area clear and preserve title/save behavior; deliver the alternate PNG and source layer, with Claude selection notes. The output remains 1586×992, the original painting's resolution.
 - This supersedes the rejected giant/middle-distance title attempts. Jon's likeness is title artwork, not a new gameplay character; the Briana map slot is reviewed independently.
+
+## 2026-10-06: Smaller dusk-lit title pair v4 (PR #75)
+- Codex follows Jon's v4 request: reduce pair height from 78% to 68% of the canvas, about 13%, and move them right to reveal the Hearth fire and more town behind.
+- Relight the transparent pair with cool dusk fill, quieter frontal highlights, warm village light on the left edges and pale cool rim on sky-facing edges. Preserve identities, clothing and the original approved background texture.
+- Keep both faces visible, the left menu area clear, the falling star head and distant Bloom hint present at 1280×800 and 1600×900. Right arm/shoulder crop is intentional foreground framing; v3 remains archived for comparison.
