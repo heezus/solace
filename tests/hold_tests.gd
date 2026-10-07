@@ -1,5 +1,5 @@
 extends RefCounted
-## Hold to harvest forgives a shaky hand (design-system/14-hands-to-haulers.md, found by Jon's playtest of 2026-10-03:
+## Hold to harvest forgives a shaky hand (design-system/14-hands-to-haulers.md, found by the project owner's playtest of 2026-10-03:
 ## "the early game is kinda slow and wonky with clicking"). A pointer that drifts off the tile or a click that lets go early
 ## keeps its progress for Data.HOLD_KEEP seconds; a pointer that slides to the next tile of the same kind keeps the ring
 ## at once. The first resource a Kith learns takes Data.LEARN_FIRST harvests, the rest Data.LEARN_CLICKS. Run from
@@ -192,7 +192,7 @@ func test_the_first_lesson_takes_fewer_harvests() -> void:
 	t.check(s.people.knows("stone"), "but after %d it is" % Data.LEARN_CLICKS)
 
 
-## Jon's playtest of 2026-10-03: the first minutes by hand were slow and roads came late. These are the numbers that keep
+## The project owner's playtest of 2026-10-03: the first minutes by hand were slow and roads came late. These are the numbers that keep
 ## them quick; tests/tools/pace.gd (the pacing bot) says what they do to a whole run.
 func test_the_early_numbers_stay_quick() -> void:
 	var flint: float = Data.HAND_TOOLS["flint_tools"]["hold"]

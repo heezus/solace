@@ -1,6 +1,6 @@
 # In-game HUD: spec
 
-Status: **default approved for building** (2026-09-30). Jon was away, so Claude picked this and he can still revise it.
+Status: **default approved for building** (2026-09-30). The project owner was away, so Claude picked this and he can still revise it.
 Mockup: https://claude.ai/artifact/9WgaSRvMp18nqHV24w96CY (the board "In-game HUD", 1280 × 800).
 It builds on what the code thread shipped: a goal panel, a full top bar, build buttons that say what they need, and hut range. Only the changes are listed here.
 

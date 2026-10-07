@@ -4,7 +4,7 @@
 
 - **Working title:** Solace (2026-09-29)
 - **Genre:** automation / incremental with era progression and prestige
-- **Platform(s):** Mac first (Jon plays and tests there); engine is Godot
+- **Platform(s):** Mac first (the project owner plays and tests there); engine is Godot
 - **Player count:** single player
 - **Elevator pitch (one sentence):** Guide the Kith from stone tools to super-advanced industry on the planet Solace, until a fallen star brings magic, rivals and the thing that hunted them.
 - **The fantasy (what the player gets to feel):** designing a sprawling machine, watching it run, and climbing through eras while the world grows stranger.

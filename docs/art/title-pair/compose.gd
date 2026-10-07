@@ -50,7 +50,7 @@ func compose() -> void:
   await process_frame
  await RenderingServer.frame_post_draw
  var result := viewport.get_texture().get_image()
- var error := result.save_png("res://art/rendered/title_briana.png")
+ var error := result.save_png("res://art/rendered/title_alt.png")
  var manifest := {"background":"original-background.png","foreground":"res://art/rendered/title-pair-foreground.png","foreground_region":[bounds.position.x,bounds.position.y,bounds.size.x,bounds.size.y],"foreground_box":[artwork.foreground_box.position.x,artwork.foreground_box.position.y,width,height],"canvas":[viewport.size.x,viewport.size.y],"method":"Godot two-layer render; original source textures unchanged"}
  var file := FileAccess.open(HERE+"layers.json",FileAccess.WRITE)
  file.store_string(JSON.stringify(manifest,"\t")+"\n")

@@ -1,6 +1,6 @@
 # Misty Highlands: coordinated tile variants
 
-2026-10-04, Codex, PR #33. Documentation-only art studies following Jon's request for varied assets that blend naturally on the tile map. These extend the [rendered miniature kit](../README.md), with no production sprite replacements or engine changes.
+2026-10-04, Codex, PR #33. Documentation-only art studies following the project owner's request for varied assets that blend naturally on the tile map. These extend the [rendered miniature kit](../README.md), with no production sprite replacements or engine changes.
 
 ## Shared family, varied silhouettes
 
@@ -31,7 +31,7 @@ Grass is sampled across a continuous world plane, with a second offset sample an
 - Kith appearances are translated single poses, not directional walk or work frames. A real animation sheet still needs aligned anchors and consistent poses.
 - Bridge end posts repeat across adjacent segments. Production needs separate deck, bank ends and rail continuations. The river contour is an illustrative continuous shape; a general terrain system needs masks or matched edge/corner tiles for arbitrary maps.
 - Generated alpha edges, camera consistency, shape bounds, exact ground texture repeat seams and semantic distinctions between building roles require a controlled production pass. Kiln, wheel and fake harvested states still use simplified placeholders; harvest toggles do not propose resource depletion rules.
-- All raster studies remain isolated by the parent `.gdignore`; this study does not change production imports. Jon's 2026-10-04 authorization allows Codex to implement the visual pipeline in a subsequent validated engine change, with Claude reviewing the PR.
+- All raster studies remain isolated by the parent `.gdignore`; this study does not change production imports. The project owner's 2026-10-04 authorization allows Codex to implement the visual pipeline in a subsequent validated engine change, with Claude reviewing the PR.
 
 ## Validation
 

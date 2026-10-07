@@ -1,4 +1,0 @@
-[
- {"id":"lumen_briana","path":"res://art/sprites/lumen_briana.png","grid":[1,1],"cell":0,"size":[24,24]},
- {"id":"existing_kith","path":"res://art/rendered/walk.png","grid":[4,3],"cell":4,"size":[24,24]}
-]

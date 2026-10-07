@@ -1,5 +1,5 @@
 extends RefCounted
-## The Flax Field (Jon's request, 2026-10-03: "I think we need an ability to plant fiber"). Flax is sown by dragging on
+## The Flax Field (the project owner's request, 2026-10-03: "I think we need an ability to plant fiber"). Flax is sown by dragging on
 ## open grassland for 2 Fiber, once Cordage is known; a hut set to Fiber cuts it exactly as it cuts a wild patch, and
 ## a sown tile, like a wild one, never runs out. Run from tests/run_tests.gd, which owns check() and the helpers.
 

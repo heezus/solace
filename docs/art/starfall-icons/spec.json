@@ -1,0 +1,184 @@
+[
+  {
+    "id": "pack_light",
+    "path": "res://art/rendered/starfall-icons.png",
+    "grid": [
+      4,
+      4
+    ],
+    "cell": 0,
+    "size": [
+      24,
+      24
+    ]
+  },
+  {
+    "id": "pack_standard",
+    "path": "res://art/rendered/starfall-icons.png",
+    "grid": [
+      4,
+      4
+    ],
+    "cell": 1,
+    "size": [
+      24,
+      24
+    ]
+  },
+  {
+    "id": "pack_heavy",
+    "path": "res://art/rendered/starfall-icons.png",
+    "grid": [
+      4,
+      4
+    ],
+    "cell": 2,
+    "size": [
+      24,
+      24
+    ]
+  },
+  {
+    "id": "shard",
+    "path": "res://art/rendered/starfall-icons.png",
+    "grid": [
+      4,
+      4
+    ],
+    "cell": 3,
+    "size": [
+      24,
+      24
+    ]
+  },
+  {
+    "id": "gift_shardlight",
+    "path": "res://art/rendered/starfall-icons.png",
+    "grid": [
+      4,
+      4
+    ],
+    "cell": 4,
+    "size": [
+      24,
+      24
+    ]
+  },
+  {
+    "id": "gift_lumen_healer",
+    "path": "res://art/rendered/starfall-icons.png",
+    "grid": [
+      4,
+      4
+    ],
+    "cell": 5,
+    "size": [
+      24,
+      24
+    ]
+  },
+  {
+    "id": "gift_starfruit",
+    "path": "res://art/rendered/starfall-icons.png",
+    "grid": [
+      4,
+      4
+    ],
+    "cell": 6,
+    "size": [
+      24,
+      24
+    ]
+  },
+  {
+    "id": "gift_shardwork",
+    "path": "res://art/rendered/starfall-icons.png",
+    "grid": [
+      4,
+      4
+    ],
+    "cell": 7,
+    "size": [
+      24,
+      24
+    ]
+  },
+  {
+    "id": "set_name",
+    "path": "res://art/rendered/starfall-icons.png",
+    "grid": [
+      4,
+      4
+    ],
+    "cell": 8,
+    "size": [
+      24,
+      24
+    ]
+  },
+  {
+    "id": "set_light",
+    "path": "res://art/rendered/starfall-icons.png",
+    "grid": [
+      4,
+      4
+    ],
+    "cell": 9,
+    "size": [
+      24,
+      24
+    ]
+  },
+  {
+    "id": "set_body",
+    "path": "res://art/rendered/starfall-icons.png",
+    "grid": [
+      4,
+      4
+    ],
+    "cell": 10,
+    "size": [
+      24,
+      24
+    ]
+  },
+  {
+    "id": "set_growth",
+    "path": "res://art/rendered/starfall-icons.png",
+    "grid": [
+      4,
+      4
+    ],
+    "cell": 11,
+    "size": [
+      24,
+      24
+    ]
+  },
+  {
+    "id": "set_craft",
+    "path": "res://art/rendered/starfall-icons.png",
+    "grid": [
+      4,
+      4
+    ],
+    "cell": 12,
+    "size": [
+      24,
+      24
+    ]
+  },
+  {
+    "id": "set_warning",
+    "path": "res://art/rendered/starfall-icons.png",
+    "grid": [
+      4,
+      4
+    ],
+    "cell": 13,
+    "size": [
+      24,
+      24
+    ]
+  }
+]

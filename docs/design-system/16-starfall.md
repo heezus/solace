@@ -1,6 +1,6 @@
 # Era 3: Starfall
 
-Status: **designed, not built** (2026-10-03). Jon agreed the five main picks on 2026-10-03 and asked for a mix on the Lumen choice (a hidden trust meter plus a few big choice moments). Anything marked *default* is a pick Claude made, and Jon can change it. Mechanics page, so Claude owns it. Tech additions live here, not in [09](09-tech-tree.md) or [10](10-bronze-dawn.md).
+Status: **designed, not built** (2026-10-03). The project owner agreed the five main picks on 2026-10-03 and asked for a mix on the Lumen choice (a hidden trust meter plus a few big choice moments). Anything marked *default* is a pick Claude made, and the project owner can change it. Mechanics page, so Claude owns it. Tech additions live here, not in [09](09-tech-tree.md) or [10](10-bronze-dawn.md).
 
 Picks up where [Bronze Dawn](10-bronze-dawn.md) ends: the Falling Star card, then "Keep building".
 
@@ -38,7 +38,7 @@ Code records a flag, `cairn_built_before_landing`. This page defines what it doe
 - Either way nothing is locked out. The cairn buys a friendlier start, not a different game.
 
 ## Expeditions
-Set and forget, in line with Jon's feedback that clicking chores are the bad part.
+Set and forget, in line with the project owner's feedback that clicking chores are the bad part.
 - Build an **Expedition Post**. Pick a **fog target** on the map (a tile or a marker), pick a **pack** from a short list of presets (Light, Standard, Heavy), and send 2 or 3 Kith.
 - The party **walks there and back on its own** along roads where possible. Roads shorten the trip, so the road network matters (roads were the fun part).
 - **Nightfall rule:** the party must be home by dark. If the target is too far, the post shows a warning before launch and suggests a road or a closer stop.
@@ -70,7 +70,7 @@ In Bronze Dawn the Cairn glows brighter as the Wanderer comes closer, and does n
 - It keeps the same footprint and sprite, so no new art slot is needed (a glow layer only).
 
 ## The Lumen choice (trust meter plus big moments)
-Jon's pick: a mix of a hidden meter and a few explicit decisions.
+the project owner's pick: a mix of a hidden meter and a few explicit decisions.
 - **Trust** is a hidden number from 0 to 100. Buildings and trade move it quietly:
   - Up: a **Lumen Camp** with housing, shared food, sharing glyph sets, a shared shrine.
   - Down: a **Guard Post**, refusing trade, taking shards by force, hoarding food while they starve.
@@ -94,8 +94,8 @@ Jon's pick: a mix of a hidden meter and a few explicit decisions.
 - The first **Bloom sign** appears: a patch of strange growth at the edge of the fog. It does nothing yet. The game keeps running, as it did after the Falling Star.
 - A story id `bloom_seen` goes in the profile save.
 
-## Pacing against Jon's feedback
-Jon said the early game is slow, tools by hand are annoying, and roads were the fun part. For this era:
+## Pacing against the project owner's feedback
+the project owner said the early game is slow, tools by hand are annoying, and roads were the fun part. For this era:
 - No hand-crafted items. Anything crafted runs from a building.
 - Roads matter more, because expeditions and the Lumen Camp both want them.
 - Clicking is for decisions: guessing glyphs, picking a fog target, answering a big moment.
@@ -142,9 +142,9 @@ Jon said the early game is slow, tools by hand are annoying, and roads were the 
 - Story ids `market_open`, `shrine_raised` and `guard_raised` go in the Chronicle. The seen-once flags save in the run save (`starfall.seen`); older saves load.
 - **Still not built:** the third tech tab, shared food as an ongoing trust mover (the Hunger moment is the shared food), alternate recipes and Bloom samples as finds, the beast cart. Placeholder art borrows the Trading Post, Watchtower and Standing Stone; slots in `docs/art/requests.md`.
 
-## The lead stranger (Claude, 2026-10-07, on Jon's ask)
-- Jon's friend Briana asked to be in the game; Jon made her one of the three Lumen. She is the **tall one with long pale hair**, the first of the strangers to trust the Kith and the voice of the trust choices. Working name `Data.LEAD_NAME` (Briana), one constant, so a rename is one edit.
+## The lead stranger (Claude, 2026-10-07)
+- One of the three Lumen is a named lead character, **Sela**. She is the **tall one with long pale hair**, the first of the strangers to trust the Kith and the voice of the trust choices. Her name is `Data.LEAD_NAME`, one constant, so a rename is one edit.
 - **Voice:** warm, playful, quick to tease, perceptive and confident; glamorous at first sight, goofy and loyal once she trusts you. She notices the Kith's mood before they say it, and her smile fades when the choice goes against her (the fade is the feedback).
 - **Where she speaks:** the arrival line (she waves first), the moment she gives her name when the first set is read, a line on each moment card (the Hunger, the Shards, the Warning) and her reply to every choice in the event log, and the end card. The trust meter stays hidden: her warmth shows it, not a number.
-- **Art:** a 24 px figure, a 160x160 portrait and an optional card header, in [the art brief](../art/starfall-art-brief.md). The look is stylized and tasteful; no photos are in the repo.
+- **Art:** a 24 px figure, a 160x160 portrait and an optional card header, in [the art brief](../art/starfall-art-brief.md). The look is stylized and tasteful.
 

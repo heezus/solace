@@ -1,6 +1,6 @@
 # Growth visuals and build-bar fit
 
-Jon assigned these assets and the clipping fix on 2026-10-05. Claude owns logistics/needs rules and selects state in PR #50 and the following needs PR. Beast carts and canon changes are outside this delivery.
+the project owner assigned these assets and the clipping fix on 2026-10-05. Claude owns logistics/needs rules and selects state in PR #50 and the following needs PR. Beast carts and canon changes are outside this delivery.
 
 ## Production UI fix
 

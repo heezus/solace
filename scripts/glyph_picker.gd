@@ -9,6 +9,7 @@ const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Ui = preload("res://scripts/ui.gd")
 const GlyphMark = preload("res://scripts/glyph_mark.gd")
+const IconRow = preload("res://scripts/icon_row.gd")
 
 var state: Sim
 var key := ""  # what the rows were built from, so they are built again only when it changes
@@ -41,10 +42,11 @@ func show_for(b: Dictionary) -> void:
 		var gset: Dictionary = Data.GLYPH_SETS[n]
 		if gset["source"] == "wreck" and f.progress(gset["id"]).x == 0 and not f.locked.has(gset["id"]):
 			continue  # a set the Wreck holds shows once its first mark is home
-		add_child(_wrapped(header_text(state, gset), Ui.TEXT))
+		add_child(IconRow.wrap("set_" + gset["id"], _wrapped(header_text(state, gset), Ui.TEXT), gset["name"]))
 		if f.locked.has(gset["id"]) and Data.LUMEN_GIFTS.has(gset["id"]):
 			var gift: Dictionary = Data.LUMEN_GIFTS[gset["id"]]
-			add_child(_wrapped(Data.GIFT_LINE % [gift["name"], gift["note"]], Ui.GOOD))
+			var gift_line := _wrapped(Data.GIFT_LINE % [gift["name"], gift["note"]], Ui.GOOD)
+			add_child(IconRow.wrap("gift_" + gset["id"], gift_line, gift["name"]))
 		for g in gset["glyphs"]:
 			if f.copied.has(g):
 				add_child(_row(g, f.locked.has(gset["id"])))

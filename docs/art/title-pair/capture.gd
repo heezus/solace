@@ -7,9 +7,9 @@ func _init() -> void:
 func capture() -> void:
 	root.mode = Window.MODE_WINDOWED
 	var title = load("res://scenes/title.tscn").instantiate()
-	title.save_path = "user://briana-preview-nonexistent.save"
+	title.save_path = "user://lead-stranger-preview-nonexistent.save"
 	root.add_child(title)
-	title._art = load("res://art/rendered/title_briana.png")
+	title._art = load("res://art/rendered/title_alt.png")
 	title.queue_redraw()
 	current_scene = title
 	for dimensions in [Vector2i(1280, 800), Vector2i(1600, 900)]:
