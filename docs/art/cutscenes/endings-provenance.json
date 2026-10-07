@@ -1,0 +1,47 @@
+{
+  "starfall_end_1": {
+    "source": "exec-029700c7-c34b-4874-b9fc-1782a7f5c0c1.png",
+    "sha256": "04a91f87d61bfdd770bc7e99361910dc53106a5273abf0eeea18c9edaab7cbd2",
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  },
+  "starfall_end_2": {
+    "source": "exec-179e4d6c-d9d3-46ff-b5b9-d024df700f69.png",
+    "sha256": "929af4fa6582ca15482946916ecfc0309838cf448fa899e02b3f532ab94293a4",
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  },
+  "starfall_end_3_neighbours": {
+    "source": "exec-84502447-22ed-4e12-8c21-7e8645712d99.png",
+    "sha256": "0feba1277e30505d1c20e6a638de39925a57fbb689d76197b1fc391518910853",
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  },
+  "starfall_end_3_enemies": {
+    "source": "exec-981cb0bd-cae9-4898-bc20-45c9f8829083.png",
+    "sha256": "e7a7d774cba3f1239da7b21d9fbb2eb95a399ca2e7f81f51de06d671d14b78d6",
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  },
+  "starfall_end_3_allies": {
+    "source": "exec-ff66febe-9058-468e-9a40-58b0402b3985.png",
+    "sha256": "f195e1623f69a61fc2626ff49661218a459a27709ebdc71d829cf661f09b7e47",
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  }
+}

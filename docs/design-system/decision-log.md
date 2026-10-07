@@ -732,3 +732,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - The debug keys (F1 goods, F2 research, F3 speed to 30x, F4 fog) sit behind a pause-menu switch that starts off.
 - The exports ship the two bot scripts and leave out the rest of `tests/`, listed by pattern and guarded by a test.
 - The project owner asked for a calmer title screen: a left-to-clear gradient, a large name, no text under the buttons. Menus use Cinzel Decorative Bold (free, OFL; named in `scripts/menu_fonts.gd` so the family can be swapped) with plain Cinzel for small captions.
+
+## 2026-10-07: Phase A cutscene art review (PR #81)
+- Codex: nineteen stills and five separate memory layers use Misty Highlands title materials and the approved Sela/traveller kit; earthy Kith clothing stays distinct from pale Lumen clothing.
+- Keep story focal points visible through 8% push-in and captions in the lower third with the engine gradient. No text is baked into source paintings; no Bloom appears in first-run Phase A art.
+- Reuse #73 meteor/impact and Bloom-sign designs as references. The arrival atlas is not a full cinematic still; vignettes and cutscene images keep separate purposes.
+- Review memory layers at 12% normal alpha opacity and lower it when stacking. Preserve originals at their actual 1586×992 resolution; the requested 2560×1600 master criterion remains open, so publish draft art reviews rather than claim compliant masters.

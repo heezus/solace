@@ -1,0 +1,9 @@
+{
+  "prompt": "Use case: stylized-concept. Solace reusable transparent memory overlay, requested 2560x1600 landscape16:10. Genuine alpha transparency, no opaque background, NO landscape or characters or scenery. Almost empty transparent canvas. Painted airy softly fading edge wisps, extremely sparse low-contrast subtle effects confined to OUTER TEN PERCENT. Center80% horizontally and vertically MUST be completely transparent. No solid border, no text, no logo, no UI. TRANSPARENT memory layer only: faint magenta-green tint at OUTER edges with sparse thin reaching filaments based on existing Bloom-sign source. Extremely quiet lowcontrast tinted haze and tinyorganicgrowth, center80% clear. No opaque background, no full landscape, no saturated monster, no text.",
+  "source": "exec-7de58dee-564d-4e8d-9868-a967f39ee8ab.png",
+  "transparent": true,
+  "requested": [
+    2560,
+    1600
+  ]
+}

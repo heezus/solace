@@ -1,0 +1,38 @@
+{
+  "first_contact_1": {
+    "source": "exec-f362c253-1f38-48d0-b1d3-707c3b375e5d.png",
+    "sha256": "547e4396408678782d2cf88c1e3428d737b3cc224f09124012e51333c32860d1",
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  },
+  "first_contact_1_guests": {
+    "source": "exec-b068ad19-a48e-47a4-9a20-4440c5c9bfcf.png",
+    "sha256": "6950f09bac841c7471b4d65a34df3935f05baf5ee978110332226eefea30d37e",
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  },
+  "first_contact_2": {
+    "source": "exec-803628b6-c60e-43d7-b144-c8f494fb6587.png",
+    "sha256": "b26f5c3a91b8f5420d64267b9432ee964178664fe6f2b9ad6a8b5e264c9ffee0",
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  },
+  "first_contact_3": {
+    "source": "exec-7b62c3fb-d189-4522-b7a3-8c9ca0ca076b.png",
+    "sha256": "1fd9c664dcbe5308336e8af19ae9c97e87a56e5f747b6331dfbdfdf667faa7c7",
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  }
+}

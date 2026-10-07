@@ -1,0 +1,47 @@
+{
+  "memory_exodus": {
+    "source": "exec-5ac20955-7e0a-4737-b141-d4e0ae65c413.png",
+    "sha256": "75bbfff3ade68ca376d6715ffcdbd5857005efce86fbf0f28c9ec8a7922cf4f5",
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGBA"
+  },
+  "memory_cataclysm": {
+    "source": "exec-196808ae-ce38-4ecd-8a15-9dd445fb46d0.png",
+    "sha256": "90d888a79f281d10c44ba403d0c94864ce700c5c3b3fec0e4c01f39dc59b779b",
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGBA"
+  },
+  "memory_loop": {
+    "source": "exec-b5d7bc66-face-4ed3-a1fa-b4d5d5f21b6f.png",
+    "sha256": "f00ca2060e587f9ba9c003fb95273e6c686becc7547dd9d14c21fd80ee926280",
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGBA"
+  },
+  "memory_glyph": {
+    "source": "exec-e8c77157-e025-47d3-bcf8-c87adf8aa038.png",
+    "sha256": "8a1929611f750f2103bff8e53d0b4652041784eed738374fbbae4b4e8f83d947",
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGBA"
+  },
+  "memory_bloom": {
+    "source": "exec-7de58dee-564d-4e8d-9868-a967f39ee8ab.png",
+    "sha256": "8b87d47383a73d55eadada35e7ba795fbd2a3a77ac15f92736d66c745a8568b6",
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGBA"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "mode": "built-in imagegen",
+  "note": "Early batch prompt reconstruction from saved scene plan; per-asset revision files record final edits.",
+  "prompts": [
+    [
+      "bronze_dawn_1",
+      "Solace bronze_dawn_1. ONE original image, output requested 2560x1600, landscape16:10, no text or lettering, no logo, no UI, no frame, no contact sheet. Match approved Misty Highlands title: beautiful grounded atmospheric sculpted painted miniatures, tactile matte surfaces, jade rivers, rounded mossy stones, pine highlands, layered mist, warm amber hearth versus cool blue dusk. Slightly lower cinematic angle than map. Subject central80%; lower third calm and darker for captions. Cyan reserved for Lumen/star; no Bloom in PhaseA. Kith rust/cream/moss traveller kit. Molten bronze being carefully poured from a clay crucible into a stone/clay mould by Kith hands; a new gold-green metallic reflection INSIDE the warm fire, not magical green sky or vegetation. Small timber workshop seen close, handmade bronze, no machinery."
+    ],
+    [
+      "bronze_dawn_2",
+      "Solace bronze_dawn_2. ONE original image, output requested 2560x1600, landscape16:10, no text or lettering, no logo, no UI, no frame, no contact sheet. Match approved Misty Highlands title: beautiful grounded atmospheric sculpted painted miniatures, tactile matte surfaces, jade rivers, rounded mossy stones, pine highlands, layered mist, warm amber hearth versus cool blue dusk. Slightly lower cinematic angle than map. Subject central80%; lower third calm and darker for captions. Cyan reserved for Lumen/star; no Bloom in PhaseA. Kith rust/cream/moss traveller kit. A small ONE-Kith wooden hand cart with two wheels travelling on a long humble dirt road east toward distant fog. Rust/cream/moss-clothed chunky Kith traveller walking, modest cargo blanket/wood bundles. Road vanishes into mist, hopeful reach."
+    ],
+    [
+      "bronze_dawn_3",
+      "Solace bronze_dawn_3. ONE original image, output requested 2560x1600, landscape16:10, no text or lettering, no logo, no UI, no frame, no contact sheet. Match approved Misty Highlands title: beautiful grounded atmospheric sculpted painted miniatures, tactile matte surfaces, jade rivers, rounded mossy stones, pine highlands, layered mist, warm amber hearth versus cool blue dusk. Slightly lower cinematic angle than map. Subject central80%; lower third calm and darker for captions. Cyan reserved for Lumen/star; no Bloom in PhaseA. Kith rust/cream/moss traveller kit. Eastern fog edge beyond jade highland valley under a PALE CYAN STAR HIGH ABOVE. Few warm far-off settlement windows contrast cool mist, no meteor streak yet, no figures needed, anticipation."
+    ]
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "prompt": "Use case: stylized-concept. Solace reusable transparent memory overlay, requested 2560x1600 landscape16:10. Genuine alpha transparency, no opaque background, NO landscape or characters or scenery. Almost empty transparent canvas. Painted airy softly fading edge wisps, extremely sparse low-contrast subtle effects confined to OUTER TEN PERCENT. Center80% horizontally and vertically MUST be completely transparent. No solid border, no text, no logo, no UI. TRANSPARENT memory layer only: subtle soft ghosted pale ring with offset doubled light arc, a faint echo. VERY low contrast diffuse ivory/cool grey, mostly near edges, center80% remains nearly clear. No pictured second scene, no actual clock or watch, no text.",
+  "source": "exec-b5d7bc66-face-4ed3-a1fa-b4d5d5f21b6f.png",
+  "transparent": true,
+  "requested": [
+    2560,
+    1600
+  ]
+}
