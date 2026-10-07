@@ -639,7 +639,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Defaults Claude picked: Lessons are a finite list of about 8 (the three Bloom ones double as the three sample types for the echoes); coal is finite so the Lumen's Shard Boiler matters; the map grows once to the south on Ironstone; beasts ship as one optional Beast Pen branch.
 - Trust and the lean set how freely the Lumen hand over parts, and the Wreck always holds three, so no run is locked out of the Boiler or the Lamp.
 
-## 2026-10-07: Starfall stage 4, the market, the shrine and the Guard Post (PR #68)
+## 2026-10-07: Starfall stage 4, the market, the shrine and the Guard Post (PR #69)
 - Claude: built the three trust-moving buildings from page 16 on Jon's "whatever else is next": a Lumen Market (trade, 2 for 1), a Shared Shrine and a Guard Post, with placeholder art.
 - Defaults Claude picked: trade opens once the name is read and trust reaches 8, and a Market lifts trust only to 60 (trade alone makes neighbours); the shrine is +10 and +1 a minute; the Guard Post is -6 and -1 a minute but speeds work within 4 tiles by 15%, so force pays and costs trust.
 - Shared food as an ongoing mover, the third tech tab and the beast cart stay for later.
