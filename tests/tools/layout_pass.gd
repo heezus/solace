@@ -55,7 +55,7 @@ var picker := PickerChecks.new()  # the hut picker's checks (tests/tools/picker_
 
 func _init() -> void:
 	seed(7)
-	var scene: PackedScene = load(ProjectSettings.get_setting("application/run/main_scene"))
+	var scene: PackedScene = load("res://scenes/main.tscn")
 	main = scene.instantiate()
 	root.add_child(main)
 

@@ -104,6 +104,11 @@ static func save(s, path: String = PATH) -> bool:
 	return true
 
 
+## True when a run save file is on disk at `path` (it may still turn out unreadable: load_into says so).
+static func exists(path: String = PATH) -> bool:
+	return FileAccess.file_exists(path)
+
+
 ## Read the run save at `path` into `s`. False, with `s` untouched, when the file is missing, is not JSON
 ## or is not a run save of this version.
 static func load_into(s, path: String = PATH) -> bool:

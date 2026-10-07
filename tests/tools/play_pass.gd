@@ -32,7 +32,7 @@ var won_at := -1  # the frame Bronze Dawn was researched
 
 func _init() -> void:
 	seed(7)  # the same map every run
-	var scene: PackedScene = load(ProjectSettings.get_setting("application/run/main_scene"))
+	var scene: PackedScene = load("res://scenes/main.tscn")
 	main = scene.instantiate()
 	root.add_child(main)
 

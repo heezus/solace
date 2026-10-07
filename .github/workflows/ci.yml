@@ -62,3 +62,8 @@ jobs:
         run: |
           tests/tools/run_checked.sh xvfb-run -a -s "-screen 0 1280x800x24" \
             ./godot --rendering-driver opengl3 --audio-driver Dummy --path . -s tests/tools/layout_pass.gd
+
+      - name: Title screen, zoom, pause menu, Save and Load work as a player drives them
+        run: |
+          tests/tools/run_checked.sh xvfb-run -a -s "-screen 0 1280x800x24" \
+            ./godot --rendering-driver opengl3 --audio-driver Dummy --path . -s tests/tools/menu_pass.gd
