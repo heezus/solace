@@ -32,6 +32,7 @@ const Land = preload("res://scripts/land.gd")
 const MessageLog = preload("res://scripts/message_log.gd")
 const HutFocus = preload("res://scripts/hut_focus.gd")
 const EraCard = preload("res://scripts/era_card.gd")
+const MomentCard = preload("res://scripts/moment_card.gd")
 const Profile = preload("res://scripts/profile.gd")
 const Clearing = preload("res://scripts/clearing.gd")
 const WorldGround = preload("res://scripts/world_ground.gd")
@@ -92,6 +93,7 @@ var side_panel: SidePanel
 var info_label: Label  # the side panel's hover text
 var tech_panel: TechPanel
 var era_card: EraCard  # the Falling Star's card, put up once
+var moment_card: MomentCard  # a Starfall moment or the ending, put up when the strangers ask (Starfall.pending)
 var building_panel: BuildingPanel  # the selected building's card, docked in the side panel
 var banner_shown := false  # the Bronze Dawn banner has been shown
 var ui_refresh := 0.0
@@ -120,6 +122,9 @@ func _process(delta: float) -> void:
 	if not paused:
 		for i in speed:
 			state.tick(delta)
+	if state.starfall.pending != "" and not moment_card.visible:
+		paused = true  # the strangers are asking something: the game waits behind the card
+		moment_card.open(state.starfall)
 	for e in state.events:
 		if e == Data.BORN_EVENT % Data.PEOPLE["one"]:
 			var at := Overlays.center(state.world.camp_pos) - Vector2(0, 12)
@@ -189,6 +194,7 @@ func _layout() -> void:
 	toasts.position = Vector2(16, top + 14)  # stacked from the bottom edge up, so the lit area stays in view
 	msg_log.position = Vector2(16, vp.y - bottom - msg_log.size.y - 16)
 	era_card.place(view)
+	moment_card.place(view)
 	side_panel.position = Vector2(view.end.x, top)
 	side_panel.size = Vector2(SIDE_W, view.size.y)
 	var k: float = ZOOM_PX[zoom_step] / TILE
@@ -311,7 +317,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 ## 0 toggles pause; 1, 2 or 3 sets the speed and unpauses. The game waits while the end card is up.
 func _set_speed(v: int) -> void:
-	if era_card.visible:
+	if era_card.visible or moment_card.visible:
 		return
 	if v == 0:
 		paused = not paused
@@ -555,6 +561,10 @@ func _build_ui() -> void:
 	layer.add_child(era_card)
 	era_card.setup()
 	era_card.closed.connect(func(): paused = false)
+	moment_card = MomentCard.new()
+	layer.add_child(moment_card)
+	moment_card.setup()
+	moment_card.chose.connect(_on_moment_chosen)
 
 
 func _refresh_ui() -> void:
@@ -609,6 +619,15 @@ func _on_story(id: String) -> void:
 		era_card.open()
 		if not Profile.note_run(state):
 			_toast(Data.PROFILE_UNSAVED, 6.0)
+
+
+## The player answered a Starfall moment (or put the ending away): the game goes on. Saved at an ending.
+func _on_moment_chosen(index: int) -> void:
+	var ending: bool = state.starfall.pending == "ending"
+	state.starfall.choose(index)
+	paused = false
+	if ending and not Profile.note_run(state):
+		_toast(Data.PROFILE_UNSAVED, 6.0)
 
 
 ## A discovery that unlocks buildings: their cards and tab glow, and a toast says where to find them.
@@ -731,6 +750,7 @@ func _draw() -> void:
 		Overlays.flow_arrows(self, state, sel, time)
 	KithArt.draw_all(self, state, time)
 	KithArt.draw_wreck(self, state, time)
+	KithArt.draw_bloom_sign(self, state, time)
 	KithArt.draw_strangers(self, state, time)
 	Overlays.fog_edges(self, state, seen)
 	Overlays.alert_badges(self, state)

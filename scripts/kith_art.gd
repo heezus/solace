@@ -118,6 +118,24 @@ static func draw_wreck(ci: CanvasItem, s, time: float) -> void:
 		ci.draw_circle(c + Vector2(-26 + i * 24, -18 - 4 * flick), 4.0 + 2.0 * flick, Color(1.0, 0.62, 0.25, 0.55))
 
 
+## The first Bloom sign (Starfall.bloom), once the Warning is read and the fog is lifted there: a patch of growth nobody
+## planted, magenta and sickly green, slowly breathing. Stand-in art until Codex draws it (docs/art/starfall-art-brief.md).
+static func draw_bloom_sign(ci: CanvasItem, s, time: float) -> void:
+	var b: Vector2i = s.starfall.bloom
+	if b.x < 0 or not s.fog.is_revealed(b):
+		return
+	var c := (Vector2(b) + Vector2(0.5, 0.5)) * Overlays.TILE
+	ci.draw_circle(c + Vector2(0, 4), 40.0, Color(0.1, 0.1, 0.1, 0.16))
+	for i in 5:
+		var a := TAU * i / 5.0 + 0.4
+		var tip := c + Vector2.from_angle(a) * (22.0 + 4.0 * sin(time * 1.4 + i))
+		ci.draw_line(c, tip, Color("1b1b1f"), 7.0)
+		ci.draw_line(c, tip, Color("6fa84a"), 4.0)
+		ci.draw_circle(tip, 5.0, Color("1b1b1f"))
+		ci.draw_circle(tip, 3.5, Color("c04a9d"))
+	Art.outlined_circle(ci, c, 8.0 + 1.5 * sin(time * 1.4), Color("c04a9d"))
+
+
 ## One Kith standing at `at` (the middle of its feet): its shadow, body and head. A hauler is a shade lighter, and
 ## one pushing a cart is drawn with it.
 static func draw_one(ci: CanvasItem, at: Vector2, hauler: bool, cart := false) -> void:

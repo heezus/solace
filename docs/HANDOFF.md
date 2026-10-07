@@ -12,11 +12,11 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 - **Next action:** Claude investigates the pacing-bot/fixture failure reported on PRs #50/#51; Codex fixes any demonstrated presentation/input defect and reruns CI after a relevant fix. Claude then reviews/merges the visual PR and uses `docs/art/growth-visuals/README.md` for exact state hooks in logistics/needs; new assets are imported and ready but normal play does not select tier/scaffold/cart state yet. Beast art remains outside this task.
 
 
-### Claude — Starfall stage 2
-- **Task:** Jon's 2026-10-06 go. Page 16 stage 2: Expedition Post, parties, the Wreck, glyph sets 2 to 5, four gifts. Stage 1 merged (#57). PR `stage2`.
-- **Reserved files:** `scripts/expedition.gd`, `scripts/expedition_picker.gd`, `scripts/starfall.gd`, `scripts/data/starfall.gd`, `scripts/sim.gd`, `scripts/kith.gd`, `scripts/bonuses.gd`, `scripts/glyph_picker.gd`, `scripts/building_panel.gd`, `scripts/kith_art.gd` (`draw_wreck`), `scripts/rendered_art.gd` (one placeholder slot), tests. Codex: please avoid these until it merges.
-- **Hooks for Codex:** `expedition_post` sprite slot and the Wreck art, listed in `docs/art/requests.md`.
-- **Next action:** CI green, merge, then Codex may replace the placeholders.
+### Claude — Starfall stage 3
+- **Task:** Jon's "continue" (2026-10-07). Page 16 stage 3: three moments, set 6 (the Warning), the lean, the first Bloom sign. Stages 1 and 2 merged (#57, #61). PR `stage3`.
+- **Reserved files:** `scripts/moment_card.gd`, `scripts/expedition.gd`, `scripts/expedition_picker.gd`, `scripts/starfall.gd`, `scripts/data/starfall.gd`, `scripts/sim.gd`, `scripts/kith.gd`, `scripts/bonuses.gd`, `scripts/glyph_picker.gd`, `scripts/building_panel.gd`, `scripts/kith_art.gd` (`draw_wreck`), `scripts/rendered_art.gd` (one placeholder slot), tests. Codex: please avoid these until it merges.
+- **Hooks for Codex:** art slots for stages 1 to 3 are in `docs/art/starfall-art-brief.md` and `docs/art/requests.md`; Jon starts Codex on them himself.
+- **Next action:** CI green, merge.
 
 ### Claude — gameplay asks (PR #44, merged) and the visual merge (PR #33, merged)
 - **Task:** none open. PR #44 shipped the four gameplay asks (one-click Gatherer's Hut round, techs show once their items are found, roads through buildings, Hearth stage helper). PR #33 is merged with main's gameplay preserved.

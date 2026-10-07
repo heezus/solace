@@ -48,6 +48,7 @@ const GLYPH_WORDS := [
 	"Shape",
 	"Bind",
 	"Weave",
+	"Spread",
 ]
 const NO_GUESS := "?"
 const WALL_NEED_SURVIVORS := "The Wall waits for someone who can show it the marks."
@@ -69,6 +70,7 @@ const GLYPH_SETS := {
 	3: {"id": "body", "name": "Body", "source": "wreck", "glyphs": ["g_hurt", "g_heal", "g_rest"]},
 	4: {"id": "growth", "name": "Growth", "source": "wreck", "glyphs": ["g_seed", "g_rain", "g_soil"]},
 	5: {"id": "craft", "name": "Craft", "source": "wreck", "glyphs": ["g_shape", "g_bind", "g_weave"]},
+	6: {"id": "warning", "name": "The Warning", "source": "wreck", "glyphs": ["g_hunger", "g_spread", "g_danger"]},
 }
 
 ## One glyph: its true word, its strokes (lines in a unit square, so a Control can draw it), and where it was found.
@@ -252,6 +254,40 @@ const GLYPHS := {
 			"and they teach the Kith the first stitch before the mark",
 		],
 	},
+	"g_hunger":
+	{
+		"word": "Hunger",
+		"strokes": [[[0.2, 0.2], [0.2, 0.8]], [[0.8, 0.2], [0.8, 0.8]], [[0.2, 0.8], [0.5, 0.55], [0.8, 0.8]]],
+		"found":
+		[
+			"scratched deep into the hull, over and over, in a column",
+			"and a survivor holds an empty bowl and makes it",
+			"and they make it softly, and then look at the sky as if something might hear",
+		],
+	},
+	"g_spread":
+	{
+		"word": "Spread",
+		"strokes":
+		[[[0.5, 0.85], [0.5, 0.5]], [[0.5, 0.5], [0.2, 0.2]], [[0.5, 0.5], [0.8, 0.2]], [[0.5, 0.5], [0.5, 0.15]]],
+		"found":
+		[
+			"at the end of a long row of marks, drawn larger than the rest",
+			"and they draw it in the dust, then rub it out fast",
+			"and they will not say it aloud, only point east and shake their heads",
+		],
+	},
+	"g_danger":
+	{
+		"word": "Danger",
+		"strokes": [[[0.5, 0.1], [0.9, 0.85], [0.1, 0.85], [0.5, 0.1]], [[0.5, 0.4], [0.5, 0.6]]],
+		"found":
+		[
+			"last on the hull, circled three times",
+			"and every stranger turns to look when it is read out",
+			"and they put out their fire before they will say what it means",
+		],
+	},
 }
 
 # --- The Lumen Camp (a place for the survivors) ---
@@ -334,3 +370,127 @@ const WRECK_NOTHING_LINE := "The party comes home. The Wreck has nothing more to
 const FOG_BACK_LINE := "The party comes home and tells of what lies %s."
 const LATE_LINE := "Dusk caught the party on the road. They lost half their pack."
 const WRECK_NAME := "The Wreck"
+
+# --- Stage 3: the three moments, the Warning and the end of the era (scripts/starfall.gd) ---
+## A moment is asked once, `wait` seconds after the set it follows is read, and waits for the player's answer (the game is
+## paused behind its card, scripts/moment_card.gd). Each option moves trust, may cost something and is recorded as the
+## story id in `story`. `cost` is food worth, `dim` seconds the Cairn's shardlight is lent away, `dark` seconds the
+## workshops go quiet. Order matters: one moment at a time.
+const ENDING_SET := "warning"  # the id of the set whose reading ends the era
+const MOMENT_ORDER := ["hunger", "shards", "warning"]
+const MOMENTS := {
+	"hunger":
+	{
+		"title": "The Hunger",
+		"after": "name",
+		"wait": 150.0,
+		"text":
+		"The strangers have eaten almost nothing for days. The smallest one cannot stand. They will not ask. They only look at the stores.",
+		"options":
+		[
+			{
+				"label": "Share the food",
+				"note": "Costs a good share of the stockpile's food. They will remember it.",
+				"story": "hunger_shared",
+				"trust": 14.0,
+				"food": 40.0,
+				"line":
+				"The Kith set bowls down in front of the strangers. Nobody speaks. The smallest one eats first.",
+			},
+			{
+				"label": "Hold it back",
+				"note": "Keeps the food. They will remember this too.",
+				"story": "hunger_held",
+				"trust": -12.0,
+				"line": "The Kith keep the stores. The strangers turn away from the Hearth, one by one.",
+			},
+		],
+	},
+	"shards":
+	{
+		"title": "The Shards",
+		"after": "light",
+		"wait": 120.0,
+		"text":
+		"The strangers kneel at the Cairn and touch the shards. Then they hold out their hands to the Kith. They are asking.",
+		"options":
+		[
+			{
+				"label": "Give them",
+				"note": "Shardlight is lent away for a while. Most trust.",
+				"story": "shards_given",
+				"trust": 14.0,
+				"dim": 150.0,
+				"line":
+				"The Kith step back from the Cairn. The strangers carry shards away in their cloaks, and the glow dims.",
+			},
+			{
+				"label": "Trade",
+				"note": "Shardlight dims only a little. A little trust.",
+				"story": "shards_traded",
+				"trust": 5.0,
+				"dim": 60.0,
+				"line":
+				"The Kith lay out food and rope beside the Cairn. The strangers take one shard and leave the rest.",
+			},
+			{
+				"label": "Refuse",
+				"note": "The Cairn keeps its light. Trust drops.",
+				"story": "shards_refused",
+				"trust": -10.0,
+				"line": "The Kith stand in front of the Cairn. The strangers lower their hands, and say nothing.",
+			},
+		],
+	},
+	"warning":
+	{
+		"title": "The Warning",
+		"after": "craft",
+		"wait": 90.0,
+		"text":
+		"They point at the smoke over the kilns, then at the east, then they put a finger to their lips. They want the Kith to go dark.",
+		"options":
+		[
+			{
+				"label": "Go dark",
+				"note": "Workshops run at half speed for a while. Most trust.",
+				"story": "dark_kept",
+				"trust": 14.0,
+				"dark": 90.0,
+				"line": "The Kith bank the kilns and keep the Hearth low. The strangers sit very still and listen.",
+			},
+			{
+				"label": "Keep working",
+				"note": "The fires stay lit. Trust drops.",
+				"story": "dark_refused",
+				"trust": -12.0,
+				"line": "The Kith keep their fires. The strangers watch the east, and flinch at every spark.",
+			},
+		],
+	},
+}
+const DARK_NAME := "Lights out"  # the workshop slowdown while the Kith go dark (Data.BONUSES "lights_out")
+const DARK_SLOWER := -0.5
+const DIM_NOTE := "The Cairn's light is lent away for %d more seconds."
+const DARK_NOTE := "The Kith are keeping dark for %d more seconds."
+const MOMENT_ASKED_LINE := "The strangers have something to ask. (%s)"  # the moment's title
+
+## The Warning set is read: the era ends. Trust at that moment sets the lean (stored as a story id, never shown as a number).
+const LEAN_ALLIES := 70.0
+const LEAN_NEIGHBOURS := 35.0
+const LEANS := {"allies": "lean_allies", "neighbours": "lean_neighbours", "enemies": "lean_enemies"}
+const WARNING_LINE := (
+	"The three marks fit. They mean: Hunger, Spread, Danger. "
+	+ "The strangers did not come to live here. They came to hide."
+)
+const WARNING_NEEDS := "The Kith cannot read the Warning until they have answered what the strangers asked."
+const BLOOM_LINE := "Far to the east, at the edge of the fog, something is growing that no one planted."
+const BLOOM_SIGHT := 3  # how much fog the Bloom sign lifts around it
+const BLOOM_DISTANCE := 7  # tiles from the Wreck (north of it, or south if there is no room)
+const ENDING_TITLE := "They Came to Hide"
+const ENDING_TEXT := (
+	"The strangers say the word at last, and the Kith understand why they ran. "
+	+ "Something is following them. It is slow, and it does not stop."
+)
+const ENDING_NOTE := "The Bloom has been seen. The game goes on."
+const ENDING_BUTTON := "Keep building"

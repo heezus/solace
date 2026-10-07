@@ -318,7 +318,7 @@ static func pace_text(s: Sim, b: Dictionary) -> String:
 	var boosts: Array = []
 	for bonus in Bonuses.active(s, b, ""):
 		if bonus["group"] == "speed":
-			boosts.append("%s (+%d%%)" % [bonus["name"], roundi(bonus["add"] * 100.0)])
+			boosts.append("%s (%+d%%)" % [bonus["name"], roundi(bonus["add"] * 100.0)])
 	if not boosts.is_empty():
 		lines.append(Data.PACE_BOOST % ", ".join(boosts))
 	return " ".join(lines)
