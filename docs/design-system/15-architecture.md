@@ -2,7 +2,7 @@
 
 Status: **built** (2026-09-30). Written from main at 46a0f13. Steps 0 to 7b are merged (PRs #5 to #13); step 8 (thin Sim, PR #14) is in review. The golden snapshot (1053 s, 894 s, 857 s) has been identical after every step.
 
-Jon (a DV hardware engineer) asked whether the code should be split into compartmentalized subsystems. Yes. This page frames it his way: every subsystem is a block with a defined interface and its own testbench, and the bot playthrough is the system-level test.
+The project owner asked whether the code should be split into compartmentalized subsystems. Yes. This page frames it as blocks and interfaces: every subsystem is a block with a defined interface and its own testbench, and the bot playthrough is the system-level test.
 
 ## Why now
 - `scripts/game_state.gd` is about 1,000 lines. It holds the map, the stockpile, research, buildings, walking, the Kith, food, fog hooks and the tick order. It is the one block everything touches, so every change edits it.

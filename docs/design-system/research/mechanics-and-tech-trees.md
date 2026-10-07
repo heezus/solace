@@ -122,7 +122,7 @@ Solace now has the tools ladder (flint +50% with wear, Stone Axe x2 Wood, Bronze
 | One tree screen per era, with tabs | Civ (eras), avoiding ONI | Planned in 10-bronze-dawn.md |
 | A map overlay for systems (power, range) | ONI overlays | Water Wheel power and Standing Stone range as a toggleable overlay |
 
-- **Avoid:** crossing lines. Jon's feedback on the transit map was that lines "bleed/overflow and aren't readable". Every game above that reads well draws few lines at once.
+- **Avoid:** crossing lines. The project owner's feedback on the transit map was that lines "bleed/overflow and aren't readable". Every game above that reads well draws few lines at once.
 
 ---
 
@@ -152,7 +152,7 @@ Solace now has the tools ladder (flint +50% with wear, Stone Axe x2 Wood, Bronze
 
 ## 7. Niche games: mechanics nobody expects (added 2026-09-30)
 
-Jon asked for games outside his library, looking for a new mechanic that isn't a genre copy. His library says what lands: automation, plus **deduction mysteries** (Obra Dinn, Roottrees are Dead, Blue Prince, The Operator) and **extraction runs** (Duckov, ZERO Sievert, DREDGE), and he likes it when genres blend (inspiration.md). The best niche ideas below blend automation with one of those.
+the project owner asked for games outside his library, looking for a new mechanic that isn't a genre copy. His library says what lands: automation, plus **deduction mysteries** (Obra Dinn, Roottrees are Dead, Blue Prince, The Operator) and **extraction runs** (Duckov, ZERO Sievert, DREDGE), and he likes it when genres blend (inspiration.md). The best niche ideas below blend automation with one of those.
 
 | Game | The unusual mechanic | Solace idea |
 |---|---|---|
@@ -173,7 +173,7 @@ Jon asked for games outside his library, looking for a new mechanic that isn't a
 - The Kith call the refugees "the Starfallen" until they learn the name "Lumen". That's already canon, and it's a language-learning beat waiting to happen.
 - The Lumen magic tree is written in Lumen glyphs. Trade, shards and Lumen visitors show glyphs in context (a glyph over their healer, a glyph on a crate of shards).
 - The player guesses a meaning for each glyph. Guesses are confirmed in batches of 3, as in Obra Dinn. A confirmed glyph opens its magic node.
-- It's research by deduction instead of by stockpile, which blends Jon's two favorite kinds of game. How much you trade with the Lumen decides how much context you see, so it feeds the refugee choice that picks the prestige layer.
+- It's research by deduction instead of by stockpile, which blends the project owner's two favorite kinds of game. How much you trade with the Lumen decides how much context you see, so it feeds the refugee choice that picks the prestige layer.
 - Where: 06-mechanics.md (the magic tree), 03-world-lore.md (the Lumen).
 
 ### B. Teach by doing
@@ -207,7 +207,7 @@ Jon asked for games outside his library, looking for a new mechanic that isn't a
 ### G. Expeditions
 - Send a small party into fog or Bloom land. They carry a limited pack grid (DREDGE) and must return before nightfall or the Bloom rises.
 - Rewards are things the factory can't make: alternate recipes (section 1, Satisfactory), glyphs (idea A) and Bloom samples.
-- This adds a risky "go out and get home" beat, which Jon's extraction hours say he enjoys, without turning Solace into a shooter.
+- This adds a risky "go out and get home" beat, which the project owner's extraction hours say he enjoys, without turning Solace into a shooter.
 
 ### Picks
-If only one is built, build **A (Decipher the Lumen)**. It's new to the genre, it's canon already, and it uses deduction, which Jon rates highest after automation. **D** is its natural partner for the Time loop. **B** is the only one that could change the stone age today.
+If only one is built, build **A (Decipher the Lumen)**. It's new to the genre, it's canon already, and it uses deduction, which the project owner rates highest after automation. **D** is its natural partner for the Time loop. **B** is the only one that could change the stone age today.

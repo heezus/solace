@@ -1,6 +1,6 @@
 # Era 4: Ironfall
 
-Status: **designed, not built** (2026-10-07). Jon said yes to designing Ironfall in detail ("as well as whatever else is next"). Every number is a placeholder to tune with the pacing bot, and anything marked *default* is a pick Claude made that Jon can change. Mechanics page, so Claude owns it. It follows [18](18-roadmap.md) (the shape and the Decided list) and picks up where [Starfall](16-starfall.md) ends.
+Status: **designed, not built** (2026-10-07). The project owner said yes to designing Ironfall in detail ("as well as whatever else is next"). Every number is a placeholder to tune with the pacing bot, and anything marked *default* is a pick Claude made that the project owner can change. Mechanics page, so Claude owns it. It follows [18](18-roadmap.md) (the shape and the Decided list) and picks up where [Starfall](16-starfall.md) ends.
 
 ## The feeling
 - Bronze Dawn was metal and distance. Starfall was strangers and meaning. **Ironfall is machines and borrowed knowledge.** The Kith finally have the strength to build engines, and the Lumen have things the Kith cannot make yet. The era is about **opening things up to see how they work**.
@@ -99,7 +99,7 @@ Three stages, each its own PR with placeholder art and the art slots logged in `
 2. **Teardown.** The Bench, parts, the Lessons list, expedition finds, the Lumen Camp's parts and the Bloom patches. The Lessons turn on the nodes they name.
 3. **Steam and the end.** Boiler, Rails, Forge, Steel, the Shard Boiler, Bloom Sampling, the Beast Pen, the gate and the end card.
 
-## Open (defaults stand until Jon says otherwise)
+## Open (defaults stand until the project owner says otherwise)
 - **Are Lessons a finite list** (about 8, each from a part) **or repeatable.** *Default:* finite.
 - **Is coal finite.** *Default:* yes, about 500 a seam, so the Shard Boiler matters.
 - **Where does the map grow.** *Default:* once, to the south, on Ironstone.

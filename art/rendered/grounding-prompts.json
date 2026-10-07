@@ -6,9 +6,9 @@
     "calm-river": "Use case: stylized-concept. Square full-bleed seamless overhead calm river surface MATERIAL for the referenced miniature game, not a screenshot. Match its narrow calm jade river, quiet soft clear blue-green water with subtle broad translucent depth variation, a few gentle softly rounded ripples and restrained pale sky reflections. Entire texture covers ten game tiles, 480 world pixels. Smooth miniature hand-painted material, soft upper-left light, deep teal with subtle lighter jade details. No large waves, ocean swell, bright white ridges, foam, caustic webbing, noisy streaks, shoreline, pebbles, plants, sky, horizon, objects or scene. Uniform brightness edge to edge and seamless repeat both axes. Engine supplies banks and shallow water; output only quiet beautiful water."
   },
   "sources": {
-    "meadow-ground": "/Users/jhowell/.codex/generated_images/01a102c1-2f03-7f12-aa4a-15cac6f76c52/exec-0b38b427-516f-4215-9a2d-1563639cf28c.png",
-    "woodland-ground": "/Users/jhowell/.codex/generated_images/01a102c1-2f03-7f12-aa4a-15cac6f76c52/exec-9f14bd3e-9aa5-4680-be70-0deb283b7587.png",
-    "calm-river": "/Users/jhowell/.codex/generated_images/01a102c1-2f03-7f12-aa4a-15cac6f76c52/exec-8e3ee0f7-8b97-47b0-a49c-6e95411d7777.png"
+    "meadow-ground": "/Users/USER/.codex/generated_images/01a102c1-2f03-7f12-aa4a-15cac6f76c52/exec-0b38b427-516f-4215-9a2d-1563639cf28c.png",
+    "woodland-ground": "/Users/USER/.codex/generated_images/01a102c1-2f03-7f12-aa4a-15cac6f76c52/exec-9f14bd3e-9aa5-4680-be70-0deb283b7587.png",
+    "calm-river": "/Users/USER/.codex/generated_images/01a102c1-2f03-7f12-aa4a-15cac6f76c52/exec-8e3ee0f7-8b97-47b0-a49c-6e95411d7777.png"
   },
   "reference": "docs/art/overhaul/misty-highlands/grounding-studies/blended-regions.png"
 }

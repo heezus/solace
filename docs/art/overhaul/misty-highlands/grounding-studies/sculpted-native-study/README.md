@@ -1,6 +1,6 @@
 # Sculpted terrain — isolated native study
 
-Codex, 2026-10-05, draft PR #33. Jon confirmed the richer blended paintover as the target after rejecting the flatter material experiment. This study tests that direction through Godot's actual main scene without changing the production renderer.
+Codex, 2026-10-05, draft PR #33. The project owner confirmed the richer blended paintover as the target after rejecting the flatter material experiment. This study tests that direction through Godot's actual main scene without changing the production renderer.
 
 ## Native output at the normal scale
 

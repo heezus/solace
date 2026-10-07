@@ -30,4 +30,4 @@ Move each one to the Decision Log once it's answered.
 - [ ] Target platform (Mac + PC to start?)
 - [ ] Solo player or multiplayer?
 - [ ] How big is a realistic first game? (hours of play, months of work)
-- [x] Jon's experience: strong engineer (hardware verification, SystemVerilog, ML and LLM-agent tooling) plus 3D design and printing. No game dev, 2D art or music listed (2026-09-29)
+- [x] the project owner's experience: strong engineer (hardware verification, SystemVerilog, ML and LLM-agent tooling) plus 3D design and printing. No game dev, 2D art or music listed (2026-09-29)

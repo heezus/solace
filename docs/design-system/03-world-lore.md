@@ -7,7 +7,7 @@
 
 **Place (2026-09-29):** **Solace**, a single planet that the player industrializes, with magic scattered in it.
 
-**The fallen star (2026-09-29):** magic didn't come from the planet. It arrived with a fallen star, which carried refugees who wield magic. They are the rival faction. They were fleeing a greater enemy from space, and that enemy is the planned third adversary for later in the game. Proposed reason for the rivalry (not yet confirmed by Jon): the refugees are outsiders hiding here, and the player's industry makes noise that could lead the hunters to them. **Timing (2026-09-29):** the star fell twice. Shards fell ages ago and are the rare magic traces found early on. The main refugee ship crashes mid-game, which is the major discovery that opens the magic tree. The refugees are the Lumen, and the enemy is the Bloom.
+**The fallen star (2026-09-29):** magic didn't come from the planet. It arrived with a fallen star, which carried refugees who wield magic. They are the rival faction. They were fleeing a greater enemy from space, and that enemy is the planned third adversary for later in the game. Proposed reason for the rivalry (not yet confirmed by the project owner): the refugees are outsiders hiding here, and the player's industry makes noise that could lead the hunters to them. **Timing (2026-09-29):** the star fell twice. Shards fell ages ago and are the rare magic traces found early on. The main refugee ship crashes mid-game, which is the major discovery that opens the magic tree. The refugees are the Lumen, and the enemy is the Bloom.
 
 ## Rules of the world
 The laws that never bend (physics, magic, technology, death, etc).

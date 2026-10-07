@@ -1,6 +1,6 @@
 # Era 2: Bronze Dawn
 
-Status: **stage 1 merged, stage 2 built** (2026-10-02, branch `bronze-2`, not merged yet): carts, the Stone Bridge, Bronze Tools with wear, the Trading Post, the Watchtower and Wanderer, and the Falling Star ending are in. See the decision log for the numbers. Jon's call: polish the stone age, then build Bronze Dawn. No star crash yet. Every choice below is a default Claude picked and logged, so tell me to change any of them.
+Status: **stage 1 merged, stage 2 built** (2026-10-02, branch `bronze-2`, not merged yet): carts, the Stone Bridge, Bronze Tools with wear, the Trading Post, the Watchtower and Wanderer, and the Falling Star ending are in. See the decision log for the numbers. The project owner's call: polish the stone age, then build Bronze Dawn. No star crash yet. Every choice below is a default Claude picked and logged, so tell me to change any of them.
 
 See "Stage 1: built and not built" at the end for exactly what the game does today.
 
@@ -52,7 +52,7 @@ Gate cost: 60 Bronze, 100 Brick, 60 Flour and 40 Rope.
 
 ## The era ending (a cliffhanger, not the crash)
 - Researching The Falling Star plays a short end card: the Wanderer grows huge and bright over the map, the screen dims, and a line of text reads "It is not a star. It is coming down."
-- The ship landing and the Lumen are **era 3** and not built yet. Jon picked stone age plus Bronze Dawn only.
+- The ship landing and the Lumen are **era 3** and not built yet. The project owner picked stone age plus Bronze Dawn only.
 - **Save and continue:** after the end card, the game keeps running so the player can keep building.
 
 ## Star Lore carry-over

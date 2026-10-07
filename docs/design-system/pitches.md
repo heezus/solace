@@ -1,6 +1,6 @@
 # Concept Pitches (2026-09-29) — SET ASIDE
 
-> Jon asked to go granular instead: discuss game types one at a time before any pitch. Kept for reference only; not canon.
+> The project owner asked to go granular instead: discuss game types one at a time before any pitch. Kept for reference only; not canon.
 
 Three concepts grounded in [Inspiration](inspiration.md). All scoped as a 2D first game.
 
