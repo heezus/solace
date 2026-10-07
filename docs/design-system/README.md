@@ -33,6 +33,7 @@ The source of truth for our game's universe. If something is written here, it's 
 16. [Era 3: Starfall](16-starfall.md): the Lumen ship lands; glyph deciphering, set-and-forget expeditions, a hidden trust meter plus three big moments (stages 1 to 3 built: the landing, Glyph Wall, Expedition Post, the Wreck, four gifts, three moments, the Warning and the first Bloom sign; trade and the third tab not built) Art for it: [Starfall art brief](../art/starfall-art-brief.md).
 17. [Needs and upgrades](17-needs-and-upgrades.md): dwelling tiers and needs, road and bridge tiers, copy cost, tech forks, hand carts, scouting (approved by Jon with the defaults; built in 3 PRs: Logistics, Needs, Tree)
 18. [Roadmap](18-roadmap.md): the eras after Starfall, the Bloom and the three resets, with every open fork and its default (proposal, nothing built)
+19. [Ironfall](19-ironfall.md): era 4 in detail, the Teardown mechanic, iron and steam, a 16-tech tree, the Lessons list, the Bloom patches and how it is built in three stages (designed, not built)
 - [Decision Log](decision-log.md)
 
 ### Mockups (visual specs from the visual design thread)
