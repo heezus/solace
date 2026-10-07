@@ -5,8 +5,8 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 ## Active work
 
 ### Codex — Starfall map buildings
-- **Task:** Jon's full Starfall art assignment (2026-10-06), next small group after title PR #68: Glyph Wall (2×1), Lumen Camp (2×2), Expedition Post (1×1) and Wreck (about 2×1). Branch `codex/starfall-buildings`.
-- **Reserved files:** four new `art/rendered/starfall-*` PNGs and generated imports, `docs/art/starfall-buildings/`, relevant request notes and an append-only design decision. No Claude renderer/gameplay files.
+- **Task:** Jon's full Starfall art assignment (2026-10-06), next small group after title PR #68: Glyph Wall (2×1), Lumen Camp (2×2), Expedition Post (1×1) and Wreck (about 2×1). Branch `codex/starfall-buildings`, PR #70.
+- **Reserved files:** none after publication. PR #70 supplies four `art/rendered/starfall-*` PNGs/imports, native-size preview and exact loading/anchor notes; no renderer/gameplay code.
 - **Acceptance criteria:** original transparent miniature subjects, consistent camera/light, tight ground contact, existing logical footprints and IDs documented, native-size side-by-side preview against current buildings; imported metadata and green CI. Claude hooks listed in requests.md; no state or loader changes in this art-only group.
 - **Status:** four transparent subjects imported and their 48 px/96 px tile-scale asset board inspected. Source/alpha/region contract supplied; publishing the art-only PR, full CI pending. Title PR #68 has actual menu captures and passing import checks; full CI runs independently. Its original image is 1586×992, below the requested roughly 2560×1600 master, documented for review.
 - **Next action:** inspect each subject and native preview; publish this small asset PR and send Claude the exact loading/anchor contract. Then current character/item/icon/card/Bloom groups. Later/canon-pending slots remain deferred per the brief.

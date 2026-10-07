@@ -634,7 +634,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Zoom: the mouse wheel worked, but a trackpad or Magic Mouse scrolls with a different event the game ignored, and there were only three zoom steps. Added trackpad scroll and the + and - keys, and seven steps (24 to 80 px, 48 px stays the default).
 - The game's main scene is now the title screen; the CI play-through and layout tools load the game scene directly.
 
-## 2026-10-06: Starfall map subject kit (PR pending)
+## 2026-10-06: Starfall map subject kit (PR #70)
 - Codex: keep the Kith's sculpted miniature camera/materials while separating the Glyph Wall's broad stone silhouette, Lumen Camp's pale travelling tents and Expedition Post's warm pack rack.
 - Cyan is a restrained Lumen accent alongside the Kith's amber fire; glyph grooves are decorative, leaving the meaningful panel symbols code-drawn.
 - The Wreck is a low broken matte hull with bronze ribs and embers; smoke/flare remain engine layers. No new spacecraft mechanics or lore are introduced.
