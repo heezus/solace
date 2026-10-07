@@ -15,6 +15,7 @@ A short map of everything past [Era 3: Starfall](16-starfall.md), up to "super a
 The three factions form a triad: machine (Kith), magic (Lumen), life (Bloom). Eras 4 to 6 braid the machine tree with the magic tree; the life tree is the Bloom's (see below).
 
 ## Era 4: Ironfall
+Designed in detail on [19](19-ironfall.md).
 - **Mechanic: Teardown.** Take apart a Lumen device or a Bloom sample at a Workshop; the Kith learn how it works and the part becomes a recipe, a machine or a new use for a shard. It is "what the Kith know" made literal: you learn by opening things. Fits the expeditions loop, which bring the finds home.
 - **Beat:** the Kith machine tree finally meets the Lumen magic. Trust from Starfall decides how freely the Lumen share. Beasts and the beast cart arrive here (shard-touched, per [17](17-needs-and-upgrades.md)).
 - **Bloom:** a few growth patches show at the edge of the fog. They do nothing yet.
