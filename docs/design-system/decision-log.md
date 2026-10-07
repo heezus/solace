@@ -633,3 +633,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Esc with nothing to cancel opens a pause menu: Resume, Save game, Load game, Quit to title. One save slot (the run save from page 15); Load starts the game scene again from it. No autosave for now.
 - Zoom: the mouse wheel worked, but a trackpad or Magic Mouse scrolls with a different event the game ignored, and there were only three zoom steps. Added trackpad scroll and the + and - keys, and seven steps (24 to 80 px, 48 px stays the default).
 - The game's main scene is now the title screen; the CI play-through and layout tools load the game scene directly.
+
+## 2026-10-06: Starfall title painting (PR pending)
+- Codex: use the approved Misty Highlands architecture and atmosphere for the title, with a warm Kith Hearth as the visual focus and a dark quiet left third under the menu.
+- Keep the Lumen star and distant Bloom growth as environmental hints; no text is baked into the image and no new lore is introduced.
+- Keep the existing title loader and centered cover behavior. Actual 1280×800 and 1600×900 scene captures retain menu contrast and all three narrative cues.
+- Preserve the original generated 1586×992 PNG unchanged; the requested approximately 2560×1600 master was not returned by the tool, so higher-resolution enlargement remains an explicit review limitation.

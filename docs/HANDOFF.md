@@ -4,13 +4,12 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 
 ## Active work
 
-### Codex — growth visuals and build-bar fit
-- **Task:** Jon's 2026-10-05 assignment: fit the bottom build bar; supply path/gravel/paved art, Dwelling/Homestead/Longhouse, reusable scaffold and one-Kith hand cart. Branch `codex/growth-visuals`, PR #51. This assignment authorizes these assets despite page 17's older approval-hold text; beast carts and gameplay changes remain excluded.
-- **Reserved files:** none after publication; delivered layout-only `scripts/build_bar.gd`, new `art/rendered/growth-*` assets, `scripts/growth_art.gd`, focused visual/layout tests and related art/decision docs. Claude confirmed #50 keeps build-bar edits to price/visibility; the second merger reconciles them. No edits to Claude's drawing/gameplay hooks.
-- **Acceptance criteria:** craft and demolition controls fit default/narrow windows; every build tab remains accessible; cards keep readable dimensions with scrolling when needed. New transparent subjects/materials match current miniatures, retain logical footprints and imported metadata; native 48/24 px preview inspected; exact slot/region contract supplied to Claude.
-- **Status:** implementation complete for review. Build-bar checks pass at 800/1100/1280/1600 px across all tabs; native 24/48/96 px asset/48 px road preview inspected. Imports, strict warnings, lint/format and focused slot/alpha/bounds/RNG/seam checks passed. CI run 37405354942 on 9a0f2b9 passed import/metadata/warnings/main load/all logic tests, then the scripted bot stalled at 6001 frames with three Kith and no Bronze Dawn. The same stall reproduced locally with no UI-click or asset errors; long layout CI was not reached. PR #51 is blocked from merging until this progression/fixture failure is resolved.
-- **Next action:** Claude investigates the pacing-bot/fixture failure reported on PRs #50/#51; Codex fixes any demonstrated presentation/input defect and reruns CI after a relevant fix. Claude then reviews/merges the visual PR and uses `docs/art/growth-visuals/README.md` for exact state hooks in logistics/needs; new assets are imported and ready but normal play does not select tier/scaffold/cart state yet. Beast art remains outside this task.
-
+### Codex — Starfall title painting
+- **Task:** Jon's 2026-10-06 full Starfall art assignment, starting with the title painting on `codex/starfall-title`. Keep each asset group in a separate small PR; later/canon-pending slots stay deferred as stated in the brief.
+- **Reserved files:** `art/rendered/title.png`, its Godot-generated `.import`, `docs/art/starfall-title/`, the title request line in `docs/art/requests.md`, and an append-only design decision. No gameplay or Claude-reserved renderer files.
+- **Acceptance criteria:** one approximately 2560×1600 / 16:10 painting matching Misty Highlands; warm Kith settlement first, a subtle cyan falling star and distant magenta/green Bloom hint; calm dark left third, no baked text; import succeeds and actual title menu remains readable at default and wider aspect ratios.
+- **Status:** title painted/imported and actual 1280×800 plus 1600×900 title captures inspected. Source is 1586×992, below the requested approximately 2560×1600 master; documented for review. Publishing the small title PR; full CI pending.
+- **Next action:** generate one focused painting, import it, inspect the real title screen and cropping, then publish a small PR and hand off through #53. Next asset group: current Starfall buildings; later slots remain queued.
 
 ### Claude — Starfall stage 3
 - **Task:** Jon's "continue" (2026-10-07). Page 16 stage 3: three moments, set 6 (the Warning), the lean, the first Bloom sign. Stages 1 and 2 merged (#57, #61). PR `stage3`.
