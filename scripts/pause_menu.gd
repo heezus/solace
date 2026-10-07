@@ -1,7 +1,8 @@
 extends Control
-## The pause menu: Resume, Save game, Load game and Quit to title, on a card over the dimmed map, and the Debug keys switch
-## (off unless the player turns it on: scripts/debug_keys.gd). The owner (scripts/main.gd) pauses while it is up and does the
-## real work; this only shows the buttons and a one-line status ("Saved to slot 2."). Save and Load open the slot screen.
+## The pause menu: Resume, Save game, Load game and Quit to title, on a card over the dimmed map, and two switches: Cutscenes
+## (on unless the player turns it off: scripts/cutscene_settings.gd) and Debug keys (off unless turned on: scripts/debug_keys.gd).
+## The owner (scripts/main.gd) pauses while it is up and does the real work; this only shows the buttons and a one-line
+## status ("Saved to slot 2."). Save and Load open the slot screen.
 ## Signals: resumed, save_pressed, load_pressed, quit_pressed.
 
 signal resumed
@@ -13,11 +14,13 @@ const Data = preload("res://scripts/data.gd")
 const Ui = preload("res://scripts/ui.gd")
 const MenuFonts = preload("res://scripts/menu_fonts.gd")
 const DebugKeys = preload("res://scripts/debug_keys.gd")
+const CutsceneSettings = preload("res://scripts/cutscene_settings.gd")
 
 const WIDTH := 300.0
 
 var load_button: Button
 var debug_toggle: CheckButton
+var cutscene_toggle: CheckButton
 var status: Label
 
 
@@ -48,12 +51,9 @@ func setup() -> void:
 	load_button = _button(Data.PAUSE_LOAD, false, func(): load_pressed.emit())
 	v.add_child(load_button)
 	v.add_child(_button(Data.PAUSE_QUIT, false, func(): quit_pressed.emit()))
-	debug_toggle = CheckButton.new()
-	debug_toggle.text = Data.DEBUG_KEYS_LABEL
-	debug_toggle.tooltip_text = Data.DEBUG_HELP
-	debug_toggle.add_theme_font_override("font", MenuFonts.caption())
-	debug_toggle.add_theme_font_size_override("font_size", Ui.MIN_TEXT)
-	debug_toggle.toggled.connect(func(on): DebugKeys.set_on(on))
+	cutscene_toggle = _switch(Data.CUTSCENES_LABEL, Data.CUTSCENES_HELP, CutsceneSettings.set_on)
+	v.add_child(cutscene_toggle)
+	debug_toggle = _switch(Data.DEBUG_KEYS_LABEL, Data.DEBUG_HELP, DebugKeys.set_on)
 	v.add_child(debug_toggle)
 	status = Ui.label("", Ui.MIN_TEXT)
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -67,6 +67,17 @@ func setup() -> void:
 	MenuFonts.style_caption(hint)
 	hint.add_theme_color_override("font_color", Ui.TEXT_DIM)
 	v.add_child(hint)
+
+
+## An on/off switch under the buttons, in the caption face; `on_toggle` is told the new state.
+func _switch(text: String, help: String, on_toggle: Callable) -> CheckButton:
+	var c := CheckButton.new()
+	c.text = text
+	c.tooltip_text = help
+	c.add_theme_font_override("font", MenuFonts.caption())
+	c.add_theme_font_size_override("font_size", Ui.MIN_TEXT)
+	c.toggled.connect(func(on): on_toggle.call(on))
+	return c
 
 
 func _button(text: String, primary: bool, on_press: Callable) -> Button:
@@ -89,6 +100,7 @@ func place(area: Rect2) -> void:
 func open() -> void:
 	status.text = ""
 	debug_toggle.set_pressed_no_signal(DebugKeys.on())
+	cutscene_toggle.set_pressed_no_signal(CutsceneSettings.on())
 	visible = true
 
 

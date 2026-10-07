@@ -277,6 +277,9 @@ static func idle_reason(s, b: Dictionary, def: Dictionary) -> void:
 	if def.get("trade", false) and not Buildings.is_trading(b):
 		s.town.set_status(b, Data.TRADE_UNSET, Data.TRADE_UNSET_ALERT)
 		return
+	if def.has("dig") and s.world.seam_spent(b["pos"]):
+		s.town.set_status(b, Data.SEAM_SPENT_STATUS, Data.SEAM_SPENT_ALERT)
+		return
 	var missing: Array = []
 	var recipe := Buildings.recipe_in(b)
 	for id in recipe:

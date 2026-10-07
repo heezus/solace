@@ -171,6 +171,22 @@ const TECH_BLURBS := {
 	"bronze_ploughshare": "Fields yield another 50%.",
 	"star_charts": "Traces the Wanderer's path across the sky.",
 	"falling_star": "The era ends, and the Wanderer comes down.",
+	"coal_seams": "Names the coal in the south and lets you build a Coal Mine.",
+	"ironstone": "Names the iron hills and opens the land to the south.",
+	"teardown": "A Teardown Bench takes a find apart so the Kith keep a Lesson from it.",
+	"bloomery": "Lets you build a Bloomery that turns iron ore and coal into iron.",
+	"boiler": "A Boiler burns coal and powers machines near it, with no river needed.",
+	"beast_pen": "Lets you tame a shard-touched beast to pull a cart that needs no coal.",
+	"iron_tools": "Iron Tools make workers faster than bronze ones do, and last 300 jobs.",
+	"rails": "Rail carries eight times open ground, and the Steam Cart runs on it.",
+	"shard_lamps": "A lamp post that burns a shard and lights three tiles.",
+	"taught_hands_ii": "Teach-by-doing is faster, and a job learned spreads to every hut.",
+	"blast_furnace": "Lets you build a Forge that makes Steel, and doubles the iron a firing gives.",
+	"iron_plough": "Fields yield another 50%.",
+	"shard_boiler": "A boiler that burns shards, so it needs far less coal.",
+	"steel": "Steel Tools make workers another 50% faster and last longer.",
+	"bloom_sampling": "Expeditions can take a sample from each patch of the Bloom.",
+	"livewire": "The era ends, and the lamps burn without a flame.",
 }
 
 # --- Era 2 (scripts/sim.gd, scripts/main.gd, scripts/tech_panel.gd) ---
@@ -183,7 +199,7 @@ const LOOK_EAST_TIP := "Moves the view toward the %s, still under fog. Home brin
 const LOOK_EAST_ORE := {"copper_hills": "copper", "tin_stream": "tin"}
 const TECH_UNBUILT := "Opens in a later age"  # on a card and in the strip of a tech that is not open to the Kith yet
 const ERA_TAB_TIP := "The %s tech tree"  # an era's name
-const ERA_TAB_LOCKED := "Opens when Bronze Dawn is discovered"
+const ERA_TAB_LOCKED := "Opens when Bronze Dawn is discovered"  # the second era's tab (ERA_TAB_LOCKED_IRONFALL is the fourth's)
 const MINE_TIP := "A Mine standing on it digs without walking: it takes two Kith."
 const ORE_PLAIN_HINT := "Discover %s to read what lies in it."  # a tech's name
 const WORKER_CREW := "It takes %d %s to work: %d here."  # how many, many, how many are here

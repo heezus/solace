@@ -35,6 +35,7 @@ const STORY_EVENTS := {
 	"lean_allies": "The Lumen and the Kith ended as allies",
 	"lean_neighbours": "The Lumen and the Kith ended as neighbours",
 	"lean_enemies": "The Lumen and the Kith ended as enemies",
+	"ironfall_begun": "The Starfall was over, and the Kith turned to iron",
 }
 
 ## Techs that are story moments: tech id -> the STORY_EVENTS id the Story block records when it is researched.

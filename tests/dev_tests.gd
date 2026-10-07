@@ -108,7 +108,8 @@ func test_the_list_is_well_formed() -> void:
 		"starfall_landing",
 		"starfall_camp",
 		"starfall_market",
-		"starfall_end"
+		"starfall_end",
+		"ironfall"
 	]:
 		t.check(seen.has(id), "the start %s is there" % id)
 	t.check(DevStarts.build("no_such_start") == null, "an unknown start builds nothing")
@@ -517,6 +518,10 @@ func _expect_stage(id: String, s: Sim) -> void:
 				probe.starfall.ended and probe.story.has_event("warning_read"),
 				"starfall_end ends the era within the half minute"
 			)
+		"ironfall":
+			t.check(s.starfall.ended and s.starfall.pending == "", "ironfall: the Starfall is over and put away")
+			t.check(s.story.has_event(Data.IRONFALL_EVENT), "and Ironfall has begun")
+			t.check(s.tech_tree.tech_visible("coal_seams"), "so its first techs are in view")
 
 
 func test_starts_are_deterministic() -> void:

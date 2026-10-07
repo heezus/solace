@@ -67,6 +67,41 @@ const TILES := {
 		"tech": "prospecting",
 		"stays": "The land stays · ore lies where the earth put it",
 	},
+	# Era 4 (Ironfall), in the land that grows south (scripts/map_south.gd). Coal is finite: the tiles of a seam share a pile
+	# (World.seam_left, Data.COAL_PER_SEAM) and become a Spent Seam when it is gone. Iron is plentiful.
+	"coal_seam":
+	{
+		"name": "Coal Seam",
+		"plain_name": "Dark Ridge",
+		"yields": "coal",
+		"color": Color("3b3b46"),
+		"buildable": false,
+		"mine_only": true,
+		"tech": "coal_seams",
+		"gated": true,
+		"stays": "The land stays · coal lies where the earth put it",
+	},
+	"iron_hills":
+	{
+		"name": "Iron Hills",
+		"plain_name": "Rust-red Hills",
+		"yields": "iron_ore",
+		"color": Color("8a4f3a"),
+		"buildable": false,
+		"mine_only": true,
+		"tech": "ironstone",
+		"gated": true,
+		"stays": "The land stays · ore lies where the earth put it",
+	},
+	"spent_seam":
+	{
+		"name": "Spent Seam",
+		"yields": "",
+		"color": Color("55555e"),
+		"buildable": false,
+		"hint": "The coal here is gone. A Mine standing on it has nothing left to dig.",
+		"stays": "The seam is spent · nothing is left to dig",
+	},
 }
 
 ## The Demolish tool on a resource tile (scripts/clearing.gd): the pill's words, %s being the tile's name. Clearing is

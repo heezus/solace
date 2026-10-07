@@ -174,7 +174,7 @@ const BUILDINGS := {
 		"cost": {"wood": 10, "stone": 5},
 		"in": {},
 		"out": {},
-		"makes": ["flint_tools", "bronze_tools"],
+		"makes": ["flint_tools", "bronze_tools", "iron_tools"],
 		"time": 6.0,
 		"color": Color("8a8d91"),
 		"desc": "Makes tools so you do not have to. Keeps a spare or two ready, then waits until more are needed.",
@@ -254,11 +254,30 @@ const BUILDINGS := {
 		"in": {},
 		"out": {},
 		"dig": 2,
-		"on_tiles": ["copper_hills", "tin_stream"],
+		"on_tiles": ["copper_hills", "tin_stream", "iron_hills"],
 		"crew": 2,
 		"time": 5.0,
 		"color": Color("8f9b5a"),
-		"desc": "Stands on Copper Hills or a Tin Stream. Two Kith dig ore without walking.",
+		"desc":
+		"Stands on Copper Hills, a Tin Stream or (with Ironstone) Iron Hills. Two Kith dig ore without walking.",
+	},
+	"coal_mine":
+	{
+		"name": "Coal Mine",
+		"kind": "processor",
+		"job": "Miner",
+		"tech": "coal_seams",
+		"story": true,
+		"cost": {"wood": 120, "stone": 40, "brick": 30},
+		"in": {},
+		"out": {},
+		"dig": 2,
+		"on_tiles": ["coal_seam"],
+		"crew": 2,
+		"time": 5.0,
+		"color": Color("3b3b46"),
+		"desc":
+		"Stands on a Coal Seam. Two Kith dig coal without walking. A seam holds about 500, and then it is spent.",
 	},
 	"smelter":
 	{
@@ -273,6 +292,20 @@ const BUILDINGS := {
 		"time": 5.0,
 		"color": Color("b87333"),
 		"desc": "Melts Copper Ore with Charcoal into Copper.",
+	},
+	"bloomery":
+	{
+		"name": "Bloomery",
+		"kind": "processor",
+		"job": "Smith",
+		"tech": "bloomery",
+		"story": true,
+		"cost": {"stone": 40, "brick": 60, "clay": 30},
+		"in": {"iron_ore": 2, "coal": 1},
+		"out": {"iron": 1},
+		"time": 9.0,
+		"color": Color("a65f45"),
+		"desc": "A clay stack fired with coal. Melts 2 Iron Ore and 1 Coal into Iron, slowly.",
 	},
 	"crucible":
 	{
@@ -440,7 +473,7 @@ const BUILD_TABS := {
 	"Homes": ["dwelling"],
 	"Gathering": ["gatherers_hut", "field", "flax_field", "fishing_weir"],
 	"Workshops": ["tool_bench", "charcoal_pit", "twine_post", "kiln", "water_wheel", "grindstone"],
-	"Metal": ["mine", "smelter", "crucible"],
+	"Metal": ["mine", "coal_mine", "smelter", "crucible", "bloomery"],
 	"Logistics":
 	["road", "gravel_road", "paved_road", "bridge", "stone_bridge", "storehouse", "cart_shed", "trading_post"],
 	"Lore":
@@ -478,8 +511,10 @@ const BUILD_ORDER := [
 	"standing_stone",
 	"shard_cairn",
 	"mine",
+	"coal_mine",
 	"smelter",
 	"crucible",
+	"bloomery",
 	"cart_shed",
 	"trading_post",
 	"watchtower",

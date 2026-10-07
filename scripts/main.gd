@@ -45,6 +45,7 @@ const BridgeArt = preload("res://scripts/bridge_art.gd")
 const Homes = preload("res://scripts/homes.gd")
 const HomeView = preload("res://scripts/home_view.gd")
 const GrowthArt = preload("res://scripts/growth_art.gd")
+const CutscenePlayer = preload("res://scripts/cutscene_player.gd")
 
 const TILE: float = Overlays.TILE
 const MAP_ORIGIN := Vector2.ZERO  # the node's transform pans and zooms the map
@@ -600,6 +601,7 @@ func _build_ui() -> void:
 	layer.add_child(game_menu)
 	game_menu.setup(state)
 	game_menu.paused_changed.connect(func(on: bool): paused = on)
+	CutscenePlayer.attach(layer, state, self)  # last, so a sequence plays over every card
 
 
 func _refresh_ui() -> void:

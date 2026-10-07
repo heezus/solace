@@ -1,6 +1,6 @@
 # Era 4: Ironfall
 
-Status: **designed, not built** (2026-10-07). The project owner said yes to designing Ironfall in detail ("as well as whatever else is next"). Every number is a placeholder to tune with the pacing bot, and anything marked *default* is a pick Claude made that the project owner can change. Mechanics page, so Claude owns it. It follows [18](18-roadmap.md) (the shape and the Decided list) and picks up where [Starfall](16-starfall.md) ends.
+Status: **stage 1 built** (2026-10-07): coal and iron, the south growth, Coal Seams, Ironstone, Bloomery, Iron Tools, the fourth tab and the era's goals, on placeholder art. Stages 2 (Teardown) and 3 (steam and the end) are designed, not built. Every number is a placeholder to tune with the pacing bot, and anything marked *default* is a pick Claude made that the project owner can change. Mechanics page, so Claude owns it. It follows [18](18-roadmap.md) (the shape and the Decided list) and picks up where [Starfall](16-starfall.md) ends.
 
 ## The feeling
 - Bronze Dawn was metal and distance. Starfall was strangers and meaning. **Ironfall is machines and borrowed knowledge.** The Kith finally have the strength to build engines, and the Lumen have things the Kith cannot make yet. The era is about **opening things up to see how they work**.
@@ -92,6 +92,13 @@ The gate cost is about 100 Steel, 100 Iron, 60 Brick, 40 Rope and one of each Bl
 ## Ending
 - Researching **Livewire** plays a short end card. The lamps burn without a flame, the Kith hear a hum down the new wires, and, far to the north, something green moves in the fog.
 - The game keeps running so the player can keep building, as Bronze Dawn and Starfall do. Livewire (era 5) is the next design page.
+
+## What stage 1 built, and where it differs (2026-10-07)
+- **Opening.** The era's techs wait for the story: Ironfall begins the tick after the Starfall ending card is put away (`ironfall_begun`), and the four stage-1 techs, the roots Coal Seams and Ironstone first, come into view then. The fourth tab opens at the same moment and is where the research board opens from then on. The Goals panel switches to a nine-goal Ironfall list.
+- **The south.** The land grows 22 rows south when **either** Coal Seams or Ironstone is learned (page 19 said Ironstone; either keeps coal from being stranded when the player learns it first). It is made from the map's seed like the east, checked for fairness over many seeds (three separate seams on the near side, plenty of iron and some of it near, an open way south), and starts under fog. Coal and iron are placed there only, so the stone age and Bronze Dawn maps, and the golden pacing runs, do not change.
+- **Finite coal.** Each of the three seams holds 500 shared by its tiles. A Coal Mine or a hand dig draws from the pile; when it is gone the seam turns to a Spent Seam and a Mine on it says it has nothing left. Iron is plentiful. Both ores need their tech to be named, to be dug by hand and to be mined (`gated` tiles).
+- **Metal.** A Coal Mine (Metal tab) digs coal; the plain Mine also stands on Iron Hills once Ironstone is learned. The Bloomery turns 2 Iron Ore and 1 Coal into Iron. Iron Tools (Iron and Wood, at the Tool Bench or by hand) give a worker Speed 2.75 against bronze's 2.0 and last 300 jobs, and workers take them before bronze.
+- **Not yet.** Teardown, the parts and the Lessons list (stage 2). The Boiler, Rails, Forge, Steel, Beast Pen, the Shard Boiler, Bloom Sampling, the gate and its end card (stage 3): their techs are on the board, locked, and carry `stage` 3. Techs of the era are defined in `scripts/data/ironfall/techs.gd`, one constant each, since a constant cannot merge dictionaries.
 
 ## Staging (how it gets built)
 Three stages, each its own PR with placeholder art and the art slots logged in `docs/art/requests.md`, so Codex can start in parallel.

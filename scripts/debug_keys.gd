@@ -68,11 +68,12 @@ static func next_speed(current: int) -> int:
 	return SPEEDS[0]
 
 
-## A stack of every good the run's era knows (era 2's once Bronze Dawn is won), not the Bronze Tools, which speed workers up.
+## A stack of every good the run's era knows (era 2's once Bronze Dawn is won, era 4's once Ironfall begins), not the
+## tools, which speed workers up.
 static func add_goods(s) -> String:
-	var era := 2 if s.won else 1
+	var era := 4 if s.story.has_event(Data.IRONFALL_EVENT) else 2 if s.won else 1
 	for id in Data.ITEM_ORDER:
-		if id != "bronze_tools" and int(Data.ITEMS[id].get("era", 1)) <= era:
+		if id not in ["bronze_tools", "iron_tools"] and int(Data.ITEMS[id].get("era", 1)) <= era:
 			s.economy.add(id, GOODS_STACK)
 	return Data.DEBUG_GOODS % GOODS_STACK
 

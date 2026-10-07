@@ -67,6 +67,11 @@ static func finish_cycle(s, b: Dictionary) -> void:
 		b["inbuf"][id] -= used[id]
 		s.economy.note(id, -used[id], b["type"])
 	var made := Buildings.recipe_out(b)
+	if Data.BUILDINGS[b["type"]].has("dig"):  # a finite seam gives what is left of its pile, and no more
+		for id in made:
+			made[id] = s.world.seam_draw(b["pos"], made[id])
+			if made[id] > 0 and s.world.seam_spent(b["pos"]):
+				s.events.append(Data.SEAM_SPENT_EVENT)
 	if made.has("flint_tools"):
 		s.hand_tools = true  # the first Flint Tool made by anyone doubles hand gathering, as a hand-crafted one does
 	var more := Bonuses.output(s, b)

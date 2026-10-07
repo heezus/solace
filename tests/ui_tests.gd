@@ -165,7 +165,7 @@ func test_story_cards_stay_hidden_until_revealed() -> void:
 	t.check(CardText.shown(s, "standing_stone"), "the Standing Stone shows once Megaliths is reachable")
 	for type in Data.BUILDINGS:
 		var def: Dictionary = Data.BUILDINGS[type]
-		var era_two: bool = def.get("tech", "") != "" and int(Data.TECHS[def["tech"]].get("era", 1)) == 2
+		var era_two: bool = def.get("tech", "") != "" and int(Data.TECHS[def["tech"]].get("era", 1)) >= 2
 		t.check(
 			not def.get("story", false) or def["kind"] in ["aura", "cairn"] or era_two,
 			"only Lore and next-era buildings are story cards"

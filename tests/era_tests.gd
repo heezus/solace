@@ -102,7 +102,7 @@ func mine_of(s: Sim) -> Dictionary:
 
 func test_era_two_tree_is_defined() -> void:
 	var mine := Rules.era_techs(2)
-	t.check(Data.ERAS.size() == 2 and mine.size() == 16, "the second era has 16 techs (%d)" % mine.size())
+	t.check(Data.ERAS.has(2) and mine.size() == 16, "the second era has 16 techs (%d)" % mine.size())
 	t.check(Data.ERA_TIER_NAMES.has(1) and Data.ERA_TIER_NAMES.has(2), "every era has its column captions")
 	for tech in PARENTS:
 		t.check(Data.TECHS.has(tech) and tech in mine, tech + " is an era-2 tech")

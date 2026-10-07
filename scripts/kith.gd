@@ -303,7 +303,7 @@ func worker_home(b: Dictionary) -> bool:
 # --- Tools -------------------------------------------------------------------
 
 
-## A worker without a tool takes the best one from the stockpile (Bronze Tools before Flint Tools).
+## A worker without a tool takes the best one from the stockpile (Iron before Bronze before Flint Tools).
 func equip(k: Dictionary) -> void:
 	if k["tool"] > 0:
 		return
@@ -318,7 +318,12 @@ func equip(k: Dictionary) -> void:
 
 ## How many jobs a new tool of `id` lasts.
 static func tool_jobs(id: String) -> int:
-	return Data.BRONZE_TOOL_JOBS if id == "bronze_tools" else Data.TOOL_JOBS
+	match id:
+		"iron_tools":
+			return Data.IRON_TOOL_JOBS
+		"bronze_tools":
+			return Data.BRONZE_TOOL_JOBS
+	return Data.TOOL_JOBS
 
 
 ## The tool a worker holds: its item id, "" for none. A save from before Bronze Tools holds a Flint Tool.

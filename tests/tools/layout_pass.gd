@@ -15,6 +15,7 @@ const HoverText = preload("res://scripts/hover_text.gd")
 const Hands = preload("res://scripts/hands.gd")
 const UiTests = preload("res://tests/ui_tests.gd")
 const Ui = preload("res://scripts/ui.gd")
+const CutscenePlayer = preload("res://scripts/cutscene_player.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
 const HudChecks = preload("res://tests/tools/hud_checks.gd")
 const PickerChecks = preload("res://tests/tools/picker_checks.gd")
@@ -54,6 +55,7 @@ var picker := PickerChecks.new()  # the hut picker's checks (tests/tools/picker_
 
 
 func _init() -> void:
+	CutscenePlayer.suppress = true  # the scripted pass plays the game, not its cutscenes
 	seed(7)
 	var scene: PackedScene = load("res://scenes/main.tscn")
 	main = scene.instantiate()
@@ -190,7 +192,7 @@ func _check_era_board() -> void:
 	for tech in Data.TECH_ORDER:
 		if Data.TECHS[tech].get("era", 1) == 2 and not panel.board.shows(tech):
 			problems.append("%s has no card on the second board" % tech)
-		if Data.TECHS[tech].get("stage", 1) > Data.BUILT_STAGE:
+		if Data.TECHS[tech].get("era", 1) == 2 and Data.TECHS[tech].get("stage", 1) > Data.BUILT_STAGE:
 			locked += 1
 	if locked != 0:
 		problems.append("the second board has %d techs for the next update, not none" % locked)

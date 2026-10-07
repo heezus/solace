@@ -41,6 +41,7 @@ const SAVE_HINT := "Saving over a slot replaces it. Stage starts are never overw
 const ERA_STONE := "Stone Age"
 const ERA_BRONZE := "Bronze Dawn"
 const ERA_STARFALL := "Starfall"
+const ERA_IRONFALL := "Ironfall"
 const DEBUG_KEYS_LABEL := "Debug keys (F1 to F4)"
 const DEBUG_HELP := "F1 goods, F2 research, F3 speed, F4 fog"
 const DEBUG_GOODS := "Debug: +%d of every good"

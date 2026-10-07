@@ -31,6 +31,8 @@ static func meta_of(d: Dictionary) -> Dictionary:
 		era = Data.ERA_BRONZE
 	if game.get("starfall", {}).get("stage", "") != "":
 		era = Data.ERA_STARFALL
+	if Data.IRONFALL_EVENT in d["story"].get("events", []):
+		era = Data.ERA_IRONFALL
 	return {
 		"era": era,
 		"minutes": int(float(d["economy"].get("flows", {}).get("clock", 0.0)) / 60.0),

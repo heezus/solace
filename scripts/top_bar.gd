@@ -1,6 +1,6 @@
 extends PanelContainer
 ## The top bar: Kith and jobs, food with its time left (flashing red when it is about to run out), and a
-## chip per good in three rows. Every chip is the same fixed-width widget in every era: a sprite that carries the
+## chip per good in four rows. Every chip is the same fixed-width widget in every era: a sprite that carries the
 ## good's color, its count in cream and its net rate per second under it (moss up, alert red down; the name is in the
 ## tooltip). The third row, the second era's goods, lines up under the first two rows' columns. Hovering a chip drops
 ## a panel explaining where that good comes from and where it goes. Every chip keeps EDGE_PAD from the bar's edges.
@@ -16,8 +16,10 @@ const Ui = preload("res://scripts/ui.gd")
 const GrowthNote = preload("res://scripts/growth_note.gd")
 const Hands = preload("res://scripts/hands.gd")
 
-const RAW := ["wood", "stone", "flint", "fiber", "clay", "berries", "grain", "fish", "copper_ore", "tin"]
-const ROWS := [0, 7, 13, 18]  # where each row of goods starts in ITEM_ORDER: raw, made, the second era's five
+const RAW := [
+	"wood", "stone", "flint", "fiber", "clay", "berries", "grain", "fish", "copper_ore", "tin", "coal", "iron_ore"
+]
+const ROWS := [0, 7, 13, 18, 23]  # where each row of goods starts in ITEM_ORDER: raw, made, Bronze Dawn's five, Ironfall's five
 const LOSS := Ui.SHORT  # `alert`, lifted to read on cocoa
 ## The Food readout's text while the warning is up: light enough to read on the bar (over 4.5 to 1) at every moment.
 const ALARM_TEXT := Ui.SHORT
@@ -29,17 +31,17 @@ const FLAT := Ui.TEXT_DIM
 const MINUS := "−"
 const CHIP_W := 80.0
 const ICON := 24.0  # a good's sprite, with nothing behind it
-## A row of chips keeps this height whether or not its goods have appeared yet. Three rows fill the bar's goods area.
+## A row of chips keeps this height whether or not its goods have appeared yet. Four rows fill the bar's goods area.
 const ROW_H := 38.0
 const CHIP_GAP := 3  # between the chips of a row, the same in every row
 const CHIP_STACK := -10  # the rate sits this close under the count
-const CHIP_VPAD := 1  # a chip keeps this much above and below, so it is 38 px tall and three rows fit the bar
+const CHIP_VPAD := 1  # a chip keeps this much above and below, so it is 38 px tall and four rows fit the bar
 const EDGE_PAD := 6.0  # the goods keep this much clear of the bar's top and bottom edge (the bottom rule is on top of it)
 const RULE_W := 3  # the rule along the bar's bottom edge
 ## The bar is never shorter than its tallest block, the Kith block with its name, jobs line and three lines of note,
 ## plus the panel's margins: it is reserved from the first frame, so a chip, a note or a long line appearing later can
 ## never make it (or the map under it) grow.
-const BAR_H := 130.0
+const BAR_H := 167.0  # four rows of chips (4 x ROW_H) between the edge padding and the rule
 const FOOD_W := 190.0
 const COUNT_SIZE := 18  # numbers are 18
 const KITH_W := 216.0  # the Kith block, wide enough for "Jobs filled 19 of 19  ·  25 hauling"
@@ -112,7 +114,7 @@ func setup(game: Sim) -> void:
 	h.add_child(food_box)
 	h.add_child(VSeparator.new())
 
-	# The goods, in three rows that never wrap: raw, made (with the tool count at its end), and the second era's.
+	# The goods, in four rows that never wrap: raw, made (with the tool count at its end), and one for each later era's.
 	var goods := VBoxContainer.new()
 	goods.add_theme_constant_override("separation", 0)
 	goods.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -284,7 +286,12 @@ func refresh(paused: bool, speed: int) -> void:
 			Data.PEOPLE["many"],
 			Data.TOOL_JOBS,
 			Data.BRONZE_TOOL_JOBS,
-			state.economy.inv.get("flint_tools", 0) + state.economy.inv.get("bronze_tools", 0)
+			Data.IRON_TOOL_JOBS,
+			(
+				state.economy.inv.get("flint_tools", 0)
+				+ state.economy.inv.get("bronze_tools", 0)
+				+ state.economy.inv.get("iron_tools", 0)
+			)
 		]
 	)
 	tools_label.mouse_filter = Control.MOUSE_FILTER_STOP

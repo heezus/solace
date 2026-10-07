@@ -163,6 +163,10 @@ const FEATURES := {
 	"tin_stream": ["extras", 0, 1],
 	"gravel": ["extras", 1, 1],
 	"shard": ["extras", 2, 1],
+	# Ironfall placeholders: the copper hills' rocks, tinted (docs/art/requests.md has the slots Codex paints).
+	"coal_seam": ["rocks", 3, 3],
+	"iron_hills": ["rocks", 3, 3],
+	"spent_seam": ["rocks", 0, 3],
 }
 const BUILDINGS := {"dwelling": 0, "gatherers_hut": 3, "camp": 6}
 const SINGLE_BUILDINGS := {
@@ -189,6 +193,17 @@ const SINGLE_BUILDINGS := {
 	"lumen_market": ["industry", 4],
 	"guard_post": ["industry", 5],
 	"shared_shrine": ["workshops", 7],
+	# Ironfall placeholders: the Mine and the Smelter, tinted (see TINTS).
+	"coal_mine": ["industry", 0],
+	"bloomery": ["industry", 1],
+}
+## The tint of a placeholder that borrows another one's sprite, by feature or building id.
+const TINTS := {
+	"coal_seam": Color(0.34, 0.34, 0.42),
+	"iron_hills": Color(1.0, 0.6, 0.48),
+	"spent_seam": Color(0.62, 0.62, 0.68),
+	"coal_mine": Color(0.5, 0.5, 0.6),
+	"bloomery": Color(0.85, 0.7, 0.62),
 }
 ## The fourteen Starfall icons, in the order of the "starfall-icons" regions: the three packs (Starfall.PACKS keys), the Shard,
 ## the four gifts (LUMEN_GIFTS keys) and the six glyph-set headings (GLYPH_SETS ids).
@@ -228,6 +243,16 @@ const ITEM_IDS := [
 	"flint_tools",
 	"bronze_tools"
 ]
+
+## Ironfall placeholders: a good with no icon of its own borrows another's, recolored (docs/art/requests.md has the slots).
+const BORROWED_ITEMS := {
+	"coal": ["charcoal", Color(0.6, 0.6, 0.75)],
+	"iron_ore": ["copper_ore", Color(0.78, 0.66, 0.66)],
+	"iron": ["copper", Color(0.62, 0.7, 0.8)],
+	"steel": ["bronze", Color(0.72, 0.86, 1.0)],
+	"iron_tools": ["bronze_tools", Color(0.66, 0.72, 0.85)],
+}
+const BORROWED_PX := 64  # the recolored copy's size: items are shown at 20 to 48 px
 
 const LEAD_SPRITE_PATH := "res://art/sprites/lumen_lead.png"
 const LEAD_SPRITE_REGION := Rect2(277, 92, 524, 1333)
@@ -276,7 +301,7 @@ static func feature(ci: CanvasItem, type: String, at: Vector2, p: Vector2i, time
 	var offset := Vector2((variant(p, 5, 17) - 2) * 0.22, 0)
 	if type in ["tree", "berry", "flax", "flax_field", "grain"]:
 		offset.x += sin(time * 1.1 + variant(p, 31)) * 0.18
-	fit(ci, sprite(spec[0], index), Rect2(at - Vector2(15, 15) + offset, Vector2(30, 30)))
+	fit(ci, sprite(spec[0], index), Rect2(at - Vector2(15, 15) + offset, Vector2(30, 30)), TINTS.get(type, Color.WHITE))
 	if type == "flax_field":
 		for i in 3:
 			ci.draw_line(at + Vector2(-12, 10 + i * 2), at + Vector2(12, 10 + i * 2), Color("63594570"), 0.7)
@@ -286,7 +311,7 @@ static func feature(ci: CanvasItem, type: String, at: Vector2, p: Vector2i, time
 static func building(ci: CanvasItem, type: String, box: Rect2) -> bool:
 	if SINGLE_BUILDINGS.has(type):
 		var spec: Array = SINGLE_BUILDINGS[type]
-		fit(ci, sprite(spec[0], spec[1]), box.grow(-1.0))
+		fit(ci, sprite(spec[0], spec[1]), box.grow(-1.0), TINTS.get(type, Color.WHITE))
 		return true
 	if not BUILDINGS.has(type):
 		return false
@@ -332,6 +357,25 @@ static func wreck(ci: CanvasItem, center: Vector2) -> void:
 	fit(ci, sprite("starfall-wreck", 0), Rect2(center - Vector2(48, 24), Vector2(96, 48)))
 
 
+## The borrowed icon of `id` (BORROWED_ITEMS), recolored once and kept; null for a good that is not borrowed.
+static func borrowed_item(id: String) -> Texture2D:
+	if not BORROWED_ITEMS.has(id):
+		return null
+	var key := "borrowed_" + id
+	if not _textures.has(key):
+		var spec: Array = BORROWED_ITEMS[id]
+		var img: Image = sprite("items", ITEM_IDS.find(spec[0])).get_image()
+		img.convert(Image.FORMAT_RGBA8)
+		var scale := float(BORROWED_PX) / maxi(img.get_width(), img.get_height())
+		img.resize(maxi(roundi(img.get_width() * scale), 1), maxi(roundi(img.get_height() * scale), 1))
+		for y in img.get_height():
+			for x in img.get_width():
+				var c := img.get_pixel(x, y)
+				img.set_pixel(x, y, Color(c.r * spec[1].r, c.g * spec[1].g, c.b * spec[1].b, c.a))
+		_textures[key] = ImageTexture.create_from_image(img)
+	return _textures[key]
+
+
 static func named(name: String) -> Texture2D:
 	if name.begins_with("tile_") and FEATURES.has(name.trim_prefix("tile_")):
 		var spec: Array = FEATURES[name.trim_prefix("tile_")]
@@ -340,6 +384,8 @@ static func named(name: String) -> Texture2D:
 		var index := ITEM_IDS.find(name.trim_prefix("item_"))
 		if index >= 0:
 			return sprite("items", index)
+		if BORROWED_ITEMS.has(name.trim_prefix("item_")):
+			return borrowed_item(name.trim_prefix("item_"))
 	if SINGLE_BUILDINGS.has(name):
 		var spec: Array = SINGLE_BUILDINGS[name]
 		return sprite(spec[0], spec[1])

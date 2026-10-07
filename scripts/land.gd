@@ -1,7 +1,8 @@
 extends RefCounted
-## The land that opens at Bronze Dawn: the map doubles to the east (World.grow_east) and the blocks that follow its size
-## take the new land in. It happens on the tick after the tech is researched, so the moment of Bronze Dawn itself is still
-## the stone age's last state. The new land starts fogged; what already stands by the old east edge lifts a little of it.
+## The land that opens with each era: at Bronze Dawn the map doubles to the east (World.grow_east), and in Ironfall it grows
+## south (World.grow_south) with the first of Coal Seams and Ironstone. The blocks that follow its size take the new land in.
+## It happens on the tick after the tech is researched, so the moment of Bronze Dawn itself is still the stone age's last
+## state. The new land starts fogged; what already stands by the old edge lifts a little of it.
 ## Static, and works on the Sim passed in, like Roads and Workers.
 
 const Data = preload("res://scripts/data.gd")
@@ -10,26 +11,35 @@ const SIDES := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)
 const ORE_ORDER := ["copper_hills", "tin_stream"]  # the order the player is pointed to them
 
 
-## Grow the map if Bronze Dawn is researched and it has not grown yet.
+## Grow the map if Bronze Dawn is researched and it has not grown east yet, and if Coal Seams or Ironstone is researched and it
+## has not grown south yet.
 static func grow_if_due(s) -> void:
-	if not s.tech_tree.researched.has("bronze_dawn") or not s.world.grow_east():
-		return
-	s.fog.widen(s.world.width)
-	s.pathing.build()  # the walking grid and the haulers' road grid are as big as the map
+	if s.tech_tree.researched.has("bronze_dawn") and s.world.grow_east():
+		s.fog.widen(s.world.width)
+		_took_in(s, Data.LAND_GREW_EVENT)
+	if Data.SOUTH_TECHS.any(func(t): return s.tech_tree.researched.has(t)) and s.world.grow_south():
+		s.fog.lengthen(s.world.height)
+		_took_in(s, Data.LAND_GREW_SOUTH_EVENT)
+
+
+## The new land is in: the walking grid and the haulers' road grid are as big as the map, and what stands by the old edge lifts
+## a little of the fog.
+static func _took_in(s, event: String) -> void:
+	s.pathing.build()
 	s.town.road_rev += 1
 	var more: int = Data.SCOUTING_SIGHT if s.tech_tree.researched.has("scouting") else 0
 	for b in s.town.buildings:
 		s.fog.reveal(b["pos"], Data.SIGHT_BUILDING + more)
 	for p in s.world.roads:
 		s.fog.reveal(p, Data.SIGHT_KITH + more)
-	s.events.append(Data.LAND_GREW_EVENT)
+	s.events.append(event)
 
 
-## Every tile of `tile` (an ore) in the land that grew east, in row order. Empty before the land has grown.
+## Every tile of `tile` (an ore) in the land that grew, in row order. Empty before the land has grown.
 static func ore_tiles(s, tile: String) -> Array:
 	var out: Array = []
 	for y in s.world.height:
-		for x in range(s.world.stone_width, s.world.width):
+		for x in s.world.width:
 			if s.world.tiles[y * s.world.width + x] == tile:
 				out.append(Vector2i(x, y))
 	return out

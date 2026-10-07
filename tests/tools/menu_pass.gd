@@ -9,6 +9,7 @@ extends SceneTree
 const Data = preload("res://scripts/data.gd")
 const RunSave = preload("res://scripts/run_save.gd")
 const SaveSlots = preload("res://scripts/save_slots.gd")
+const CutscenePlayer = preload("res://scripts/cutscene_player.gd")
 
 const ASIDE := ".menu_pass_aside"
 
@@ -23,6 +24,7 @@ var stage_wait := -1  # the frame the stage start was asked for, -1 before
 
 
 func _init() -> void:
+	CutscenePlayer.suppress = true  # the scripted pass plays the game, not its cutscenes
 	_move_saves(true)  # a clean slate
 	title = load("res://scenes/title.tscn").instantiate()
 	root.add_child(title)

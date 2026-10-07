@@ -9,11 +9,14 @@ extends RefCounted
 ## Signal: grew(from_width) fires when the map grows, with the width it had; the owner lifts the walking grid and fog.
 
 signal grew(from_width: int)
+## Signal: grew_south(from_height: int) fires when the land grows south, with the height it had.
+signal grew_south(from_height: int)
 
 const Codec = preload("res://scripts/save_codec.gd")
 const Data = preload("res://scripts/data.gd")
 const MapGen = preload("res://scripts/map_gen.gd")
 const MapEast = preload("res://scripts/map_east.gd")
+const MapSouth = preload("res://scripts/map_south.gd")
 
 const WIDTH := 36
 const HEIGHT := 22
@@ -22,6 +25,7 @@ const NEIGHBORS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0,
 var width: int
 var height: int
 var stone_width: int  # the width the map was made with: the stone-age half. The map is wider once it has grown
+var base_height: int  # the height the map was made with. The map is taller once it has grown south
 var map_seed := 0  # the seed the map was made from, so the land that grows east comes from the same one
 var tiles: Array = []  # flat array of tile ids, index = y * width + x
 var camp_pos := Vector2i.ZERO
@@ -31,6 +35,8 @@ var stone_bridges: Dictionary = {}  # Vector2i -> true, the bridges among them t
 var road_tiers: Dictionary = {}  # Vector2i -> 1 (gravel) or 2 (paved) for the roads laid above the plain path (tier 0)
 var fields: Dictionary = {}  # Vector2i -> true, grain tiles that were sown
 var flax_fields: Dictionary = {}  # Vector2i -> true, flax tiles that were sown (wild flax is not in here)
+var seam_of: Dictionary = {}  # Vector2i -> seam number, for every tile of a finite seam (coal), spent or not
+var seam_left: Dictionary = {}  # seam number -> what is still in the ground (an int)
 
 
 ## A map of open grass, `w` by `h` tiles (the game's size unless a test wants a tiny one).
@@ -38,6 +44,7 @@ func _init(w: int = WIDTH, h: int = HEIGHT) -> void:
 	width = w
 	height = h
 	stone_width = w
+	base_height = h
 	reset()
 
 
@@ -51,6 +58,9 @@ func reset(tile: String = "grass") -> void:
 ## Make a new map from `seed_value`: the same seed always makes the same map (see MapGen).
 func generate(seed_value: int) -> void:
 	width = stone_width  # a new map starts as the stone-age half again
+	height = base_height
+	seam_of.clear()
+	seam_left.clear()
 	map_seed = seed_value
 	MapGen.generate(self, seed_value)
 
@@ -78,6 +88,48 @@ func grow_east() -> bool:
 	tiles = grown
 	grew.emit(old)
 	return true
+
+
+## True once the map has grown south (see grow_south).
+func is_grown_south() -> bool:
+	return height > base_height
+
+
+## Add the land south of the map: every tile stays as it is, and MapSouth makes Data.SOUTH_ROWS rows from the map's seed (coal
+## and iron in it). Each coal seam in them gets its pile. Does nothing and returns false when the map has grown south already.
+func grow_south() -> bool:
+	if is_grown_south():
+		return false
+	var old := height
+	tiles.append_array(MapSouth.make(self))
+	height = old + Data.SOUTH_ROWS
+	for seam in MapSouth.seams_in(tiles.slice(old * width), width):
+		var id := seam_left.size()
+		seam_left[id] = Data.COAL_PER_SEAM
+		for i in seam:
+			seam_of[Vector2i(i % width, old + floori(float(i) / width))] = id
+	grew_south.emit(old)
+	return true
+
+
+## Take up to `want` from the finite seam under p (a mine or a hand dig) and return what came out: `want` itself where the
+## ground holds no seam. A seam that comes to nothing turns every tile of it into a Spent Seam.
+func seam_draw(p: Vector2i, want: int) -> int:
+	if not seam_of.has(p):
+		return want
+	var id: int = seam_of[p]
+	var got := mini(want, seam_left[id])
+	seam_left[id] -= got
+	if seam_left[id] <= 0:
+		for q in seam_of:
+			if seam_of[q] == id and tile_at(q) == "coal_seam":
+				set_tile(q, "spent_seam")
+	return got
+
+
+## True when p lies in a seam that has run out.
+func seam_spent(p: Vector2i) -> bool:
+	return seam_of.has(p) and seam_left[seam_of[p]] <= 0
 
 
 # --- Tiles -------------------------------------------------------------------
@@ -200,6 +252,7 @@ func to_dict() -> Dictionary:
 		"width": width,
 		"height": height,
 		"stone_width": stone_width,
+		"base_height": base_height,
 		"map_seed": map_seed,
 		"tiles": tiles.duplicate(),
 		"camp_pos": Codec.vec(camp_pos),
@@ -209,6 +262,8 @@ func to_dict() -> Dictionary:
 		"road_tiers": _tiers_to_list(),
 		"fields": Codec.vec_keys(fields),
 		"flax_fields": Codec.vec_keys(flax_fields),
+		"seams": _seams_to_list(),
+		"seam_left": _left_to_dict(),
 	}
 
 
@@ -217,6 +272,7 @@ func from_dict(d: Dictionary) -> void:
 	width = int(d.get("width", width))
 	height = int(d.get("height", height))
 	stone_width = int(d.get("stone_width", width))
+	base_height = int(d.get("base_height", height))
 	map_seed = int(d.get("map_seed", 0))
 	reset()
 	var saved: Array = d.get("tiles", [])
@@ -229,6 +285,29 @@ func from_dict(d: Dictionary) -> void:
 	road_tiers = _tiers_from_list(d.get("road_tiers", []))
 	fields = Codec.to_vec_set(d.get("fields", []))
 	flax_fields = Codec.to_vec_set(d.get("flax_fields", []))
+	seam_of = {}
+	for triple in d.get("seams", []):
+		seam_of[Vector2i(int(triple[0]), int(triple[1]))] = int(triple[2])
+	seam_left = {}
+	var left: Dictionary = d.get("seam_left", {})
+	for id in left:
+		seam_left[int(id)] = int(left[id])
+
+
+## What is left in each seam, keyed by the seam number as text (JSON keys are text).
+func _left_to_dict() -> Dictionary:
+	var out := {}
+	for id in seam_left:
+		out[str(id)] = int(seam_left[id])
+	return out
+
+
+## The tiles of the finite seams as [x, y, seam number] triples, in the order they were laid.
+func _seams_to_list() -> Array:
+	var out: Array = []
+	for p in seam_of:
+		out.append([p.x, p.y, seam_of[p]])
+	return out
 
 
 ## The tiered roads as [x, y, tier] triples, in the order they were laid.
