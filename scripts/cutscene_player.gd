@@ -272,10 +272,10 @@ func _draw() -> void:
 	var box := Rect2((size - extent) * 0.5, extent)
 	draw_texture_rect(tex, box, false, Color(1, 1, 1, env))
 	var opacity: float = Data.CUTSCENE_MEMORY_OPACITY / sqrt(maxf(overlays.size(), 1.0))
-	for name in overlays:
-		var layer := texture(name)
-		if layer != null:
-			draw_texture_rect(layer, box, false, Color(1, 1, 1, env * opacity))
+	for overlay in overlays:
+		var memory := texture(overlay)
+		if memory != null:
+			draw_texture_rect(memory, box, false, Color(1, 1, 1, env * opacity))
 	var top := size.y * (1.0 - Data.CUTSCENE_CAPTION_SHARE - 0.1)
 	var dark := Color(0.04, 0.05, 0.07, 0.88 * env)
 	var clear := Color(dark, 0.0)

@@ -699,24 +699,28 @@ func _road_drag_check() -> void:
 	_expect(main.placing == "", "right-click didn't stop laying Road")
 
 
-## A cutscene player over the live scene: it starts on a story moment, holds the game paused and draws a painted still, a
-## skip with Esc puts everything back, and a sequence with no painting yet plays its lines over a dark panel.
+## A cutscene player over the live scene: a fresh run opens with its cutscene, which holds the game paused and draws a painted
+## still; Esc skips it and puts everything back; a story moment starts the next, and a sequence with no painting yet plays its
+## lines over a dark panel.
 func _cutscene_checks() -> void:
 	var layer := CanvasLayer.new()
 	root.add_child(layer)
 	var player = CutscenePlayer.new()
 	layer.add_child(player)
 	player.setup(main.state, main, [])
-	_then(func(): player.enqueue("falling_star"))
 	_then(
 		func():
-			_expect(player.active and player.current == "falling_star", "the cutscene did not start")
+			_expect(player.active and player.current == "opening", "a fresh run did not open with its cutscene")
 			_expect(main.paused, "a cutscene left the game running")
 	)
-	_then(func(): _expect(player.texture("falling_star_1") != null, "the first still did not load"), 6)
+	_then(func(): _expect(player.texture("opening_1") != null, "the first still did not load"), 6)
 	_then(func(): _key(KEY_ESCAPE))
 	_then(func(): _expect(not player.active and not main.paused, "Esc did not skip the cutscene and free the game"), 2)
+	_then(func(): player.enqueue("falling_star"))
+	_then(func(): _expect(player.active and player.current == "falling_star", "a queued sequence did not start"), 2)
+	_then(func(): player.skip())
 	_then(func(): player.enqueue("ironfall"))
 	_then(func(): _expect(player.active and player.texture("ironfall_1") == null, "no painting: lines over dark"), 4)
 	_then(func(): player.skip())
 	_then(func(): _expect(not player.active and not main.paused, "the lines-only cutscene did not end"))
+	_then(func(): layer.queue_free())  # the run goes on without it: the later sequences are not this check's business

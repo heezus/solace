@@ -192,7 +192,7 @@ func _check_era_board() -> void:
 	for tech in Data.TECH_ORDER:
 		if Data.TECHS[tech].get("era", 1) == 2 and not panel.board.shows(tech):
 			problems.append("%s has no card on the second board" % tech)
-		if Data.TECHS[tech].get("stage", 1) > Data.BUILT_STAGE:
+		if Data.TECHS[tech].get("era", 1) == 2 and Data.TECHS[tech].get("stage", 1) > Data.BUILT_STAGE:
 			locked += 1
 	if locked != 0:
 		problems.append("the second board has %d techs for the next update, not none" % locked)

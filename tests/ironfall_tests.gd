@@ -12,6 +12,7 @@ const Kith = preload("res://scripts/kith.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Rules = preload("res://scripts/rules.gd")
+const Art = preload("res://scripts/art.gd")
 const TechPanel = preload("res://scripts/tech_panel.gd")
 
 const SEEDS := [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 42, 99, 123, 2024]
@@ -88,6 +89,9 @@ func test_ironfall_data_is_whole() -> void:
 		t.check(Rules.tech_enabled(id) == (id in STAGE_ONE), "%s is built only if it is in stage 1" % id)
 	for item in ["coal", "iron_ore", "iron", "steel", "iron_tools"]:
 		t.check(Data.ITEMS[item]["era"] == 4 and item in Data.ITEM_ORDER, "%s is an era-4 good" % item)
+	for item in ["coal", "iron_ore", "iron", "steel", "iron_tools"]:
+		var tex := Art.sprite("item_" + item)
+		t.check(tex != null and tex.get_width() <= 64, "%s has a placeholder icon, borrowed and recolored" % item)
 	for type in ["coal_mine", "bloomery"]:
 		t.check(Data.TECHS[Data.BUILDINGS[type]["tech"]]["era"] == 4, "%s comes with an era-4 tech" % type)
 		t.check(type in Data.BUILD_TABS["Metal"], "%s is on the Metal tab" % type)
@@ -138,7 +142,7 @@ func test_the_land_grows_south() -> void:
 	t.check(s.world.tiles.size() == w * s.world.height, "the tiles fill the new size")
 	t.check(s.world.tiles.slice(0, before.size()) == before, "every old tile stays as it was")
 	t.check(Data.LAND_GREW_SOUTH_EVENT in s.events, "and the Kith say so")
-	t.check(not s.fog.is_revealed(Vector2i(w / 2, h + 3)), "the new land is under fog")
+	t.check(not s.fog.is_revealed(Vector2i(floori(w / 2.0), h + 3)), "the new land is under fog")
 	s.tick(0.1)
 	t.check(s.world.height == h + Data.SOUTH_ROWS, "it grows once")
 	t.check(count(s, "coal_seam") >= 3 * MapSouth.COAL_TILES_MIN, "there are coal tiles (%d)" % count(s, "coal_seam"))

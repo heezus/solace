@@ -17,6 +17,7 @@ const Ranks = preload("res://scripts/ranks.gd")
 
 const BG := Ui.PANEL
 const STRIP_H := 170.0  # the strip about one tech: always this tall
+const STOCK_GAP := 6  # between the goods of the stock line: all of them (23 by Ironfall) still fit a 1280 window
 const STRIP_SIDE_W := 330.0  # its right column: needs, leads to, route
 
 var state: Sim
@@ -99,7 +100,7 @@ func setup(game: Sim) -> void:
 
 	# What you have, so nothing needs closing to check what you can afford; one line says how the costs read.
 	stock_row = HBoxContainer.new()
-	stock_row.add_theme_constant_override("separation", 12)
+	stock_row.add_theme_constant_override("separation", STOCK_GAP)
 	var stock_cap := Ui.label(Data.STOCK_CAPTION, Ui.MIN_TEXT)
 	stock_cap.add_theme_color_override("font_color", Ui.TEXT_DIM)
 	stock_row.add_child(stock_cap)
