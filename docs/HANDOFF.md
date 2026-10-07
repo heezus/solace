@@ -5,10 +5,10 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 ## Active work
 
 ### Codex — Starfall current icons
-- **Task:** current Light/Standard/Heavy pack and Shard icons, four glyph gifts and six set-heading emblems from Jon's full Starfall art assignment. Branch `codex/starfall-icons`.
-- **Reserved files:** `art/rendered/starfall-icons.png`/import, `docs/art/starfall-icons/`, relevant request notes and append-only decision log. No board/picker/gameplay code.
+- **Task:** current Light/Standard/Heavy pack and Shard icons, four glyph gifts and six set-heading emblems from Jon's full Starfall art assignment. Branch `codex/starfall-icons`, PR #72.
+- **Reserved files:** none after publication. PR #72 supplies the icon PNG/import, measured regions, native preview and exact caller notes; no code edits.
 - **Acceptance criteria:** fourteen readable miniature illustrations at 24/32/40 px, exact grid/visible regions supplied, no baked text, glyph emblems decorative and distinct from the real twenty glyph marks; original transparent source and generated import, native preview.
-- **Status:** starting the current icon kit. Title #68, map subjects #70 and travellers #71 published; current code hooks remain Claude's action.
+- **Status:** fourteen icons imported and native 24/32/40 px board inspected; Warning ring correction complete and neighbor-free subject bounds verified. Asset commit published, full CI pending. Title #68, map subjects #70 and travellers #71 published; current code hooks remain Claude's action.
 - **Next action:** inspect/import/publish the small icon PR and pass exact hooks to Claude; then moment/ending vignettes and Bloom sign. Later goods and unlisted magic techs remain deferred.
 
 ### Claude — Starfall stage 3

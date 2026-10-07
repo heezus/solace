@@ -638,3 +638,8 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Claude: wrote page 19 for era 4 on Jon's "yes, design Ironfall": Teardown as the one new mechanic (a part is opened at a Teardown Bench and teaches one permanent Lesson), a 16-tech tree ending on the Livewire gate, new items, buildings and map content, and a three-stage build plan. Docs only, nothing built.
 - Defaults Claude picked: Lessons are a finite list of about 8 (the three Bloom ones double as the three sample types for the echoes); coal is finite so the Lumen's Shard Boiler matters; the map grows once to the south on Ironstone; beasts ship as one optional Beast Pen branch.
 - Trust and the lean set how freely the Lumen hand over parts, and the Wreck always holds three, so no run is locked out of the Boiler or the Lamp.
+
+## 2026-10-06: Current Starfall illustrations (PR #72)
+- Codex: use tactile leather/cloth/stone/bronze illustrations matching existing item art for packs, Shard, four gifts and six set headings; strong silhouettes survive 24–40 px.
+- The Warning has three carved rings; headings use decorative emblems, preserving the twenty actual translation glyphs and discovery rules.
+- Supply measured subject regions, excluding neighboring fragments while preserving original PNGs. Live hover/focus names and existing cost semantics stay with the callers; no new goods or third-tab techs are implied.
