@@ -659,3 +659,8 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Codex: three pale ivory/gold cloaks and small cyan brooches distinguish calm Lumen visitors from warm Kith, using the same miniature camera/materials; engine aura stays separate.
 - Keep the brief's 24 px figure target and a bottom-center foot anchor. Three appearance variants are not new named identities, ranks or simulation people.
 - A 12×14 px leather/blanket pack sits behind the existing expedition Kith pose; it shares the body's bob/facing and does not imply new cargo or movement mechanics. Existing four-pose fixture inspected; full Lumen walk cycles remain optional future work.
+
+## 2026-10-06: Current Starfall illustrations (PR #72)
+- Codex: use tactile leather/cloth/stone/bronze illustrations matching existing item art for packs, Shard, four gifts and six set headings; strong silhouettes survive 24–40 px.
+- The Warning has three carved rings; headings use decorative emblems, preserving the twenty actual translation glyphs and discovery rules.
+- Supply measured subject regions, excluding neighboring fragments while preserving original PNGs. Live hover/focus names and existing cost semantics stay with the callers; no new goods or third-tab techs are implied.

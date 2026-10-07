@@ -4,7 +4,15 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 
 ## Active work
 
-### Codex — Starfall travellers
+### Codex — Starfall current icons
+- **Task:** current Light/Standard/Heavy pack and Shard icons, four glyph gifts and six set-heading emblems from Jon's full Starfall art assignment. Branch `codex/starfall-icons`, PR #72.
+- **Reserved files:** none after publication. PR #72 supplies the icon PNG/import, measured regions, native preview and exact caller notes; no code edits.
+- **Acceptance criteria:** fourteen readable miniature illustrations at 24/32/40 px, exact grid/visible regions supplied, no baked text, glyph emblems decorative and distinct from the real twenty glyph marks; original transparent source and generated import, native preview.
+- **Status:** fourteen icons imported and native 24/32/40 px board inspected; Warning ring correction complete and neighbor-free subject bounds verified. Asset commit published, full CI pending. Map subjects #70 and travellers #71 merged; title #68 awaiting synchronization; current code hooks remain Claude's action.
+- **Next action:** inspect/import/publish the small icon PR and pass exact hooks to Claude; then moment/ending vignettes and Bloom sign. Later goods and unlisted magic techs remain deferred.
+- **Synchronization:** merged main `e797c39` on the mailbox request, preserving Claude’s lead-stranger notes and both design-log tails. Asset/code content unchanged by this reconciliation; current-head CI must pass before Claude merges and wires the art.
+
+#### Delivered context — Starfall travellers (PR #71, merged)
 - **Task:** current Lumen strangers and expedition pack overlay from Jon's 2026-10-06 Starfall assignment, branch `codex/starfall-travellers`, PR #71.
 - **Reserved files:** none after publication. PR #71 supplies traveller art/imports, exact regions, native preview and hook notes; no engine code.
 - **Acceptance criteria:** three slim pale-cloaked Lumen at the brief's 24 px target, consistent miniature camera/light and shared feet anchors, faint cyan accents with separate engine glow; small transparent pack overlay compatible with existing Kith poses; native-size preview, imports and loading/anchor handoff.
