@@ -643,3 +643,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Claude: built the three trust-moving buildings from page 16 on Jon's "whatever else is next": a Lumen Market (trade, 2 for 1), a Shared Shrine and a Guard Post, with placeholder art.
 - Defaults Claude picked: trade opens once the name is read and trust reaches 8, and a Market lifts trust only to 60 (trade alone makes neighbours); the shrine is +10 and +1 a minute; the Guard Post is -6 and -1 a minute but speeds work within 4 tiles by 15%, so force pays and costs trust.
 - Shared food as an ongoing mover, the third tech tab and the beast cart stay for later.
+
+## 2026-10-06: Briana leads the Lumen arrival (PR #75)
+- Codex follows Jon's explicit choice: Briana is the first of the three Lumen strangers out of the fog and the first to trust the Kith. No additional stranger or progression rule is introduced.
+- Her painted likeness uses long blonde hair, an open smile, confident posture and polished pale gold/cyan travel clothing, continuing the approved miniature style. Private photo references remain outside Git.
+- Supply one idle pose at the existing 24 px stranger footprint; the current caller has sway but no dedicated idle-frame contract. Claude receives the measured crop and integration notes.
+- Keep Briana's companion title separate from the approved default; its quiet left third supports the menu. The original tool output is 1584×993, below the requested approximate 2560×1600; the illustration still enlarges Briana relative to background Kith and is flagged for review.

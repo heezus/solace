@@ -6,10 +6,10 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 
 ### Codex — Briana Lumen art
 - **Task:** Jon prioritizes Briana, lead Lumen stranger and first to trust the Kith: one miniature sprite and an alternate title painting. Branch `codex/lumen-briana`. Jon supplied private photo references; never commit them.
-- **Reserved files:** `art/sprites/lumen_briana.png` and its Godot import; `art/rendered/title_briana.png` and its import; `docs/art/briana/`; Briana sections in `docs/art/requests.md` and append-only design decision log. No gameplay or Claude-reserved code edits.
+- **Reserved files:** none after publication; delivered `art/sprites/lumen_briana.png` and its Godot import; `art/rendered/title_briana.png` and its import; `docs/art/briana/`; Briana sections in `docs/art/requests.md` and append-only design decision log. No gameplay or Claude-reserved code edits.
 - **Acceptance criteria:** painted likeness, long blonde hair, open smile, pale gold/cyan clothing; existing 24 px stranger footprint and elevated miniature angle. Alternate title preserves the approved dusk settlement, falling star and distant Bloom hints, with calm dark left third and no text. Godot-generated imports and inspected native-size previews.
-- **Status:** reference photos received; production art underway. Current stranger caller has sway but no dedicated idle-frame slot, so supply a single idle sprite and document hooks for Claude.
-- **Next action:** generate and inspect both pieces, publish a small PR with exact hooks. Starfall moments/Bloom/arrival work is safely stashed on `codex/starfall-moments` (draft #73); overhaul documentation cleanup follows Briana.
+- **Status:** art delivered in PR #75. Imports, alpha/region bounds and native 24/96 px sprite comparison passed; actual alternate-title menu captures inspected at 1280×800 and 1600×900. Single pose; no dedicated idle-frame slot. Title original is 1584×993 and still uses enlarged heroine scale, explicitly flagged for review. Full CI is tracked on the PR.
+- **Next action:** Claude reviews #75 and hooks stranger index 0 plus alternate-title selection per `docs/art/briana/README.md`; verify in actual Starfall play and merge after CI green. Starfall moments/Bloom/arrival work is safely stashed on `codex/starfall-moments` (draft #73); overhaul documentation cleanup follows Briana.
 
 ### Claude — Starfall stage 4
 - **Task:** Jon's "whatever else is next" (2026-10-07). Page 16 stage 4: Lumen Market, Shared Shrine, Guard Post. Stage 3 (#64) and the title screen, pause menu and zoom (#66) are merged. PR `stage4`.
