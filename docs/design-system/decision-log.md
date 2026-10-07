@@ -634,6 +634,11 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Zoom: the mouse wheel worked, but a trackpad or Magic Mouse scrolls with a different event the game ignored, and there were only three zoom steps. Added trackpad scroll and the + and - keys, and seven steps (24 to 80 px, 48 px stays the default).
 - The game's main scene is now the title screen; the CI play-through and layout tools load the game scene directly.
 
+## 2026-10-07: Ironfall designed (PR #67)
+- Claude: wrote page 19 for era 4 on Jon's "yes, design Ironfall": Teardown as the one new mechanic (a part is opened at a Teardown Bench and teaches one permanent Lesson), a 16-tech tree ending on the Livewire gate, new items, buildings and map content, and a three-stage build plan. Docs only, nothing built.
+- Defaults Claude picked: Lessons are a finite list of about 8 (the three Bloom ones double as the three sample types for the echoes); coal is finite so the Lumen's Shard Boiler matters; the map grows once to the south on Ironstone; beasts ship as one optional Beast Pen branch.
+- Trust and the lean set how freely the Lumen hand over parts, and the Wreck always holds three, so no run is locked out of the Boiler or the Lamp.
+
 ## 2026-10-06: Starfall map subject kit (PR #70)
 - Codex: keep the Kith's sculpted miniature camera/materials while separating the Glyph Wall's broad stone silhouette, Lumen Camp's pale travelling tents and Expedition Post's warm pack rack.
 - Cyan is a restrained Lumen accent alongside the Kith's amber fire; glyph grooves are decorative, leaving the meaningful panel symbols code-drawn.
