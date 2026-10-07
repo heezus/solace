@@ -718,3 +718,4 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Cutscenes are full-screen sequences between play; the vignettes in Codex's #73 stay single images on choice cards, and their Sela, Bloom-sign and arrival art is reused as stills.
 - The project owner chose that **every run plays every sequence in full** (skip is always there, and the pause menu can turn them off). Art not painted yet falls back to the lines over a dark panel.
 - The project owner also confirmed (2026-10-07, on a card) that Ironfall's Lessons are a **finite list** (about 8, one per part), as page 19 proposed.
+- The project owner also chose (2026-10-07, on a card) that Ironfall's map grows **twice**: south on Ironstone, then (Claude's default) west on Rails, which holds the Bloom patches and the rail room.
