@@ -292,6 +292,20 @@ const GLYPHS := {
 
 # --- The Lumen Camp (a place for the survivors) ---
 const CAMP_BUILT_LINE := "The strangers look at the Camp for a long time, then one of them sits down inside it."
+# --- Trade, the Guard Post and the shared shrine (stage 4): more buildings that move trust ---
+const MARKET_OPEN_TRUST := 8.0  # the Lumen will trade once this much trust stands (guests at once, the wary after a Camp)
+const MARKET_TRUST_PER_MINUTE := 0.6  # trade alone makes neighbours: it stops lifting trust here
+const MARKET_TRUST_CAP := 60.0
+const TRUST_SHRINE := 10.0  # the shared shrine goes up
+const TRUST_SHRINE_PER_MINUTE := 1.0
+const TRUST_GUARD := -6.0  # a Guard Post goes up
+const TRUST_GUARD_PER_MINUTE := -1.0
+const GUARD_RADIUS := 4.0  # tiles round a Guard Post where the Kith work a little faster
+const MARKET_OPEN_LINE := "One of the strangers holds out a hand with a small bright thing in it. They would trade."
+const MARKET_BUILT_LINE := "The strangers lay out what they have, and the Kith lay out what they have."
+const SHRINE_BUILT_LINE := "Both peoples leave something at the shrine. Nobody says whose it is."
+const GUARD_BUILT_LINE := "The strangers see the Guard Post and move their things a little farther from the Kith."
+
 const SURVIVOR_STAND := 6.0  # tiles from the Hearth when trust is 0 ...
 const SURVIVOR_CLOSE := 2.5  # ... and when it is full
 const SURVIVOR_AT_CAMP := 1.6  # tiles from a Lumen Camp, once one stands

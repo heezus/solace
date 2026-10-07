@@ -138,6 +138,9 @@ const BONUSES := {
 	},
 	"shardwork":
 	{"name": "Shardwork", "group": "speed", "add": 0.25, "kinds": ["processor"], "gift": "craft", "near_cairn": true},
+	# A Guard Post (stage 4): the Kith near one work a little faster, `near_guard` (Data.GUARD_RADIUS), at a cost in trust.
+	"watchful":
+	{"name": "Guard Post", "group": "speed", "add": 0.15, "kinds": ["gatherer", "processor"], "near_guard": true},
 	# The Warning (a moment, scripts/starfall.gd): while the Kith keep dark the workshops run slower.
 	"lights_out": {"name": "Lights out", "group": "speed", "add": -0.5, "kinds": ["processor"], "dark": true},
 }
