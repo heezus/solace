@@ -716,5 +716,5 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 ## 2026-10-07: Cutscenes tie the eras into one story (PR #79)
 - Claude: on the project owner's ask, the game gets short, skippable painted sequences instead of eras that just start. Page 20 holds the story spine, 12 sequences (a still has 1 to 3 lines, a slow push-in, no voice) and three phases: A for the eras that exist, B with Ironfall, C later.
 - Cutscenes are full-screen sequences between play; the vignettes in Codex's #73 stay single images on choice cards, and their Sela, Bloom-sign and arrival art is reused as stills.
-- Default: the first run shows each sequence in full, later runs only its first and last still; skip is always there. Art not painted yet falls back to the lines over a dark panel.
+- The project owner chose that **every run plays every sequence in full** (skip is always there, and the pause menu can turn them off). Art not painted yet falls back to the lines over a dark panel.
 - The project owner also confirmed (2026-10-07, on a card) that Ironfall's Lessons are a **finite list** (about 8, one per part), as page 19 proposed.

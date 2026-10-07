@@ -35,7 +35,7 @@ Ids are stable (the Chronicle can record them, [13](13-three-perspectives.md)). 
 | `reset_cataclysm` | Cataclysm | 3 | "The magic reached too far, and the world broke." / "The Kith woke in the ruins." / "They dug. Some of it was theirs." |
 | `reset_loop` | Time loop | 3 | "The morning came again." / "Only the Kith remembered." / "The fire was lit. They knew what was coming." |
 
-After any reset the next run's `opening` plays in its short form (below) with one added still, the Hearth with a small mark of what carried, and no new line.
+After any reset the next run's `opening` plays in full, with one added still: the Hearth with a small mark of what carried, and no new line.
 
 Phases, so art and code can run ahead of the eras:
 - **A (the eras that exist):** `opening`, `bronze_dawn`, `falling_star`, `first_contact`, `starfall_end` (16 stills plus 3 variant stills: a second `first_contact` 1 for the guests version, and two more `starfall_end` 3 for the other leans; 19 images in all).
@@ -53,8 +53,8 @@ Phases, so art and code can run ahead of the eras:
 - It listens to `Story.recorded` and to era changes, so no gameplay code changes. Each id plays once per run.
 - **Art not painted yet is fine:** with a missing image the sequence shows the lines over a dark panel with the fade, so the story ships first and the paintings drop in later by name.
 - Skippable at any point, and the pause menu gets a "Cutscenes" on/off. A skip still records the story id.
-- Seen-ids live in a tiny file apart from the run save (`user://profile.json`, the start of the profile save from [13](13-three-perspectives.md)), so later runs know what the player has already watched.
+- Every run plays every sequence in full, so no seen-list is needed. The on/off setting lives in a tiny file apart from the run save (`user://profile.json`, the start of the profile save from [13](13-three-perspectives.md)).
 
 ## Open (defaults stand until the project owner says otherwise)
-- **Replays.** *Default:* the first run shows each sequence in full; later runs show only its first and last still (the `opening` after a reset adds the "carried" still). Skip is always there.
+- **Replays.** *Decided (the project owner, 2026-10-07):* every run plays every sequence in full. Skip is always there, and the pause menu can turn them all off.
 - **Wiring.** *Default:* Phase A rides along with the Ironfall stage 1 PR; Codex paints in the meantime and the lines-over-dark fallback covers the gap.
