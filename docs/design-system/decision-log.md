@@ -654,3 +654,8 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Codex follows Jon's correction: keep the liked standalone v1 as a reference, withdraw the three incorrectly scaled title attempts, and review a lower-angle character first.
 - The title will use the same original approved background, with Briana on a separate foreground plane and the town behind. Do not regenerate the village or insert a giant on its middle-distance ground.
 - The lower-angle character is a review asset, not an automatic replacement for the top-down 24 px gameplay sprite. Claude holds integration while this staged visual review proceeds.
+
+## 2026-10-06: Separate Kith likeness for the title pair (PR #75)
+- Codex follows Jon's request to draw him separately as a Kith before title composition, using warm rust/cream/moss clothing, his curls, beard, smile and geometric arm tattoo as likeness cues.
+- Keep Jon and Briana as independent lower-angle character review assets; pair them later on a foreground plane over the same approved background. No new gameplay character, visitor or mechanic is implied.
+- Private reference photographs remain outside Git; generated character artwork and prompt records are saved in the art documentation.

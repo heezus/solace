@@ -10,6 +10,8 @@ Jon liked the original standalone character as a reference and rejected all thre
 The original character is saved at [reference/briana-v1.png](reference/briana-v1.png). The intermediate overhead miniature experiment is [reference/briana-v2-overhead.png](reference/briana-v2-overhead.png). Private likeness photos are not included in Git.
 
 ## Next stage, after character review
+Jon also requested [his own separate Kith character](../jon-kith/README.md). The next composition pairs these two characters in the foreground.
+
 Use the exact approved landscape from PR #68 (`art/rendered/title.png`) as the background. Add the accepted character as a separately controlled foreground layer, with the town clearly behind her. Keep the menu's left third clear. Do not regenerate the town or put a large figure on the village's middle-distance ground plane. No new title composition is delivered at this stage.
 
 ## Withdrawn title attempts

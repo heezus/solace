@@ -57,3 +57,7 @@ Visual engine wiring is owned by Codex under the updated [handoff](../HANDOFF.md
 - [ ] **Character stage:** Jon asks for a lower-angle v2 closer to the game's miniature style. [Current standalone character](briana/character-v2.png) is ready for visual review, with [status and references](briana/README.md).
 - [ ] **Composition stage, after character review:** place the accepted character in a clearly separate foreground plane over the exact original approved title painting; keep the town in the background and menu third clear. No replacement title delivered yet.
 - [ ] **Claude hold:** do not hook the rejected title or automatically use the lower-angle design as a top-down map sprite. Eventually Briana replaces stranger index 0, retaining the existing three visitors, footprint, aura/sway and save behavior. Dedicated idle-frame slot does not currently exist.
+
+## Jon as a Kith — separate character stage, 2026-10-06 (PR #75)
+- [x] Prepare [standalone Kith likeness](jon-kith/README.md) from Jon's private supplied photos; keep those photos outside Git. Character-only review asset, not a new gameplay person.
+- [ ] After reviewing both standalone designs, pair Jon and Briana on a clear foreground plane over the unchanged original approved title background. Preserve the quiet left menu area; no new title image this stage.

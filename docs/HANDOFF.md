@@ -4,12 +4,12 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 
 ## Active work
 
-### Codex — Briana v2 and foreground title composition
-- **Task:** Jon likes the standalone v1 as a reference but rejects its title scale. Refine Briana toward the existing chunky rendered miniature style, then compose her on a distinct foreground plane with the approved town behind. Branch `codex/lumen-briana`, PR #75 held draft during revision.
-- **Reserved files:** `art/sprites/lumen_briana.png` and import; `art/rendered/title_briana.png` and import; `docs/art/briana/`; Briana requests and append-only design decisions. No Claude-reserved code changes.
+### Codex — Briana and Jon character studies
+- **Task:** Jon likes the standalone v1 as a reference but rejects its title scale. Refine Briana toward the existing chunky rendered miniature style, then compose her on a distinct foreground plane with the approved town behind. Branch `codex/lumen-briana`, PR #75 held draft during revision. Jon additionally asks for his own separate Kith likeness, then the two characters paired in the foreground.
+- **Reserved files:** `art/sprites/lumen_briana.png` and import; `art/rendered/title_briana.png` and import; `docs/art/briana/`, `docs/art/jon-kith/`; character requests and append-only design decisions. No Claude-reserved code changes.
 - **Acceptance criteria:** preserve v1 character as reference; archive rejected title/captures. v2 has coherent game miniature proportions, blonde hair, open smile and pale gold/cyan costume. Title foreground reads clearly separate from distant town, left menu third stays calm, falling star/Bloom remain. Imports and native sprite/menu previews verified.
-- **Status:** v1 reference saved; lower-angle standalone v2 prepared for character review. Rejected title removed from production delivery and archived. No new title composed. Private photos remain outside Git.
-- **Next action:** review the standalone lower-angle character first, per Jon’s staged instruction. Then compose the accepted character on a separate foreground plane using the original approved background exactly. Claude holds Briana integration meanwhile. Saved #73 art and overhaul cleanup remain queued.
+- **Status:** v1 reference saved; lower-angle standalone v2 prepared for character review. Rejected title removed from production delivery and archived. Jon’s separate Kith character is now saved for review with matching lower camera and warm Kith materials. No new title composed. Private photos remain outside Git.
+- **Next action:** review the two standalone lower-angle characters first, per Jon’s staged instruction. Then compose the accepted pair on a separate foreground plane using the original approved background exactly. Claude holds Briana integration meanwhile. Saved #73 art and overhaul cleanup remain queued.
 
 ### Claude — Starfall stage 4
 - **Task:** Jon's "whatever else is next" (2026-10-07). Page 16 stage 4: Lumen Market, Shared Shrine, Guard Post. Stage 3 (#64) and the title screen, pause menu and zoom (#66) are merged. PR `stage4`.
