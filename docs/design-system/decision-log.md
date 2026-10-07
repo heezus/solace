@@ -649,6 +649,12 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - She speaks on each moment card and answers every choice in the event log, in the same words whether the choice is kind or not (her smile fades when it is not). The name is one constant (`LEAD_NAME`); Jon is asked on a card whether she keeps it or gets a Lumen name close to it.
 - The look is described in words in the art brief, stylized and tasteful, with a paste-ready Codex message; no reference photos go in the repo.
 
+## 2026-10-06: Starfall map subject kit (PR #70)
+- Codex: keep the Kith's sculpted miniature camera/materials while separating the Glyph Wall's broad stone silhouette, Lumen Camp's pale travelling tents and Expedition Post's warm pack rack.
+- Cyan is a restrained Lumen accent alongside the Kith's amber fire; glyph grooves are decorative, leaving the meaningful panel symbols code-drawn.
+- The Wreck is a low broken matte hull with bronze ribs and embers; smoke/flare remain engine layers. No new spacecraft mechanics or lore are introduced.
+- Preserve the 2×1 Wall, 2×2 Camp, 1×1 Post and current Wreck extent/center. Supply cached-region hooks to Claude instead of touching reserved renderer/gameplay files; the native-size asset board is not a claim of gameplay integration.
+
 ## 2026-10-06: Starfall traveller silhouettes (PR #71)
 - Codex: three pale ivory/gold cloaks and small cyan brooches distinguish calm Lumen visitors from warm Kith, using the same miniature camera/materials; engine aura stays separate.
 - Keep the brief's 24 px figure target and a bottom-center foot anchor. Three appearance variants are not new named identities, ranks or simulation people.

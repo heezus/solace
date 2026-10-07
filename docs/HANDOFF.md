@@ -8,9 +8,16 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 - **Task:** current Lumen strangers and expedition pack overlay from Jon's 2026-10-06 Starfall assignment, branch `codex/starfall-travellers`, PR #71.
 - **Reserved files:** none after publication. PR #71 supplies traveller art/imports, exact regions, native preview and hook notes; no engine code.
 - **Acceptance criteria:** three slim pale-cloaked Lumen at the brief's 24 px target, consistent miniature camera/light and shared feet anchors, faint cyan accents with separate engine glow; small transparent pack overlay compatible with existing Kith poses; native-size preview, imports and loading/anchor handoff.
-- **Status:** stranger atlas and pack imported; 24 px figures and four existing Kith poses with the trial overlay inspected. Publishing art-only PR, CI pending. Title PR #68 and map-subject PR #70 are published and in CI; normal-play map hooks remain Claude's next action.
+- **Status:** stranger atlas and pack imported; 24 px figures and four existing Kith poses with the trial overlay inspected. Publishing art-only PR, CI pending. Title PR #68 is awaiting synchronization; map-subject PR #70 has merged; normal-play map hooks remain Claude's next action.
 - **Next action:** supply current traveller assets and code-hook notes in a small PR; then current item/glyph/gift illustrations, card vignettes and the Bloom sign. Later slots remain deferred.
-- **Synchronization:** merged main `3efb920` on the mailbox request, preserving Claude’s lead-stranger notes and both design-log tails. Asset/code content unchanged by this reconciliation; current-head CI must pass before Claude merges and wires the art.
+
+#### Delivered context — Starfall map buildings (PR #70, merged)
+- **Task:** Jon's full Starfall art assignment (2026-10-06), next small group after title PR #68: Glyph Wall (2×1), Lumen Camp (2×2), Expedition Post (1×1) and Wreck (about 2×1). Branch `codex/starfall-buildings`, PR #70.
+- **Reserved files:** none after publication. PR #70 supplies four `art/rendered/starfall-*` PNGs/imports, native-size preview and exact loading/anchor notes; no renderer/gameplay code.
+- **Acceptance criteria:** original transparent miniature subjects, consistent camera/light, tight ground contact, existing logical footprints and IDs documented, native-size side-by-side preview against current buildings; imported metadata and green CI. Claude hooks listed in requests.md; no state or loader changes in this art-only group.
+- **Status:** four transparent subjects imported and their 48 px/96 px tile-scale asset board inspected. Source/alpha/region contract supplied; publishing the art-only PR, full CI pending. Title PR #68 has actual menu captures and passing import checks; full CI runs independently. Its original image is 1586×992, below the requested roughly 2560×1600 master, documented for review.
+- **Next action:** inspect each subject and native preview; publish this small asset PR and send Claude the exact loading/anchor contract. Then current character/item/icon/card/Bloom groups. Later/canon-pending slots remain deferred per the brief.
+- **Synchronization:** merged main `1df6add` on the mailbox request, preserving Claude’s lead-stranger notes and both design-log tails. Asset/code content unchanged by this reconciliation; current-head CI must pass before Claude merges and wires the art.
 
 ### Claude — Starfall stage 4
 - **Task:** Jon's "whatever else is next" (2026-10-07). Page 16 stage 4: Lumen Market, Shared Shrine, Guard Post. Stage 3 (#64) and the title screen, pause menu and zoom (#66) are merged. PR `stage4`.

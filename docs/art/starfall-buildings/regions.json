@@ -1,0 +1,70 @@
+{
+	"expedition_post": {
+		"footprint": [
+			1,
+			1
+		],
+		"path": "res://art/rendered/starfall-expedition-post.png",
+		"region": [
+			146,
+			122,
+			1059,
+			1026
+		],
+		"source_size": [
+			1254,
+			1254
+		]
+	},
+	"glyph_wall": {
+		"footprint": [
+			2,
+			1
+		],
+		"path": "res://art/rendered/starfall-glyph-wall.png",
+		"region": [
+			112,
+			318,
+			1061,
+			707
+		],
+		"source_size": [
+			1254,
+			1254
+		]
+	},
+	"lumen_camp": {
+		"footprint": [
+			2,
+			2
+		],
+		"path": "res://art/rendered/starfall-lumen-camp.png",
+		"region": [
+			162,
+			272,
+			977,
+			713
+		],
+		"source_size": [
+			1254,
+			1254
+		]
+	},
+	"wreck": {
+		"footprint": [
+			2,
+			1
+		],
+		"path": "res://art/rendered/starfall-wreck.png",
+		"region": [
+			80,
+			110,
+			1647,
+			667
+		],
+		"source_size": [
+			1774,
+			887
+		]
+	}
+}
