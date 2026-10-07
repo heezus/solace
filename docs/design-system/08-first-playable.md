@@ -49,4 +49,4 @@ One rare, faintly glowing stone (an ancient star shard) can be found on the map.
 Prestige, the Lumen, the Bloom, combat, eras past the gate, audio, offline progress.
 
 ## Tech
-Godot 4, top-down 2D grid, vector art (Advance Wars style). Built by Claude; Jon plays on Mac.
+Godot 4, top-down 2D grid, vector art (Advance Wars style). Built by Claude; the project owner plays on Mac.

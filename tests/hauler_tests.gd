@@ -57,7 +57,7 @@ func test_haulers_wait_at_every_depot_with_work() -> void:
 	t.check(at_hearth >= 1 and at_store >= 1, "haulers wait at both (%d and %d)" % [at_hearth, at_store])
 
 
-## Found by the pacing bot after Jon's playtest changes shifted its timeline: on one map 1 of 45 haulers was hashed onto the
+## Found by the pacing bot after the project owner's playtest changes shifted its timeline: on one map 1 of 45 haulers was hashed onto the
 ## Storehouse that served the Smelters, and the Smelters stood starved for an hour. Idle haulers now take the posts in
 ## turn by the order they were born in, so no post is left with a handful while another has dozens.
 func test_the_posts_share_the_haulers_evenly() -> void:

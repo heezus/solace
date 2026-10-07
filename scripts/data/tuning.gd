@@ -123,6 +123,26 @@ const BONUSES := {
 	# Bronze Tools: the tool a worker holds is bronze, +100% Speed in place of a Flint Tool's +50% (so +50% over flint).
 	"bronze_tools":
 	{"name": "Bronze Tools", "group": "speed", "add": 1.0, "kinds": ["gatherer", "processor"], "tool": "bronze_tools"},
+	# Era 3 gifts (a glyph set read, `gift`; they work within Data.SHARDLIGHT_RADIUS of a Shard Cairn, `near_cairn`).
+	"shardlight":
+	{"name": "Shardlight", "group": "speed", "add": 0.25, "kinds": ["gatherer"], "gift": "light", "near_cairn": true},
+	"starfruit":
+	{
+		"name": "Starfruit",
+		"group": "yield",
+		"add": 0.5,
+		"item": "berries",
+		"kinds": ["gatherer"],
+		"gift": "growth",
+		"near_cairn": true
+	},
+	"shardwork":
+	{"name": "Shardwork", "group": "speed", "add": 0.25, "kinds": ["processor"], "gift": "craft", "near_cairn": true},
+	# A Guard Post (stage 4): the Kith near one work a little faster, `near_guard` (Data.GUARD_RADIUS), at a cost in trust.
+	"watchful":
+	{"name": "Guard Post", "group": "speed", "add": 0.15, "kinds": ["gatherer", "processor"], "near_guard": true},
+	# The Warning (a moment, scripts/starfall.gd): while the Kith keep dark the workshops run slower.
+	"lights_out": {"name": "Lights out", "group": "speed", "add": -0.5, "kinds": ["processor"], "dark": true},
 }
 ## A tool lasts this many jobs (harvests or work cycles) in a worker's hands: flint, then bronze (one per 200 jobs).
 const TOOL_JOBS := 40
@@ -141,15 +161,23 @@ const PATCH_STEP := 0.1
 const PATCH_MAX_TILES := 8
 
 ## Era 2, stage 2.
-## Carts (The Wheel): each Cart Shed turns CARTS_PER_SHED haulers into carts. A cart carries CART_LOAD times what a
-## hauler does, walks roads only (a Wooden Bridge will not bear it: it needs a Stone Bridge) and waits where it stands
-## when the roads do not reach.
-const CARTS_PER_SHED := 2
-const CART_LOAD := 2
-## Causeways: every road walks at this cost (the Road's WALK_COST is 0.5, paved 0.25; 0.2 is five times open ground),
-## and a new Road costs this instead of its Wood. A Road cut through Rocks still costs PASS_COST.
-const CAUSEWAY_WALK_COST := 0.2
-const CAUSEWAY_ROAD_COST := {"stone": 1, "brick": 1}
+## Hand carts (The Wheel, Bronze Dawn): each Cart Shed turns CARTS_PER_SHED hauler into a hand cart. One Kith pulls it, and
+## it carries CART_LOAD times what a hauler does. It walks roads only (a Wooden Bridge will not bear it: it needs a Stone
+## Bridge) and waits where it stands when the roads do not reach. (The old cart took two haulers at 2x: no gain.)
+const CARTS_PER_SHED := 1
+const CART_LOAD := 3
+## Road tiers (design-system/17-needs-and-upgrades.md): path, gravel, paved. A road tile's walk cost is the open road's
+## (WALK_COST "road") divided by its tier's speed, so higher tiers are faster. A Stone Bridge walks at the top tier.
+const ROAD_SPEEDS := [1.0, 1.25, 1.5]
+## Copy cost: every standing copy of a production building makes the next one cost this share more, up to
+## COPY_COST_CEILING times the listed price. The build bar tabs that hold production buildings are COPY_COST_TABS.
+## Homes, roads, bridges, fields, storage and the Lore buildings stay flat.
+const COPY_COST_STEP := 0.15
+const COPY_COST_CEILING := 4.0
+const COPY_COST_TABS := ["Workshops", "Metal"]
+## Scouting by clicking fog: the nearest idle Kith walks there, lifts the fog this many tiles around it (Scouting research
+## adds to it, like every sight) and walks home.
+const SCOUT_SIGHT := 5
 ## Granaries: every GRANARY_FOOD food in the stockpile houses one more person, up to GRANARY_HOMES.
 const GRANARY_FOOD := 20.0
 const GRANARY_HOMES := 30

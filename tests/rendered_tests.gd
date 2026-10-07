@@ -6,9 +6,12 @@ const Ground = preload("res://scripts/world_ground.gd")
 const World = preload("res://scripts/world.gd")
 const Fog = preload("res://scripts/fog.gd")
 const Bridge = preload("res://scripts/bridge_art.gd")
+const Data = preload("res://scripts/data.gd")
+const IconRow = preload("res://scripts/icon_row.gd")
 
 
 func run(t) -> void:
+	test_starfall_icons(t)
 	test_grounding_masks(t)
 	test_roads_join_across_cells(t)
 	var choices := {}
@@ -143,3 +146,26 @@ func test_grounding_masks(t) -> void:
 			world.set_tile(Vector2i(x, y), "grass")
 	ground._rebuild(s)
 	t.check(ground._image.get_pixelv(pixel).b == 0.0, "clearing trees refreshes woodland ground")
+
+
+## Every pack, gift and glyph-set heading has its picture, and the row helper gives it a hover name.
+func test_starfall_icons(t) -> void:
+	var ids: Array = []
+	for pack in Data.PACKS:
+		ids.append("pack_" + pack)
+	for gift in Data.LUMEN_GIFTS:
+		ids.append("gift_" + gift)
+	for n in Data.GLYPH_SETS:
+		ids.append("set_" + Data.GLYPH_SETS[n]["id"])
+	for id in ids:
+		t.check(Rendered.icon(id) != null, "%s has an icon" % id)
+	t.check(Rendered.icon("shard") != null, "the shard has an icon")
+	t.check(Rendered.icon("nothing") == null, "an unknown icon is null, not an error")
+	t.check(Rendered.STARFALL_ICONS.size() == Rendered.REGIONS["starfall-icons"].size(), "one region per icon id")
+	var label := Label.new()
+	var row: Control = IconRow.wrap("pack_light", label, "Light pack")
+	t.check(row != label and row.get_child(0).tooltip_text == "Light pack", "an icon row names its picture on hover")
+	t.check(IconRow.wrap("nothing", label, "x") == label, "a line without an icon is left as it was")
+	row.free()
+	label = Label.new()
+	label.free()

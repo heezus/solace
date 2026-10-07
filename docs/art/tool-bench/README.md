@@ -1,6 +1,6 @@
 # Tool Bench art handoff
 
-Transparent rendered miniature for Claude's first open sprite request. **Art supplied; not loaded by the game yet.** The existing Twine Post alias remains in production. Growth art remains pending Jon's approval of page 17.
+Transparent rendered miniature for Claude's first open sprite request. **Art supplied; not loaded by the game yet.** The existing Twine Post alias remains in production. Growth art remains pending the project owner's approval of page 17.
 
 ![Native-size workshop comparison](native-preview.png)
 

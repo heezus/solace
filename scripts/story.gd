@@ -25,6 +25,11 @@ var _ore_tiles: Dictionary = {}  # tile id -> its positions in the grown land (s
 var _ore_width := 0
 
 
+## True once the story moment `id` has happened.
+func has_event(id: String) -> bool:
+	return events.has(id)
+
+
 ## Note a story moment once, by its id in Data.STORY_EVENTS.
 func record(id: String) -> void:
 	assert(Data.STORY_EVENTS.has(id), "unknown story event " + id)

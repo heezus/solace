@@ -14,7 +14,7 @@ const CARD_NEED_NAMES := "Need %s"  # "Wood, Stone": what is short, without the 
 const CARD_NEED_COUNT := "Need %d items"  # how many kinds are short, when even the names do not fit
 const DEMOLISH_TIP := "Demolish: click a building to remove it, or a resource tile to clear it (X). Buildings refund half."
 const DEMOLISH_LABEL := "Demolish"
-const CAMERA_HINT := "Arrows or WASD move the map, the wheel zooms, Home returns to the Hearth."
+const CAMERA_HINT := "Arrows or WASD move the map, the wheel zooms (or + and -), Home returns to the Hearth, Esc opens the menu."
 const CARD_NEED_ITEMS := "Need more"  # when even the short form doesn't fit
 const CARD_DISCOVER := "Discover %s"  # a tech's name
 const CARD_DISCOVER_IT := "Discover it first"  # on a locked card whose tech has the card's own name
@@ -38,6 +38,8 @@ const JOBS_TIP := (
 	"%s\n%s work buildings and haul goods. Each building is one job and needs one. "
 	+ "They grow when there is room and steady food."
 )
+## The build card's note on a production building that already stands: copies standing, the percent more it costs.
+const COPY_COST_NOTE := "%d standing: this one costs %d%% more."
 const IDLE_WORD := "idle"
 const HAUL_WORD := "hauling"
 const NOTE_STARVING := "Starving: no food"
@@ -148,7 +150,7 @@ const TECH_BLURBS := {
 	"irrigation": "Fields that touch the river grow twice as fast.",
 	"preservation": "The Kith eat 25% less.",
 	"carrying_poles": "Haulers carry 20 at a time instead of 10.",
-	"paved_roads": "Roads are 4 times faster than open ground.",
+	"paved_roads": "Lets you lay Paved Roads, 3 times faster than open ground, over any road.",
 	"baking": "Bake flour into bread: flour is worth 5 food instead of 3.",
 	"rafts": "Kith can cross the river without a bridge, slowly.",
 	"calendar": "Fields yield 25% more.",
@@ -159,9 +161,9 @@ const TECH_BLURBS := {
 	"mining": "Lets you build a Mine on an ore tile, dug by two Kith.",
 	"smelting": "Lets you build a Smelter that melts copper ore into Copper.",
 	"kilns_ii": "Every Kiln fires twice the Brick each time.",
-	"the_wheel": "Lets you build a Cart Shed: carts carry twice the load, on roads.",
+	"the_wheel": "Lets you build a Cart Shed: a hand cart carries three times the load, on roads.",
 	"alloying": "Lets you build a Crucible that pours Copper and Tin into Bronze.",
-	"causeways": "Lets you lay stone Roads, five times as fast as open ground, and a Stone Bridge.",
+	"causeways": "Lets you build a Stone Bridge, over a Wooden Bridge or a new crossing: carts can cross it.",
 	"markets": "Lets you build a Trading Post to swap goods.",
 	"sky_watch": "Lets you build a Watchtower, and names the new light in the sky.",
 	"bronze_tools": "Workers with a Bronze Tool are 50% faster than with flint.",
@@ -302,4 +304,47 @@ const CLOSE_TIP := "Close (Esc)"
 const SELECT_HINT := "Click a building to see its details here."
 
 # --- The Info panel (scripts/hover_text.gd) ---
-const UNEXPLORED_INFO := "Unexplored. Build a Gatherer's Hut, or discover Scouting, to see farther."
+const UNEXPLORED_INFO := "Unexplored. Click it to send the nearest idle Kith to look, or build a Gatherer's Hut, or discover Scouting."
+const UNEXPLORED_PILL := "Unexplored · click to scout"
+const SCOUT_SENT := "%s sets out to look."  # a name
+const SCOUT_NOBODY := "No one is free to scout: every %s has a job."  # many
+const SCOUT_BUSY := "A scout is already on the way there."
+const SCOUT_NO_WAY := "There is no way there on foot."
+
+# --- Dwelling tiers and what each needs (scripts/homes.gd, scripts/home_text.gd) ---
+## The tier names, lowest first (Data.HOME_TIERS has the numbers).
+const HOME_NAMES := ["Dwelling", "Homestead", "Longhouse"]
+const HOME_MISSING_FOOD := "%d more kinds of food in stock"  # a number
+const FORK_NOTE := " (taking one sets the other aside until this is learned)"
+const HOME_MISSING_FOOD_ONE := "one more kind of food in stock"
+const HOME_MISSING_GOOD := "%d %s"  # how many more, an item's name
+const HOME_MISSING_ROAD := "a road to the Hearth"
+const HOME_MISSING_HAULERS := "Paths & Haulers, to carry goods in"
+const HOME_CAPPED := "Held at your cap on %ss"  # a tier name
+const HOME_CAP_ROW := "%s or better"  # a tier name
+const HOME_CAP_VALUE := "%d of %s"  # homes that have reached it, the cap
+const HOME_CAP_NONE := "any"
+const HOME_CAP_TIP := (
+	"The most homes you allow to reach %s or better. Homes grow on their own while the settlement keeps them supplied;"
+	+ " lower this to keep it small. Homes already there stay."
+)  # a tier name
+const HOME_BUSY := "Waiting for the builders: %d scaffolds are already up"  # a number
+
+const HOME_NO_STOCK := "Waiting for %s in the stockpile"  # item names, "Bronze, Brick"
+# --- What a home says about its needs (scripts/home_text.gd, scripts/home_needs.gd) ---
+const HOME_NEED_FOODS := "Food: %d of %d kinds in stock"  # kinds held, kinds needed
+const HOME_NEED_GOOD := "%s: %d of %d"  # an item's name, held, needed
+const HOME_STALLED := "Stalled, it needs %s"  # what is missing
+const HOME_HELD := "Content, but held back: %s"  # what holds it
+const HOME_COUNTING := "Content: %d of %d s before it asks to grow"  # seconds, seconds
+const HOME_READY := "Content, and about to ask to grow"
+const HOME_TOP := "Content: nowhere higher to grow"
+const HOME_HAULING := "Growing into a %s: materials %d%% in"  # a tier name, a percent
+const HOME_BUILDING := "Growing into a %s: building, %d s left"  # a tier name, seconds
+const HOME_HOUSES := "Houses %d"
+const HOME_HOUSES_LAPSED := "Houses %d for now, %d once its needs are met"
+const HOME_NEXT := "Next: a %s, for %s"  # a tier name, a cost
+const HOME_PLURALS := ["Dwellings", "Homesteads", "Longhouses"]
+const HOME_READOUT := "%d homes: %s."  # a count, "2 Dwellings, 3 Homesteads"
+const HOME_ALL_MET := "All of them have what they need."
+const HOME_READOUT_STALLED := "%d stalled, most for: %s."  # a count, the commonest missing thing

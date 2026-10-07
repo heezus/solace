@@ -12,7 +12,7 @@ Codex, 2026-10-04, PR #33. This pass implements the approved rendered miniature 
 
 ## Terrain and crossing revision
 
-Jon rejected the first pass's blurry grass, flat water and roads, and stretched bridges. New original materials and exact prompts are in [terrain-prompts.json](../../../../../art/rendered/terrain-prompts.json). `world_ground.gd` now caches geometry masks; `terrain.gdshader` shades detail, flowing reflections, depth, shoreline and road texture on a separate child canvas beneath the map objects. All original generated PNGs remain unmodified.
+the project owner rejected the first pass's blurry grass, flat water and roads, and stretched bridges. New original materials and exact prompts are in [terrain-prompts.json](../../../../../art/rendered/terrain-prompts.json). `world_ground.gd` now caches geometry masks; `terrain.gdshader` shades detail, flowing reflections, depth, shoreline and road texture on a separate child canvas beneath the map objects. All original generated PNGs remain unmodified.
 
 `bridge_art.gd` assembles deck modules at fixed tile size. Wood/stone, horizontal/vertical and single-cell crossings have separate bank-end handling. Interior pieces repeat without stretching an entire bridge or repeating bank posts. Below is a staged renderer fixture, distinct from the gameplay screenshots.
 
@@ -47,4 +47,4 @@ Validation: strict editor warnings on 117 scripts; import/metadata; GDScript lin
 
 ### Visual review status
 
-Jon found the playable translation visually weaker than the reviewed paintover. PR #33 is in draft. The technical prototype is not visually approved: repetitive ground detail, strip-like road silhouettes and insufficient local grounding remain concerns. Contact shadows/aprons were corrected to the bottom-anchored sprite baseline after this review; the captures above show the initial test, not that subsequent correction. Retain the approved subject art and use the blended paintover as the visual target.
+the project owner found the playable translation visually weaker than the reviewed paintover. PR #33 is in draft. The technical prototype is not visually approved: repetitive ground detail, strip-like road silhouettes and insufficient local grounding remain concerns. Contact shadows/aprons were corrected to the bottom-anchored sprite baseline after this review; the captures above show the initial test, not that subsequent correction. Retain the approved subject art and use the blended paintover as the visual target.

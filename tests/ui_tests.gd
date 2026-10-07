@@ -113,6 +113,8 @@ func test_card_line_always_fits() -> void:
 		if Data.BUILDINGS[type]["cost"].is_empty():
 			continue
 		s.tech_tree.researched[Data.BUILDINGS[type]["tech"]] = true
+		if Data.BUILDINGS[type].has("event"):
+			s.story.record(Data.BUILDINGS[type]["event"])  # the era after the star opens with its story
 		for width in [CARD_TEXT_W, 70.0, 40.0]:
 			var line: String = CardText.state_line(s, type, "", width)
 			t.check(
@@ -133,9 +135,12 @@ func test_card_line_always_fits() -> void:
 		CardText.short_names({"wood": 9}, hut_cost) == ["Wood", "Stone"], "the names of what is short, in cost order"
 	)
 	for type in Data.BUILDINGS:
-		if Data.BUILDINGS[type]["tech"] == "":
-			continue  # always available: never locked
 		var why: String = CardText.locked_reason(type, 100.0)
+		if Data.BUILDINGS[type]["tech"] == "":
+			t.check(
+				why == Data.CARD_WAIT or Data.BUILDINGS[type].has("event") == false, "%s: waits on the story" % type
+			)
+			continue  # no tech to name
 		t.check(CardText.lines(why, 100.0) <= 2, "%s: the reason fits two lines: %s" % [type, why])
 		t.check(not why.contains("..."), "and never with dots: " + why)
 		t.check(not why.contains(Data.BUILDINGS[type]["name"]), "%s: and never its own title again: %s" % [type, why])
@@ -150,12 +155,14 @@ func test_story_cards_stay_hidden_until_revealed() -> void:
 	t.check(not CardText.shown(s, "standing_stone"), "so is the Standing Stone")
 	t.check(CardText.shown(s, "gatherers_hut") and CardText.shown(s, "dwelling"), "ordinary cards always show")
 	s.tech_tree.researched["masonry"] = true
-	t.check(not CardText.shown(s, "standing_stone"), "Masonry alone doesn't show it: Megaliths needs Storytelling too")
+	t.check(not CardText.shown(s, "standing_stone"), "Masonry alone doesn't show it: Megaliths needs the Star Lore too")
 	s.tech_tree.researched["storytelling"] = true
-	t.check(CardText.shown(s, "standing_stone"), "it shows once Megaliths is reachable")
+	t.check(not CardText.shown(s, "standing_stone"), "Storytelling is no way in")
 	t.check(not CardText.shown(s, "shard_cairn"), "the Cairn stays hidden until the Strange Stone has been clicked")
 	s.shard_seen = true
 	t.check(CardText.shown(s, "shard_cairn"), "and shows after, when Star Lore is reachable")
+	s.tech_tree.researched["star_lore"] = true
+	t.check(CardText.shown(s, "standing_stone"), "the Standing Stone shows once Megaliths is reachable")
 	for type in Data.BUILDINGS:
 		var def: Dictionary = Data.BUILDINGS[type]
 		var era_two: bool = def.get("tech", "") != "" and int(Data.TECHS[def["tech"]].get("era", 1)) == 2

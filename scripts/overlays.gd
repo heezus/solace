@@ -265,7 +265,7 @@ static func line_text(s, type: String, tiles: Array) -> String:
 		if s.town.placement_error(type, p) != "":
 			continue
 		n += 1
-		var cost := Rules.cost_at(type, s.world.tile_at(p), s.tech_tree.researched.has("causeways"))
+		var cost: Dictionary = s.town.cost_here(type, p)
 		for id in cost:
 			total[id] = total.get(id, 0) + cost[id]
 	var name: String = Data.BUILDINGS[type]["name"]

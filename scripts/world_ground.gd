@@ -5,6 +5,9 @@ const Rendered = preload("res://scripts/rendered_art.gd")
 const NEIGHBORS := [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]
 const SAMPLES := 16
 const TILE := 48.0
+## Every road is drawn as a path here: the gravel and paved tiers lie over it as their own material (RoadLayer), so
+## Causeways no longer turns every road to stone.
+const STONE_PATHS := false
 
 var texture: ImageTexture
 var revision := 0
@@ -20,15 +23,7 @@ var _seed := -1
 
 func draw(ci: CanvasItem, s, seen: Rect2i) -> void:
 	var stamp: int = hash(
-		[
-			s.world.tiles,
-			s.world.roads,
-			s.world.width,
-			s.world.map_seed,
-			s.town.building_at,
-			s.tech_tree.researched.has("causeways"),
-			s.fog.cells
-		]
+		[s.world.tiles, s.world.roads, s.world.width, s.world.map_seed, s.town.building_at, s.fog.cells]
 	)
 	if texture == null or stamp != revision:
 		_rebuild(s)
@@ -48,7 +43,7 @@ func draw(ci: CanvasItem, s, seen: Rect2i) -> void:
 		ci.add_child(_surface)
 	_material.set_shader_parameter("terrain_mask", texture)
 	_material.set_shader_parameter("world_size", Vector2(s.world.width, s.world.height) * TILE)
-	_material.set_shader_parameter("stone_paths", s.tech_tree.researched.has("causeways"))
+	_material.set_shader_parameter("stone_paths", STONE_PATHS)
 	_material.set_shader_parameter("map_seed", float(s.world.map_seed % 10007))
 	var rect := Rect2(Vector2(seen.position) * TILE, Vector2(seen.size) * TILE)
 	if _rect != rect or _surface.get_meta("builds", -1) != builds:
@@ -89,7 +84,7 @@ func _rebuild(s) -> void:
 
 
 func _tile_key(s, tile: Vector2i) -> int:
-	var values: Array = [s.tech_tree.researched.has("causeways")]
+	var values: Array = []
 	for y in range(-2, 4):
 		for x in range(-2, 4):
 			var q := tile + Vector2i(x, y)

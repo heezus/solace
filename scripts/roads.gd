@@ -143,8 +143,7 @@ static func _net_has_depot(c: Dictionary, id: int) -> bool:
 
 static func _cache(s) -> Dictionary:
 	var c: Dictionary = s.town.road_net
-	var fast: Array = [s.tech_tree.researched.has("paved_roads"), s.tech_tree.researched.has("causeways")]
-	if c.get("rev", -1) == s.town.road_rev and c.get("fast", []) == fast:
+	if c.get("rev", -1) == s.town.road_rev:
 		return c
 	c = _build(s)
 	s.town.road_net = c
@@ -182,7 +181,7 @@ static func _build(s) -> Dictionary:
 		at_depot[depot] = ids
 	var link := {}
 	for b in s.town.buildings:
-		if not Buildings.needs_worker(b):
+		if not Buildings.served(b):
 			continue
 		var best: Array = []
 		var best_d := INF
@@ -214,7 +213,6 @@ static func _build(s) -> Dictionary:
 		"rev": s.town.road_rev,
 		"depots": all_depots,
 		"posts": waiting_posts,
-		"fast": [s.tech_tree.researched.has("paved_roads"), s.tech_tree.researched.has("causeways")],
 		"net": net,
 		"depot_nets": at_depot,
 		"link": link,

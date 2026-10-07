@@ -25,3 +25,7 @@ The crossing atlas has twelve modules: three horizontal wood, three horizontal s
 ## Research illustrations
 
 `research-symbols.png` and `research-landmarks.png` preserve original transparent built-in image-generation outputs. Exact prompts, reference role and source paths: [research-prompts.json](research-prompts.json). Atlas regions in `Rendered` and the presentation-only `Art.research_sprite` resolver supply all research illustrations, including former vector placeholders. Existing map sprites are unchanged. Both research views use centered aspect-preserving drawing. Godot generates the accompanying import metadata.
+
+## Growth asset kit, 2026-10-05
+
+`growth-houses.png`, `growth-scaffold.png`, `growth-hand-cart.png` and `growth-roads.png` are unchanged generated sources with Godot imports. Exact prompts: [growth-prompts.json](growth-prompts.json). Cached slots/drawing live in `scripts/growth_art.gd`; `growth-road.gdshader` supplies a connected road material mask. [Native previews and Claude's state-hook contract](../../docs/art/growth-visuals/README.md). Gameplay state selection remains in Claude's logistics/needs work.

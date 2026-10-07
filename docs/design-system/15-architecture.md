@@ -2,7 +2,7 @@
 
 Status: **built** (2026-09-30). Written from main at 46a0f13. Steps 0 to 7b are merged (PRs #5 to #13); step 8 (thin Sim, PR #14) is in review. The golden snapshot (1053 s, 894 s, 857 s) has been identical after every step.
 
-Jon (a DV hardware engineer) asked whether the code should be split into compartmentalized subsystems. Yes. This page frames it his way: every subsystem is a block with a defined interface and its own testbench, and the bot playthrough is the system-level test.
+The project owner asked whether the code should be split into compartmentalized subsystems. Yes. This page frames it as blocks and interfaces: every subsystem is a block with a defined interface and its own testbench, and the bot playthrough is the system-level test.
 
 ## Why now
 - `scripts/game_state.gd` is about 1,000 lines. It holds the map, the stockpile, research, buildings, walking, the Kith, food, fog hooks and the tick order. It is the one block everything touches, so every change edits it.
@@ -56,7 +56,7 @@ Every step is its own PR, keeps CI green and reproduces the golden result. Merge
 4. **Extract World and Pathing.** Done (PR #9): `scripts/world.gd` and `scripts/pathing.gd`.
 5. **Extract Buildings.** Done (PR #10): `scripts/buildings.gd`, reached as `state.town`. The per-building work cycle stays in GameState until Bonuses, Hands, Roads and Workers stop taking the whole GameState.
 6. **Extract Kith** (with jobs, walking and titles). Done (PR #11): `scripts/kith.gd`, reached as `state.people`.
-7. **Introduce signals** and move Story onto them (7a, PR #12: `scripts/story.gd`, `sim.story`, signals wired in `Sim._init`). Then `to_dict` and `from_dict` on each block, a versioned run save (`scripts/run_save.gd`) and a separate profile save (`scripts/profile.gd`, holding only the Chronicle of story ids and the items the Kith have learned) (7b, PR #13). Nothing reads the profile yet and no UI uses either save.
+7. **Introduce signals** and move Story onto them (7a, PR #12: `scripts/story.gd`, `sim.story`, signals wired in `Sim._init`). Then `to_dict` and `from_dict` on each block, a versioned run save (`scripts/run_save.gd`) and a separate profile save (`scripts/profile.gd`, holding only the Chronicle of story ids and the items the Kith have learned) (7b, PR #13). Nothing reads the profile yet. The run save has a UI since 2026-10-07: the pause menu (Esc) saves and loads it (`scripts/game_menu.gd`, `scripts/pause_menu.gd`) and the title screen's Continue starts from it (`scripts/title_screen.gd`, `scripts/launch.gd`).
 8. **Retire the pass-through methods.** Done (PR #14): GameState is now `Sim` (`scripts/sim.gd`, 293 lines, 10 public commands). The work cycle moved to `scripts/work.gd` and `Workers.tick_building`. Convention tests fail if a retired pass-through name returns.
 
 Each extraction ships with that block's unit testbench.

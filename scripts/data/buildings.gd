@@ -2,11 +2,17 @@ extends RefCounted
 ## Every building, the build bar's tabs and order. Read through the `Data` facade (scripts/data.gd).
 
 ## kind: "camp" | "house" | "road" | "bridge" | "field" | "depot" | "gatherer" | "processor" | "power" | "aura" | "cairn"
-##   | "shed" (a Cart Shed) | "tower" (a Watchtower)
+##   | "shed" (a Cart Shed) | "tower" (a Watchtower) | "wall" (the Glyph Wall)
+##   | "refuge" (the Lumen Camp, the shared shrine, the Guard Post)
+## A building with an `event` (and no tech) opens when that story event has happened (Data.STORY_EVENTS): the era of the
+## Lumen has no research to gate it, and the card stays off the build bar until then.
 ## A "field" with `crop` "flax" sows flax instead of grain (World.flax_fields); it yields fiber as wild flax does.
-## A `stone` bridge bears carts and walks at the Causeway pace; the Wooden Bridge bears the Kith only.
+## A `stone` bridge bears carts and walks at the top road tier; the Wooden Bridge bears the Kith only. A road has a
+## `tier` (0 path, 1 gravel, 2 paved; Data.ROAD_SPEEDS): dragging a higher tier over a lower one upgrades it in place for
+## the difference in cost, and the Stone Bridge does the same over a Wooden Bridge.
 ## A processor with `trade` has no fixed recipe: it swaps Data.TRADE_GIVE of the good it is set to give for
-## Data.TRADE_GET of the one it is set to get (the building's `give` and `get`). `sight` is how far a building sees.
+## Data.TRADE_GET of the one it is set to get (the building's `give` and `get`); a `trade_give` of its own replaces
+## Data.TRADE_GIVE (the Lumen Market gives 2). `sight` is how far a building sees.
 ## `story` buildings stay off the build bar until their tech is on the board and reachable (nothing to spoil early).
 ## Processors turn `in` into `out` every `time` seconds (a processor with no `in` just makes `out`).
 ## A processor with `makes` is a tool bench: a list of tool recipes (Data.RECIPES ids, worst first), and it makes
@@ -42,6 +48,7 @@ const BUILDINGS := {
 	{
 		"name": "Road",
 		"kind": "road",
+		"tier": 0,
 		"tech": "haulers",
 		"cost": {"wood": 2},
 		"color": Color("c8a36a"),
@@ -50,6 +57,34 @@ const BUILDINGS := {
 			"A timber trackway. Kith walk twice as fast on roads, and haulers serve only road-linked buildings."
 			+ " Through Forest, a Road fells the trees; on Rocks, it cuts a pass for 3 Stone."
 			+ " Roads can't cross the river: build a Wooden Bridge. Drag to lay."
+		),
+	},
+	"gravel_road":
+	{
+		"name": "Gravel Road",
+		"kind": "road",
+		"tier": 1,
+		"tech": "haulers",
+		"cost": {"wood": 2, "flint": 2},
+		"color": Color("a9a395"),
+		"desc":
+		(
+			"A road bedded in riverbed gravel: Kith and haulers move 25% faster than on a Road."
+			+ " Drag over a Road to upgrade it in place: you pay only the difference for each tile."
+		),
+	},
+	"paved_road":
+	{
+		"name": "Paved Road",
+		"kind": "road",
+		"tier": 2,
+		"tech": "paved_roads",
+		"cost": {"wood": 2, "stone": 2, "brick": 1},
+		"color": Color("8e9aa6"),
+		"desc":
+		(
+			"A road laid in dressed stone: Kith and haulers move 50% faster than on a Road."
+			+ " Drag over a Road or a Gravel Road to upgrade it in place: you pay only the difference for each tile."
 		),
 	},
 	"bridge":
@@ -70,7 +105,10 @@ const BUILDINGS := {
 		"cost": {"stone": 6, "brick": 4},
 		"color": Color("b3aca2"),
 		"desc":
-		"Goes on a river tile. The Kith cross at Causeway pace, and carts can cross too. Drag to span the river.",
+		(
+			"Goes on a river tile. The Kith cross at paved pace, and carts can cross too. Drag to span the river,"
+			+ " or drag over a Wooden Bridge to rebuild it in stone."
+		),
 	},
 	"field":
 	{
@@ -258,8 +296,8 @@ const BUILDINGS := {
 		"story": true,
 		"cost": {"wood": 60, "rope": 20, "copper": 6},
 		"color": Color("c9a45c"),
-		"desc": "Turns two haulers into carts. A cart carries twice a hauler's load, but only on roads.",
-		"status": "Two haulers push carts for it.",
+		"desc": "Turns a hauler into a hand cart: one Kith, three times a hauler's load, but only on roads.",
+		"status": "A hauler pulls a hand cart for it.",
 	},
 	"trading_post":
 	{
@@ -317,6 +355,84 @@ const BUILDINGS := {
 		),
 		"status": "It hums. The Kith think clearer. Something far off may hear.",
 	},
+	"glyph_wall":
+	{
+		"name": "Glyph Wall",
+		"kind": "wall",
+		"tech": "",
+		"event": "lumen_arrived",
+		"cost": {"stone": 40, "brick": 20},
+		"color": Color("7aa6c2"),
+		"desc":
+		"A smooth wall where the Kith copy every mark the strangers show them. Click it to guess what each one means.",
+		"status": "Copying marks.",
+	},
+	"expedition_post":
+	{
+		"name": "Expedition Post",
+		"kind": "post",
+		"tech": "",
+		"event": "name_read",
+		"cost": {"wood": 80, "stone": 40, "rope": 30},
+		"color": Color("d9a066"),
+		"desc": "Where parties leave for the fog and the crash site. Choose a target and a pack, then send two Kith.",
+		"status": "Waiting for a party.",
+	},
+	"lumen_camp":
+	{
+		"name": "Lumen Camp",
+		"kind": "refuge",
+		"tech": "",
+		"event": "name_read",
+		"cost": {"wood": 60, "stone": 30, "rope": 20},
+		"color": Color("9fd8e8"),
+		"desc":
+		"A place for the strangers to sit by their own fire. They trust the Kith a little more while it stands.",
+		"status": "The strangers rest here.",
+	},
+	"lumen_market":
+	{
+		"name": "Lumen Market",
+		"kind": "processor",
+		"job": "Trader",
+		"tech": "",
+		"event": "market_open",
+		"cost": {"wood": 60, "stone": 30, "rope": 20},
+		"in": {},
+		"out": {},
+		"trade": true,
+		"trade_give": 2,
+		"time": 8.0,
+		"color": Color("9fd8e8"),
+		"desc":
+		(
+			"Swaps 2 of one good for 1 of another with the strangers, a little quicker than the Trading Post. "
+			+ "Choose what it gives and what it gets."
+		),
+	},
+	"shared_shrine":
+	{
+		"name": "Shared Shrine",
+		"kind": "refuge",
+		"tech": "",
+		"event": "name_read",
+		"cost": {"stone": 30, "wood": 20, "rope": 10},
+		"color": Color("c9b8e8"),
+		"desc": "A small shrine where both peoples leave something. They trust the Kith more while it stands.",
+		"status": "Both peoples leave something here.",
+	},
+	"guard_post":
+	{
+		"name": "Guard Post",
+		"kind": "refuge",
+		"tech": "",
+		"event": "lumen_arrived",
+		"cost": {"wood": 40, "stone": 40},
+		"color": Color("8d6e63"),
+		"desc":
+		"A watch on the strangers. The Kith near it work a little faster, and the strangers trust the Kith less while it stands.",
+		"status": "The Kith keep watch.",
+	},
 }
 
 ## The build bar's tabs, in order. Craft by hand has its own small group beside them.
@@ -325,13 +441,27 @@ const BUILD_TABS := {
 	"Gathering": ["gatherers_hut", "field", "flax_field", "fishing_weir"],
 	"Workshops": ["tool_bench", "charcoal_pit", "twine_post", "kiln", "water_wheel", "grindstone"],
 	"Metal": ["mine", "smelter", "crucible"],
-	"Logistics": ["road", "bridge", "stone_bridge", "storehouse", "cart_shed", "trading_post"],
-	"Lore": ["standing_stone", "shard_cairn", "watchtower"],
+	"Logistics":
+	["road", "gravel_road", "paved_road", "bridge", "stone_bridge", "storehouse", "cart_shed", "trading_post"],
+	"Lore":
+	[
+		"standing_stone",
+		"shard_cairn",
+		"watchtower",
+		"glyph_wall",
+		"lumen_camp",
+		"expedition_post",
+		"lumen_market",
+		"shared_shrine",
+		"guard_post"
+	],
 }
 
 const BUILD_ORDER := [
 	"dwelling",
 	"road",
+	"gravel_road",
+	"paved_road",
 	"bridge",
 	"stone_bridge",
 	"field",
@@ -353,6 +483,12 @@ const BUILD_ORDER := [
 	"cart_shed",
 	"trading_post",
 	"watchtower",
+	"glyph_wall",
+	"lumen_camp",
+	"expedition_post",
+	"lumen_market",
+	"shared_shrine",
+	"guard_post",
 ]
 
 ## Output a building holds before it stops, when nobody hauls it away.

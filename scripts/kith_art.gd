@@ -7,8 +7,10 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 const Art = preload("res://scripts/art.gd")
+const GrowthArt = preload("res://scripts/growth_art.gd")
 const Overlays = preload("res://scripts/overlays.gd")
 const Rendered = preload("res://scripts/rendered_art.gd")
+const Expedition = preload("res://scripts/expedition.gd")
 
 const KITH := Color("e76f51")
 const SPRITE := Overlays.TILE  # the sprite's square: drawn at 1.5x, so its 2-unit outline is 3 px
@@ -65,14 +67,70 @@ static func draw_all(ci: CanvasItem, s, time: float) -> void:
 			at.y += absf(sin(time * 5.0 + i)) * -3.0  # a little hop while it works
 		var flip: bool = moving and k["path"][0].x > k["pos"].x
 		var with_cart: bool = k.get("cart", false)
-		var facing := 1.0 if flip else -1.0
-		var person_at := at - Vector2(facing * 6, 0) if with_cart else at
-		Rendered.kith(ci, person_at, k.get("name", str(i)), moving, time, flip)
 		if with_cart:
-			Rendered.fit(ci, Rendered.sprite("extras", 4), Rect2(at + Vector2(facing * 7 - 13, -14), Vector2(26, 25)))
+			# One Kith and the cart are one picture (Codex's hand cart); what it carries rides in the bed.
+			var cargo: Texture2D = null
+			for id in k["carry"]:
+				cargo = Rendered.named("item_" + id)
+				break
+			GrowthArt.draw_hand_cart(
+				ci, Rect2(at + Vector2(-SPRITE * 0.52, -SPRITE * 0.82), Vector2(SPRITE * 1.04, SPRITE * 1.04)), cargo
+			)
+			continue
+		if Expedition.is_party(k):
+			Rendered.party_pack(ci, at, flip)  # behind the body: only the Kith out with a party carry one
+		Rendered.kith(ci, at, k.get("name", str(i)), moving, time, flip)
 		var above := at + Vector2(-10, -SPRITE * 1.08)  # over the head
 		for id in k["carry"]:
 			Art.item_icon(ci, id, Rect2(above, Vector2(20, 20)), 1.0)
+
+
+## The strangers of the era after the Falling Star (Starfall.survivor_spots): three pale-cloaked Lumen figures in a soft light
+## so nobody takes them for Kith. They stand about and sway a little; they come closer as they trust the Kith.
+static func draw_strangers(ci: CanvasItem, s, time: float) -> void:
+	if not s.starfall.arrived():
+		return
+	var camp := Vector2i(-1, -1)
+	for b in s.town.buildings:
+		if b["type"] == "lumen_camp":
+			camp = b["pos"]
+	var spot_list: Array = s.starfall.survivor_spots(s.world.camp_pos, camp)
+	for i in spot_list.size():
+		var sway := Vector2(sin(time * 0.8 + i * 2.1), cos(time * 0.6 + i * 1.3)) * 3.0
+		var at: Vector2 = spot_list[i] * Overlays.TILE + sway
+		ci.draw_circle(at - Vector2(0, SPRITE * 0.3), SPRITE * 0.62, Color(0.6, 0.92, 1.0, 0.1))
+		ci.draw_circle(at - Vector2(0, SPRITE * 0.3), SPRITE * 0.4, Color(0.6, 0.92, 1.0, 0.14))
+		Rendered.stranger(ci, at, i)
+
+
+## The crash site (Starfall.wreck), once a party has lifted the fog there: a low broken hull in the grass, with embers about it.
+static func draw_wreck(ci: CanvasItem, s, time: float) -> void:
+	var w: Vector2i = s.starfall.wreck
+	if w.x < 0 or not s.starfall.wreck_found or not s.fog.is_revealed(w):
+		return
+	var c := (Vector2(w) + Vector2(0.5, 0.5)) * Overlays.TILE
+	Rendered.wreck(ci, c)
+	for i in 3:
+		var flick := 0.5 + 0.5 * sin(time * 3.0 + i * 2.0)
+		ci.draw_circle(c + Vector2(-22 + i * 22, -6 - 4 * flick), 4.0 + 2.0 * flick, Color(1.0, 0.62, 0.25, 0.55))
+
+
+## The first Bloom sign (Starfall.bloom), once the Warning is read and the fog is lifted there: a patch of growth nobody
+## planted, magenta and sickly green, slowly breathing. Stand-in art until Codex draws it (docs/art/starfall-art-brief.md).
+static func draw_bloom_sign(ci: CanvasItem, s, time: float) -> void:
+	var b: Vector2i = s.starfall.bloom
+	if b.x < 0 or not s.fog.is_revealed(b):
+		return
+	var c := (Vector2(b) + Vector2(0.5, 0.5)) * Overlays.TILE
+	ci.draw_circle(c + Vector2(0, 4), 40.0, Color(0.1, 0.1, 0.1, 0.16))
+	for i in 5:
+		var a := TAU * i / 5.0 + 0.4
+		var tip := c + Vector2.from_angle(a) * (22.0 + 4.0 * sin(time * 1.4 + i))
+		ci.draw_line(c, tip, Color("1b1b1f"), 7.0)
+		ci.draw_line(c, tip, Color("6fa84a"), 4.0)
+		ci.draw_circle(tip, 5.0, Color("1b1b1f"))
+		ci.draw_circle(tip, 3.5, Color("c04a9d"))
+	Art.outlined_circle(ci, c, 8.0 + 1.5 * sin(time * 1.4), Color("c04a9d"))
 
 
 ## One Kith standing at `at` (the middle of its feet): its shadow, body and head. A hauler is a shade lighter, and

@@ -1,6 +1,6 @@
 # Withdrawn terrain experiment — 2026-10-05
 
-Codex attempted quieter turf, procedural bank stones and flatter water. Jon found the native result a significant step back from the richer blended paintover. The experiment was withdrawn before commit or publication; production renderer/art/tests were restored to `36239f3`.
+Codex attempted quieter turf, procedural bank stones and flatter water. The project owner found the native result a significant step back from the richer blended paintover. The experiment was withdrawn before commit or publication; production renderer/art/tests were restored to `36239f3`.
 
 The [blended paintover](../blended-regions.png) remains the target. It is AI concept art, not a previous working game render. Its globally composed banks, ground relief, shadows and water have not yet been reproduced at that quality in the playable renderer.
 

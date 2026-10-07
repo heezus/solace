@@ -1,6 +1,6 @@
 # Interface for the rendered miniature world
 
-Current visual specification, 2026-10-04, PR #33. Jon accepted the grounded, atmospheric map direction and requested that the UI/UX follow it. Codex implemented this first interface pass in the actual game.
+Current visual specification, 2026-10-04, PR #33. The project owner accepted the grounded, atmospheric map direction and requested that the UI/UX follow it. Codex implemented this first interface pass in the actual game.
 
 The interface should feel like a quiet field journal beside a living miniature landscape. Use plain surfaces and readable labels: texture belongs in the world and subject icons, not behind dense resource numbers.
 

@@ -13,6 +13,7 @@ const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
 const Ranks = preload("res://scripts/ranks.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Rules = preload("res://scripts/rules.gd")
+const Scouting = preload("res://scripts/scouting.gd")
 
 const BOT_STEPS_PER_FRAME := 40
 const MAX_FRAMES := 6000
@@ -31,7 +32,7 @@ var won_at := -1  # the frame Bronze Dawn was researched
 
 func _init() -> void:
 	seed(7)  # the same map every run
-	var scene: PackedScene = load(ProjectSettings.get_setting("application/run/main_scene"))
+	var scene: PackedScene = load("res://scenes/main.tscn")
 	main = scene.instantiate()
 	root.add_child(main)
 
@@ -336,6 +337,11 @@ func _script() -> void:
 	# Right-click cancels placing; a dragged Road lays a line.
 	_then(func(): _road_drag(), 2)
 	_then(func(): _road_drag_check(), 3)
+	# Dragging a higher tier over that Road upgrades it in place; clicking fog sends an idle Kith to look.
+	_then(func(): _upgrade_drag(), 2)
+	_then(func(): _upgrade_drag_check(), 3)
+	_then(func(): _fog_click(), 2)
+	_then(func(): _fog_click_check(), 2)
 	# Let the town run a minute of game time with the UI drawing. The bot starts from whatever state the checks left,
 	# and a short, fast run of them (a lighter frame) left it one that could dead-end: workshops ahead of any hut.
 	_then(func(): probe["settled"] = game_time + SETTLE_SECONDS)
@@ -622,6 +628,59 @@ func _road_drag() -> void:
 	main.placing = "road"
 	_move(_screen_of(start))
 	_button(_screen_of(start), MOUSE_BUTTON_LEFT, true)
+
+
+## Drag Gravel Road back over the four Road tiles just laid.
+func _upgrade_drag() -> void:
+	var s = main.state
+	for id in Data.BUILDINGS["gravel_road"]["cost"]:
+		s.economy.inv[id] = maxi(s.economy.inv.get(id, 0), 40)
+	var start: Vector2i = probe["road_from"]
+	main.placing = "gravel_road"
+	_move(_screen_of(start))
+	_button(_screen_of(start), MOUSE_BUTTON_LEFT, true)
+
+
+func _upgrade_drag_check() -> void:
+	var s = main.state
+	var start: Vector2i = probe["road_from"]
+	var end := start + Vector2i(3, 0)
+	_move(_screen_of(end))
+	_button(_screen_of(end), MOUSE_BUTTON_LEFT, false)
+	var gravel := 0
+	for i in 4:
+		gravel += 1 if s.world.road_tier(start + Vector2i(i, 0)) == 1 else 0
+	_expect(gravel == 4, "dragging Gravel Road over a Road upgraded %d of 4 tiles" % gravel)
+	_expect(s.world.roads.size() == probe["roads"] + 4, "the upgrade laid new tiles instead of changing the old")
+	_click(_screen_of(end + Vector2i(0, 1)), MOUSE_BUTTON_RIGHT)
+	_expect(main.placing == "", "right-click didn't stop laying Gravel Road")
+
+
+## Click a fogged tile that can be walked to.
+func _fog_click() -> void:
+	var s = main.state
+	probe["scouts"] = 0
+	var idle: Array = s.people.kith.filter(func(k): return Scouting.available(k))
+	probe["idle"] = idle.size()
+	var camp: Vector2i = s.world.camp_pos
+	var best := Vector2i(-1, -1)
+	var best_d := INF
+	for y in s.world.height:
+		for x in s.world.width:
+			var p := Vector2i(x, y)
+			var d := Vector2(p).distance_to(Vector2(camp))
+			if not s.fog.is_revealed(p) and d < best_d and not s.pathing.path(camp, p).is_empty():
+				best = p
+				best_d = d
+	probe["fog_at"] = best
+	if best.x >= 0 and not idle.is_empty():
+		_click(_screen_of(best))
+
+
+func _fog_click_check() -> void:
+	var s = main.state
+	if probe["idle"] > 0 and probe["fog_at"].x >= 0:
+		_expect(Scouting.count(s) >= 1, "clicking fog sent no scout")
 
 
 func _road_drag_check() -> void:

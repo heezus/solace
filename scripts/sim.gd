@@ -1,6 +1,6 @@
 extends RefCounted
 ## Sim: the whole simulation, with no rendering, so it runs headless in tests. It is a thin owner. It holds
-## one of each block (`fog`, `world`, `pathing`, `economy`, `tech_tree`, `town`, `people`, `story`, `sky`) and
+## one of each block (`fog`, `world`, `pathing`, `economy`, `tech_tree`, `town`, `people`, `story`, `sky`, `starfall`) and
 ## nothing else about them: callers reach a block through its name (`sim.economy.inv`, `sim.world.tile_at(p)`).
 ## What stays here is what no single block can do: the commands that touch several blocks at once (`place`,
 ## `demolish`, `research`, `gather_by_hand`...), the few flags of the run itself, and the tick order:
@@ -26,9 +26,13 @@ const Research = preload("res://scripts/research.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Workers = preload("res://scripts/workers.gd")
 const Roads = preload("res://scripts/roads.gd")
+const Scouting = preload("res://scripts/scouting.gd")
+const Expedition = preload("res://scripts/expedition.gd")
 const Forage = preload("res://scripts/forage.gd")
 const Land = preload("res://scripts/land.gd")
+const Homes = preload("res://scripts/homes.gd")
 const SkyBlock = preload("res://scripts/sky.gd")
+const StarfallBlock = preload("res://scripts/starfall.gd")
 
 var won := false
 var hand_tools := false  # you've made a Flint Tool, so hand gathering is doubled for good
@@ -56,6 +60,7 @@ var town := Buildings.new(world, economy, tech_tree, fog.is_revealed)
 var people := Kith.new(world, pathing, economy, tech_tree, town)
 var story := Story.new()  # story moments and the opening checklist
 var sky := SkyBlock.new(tech_tree, town)
+var starfall := StarfallBlock.new(town, economy)  # the era after the Falling Star: the landing, the strangers, the glyphs
 
 
 ## Wire the blocks together. Every signal connection in the game is here, so it is all in one place.
@@ -70,6 +75,11 @@ func _init() -> void:
 	people.announce.connect(_announce)
 	sky.sighted.connect(_announce)
 	economy.food_low.connect(_on_food_low)
+	town.story_has = story.has_event
+	story.recorded.connect(_on_story)
+	people.gift = starfall.gift
+	starfall.said.connect(_announce)
+	starfall.moment.connect(story.record)
 
 
 # --- Map ---------------------------------------------------------------------
@@ -142,7 +152,7 @@ func research(tech: String) -> bool:
 
 ## What a finished tech sets off in the rest of the game (Research only reports that it finished).
 func _tech_done(tech: String) -> void:
-	if tech in ["paved_roads", "rafts", "causeways"]:
+	if tech == "rafts":
 		pathing.refresh()
 	if tech == "scouting":
 		for b in town.buildings:
@@ -158,6 +168,21 @@ func _tech_done(tech: String) -> void:
 ## Connected to Kith.announce: tell the player something (the UI shows and clears `events`).
 func _announce(message: String) -> void:
 	events.append(message)
+
+
+## Where the ship comes down: the far east of the map, on the nearest ground a party can reach.
+func _wreck_tile() -> Vector2i:
+	var far := Vector2i(world.width - 5, roundi(world.height / 2.0))
+	var near := Scouting.goal(self, far)
+	return near if near.x >= 0 else far
+
+
+## Connected to Story.recorded: the Falling Star starts the era after it (a Cairn built first means friendly strangers).
+func _on_story(id: String) -> void:
+	if id == "star_falling":
+		starfall.begin(story.cairn_before_landing, _wreck_tile())
+	elif id == "bloom_seen" and starfall.bloom.x >= 0:
+		fog.reveal(starfall.bloom, Data.BLOOM_SIGHT)  # the first sign shows at the edge of the fog
 
 
 ## Connected to Economy.food_low: the early warning, before anyone leaves.
@@ -257,6 +282,8 @@ func tick(delta: float) -> void:
 	people.grow(delta, fed)
 	story.update(self)
 	sky.tick(delta)
+	starfall.tick(delta)
+	Expedition.auto(self, delta)
 	if fed:
 		for k in people.kith:
 			if Forage.tick(self, k, delta):
@@ -266,6 +293,10 @@ func tick(delta: float) -> void:
 					Workers.tick(self, k, delta)
 				"haul":
 					Haulers.tick(self, k, delta)
+				"scout":
+					Scouting.tick(self, k, delta)
+				"expedition":
+					Expedition.tick(self, k, delta)
 				_:
 					people.step(k, delta)
 	for k in people.kith:
@@ -275,6 +306,7 @@ func tick(delta: float) -> void:
 			fog.reveal(here, _sight(Data.SIGHT_KITH))
 	for b in town.buildings:
 		town.tick_timers(b, delta)
+		Homes.tick(self, b, delta)
 		Workers.tick_building(self, b, delta, fed)
 		if (
 			tech_tree.researched.has("haulers")

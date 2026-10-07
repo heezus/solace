@@ -514,7 +514,7 @@ func _needs_text(tech: String) -> String:
 	if any.size() == 1:
 		parts.append(any[0])
 	elif any.size() > 1:
-		parts.append("one of " + " or ".join(any))
+		parts.append("one of " + " or ".join(any) + (Data.FORK_NOTE if Data.TECHS[tech].get("fork", false) else ""))
 	return ", ".join(parts) if not parts.is_empty() else "nothing, start here"
 
 

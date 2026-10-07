@@ -1,6 +1,6 @@
 extends RefCounted
 ## The Pathing block: the walking grid, A* over it, and what each tile costs to cross. It reads the World
-## (tiles and roads) and never writes it. The two facts it needs from research, paved roads and rafts, come
+## (tiles and roads) and never writes it. The one fact it needs from research, rafts, comes
 ## in as a read-only callable: has_tech.call(tech_id) -> bool. Sim owns one, reached as
 ## `sim.pathing`. Moving Kith along a path is the Kith block's job, not this one's.
 
@@ -40,14 +40,11 @@ func update_cell(p: Vector2i) -> void:
 	astar.set_point_weight_scale(p, walk_cost(p))
 
 
-## Relative time to cross a tile: roads are fast, forest and rocks are slow, rafting a river slower. Causeways makes
-## every road faster still, and a Wooden Bridge keeps the pace it had (only stone is laid to the Causeway).
+## Relative time to cross a tile: roads are fast (a higher tier faster still, see Data.ROAD_SPEEDS), forest and rocks are
+## slow, rafting a river slower. A Wooden Bridge walks like a path and a Stone Bridge like the top tier.
 func walk_cost(p: Vector2i) -> float:
 	if _world.roads.has(p):
-		var road: float = Data.WALK_COST["road"] / (2.0 if _has_tech.call("paved_roads") else 1.0)
-		if _has_tech.call("causeways") and not _world.is_wooden_bridge(p):
-			return minf(road, Data.CAUSEWAY_WALK_COST)
-		return road
+		return Data.WALK_COST["road"] / float(Data.ROAD_SPEEDS[_world.road_tier(p)])
 	return Data.WALK_COST.get(_world.tile_at(p), 1.0)
 
 

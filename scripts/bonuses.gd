@@ -20,6 +20,10 @@ static func active(s, b: Dictionary, item: String) -> Array:
 		var bonus: Dictionary = Data.BONUSES[id]
 		if bonus.has("tech") and not s.tech_tree.researched.has(bonus["tech"]):
 			continue
+		if bonus.has("gift") and not s.starfall.gift(bonus["gift"]):
+			continue
+		if bonus.get("dark", false) and not s.starfall.dark():
+			continue
 		if bonus.has("kinds") and kind not in bonus["kinds"]:
 			continue
 		if bonus.has("types") and b["type"] not in bonus["types"]:
@@ -42,12 +46,29 @@ static func active(s, b: Dictionary, item: String) -> Array:
 
 ## Checks that depend on the building itself: its worker's tool, a Standing Stone nearby.
 static func _applies(s, b: Dictionary, id: String) -> bool:
+	if Data.BONUSES[id].get("near_cairn", false) and (s.starfall.dimmed() or not _near_cairn(s, b["pos"])):
+		return false
+	if Data.BONUSES[id].get("near_guard", false) and not _near(s, b["pos"], "guard_post", Data.GUARD_RADIUS):
+		return false
 	if Data.BONUSES[id].has("tool"):
 		return b["worker"] >= 0 and Kith.tool_of(s.people.kith[b["worker"]]) == Data.BONUSES[id]["tool"]
 	match id:
 		"standing_stone":
 			return s.town.in_range_of("aura", b["pos"])
 	return true
+
+
+## True when a Shard Cairn stands within Data.SHARDLIGHT_RADIUS tiles of `p`.
+static func _near_cairn(s, p: Vector2i) -> bool:
+	return _near(s, p, "shard_cairn", Data.SHARDLIGHT_RADIUS)
+
+
+## True when a building of `type` stands within `radius` tiles of `p`.
+static func _near(s, p: Vector2i, type: String, radius: float) -> bool:
+	for c in s.town.buildings:
+		if c["type"] == type and Vector2(c["pos"]).distance_to(Vector2(p)) <= radius:
+			return true
+	return false
 
 
 ## The Speed a tool item gives its worker, as a share (0.5 for Flint Tools).
@@ -109,7 +130,7 @@ static func text(s, b: Dictionary) -> String:
 		var names: Array = []
 		for p in parts:
 			if p["group"] == "speed":
-				names.append("%s +%d%%" % [p["name"], roundi(p["add"] * 100.0)])
+				names.append("%s %+d%%" % [p["name"], roundi(p["add"] * 100.0)])
 		line += " x Speed %s (%s) = %s %s" % [_num(sp), ", ".join(names), _num(base * sp), unit]
 	if def["kind"] == "gatherer":
 		line += ", plus walking"

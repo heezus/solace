@@ -7,7 +7,7 @@ config_version=5
 
 config/name="Solace"
 config/description="Guide the Kith from stone tools to super-advanced industry on the planet Solace."
-run/main_scene="res://scenes/main.tscn"
+run/main_scene="res://scenes/title.tscn"
 config/features=PackedStringArray("4.7")
 
 [display]

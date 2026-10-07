@@ -1,6 +1,6 @@
 # Inspiration
 
-What Jon's Steam library says about what he enjoys. Source: [steam-library/snapshot.csv](../steam-library/snapshot.csv) (captured 2026-09-29; reviews + profile, not the full owned list).
+What the project owner's Steam library says about what he enjoys. Source: [steam-library/snapshot.csv](../steam-library/snapshot.csv) (captured 2026-09-29; reviews + profile, not the full owned list).
 
 ## Most-played games (excluding Soundpad, a utility)
 | Game | Hours | What hooks him (our read) |
@@ -24,6 +24,6 @@ What Jon's Steam library says about what he enjoys. Source: [steam-library/snaps
 4. **Genre blends win.** His praise for DREDGE and Timberborn is specifically about genres overlapping. Cult of the Lamb (cute + dark) fits too.
 5. **Gripes to avoid:** slow tech progression between sessions (Against the Storm), unfair difficulty spikes (Cult of the Lamb's last boss).
 
-## Jon's own list of loves (2026-09-29)
+## The project owner's own list of loves (2026-09-29)
 Automation, incremental, idle, RTS, space, fantasy, magic. "There's a full gambit."
 Library evidence: automation is backed hardest by hours. Idle shows up (currently playing Path of Idle). RTS/strategy via Civ V, XCOM and an Age of Mythology badge. Fantasy ARPG via Last Epoch and a Torchlight II badge. Space and magic have little library evidence so far, which may just be the snapshot's gaps.

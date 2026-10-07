@@ -32,8 +32,12 @@ const CREW_SLOTS := ["worker", "mate"]
 ## each: {type, pos, progress, inbuf, out, status, gather_items, focus, gather_index, worker, ...}
 var buildings: Array = []
 var building_at: Dictionary = {}  # Vector2i -> index into buildings
+## The most homes the player allows at each tier or above (index = tier; a Dwelling is always allowed). Saved.
+var home_caps: Array = [Data.HOME_CAP_OPEN, Data.HOME_CAP_OPEN, Data.HOME_CAP_OPEN]
 var road_rev := 0  # bumped whenever roads or buildings change, so Roads rebuilds its networks
 var road_net: Dictionary = {}  # Roads' cache of the road networks and which buildings they link
+## (String) -> bool: has this story event happened? Sim connects it to the Story block; it opens a building's `event`.
+var story_has: Callable = func(_id): return false
 var _world: World
 var _economy: Economy
 var _research: Research
@@ -51,8 +55,11 @@ func _init(world: World, economy: Economy, research: Research, is_revealed: Call
 
 
 func unlocked(type: String) -> bool:
-	var tech: String = Data.BUILDINGS[type]["tech"]
-	return tech == "" or _research.unlocked(tech)
+	var def: Dictionary = Data.BUILDINGS[type]
+	var tech: String = def["tech"]
+	if tech == "":
+		return def.get("event", "") == "" or story_has.call(def["event"])
+	return _research.unlocked(tech)
 
 
 ## Returns "" if the building can go here, otherwise the reason it can't.
@@ -64,15 +71,20 @@ func placement_error(type: String, p: Vector2i) -> String:
 		return "Off the map"
 	if not _is_revealed.call(p):
 		return "Unexplored: build or walk closer to see it"
-	if building_at.has(p) or _world.roads.has(p):
+	if building_at.has(p):
 		return "Something is already there"
 	var tile := _world.tile_at(p)
+	if _world.roads.has(p):
+		var upgrade := upgrade_error(type, p)
+		if upgrade != "":
+			return upgrade
+		return "" if _economy.can_afford(cost_here(type, p)) else "Not enough materials"
 	if def["kind"] == "road":
 		if tile == "river":
 			return "Roads can't cross the river: build a Wooden Bridge"
 		if tile not in ["grass", "rock", "tree"]:
 			return "Roads go on grassland or through Forest, or cut a pass through Rocks"
-		return "" if _economy.can_afford(Rules.cost_at(type, tile, _causeways())) else "Not enough materials"
+		return "" if _economy.can_afford(cost_here(type, p)) else "Not enough materials"
 	if def["kind"] == "bridge":
 		if tile != "river":
 			return "Bridges go on river tiles"
@@ -92,14 +104,55 @@ func placement_error(type: String, p: Vector2i) -> String:
 		return "Must go next to the Strange Stone"
 	if def.get("near_hearth", false) and not near_hearth(p):
 		return "Must be within %d tiles of the Hearth" % int(Data.HEARTH_RADIUS)
-	if not _economy.can_afford(def["cost"]):
+	if not _economy.can_afford(price(type)):
 		return "Not enough materials"
 	return ""
 
 
-## True once Causeways is known: Roads are laid in stone and brick.
-func _causeways() -> bool:
-	return _research.unlocked("causeways")
+## What `type` costs at p now: a road costs what its tile asks (a pass through Rocks costs more), and a road or bridge
+## laid over one that stands there costs only the difference.
+func cost_here(type: String, p: Vector2i) -> Dictionary:
+	if Data.BUILDINGS[type]["kind"] in ["road", "bridge"]:
+		return Rules.cost_at(type, _world.tile_at(p), built_type(p) if _world.roads.has(p) else "")
+	return price(type)
+
+
+## How many of building `type` stand.
+func copies(type: String) -> int:
+	var n := 0
+	for b in buildings:
+		if b["type"] == type:
+			n += 1
+	return n
+
+
+## What the next building of `type` costs: its listed price, with 15% more for each production copy already standing
+## (never past 4 times, see Rules.price). Homes, roads, bridges and the rest stay flat.
+func price(type: String) -> Dictionary:
+	return Rules.price(type, copies(type))
+
+
+## Why `type` can't be laid over the road or bridge already at p, or "" when it upgrades it: a higher road tier over a
+## lower one, a Stone Bridge over a Wooden Bridge. Everything else (the same tier, a worse one, a building) is refused.
+func upgrade_error(type: String, p: Vector2i) -> String:
+	var kind: String = Data.BUILDINGS[type]["kind"]
+	var river := _world.tile_at(p) == "river"
+	if kind == "road" and not river:
+		var here := _world.road_tier(p)
+		if Rules.tier_of(type) > here:
+			return ""
+		return (
+			"Already a %s" % Data.BUILDINGS[type]["name"]
+			if here == Rules.tier_of(type)
+			else "A better road is already here"
+		)
+	if kind == "bridge" and river:
+		if _world.stone_bridges.has(p):
+			return "Already a Stone Bridge"
+		if Data.BUILDINGS[type].get("stone", false):
+			return ""
+		return "Already a bridge"
+	return "Something is already there"
 
 
 func near_hearth(p: Vector2i) -> bool:
@@ -113,7 +166,7 @@ func built_type(p: Vector2i) -> String:
 	if _world.roads.has(p):
 		if _world.stone_bridges.has(p):
 			return "stone_bridge"
-		return "bridge" if _world.tile_at(p) == "river" else "road"
+		return "bridge" if _world.tile_at(p) == "river" else Rules.road_type(_world.road_tier(p))
 	if _world.fields.has(p):
 		return "field"
 	if _world.flax_fields.has(p):
@@ -129,7 +182,7 @@ func place(type: String, p: Vector2i, focus := "") -> Dictionary:
 	if placement_error(type, p) != "":
 		return {}
 	var tile := _world.tile_at(p)
-	_economy.pay(Rules.cost_at(type, tile, _causeways()))
+	_economy.pay(cost_here(type, p))
 	road_rev += 1
 	var kind: String = Data.BUILDINGS[type]["kind"]
 	var cleared := ""
@@ -140,7 +193,7 @@ func place(type: String, p: Vector2i, focus := "") -> Dictionary:
 		if Data.BUILDINGS[type].get("stone", false):
 			_world.add_stone_bridge(p)
 		else:
-			_world.add_road(p)  # a bridge is a road over the river
+			_world.add_road(p, Rules.tier_of(type))  # a bridge is a road over the river
 	elif kind == "field":
 		if Data.BUILDINGS[type].get("crop", "") == "flax":
 			_world.add_flax_field(p)
@@ -180,6 +233,13 @@ func add_building(type: String, p: Vector2i) -> void:
 		"alert": "",  # a short warning for the pill under the building, "" when all is well
 		"trips": 0,  # hut trips queued by clicking it, before Paths & Haulers (the one under way counts)
 		"rush_cd": 0.0,  # seconds until it can be rushed again
+		"tier": 0,  # a home's tier (Data.HOME_TIERS): 0 Dwelling, 1 Homestead, 2 Longhouse
+		"check": 0.0,  # seconds since a home last looked at its needs (scripts/homes.gd)
+		"met": 0.0,  # seconds its needs have been met, counted up and down by those looks
+		"content": true,  # false once its needs have lapsed (met run down to nothing): it houses a Dwelling's worth until they are met
+		"pantry": 0.0,  # seconds since the household last used its goods
+		"site": "",  # "" or the scaffold's state: "waiting" for materials, "building" once they are in (scripts/homes.gd)
+		"site_t": 0.0,  # seconds the scaffold has stood
 	}
 	if Data.BUILDINGS[type].has("dig"):
 		b["ore"] = Data.TILES[_world.tile_at(p)]["yields"]
@@ -345,7 +405,11 @@ func in_range_of(kind: String, p: Vector2i) -> bool:
 func housing() -> int:
 	var total := 0
 	for b in buildings:
-		total += Data.BUILDINGS[b["type"]].get("housing", 0)
+		var def: Dictionary = Data.BUILDINGS[b["type"]]
+		if def["kind"] == "house":
+			total += int(Data.HOME_TIERS[b["tier"] if b["content"] else 0]["housing"])  # what its tier houses, while content
+		else:
+			total += def.get("housing", 0)
 		if b["type"] == "dwelling" and _research.unlocked("shelter"):
 			total += 2
 	return total + granary_homes()
@@ -358,7 +422,20 @@ func granary_homes() -> int:
 	return mini(floori(_economy.food_total() / Data.GRANARY_FOOD), Data.GRANARY_HOMES)
 
 
-## How many Cart Sheds stand, and so how many haulers are carts (Data.CARTS_PER_SHED each).
+## The most homes allowed at `tier` (0 to 2) or above.
+func home_cap(tier: int) -> int:
+	return home_caps[clampi(tier, 0, home_caps.size() - 1)]
+
+
+## Set the cap on `tier` (1 or 2: a Dwelling needs none), kept between 0 and Data.HOME_CAP_OPEN. False for any other tier.
+func set_home_cap(tier: int, n: int) -> bool:
+	if tier < 1 or tier >= home_caps.size():
+		return false
+	home_caps[tier] = clampi(n, 0, Data.HOME_CAP_OPEN)
+	return true
+
+
+## How many Cart Sheds stand, and so how many haulers pull hand carts (Data.CARTS_PER_SHED each).
 func carts_allowed() -> int:
 	var n := 0
 	for b in buildings:
@@ -373,6 +450,11 @@ func carts_allowed() -> int:
 ## True for the buildings a Kith staffs.
 static func needs_worker(b: Dictionary) -> bool:
 	return Data.BUILDINGS[b["type"]]["kind"] in ["gatherer", "processor"]
+
+
+## True for the buildings haulers serve: the ones a Kith staffs, and homes (goods in, upgrade materials in).
+static func served(b: Dictionary) -> bool:
+	return needs_worker(b) or Data.BUILDINGS[b["type"]]["kind"] == "house"
 
 
 ## How many people building `b` needs at work: 1, or its `crew`.
@@ -413,7 +495,7 @@ static func recipe_in(b: Dictionary) -> Dictionary:
 	if def.has("makes"):
 		return Data.RECIPES[b["make"]]["in"]
 	if def.get("trade", false):
-		return {b["give"]: Data.TRADE_GIVE} if is_trading(b) else {}
+		return {b["give"]: def.get("trade_give", Data.TRADE_GIVE)} if is_trading(b) else {}
 	return def.get("in", {})
 
 
@@ -500,7 +582,7 @@ func to_dict() -> Dictionary:
 	var list: Array = []
 	for b in buildings:
 		list.append(_building_to_dict(b))
-	return {"buildings": list, "road_rev": road_rev}
+	return {"buildings": list, "road_rev": road_rev, "home_caps": home_caps.duplicate()}
 
 
 ## Restore what to_dict wrote, in place, and rebuild `building_at`. The road cache is dropped.
@@ -515,6 +597,10 @@ func from_dict(d: Dictionary) -> void:
 		buildings.append(b)
 	road_rev = int(d.get("road_rev", 0))
 	road_net = {}
+	home_caps = []
+	var saved: Array = d.get("home_caps", [])
+	for i in Data.HOME_TIERS.size():
+		home_caps.append(int(saved[i]) if i < saved.size() else Data.HOME_CAP_OPEN)  # an old save has no caps: all open
 
 
 static func _building_to_dict(b: Dictionary) -> Dictionary:
@@ -536,6 +622,13 @@ static func _building_from_dict(d: Dictionary) -> Dictionary:
 	for key in ["gather_index", "worker", "trips"]:
 		b[key] = int(d[key])
 	b["mate"] = int(d.get("mate", -1))  # a save from before the Mine has no second place
+	b["tier"] = clampi(int(d.get("tier", 0)), 0, Data.HOME_TIERS.size() - 1)  # a save from before dwelling tiers has every home at the first
+	b["check"] = float(d.get("check", 0.0))
+	b["met"] = float(d.get("met", 0.0))
+	b["content"] = bool(d.get("content", true))
+	b["pantry"] = float(d.get("pantry", 0.0))
+	b["site"] = String(d.get("site", ""))
+	b["site_t"] = float(d.get("site_t", 0.0))
 	b["ore"] = String(d.get("ore", ""))
 	b["give"] = String(d.get("give", ""))
 	b["get"] = String(d.get("get", ""))

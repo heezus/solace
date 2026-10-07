@@ -1,6 +1,6 @@
 extends PanelContainer
 ## The bottom bar: the tech tree button, build tabs (Homes, Gathering, Workshops, Logistics, Lore),
-## fixed-size build buttons, the Demolish tool and a small Craft group.
+## scrollable fixed-size build buttons, the Demolish tool and a small Craft group.
 ## Buttons never change size: costs live in their tooltips and in the placement preview.
 
 signal build_picked(type: String)
@@ -10,11 +10,13 @@ signal demolish_pressed
 
 const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
+const Rules = preload("res://scripts/rules.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Hands = preload("res://scripts/hands.gd")
 const CardText = preload("res://scripts/card_text.gd")
 const FieldText = preload("res://scripts/field_text.gd")
+const HomesStrip = preload("res://scripts/homes_strip.gd")
 
 const BUTTON := Vector2(172, 64)
 const TEXT_X := 42.0  # the title and state line start here, beside the 30 px icon
@@ -36,6 +38,8 @@ var pulses := {}  # building type or tab name -> seconds of glow left
 var tech_button: Button
 var demolish_button: Button
 var row: HBoxContainer
+var homes_strip: HomesStrip  # the Homes tab's caps (scripts/homes_strip.gd)
+var build_scroll: ScrollContainer
 
 
 func setup(game: Sim) -> void:
@@ -54,10 +58,17 @@ func setup(game: Sim) -> void:
 
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 4)
+	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	v.custom_minimum_size.x = BUTTON.x
 	h.add_child(v)
+	var tab_scroll := ScrollContainer.new()
+	tab_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	tab_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	tab_scroll.custom_minimum_size.y = 44
+	v.add_child(tab_scroll)
 	var tabs := HBoxContainer.new()
 	tabs.add_theme_constant_override("separation", 4)
-	v.add_child(tabs)
+	tab_scroll.add_child(tabs)
 	for tab_name in Data.BUILD_TABS:
 		var b := Ui.button(tab_name)
 		b.toggle_mode = true
@@ -67,13 +78,22 @@ func setup(game: Sim) -> void:
 		tab_buttons[tab_name] = b
 	row = HBoxContainer.new()
 	row.add_theme_constant_override("separation", 6)
-	v.add_child(row)
+	build_scroll = ScrollContainer.new()
+	build_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	build_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	build_scroll.follow_focus = true
+	build_scroll.custom_minimum_size.y = BUTTON.y + 16
+	v.add_child(build_scroll)
+	build_scroll.add_child(row)
 	for tab_name in Data.BUILD_TABS:
 		for type in Data.BUILD_TABS[tab_name]:
 			var parts := _build_button(type)
 			parts["button"].pressed.connect(func(): build_picked.emit(type))
 			row.add_child(parts["button"])
 			build_buttons[type] = parts
+	homes_strip = HomesStrip.new()
+	homes_strip.setup(game)
+	row.add_child(homes_strip)
 
 	h.add_child(VSeparator.new())
 
@@ -91,9 +111,6 @@ func setup(game: Sim) -> void:
 		craft.add_child(b)
 		craft_buttons[r] = b
 	h.add_child(craft)
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	h.add_child(spacer)
 	demolish_button = _demolish_button()  # the far right: small, ghost style, red only while it is the tool in use
 	demolish_button.pressed.connect(func(): demolish_pressed.emit())
 	h.add_child(demolish_button)
@@ -113,6 +130,7 @@ func _apply_visibility() -> void:
 		tab_buttons[t].visible = tab_shown(t)
 	for type in build_buttons:
 		build_buttons[type]["button"].visible = type in Data.BUILD_TABS[tab] and CardText.shown(state, type)
+	homes_strip.visible = tab == "Homes"
 
 
 ## Whether a tab has any card to show.
@@ -231,10 +249,10 @@ func _demolish_button() -> Button:
 func refresh(placing: String, ready_count: int) -> void:
 	tech_button.text = "Tech tree\n%d ready · T" % ready_count
 	_apply_visibility()
+	homes_strip.refresh()
 	for type in build_buttons:
 		var parts: Dictionary = build_buttons[type]
 		var b: Button = parts["button"]
-		var def: Dictionary = Data.BUILDINGS[type]
 		var unlocked := state.town.unlocked(type)
 		var style := Ui.panel_style(Ui.CARD if unlocked else LOCKED_BG, 4)
 		if placing == type:
@@ -250,13 +268,14 @@ func refresh(placing: String, ready_count: int) -> void:
 		b.disabled = not unlocked
 		var sub: Label = parts["sub"]
 		sub.text = CardText.state_line(state, type, placing, sub.size.x) if unlocked else ""  # the reason says it
-		var short := not CardText.shortfall(state.economy.inv, def["cost"]).is_empty()
+		var price: Dictionary = state.town.price(type)
+		var short := not CardText.shortfall(state.economy.inv, price).is_empty()
 		sub.add_theme_color_override("font_color", Ui.SHORT if short and placing != type else Ui.TEXT_DIM)
 		var why: Label = parts["why"]
 		why.text = CardText.locked_reason(type, why.size.x) if not unlocked else ""
 		why.add_theme_color_override("font_color", LOCKED_TEXT)
 		parts["pips"].visible = unlocked
-		Ui.update_pips(parts["pips"], def["cost"], state.economy.inv)
+		Ui.update_pips(parts["pips"], price, state.economy.inv)
 		parts["icon"].modulate = Color(1, 1, 1, 1.0 if unlocked else 0.4)
 		b.tooltip_text = _tooltip(type)
 	var demo := Ui.panel_style(Ui.BAD if placing == "demolish" else Ui.CARD_LOCKED, 4)
@@ -278,12 +297,16 @@ func refresh(placing: String, ready_count: int) -> void:
 func _tooltip(type: String) -> String:
 	var def: Dictionary = Data.BUILDINGS[type]
 	var s: String = def["name"] + "\n" + def["desc"]
-	if not def["cost"].is_empty():
-		s += "\nPrice (have/need): " + Ui.progress_text(state.economy.inv, def["cost"], 99)
+	var price: Dictionary = state.town.price(type)
+	if not price.is_empty():
+		s += "\nPrice (have/need): " + Ui.progress_text(state.economy.inv, price, 99)
+	var copies: int = state.town.copies(type)
+	if Rules.is_production(type) and copies > 0:
+		s += "\n" + Data.COPY_COST_NOTE % [copies, roundi((Rules.copy_multiplier(type, copies) - 1.0) * 100.0)]
 	if def["kind"] == "field":
 		s += "\n" + FieldText.card_text(state, def)
 	if def["tech"] == "":
-		s += "\nAlways available."
+		s += "\nAlways available." if def.get("event", "") == "" else ""
 	elif not state.town.unlocked(type):
 		s += "\n%s to unlock it." % (Data.CARD_DISCOVER % Data.TECHS[def["tech"]]["name"])
 	return s
