@@ -1,0 +1,67 @@
+{
+  "memory_exodus": {
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGBA",
+    "alpha_range": [
+      0,
+      249
+    ],
+    "center_mean": 7.071486420283072,
+    "center_nonzero": 0.10476519824270086
+  },
+  "memory_cataclysm": {
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGBA",
+    "alpha_range": [
+      0,
+      249
+    ],
+    "center_mean": 0.5527751195696784,
+    "center_nonzero": 0.06349689014495433
+  },
+  "memory_loop": {
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGBA",
+    "alpha_range": [
+      0,
+      243
+    ],
+    "center_mean": 8.571440212179661,
+    "center_nonzero": 0.18841279636536
+  },
+  "memory_glyph": {
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGBA",
+    "alpha_range": [
+      0,
+      249
+    ],
+    "center_mean": 0.6478863022288205,
+    "center_nonzero": 0.0545682920988118
+  },
+  "memory_bloom": {
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGBA",
+    "alpha_range": [
+      0,
+      253
+    ],
+    "center_mean": 5.203736993412613,
+    "center_nonzero": 0.15050227711546163
+  }
+}
