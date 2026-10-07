@@ -27,10 +27,10 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 - **Next action:** inspect each subject and native preview; publish this small asset PR and send Claude the exact loading/anchor contract. Then current character/item/icon/card/Bloom groups. Later/canon-pending slots remain deferred per the brief.
 - **Synchronization:** merged main `1df6add` on the mailbox request, preserving Claude’s lead-stranger notes and both design-log tails. Asset/code content unchanged by this reconciliation; current-head CI must pass before Claude merges and wires the art.
 
-### Claude — Starfall stage 4
-- **Task:** Jon's "whatever else is next" (2026-10-07). Page 16 stage 4: Lumen Market, Shared Shrine, Guard Post. Stage 3 (#64) and the title screen, pause menu and zoom (#66) are merged. PR `stage4`.
-- **Reserved files:** `scripts/starfall.gd`, `scripts/data/starfall.gd`, `scripts/data/buildings.gd`, `scripts/data/tuning.gd`, `scripts/bonuses.gd`, `scripts/buildings.gd`, `scripts/rendered_art.gd` (three placeholder slots), tests. Codex: please avoid these until it merges.
-- **Hooks for Codex:** art slots for stages 1 to 4 are in `docs/art/starfall-art-brief.md` and `docs/art/requests.md`; Jon starts Codex on them himself.
+### Claude — Starfall art wiring
+- **Task:** wire Codex's Starfall art (PRs #70 to #72) into the map and panels. PR `starfall-art-wiring`. Stage 4 (#69) and the lead stranger lines (#74) are merged.
+- **Reserved files:** `scripts/rendered_art.gd`, `scripts/kith_art.gd`, `scripts/icon_row.gd`, `scripts/expedition_picker.gd`, `scripts/glyph_picker.gd`, `tests/rendered_tests.gd`.
+- **Hooks for Codex:** title #68 and the Briana sprite and title (#75) are held for Jon's visual review; the lead stranger's sprite slot is index 0 of the strangers once accepted.
 - **Next action:** CI green, merge.
 
 ### Claude — gameplay asks (PR #44, merged) and the visual merge (PR #33, merged)
