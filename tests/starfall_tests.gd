@@ -135,6 +135,7 @@ func test_the_wall_copies_marks_and_the_set_reads_only_all_at_once() -> void:
 	t.check(s.starfall.locked.has("name"), "all three right at a check reads the set")
 	t.check(s.story.events.has("name_read"), "the name is a story moment")
 	t.check(s.starfall.people_word() == Data.LUMEN_NAME, "the strangers have a name now")
+	t.check(s.events.has(Data.LEAD_NAMED_LINE % [Data.LEAD_NAME, Data.LEAD_NAME]), "and the tall one gives hers")
 	t.check(s.starfall.trust >= before + Data.TRUST_SET - 0.001, "and trust goes up")
 	t.check(s.starfall.cycle_guess("g_star") == "", "a read set can't be guessed again")
 

@@ -8,13 +8,21 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 - **Task:** Jon's 2026-10-06 full Starfall art assignment, starting with the title painting on `codex/starfall-title`, PR #68. Keep each asset group in a separate small PR; later/canon-pending slots stay deferred as stated in the brief.
 - **Reserved files:** none after publication. PR #68 contains `art/rendered/title.png`, its generated import, native title captures, provenance and related notes. No gameplay or renderer edits.
 - **Acceptance criteria:** one approximately 2560×1600 / 16:10 painting matching Misty Highlands; warm Kith settlement first, a subtle cyan falling star and distant magenta/green Bloom hint; calm dark left third, no baked text; import succeeds and actual title menu remains readable at default and wider aspect ratios.
-- **Status:** title painted/imported and actual 1280×800 plus 1600×900 title captures inspected. Source is 1586×992, below the requested approximately 2560×1600 master; documented for review. Publishing the small title PR; full CI pending.
-- **Next action:** generate one focused painting, import it, inspect the real title screen and cropping, then publish a small PR and hand off through #53. Next asset group: current Starfall buildings; later slots remain queued.
+- **Status:** title painted/imported and actual 1280×800 plus 1600×900 title captures inspected. Source is 1586×992, below the requested approximately 2560×1600 master; documented for review. PR #68 published; synchronized with current main, with fresh CI required.
+- **Next action:** Claude merges PR #68 once its current-head CI passes. Building PR #70 has merged; traveller PR #71 is synchronized, and icon PR #72 will be synchronized after #71 lands.
 
-### Claude — Starfall stage 3
-- **Task:** Jon's "continue" (2026-10-07). Page 16 stage 3: three moments, set 6 (the Warning), the lean, the first Bloom sign. Stages 1 and 2 merged (#57, #61). PR `stage3`.
-- **Reserved files:** `scripts/moment_card.gd`, `scripts/expedition.gd`, `scripts/expedition_picker.gd`, `scripts/starfall.gd`, `scripts/data/starfall.gd`, `scripts/sim.gd`, `scripts/kith.gd`, `scripts/bonuses.gd`, `scripts/glyph_picker.gd`, `scripts/building_panel.gd`, `scripts/kith_art.gd` (`draw_wreck`), `scripts/rendered_art.gd` (one placeholder slot), tests. Codex: please avoid these until it merges.
-- **Hooks for Codex:** art slots for stages 1 to 3 are in `docs/art/starfall-art-brief.md` and `docs/art/requests.md`; Jon starts Codex on them himself.
+#### Delivered context — Starfall map buildings (PR #70, merged)
+- **Task:** Jon's full Starfall art assignment (2026-10-06), next small group after title PR #68: Glyph Wall (2×1), Lumen Camp (2×2), Expedition Post (1×1) and Wreck (about 2×1). Branch `codex/starfall-buildings`, PR #70.
+- **Reserved files:** none after publication. PR #70 supplies four `art/rendered/starfall-*` PNGs/imports, native-size preview and exact loading/anchor notes; no renderer/gameplay code.
+- **Acceptance criteria:** original transparent miniature subjects, consistent camera/light, tight ground contact, existing logical footprints and IDs documented, native-size side-by-side preview against current buildings; imported metadata and green CI. Claude hooks listed in requests.md; no state or loader changes in this art-only group.
+- **Status:** four transparent subjects imported and their 48 px/96 px tile-scale asset board inspected. Source/alpha/region contract supplied; publishing the art-only PR, full CI pending. Title PR #68 has actual menu captures and passing import checks; full CI runs independently. Its original image is 1586×992, below the requested roughly 2560×1600 master, documented for review.
+- **Next action:** inspect each subject and native preview; publish this small asset PR and send Claude the exact loading/anchor contract. Then current character/item/icon/card/Bloom groups. Later/canon-pending slots remain deferred per the brief.
+- **Synchronization:** merged main `1df6add` on the mailbox request, preserving Claude’s lead-stranger notes and both design-log tails. Asset/code content unchanged by this reconciliation; current-head CI must pass before Claude merges and wires the art.
+
+### Claude — Starfall stage 4
+- **Task:** Jon's "whatever else is next" (2026-10-07). Page 16 stage 4: Lumen Market, Shared Shrine, Guard Post. Stage 3 (#64) and the title screen, pause menu and zoom (#66) are merged. PR `stage4`.
+- **Reserved files:** `scripts/starfall.gd`, `scripts/data/starfall.gd`, `scripts/data/buildings.gd`, `scripts/data/tuning.gd`, `scripts/bonuses.gd`, `scripts/buildings.gd`, `scripts/rendered_art.gd` (three placeholder slots), tests. Codex: please avoid these until it merges.
+- **Hooks for Codex:** art slots for stages 1 to 4 are in `docs/art/starfall-art-brief.md` and `docs/art/requests.md`; Jon starts Codex on them himself.
 - **Next action:** CI green, merge.
 
 ### Claude — gameplay asks (PR #44, merged) and the visual merge (PR #33, merged)
