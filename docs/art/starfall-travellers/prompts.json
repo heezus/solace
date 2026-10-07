@@ -1,0 +1,18 @@
+[
+  {
+    "asset": "art/rendered/starfall-lumen-strangers.png",
+    "prompt": "Use case: stylized-concept. Asset type: ONE production transparent character atlas for Solace: the three stationary Lumen strangers, three variations of the SAME slim cloaked traveller archetype. Reference is the current Kith walk atlas for miniature rendering, neutral upper-left light, overhead three-quarter camera and expressive rounded heads ONLY; do not copy its orange clothing, walk poses or grid. Create a wide transparent sprite sheet with exactly THREE equal square cells in ONE horizontal row, and one complete standing Lumen in each. All three have the SAME drawn height, baseline/feet position and camera, centered within their cell with generous clear margin. Rendered height in game is 24 pixels: larger simple pale ivory cloak masses, delicate pale-gold trim and one tiny pale cyan shard brooch, minimal detail, slender silhouettes compared with chunky Kith. They look like calm mysterious travellers, not sci-fi elves or soldiers; no wings, weapons, halos, neon beams, chrome or supernatural anatomy. Left variation: open ivory hood with short dark hair, hands calmly at sides. Middle variation: hood lowered, pale hair, a long clean ivory cape and simple folded hands. Right variation: gently raised hood with a slightly shorter mantle over a slender tunic, quiet neutral posture. No named identities or rank insignia. Sturdy readable faces and brown soft boots; all three anchored at identical foot height. Minimal tight soft foot shadow, genuine transparent RGBA everywhere outside figures; no ground disks. Faint cyan accents only, not a baked aura (engine draws glow separately). High-quality painterly rendered miniature matching the Kith sheet, no text, labels, divider lines, extra figures, multiple pose rows, backdrop or clipped limbs. One 3-column character-family atlas, wide 3:1 PNG.",
+    "source": "/Users/jhowell/.codex/generated_images/01a102c1-2f03-7f12-aa4a-15cac6f76c52/exec-1f0bdc09-984c-4f17-ae94-ff9ae67fe355.png",
+    "tool": "Built-in imagegen",
+    "reference": "art/rendered/walk.png",
+    "unmodified": true
+  },
+  {
+    "asset": "art/rendered/starfall-party-pack.png",
+    "prompt": "Use case: stylized-concept. Asset type: ONE small transparent sprite overlay for Solace expedition travellers. Reference Kith sheet only for rendering camera, materials and light, not a figure to copy. Draw ONLY a single compact loaded leather travel pack with a rolled muted blue-grey blanket strapped along the top, a broad brown leather flap, two simple straps and one bronze buckle. High overhead three-quarter miniature view with upper-left lighting, chunky silhouette, tactile painterly brown leather and cloth. It is an overlay drawn behind the side of an existing walking Kith at about 10 to 12 pixels wide and 12 to 14 pixels tall; eliminate tiny clutter so the blanket/flap silhouette reads at that size. No person, no body, no boots, no long trailing shoulder straps, no shadow disk, no broad glow, no background, no text, labels or multiple objects. Single complete pack centered with generous genuine transparent RGBA margin, square high-resolution PNG. This is a carried object, not a building or a modern camping backpack.",
+    "source": "/Users/jhowell/.codex/generated_images/01a102c1-2f03-7f12-aa4a-15cac6f76c52/exec-ed08622a-0c3f-4835-87f3-79f6bbb9d3e2.png",
+    "tool": "Built-in imagegen",
+    "reference": "art/rendered/walk.png",
+    "unmodified": true
+  }
+]
