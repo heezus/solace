@@ -1,0 +1,18 @@
+{
+  "mode": "built-in imagegen",
+  "note": "Early batch prompt reconstruction from saved scene plan; per-asset revision files record final edits.",
+  "prompts": [
+    [
+      "opening_1",
+      "Paint one full-screen Solace cutscene still opening_1. Output 2560x1600 landscape 16:10. Reference is the approved Misty Highlands title: match its tactile softly painted sculpted miniature environment, beautiful atmospheric layered mountain valleys, moss-covered rounded stone, blue-green pine trees, cool jade river, deep blue dusk shadows contrasted with warm skies. NEW SCENE: first dawn mist over untouched empty highlands valley, a few humble rounded stones in a natural clearing, nobody yet, no settlement, no buildings, no roads, no fire, no falling star, no Bloom. Slightly lower cinematic camera, grounded beautiful mysterious hopeful dawn, subtle peach horizon and cool mists. Main clearing and storytelling stones within central 80% both axes, room for 8% push-in. Bottom third is calm dark desaturated moss/rock shadow with minimal detail, for later engine captions. Edge breathing room, no text, no lettering, no interface, no frame. Full original painting, not a contact sheet. Do not copy reference's village, comet or magenta-green distant glow."
+    ],
+    [
+      "opening_2",
+      "Solace opening_2. ONE original image, output requested 2560x1600, landscape16:10, no text or lettering, no logo, no UI, no frame, no contact sheet. Match approved Misty Highlands title: beautiful grounded atmospheric sculpted painted miniatures, tactile matte surfaces, jade rivers, rounded mossy stones, pine highlands, layered mist, warm amber hearth versus cool blue dusk. Slightly lower cinematic angle than map. Subject central80%; lower third calm and darker for captions. Cyan reserved for Lumen/star; no Bloom in PhaseA. Kith rust/cream/moss traveller kit. Kith hands setting rounded Hearth stones into a modest ring, first small amber fire at center. Close intimate cinematic composition: only hands/rolled cream sleeves/rust cloth and stones, no finished town, no modern tools. Warm beginning of home."
+    ],
+    [
+      "opening_3",
+      "Solace opening_3. ONE original image, output requested 2560x1600, landscape16:10, no text or lettering, no logo, no UI, no frame, no contact sheet. Match approved Misty Highlands title: beautiful grounded atmospheric sculpted painted miniatures, tactile matte surfaces, jade rivers, rounded mossy stones, pine highlands, layered mist, warm amber hearth versus cool blue dusk. Slightly lower cinematic angle than map. Subject central80%; lower third calm and darker for captions. Cyan reserved for Lumen/star; no Bloom in PhaseA. Kith rust/cream/moss traveller kit. The modest Hearth stone fire ring at dusk, small thatch shelter nearby, clear sky. Very LOW on horizon ONE nearly imperceptible cyan point, no streak. No established large town yet. Humble home, hopeful quiet."
+    ]
+  ]
+}
