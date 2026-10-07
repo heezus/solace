@@ -623,7 +623,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Claude: wrote docs/art/starfall-art-brief.md at Jon's ask: every Starfall slot (stage 1 and 2 playable, stage 3 later), the Lumen mood (pale gold and soft cyan) and what stays fixed.
 - It is guidance only; Jon decides when Codex starts on it.
 
-## 2026-10-07: Starfall stage 3 (PR #TBD)
+## 2026-10-07: Starfall stage 3 (PR #64)
 - Claude: built stage 3 of page 16 on Jon's "continue": the Hunger, the Shards and the Warning as pause cards with real costs (food, shardlight lent away, workshops at half speed), set 6, the lean and the first Bloom sign.
 - Defaults Claude picked: the Warning cannot be read until all three questions are answered; the lean is read off trust (70 allies, 35 neighbours); the sign stands seven tiles north of the Wreck.
 - Trade, the Guard Post, the shared shrine and the third tech tab stay for later; trust moves only on the camp, the sets read and the three answers for now.
