@@ -53,7 +53,7 @@ Phases, so art and code can run ahead of the eras:
 - It listens to `Story.recorded` and to era changes, so no gameplay code changes. Each id plays once per run.
 - **Art not painted yet is fine:** with a missing image the sequence shows the lines over a dark panel with the fade, so the story ships first and the paintings drop in later by name.
 - Skippable at any point, and the pause menu gets a "Cutscenes" on/off. A skip still records the story id.
-- Every run plays every sequence in full, so no seen-list is needed. The on/off setting lives in a tiny file apart from the run save (`user://profile.json`, the start of the profile save from [13](13-three-perspectives.md)).
+- Every run plays every sequence in full, so no seen-list is needed. The on/off setting is kept apart from the run save, in the profile or beside it (`scripts/profile.gd` already holds the Chronicle and knowledge, [13](13-three-perspectives.md)).
 
 ## Repeat runs remember (the project owner, 2026-10-07)
 On a later run the same sequences hint at what the Kith carried over, without a new set of paintings. Two cheap tools, both chosen from the profile ([13](13-three-perspectives.md), [18](18-roadmap.md) echoes and the Chronicle):

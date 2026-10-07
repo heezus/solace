@@ -44,7 +44,7 @@ Owner: the project owner (heezus). Two AI teams, one repo, coordinated by respon
 ### Claude — Starfall art wiring
 - **Task:** wire Codex's Starfall art (PRs #70 to #72) into the map and panels. PR `starfall-art-wiring`. Stage 4 (#69) and the lead stranger lines (#74) are merged.
 - **Reserved files:** `scripts/rendered_art.gd`, `scripts/kith_art.gd`, `scripts/icon_row.gd`, `scripts/expedition_picker.gd`, `scripts/glyph_picker.gd`, `tests/rendered_tests.gd`.
-- **Hooks for Codex:** title #68 and the lead-stranger sprite and title (#75) are held for the project owner's visual review; the lead stranger's sprite slot is index 0 of the strangers once accepted.
+- **Hooks for Codex:** the alternate title and the lead-stranger sprite (#75) are merged; Sela draws as stranger 0.
 - **Next action:** CI green, merge.
 
 ### Claude — gameplay asks (PR #44, merged) and the visual merge (PR #33, merged)

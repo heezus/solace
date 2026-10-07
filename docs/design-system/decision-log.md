@@ -713,6 +713,10 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Codex: match the merged title loader with `title_alt.png` and rename the map art to `lumen_lead.png`; regenerate imports.
 - Use Sela and a Kith character in study folders and prompt records; remove personal names, reference-photo descriptions and local account paths. Artwork and its pixel data stay unchanged.
 
+## 2026-10-07: Sela's sprite and the alternate title go in (PR #78)
+- Claude: the project owner accepted the alternate title and Sela's sprite from #75. Sela draws as stranger 0 of the three Lumen (her own one-pose sprite); the title already picks between the two paintings at random.
+- The project owner closed the terrain study (#48) unmerged and confirmed **coal is finite** in Ironfall (about 500 a seam), as page 19 proposed.
+
 ## 2026-10-07: Cutscenes tie the eras into one story (PR #79)
 - Claude: on the project owner's ask, the game gets short, skippable painted sequences instead of eras that just start. Page 20 holds the story spine, 12 sequences (a still has 1 to 3 lines, a slow push-in, no voice) and three phases: A for the eras that exist, B with Ironfall, C later.
 - Cutscenes are full-screen sequences between play; the vignettes in Codex's #73 stay single images on choice cards, and their Sela, Bloom-sign and arrival art is reused as stills.
