@@ -23,6 +23,9 @@ extends RefCounted
 ## effect ships in: a tech past BUILT_STAGE is on the board, locked, and can't be bought, so nobody pays for a tech
 ## that does nothing yet.
 
+## Era 4's techs are one constant each in their own folder (a constant cannot merge dictionaries); TECHS lists them.
+const IronfallTechs = preload("res://scripts/data/ironfall/techs.gd")
+
 ## The research board's bands, top to bottom. Bronze Dawn sits alone in the "gate" column.
 const LANES := {
 	"hearth": {"name": "Hearth", "color": Color("ff7b39")},
@@ -36,8 +39,13 @@ const LANE_ORDER := ["fiber", "stone", "land", "hearth", "lore"]
 const TIER_NAMES := ["TIER I", "TIER II", "TIER III", "TIER IV", "TIER V", "THE GATE"]
 
 ## The eras, each with a board of its own, and the column captions of each board (the last is the gate's column).
-const ERAS := {1: {"name": "Stone Age"}, 2: {"name": "Bronze Dawn"}}
-const ERA_TIER_NAMES := {1: TIER_NAMES, 2: ["TIER I", "TIER II", "TIER III", "TIER IV", "TIER V", "THE GATE"]}
+## Era 3, Starfall, has no tree: its magic is a set of gifts (design-system/16-starfall.md), so the next board is era 4.
+const ERAS := {1: {"name": "Stone Age"}, 2: {"name": "Bronze Dawn"}, 4: {"name": "Ironfall"}}
+const ERA_TIER_NAMES := {
+	1: TIER_NAMES,
+	2: ["TIER I", "TIER II", "TIER III", "TIER IV", "TIER V", "THE GATE"],
+	4: ["TIER I", "TIER II", "TIER III", "TIER IV", "THE GATE"],
+}
 ## The latest build stage whose techs can be researched (see `stage` above).
 const BUILT_STAGE := 2
 ## A route set aside by a fork costs this many times its price once the fork's goal is learned.
@@ -761,6 +769,23 @@ const TECHS := {
 		"cost": {"bronze": 60, "brick": 100, "flour": 60, "rope": 40},
 		"desc": "It is not a star. It is coming down.",
 	},
+	# --- Era 4: Ironfall (design-system/19-ironfall.md), defined in scripts/data/ironfall/techs.gd ---
+	"coal_seams": IronfallTechs.COAL_SEAMS,
+	"ironstone": IronfallTechs.IRONSTONE,
+	"teardown": IronfallTechs.TEARDOWN,
+	"bloomery": IronfallTechs.BLOOMERY,
+	"boiler": IronfallTechs.BOILER,
+	"beast_pen": IronfallTechs.BEAST_PEN,
+	"iron_tools": IronfallTechs.IRON_TOOLS,
+	"rails": IronfallTechs.RAILS,
+	"shard_lamps": IronfallTechs.SHARD_LAMPS,
+	"taught_hands_ii": IronfallTechs.TAUGHT_HANDS_II,
+	"blast_furnace": IronfallTechs.BLAST_FURNACE,
+	"iron_plough": IronfallTechs.IRON_PLOUGH,
+	"shard_boiler": IronfallTechs.SHARD_BOILER,
+	"steel": IronfallTechs.STEEL,
+	"bloom_sampling": IronfallTechs.BLOOM_SAMPLING,
+	"livewire": IronfallTechs.LIVEWIRE,
 }
 
 ## Order for lists and tests (roots first, then by column).
@@ -810,4 +835,20 @@ const TECH_ORDER := [
 	"bronze_ploughshare",
 	"star_charts",
 	"falling_star",
+	"coal_seams",
+	"ironstone",
+	"teardown",
+	"bloomery",
+	"boiler",
+	"beast_pen",
+	"iron_tools",
+	"rails",
+	"shard_lamps",
+	"taught_hands_ii",
+	"blast_furnace",
+	"iron_plough",
+	"shard_boiler",
+	"steel",
+	"bloom_sampling",
+	"livewire",
 ]

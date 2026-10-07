@@ -70,8 +70,8 @@ const FORAGE_MAKER := "Foraged by idle %s"  # many
 const STARVING_TEXT := "Food: none! The %s have stopped working"  # many
 const TOOLS_LABEL := "Tools %d/%d %s"  # held, people, many
 const TOOLS_TIP := (
-	"%s holding a Flint Tool work 50%% faster, and a Bronze Tool 100%% faster. "
-	+ "Flint lasts %d jobs and bronze %d; spares in the stockpile: %d."
+	"%s holding a Flint Tool work 50%% faster, a Bronze Tool 100%% and an Iron Tool 175%%. "
+	+ "Flint lasts %d jobs, bronze %d and iron %d; spares in the stockpile: %d."
 )  # many
 const FOOD_NOTE := "Food worth %s each. The %s eat it."  # many
 const HUNGRY_THEN := "the %s go hungry"  # many

@@ -23,7 +23,7 @@ const HOLD_TIME := 0.8
 const HOLD_KEEP := 0.6
 ## Ore is dug slowly by hand: seconds of holding for one harvest of these items (HOLD_TIME for everything else).
 ## A hand tool's hold is a share of HOLD_TIME, so Flint Tools shorten these in the same proportion.
-const HAND_HOLD := {"copper_ore": 2.4, "tin": 3.2}
+const HAND_HOLD := {"copper_ore": 2.4, "tin": 3.2, "coal": 2.4, "iron_ore": 2.8}
 ## Hand tools: the best one that applies counts for each part. `hold` shortens the hold (seconds),
 ## `mult` multiplies the yield. `crafted` needs a Flint Tool made once, `tech` a researched tech
 ## (Bronze Tools is era 2's slot), `item` limits it to one resource.
@@ -31,6 +31,7 @@ const HAND_TOOLS := {
 	"flint_tools": {"name": "Flint Tools", "hold": 0.6, "crafted": true},
 	"stone_axe": {"name": "Stone Axe", "mult": 3, "tech": "stone_axe", "item": "wood"},
 	"bronze_tools": {"name": "Bronze Tools", "hold": 0.4, "tech": "bronze_tools"},
+	"iron_tools": {"name": "Iron Tools", "hold": 0.3, "tech": "iron_tools"},
 }
 
 ## Food each Kith eats per second.
@@ -123,6 +124,9 @@ const BONUSES := {
 	# Bronze Tools: the tool a worker holds is bronze, +100% Speed in place of a Flint Tool's +50% (so +50% over flint).
 	"bronze_tools":
 	{"name": "Bronze Tools", "group": "speed", "add": 1.0, "kinds": ["gatherer", "processor"], "tool": "bronze_tools"},
+	# Era 4: Iron Tools, +75% Speed over bronze (flint is +50%, bronze +100%, iron +175%).
+	"iron_tools":
+	{"name": "Iron Tools", "group": "speed", "add": 1.75, "kinds": ["gatherer", "processor"], "tool": "iron_tools"},
 	# Era 3 gifts (a glyph set read, `gift`; they work within Data.SHARDLIGHT_RADIUS of a Shard Cairn, `near_cairn`).
 	"shardlight":
 	{"name": "Shardlight", "group": "speed", "add": 0.25, "kinds": ["gatherer"], "gift": "light", "near_cairn": true},
@@ -150,7 +154,7 @@ const BRONZE_TOOL_JOBS := 200
 ## A Tool Bench keeps this many tools spare in the stockpile, on top of one for each working Kith who holds none.
 const TOOL_SPARES := 2
 ## The tool items a worker takes from the stockpile, best first.
-const TOOL_ITEMS := ["bronze_tools", "flint_tools"]
+const TOOL_ITEMS := ["iron_tools", "bronze_tools", "flint_tools"]
 const CALENDAR_FIELD_BONUS := 0.25  # extra yield from Fields
 const PLOUGH_FIELD_BONUS := 0.5  # ...and the Plough's share, on top
 const PLOUGHSHARE_FIELD_BONUS := 0.5  # ...and the Bronze Ploughshare's, on top of that

@@ -1,7 +1,7 @@
 extends RefCounted
 ## The Story block: the story moments that have happened (`events`, stable ids from Data.STORY_EVENTS, in the
 ## order they happened, for a future profile save) and the checklist (`goals_done`, from Data.GOALS, and from
-## Data.GOALS_ERA2 once Bronze Dawn is discovered: goal_list() is the one in force).
+## Data.GOALS_ERA2 once Bronze Dawn is discovered and Data.GOALS_ERA4 once Ironfall begins: goal_list() is the one in force).
 ## It listens: the owner connects the other blocks' signals to the on_* methods below, so no block calls
 ## Story and Story never calls a block. record(id) notes a moment once. A goal is met when its `tech` is
 ## researched or its `building` stands, and the rest are checked by id against the Sim handed to
@@ -76,9 +76,11 @@ func on_built(type: String, _pos: Vector2i) -> void:
 
 ## Mark every goal that's met now. Goals stay done after that, even once the items are spent.
 func update(s) -> void:
+	if s.starfall.ended and s.starfall.pending == "":
+		record(Data.IRONFALL_EVENT)  # the Starfall is over and its card is put away: Ironfall begins
 	var lists: Array = [Data.GOALS]
-	if goal_list() == Data.GOALS_ERA2:
-		lists.append(Data.GOALS_ERA2)  # the stone age's stay checked: its last goal is met by the dawn itself
+	if goal_list() != Data.GOALS:
+		lists.append(goal_list())  # the stone age's stay checked: its last goal is met by the dawn itself
 	for list in lists:
 		for g in list:
 			if not goals_done.has(g["id"]) and goal_met(s, g):
@@ -87,6 +89,8 @@ func update(s) -> void:
 
 ## The checklist in force: the stone age's, and the second era's once Bronze Dawn is discovered.
 func goal_list() -> Array:
+	if Data.IRONFALL_EVENT in events:
+		return Data.GOALS_ERA4
 	return Data.GOALS_ERA2 if "bronze_dawn" in events else Data.GOALS
 
 
@@ -135,7 +139,21 @@ func goal_met(s, g: Dictionary) -> bool:
 			return _road_beside_ore(s, "copper_hills")
 		"first_bronze":
 			return s.economy.inv.get("bronze", 0) > 0
+		"find_coal", "find_iron", "iron_mine", "first_iron":
+			return _ironfall_goal_met(s, g["id"])
 	return false
+
+
+## The era 4 goals (Data.GOALS_ERA4) that are about the land and the metal.
+func _ironfall_goal_met(s, id: String) -> bool:
+	match id:
+		"find_coal":
+			return _ore_seen(s, "coal_seam")
+		"find_iron":
+			return _ore_seen(s, "iron_hills")
+		"iron_mine":
+			return s.town.buildings.any(func(b): return b["type"] == "mine" and b.get("ore", "") == "iron_ore")
+	return s.economy.inv.get("iron", 0) > 0
 
 
 ## Index into goal_list() of the first goal not yet done, or its size when all are.
@@ -158,8 +176,8 @@ func done_count() -> int:
 
 ## The ore tiles of one kind, found once per size of the map (the land grows only once, and ore is never laid later).
 func _ore(s, tile: String) -> Array:
-	if _ore_width != s.world.width:
-		_ore_width = s.world.width
+	if _ore_width != s.world.width * 1000 + s.world.height:  # the land grows east, then south
+		_ore_width = s.world.width * 1000 + s.world.height
 		_ore_tiles = {}
 	if not _ore_tiles.has(tile):
 		_ore_tiles[tile] = Land.ore_tiles(s, tile)

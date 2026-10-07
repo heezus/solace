@@ -94,8 +94,8 @@ func placement_error(type: String, p: Vector2i) -> String:
 			return "Fields go on open grassland"
 		return "" if _economy.can_afford(def["cost"]) else "Not enough materials"
 	if def.has("on_tiles"):
-		if tile not in def["on_tiles"]:
-			return "Must stand on " + " or ".join(def["on_tiles"].map(func(t): return Data.TILES[t]["name"]))
+		if _on_tiles_error(def, tile) != "":
+			return _on_tiles_error(def, tile)
 	elif not Data.TILES[tile]["buildable"]:
 		return "Build on open grassland"
 	if def.get("needs_river", false) and not _world.touches_river(p):
@@ -106,6 +106,15 @@ func placement_error(type: String, p: Vector2i) -> String:
 		return "Must be within %d tiles of the Hearth" % int(Data.HEARTH_RADIUS)
 	if not _economy.can_afford(price(type)):
 		return "Not enough materials"
+	return ""
+
+
+## Why a building that stands only on certain tiles (a Mine) cannot go on `tile`: "" when it can.
+func _on_tiles_error(def: Dictionary, tile: String) -> String:
+	if tile not in def["on_tiles"]:
+		return "Must stand on " + " or ".join(def["on_tiles"].map(func(t): return Data.TILES[t]["name"]))
+	if Data.TILES[tile].has("gated") and not _research.unlocked(Data.TILES[tile]["tech"]):
+		return "Not named yet: discover %s first" % Data.TECHS[Data.TILES[tile]["tech"]]["name"]  # ore nobody can read
 	return ""
 
 
@@ -555,6 +564,8 @@ func wants_to_work(b: Dictionary) -> bool:
 		"gatherer":
 			return buffered(b["out"]) < Data.BUFFER_CAP
 		"processor":
+			if def.has("dig") and _world.seam_spent(b["pos"]):
+				return false  # nothing left to dig
 			if def.get("needs_power", false) and not is_powered(b["pos"]):
 				return false
 			if def.get("trade", false) and not is_trading(b):

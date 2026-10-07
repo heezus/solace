@@ -116,6 +116,8 @@ static func _tile_text(m) -> String:
 		elif s.world.fields.has(p):
 			tile_name = Data.FIELD_TITLE % Data.ITEMS[item]["name"]
 		var out := "%s\n%s. %s" % [tile_name, hold_hint(s, item), how]
+		if s.world.seam_of.has(p):  # a finite seam: what is left in the ground
+			out += "\n" + Data.SEAM_LEFT % [s.world.seam_left[s.world.seam_of[p]], Data.COAL_PER_SEAM]
 		if Data.FOOD_VALUE.has(item):
 			out += " It's food: the %s eat it." % Data.PEOPLE["many"]
 		out += "\n" + (Data.MINE_TIP if t.get("mine_only", false) else learn_text(s, item))

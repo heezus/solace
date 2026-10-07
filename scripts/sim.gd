@@ -1,14 +1,13 @@
 extends RefCounted
-## Sim: the whole simulation, with no rendering, so it runs headless in tests. It is a thin owner. It holds
-## one of each block (`fog`, `world`, `pathing`, `economy`, `tech_tree`, `town`, `people`, `story`, `sky`, `starfall`) and
-## nothing else about them: callers reach a block through its name (`sim.economy.inv`, `sim.world.tile_at(p)`).
-## What stays here is what no single block can do: the commands that touch several blocks at once (`place`,
-## `demolish`, `research`, `gather_by_hand`...), the few flags of the run itself, and the tick order:
-##   1. Land.grow_if_due (the tick after Bronze Dawn, the map doubles east), economy.advance, then tech_tree.tick
+## Sim: the whole simulation, with no rendering, so it runs headless in tests. It is a thin owner. It holds one of each
+## block (`fog`, `world`, `pathing`, `economy`, `tech_tree`, `town`, `people`, `story`, `sky`, `starfall`) and nothing else
+## about them: callers reach a block through its name (`sim.economy.inv`, `sim.world.tile_at(p)`). What stays here is what
+## no single block can do: the commands that touch several blocks at once (`place`, `demolish`, `research`,
+## `gather_by_hand`...), the few flags of the run itself, and the tick order:
+##   1. Land.grow_if_due (the tick after Bronze Dawn the map grows east, in Ironfall south), economy.advance, tech_tree.tick
 ##   2. people.assign_jobs, economy.feed and people.grow, then story.update and sky.tick
 ##   3. every Kith takes a step (Forage, Workers, Haulers or a walk) and reveals what it sees; then each building's turn
-## The work cycle is in Work, Bonuses, Hands, Roads, Workers and Haulers: static modules that take the Sim. Blocks
-## never call each other to report: they emit signals, and _init connects them.
+## The work cycle is in Work, Bonuses, Hands, Roads, Workers, Haulers (static, take the Sim). Blocks only emit signals.
 
 ## The Strange Stone was clicked (it reveals the hidden techs). Story listens.
 signal shard_found
@@ -76,6 +75,7 @@ func _init() -> void:
 	sky.sighted.connect(_announce)
 	economy.food_low.connect(_on_food_low)
 	town.story_has = story.has_event
+	tech_tree.story_has = story.has_event
 	story.recorded.connect(_on_story)
 	people.gift = starfall.gift
 	starfall.said.connect(_announce)
@@ -132,7 +132,7 @@ func gather_by_hand(p: Vector2i) -> String:
 	var item: String = Data.TILES[tile]["yields"]
 	if item == "" or (Data.TILES[tile].has("tech") and not tech_tree.researched.has(Data.TILES[tile]["tech"])):
 		return ""  # nothing to gather, or ore before Prospecting
-	var n := Hands.harvest_yield(self, item)
+	var n := world.seam_draw(p, Hands.harvest_yield(self, item))  # a coal seam gives what is left of its pile
 	economy.add(item, n)
 	economy.note(item, n, Data.FLOW_HAND_SOURCE)
 	Hands.teach(self, item)

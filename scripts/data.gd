@@ -15,6 +15,7 @@ const DataTuning = preload("res://scripts/data/tuning.gd")
 const DataWords = preload("res://scripts/data/words.gd")
 const DataStarfall = preload("res://scripts/data/starfall.gd")
 const DataMenu = preload("res://scripts/data/menu.gd")
+const DataIronfall = preload("res://scripts/data/ironfall.gd")
 
 # --- Items: data/items.gd ---
 const ITEMS := DataItems.ITEMS
@@ -80,6 +81,7 @@ const CLEAR_KEEP := DataTiles.CLEAR_KEEP
 const CLEAR_EVENT := DataTiles.CLEAR_EVENT
 
 # --- Techs: data/techs.gd ---
+const IronfallTechs = preload("res://scripts/data/ironfall/techs.gd")
 const LANES := DataTechs.LANES
 const LANE_ORDER := DataTechs.LANE_ORDER
 const TIER_NAMES := DataTechs.TIER_NAMES
@@ -539,6 +541,7 @@ const SAVE_HINT := DataMenu.SAVE_HINT
 const ERA_STONE := DataMenu.ERA_STONE
 const ERA_BRONZE := DataMenu.ERA_BRONZE
 const ERA_STARFALL := DataMenu.ERA_STARFALL
+const ERA_IRONFALL := DataMenu.ERA_IRONFALL
 const DEBUG_KEYS_LABEL := DataMenu.DEBUG_KEYS_LABEL
 const DEBUG_HELP := DataMenu.DEBUG_HELP
 const DEBUG_GOODS := DataMenu.DEBUG_GOODS
@@ -546,3 +549,20 @@ const DEBUG_RESEARCH := DataMenu.DEBUG_RESEARCH
 const DEBUG_NO_TECH := DataMenu.DEBUG_NO_TECH
 const DEBUG_SPEED := DataMenu.DEBUG_SPEED
 const DEBUG_FOG := DataMenu.DEBUG_FOG
+
+# --- Era 4, Ironfall: data/ironfall.gd ---
+const IRONFALL_EVENT := DataIronfall.IRONFALL_EVENT
+const TECH_AFTER_EVENTS := DataIronfall.TECH_AFTER_EVENTS
+const SOUTH_TECHS := DataIronfall.SOUTH_TECHS
+const SOUTH_ROWS := DataIronfall.SOUTH_ROWS
+const LAND_GREW_SOUTH_EVENT := DataIronfall.LAND_GREW_SOUTH_EVENT
+const COAL_PER_SEAM := DataIronfall.COAL_PER_SEAM
+const SEAM_LEFT := DataIronfall.SEAM_LEFT
+const SEAM_SPENT_STATUS := DataIronfall.SEAM_SPENT_STATUS
+const SEAM_SPENT_ALERT := DataIronfall.SEAM_SPENT_ALERT
+const SEAM_SPENT_EVENT := DataIronfall.SEAM_SPENT_EVENT
+const ERA_TAB_LOCKED_IRONFALL := DataIronfall.ERA_TAB_LOCKED_IRONFALL
+const IRON_TOOL_JOBS := DataIronfall.IRON_TOOL_JOBS
+const GOALS_HEADER_ERA4 := DataIronfall.GOALS_HEADER_ERA4
+const GOALS_IRONFALL_CLOSING := DataIronfall.GOALS_IRONFALL_CLOSING
+const GOALS_ERA4 := DataIronfall.GOALS_ERA4

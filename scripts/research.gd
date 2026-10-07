@@ -18,6 +18,7 @@ const Rules = preload("res://scripts/rules.gd")
 var researched: Dictionary  # tech id -> true (the Economy reads the same set as a view, and never writes it)
 var goal := ""  # the tech the queue is working toward, "" for none
 var queue: Array = []  # the next techs on the way there, researched as soon as affordable
+var story_has: Callable = func(_id): return false  # (String) -> bool: has that story moment happened? Set by the owner
 var _economy: Economy
 var _hidden_shown: Callable  # () -> bool: true once hidden techs are on show (the Strange Stone was clicked)
 var _extra_discount: Callable  # () -> float: a share (0 to 1) off every tech, from what stands in the town; may be unset
@@ -56,7 +57,8 @@ func visible_set() -> Dictionary:
 	for id in _economy.inv:
 		if _economy.inv[id] > 0:
 			held += 1
-	var key := "%d|%d|%d|%s" % [_economy.seen.size(), held, researched.size(), shown]
+	var after := Data.TECH_AFTER_EVENTS.filter(func(id): return story_has.call(id)).size()
+	var key := "%d|%d|%d|%s|%d" % [_economy.seen.size(), held, researched.size(), shown, after]
 	if key == _vis_key:
 		return _vis
 	_vis_key = key
@@ -75,6 +77,8 @@ func _discovered(tech: String, shown: bool) -> bool:
 	var def: Dictionary = Data.TECHS[tech]
 	if def.get("hidden", false) and not shown:
 		return false
+	if def.has("after") and not story_has.call(def["after"]):
+		return false  # a tech of a later era waits for the story moment that opens it
 	if passed_over(tech):
 		return false
 	for item in def["cost"]:

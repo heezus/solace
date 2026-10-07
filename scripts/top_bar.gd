@@ -16,8 +16,10 @@ const Ui = preload("res://scripts/ui.gd")
 const GrowthNote = preload("res://scripts/growth_note.gd")
 const Hands = preload("res://scripts/hands.gd")
 
-const RAW := ["wood", "stone", "flint", "fiber", "clay", "berries", "grain", "fish", "copper_ore", "tin"]
-const ROWS := [0, 7, 13, 18]  # where each row of goods starts in ITEM_ORDER: raw, made, the second era's five
+const RAW := [
+	"wood", "stone", "flint", "fiber", "clay", "berries", "grain", "fish", "copper_ore", "tin", "coal", "iron_ore"
+]
+const ROWS := [0, 7, 13, 23]  # where each row of goods starts in ITEM_ORDER: raw, made, the later eras' (two times five)
 const LOSS := Ui.SHORT  # `alert`, lifted to read on cocoa
 ## The Food readout's text while the warning is up: light enough to read on the bar (over 4.5 to 1) at every moment.
 const ALARM_TEXT := Ui.SHORT
@@ -284,7 +286,12 @@ func refresh(paused: bool, speed: int) -> void:
 			Data.PEOPLE["many"],
 			Data.TOOL_JOBS,
 			Data.BRONZE_TOOL_JOBS,
-			state.economy.inv.get("flint_tools", 0) + state.economy.inv.get("bronze_tools", 0)
+			Data.IRON_TOOL_JOBS,
+			(
+				state.economy.inv.get("flint_tools", 0)
+				+ state.economy.inv.get("bronze_tools", 0)
+				+ state.economy.inv.get("iron_tools", 0)
+			)
 		]
 	)
 	tools_label.mouse_filter = Control.MOUSE_FILTER_STOP
