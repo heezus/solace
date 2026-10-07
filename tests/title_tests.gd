@@ -20,9 +20,21 @@ func run(runner) -> void:
 	test_the_words_are_there()
 	test_launch_asks_once()
 	test_the_title_offers_continue_only_with_a_save()
+	test_the_title_picks_a_painting()
 	test_the_pause_menu_has_its_buttons()
 	test_saving_and_loading_a_run()
 	test_the_game_menu_saves_and_pauses()
+
+
+func test_the_title_picks_a_painting() -> void:
+	t.check(TitleScreen.art_choice([], 0.5) == "", "no painting, the drawn stand-in")
+	t.check(
+		TitleScreen.art_choice([TitleScreen.ART_PATH], 0.99) == TitleScreen.ART_PATH, "one painting is the one shown"
+	)
+	var both := [TitleScreen.ART_PATH, TitleScreen.ALT_ART_PATH]
+	t.check(TitleScreen.art_choice(both, 0.1) == TitleScreen.ART_PATH, "a low roll shows the first")
+	t.check(TitleScreen.art_choice(both, 0.9) == TitleScreen.ALT_ART_PATH, "a high roll shows the second")
+	t.check(TitleScreen.art_choice(both, 1.0) == TitleScreen.ALT_ART_PATH, "a roll of 1 does not run off the end")
 
 
 func _clean() -> void:

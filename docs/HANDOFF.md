@@ -10,11 +10,12 @@ Owner: Jon (heezus). Two AI teams, one repo, coordinated by responsibility. On 2
 - **Acceptance criteria:** three slim pale-cloaked Lumen at the brief's 24 px target, consistent miniature camera/light and shared feet anchors, faint cyan accents with separate engine glow; small transparent pack overlay compatible with existing Kith poses; native-size preview, imports and loading/anchor handoff.
 - **Status:** stranger atlas and pack imported; 24 px figures and four existing Kith poses with the trial overlay inspected. Publishing art-only PR, CI pending. Title PR #68 and map-subject PR #70 are published and in CI; normal-play map hooks remain Claude's next action.
 - **Next action:** supply current traveller assets and code-hook notes in a small PR; then current item/glyph/gift illustrations, card vignettes and the Bloom sign. Later slots remain deferred.
+- **Synchronization:** merged main `3efb920` on the mailbox request, preserving Claude’s lead-stranger notes and both design-log tails. Asset/code content unchanged by this reconciliation; current-head CI must pass before Claude merges and wires the art.
 
-### Claude — Starfall stage 3
-- **Task:** Jon's "continue" (2026-10-07). Page 16 stage 3: three moments, set 6 (the Warning), the lean, the first Bloom sign. Stages 1 and 2 merged (#57, #61). PR `stage3`.
-- **Reserved files:** `scripts/moment_card.gd`, `scripts/expedition.gd`, `scripts/expedition_picker.gd`, `scripts/starfall.gd`, `scripts/data/starfall.gd`, `scripts/sim.gd`, `scripts/kith.gd`, `scripts/bonuses.gd`, `scripts/glyph_picker.gd`, `scripts/building_panel.gd`, `scripts/kith_art.gd` (`draw_wreck`), `scripts/rendered_art.gd` (one placeholder slot), tests. Codex: please avoid these until it merges.
-- **Hooks for Codex:** art slots for stages 1 to 3 are in `docs/art/starfall-art-brief.md` and `docs/art/requests.md`; Jon starts Codex on them himself.
+### Claude — Starfall stage 4
+- **Task:** Jon's "whatever else is next" (2026-10-07). Page 16 stage 4: Lumen Market, Shared Shrine, Guard Post. Stage 3 (#64) and the title screen, pause menu and zoom (#66) are merged. PR `stage4`.
+- **Reserved files:** `scripts/starfall.gd`, `scripts/data/starfall.gd`, `scripts/data/buildings.gd`, `scripts/data/tuning.gd`, `scripts/bonuses.gd`, `scripts/buildings.gd`, `scripts/rendered_art.gd` (three placeholder slots), tests. Codex: please avoid these until it merges.
+- **Hooks for Codex:** art slots for stages 1 to 4 are in `docs/art/starfall-art-brief.md` and `docs/art/requests.md`; Jon starts Codex on them himself.
 - **Next action:** CI green, merge.
 
 ### Claude — gameplay asks (PR #44, merged) and the visual merge (PR #33, merged)

@@ -639,6 +639,16 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Defaults Claude picked: Lessons are a finite list of about 8 (the three Bloom ones double as the three sample types for the echoes); coal is finite so the Lumen's Shard Boiler matters; the map grows once to the south on Ironstone; beasts ship as one optional Beast Pen branch.
 - Trust and the lean set how freely the Lumen hand over parts, and the Wreck always holds three, so no run is locked out of the Boiler or the Lamp.
 
+## 2026-10-07: Starfall stage 4, the market, the shrine and the Guard Post (PR #69)
+- Claude: built the three trust-moving buildings from page 16 on Jon's "whatever else is next": a Lumen Market (trade, 2 for 1), a Shared Shrine and a Guard Post, with placeholder art.
+- Defaults Claude picked: trade opens once the name is read and trust reaches 8, and a Market lifts trust only to 60 (trade alone makes neighbours); the shrine is +10 and +1 a minute; the Guard Post is -6 and -1 a minute but speeds work within 4 tiles by 15%, so force pays and costs trust.
+- Shared food as an ongoing mover, the third tech tab and the beast cart stay for later.
+
+## 2026-10-07: The lead stranger (PR #74)
+- Claude: on Jon's ask, one of the three Lumen strangers is now a named lead character based on Jon's friend Briana: the tall one with long pale hair, the first to trust the Kith. Warm, playful, teasing and perceptive, and glamorous at first sight, goofy and loyal once she trusts you.
+- She speaks on each moment card and answers every choice in the event log, in the same words whether the choice is kind or not (her smile fades when it is not). The name is one constant (`LEAD_NAME`); Jon is asked on a card whether she keeps it or gets a Lumen name close to it.
+- The look is described in words in the art brief, stylized and tasteful, with a paste-ready Codex message; no reference photos go in the repo.
+
 ## 2026-10-06: Starfall traveller silhouettes (PR #71)
 - Codex: three pale ivory/gold cloaks and small cyan brooches distinguish calm Lumen visitors from warm Kith, using the same miniature camera/materials; engine aura stays separate.
 - Keep the brief's 24 px figure target and a bottom-center foot anchor. Three appearance variants are not new named identities, ranks or simulation people.

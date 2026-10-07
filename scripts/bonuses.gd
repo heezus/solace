@@ -48,6 +48,8 @@ static func active(s, b: Dictionary, item: String) -> Array:
 static func _applies(s, b: Dictionary, id: String) -> bool:
 	if Data.BONUSES[id].get("near_cairn", false) and (s.starfall.dimmed() or not _near_cairn(s, b["pos"])):
 		return false
+	if Data.BONUSES[id].get("near_guard", false) and not _near(s, b["pos"], "guard_post", Data.GUARD_RADIUS):
+		return false
 	if Data.BONUSES[id].has("tool"):
 		return b["worker"] >= 0 and Kith.tool_of(s.people.kith[b["worker"]]) == Data.BONUSES[id]["tool"]
 	match id:
@@ -58,8 +60,13 @@ static func _applies(s, b: Dictionary, id: String) -> bool:
 
 ## True when a Shard Cairn stands within Data.SHARDLIGHT_RADIUS tiles of `p`.
 static func _near_cairn(s, p: Vector2i) -> bool:
+	return _near(s, p, "shard_cairn", Data.SHARDLIGHT_RADIUS)
+
+
+## True when a building of `type` stands within `radius` tiles of `p`.
+static func _near(s, p: Vector2i, type: String, radius: float) -> bool:
 	for c in s.town.buildings:
-		if c["type"] == "shard_cairn" and Vector2(c["pos"]).distance_to(Vector2(p)) <= Data.SHARDLIGHT_RADIUS:
+		if c["type"] == type and Vector2(c["pos"]).distance_to(Vector2(p)) <= radius:
 			return true
 	return false
 
