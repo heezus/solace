@@ -619,6 +619,6 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Jon picked on cards: a handful of echoes per run; an echo unlocks the tech but it still needs its normal materials; echoes bank only when a run ends in a reset.
 - Claude: recorded these on page 18 (what carries stays the default: one echo per read Lumen glyph set and per Bloom sample type). Nothing is built.
 
-## 2026-10-07: Starfall art brief (PR #TBD)
+## 2026-10-07: Starfall art brief (PR #63)
 - Claude: wrote docs/art/starfall-art-brief.md at Jon's ask: every Starfall slot (stage 1 and 2 playable, stage 3 later), the Lumen mood (pale gold and soft cyan) and what stays fixed.
 - It is guidance only; Jon decides when Codex starts on it.
