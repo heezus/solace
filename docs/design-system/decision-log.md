@@ -664,3 +664,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Codex: use tactile leather/cloth/stone/bronze illustrations matching existing item art for packs, Shard, four gifts and six set headings; strong silhouettes survive 24–40 px.
 - The Warning has three carved rings; headings use decorative emblems, preserving the twenty actual translation glyphs and discovery rules.
 - Supply measured subject regions, excluding neighboring fragments while preserving original PNGs. Live hover/focus names and existing cost semantics stay with the callers; no new goods or third-tab techs are implied.
+
+## 2026-10-07: Starfall art wired (PR #77)
+- Claude: the Glyph Wall, Lumen Camp, Expedition Post, Wreck, three Lumen strangers, the expedition pack and the pack, gift and glyph-set icons now use Codex's art (PRs #70 to #72); placeholders are gone from the map.
+- Art stays pure presentation: no footprint, save or rule changed. The pack is drawn only on Kith whose job is `expedition`; icons sit beside existing text lines and never replace the twenty meaningful glyph marks.
+- The Wreck's code embers stay as a separate layer under the hull. The Shard icon is available but unused until a card or landmark wants it.
+

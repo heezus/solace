@@ -9,6 +9,7 @@ const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Expedition = preload("res://scripts/expedition.gd")
+const IconRow = preload("res://scripts/icon_row.gd")
 
 var state: Sim
 var key := ""  # what the rows were built from, so they are built again only when it changes
@@ -37,7 +38,12 @@ func show_for(b: Dictionary) -> void:
 		c.queue_free()
 		remove_child(c)
 	add_child(_line_button(target_text(state), Callable(self, "_next_target")))
-	add_child(_line_button(pack_text(state), Callable(self, "_next_pack")))
+	var pack: String = o["pack"]
+	add_child(
+		IconRow.wrap(
+			"pack_" + pack, _line_button(pack_text(state), Callable(self, "_next_pack")), Data.PACKS[pack]["name"]
+		)
+	)
 	var trip := trip_text(plan)
 	if trip != "":
 		add_child(_wrapped(trip, Ui.SHORT if plan["late"] else Ui.TEXT_DIM))

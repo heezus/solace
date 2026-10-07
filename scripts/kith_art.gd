@@ -10,6 +10,7 @@ const Art = preload("res://scripts/art.gd")
 const GrowthArt = preload("res://scripts/growth_art.gd")
 const Overlays = preload("res://scripts/overlays.gd")
 const Rendered = preload("res://scripts/rendered_art.gd")
+const Expedition = preload("res://scripts/expedition.gd")
 
 const KITH := Color("e76f51")
 const SPRITE := Overlays.TILE  # the sprite's square: drawn at 1.5x, so its 2-unit outline is 3 px
@@ -76,14 +77,16 @@ static func draw_all(ci: CanvasItem, s, time: float) -> void:
 				ci, Rect2(at + Vector2(-SPRITE * 0.52, -SPRITE * 0.82), Vector2(SPRITE * 1.04, SPRITE * 1.04)), cargo
 			)
 			continue
+		if Expedition.is_party(k):
+			Rendered.party_pack(ci, at, flip)  # behind the body: only the Kith out with a party carry one
 		Rendered.kith(ci, at, k.get("name", str(i)), moving, time, flip)
 		var above := at + Vector2(-10, -SPRITE * 1.08)  # over the head
 		for id in k["carry"]:
 			Art.item_icon(ci, id, Rect2(above, Vector2(20, 20)), 1.0)
 
 
-## The strangers of the era after the Falling Star (Starfall.survivor_spots): the same figure as a Kith, in a soft light
-## so nobody takes them for one. They stand about and sway a little; they come closer as they trust the Kith.
+## The strangers of the era after the Falling Star (Starfall.survivor_spots): three pale-cloaked Lumen figures in a soft light
+## so nobody takes them for Kith. They stand about and sway a little; they come closer as they trust the Kith.
 static func draw_strangers(ci: CanvasItem, s, time: float) -> void:
 	if not s.starfall.arrived():
 		return
@@ -97,25 +100,19 @@ static func draw_strangers(ci: CanvasItem, s, time: float) -> void:
 		var at: Vector2 = spot_list[i] * Overlays.TILE + sway
 		ci.draw_circle(at - Vector2(0, SPRITE * 0.3), SPRITE * 0.62, Color(0.6, 0.92, 1.0, 0.1))
 		ci.draw_circle(at - Vector2(0, SPRITE * 0.3), SPRITE * 0.4, Color(0.6, 0.92, 1.0, 0.14))
-		Rendered.kith(ci, at, "stranger-%d" % i, false, time, i % 2 == 1)
+		Rendered.stranger(ci, at, i)
 
 
-## The crash site (Starfall.wreck), once a party has lifted the fog there: a broken hull in the grass with embers about it.
-## Stand-in art until Codex draws it (docs/art/requests.md).
+## The crash site (Starfall.wreck), once a party has lifted the fog there: a low broken hull in the grass, with embers about it.
 static func draw_wreck(ci: CanvasItem, s, time: float) -> void:
 	var w: Vector2i = s.starfall.wreck
 	if w.x < 0 or not s.starfall.wreck_found or not s.fog.is_revealed(w):
 		return
 	var c := (Vector2(w) + Vector2(0.5, 0.5)) * Overlays.TILE
-	var hull := PackedVector2Array(
-		[c + Vector2(-38, 6), c + Vector2(-20, -14), c + Vector2(26, -10), c + Vector2(40, 4), c + Vector2(12, 16)]
-	)
-	ci.draw_circle(c + Vector2(0, 4), 46.0, Color(0.1, 0.1, 0.1, 0.18))
-	Art.outlined_poly(ci, hull, Color("6f7f94"))
-	ci.draw_line(c + Vector2(-8, -12), c + Vector2(6, 12), Color("1b1b1f"), 2.0)
+	Rendered.wreck(ci, c)
 	for i in 3:
 		var flick := 0.5 + 0.5 * sin(time * 3.0 + i * 2.0)
-		ci.draw_circle(c + Vector2(-26 + i * 24, -18 - 4 * flick), 4.0 + 2.0 * flick, Color(1.0, 0.62, 0.25, 0.55))
+		ci.draw_circle(c + Vector2(-22 + i * 22, -6 - 4 * flick), 4.0 + 2.0 * flick, Color(1.0, 0.62, 0.25, 0.55))
 
 
 ## The first Bloom sign (Starfall.bloom), once the Warning is read and the fog is lifted there: a patch of growth nobody
