@@ -1,6 +1,7 @@
 extends RefCounted
 ## Visual variation and terrain caching must preserve gameplay state, RNG and hidden terrain.
 
+const Art = preload("res://scripts/art.gd")
 const Rendered = preload("res://scripts/rendered_art.gd")
 const Ground = preload("res://scripts/world_ground.gd")
 const World = preload("res://scripts/world.gd")
@@ -14,6 +15,7 @@ func run(t) -> void:
 	test_starfall_icons(t)
 	test_grounding_masks(t)
 	test_roads_join_across_cells(t)
+	test_dashes_always_advance(t)
 	var choices := {}
 	for y in 12:
 		for x in 18:
@@ -179,3 +181,18 @@ func test_starfall_icons(t) -> void:
 	row.free()
 	label = Label.new()
 	label.free()
+
+
+## A dashed outline at any screen scale ends: the reach box once froze the game when a dash edge fell too close to the last.
+## It used to stall at a hundred of these scales, so a stall here would hang the run, not fail it quietly.
+func test_dashes_always_advance(t) -> void:
+	var cuts := 0
+	for ki in range(100, 400, 3):
+		var k := ki / 100.0
+		for side in [48, 96, 144, 240, 333]:
+			var r := Rect2(Vector2(13.7, 9.3) * k, Vector2.ONE * side * k)
+			var pts := PackedVector2Array(
+				[r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y), r.position]
+			)
+			cuts += Art.dash_pattern(pts, 10.0 * k, 6.0 * k, 0.0).size()
+	t.check(cuts > 0, "dashed outlines end at every screen scale")

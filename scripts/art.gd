@@ -26,6 +26,11 @@ const SPRITE_OF := {
 ## 48 px tiles. Sprites are drawn at their native scale, never redrawn thin.
 const DESIGN := 32.0
 
+## The least a dash step may advance, in px. A step cut short by a pattern edge can come out smaller than the float spacing
+## at the distance along the line, so `d += step` stood still and the loop never ended (the hut ghost's reach box froze the
+## game at some screen scales).
+const MIN_DASH_STEP := 0.01
+
 ## One screen pixel in map units (1 / the map's zoom), set by the map each frame: text, pills and badges keep the
 ## same size on screen whatever the zoom. 1.0 anywhere that draws at screen scale.
 static var ui_k := 1.0
@@ -397,7 +402,7 @@ static func dash_pattern(pts: PackedVector2Array, on: float, off: float, offset:
 			var phase := fposmod(pos + d, period)
 			var drawing := phase < on
 			var left := (on - phase) if drawing else (period - phase)
-			var step := minf(left, seg - d)
+			var step := maxf(minf(left, seg - d), MIN_DASH_STEP)
 			if drawing:
 				if cur.is_empty():
 					cur.append(a.lerp(b, d / seg))
