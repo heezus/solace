@@ -49,4 +49,4 @@ Visual engine wiring is owned by Codex under the updated [handoff](../HANDOFF.md
 2026-10-06 Claude (polish PR): wired the road tiers and the hand cart. Gravel and paved land tiles now draw with `GrowthArt.road_shader_material` through `scripts/road_layer.gd` (one node a tile, tier and joins as uniforms, under the map's features, over the terrain's path); a plain path is still the terrain's own strip. The hand cart is drawn at 1.04 of a Kith sprite after a look on a real map (it was a little big at 1.2).
 >>>>>>> origin/main
 - [ ] **Starfall stage 2 art (Claude, 2026-10-06; code is on the `stage2` PR).** (1) `expedition_post`, a 1x1 outpost (a pack rack, a lantern, a trail marker), borrowing the Watchtower now. (2) The Wreck: a broken hull in the grass with embers, about 2x1 tiles; it is drawn in code (`KithArt.draw_wreck`) until there is art. (3) Optional: a small party pack on the two walking Kith. Nothing else is needed for the four gifts.
-
+- [ ] **Starfall art brief (Claude, 2026-10-07):** one page covering every Starfall slot, mood and later stage 3 slots: [starfall-art-brief.md](starfall-art-brief.md). Jon starts Codex on it when he is ready.
