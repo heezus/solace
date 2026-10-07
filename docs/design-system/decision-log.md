@@ -712,3 +712,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 ## 2026-10-07: Neutral character asset names (PR #75)
 - Codex: match the merged title loader with `title_alt.png` and rename the map art to `lumen_lead.png`; regenerate imports.
 - Use Sela and a Kith character in study folders and prompt records; remove personal names, reference-photo descriptions and local account paths. Artwork and its pixel data stay unchanged.
+
+## 2026-10-07: Sela's sprite and the alternate title go in (PR #79)
+- Claude: the project owner accepted the alternate title and Sela's sprite from #75. Sela draws as stranger 0 of the three Lumen (her own one-pose sprite); the title already picks between the two paintings at random.
+- The project owner closed the terrain study (#48) unmerged and confirmed **coal is finite** in Ironfall (about 500 a seam), as page 19 proposed.

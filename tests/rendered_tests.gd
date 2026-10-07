@@ -148,6 +148,16 @@ func test_grounding_masks(t) -> void:
 	t.check(ground._image.get_pixelv(pixel).b == 0.0, "clearing trees refreshes woodland ground")
 
 
+## Sela's sprite is cut from inside her own image, and she is stranger 0 of the three.
+func test_lead_sprite(t) -> void:
+	var tex: AtlasTexture = Rendered.lead_sprite()
+	t.check(
+		tex.atlas != null and Rect2(Vector2.ZERO, tex.atlas.get_size()).encloses(Rendered.LEAD_SPRITE_REGION),
+		"Sela's region lies inside her image"
+	)
+	t.check(Rendered.lead_sprite() == tex, "her sprite is cached")
+
+
 ## Every pack, gift and glyph-set heading has its picture, and the row helper gives it a hover name.
 func test_starfall_icons(t) -> void:
 	var ids: Array = []
