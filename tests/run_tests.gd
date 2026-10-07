@@ -5,6 +5,8 @@ extends SceneTree
 const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Main = preload("res://scripts/main.gd")
+const IronfallTests = preload("res://tests/ironfall_tests.gd")
+const CutsceneTests = preload("res://tests/cutscene_tests.gd")
 const TechLayout = preload("res://scripts/tech_layout.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Rules = preload("res://scripts/rules.gd")
@@ -106,6 +108,12 @@ func _init() -> void:
 		print("FAILED: %d" % failures if failures > 0 else "FORKS TESTS PASSED")
 		quit(1 if failures > 0 else 0)
 		return
+	if "ironfall" in OS.get_cmdline_user_args():  # `-- ironfall` runs only the Ironfall tests while iterating
+		IronfallTests.new().run(self)
+		CutsceneTests.new().run(self)
+		print("FAILED: %d" % failures if failures > 0 else "IRONFALL TESTS PASSED")
+		quit(1 if failures > 0 else 0)
+		return
 	if "homes" in OS.get_cmdline_user_args():  # `-- homes` runs only the Needs tests while iterating
 		HomesTests.new().run(self)
 		print("FAILED: %d" % failures if failures > 0 else "HOMES TESTS PASSED")
@@ -189,6 +197,8 @@ func _init() -> void:
 	TitleTests.new().run(self)
 	DevTests.new().run(self)
 	HomesTests.new().run(self)
+	IronfallTests.new().run(self)
+	CutsceneTests.new().run(self)
 	NewcomerTests.new().run(self)
 	UiTests.new().run(self)
 	TechBoardTests.new().run(self)

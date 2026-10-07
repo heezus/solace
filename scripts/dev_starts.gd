@@ -133,6 +133,7 @@ static func _table() -> Array:
 		["starfall_camp", "Stage: Starfall, camp and first glyphs", _starfall_camp],
 		["starfall_market", "Stage: Starfall, the market", _starfall_market],
 		["starfall_end", "Stage: Starfall, before the ending", _starfall_end],
+		["ironfall", "Stage: Ironfall, the Starfall is over", _ironfall],
 	]
 
 
@@ -218,6 +219,16 @@ static func _starfall_end() -> Sim:
 			s.starfall.copied.append(g)
 		s.starfall.guesses[g] = Data.GLYPHS[g]["word"]
 	s.starfall.check_clock = Data.CHECK_SECONDS - END_FUSE
+	return s
+
+
+## The Warning is read, the ending card put away and the first tick of Ironfall run: its techs are in view and the coal and
+## iron wait in the land south of the map for Coal Seams or Ironstone.
+static func _ironfall() -> Sim:
+	var s := _starfall_end()
+	_wait(s, END_FUSE + 6.0)
+	s.starfall.choose(0)
+	_wait(s, 2.0)
 	return s
 
 

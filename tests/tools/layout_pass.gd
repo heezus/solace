@@ -15,6 +15,7 @@ const HoverText = preload("res://scripts/hover_text.gd")
 const Hands = preload("res://scripts/hands.gd")
 const UiTests = preload("res://tests/ui_tests.gd")
 const Ui = preload("res://scripts/ui.gd")
+const CutscenePlayer = preload("res://scripts/cutscene_player.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
 const HudChecks = preload("res://tests/tools/hud_checks.gd")
 const PickerChecks = preload("res://tests/tools/picker_checks.gd")
@@ -54,6 +55,7 @@ var picker := PickerChecks.new()  # the hut picker's checks (tests/tools/picker_
 
 
 func _init() -> void:
+	CutscenePlayer.suppress = true  # the scripted pass plays the game, not its cutscenes
 	seed(7)
 	var scene: PackedScene = load("res://scenes/main.tscn")
 	main = scene.instantiate()

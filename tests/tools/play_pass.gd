@@ -14,6 +14,7 @@ const Ranks = preload("res://scripts/ranks.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Rules = preload("res://scripts/rules.gd")
 const Scouting = preload("res://scripts/scouting.gd")
+const CutscenePlayer = preload("res://scripts/cutscene_player.gd")
 
 const BOT_STEPS_PER_FRAME := 40
 const MAX_FRAMES := 6000
@@ -32,6 +33,7 @@ var won_at := -1  # the frame Bronze Dawn was researched
 
 func _init() -> void:
 	seed(7)  # the same map every run
+	CutscenePlayer.suppress = true  # the game scene plays none of its own: _cutscene_checks drives one by hand
 	var scene: PackedScene = load("res://scenes/main.tscn")
 	main = scene.instantiate()
 	root.add_child(main)
@@ -231,6 +233,7 @@ func _grass_by(near: Vector2i) -> Vector2i:
 
 func _script() -> void:
 	var s = main.state
+	_cutscene_checks()
 	# Look around: hover the Hearth, the fog, the river, every resource.
 	_then(func(): _move(_screen_of(s.world.camp_pos)))
 	_then(func(): _move(_screen_of(Vector2i(0, 0))))
@@ -694,3 +697,26 @@ func _road_drag_check() -> void:
 	)
 	_click(_screen_of(end + Vector2i(0, 1)), MOUSE_BUTTON_RIGHT)
 	_expect(main.placing == "", "right-click didn't stop laying Road")
+
+
+## A cutscene player over the live scene: it starts on a story moment, holds the game paused and draws a painted still, a
+## skip with Esc puts everything back, and a sequence with no painting yet plays its lines over a dark panel.
+func _cutscene_checks() -> void:
+	var layer := CanvasLayer.new()
+	root.add_child(layer)
+	var player = CutscenePlayer.new()
+	layer.add_child(player)
+	player.setup(main.state, main, [])
+	_then(func(): player.enqueue("falling_star"))
+	_then(
+		func():
+			_expect(player.active and player.current == "falling_star", "the cutscene did not start")
+			_expect(main.paused, "a cutscene left the game running")
+	)
+	_then(func(): _expect(player.texture("falling_star_1") != null, "the first still did not load"), 6)
+	_then(func(): _key(KEY_ESCAPE))
+	_then(func(): _expect(not player.active and not main.paused, "Esc did not skip the cutscene and free the game"), 2)
+	_then(func(): player.enqueue("ironfall"))
+	_then(func(): _expect(player.active and player.texture("ironfall_1") == null, "no painting: lines over dark"), 4)
+	_then(func(): player.skip())
+	_then(func(): _expect(not player.active and not main.paused, "the lines-only cutscene did not end"))

@@ -36,3 +36,13 @@ On later runs the game draws these over any still, so nothing is painted twice. 
 
 ## Paste-ready message for Codex
 > Codex, a new art batch for Solace: cutscene stills. Please read docs/art/cutscene-art-brief.md and docs/design-system/20-cutscenes.md. Paint the 19 Phase A stills in the table (Misty Highlands title look, 2560x1600, no text in the image, subject in the middle 80%, bottom third calm and darker), save them as art/rendered/cutscenes/<id>_<n>.png with their Godot import files, and keep Sela as in docs/art/starfall-art-brief.md. Please reuse your arrival and Bloom-sign art from #73 where they fit rather than painting them twice. Also paint the five transparent memory overlays described in the same brief (memory_exodus, memory_cataclysm, memory_loop, memory_glyph, memory_bloom), soft and low-contrast. Small PRs are fine, a few stills each; Claude wires the code. Work on a codex/ branch and open a PR.
+
+## Phase B stills (5)
+The same look and rules as above, for Ironfall's two sequences. The game plays their lines over a dark panel until these exist, and loads them by name.
+| File | What is in it |
+|---|---|
+| `ironfall_1` | A bloomery stack glowing at dusk, a Kith hand lifting a first rough bar of iron with tongs |
+| `ironfall_2` | A Lumen and a Kith turning over a piece of the broken hull together, a small cyan lamp core between them |
+| `ironfall_3` | The southern fog edge at dusk, three faint patches of green and magenta ground far off, nobody looking at them yet |
+| `bloom_sign_1` | A bare patch at the edge of the light, a few green and magenta shoots where there was grass |
+| `bloom_sign_2` | Sela at the patch, not smiling, one hand lowered over it; two Kith behind her |

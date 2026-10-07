@@ -116,13 +116,13 @@ const IRON_TOOLS := {
 	"lane": "stone",
 	"tier": 2,
 	"slot": 0,
-	"unlock": "Iron Tools: +75%",
+	"unlock": "Iron Tools, faster than bronze",
 	"icon": "item_bronze_tools",
 	"requires": ["bloomery", "ironstone"],
 	"cost": {"iron": 25, "coal": 40, "wood": 100},
 	"desc":
 	(
-		"Iron replaces bronze. A worker with an Iron Tool is 75% faster than with bronze, and the tool lasts 300 jobs."
+		"Iron replaces bronze. A worker with an Iron Tool works 75 points faster than with bronze, and it lasts 300 jobs."
 		+ " Tools wear out: keep the Bloomery going."
 	),
 }

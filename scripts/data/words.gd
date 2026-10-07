@@ -177,7 +177,7 @@ const TECH_BLURBS := {
 	"bloomery": "Lets you build a Bloomery that turns iron ore and coal into iron.",
 	"boiler": "A Boiler burns coal and powers machines near it, with no river needed.",
 	"beast_pen": "Lets you tame a shard-touched beast to pull a cart that needs no coal.",
-	"iron_tools": "Workers with an Iron Tool are 75% faster than with bronze.",
+	"iron_tools": "Iron Tools make workers faster than bronze ones do, and last 300 jobs.",
 	"rails": "Rail carries eight times open ground, and the Steam Cart runs on it.",
 	"shard_lamps": "A lamp post that burns a shard and lights three tiles.",
 	"taught_hands_ii": "Teach-by-doing is faster, and a job learned spreads to every hut.",

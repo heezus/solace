@@ -163,6 +163,10 @@ const FEATURES := {
 	"tin_stream": ["extras", 0, 1],
 	"gravel": ["extras", 1, 1],
 	"shard": ["extras", 2, 1],
+	# Ironfall placeholders: the copper hills' rocks, tinted (docs/art/requests.md has the slots Codex paints).
+	"coal_seam": ["rocks", 3, 3],
+	"iron_hills": ["rocks", 3, 3],
+	"spent_seam": ["rocks", 0, 3],
 }
 const BUILDINGS := {"dwelling": 0, "gatherers_hut": 3, "camp": 6}
 const SINGLE_BUILDINGS := {
@@ -189,6 +193,17 @@ const SINGLE_BUILDINGS := {
 	"lumen_market": ["industry", 4],
 	"guard_post": ["industry", 5],
 	"shared_shrine": ["workshops", 7],
+	# Ironfall placeholders: the Mine and the Smelter, tinted (see TINTS).
+	"coal_mine": ["industry", 0],
+	"bloomery": ["industry", 1],
+}
+## The tint of a placeholder that borrows another one's sprite, by feature or building id.
+const TINTS := {
+	"coal_seam": Color(0.34, 0.34, 0.42),
+	"iron_hills": Color(1.0, 0.6, 0.48),
+	"spent_seam": Color(0.62, 0.62, 0.68),
+	"coal_mine": Color(0.5, 0.5, 0.6),
+	"bloomery": Color(0.85, 0.7, 0.62),
 }
 ## The fourteen Starfall icons, in the order of the "starfall-icons" regions: the three packs (Starfall.PACKS keys), the Shard,
 ## the four gifts (LUMEN_GIFTS keys) and the six glyph-set headings (GLYPH_SETS ids).
@@ -276,7 +291,7 @@ static func feature(ci: CanvasItem, type: String, at: Vector2, p: Vector2i, time
 	var offset := Vector2((variant(p, 5, 17) - 2) * 0.22, 0)
 	if type in ["tree", "berry", "flax", "flax_field", "grain"]:
 		offset.x += sin(time * 1.1 + variant(p, 31)) * 0.18
-	fit(ci, sprite(spec[0], index), Rect2(at - Vector2(15, 15) + offset, Vector2(30, 30)))
+	fit(ci, sprite(spec[0], index), Rect2(at - Vector2(15, 15) + offset, Vector2(30, 30)), TINTS.get(type, Color.WHITE))
 	if type == "flax_field":
 		for i in 3:
 			ci.draw_line(at + Vector2(-12, 10 + i * 2), at + Vector2(12, 10 + i * 2), Color("63594570"), 0.7)
@@ -286,7 +301,7 @@ static func feature(ci: CanvasItem, type: String, at: Vector2, p: Vector2i, time
 static func building(ci: CanvasItem, type: String, box: Rect2) -> bool:
 	if SINGLE_BUILDINGS.has(type):
 		var spec: Array = SINGLE_BUILDINGS[type]
-		fit(ci, sprite(spec[0], spec[1]), box.grow(-1.0))
+		fit(ci, sprite(spec[0], spec[1]), box.grow(-1.0), TINTS.get(type, Color.WHITE))
 		return true
 	if not BUILDINGS.has(type):
 		return false

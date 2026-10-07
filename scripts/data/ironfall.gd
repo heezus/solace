@@ -51,7 +51,7 @@ const GOALS_ERA4 := [
 	{"id": "first_iron", "text": "Make the first Iron"},
 	{
 		"id": "iron_tools",
-		"text": "Discover Iron Tools: workers with an Iron Tool are 75% faster than with bronze",
+		"text": "Discover Iron Tools: a worker with an Iron Tool beats one with bronze by 75 points",
 		"tech": "iron_tools"
 	},
 ]

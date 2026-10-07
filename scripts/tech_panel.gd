@@ -235,9 +235,14 @@ func _pick_era(e: int) -> void:
 	refresh()
 
 
-## Era 2's tab opens when Bronze Dawn is discovered.
+## Era 2's tab opens when Bronze Dawn is discovered, and era 4's (Ironfall) once the Starfall is over.
 func _era_open(e: int) -> bool:
-	return e == 1 or state.tech_tree.researched.has("bronze_dawn")
+	match e:
+		2:
+			return state.tech_tree.researched.has("bronze_dawn")
+		4:
+			return state.story.has_event(Data.IRONFALL_EVENT)
+	return true
 
 
 ## The player picked a view: from then on the panel keeps it.
@@ -271,7 +276,7 @@ func _on_open() -> void:
 	if not visible:
 		return
 	if not era_chosen:
-		board.set_era(2 if _era_open(2) else 1)
+		board.set_era(4 if _era_open(4) else 2 if _era_open(2) else 1)
 	if not view_chosen:
 		_apply_view("next")
 	board.fit(true)
@@ -321,7 +326,11 @@ func refresh() -> void:
 		var tab: Button = era_buttons[e]
 		tab.button_pressed = e == board.era
 		tab.disabled = not _era_open(e)
-		tab.tooltip_text = Data.ERA_TAB_TIP % Data.ERAS[e]["name"] if _era_open(e) else Data.ERA_TAB_LOCKED
+		tab.tooltip_text = (
+			Data.ERA_TAB_TIP % Data.ERAS[e]["name"]
+			if _era_open(e)
+			else Data.ERA_TAB_LOCKED_IRONFALL if e == 4 else Data.ERA_TAB_LOCKED
+		)
 	for which in view_buttons:
 		view_buttons[which].button_pressed = which == view
 	for id in stock_chips:

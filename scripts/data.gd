@@ -16,6 +16,7 @@ const DataWords = preload("res://scripts/data/words.gd")
 const DataStarfall = preload("res://scripts/data/starfall.gd")
 const DataMenu = preload("res://scripts/data/menu.gd")
 const DataIronfall = preload("res://scripts/data/ironfall.gd")
+const DataCutscenes = preload("res://scripts/data/cutscenes.gd")
 
 # --- Items: data/items.gd ---
 const ITEMS := DataItems.ITEMS
@@ -566,3 +567,19 @@ const IRON_TOOL_JOBS := DataIronfall.IRON_TOOL_JOBS
 const GOALS_HEADER_ERA4 := DataIronfall.GOALS_HEADER_ERA4
 const GOALS_IRONFALL_CLOSING := DataIronfall.GOALS_IRONFALL_CLOSING
 const GOALS_ERA4 := DataIronfall.GOALS_ERA4
+
+# --- Cutscenes: data/cutscenes.gd ---
+const CUTSCENE_ART_DIR := DataCutscenes.CUTSCENE_ART_DIR
+const CUTSCENE_STILL_SECONDS := DataCutscenes.CUTSCENE_STILL_SECONDS
+const CUTSCENE_FADE_SECONDS := DataCutscenes.CUTSCENE_FADE_SECONDS
+const CUTSCENE_PUSH_IN := DataCutscenes.CUTSCENE_PUSH_IN
+const CUTSCENE_CAPTION_SHARE := DataCutscenes.CUTSCENE_CAPTION_SHARE
+const CUTSCENE_MEMORY_OPACITY := DataCutscenes.CUTSCENE_MEMORY_OPACITY
+const CUTSCENE_SKIP_GRACE := DataCutscenes.CUTSCENE_SKIP_GRACE
+const CUTSCENE_SKIP_HINT := DataCutscenes.CUTSCENE_SKIP_HINT
+const CUTSCENE_PANEL := DataCutscenes.CUTSCENE_PANEL
+const CUTSCENES_LABEL := DataCutscenes.CUTSCENES_LABEL
+const CUTSCENES_HELP := DataCutscenes.CUTSCENES_HELP
+const CUTSCENES := DataCutscenes.CUTSCENES
+const CUTSCENE_VARIANT_LINES := DataCutscenes.CUTSCENE_VARIANT_LINES
+const CUTSCENE_MEMORY := DataCutscenes.CUTSCENE_MEMORY

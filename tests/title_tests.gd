@@ -112,15 +112,17 @@ func test_the_pause_menu_has_its_buttons() -> void:
 	menu.open()
 	t.check(menu.visible and not menu.load_button.disabled, "open, Load is on: the stage starts are always there")
 	t.check(not menu.debug_toggle.button_pressed, "and the debug keys are off")
+	t.check(menu.cutscene_toggle.button_pressed, "and the cutscenes are on")
 	var got := []
 	menu.resumed.connect(func(): got.append("resume"))
 	menu.save_pressed.connect(func(): got.append("save"))
 	menu.load_pressed.connect(func(): got.append("load"))
 	menu.quit_pressed.connect(func(): got.append("quit"))
 	var buttons := _buttons(menu)
-	t.check(buttons.size() == 5, "Resume, Save, Load, Quit and the debug keys switch")
+	t.check(buttons.size() == 6, "Resume, Save, Load, Quit and the Cutscenes and debug keys switches")
+	t.check(menu.cutscene_toggle.text == Data.CUTSCENES_LABEL, "the Cutscenes switch is named")
 	for b in buttons:
-		if b != menu.debug_toggle:
+		if b != menu.debug_toggle and b != menu.cutscene_toggle:
 			b.pressed.emit()
 	t.check(got == ["resume", "save", "load", "quit"], "each button says what was pressed: %s" % [got])
 	t.check(not menu.visible, "Resume puts it away")

@@ -263,7 +263,7 @@ func to_dict() -> Dictionary:
 		"fields": Codec.vec_keys(fields),
 		"flax_fields": Codec.vec_keys(flax_fields),
 		"seams": _seams_to_list(),
-		"seam_left": Codec.int_dict(seam_left),
+		"seam_left": _left_to_dict(),
 	}
 
 
@@ -292,6 +292,14 @@ func from_dict(d: Dictionary) -> void:
 	var left: Dictionary = d.get("seam_left", {})
 	for id in left:
 		seam_left[int(id)] = int(left[id])
+
+
+## What is left in each seam, keyed by the seam number as text (JSON keys are text).
+func _left_to_dict() -> Dictionary:
+	var out := {}
+	for id in seam_left:
+		out[str(id)] = int(seam_left[id])
+	return out
 
 
 ## The tiles of the finite seams as [x, y, seam number] triples, in the order they were laid.
