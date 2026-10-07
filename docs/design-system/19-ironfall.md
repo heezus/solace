@@ -100,7 +100,7 @@ Three stages, each its own PR with placeholder art and the art slots logged in `
 3. **Steam and the end.** Boiler, Rails, Forge, Steel, the Shard Boiler, Bloom Sampling, the Beast Pen, the gate and the end card.
 
 ## Open (defaults stand until the project owner says otherwise)
-- **Are Lessons a finite list** (about 8, each from a part) **or repeatable.** *Default:* finite.
+- **Are Lessons a finite list** (about 8, each from a part) **or repeatable.** *Decided (the project owner, 2026-10-07):* a finite list.
 - **Is coal finite.** *Default:* yes, about 500 a seam, so the Shard Boiler matters.
 - **Where does the map grow.** *Default:* once, to the south, on Ironstone.
 - **Do beasts ship in this era.** *Default:* yes, as one optional branch.
