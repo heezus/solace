@@ -13,6 +13,7 @@ const RunSave = preload("res://scripts/run_save.gd")
 
 const GAME_SCENE := "res://scenes/main.tscn"
 const ART_PATH := "res://art/rendered/title.png"
+const ALT_ART_PATH := "res://art/rendered/title_briana.png"  # an alternate painting: the lead stranger
 const BUTTON_WIDTH := 260.0
 
 var save_path := RunSave.PATH
@@ -24,11 +25,21 @@ var _new_game: Button
 var _quit: Button
 
 
+## Which painting to show: one of the `found` paths, picked by `roll` (0 up to 1), or "" when there is none. With both
+## paintings on disk each is as likely as the other; with one, that one.
+static func art_choice(found: Array, roll: float) -> String:
+	if found.is_empty():
+		return ""
+	return found[clampi(int(roll * found.size()), 0, found.size() - 1)]
+
+
 func _ready() -> void:
 	Ui.apply_theme()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	if ResourceLoader.exists(ART_PATH):
-		_art = load(ART_PATH)
+	var found := [ART_PATH, ALT_ART_PATH].filter(func(path): return ResourceLoader.exists(path))
+	var chosen := art_choice(found, randf())
+	if chosen != "":
+		_art = load(chosen)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7
 	for i in 90:
