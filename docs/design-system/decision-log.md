@@ -649,3 +649,8 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Her painted likeness uses long blonde hair, an open smile, confident posture and polished pale gold/cyan travel clothing, continuing the approved miniature style. Private photo references remain outside Git.
 - Supply one idle pose at the existing 24 px stranger footprint; the current caller has sway but no dedicated idle-frame contract. Claude receives the measured crop and integration notes.
 - Keep Briana's companion title separate from the approved default; its quiet left third supports the menu. The original tool output is 1584×993, below the requested approximate 2560×1600; the illustration still enlarges Briana relative to background Kith and is flagged for review.
+
+## 2026-10-06: Briana character-first revision (PR #75)
+- Codex follows Jon's correction: keep the liked standalone v1 as a reference, withdraw the three incorrectly scaled title attempts, and review a lower-angle character first.
+- The title will use the same original approved background, with Briana on a separate foreground plane and the town behind. Do not regenerate the village or insert a giant on its middle-distance ground.
+- The lower-angle character is a review asset, not an automatic replacement for the top-down 24 px gameplay sprite. Claude holds integration while this staged visual review proceeds.
