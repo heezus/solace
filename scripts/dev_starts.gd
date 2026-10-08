@@ -239,7 +239,7 @@ static func _ironfall_teardown() -> Sim:
 	var s := _ironfall()
 	for tech in ["coal_seams", "teardown"]:
 		s.tech_tree.researched[tech] = true
-	_build(s, "teardown_bench")
+	_build(s, "teardown_bench", 1)
 	for id in Data.WRECK_PARTS:
 		s.teardown.wreck_taken.append(id)
 		s.teardown.add_part(id)
@@ -266,9 +266,10 @@ static func _guess_right(s: Sim, n: int) -> void:
 
 
 ## Put `type` down on the nearest free tile to the Hearth, paid for (the start gives the town the materials, as a bot
-## that had saved up would have). False when there is no room.
-static func _build(s: Sim, type: String) -> bool:
-	for r in range(2, SPOT_RADIUS):
+## that had saved up would have). Rings from `from` tiles out, so a building that must stand near the Hearth can take a spot
+## next to it when the town has filled the rest. False when there is no room.
+static func _build(s: Sim, type: String, from := 2) -> bool:
+	for r in range(from, SPOT_RADIUS):
 		for dy in range(-r, r + 1):
 			for dx in range(-r, r + 1):
 				if maxi(absi(dx), absi(dy)) != r:
