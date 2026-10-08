@@ -747,3 +747,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Every new art slot is logged in `docs/art/requests.md` for Codex; nothing was added to `art/`. A ninth stage start, `ironfall`, begins just after the Starfall ending.
 - Saves stay VERSION 1 and everything Ironfall adds is optional, so older saves keep loading. A CI test now loads a frozen save written before Ironfall (`tests/fixtures/save_before_ironfall.json`) and plays it a minute; a later format change adds a newer fixture beside it instead of editing this one.
 
+
+## 2026-10-08: Ironfall material icons (PR #92)
+- Codex painted five transparent miniature icons: coal, iron ore, iron, steel and iron tools.
+- A sibling atlas preserves every existing item crop; exact regions and ID order are supplied for Claude to wire.
+- Rough iron uses one oxidized bar; steel uses two brighter silver-blue bars, readable at small HUD sizes.
+- Godot imports and a 24/32/40 px native review accompany the original pixels and recorded prompts.
