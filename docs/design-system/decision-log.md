@@ -726,6 +726,12 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - The project owner asked that repeat runs hint at what carried over. Page 20 now has variant lines (one swapped line, chosen from the profile's resets and echoes) and five transparent memory overlays that sit over any still, so no still is painted twice.
 - The project owner also confirmed (2026-10-07, on a card) that the Beast Pen and beast cart ship in Ironfall as one optional branch (stage 3). That closes every Ironfall fork on page 19; stage 1 can be built.
 
+## 2026-10-05: Tool Bench miniature (PR #49)
+- Codex supplied one transparent low timber Tool Bench, matching the accepted rendered Twine Post and Kiln rather than the historical flat SVG style.
+- Large contrasting flint, stone hammer and unfinished axe head communicate tool making; stone feet and upper-left light match adjacent workshop subjects. The 1×1 gameplay footprint remains the interface.
+- Native 48/24/96 px comparisons use the existing aspect-preserving fit helper. At 24 px the bench silhouette survives while individual tool details rely on its label.
+- Art-only delivery under `docs/art/tool-bench/`; production slot/loading/imports remain with Claude. Growth assets stay pending the project owner's approval of page 17.
+
 ## 2026-10-07: Stage starts, save slots and debug keys (PR #80)
 - Claude follows the project owner's ask to test and debug from any stage: a new run can begin at eight stages (Stone Age to just before the Starfall ending) on a fixed map with the town built. There is no separate dev build; the starts ship in the normal game, on the Load screen next to the player's own saves.
 - Starts are built on demand, never committed: the pacing bots play to the boundary and a small script sets up the Starfall stages, so they stay deterministic and follow the balance. A start is read-only; Save writes only to one of five slots (a slot file is a run save plus a `meta` key, so the save version is unchanged, and the old single save moves into a slot).
@@ -747,8 +753,35 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Every new art slot is logged in `docs/art/requests.md` for Codex; nothing was added to `art/`. A ninth stage start, `ironfall`, begins just after the Starfall ending.
 - Saves stay VERSION 1 and everything Ironfall adds is optional, so older saves keep loading. A CI test now loads a frozen save written before Ironfall (`tests/fixtures/save_before_ironfall.json`) and plays it a minute; a later format change adds a newer fixture beside it instead of editing this one.
 
+
+## 2026-10-08: Ironfall material icons (PR #92)
+- Codex painted five transparent miniature icons: coal, iron ore, iron, steel and iron tools.
+- A sibling atlas preserves every existing item crop; exact regions and ID order are supplied for Claude to wire.
+- Rough iron uses one oxidized bar; steel uses two brighter silver-blue bars, readable at small HUD sizes.
+- Godot imports and a 24/32/40 px native review accompany the original pixels and recorded prompts.
+
+## 2026-10-08: Ironfall mine and bloomery silhouettes (PR #91)
+- Codex: give Coal Mine a dark entrance, black spoil and a timber bucket head frame; give Bloomery an exposed clay stack, bellows and warm fire mouth to distinguish it from the stone smelter.
+- Match existing raised miniature camera/materials and 1×1 footprint; preserve existing building fit and selection behavior. Color is painted, so Claude removes placeholder tints when wiring the new exact region keys.
+- Keep the smoke wisp short and static in this asset; continuous flame/smoke animation is an optional engine layer. Native 46/96 px comparison and generated imports are supplied.
+
 ## 2026-10-08: Ironfall resource miniatures (PR #90)
 - Codex: coal_seam, iron_hills and spent_seam receive original transparent three-variant atlases, preserving the existing 1×1 footprints and stable visual selection contract.
 - Read coal as dark seam bands, iron as rust-red faces with grey flecks, and depletion as dull grey channels in the corresponding coal ridge shape. Keep contact edges soft rather than painting square ground bases.
 - Claude wires exact regions and removes the stand-in tints. Coal and spent coal should share the coal visual salt so exhaustion retains the paired silhouette; discovery and gameplay RNG remain unchanged.
 - Inspect beside plain ore and copper at 45 px inside the 48 px map baseline. Godot-generated imports and native comparison are supplied; actual map integration is a separate code step.
+
+
+## 2026-10-08: Ironfall stage 2, Teardown, parts and Lessons (PR #89)
+- Claude built Ironfall stage 2 as page 19 describes: the Teardown tech and Bench (iron and brick, one per town, beside the Hearth), eight parts that are whole one-off objects in the pack and on the Bench, 40 s a part and a queue of three. Taking a part apart consumes it and teaches one permanent Lesson; a second copy is stripped in 8 s for 6 Iron. The Lessons are a finite list of eight, shown on the Lore tab beside the Glyph Wall as locked, found or learned.
+- Parts come from the Wreck (always three: Heat plate, Lamp core, Hull gear, one a trip, two on a heavy pack, half when late), the Lumen Camp by the lean the Starfall ended on (low none, middle two, high four, one every 45 s) and three Bloom patches at the far edge of the south land. A fairness test checks all 24 seeds: three patches, reachable on foot, far from the Hearth, and the Wreck's parts are enough for the Boiler and Lamp path with no help from the Lumen.
+- Lessons with a target in stage 2 are live: Hull gear gives Iron Gears (+25% speed in a workshop), Water glass the Rain Barrel (+20% Field yield within 3 tiles), Seed pod a second home for Starfruit (near coal smoke), Spore and Root two map overlays. Lamp core, Heat plate and Sap are learned and kept, and wait for stage 3 (Shard Lamp, Shard Boiler, Lantern Parties).
+- **Placeholder:** Bloom Sampling is a stage-3 tech, so taking a sample is gated by `Data.BLOOM_SAMPLING_PLACEHOLDER` (true now). Stage 3 sets it false and the tech decides (`TeardownFinds.sampling_open`). Deviation from page 19's default: the Bloom patches are in the south land, not the west one, since the west land does not exist until Rails.
+- Art is placeholder only and every slot is logged in `docs/art/requests.md`. Saves stay VERSION 1 with everything optional, the frozen pre-Ironfall fixture still loads, and the golden pacing hashes and the stone age and Bronze maps are unchanged. The Sim's test limits went up by one field and ten lines for the new block.
+
+## 2026-10-08: Terrain kit for Codex, ground and water at sprite fidelity (PR #89)
+- Claude decided to keep the continuous terrain shader and give it better material, not to switch to autotile pieces: the ground is a world-space blend of masks with no tile grid, so edge pieces would add seams. The repeat comes from one mirrored meadow texture, soft texture density and a plain river blend.
+- The kit asks for non-mirrored seamless sheets at 96 px per tile (meadow in three variants, woodland, water, earth, southern earth), a decal atlas placed by the map-seeded hash, and a painted bank strip. The shader mixes two non-repeating scales and low-frequency variants so nothing looks tiled. The project owner asked for exactly this look: seamless, same fidelity as the sprites.
+- Codex gets numbered template sheets, a short spec (light from the upper left, small palettes, neighbours share mid-tones) and `tests/tools/terrain_preview.gd`, which renders the real ground on a generated map. Everything is in `docs/art/terrain-kit/`.
+- Map generation needs no change for the art. The generator's height and wetness fields can become two shader mask channels when Codex asks for them (no save or map change). Details on page 22.
+

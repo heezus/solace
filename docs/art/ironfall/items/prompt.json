@@ -1,0 +1,17 @@
+{
+  "prompt": "Solace item icon atlas: FIVE small painted miniature material icons in a 3-column by2-row grid, SIX EQUAL cells with bottom-right cell empty and transparent. Strict row-major order: TOP LEFT coal, TOP CENTER iron_ore, TOP RIGHT iron; BOTTOM LEFT steel, BOTTOM CENTER iron_tools; bottom right empty. Match reference existing item icons' raised three-quarter camera, sculpted matte materials, chunky readable silhouette, soft upper-left light and warm handmade feel. Genuine transparent background and clear gaps/margins, no text labels, no border, no backdrop, no scenery. Each icon centered and similar scale, no overlap, readable at24px. Coal: compact heap of angular glossy BLACK coal chips, not charcoal's wood-grain logs. Iron ore: three rust-red chunks with broad matte grey ore faces, no orange copper crystals or gold sparkle. Iron: one dark gunmetal rough iron bar with dull hammered surface and subtle brown oxide edge, squat chunky shape. Steel: two cleaner cool SILVER-BLUE polished metal bars stacked, brighter than iron, restrained bevels, no magical glow. Iron tools: stout wooden-handled axe and mining pick crossed, thick neutral-grey iron heads and simple rope/leather binding, NOT bronze/gold. Do not invent extra materials, symbols or effects.",
+  "source": "exec-bdde1149-aba4-4025-994e-02605dba56e3.png",
+  "reference": "items.png",
+  "grid": [
+    3,
+    2
+  ],
+  "ids": [
+    "coal",
+    "iron_ore",
+    "iron",
+    "steel",
+    "iron_tools"
+  ],
+  "mode": "built-in imagegen"
+}

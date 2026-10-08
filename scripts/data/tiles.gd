@@ -93,6 +93,45 @@ const TILES := {
 		"gated": true,
 		"stays": "The land stays · ore lies where the earth put it",
 	},
+	# Era 4, stage 2: the three Bloom patches at the far edge of the south (scripts/map_south.gd): a small spread of green and
+	# magenta ground with a sample at its middle (Data.BLOOM_TILES). The ground does nothing; a party can take the sample
+	# home (scripts/teardown_finds.gd), and then the sample tile is plain Bloom ground.
+	"bloom_ground":
+	{
+		"name": "Bloom Ground",
+		"yields": "",
+		"color": Color("8a4f9a"),
+		"buildable": false,
+		"hint": "A spread of Bloom: green and magenta ground. It does nothing. Yet.",
+		"stays": "The Bloom stays · nobody knows how to clear it",
+	},
+	"bloom_spore":
+	{
+		"name": "Bloom Sample (Spore)",
+		"yields": "",
+		"color": Color("c04a9d"),
+		"buildable": false,
+		"hint": "A Bloom sample lies here. A party can bring it home.",
+		"stays": "The Bloom stays · nobody knows how to clear it",
+	},
+	"bloom_root":
+	{
+		"name": "Bloom Sample (Root)",
+		"yields": "",
+		"color": Color("6fa84a"),
+		"buildable": false,
+		"hint": "A Bloom sample lies here. A party can bring it home.",
+		"stays": "The Bloom stays · nobody knows how to clear it",
+	},
+	"bloom_sap":
+	{
+		"name": "Bloom Sample (Sap)",
+		"yields": "",
+		"color": Color("d98ad0"),
+		"buildable": false,
+		"hint": "A Bloom sample lies here. A party can bring it home.",
+		"stays": "The Bloom stays · nobody knows how to clear it",
+	},
 	"spent_seam":
 	{
 		"name": "Spent Seam",

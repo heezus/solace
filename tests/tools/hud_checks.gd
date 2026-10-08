@@ -242,7 +242,8 @@ static func next_view(main: Node, when: String) -> Array:
 	return problems
 
 
-## The Gathering tab's four cards (Gatherer's Hut, Field, Flax Field, Fishing Weir) all show, each whole inside the
+## The Gathering tab's four cards (Gatherer's Hut, Field, Flax Field, Fishing Weir) all show (the Rain Barrel waits on a
+## Lesson, so it is left out here), each whole inside the
 ## bottom bar and the window, clear of one another and of the Craft by hand buttons and the Demolish button.
 static func gathering_tab(main: Node, when: String) -> Array:
 	var problems: Array = []
@@ -252,6 +253,8 @@ static func gathering_tab(main: Node, when: String) -> Array:
 	var window := Rect2(Vector2.ZERO, main.get_viewport_rect().size)
 	var cards: Array = []
 	for type in Data.BUILD_TABS["Gathering"]:
+		if Data.BUILDINGS[type].has("lesson"):
+			continue
 		var card: Control = bar.build_buttons[type]["button"]
 		if not card.is_visible_in_tree():
 			problems.append("%s: the %s card isn't showing on the Gathering tab" % [when, type])

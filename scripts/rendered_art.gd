@@ -57,6 +57,14 @@ const REGIONS := {
 		[1013, 700, 410, 341]
 	],
 	"bridges": [[91, 202, 607, 341], [769, 202, 602, 341], [1474, 202, 600, 340]],
+	"coal_seam": [[22, 51, 688, 621], [734, 93, 700, 554], [1452, 165, 705, 500]],
+	"iron_hills": [[46, 70, 676, 590], [745, 151, 703, 486], [1448, 264, 681, 378]],
+	"spent_seam": [[19, 45, 693, 627], [728, 89, 706, 560], [1448, 158, 707, 507]],
+	"coal_mine": [[61, 45, 1221, 1066]],
+	"bloomery": [[80, 49, 1167, 1073]],
+	"ironfall-items":
+	[[30, 85, 482, 369], [551, 79, 452, 376], [1045, 116, 463, 337], [32, 585, 480, 394], [512, 536, 512, 421]],
+	"tool-bench": [[0, 19, 1242, 1193]],
 	"walk":
 	[
 		[0, 0, 362, 362],
@@ -149,6 +157,7 @@ const REGIONS := {
 	]
 }
 
+const BloomLook = preload("res://scripts/bloom_look.gd")
 const DIR := "res://art/rendered/"
 const FEATURES := {
 	"tree": ["trees", 0, 4],
@@ -163,13 +172,16 @@ const FEATURES := {
 	"tin_stream": ["extras", 0, 1],
 	"gravel": ["extras", 1, 1],
 	"shard": ["extras", 2, 1],
-	# Ironfall placeholders: the copper hills' rocks, tinted (docs/art/requests.md has the slots Codex paints).
-	"coal_seam": ["rocks", 3, 3],
-	"iron_hills": ["rocks", 3, 3],
-	"spent_seam": ["rocks", 0, 3],
+	# Ironfall: Codex's painted tiles (docs/art/ironfall/tiles). Each has three variants.
+	"coal_seam": ["coal_seam", 0, 3],
+	"iron_hills": ["iron_hills", 0, 3],
+	"spent_seam": ["spent_seam", 0, 3],
 }
+## A tile that picks its variant with another tile's hash: a worked-out seam keeps the ridge shape its coal seam had.
+const VARIANT_SALT := {"spent_seam": "coal_seam"}
 const BUILDINGS := {"dwelling": 0, "gatherers_hut": 3, "camp": 6}
 const SINGLE_BUILDINGS := {
+	"tool_bench": ["tool-bench", 0],  # Codex's painted Tool Bench (docs/art/tool-bench)
 	"storehouse": ["workshops", 0],
 	"charcoal_pit": ["workshops", 1],
 	"twine_post": ["workshops", 2],
@@ -193,17 +205,17 @@ const SINGLE_BUILDINGS := {
 	"lumen_market": ["industry", 4],
 	"guard_post": ["industry", 5],
 	"shared_shrine": ["workshops", 7],
-	# Ironfall placeholders: the Mine and the Smelter, tinted (see TINTS).
-	"coal_mine": ["industry", 0],
-	"bloomery": ["industry", 1],
+	# Ironfall: Codex's painted Coal Mine and Bloomery (docs/art/ironfall/buildings).
+	"coal_mine": ["coal_mine", 0],
+	"bloomery": ["bloomery", 0],
+	# Ironfall stage 2: the Teardown Bench borrows the Trading Post, the Rain Barrel the Twine Post (tinted, see TINTS).
+	"teardown_bench": ["industry", 4],
+	"rain_barrel": ["workshops", 2],
 }
 ## The tint of a placeholder that borrows another one's sprite, by feature or building id.
 const TINTS := {
-	"coal_seam": Color(0.34, 0.34, 0.42),
-	"iron_hills": Color(1.0, 0.6, 0.48),
-	"spent_seam": Color(0.62, 0.62, 0.68),
-	"coal_mine": Color(0.5, 0.5, 0.6),
-	"bloomery": Color(0.85, 0.7, 0.62),
+	"teardown_bench": Color(0.78, 0.7, 1.0),
+	"rain_barrel": Color(0.55, 0.8, 1.0),
 }
 ## The fourteen Starfall icons, in the order of the "starfall-icons" regions: the three packs (Starfall.PACKS keys), the Shard,
 ## the four gifts (LUMEN_GIFTS keys) and the six glyph-set headings (GLYPH_SETS ids).
@@ -244,14 +256,12 @@ const ITEM_IDS := [
 	"bronze_tools"
 ]
 
-## Ironfall placeholders: a good with no icon of its own borrows another's, recolored (docs/art/requests.md has the slots).
+## Iron Gears has no icon of its own yet: it borrows another's, recolored (docs/art/requests.md has the slot).
 const BORROWED_ITEMS := {
-	"coal": ["charcoal", Color(0.6, 0.6, 0.75)],
-	"iron_ore": ["copper_ore", Color(0.78, 0.66, 0.66)],
-	"iron": ["copper", Color(0.62, 0.7, 0.8)],
-	"steel": ["bronze", Color(0.72, 0.86, 1.0)],
-	"iron_tools": ["bronze_tools", Color(0.66, 0.72, 0.85)],
+	"iron_gears": ["copper", Color(0.72, 0.76, 0.84)],
 }
+## The five Ironfall icons, in the order of the "ironfall-items" regions (docs/art/ironfall/items).
+const IRONFALL_ITEM_IDS := ["coal", "iron_ore", "iron", "steel", "iron_tools"]
 const BORROWED_PX := 64  # the recolored copy's size: items are shown at 20 to 48 px
 
 const LEAD_SPRITE_PATH := "res://art/sprites/lumen_lead.png"
@@ -294,10 +304,12 @@ static func fit(ci: CanvasItem, tex: Texture2D, box: Rect2, tint := Color.WHITE)
 
 
 static func feature(ci: CanvasItem, type: String, at: Vector2, p: Vector2i, time: float) -> bool:
+	if BloomLook.draw(ci, type, at, p, time):  # the Bloom patches: placeholder tiles (docs/art/requests.md)
+		return true
 	if not FEATURES.has(type):
 		return false
 	var spec: Array = FEATURES[type]
-	var index := int(spec[1]) + variant(p, spec[2], type.hash(), map_seed)
+	var index := int(spec[1]) + variant(p, spec[2], String(VARIANT_SALT.get(type, type)).hash(), map_seed)
 	var offset := Vector2((variant(p, 5, 17) - 2) * 0.22, 0)
 	if type in ["tree", "berry", "flax", "flax_field", "grain"]:
 		offset.x += sin(time * 1.1 + variant(p, 31)) * 0.18
@@ -384,6 +396,9 @@ static func named(name: String) -> Texture2D:
 		var index := ITEM_IDS.find(name.trim_prefix("item_"))
 		if index >= 0:
 			return sprite("items", index)
+		var ironfall := IRONFALL_ITEM_IDS.find(name.trim_prefix("item_"))
+		if ironfall >= 0:
+			return sprite("ironfall-items", ironfall)
 		if BORROWED_ITEMS.has(name.trim_prefix("item_")):
 			return borrowed_item(name.trim_prefix("item_"))
 	if SINGLE_BUILDINGS.has(name):

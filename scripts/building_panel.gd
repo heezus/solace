@@ -22,6 +22,8 @@ const TradePicker = preload("res://scripts/trade_picker.gd")
 const GlyphPicker = preload("res://scripts/glyph_picker.gd")
 const ExpeditionPicker = preload("res://scripts/expedition_picker.gd")
 const PatchText = preload("res://scripts/patch_text.gd")
+const TeardownPanel = preload("res://scripts/teardown_panel.gd")
+const LessonsList = preload("res://scripts/lessons_list.gd")
 
 const INSET := Ui.BAR
 
@@ -93,6 +95,17 @@ func setup(game: Sim) -> void:
 	v.add_child(post)
 	v.move_child(post, parts["recipe"].get_index())
 	parts["post"] = post
+	var bench := TeardownPanel.new()  # the Teardown Bench: its queue and the parts in the pack (scripts/teardown_panel.gd)
+	bench.setup(game)
+	bench.changed.connect(refresh)
+	v.add_child(bench)
+	v.move_child(bench, parts["recipe"].get_index())
+	parts["bench"] = bench
+	var lessons := LessonsList.new()  # the Lessons list, under the Bench's rows and beside the Glyph Wall's marks
+	lessons.setup(game)
+	v.add_child(lessons)
+	v.move_child(lessons, parts["recipe"].get_index())
+	parts["lessons"] = lessons
 	parts["holding"] = Ui.label("", Ui.MIN_TEXT)
 	v.add_child(parts["holding"])
 	var bar := ProgressBar.new()
@@ -207,6 +220,8 @@ func refresh() -> void:
 	parts["trade"].show_for(b)
 	parts["glyphs"].show_for(b)
 	parts["post"].show_for(b)
+	parts["bench"].show_for(b)
+	parts["lessons"].show_for(b)
 	parts["recipe"].text = recipe_text(state, b)
 	parts["recipe"].visible = parts["recipe"].text != ""
 	parts["worker"].text = worker_text(state, b)

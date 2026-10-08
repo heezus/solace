@@ -134,6 +134,7 @@ static func _table() -> Array:
 		["starfall_market", "Stage: Starfall, the market", _starfall_market],
 		["starfall_end", "Stage: Starfall, before the ending", _starfall_end],
 		["ironfall", "Stage: Ironfall, the Starfall is over", _ironfall],
+		["ironfall_teardown", "Stage: Ironfall, Teardown and the Wreck's parts", _ironfall_teardown],
 	]
 
 
@@ -232,6 +233,20 @@ static func _ironfall() -> Sim:
 	return s
 
 
+## Teardown is learned and the south is open: a Bench stands beside the Hearth and the Wreck's three parts are in the pack,
+## so the first Lessons are a haul away. The Lumen Camp is there for its own parts.
+static func _ironfall_teardown() -> Sim:
+	var s := _ironfall()
+	for tech in ["coal_seams", "teardown"]:
+		s.tech_tree.researched[tech] = true
+	_build(s, "teardown_bench", 1)
+	for id in Data.WRECK_PARTS:
+		s.teardown.wreck_taken.append(id)
+		s.teardown.add_part(id)
+	_wait(s, 2.0)
+	return s
+
+
 # --- Scripted steps ----------------------------------------------------------
 
 
@@ -251,9 +266,10 @@ static func _guess_right(s: Sim, n: int) -> void:
 
 
 ## Put `type` down on the nearest free tile to the Hearth, paid for (the start gives the town the materials, as a bot
-## that had saved up would have). False when there is no room.
-static func _build(s: Sim, type: String) -> bool:
-	for r in range(2, SPOT_RADIUS):
+## that had saved up would have). Rings from `from` tiles out, so a building that must stand near the Hearth can take a spot
+## next to it when the town has filled the rest. False when there is no room.
+static func _build(s: Sim, type: String, from := 2) -> bool:
+	for r in range(from, SPOT_RADIUS):
 		for dy in range(-r, r + 1):
 			for dx in range(-r, r + 1):
 				if maxi(absi(dx), absi(dy)) != r:

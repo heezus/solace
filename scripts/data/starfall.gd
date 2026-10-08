@@ -371,8 +371,10 @@ const PACKS := {
 	"heavy": {"name": "Heavy pack", "cost": {"berries": 24, "rope": 8, "flint": 6}, "finds": 3},
 }
 const PACK_ORDER := ["light", "standard", "heavy"]
-const TARGETS := {"wreck": "The crash site (east)", "fog": "The nearest fog"}
-const TARGET_ORDER := ["wreck", "fog"]
+## `bloom` (Ironfall, scripts/teardown_finds.gd) goes to the nearest Bloom patch in the far south for its sample; the picker
+## offers it only while a patch is left to sample.
+const TARGETS := {"wreck": "The crash site (east)", "fog": "The nearest fog", "bloom": "A Bloom patch (far south)"}
+const TARGET_ORDER := ["wreck", "fog", "bloom"]
 const POST_TARGET := "Going to: %s"
 const POST_PACK := "Pack: %s (%s), %d marks"  # name, cost, finds
 const POST_HINT := "Click a line to change it. A party leaves when you press Send, or again and again while Keep sending is on."

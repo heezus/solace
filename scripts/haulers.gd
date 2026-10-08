@@ -10,6 +10,7 @@ const Roads = preload("res://scripts/roads.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Work = preload("res://scripts/work.gd")
 const Homes = preload("res://scripts/homes.gd")
+const Teardown = preload("res://scripts/teardown.gd")
 
 
 ## Items a hauler carries per trip: Carrying Poles double it, and a cart (`k`, if given) carries Data.CART_LOAD times.
@@ -78,6 +79,16 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 			k["carry"] = {}
 			k["task"] = {}
 			Roads.walk(s, k, t["depot"])  # back along the road to wait at the depot
+		"to_part":
+			if not Roads.walk(s, k, b["pos"]):
+				b["unreachable"] = 2.0
+				s.people.drop_task(k)  # the part never left the pack
+				return
+			k["phase"] = "part_drop"
+		"part_drop":
+			s.teardown.deliver(t["part"])
+			k["task"] = {}
+			Roads.walk(s, k, t["depot"])
 
 
 ## Where an idle hauler waits. Haulers are born at the Hearth, so left to stand where they are none would ever
@@ -122,6 +133,8 @@ static func _stock_wanted(s, cand: Dictionary) -> Dictionary:
 	var out := {}
 	for id in recipe:
 		out[id] = recipe[id] * 2
+	if s.teardown.knows("hull_gear") and Data.BUILDINGS[cand["type"]]["kind"] == "processor" and not recipe.is_empty():
+		out[Data.GEARS_ITEM] = 1  # one Iron Gear fitted to a workshop speeds it up for good
 	return out
 
 
@@ -141,13 +154,21 @@ static func _find_task(s, k: Dictionary) -> bool:
 		if not Buildings.served(cand) or cand["unreachable"] > 0.0 or not Roads.net_of(s, cand) in nets:
 			continue
 		var d := Vector2(here).distance_to(Vector2(cand["pos"]))
-		var starved: bool = not Buildings.recipe_in(cand).is_empty() and Buildings.buffered(cand["inbuf"]) == 0
+		var fitted: int = cand["inbuf"].get(Data.GEARS_ITEM, 0)  # a gear fitted to the workshop is not an input it works on
+		var starved: bool = not Buildings.recipe_in(cand).is_empty() and Buildings.buffered(cand["inbuf"]) - fitted == 0
 		if starved or Buildings.buffered(cand["out"]) >= Data.BUFFER_CAP:
 			d /= 3.0
 		if d >= best_d or (k["cart"] and not Roads.cart_can_reach(s, here, cand["pos"])):
 			continue
 		if Buildings.buffered(cand["out"]) > 0 and not cand["claimed"]:
 			best = {"kind": "pickup", "building": i}
+			best_d = d
+			continue
+		var part: String = (
+			s.teardown.next_to_carry(Teardown.flying(s.people.kith)) if cand["type"] == "teardown_bench" else ""
+		)
+		if part != "":
+			best = {"kind": "part", "building": i, "part": part}
 			best_d = d
 			continue
 		var inputs := _stock_wanted(s, cand)
@@ -165,11 +186,13 @@ static func _find_task(s, k: Dictionary) -> bool:
 	if best["kind"] == "pickup" and not Roads.walk(s, k, b["pos"]):
 		b["unreachable"] = 2.0
 		return false
-	k["path"] = [] if best["kind"] == "deliver" else k["path"]  # a delivery starts from this depot's stock
+	k["path"] = [] if best["kind"] != "pickup" else k["path"]  # a delivery starts from this depot's stock
 	k["task"] = best
 	if best["kind"] == "pickup":
 		b["claimed"] = true
 		k["phase"] = "to_pickup"
+	elif best["kind"] == "part":
+		k["phase"] = "to_part"
 	else:
 		b["incoming"][best["item"]] = b["incoming"].get(best["item"], 0) + best["amount"]
 		k["phase"] = "to_stock"

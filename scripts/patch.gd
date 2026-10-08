@@ -5,6 +5,7 @@ extends RefCounted
 ## Static, and works on the Sim passed in.
 
 const Data = preload("res://scripts/data.gd")
+const Lessons = preload("res://scripts/lessons.gd")
 
 
 ## The huts whose reach holds tile `p` (the Gatherer's Hut kind, built, in building-list order).
@@ -57,4 +58,4 @@ static func field_share(s, tile: Vector2i) -> float:
 	more += Data.CALENDAR_FIELD_BONUS if researched.has("calendar") else 0.0
 	more += Data.PLOUGH_FIELD_BONUS if researched.has("plough") else 0.0
 	more += Data.PLOUGHSHARE_FIELD_BONUS if researched.has("bronze_ploughshare") else 0.0
-	return more
+	return more + Lessons.rain_share(s, tile)

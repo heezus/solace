@@ -11,6 +11,7 @@ const GrowthArt = preload("res://scripts/growth_art.gd")
 const Overlays = preload("res://scripts/overlays.gd")
 const Rendered = preload("res://scripts/rendered_art.gd")
 const Expedition = preload("res://scripts/expedition.gd")
+const Lessons = preload("res://scripts/lessons.gd")
 
 const KITH := Color("e76f51")
 const SPRITE := Overlays.TILE  # the sprite's square: drawn at 1.5x, so its 2-unit outline is 3 px
@@ -118,6 +119,7 @@ static func draw_wreck(ci: CanvasItem, s, time: float) -> void:
 ## The first Bloom sign (Starfall.bloom), once the Warning is read and the fog is lifted there: a patch of growth nobody
 ## planted, magenta and sickly green, slowly breathing. Stand-in art until Codex draws it (docs/art/starfall-art-brief.md).
 static func draw_bloom_sign(ci: CanvasItem, s, time: float) -> void:
+	Lessons.draw_overlays(ci, s)  # the Spore and Root Lessons (stage 2 of Ironfall), when learned
 	var b: Vector2i = s.starfall.bloom
 	if b.x < 0 or not s.fog.is_revealed(b):
 		return

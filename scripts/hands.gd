@@ -158,7 +158,8 @@ static func teach(s, item: String) -> void:
 
 
 static func recipe_unlocked(s, recipe: String) -> bool:
-	return s.tech_tree.researched.has(Data.RECIPES[recipe]["tech"])
+	var lesson: String = Data.RECIPES[recipe].get("lesson", "")  # a recipe taught by a part wants its Lesson learned too
+	return s.tech_tree.researched.has(Data.RECIPES[recipe]["tech"]) and (lesson == "" or s.teardown.knows(lesson))
 
 
 static func craft(s, recipe: String) -> bool:

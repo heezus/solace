@@ -10,6 +10,7 @@ const Sim = preload("res://scripts/sim.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Expedition = preload("res://scripts/expedition.gd")
 const IconRow = preload("res://scripts/icon_row.gd")
+const Finds = preload("res://scripts/teardown_finds.gd")
 
 var state: Sim
 var key := ""  # what the rows were built from, so they are built again only when it changes
@@ -87,7 +88,7 @@ static func keep_text(s: Sim) -> String:
 
 
 func _next_target() -> void:
-	_cycle("target", Data.TARGET_ORDER)
+	_cycle("target", Data.TARGET_ORDER.filter(func(id): return Finds.target_listed(state, id)))  # a Bloom patch only once listed
 
 
 func _next_pack() -> void:

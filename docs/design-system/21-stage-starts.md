@@ -24,6 +24,7 @@ A stage start begins a **new run** at a chosen stage, on a fixed map (seed 1) wi
 | `starfall_market` | Trust built, the Lumen would trade, the Lumen Market stands. |
 | `starfall_end` | Five sets read, every question answered, the Warning copied and guessed right: the era ends at the next talk, a few seconds in. |
 | `ironfall` | The Starfall is over and its ending card put away: Ironfall has begun, its first techs are in view and the land waits to grow south. |
+| `ironfall_teardown` | Teardown and Coal Seams are learned, the south is open, a Teardown Bench stands beside the Hearth and the Wreck's three parts are in the pack, ready to be opened. |
 
 Nothing is committed as a save. `scripts/dev_starts.gd` builds a start on demand: the pacing bots (`tests/autoplay.gd`, `tests/autoplay_bronze.gd`) play the fixed map to the boundary, and the Starfall starts are a short scripted setup on top of the Falling Star using the normal `Sim`, `Starfall` and `Story` calls. So a start is deterministic, and it follows the balance by itself: change a price or a delay and the next build is the new stage.
 
