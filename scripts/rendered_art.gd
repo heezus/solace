@@ -211,11 +211,24 @@ const SINGLE_BUILDINGS := {
 	# Ironfall stage 2: the Teardown Bench borrows the Trading Post, the Rain Barrel the Twine Post (tinted, see TINTS).
 	"teardown_bench": ["industry", 4],
 	"rain_barrel": ["workshops", 2],
+	# Ironfall stage 3: stand-ins, each tinted to tell it from the one it borrows (docs/art/requests.md has the slots).
+	"boiler": ["workshops", 3],
+	"shard_boiler": ["workshops", 3],
+	"forge": ["industry", 2],
+	"steam_shed": ["industry", 3],
+	"beast_pen": ["buildings", 3],
+	"shard_lamp": ["industry", 5],
 }
 ## The tint of a placeholder that borrows another one's sprite, by feature or building id.
 const TINTS := {
 	"teardown_bench": Color(0.78, 0.7, 1.0),
 	"rain_barrel": Color(0.55, 0.8, 1.0),
+	"boiler": Color(0.78, 0.7, 0.66),
+	"shard_boiler": Color(1.0, 0.92, 0.55),
+	"forge": Color(0.7, 0.8, 1.0),
+	"steam_shed": Color(0.7, 0.75, 0.85),
+	"beast_pen": Color(0.8, 0.9, 1.0),
+	"shard_lamp": Color(0.6, 0.95, 1.0),
 }
 ## The fourteen Starfall icons, in the order of the "starfall-icons" regions: the three packs (Starfall.PACKS keys), the Shard,
 ## the four gifts (LUMEN_GIFTS keys) and the six glyph-set headings (GLYPH_SETS ids).
@@ -256,9 +269,10 @@ const ITEM_IDS := [
 	"bronze_tools"
 ]
 
-## Iron Gears has no icon of its own yet: it borrows another's, recolored (docs/art/requests.md has the slot).
+## Iron Gears and Steel Tools have no icon of their own yet: each borrows another's, recolored (docs/art/requests.md has the slots).
 const BORROWED_ITEMS := {
 	"iron_gears": ["copper", Color(0.72, 0.76, 0.84)],
+	"steel_tools": ["iron_tools", Color(0.68, 0.84, 1.0)],
 }
 ## The five Ironfall icons, in the order of the "ironfall-items" regions (docs/art/ironfall/items).
 const IRONFALL_ITEM_IDS := ["coal", "iron_ore", "iron", "steel", "iron_tools"]
@@ -376,7 +390,12 @@ static func borrowed_item(id: String) -> Texture2D:
 	var key := "borrowed_" + id
 	if not _textures.has(key):
 		var spec: Array = BORROWED_ITEMS[id]
-		var img: Image = sprite("items", ITEM_IDS.find(spec[0])).get_image()
+		var from: AtlasTexture = (
+			sprite("items", ITEM_IDS.find(spec[0]))
+			if spec[0] in ITEM_IDS
+			else sprite("ironfall-items", IRONFALL_ITEM_IDS.find(spec[0]))
+		)
+		var img: Image = from.get_image()
 		img.convert(Image.FORMAT_RGBA8)
 		var scale := float(BORROWED_PX) / maxi(img.get_width(), img.get_height())
 		img.resize(maxi(roundi(img.get_width() * scale), 1), maxi(roundi(img.get_height() * scale), 1))
@@ -401,6 +420,8 @@ static func named(name: String) -> Texture2D:
 			return sprite("ironfall-items", ironfall)
 		if BORROWED_ITEMS.has(name.trim_prefix("item_")):
 			return borrowed_item(name.trim_prefix("item_"))
+		if name == "item_shard":
+			return sprite("starfall-icons", STARFALL_ICONS.find("shard"))  # the Shard of the Starfall, chipped by hand now
 	if SINGLE_BUILDINGS.has(name):
 		var spec: Array = SINGLE_BUILDINGS[name]
 		return sprite(spec[0], spec[1])

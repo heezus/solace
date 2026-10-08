@@ -22,12 +22,27 @@ const ITEMS := {
 	"bronze": {"name": "Bronze", "color": Color("cd7f32"), "era": 2},
 	"bronze_tools":
 	{"name": "Bronze Tools", "one": "Bronze Tool", "short": "Tools", "color": Color("a0522d"), "era": 2},
-	# Era 4 (Ironfall). Coal is finite: a seam holds a pile and runs out (Data.COAL_PER_SEAM). Steel is made from stage 3.
-	"coal": {"name": "Coal", "color": Color("2f2f38"), "era": 4, "desc": "Fuel for the Bloomery. Each seam runs out"},
+	"coal":
+	{
+		# Era 4 (Ironfall). Coal is finite: a seam holds a pile and runs out (Data.COAL_PER_SEAM). Steel is made from stage 3.
+		"name": "Coal",
+		"color": Color("2f2f38"),
+		"era": 4,
+		"desc": "Fuel for the Bloomery, the Forge and the Boiler. Each seam runs out"
+	},
 	"iron_ore": {"name": "Iron Ore", "short": "Ore", "color": Color("8a4f3a"), "era": 4},
 	"iron": {"name": "Iron", "color": Color("7d8791"), "era": 4},
 	"steel": {"name": "Steel", "color": Color("a9bfd1"), "era": 4},
 	"iron_tools": {"name": "Iron Tools", "one": "Iron Tool", "short": "Tools", "color": Color("56606b"), "era": 4},
+	# Stage 3: Steel Tools (the Steel tech) and the Shard, chipped by hand from the Strange Stone once Shard Lamps is learned.
+	"steel_tools": {"name": "Steel Tools", "one": "Steel Tool", "short": "Tools", "color": Color("8aa3b8"), "era": 4},
+	"shard":
+	{
+		"name": "Shard",
+		"color": Color("9fe0f0"),
+		"era": 4,
+		"desc": "Chipped from the Strange Stone. Burns long in a Shard Lamp or a Shard Boiler",
+	},
 	# Iron Gears are what the Hull gear Lesson teaches (stage 2): not in ITEM_ORDER, so no top-bar counter. They are made by
 	# hand, kept in the stockpile and fitted to workshops by haulers (Data.GEARS_SPEED), one to a workshop.
 	"iron_gears":
@@ -66,6 +81,8 @@ const ITEM_ORDER := [
 	"iron",
 	"steel",
 	"iron_tools",
+	"steel_tools",
+	"shard",
 ]
 
 ## Food value of each edible item. The Kith eat from the stockpile.
@@ -85,6 +102,7 @@ const RECIPES := {
 	"bronze_tools":
 	{"name": "Bronze Tools", "tech": "bronze_tools", "in": {"bronze": 1, "wood": 2}, "out": {"bronze_tools": 1}},
 	"iron_tools": {"name": "Iron Tools", "tech": "iron_tools", "in": {"iron": 1, "wood": 2}, "out": {"iron_tools": 1}},
+	"steel_tools": {"name": "Steel Tools", "tech": "steel", "in": {"steel": 1, "wood": 2}, "out": {"steel_tools": 1}},
 	# Learned from a part (`lesson`, Data.LESSONS), on top of the tech that opens the Bench.
 	"iron_gears":
 	{

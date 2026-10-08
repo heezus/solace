@@ -16,7 +16,6 @@ const Art = preload("res://scripts/art.gd")
 const TechPanel = preload("res://scripts/tech_panel.gd")
 
 const SEEDS := [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 42, 99, 123, 2024]
-const BUILT_TECHS := ["coal_seams", "ironstone", "bloomery", "iron_tools", "teardown"]  # stages 1 and 2: the rest wait for stage 3
 
 var t  # the runner, tests/run_tests.gd
 
@@ -87,7 +86,10 @@ func test_ironfall_data_is_whole() -> void:
 		)
 		t.check(Data.TECH_BLURBS.has(id), "%s has a blurb" % id)
 	for id in techs:
-		t.check(Rules.tech_enabled(id) == (id in BUILT_TECHS), "%s is built only if it is in stages 1 or 2" % id)
+		t.check(
+			Rules.tech_enabled(id),
+			"%s is built (stage %d of %d)" % [id, Data.TECHS[id].get("stage", 1), Data.BUILT_STAGE]
+		)
 	for item in ["coal", "iron_ore", "iron", "steel", "iron_tools"]:
 		t.check(Data.ITEMS[item]["era"] == 4 and item in Data.ITEM_ORDER, "%s is an era-4 good" % item)
 	for item in ["coal", "iron_ore", "iron", "steel", "iron_tools"]:

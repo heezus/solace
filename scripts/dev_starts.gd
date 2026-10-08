@@ -135,6 +135,7 @@ static func _table() -> Array:
 		["starfall_end", "Stage: Starfall, before the ending", _starfall_end],
 		["ironfall", "Stage: Ironfall, the Starfall is over", _ironfall],
 		["ironfall_teardown", "Stage: Ironfall, Teardown and the Wreck's parts", _ironfall_teardown],
+		["ironfall_steam", "Stage: Ironfall, steam: a Boiler, a Forge and Rail to lay", _ironfall_steam],
 	]
 
 
@@ -243,6 +244,20 @@ static func _ironfall_teardown() -> Sim:
 	for id in Data.WRECK_PARTS:
 		s.teardown.wreck_taken.append(id)
 		s.teardown.add_part(id)
+	_wait(s, 2.0)
+	return s
+
+
+## Steam is learned (Boiler, Rails, the Blast Furnace and what they follow) and a Boiler, a Forge and a Steam Shed stand near the
+## Hearth with coal, iron and the materials for Rail in the stores: the Livewire gate is the next thing to build toward.
+static func _ironfall_steam() -> Sim:
+	var s := _ironfall_teardown()
+	for tech in ["ironstone", "bloomery", "iron_tools", "boiler", "rails", "blast_furnace"]:
+		s.tech_tree.researched[tech] = true
+	for id in ["coal", "iron", "wood", "brick", "stone"]:
+		s.economy.add(id, 300)
+	for type in ["boiler", "forge", "steam_shed"]:
+		_build(s, type, 2)
 	_wait(s, 2.0)
 	return s
 

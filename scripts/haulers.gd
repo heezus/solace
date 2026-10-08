@@ -11,12 +11,21 @@ const Buildings = preload("res://scripts/buildings.gd")
 const Work = preload("res://scripts/work.gd")
 const Homes = preload("res://scripts/homes.gd")
 const Teardown = preload("res://scripts/teardown.gd")
+const Steam = preload("res://scripts/steam.gd")
 
 
-## Items a hauler carries per trip: Carrying Poles double it, and a cart (`k`, if given) carries Data.CART_LOAD times.
+## Items a hauler carries per trip: Carrying Poles double it, and a cart (`k`, if given) carries more: a hand cart or a beast cart
+## Data.CART_LOAD times, a Steam Cart with steam up Data.STEAM_LOAD times (a cold one is a plain hauler).
 static func carry_cap(s, k := {}) -> int:
 	var n: int = Data.CARRY * (2 if s.tech_tree.researched.has("carrying_poles") else 1)
-	return n * (Data.CART_LOAD if k.get("cart", false) else 1)
+	match Roads.ride(k):
+		"cart":
+			return n * Data.CART_LOAD
+		"beast":
+			return n * Data.BEAST_LOAD
+		"rail":
+			return n * Data.STEAM_LOAD
+	return n
 
 
 static func tick(s, k: Dictionary, delta: float) -> void:
@@ -129,10 +138,13 @@ static func _stock_wanted(s, cand: Dictionary) -> Dictionary:
 		return Homes.wanted(cand)
 	if cand["paused"] or Work.enough(s, cand):
 		return {}
+	if Buildings.is_tamed(cand):
+		return {}  # the beast is tame: it needs no more Grain
 	var recipe := Buildings.recipe_in(cand)
 	var out := {}
+	var stock: int = Data.BUILDINGS[cand["type"]].get("stock", 0)  # a fed building keeps a small store of what it burns
 	for id in recipe:
-		out[id] = recipe[id] * 2
+		out[id] = stock if stock > 0 else recipe[id] * 2
 	if s.teardown.knows("hull_gear") and Data.BUILDINGS[cand["type"]]["kind"] == "processor" and not recipe.is_empty():
 		out[Data.GEARS_ITEM] = 1  # one Iron Gear fitted to a workshop speeds it up for good
 	return out
@@ -142,13 +154,15 @@ static func _stock_wanted(s, cand: Dictionary) -> Dictionary:
 ## touches: empty a building's output, or bring a processor its inputs. A building that has stopped
 ## (a workshop with nothing to work, or one full up) counts as a third as far, so busy huts near the
 ## stockpile don't starve the far ones.
-static func _find_task(s, k: Dictionary) -> bool:
+static func _find_task(s, k: Dictionary, steam := true) -> bool:
 	var here: Vector2i = Kith.tile_of(k)
 	var nets := Roads.depot_nets(s, here)
 	if nets.is_empty():
 		return false
 	var best := {}
 	var best_d := INF
+	if k["cart"] and k["cart_kind"] == "steam":
+		k["hot"] = steam and Steam.can_stoke(s, k)  # steam up for this trip? It runs on Rail alone when it is
 	for i in s.town.buildings.size():
 		var cand: Dictionary = s.town.buildings[i]
 		if not Buildings.served(cand) or cand["unreachable"] > 0.0 or not Roads.net_of(s, cand) in nets:
@@ -158,7 +172,7 @@ static func _find_task(s, k: Dictionary) -> bool:
 		var starved: bool = not Buildings.recipe_in(cand).is_empty() and Buildings.buffered(cand["inbuf"]) - fitted == 0
 		if starved or Buildings.buffered(cand["out"]) >= Data.BUFFER_CAP:
 			d /= 3.0
-		if d >= best_d or (k["cart"] and not Roads.cart_can_reach(s, here, cand["pos"])):
+		if d >= best_d or (k["cart"] and not Roads.can_reach(s, k, here, cand["pos"])):
 			continue
 		if Buildings.buffered(cand["out"]) > 0 and not cand["claimed"]:
 			best = {"kind": "pickup", "building": i}
@@ -180,13 +194,15 @@ static func _find_task(s, k: Dictionary) -> bool:
 				best_d = d
 				break
 	if best.is_empty():
-		return false
+		return k["hot"] and _find_task(s, k, false)  # no work on its Rail: the cart goes cold and hauls like a plain hauler
 	var b: Dictionary = s.town.buildings[best["building"]]
 	best["depot"] = here
 	if best["kind"] == "pickup" and not Roads.walk(s, k, b["pos"]):
 		b["unreachable"] = 2.0
 		return false
 	k["path"] = [] if best["kind"] != "pickup" else k["path"]  # a delivery starts from this depot's stock
+	if k["hot"]:
+		Steam.stoke(s, k)  # the trip is on: it burns a little coal
 	k["task"] = best
 	if best["kind"] == "pickup":
 		b["claimed"] = true

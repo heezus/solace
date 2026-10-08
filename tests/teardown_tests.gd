@@ -55,10 +55,10 @@ func run(runner) -> void:
 	test_the_lumen_camp_hands_over_parts_by_lean()
 	test_the_bloom_patches_are_fair()
 	test_a_party_brings_a_sample_home()
-	test_sampling_waits_for_the_placeholder_or_the_tech()
+	test_sampling_waits_for_the_tech()
 	test_iron_gears()
 	test_the_rain_barrel_and_smoke_starfruit()
-	test_lessons_that_wait_for_stage_three()
+	test_lessons_that_stage_three_wakes()
 	test_the_bloom_overlays()
 	test_the_lessons_list_and_the_bench_panel()
 	test_the_goals_and_the_story()
@@ -73,7 +73,7 @@ func run(runner) -> void:
 func town(lean := "neighbours", map_seed := 2) -> Sim:
 	var s := Sim.new()
 	s.generate(map_seed)
-	for tech in ["bronze_dawn", "haulers", "coal_seams", "teardown"]:
+	for tech in ["bronze_dawn", "haulers", "coal_seams", "teardown", "bloom_sampling"]:
 		s.tech_tree.researched[tech] = true
 	Land.grow_if_due(s)
 	s.fog.reveal_all()
@@ -185,12 +185,12 @@ func test_teardown_data_is_whole() -> void:
 			"%s names a real Lesson" % id
 		)
 	var waiting := Data.LESSON_ORDER.filter(func(id): return not Data.LESSONS[id]["live"])
-	t.check(waiting == ["lamp_core", "heat_plate", "sap"], "three Lessons wait for stage 3: %s" % [waiting])
+	t.check(waiting.is_empty(), "every Lesson is live since stage 3: %s" % [waiting])
 	t.check(Rules.tech_enabled("teardown"), "the Teardown tech is built")
 	t.check("teardown_bench" in Data.BUILD_TABS["Lore"], "the Bench is on the Lore tab")
 	t.check(Data.BUILDINGS["teardown_bench"]["cost"].keys() == ["iron", "brick"], "and costs iron and brick")
 	t.check(Data.ITEMS.has("iron_gears") and not "iron_gears" in Data.ITEM_ORDER, "Iron Gears are no top-bar counter")
-	t.check(Data.BLOOM_SAMPLING_PLACEHOLDER, "the placeholder flag for Bloom Sampling is set until stage 3")
+	t.check(not Data.BLOOM_SAMPLING_PLACEHOLDER, "the placeholder flag for Bloom Sampling is off: the tech decides")
 	t.check("bloom" in Data.TARGET_ORDER and Data.TARGETS.has("bloom"), "a Bloom patch is an expedition target")
 
 
@@ -519,12 +519,14 @@ func test_a_party_brings_a_sample_home() -> void:
 		t.check(Data.LESSONS[id]["live"] or id == "sap", "%s is a Lesson" % id)
 
 
-func test_sampling_waits_for_the_placeholder_or_the_tech() -> void:
+func test_sampling_waits_for_the_tech() -> void:
 	var s := town("enemies")
-	t.check(Finds.sampling_open(s), "the placeholder flag opens sampling in stage 2")
-	t.check(not Finds.sampling_open(s, false), "without it, the tech decides: closed")
+	s.tech_tree.researched.erase("bloom_sampling")
+	t.check(not Finds.sampling_open(s), "without Bloom Sampling the Kith cannot take a sample")
+	t.check(Finds.sampling_open(s, true), "(the old placeholder flag would have opened it)")
+	t.check(Finds.bloom_problem(s) == Data.BLOOM_NO_TECH, "and the Bloom patch says why")
 	s.tech_tree.researched["bloom_sampling"] = true
-	t.check(Finds.sampling_open(s, false), "and open once Bloom Sampling is learned")
+	t.check(Finds.sampling_open(s), "and it is open once Bloom Sampling is learned")
 	var raw := Sim.new()
 	raw.generate(4)
 	t.check(Finds.bloom_problem(raw) == Data.BLOOM_NO_TEARDOWN, "the Kith will not touch it without Teardown")
@@ -640,24 +642,19 @@ func test_the_rain_barrel_and_smoke_starfruit() -> void:
 	)
 
 
-func test_lessons_that_wait_for_stage_three() -> void:
+func test_lessons_that_stage_three_wakes() -> void:
 	var s := town()
 	for id in ["lamp_core", "heat_plate", "sap"]:
 		s.teardown.lessons.append(id)
 		t.check(s.teardown.lesson_state(id) == "learned", "%s is learned and kept" % id)
-		t.check(
-			LessonsList.state_text(s, id).begins_with("Learned. It will be used once"),
-			"%s says its use comes later" % id
-		)
+		t.check(LessonsList.state_text(s, id) == Data.LESSONS[id]["note"], "%s says what it does now" % id)
 	t.check(
 		Data.TECHS["shard_lamps"]["lesson"] == "lamp_core" and Data.TECHS["shard_boiler"]["lesson"] == "heat_plate",
 		"the techs name them"
 	)
-	t.check(
-		not Rules.tech_enabled("shard_lamps") and not Rules.tech_enabled("shard_boiler"),
-		"and stay unbuilt until stage 3"
-	)
-	t.check(not Data.BUILDINGS.has("shard_lamp") and not Data.BUILDINGS.has("shard_boiler"), "no building is on offer")
+	t.check(Rules.tech_enabled("shard_lamps") and Rules.tech_enabled("shard_boiler"), "and are built")
+	t.check(Data.BUILDINGS["shard_lamp"]["lesson"] == "lamp_core", "the Shard Lamp waits for the Lamp core")
+	t.check(Data.BUILDINGS["shard_boiler"]["lesson"] == "heat_plate", "the Shard Boiler for the Heat plate")
 
 
 func test_the_bloom_overlays() -> void:
@@ -769,7 +766,7 @@ func test_the_goals_and_the_story() -> void:
 	var s := town()
 	s.tech_tree.researched.erase("teardown")
 	s.story.update(s)
-	t.check(s.story.goal_list() == Data.GOALS_ERA4 and Data.GOALS_ERA4.size() == 12, "the era has twelve goals")
+	t.check(s.story.goal_list() == Data.GOALS_ERA4 and Data.GOALS_ERA4.size() == 21, "the era has 21 goals")
 	t.check(not s.story.goals_done.has("teardown") and not s.story.goals_done.has("bench"), "the Teardown goals wait")
 	s.tech_tree.researched["teardown"] = true
 	bench(s)

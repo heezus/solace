@@ -58,4 +58,5 @@ static func field_share(s, tile: Vector2i) -> float:
 	more += Data.CALENDAR_FIELD_BONUS if researched.has("calendar") else 0.0
 	more += Data.PLOUGH_FIELD_BONUS if researched.has("plough") else 0.0
 	more += Data.PLOUGHSHARE_FIELD_BONUS if researched.has("bronze_ploughshare") else 0.0
+	more += Data.IRON_PLOUGH_FIELD_BONUS if researched.has("iron_plough") else 0.0
 	return more + Lessons.rain_share(s, tile)
