@@ -1,0 +1,107 @@
+[
+  {
+    "id": "coal_seam",
+    "path": "res://art/rendered/coal_seam.png",
+    "source_size": [
+      2172,
+      724
+    ],
+    "sha256": "aa9d04a22a6fe5b6b1c2ad937c8612e646d8bb0c30a7d9f7dedb3f8246d5d57f",
+    "regions": [
+      [
+        22,
+        51,
+        688,
+        621
+      ],
+      [
+        734,
+        93,
+        700,
+        554
+      ],
+      [
+        1452,
+        165,
+        705,
+        500
+      ]
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "variant_count": 3,
+    "native_size": 45
+  },
+  {
+    "id": "iron_hills",
+    "path": "res://art/rendered/iron_hills.png",
+    "source_size": [
+      2172,
+      724
+    ],
+    "sha256": "951b5e977f2c3089d9c7b7d9e6fcbee43a8df5bd55e39b3e50fa9096e8bb2ad7",
+    "regions": [
+      [
+        46,
+        70,
+        676,
+        590
+      ],
+      [
+        745,
+        151,
+        703,
+        486
+      ],
+      [
+        1448,
+        264,
+        681,
+        378
+      ]
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "variant_count": 3,
+    "native_size": 45
+  },
+  {
+    "id": "spent_seam",
+    "path": "res://art/rendered/spent_seam.png",
+    "source_size": [
+      2172,
+      724
+    ],
+    "sha256": "fdb45ee3ed09d66cefec8c97d2d5b4464cecd38941b94a1484641d6f39560f05",
+    "regions": [
+      [
+        19,
+        45,
+        693,
+        627
+      ],
+      [
+        728,
+        89,
+        706,
+        560
+      ],
+      [
+        1448,
+        158,
+        707,
+        507
+      ]
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "variant_count": 3,
+    "native_size": 45
+  }
+]

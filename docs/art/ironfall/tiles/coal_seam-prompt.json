@@ -1,0 +1,10 @@
+{
+  "prompt": "Solace map resource art. THREE clearly separated painted miniature variants in ONE ROW of three equally sized cells; landscape3:1 transparent PNG. Use reference existing rocks ONLY for painterly sculpted materials, chunky silhouettes, raised top-down three-quarter camera and soft upper-left lighting. Each is a standalone low resource outcrop that fits ONE game tile, not a landscape or square platform. Transparent gaps and generous margins around each, same feet/baseline and comparable coverage, tight soft contact shadow only. No text, labels, border, no opaque backdrop. Natural tiny moss/soil at feet, no full grass tile. Readable at45px. A dark natural ridge of black coal seams in muted grey shale. Variants: one upright low ridge, two rounded split ridges, one broad squat ridge. Angular black coal layers with a few tiny cool glints, thick visible seam bands and rough chipped edges. NOT charcoal logs, not copper/gold/orange crystals, no glowing ore, no mine or cart.",
+  "source": "exec-ab2ae1ea-b77d-4be7-b660-15ad8688f429.png",
+  "reference": "rocks.png",
+  "grid": [
+    3,
+    1
+  ],
+  "mode": "built-in imagegen"
+}
