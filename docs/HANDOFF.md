@@ -4,7 +4,14 @@ Owner: the project owner (heezus). Two AI teams, one repo, coordinated by respon
 
 ## Active work
 
-### Codex — Phase A cutscene paintings
+### Codex — Ironfall art batch
+- **Task:** the 2026-10-08 request: coal_seam, iron_hills, spent_seam first; coal_mine/bloomery next; five item icons; then five Phase B cutscene stills. Small art-only PRs on `codex/ironfall-*`.
+- **Reserved files:** new named PNG/import assets for these slots under `art/rendered/`, `docs/art/ironfall/`, five Phase B PNG/imports under `art/rendered/cutscenes/`, and related request/decision entries. Existing shared renderer, gameplay and atlases are not edited; Claude wires new slots.
+- **Acceptance criteria:** Misty Highlands miniature materials, 1×1 map/building footprints, native 48 px and small icon readability, original alpha plus Godot imports. Phase B stills: 1586×992 accepted, central 80% safe, calm dark caption foreground, no baked text, Sela consistent with current art.
+- **Status:** tiles published for review in #90: three original transparent three-variant atlases, imports and native 45/90 px comparisons. Main `e4ee8af`; no production code edits. Tile reservation released; remaining batch assets still reserved.
+- **Next action:** continue coal_mine/bloomery, five icons and Phase B stills without gameplay changes. Supply exact regions, names and tint-removal notes for Claude.
+
+#### Delivered context — Phase A cutscene paintings
 - **Task:** nineteen story stills and five transparent memory overlays, delivered as six small art-only review PRs (#81–#86) on `codex/cutscenes-*` branches.
 - **Reserved files:** none after publication. Assets live in `art/rendered/cutscenes/`; prompt/provenance records and native caption previews in `docs/art/cutscenes/`. Claude owns playback code.
 - **Acceptance criteria:** Misty Highlands miniature art, no baked text or first-run Bloom, safe focal points through 8% push-in, darker caption foregrounds, Sela/traveller continuity, original alpha overlays and generated imports; requested 2560×1600.
