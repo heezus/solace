@@ -64,6 +64,7 @@ const REGIONS := {
 	"bloomery": [[80, 49, 1167, 1073]],
 	"ironfall-items":
 	[[30, 85, 482, 369], [551, 79, 452, 376], [1045, 116, 463, 337], [32, 585, 480, 394], [512, 536, 512, 421]],
+	"tool-bench": [[0, 19, 1242, 1193]],
 	"walk":
 	[
 		[0, 0, 362, 362],
@@ -180,6 +181,7 @@ const FEATURES := {
 const VARIANT_SALT := {"spent_seam": "coal_seam"}
 const BUILDINGS := {"dwelling": 0, "gatherers_hut": 3, "camp": 6}
 const SINGLE_BUILDINGS := {
+	"tool_bench": ["tool-bench", 0],  # Codex's painted Tool Bench (docs/art/tool-bench)
 	"storehouse": ["workshops", 0],
 	"charcoal_pit": ["workshops", 1],
 	"twine_post": ["workshops", 2],

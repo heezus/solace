@@ -11,7 +11,7 @@ const STONE_GLOW := Color(0.6, 0.95, 1.0)
 const SPRITE_DIR := "res://art/sprites/"
 const FOREST: Color = Data.TILES["tree"]["color"]
 
-## Buildings whose sprite has another name. The Tool Bench borrows the Twine Post until it has its own (docs/art/requests.md).
+## Buildings whose sprite has another name.
 const SPRITE_OF := {
 	"camp": "hearth",
 	"road": "tile_path",
@@ -19,7 +19,6 @@ const SPRITE_OF := {
 	"paved_road": "tile_path",
 	"bridge": "tile_bridge_wood",
 	"flax_field": "flax",
-	"tool_bench": "twine_post",
 }
 
 ## Map art is drawn in a 32-unit design space (`DESIGN`) and scaled up to the tile, so a 2-unit outline is 3 px at
