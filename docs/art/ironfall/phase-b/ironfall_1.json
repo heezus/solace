@@ -1,0 +1,8 @@
+{
+  "prompt": "Use case: illustration-story. Paint a Solace Phase B cinematic still, matching the approved Misty Highlands miniature painting in reference 1: sculpted chunky toy-like forms, painterly mossy stone/thatch/timber, atmospheric layered fog, warm hearth amber versus cool dusk, grounded beautiful mysterious highlands. Slightly lower cinematic camera than the game map, not photorealistic or flat vector. Landscape 16:10, about 1586x992. All important subjects within middle 80%, safe through 8% push-in. Bottom third calm, darker low-detail foreground for captions. No text, symbols resembling writing, UI, borders or watermarks. Cyan only Lumen/lamp; magenta and green only specified Bloom. Keep detail and focus above caption zone.\nScene: A bloomery stack glowing at dusk. Use reference2's exposed terracotta stack, side leather bellows and small timber thatch shelter exactly as the building design. A Kith craftsperson in rust and cream clothing, sturdy miniature build, is lifting the FIRST rough dark iron bar with long iron tongs from the stack mouth. Show the hand, tongs and single imperfect bar clearly above the lower-third caption zone. Warm orange glow on hand and iron; cool foggy village behind. No liquid-metal pour, no cyan or Bloom, no modern machinery.",
+  "source": "exec-605c6477-170f-45d6-a4b8-5da0a861af29.png",
+  "references": [
+    "art/rendered/cutscenes/opening_3.png",
+    "bloomery.png"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "prompt": "Use case: illustration-story. Paint a Solace Phase B cinematic still, matching the approved Misty Highlands miniature painting in reference 1: sculpted chunky toy-like forms, painterly mossy stone/thatch/timber, atmospheric layered fog, warm hearth amber versus cool dusk, grounded beautiful mysterious highlands. Slightly lower cinematic camera than the game map, not photorealistic or flat vector. Landscape 16:10, about 1586x992. All important subjects within middle 80%, safe through 8% push-in. Bottom third calm, darker low-detail foreground for captions. No text, symbols resembling writing, UI, borders or watermarks. Cyan only Lumen/lamp; magenta and green only specified Bloom. Keep detail and focus above caption zone.\nScene: Sela stands at a small bare patch with a few thin sickly green/magenta shoots, NOT smiling: concerned, attentive quiet face. Match reference2 Sela's face, long pale blonde hair, white/pale gold/soft cyan clothing and jewelry, chunky miniature proportions. ONE hand lowered over growth as if cautiously sensing it without touching. Exactly TWO earthy Kith stand BEHIND her, in rust/cream/moss clothing, watching her. THREE people total, no other Lumen. Patch and lowered hand clearly in middle third, all figures above caption foreground. Warm settlement dusk at side, cool fog beyond. Use reference3 sparse growth, no flowers/monster/dense tentacles, no extra people or text.\nReference3 is the EXACT small sparse bare-soil patch and settlement location from the preceding still. Same shoots, no mature plant or big flower. Wider human-sized view of that place. Keep Sela a HUMAN adult with ordinary eyes, nose and mouth, no mask, no glowing eyes.",
+  "source": "exec-a9a30518-006f-447b-8627-db425db80a71.png",
+  "references": [
+    "art/rendered/cutscenes/opening_3.png",
+    "docs/art/lead-stranger/character-v2.png",
+    "art/rendered/cutscenes/bloom_sign_1.png"
+  ]
+}

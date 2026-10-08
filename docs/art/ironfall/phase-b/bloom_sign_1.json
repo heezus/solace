@@ -1,0 +1,8 @@
+{
+  "prompt": "Use case: illustration-story. Paint a Solace Phase B cinematic still, matching the approved Misty Highlands miniature painting in reference 1: sculpted chunky toy-like forms, painterly mossy stone/thatch/timber, atmospheric layered fog, warm hearth amber versus cool dusk, grounded beautiful mysterious highlands. Slightly lower cinematic camera than the game map, not photorealistic or flat vector. Landscape 16:10, about 1586x992. All important subjects within middle 80%, safe through 8% push-in. Bottom third calm, darker low-detail foreground for captions. No text, symbols resembling writing, UI, borders or watermarks. Cyan only Lumen/lamp; magenta and green only specified Bloom. Keep detail and focus above caption zone.\nScene: Closer view of a small bare patch at the edge of warm settlement light, where grass used to grow. Only a FEW thin green and magenta shoots reaching out of grey brown bare soil, following reference2's existing Bloom silhouette language. Patch in central-middle image, shallow dusk highlands background. Restrained unsettling green/magenta hue, warm amber edge light versus cool fog, not a glowing magical flowerbed. No people, no monster, no cyan. Bottom third dark soft unfussy earth.\nGrowth scale: tiny young grass-height stems, NO big magenta flower buds from reference2. Sparse shoots on exposed soil, no fully formed plant.",
+  "source": "exec-9184a0f6-d1fc-4f3e-b4e2-ed42e0e5e60e.png",
+  "references": [
+    "art/rendered/cutscenes/opening_3.png",
+    "bloom.png"
+  ]
+}

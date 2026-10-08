@@ -747,3 +747,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Every new art slot is logged in `docs/art/requests.md` for Codex; nothing was added to `art/`. A ninth stage start, `ironfall`, begins just after the Starfall ending.
 - Saves stay VERSION 1 and everything Ironfall adds is optional, so older saves keep loading. A CI test now loads a frozen save written before Ironfall (`tests/fixtures/save_before_ironfall.json`) and plays it a minute; a later format change adds a newer fixture beside it instead of editing this one.
 
+
+## 2026-10-08: Ironfall and Bloom Phase B paintings (PR #93)
+- Codex painted all five requested stills at the accepted Phase B size of 1586×992, without baked text.
+- The new bloomery, established hull and human Lumen materials connect the story paintings to map art; Sela retains her approved study design.
+- Bloom appears first as three faint distant ground patches, then sparse shoots; Sela's concern replaces her usual smile.
+- Important action stays above caption foregrounds; production-player captures check near-end push-in at 1280×800 and a 1600×900 crop.
