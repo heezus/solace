@@ -726,6 +726,12 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - The project owner asked that repeat runs hint at what carried over. Page 20 now has variant lines (one swapped line, chosen from the profile's resets and echoes) and five transparent memory overlays that sit over any still, so no still is painted twice.
 - The project owner also confirmed (2026-10-07, on a card) that the Beast Pen and beast cart ship in Ironfall as one optional branch (stage 3). That closes every Ironfall fork on page 19; stage 1 can be built.
 
+## 2026-10-05: Tool Bench miniature (PR #49)
+- Codex supplied one transparent low timber Tool Bench, matching the accepted rendered Twine Post and Kiln rather than the historical flat SVG style.
+- Large contrasting flint, stone hammer and unfinished axe head communicate tool making; stone feet and upper-left light match adjacent workshop subjects. The 1×1 gameplay footprint remains the interface.
+- Native 48/24/96 px comparisons use the existing aspect-preserving fit helper. At 24 px the bench silhouette survives while individual tool details rely on its label.
+- Art-only delivery under `docs/art/tool-bench/`; production slot/loading/imports remain with Claude. Growth assets stay pending the project owner's approval of page 17.
+
 ## 2026-10-07: Stage starts, save slots and debug keys (PR #80)
 - Claude follows the project owner's ask to test and debug from any stage: a new run can begin at eight stages (Stone Age to just before the Starfall ending) on a fixed map with the town built. There is no separate dev build; the starts ship in the normal game, on the Load screen next to the player's own saves.
 - Starts are built on demand, never committed: the pacing bots play to the boundary and a small script sets up the Starfall stages, so they stay deterministic and follow the balance. A start is read-only; Save writes only to one of five slots (a slot file is a run save plus a `meta` key, so the save version is unchanged, and the old single save moves into a slot).
