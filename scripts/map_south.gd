@@ -188,7 +188,7 @@ static func faults_of(s, strip: Array) -> Array:
 		faults.append("too little iron (%d)" % iron)
 	if near < IRON_NEAR_MIN:
 		faults.append("too little iron in the near rows (%d)" % near)
-	faults.append_array(_bloom_faults(strip, w, int(strip.size() / w)))
+	faults.append_array(_bloom_faults(strip, w, int(float(strip.size()) / float(w))))
 	var cross := crossings_to_south(s)
 	if cross > MAX_CROSSINGS:
 		faults.append("the new land is %d river tiles away (at most %d)" % [cross, MAX_CROSSINGS])

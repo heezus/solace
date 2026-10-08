@@ -19,6 +19,7 @@ const TeardownPanel = preload("res://scripts/teardown_panel.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
 const CardText = preload("res://scripts/card_text.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
+const Buildings = preload("res://scripts/buildings.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Haulers = preload("res://scripts/haulers.gd")
 const Patch = preload("res://scripts/patch.gd")
@@ -205,7 +206,7 @@ func test_the_bench_opens_a_part() -> void:
 	)
 	var s := town()
 	var b := bench(s)
-	t.check(Data.BUILDINGS[b["type"]]["kind"] == "bench" and not s.town.needs_worker(b), "a Bench needs no worker")
+	t.check(Data.BUILDINGS[b["type"]]["kind"] == "bench" and not Buildings.needs_worker(b), "a Bench needs no worker")
 	t.check(
 		s.town.placement_error("teardown_bench", s.world.camp_pos + Vector2i(0, -2)).contains("Only one"),
 		"only one stands"
@@ -394,13 +395,13 @@ func test_the_lumen_camp_hands_over_parts_by_lean() -> void:
 		"allies": ["lamp_core", "seed_pod", "water_glass", "heat_plate"]
 	}
 	for lean in expected:
-		var s := town(lean)
-		s.town.add_building("lumen_camp", _h._spot(s, "lumen_camp"))
+		var by_lean := town(lean)
+		by_lean.town.add_building("lumen_camp", _h._spot(by_lean, "lumen_camp"))
 		for i in 300:
-			Finds.camp_tick(s, 1.0)
+			Finds.camp_tick(by_lean, 1.0)
 		t.check(
-			s.teardown.pack == expected[lean],
-			"%s: the Camp hands over %s (%s)" % [lean, expected[lean], s.teardown.pack]
+			by_lean.teardown.pack == expected[lean],
+			"%s: the Camp hands over %s (%s)" % [lean, expected[lean], by_lean.teardown.pack]
 		)
 	var s := town("allies")
 	t.check(Finds.camp_offer(s).size() == 4, "the offer is read off the lean")
@@ -512,7 +513,7 @@ func test_a_party_brings_a_sample_home() -> void:
 	t.check(got == ["root", "sap", "spore"], "one of each kind")
 	s.starfall.orders["target"] = "bloom"
 	t.check(Expedition.plan(s)["why"] == Data.BLOOM_NONE_LEFT, "and no patch is left to sample")
-	t.check(not Finds.patches(s).any(func(p): return true), "the patches list is empty")
+	t.check(not Finds.patches(s).any(func(_p): return true), "the patches list is empty")
 	t.check(s.fog.is_revealed(plan_target), "still seen")
 	for id in got:
 		t.check(Data.LESSONS[id]["live"] or id == "sap", "%s is a Lesson" % id)
