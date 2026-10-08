@@ -149,6 +149,7 @@ const REGIONS := {
 	]
 }
 
+const BloomLook = preload("res://scripts/bloom_look.gd")
 const DIR := "res://art/rendered/"
 const FEATURES := {
 	"tree": ["trees", 0, 4],
@@ -196,6 +197,9 @@ const SINGLE_BUILDINGS := {
 	# Ironfall placeholders: the Mine and the Smelter, tinted (see TINTS).
 	"coal_mine": ["industry", 0],
 	"bloomery": ["industry", 1],
+	# Ironfall stage 2: the Teardown Bench borrows the Trading Post, the Rain Barrel the Twine Post (tinted, see TINTS).
+	"teardown_bench": ["industry", 4],
+	"rain_barrel": ["workshops", 2],
 }
 ## The tint of a placeholder that borrows another one's sprite, by feature or building id.
 const TINTS := {
@@ -204,6 +208,8 @@ const TINTS := {
 	"spent_seam": Color(0.62, 0.62, 0.68),
 	"coal_mine": Color(0.5, 0.5, 0.6),
 	"bloomery": Color(0.85, 0.7, 0.62),
+	"teardown_bench": Color(0.78, 0.7, 1.0),
+	"rain_barrel": Color(0.55, 0.8, 1.0),
 }
 ## The fourteen Starfall icons, in the order of the "starfall-icons" regions: the three packs (Starfall.PACKS keys), the Shard,
 ## the four gifts (LUMEN_GIFTS keys) and the six glyph-set headings (GLYPH_SETS ids).
@@ -251,6 +257,7 @@ const BORROWED_ITEMS := {
 	"iron": ["copper", Color(0.62, 0.7, 0.8)],
 	"steel": ["bronze", Color(0.72, 0.86, 1.0)],
 	"iron_tools": ["bronze_tools", Color(0.66, 0.72, 0.85)],
+	"iron_gears": ["copper", Color(0.72, 0.76, 0.84)],
 }
 const BORROWED_PX := 64  # the recolored copy's size: items are shown at 20 to 48 px
 
@@ -294,6 +301,8 @@ static func fit(ci: CanvasItem, tex: Texture2D, box: Rect2, tint := Color.WHITE)
 
 
 static func feature(ci: CanvasItem, type: String, at: Vector2, p: Vector2i, time: float) -> bool:
+	if BloomLook.draw(ci, type, at, p, time):  # the Bloom patches: placeholder tiles (docs/art/requests.md)
+		return true
 	if not FEATURES.has(type):
 		return false
 	var spec: Array = FEATURES[type]

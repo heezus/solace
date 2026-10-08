@@ -6,10 +6,13 @@ extends RefCounted
 ## Wall (Starfall.add_finds); in the far fog it brings a wide look instead. A party's state is in the Kith's own fields: job
 ## "expedition", phase "exp_out" or "exp_home", and `task` = {tile, target, pack, lead} (the lead resolves the trip), so it
 ## is saved with them. Static, and works on the Sim passed in.
+## Ironfall adds parts (design-system/19-ironfall.md, scripts/teardown_finds.gd): the Wreck also gives up to its three parts, one
+## a trip (the heavy pack two), and a third target, the nearest Bloom patch in the far south, brings home its sample.
 
 const Data = preload("res://scripts/data.gd")
 const Kith = preload("res://scripts/kith.gd")
 const Scouting = preload("res://scripts/scouting.gd")
+const Finds = preload("res://scripts/teardown_finds.gd")
 
 const AUTO_SECONDS := 5.0  # how often a standing order looks for a chance to send
 
@@ -38,6 +41,8 @@ static func has_post(s) -> bool:
 static func target_tile(s, target: String) -> Vector2i:
 	if target == "wreck":
 		return Scouting.goal(s, s.starfall.wreck) if s.starfall.wreck.x >= 0 else Vector2i(-1, -1)
+	if target == "bloom":
+		return Finds.bloom_goal(s)
 	var best := Vector2i(-1, -1)
 	var best_d := INF
 	var wet := Vector2i(-1, -1)
@@ -81,8 +86,14 @@ static func plan(s) -> Dictionary:
 	var o: Dictionary = s.starfall.orders
 	if not s.starfall.arrived() or not has_post(s):
 		return {"ok": false, "why": Data.POST_NO_TARGET, "seconds": 0.0, "late": false}
-	if o["target"] == "wreck" and s.starfall.wreck_found and not s.starfall.wreck_has_more():
+	if (
+		o["target"] == "wreck"
+		and s.starfall.wreck_found
+		and not (s.starfall.wreck_has_more() or Finds.wreck_has_parts(s))
+	):
 		return {"ok": false, "why": Data.POST_NO_TARGET, "seconds": 0.0, "late": false}
+	if o["target"] == "bloom" and Finds.bloom_problem(s) != "":
+		return {"ok": false, "why": Finds.bloom_problem(s), "seconds": 0.0, "late": false}
 	var to := target_tile(s, o["target"])
 	if to.x < 0:
 		return {
@@ -183,7 +194,16 @@ static func _finish(s, k: Dictionary, task: Dictionary) -> void:
 		if late:
 			finds = ceili(finds / 2.0)
 		var n: int = s.starfall.add_finds(finds)
-		s.events.append(Data.WRECK_MARKS_LINE % n if n > 0 else Data.WRECK_NOTHING_LINE)
+		var parts := Finds.wreck_finds(s, task["pack"], late)
+		if n > 0:
+			s.events.append(Data.WRECK_MARKS_LINE % n)
+		if not parts.is_empty():
+			s.events.append(Finds.wreck_line(parts))
+		elif n == 0:
+			s.events.append(Data.WRECK_NOTHING_LINE)
+	elif task["target"] == "bloom":
+		if Finds.take_sample(s, task["tile"]) == "":
+			s.events.append(Data.BLOOM_NONE_LEFT)
 	else:
 		s.events.append(Data.FOG_BACK_LINE % _compass(Vector2(task["tile"]) - Vector2(s.world.camp_pos)))
 

@@ -3,7 +3,7 @@ extends RefCounted
 
 ## kind: "camp" | "house" | "road" | "bridge" | "field" | "depot" | "gatherer" | "processor" | "power" | "aura" | "cairn"
 ##   | "shed" (a Cart Shed) | "tower" (a Watchtower) | "wall" (the Glyph Wall)
-##   | "refuge" (the Lumen Camp, the shared shrine, the Guard Post)
+##   | "refuge" (the Lumen Camp, the shared shrine, the Guard Post) | "bench" (the Teardown Bench) | "barrel" (the Rain Barrel)
 ## A building with an `event` (and no tech) opens when that story event has happened (Data.STORY_EVENTS): the era of the
 ## Lumen has no research to gate it, and the card stays off the build bar until then.
 ## A "field" with `crop` "flax" sows flax instead of grain (World.flax_fields); it yields fiber as wild flax does.
@@ -13,6 +13,8 @@ extends RefCounted
 ## A processor with `trade` has no fixed recipe: it swaps Data.TRADE_GIVE of the good it is set to give for
 ## Data.TRADE_GET of the one it is set to get (the building's `give` and `get`); a `trade_give` of its own replaces
 ## Data.TRADE_GIVE (the Lumen Market gives 2). `sight` is how far a building sees.
+## `lesson` (a Data.LESSONS id) opens a building once that Lesson is learned (scripts/teardown.gd): the card stays off the bar
+## until then. `unique` allows one only. A `bench` has no worker: haulers carry parts to it (scripts/teardown.gd).
 ## `story` buildings stay off the build bar until their tech is on the board and reachable (nothing to spoil early).
 ## Processors turn `in` into `out` every `time` seconds (a processor with no `in` just makes `out`).
 ## A processor with `makes` is a tool bench: a list of tool recipes (Data.RECIPES ids, worst first), and it makes
@@ -454,6 +456,33 @@ const BUILDINGS := {
 		"desc": "A small shrine where both peoples leave something. They trust the Kith more while it stands.",
 		"status": "Both peoples leave something here.",
 	},
+	"teardown_bench":
+	{
+		"name": "Teardown Bench",
+		"kind": "bench",
+		"tech": "teardown",
+		"cost": {"iron": 20, "brick": 40},
+		"near_hearth": true,
+		"unique": true,
+		"color": Color("b8a8f0"),
+		"desc":
+		(
+			"Where the Kith open a part to see how it works. Haulers carry parts here, one takes about 40 seconds, and"
+			+ " each teaches one Lesson for good. A second copy of a part gives only scrap."
+		),
+		"status": "Waiting for a part.",
+	},
+	"rain_barrel":
+	{
+		"name": "Rain Barrel",
+		"kind": "barrel",
+		"tech": "",
+		"lesson": "water_glass",
+		"cost": {"wood": 20, "brick": 10},
+		"color": Color("7ec8e3"),
+		"desc": "A glass-lined barrel from the Water glass Lesson. Fields within 3 tiles never wilt: +20% Field yield.",
+		"status": "Holding the rain.",
+	},
 	"guard_post":
 	{
 		"name": "Guard Post",
@@ -471,7 +500,7 @@ const BUILDINGS := {
 ## The build bar's tabs, in order. Craft by hand has its own small group beside them.
 const BUILD_TABS := {
 	"Homes": ["dwelling"],
-	"Gathering": ["gatherers_hut", "field", "flax_field", "fishing_weir"],
+	"Gathering": ["gatherers_hut", "field", "flax_field", "fishing_weir", "rain_barrel"],
 	"Workshops": ["tool_bench", "charcoal_pit", "twine_post", "kiln", "water_wheel", "grindstone"],
 	"Metal": ["mine", "coal_mine", "smelter", "crucible", "bloomery"],
 	"Logistics":
@@ -486,7 +515,8 @@ const BUILD_TABS := {
 		"expedition_post",
 		"lumen_market",
 		"shared_shrine",
-		"guard_post"
+		"guard_post",
+		"teardown_bench"
 	],
 }
 
@@ -524,6 +554,8 @@ const BUILD_ORDER := [
 	"lumen_market",
 	"shared_shrine",
 	"guard_post",
+	"teardown_bench",
+	"rain_barrel",
 ]
 
 ## Output a building holds before it stops, when nobody hauls it away.

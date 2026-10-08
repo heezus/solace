@@ -141,7 +141,30 @@ const BONUSES := {
 		"near_cairn": true
 	},
 	"shardwork":
+	# Era 4, stage 2: what two Lessons give (scripts/teardown.gd). `lesson` needs it learned; `fed` needs one of that good in the
 	{"name": "Shardwork", "group": "speed", "add": 0.25, "kinds": ["processor"], "gift": "craft", "near_cairn": true},
+	# workshop's input; `near_types` needs a building of one of those types within `radius` tiles.
+	"iron_gears":
+	{
+		"name": "Iron Gears",
+		"group": "speed",
+		"add": 0.25,
+		"kinds": ["processor"],
+		"lesson": "hull_gear",
+		"fed": "iron_gears"
+	},
+	"starfruit_smoke":
+	{
+		"name": "Starfruit in smoke",
+		"group": "yield",
+		"add": 0.5,
+		"item": "berries",
+		"kinds": ["gatherer"],
+		"gift": "growth",
+		"lesson": "seed_pod",
+		"near_types": ["coal_mine", "bloomery"],
+		"radius": 4.0
+	},
 	# A Guard Post (stage 4): the Kith near one work a little faster, `near_guard` (Data.GUARD_RADIUS), at a cost in trust.
 	"watchful":
 	{"name": "Guard Post", "group": "speed", "add": 0.15, "kinds": ["gatherer", "processor"], "near_guard": true},

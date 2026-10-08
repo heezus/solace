@@ -38,6 +38,8 @@ var road_rev := 0  # bumped whenever roads or buildings change, so Roads rebuild
 var road_net: Dictionary = {}  # Roads' cache of the road networks and which buildings they link
 ## (String) -> bool: has this story event happened? Sim connects it to the Story block; it opens a building's `event`.
 var story_has: Callable = func(_id): return false
+## (String) -> bool: is this Lesson learned? Sim connects it to the Teardown block; it opens a building's `lesson`.
+var lesson_has: Callable = func(_id): return false
 var _world: World
 var _economy: Economy
 var _research: Research
@@ -56,6 +58,8 @@ func _init(world: World, economy: Economy, research: Research, is_revealed: Call
 
 func unlocked(type: String) -> bool:
 	var def: Dictionary = Data.BUILDINGS[type]
+	if def.has("lesson") and not lesson_has.call(def["lesson"]):
+		return false  # taught by a part: nothing to build until the Bench has opened it
 	var tech: String = def["tech"]
 	if tech == "":
 		return def.get("event", "") == "" or story_has.call(def["event"])
@@ -71,8 +75,9 @@ func placement_error(type: String, p: Vector2i) -> String:
 		return "Off the map"
 	if not _is_revealed.call(p):
 		return "Unexplored: build or walk closer to see it"
-	if building_at.has(p):
-		return "Something is already there"
+	var taken := _taken_error(type, p)
+	if taken != "":
+		return taken
 	var tile := _world.tile_at(p)
 	if _world.roads.has(p):
 		var upgrade := upgrade_error(type, p)
@@ -106,6 +111,15 @@ func placement_error(type: String, p: Vector2i) -> String:
 		return "Must be within %d tiles of the Hearth" % int(Data.HEARTH_RADIUS)
 	if not _economy.can_afford(price(type)):
 		return "Not enough materials"
+	return ""
+
+
+## Why `type` can't go at p for want of room: something stands there, or it is a one-of-a-kind building (`unique`) that stands already.
+func _taken_error(type: String, p: Vector2i) -> String:
+	if building_at.has(p):
+		return "Something is already there"
+	if Data.BUILDINGS[type].get("unique", false) and copies(type) > 0:
+		return "Only one %s can stand" % Data.BUILDINGS[type]["name"]
 	return ""
 
 
@@ -461,9 +475,10 @@ static func needs_worker(b: Dictionary) -> bool:
 	return Data.BUILDINGS[b["type"]]["kind"] in ["gatherer", "processor"]
 
 
-## True for the buildings haulers serve: the ones a Kith staffs, and homes (goods in, upgrade materials in).
+## True for the buildings haulers serve: the ones a Kith staffs, homes (goods in, upgrade materials in) and the Teardown Bench
+## (parts in).
 static func served(b: Dictionary) -> bool:
-	return needs_worker(b) or Data.BUILDINGS[b["type"]]["kind"] == "house"
+	return needs_worker(b) or Data.BUILDINGS[b["type"]]["kind"] in ["house", "bench"]
 
 
 ## How many people building `b` needs at work: 1, or its `crew`.

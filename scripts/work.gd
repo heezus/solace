@@ -8,6 +8,7 @@ const Bonuses = preload("res://scripts/bonuses.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Patch = preload("res://scripts/patch.gd")
+const Lessons = preload("res://scripts/lessons.gd")
 
 
 ## Seconds for one work cycle at this building: its base time, shortened by the Speed group and, for a hut, by the
@@ -39,6 +40,7 @@ static func harvest_amount(s, b: Dictionary, tile: Vector2i, item: String) -> in
 		more += Data.CALENDAR_FIELD_BONUS if s.tech_tree.researched.has("calendar") else 0.0
 		more += Data.PLOUGH_FIELD_BONUS if s.tech_tree.researched.has("plough") else 0.0
 		more += Data.PLOUGHSHARE_FIELD_BONUS if s.tech_tree.researched.has("bronze_ploughshare") else 0.0
+		more += Lessons.rain_share(s, tile)
 	if more > 0.0:
 		b["field_extra"] = b.get("field_extra", 0.0) + n * more
 		if b["field_extra"] >= 1.0:

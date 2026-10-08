@@ -22,6 +22,8 @@ static func active(s, b: Dictionary, item: String) -> Array:
 			continue
 		if bonus.has("gift") and not s.starfall.gift(bonus["gift"]):
 			continue
+		if bonus.has("lesson") and not s.teardown.knows(bonus["lesson"]):
+			continue
 		if bonus.get("dark", false) and not s.starfall.dark():
 			continue
 		if bonus.has("kinds") and kind not in bonus["kinds"]:
@@ -49,6 +51,14 @@ static func _applies(s, b: Dictionary, id: String) -> bool:
 	if Data.BONUSES[id].get("near_cairn", false) and (s.starfall.dimmed() or not _near_cairn(s, b["pos"])):
 		return false
 	if Data.BONUSES[id].get("near_guard", false) and not _near(s, b["pos"], "guard_post", Data.GUARD_RADIUS):
+		return false
+	var bonus: Dictionary = Data.BONUSES[id]
+	if bonus.has("fed") and b["inbuf"].get(bonus["fed"], 0) <= 0:
+		return false  # the workshop has no Iron Gear fitted
+	if (
+		bonus.has("near_types")
+		and not bonus["near_types"].any(func(type): return _near(s, b["pos"], type, bonus["radius"]))
+	):
 		return false
 	if Data.BONUSES[id].has("tool"):
 		return b["worker"] >= 0 and Kith.tool_of(s.people.kith[b["worker"]]) == Data.BONUSES[id]["tool"]

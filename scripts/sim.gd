@@ -32,6 +32,8 @@ const Land = preload("res://scripts/land.gd")
 const Homes = preload("res://scripts/homes.gd")
 const SkyBlock = preload("res://scripts/sky.gd")
 const StarfallBlock = preload("res://scripts/starfall.gd")
+const TeardownBlock = preload("res://scripts/teardown.gd")
+const TeardownFinds = preload("res://scripts/teardown_finds.gd")
 
 var won := false
 var hand_tools := false  # you've made a Flint Tool, so hand gathering is doubled for good
@@ -60,6 +62,7 @@ var people := Kith.new(world, pathing, economy, tech_tree, town)
 var story := Story.new()  # story moments and the opening checklist
 var sky := SkyBlock.new(tech_tree, town)
 var starfall := StarfallBlock.new(town, economy)  # the era after the Falling Star: the landing, the strangers, the glyphs
+var teardown := TeardownBlock.new(town, economy)  # Ironfall: the parts, the Bench and the Lessons
 
 
 ## Wire the blocks together. Every signal connection in the game is here, so it is all in one place.
@@ -80,6 +83,9 @@ func _init() -> void:
 	people.gift = starfall.gift
 	starfall.said.connect(_announce)
 	starfall.moment.connect(story.record)
+	teardown.said.connect(_announce)
+	teardown.moment.connect(story.record)
+	town.lesson_has = teardown.knows
 
 
 # --- Map ---------------------------------------------------------------------
@@ -283,6 +289,8 @@ func tick(delta: float) -> void:
 	story.update(self)
 	sky.tick(delta)
 	starfall.tick(delta)
+	teardown.tick(delta)
+	TeardownFinds.camp_tick(self, delta)
 	Expedition.auto(self, delta)
 	if fed:
 		for k in people.kith:

@@ -139,6 +139,8 @@ func goal_met(s, g: Dictionary) -> bool:
 			return _road_beside_ore(s, "copper_hills")
 		"first_bronze":
 			return s.economy.inv.get("bronze", 0) > 0
+		"first_teardown":
+			return s.teardown.lessons.size() > 0
 		"find_coal", "find_iron", "iron_mine", "first_iron":
 			return _ironfall_goal_met(s, g["id"])
 	return false

@@ -3,9 +3,10 @@ extends RefCounted
 ## list them in TECHS (a constant cannot merge two dictionaries). It sits in a folder of its own because every constant
 ## in scripts/data/*.gd must be re-exported by the Data facade, and these are only read through TECHS.
 ## Costs are placeholders to tune with the pacing bot. The first stage builds Coal Seams, Ironstone, Bloomery and Iron
-## Tools; the rest carry `stage` 3, so they are on the board, locked, until their stage lands (Rules.tech_enabled).
+## Tools and the second Teardown; the rest carry `stage` 3, so they are on the board, locked, until their stage lands (Rules.tech_enabled).
 ## `after` is a story id (Data.STORY_EVENTS): the tech stays out of view until it has happened (Research.tech_visible).
-## `gift` names a Starfall gift (Data.LUMEN_GIFTS) the tech will also need once stage 2 reads it. The era's board has
+## `gift` names a Starfall gift (Data.LUMEN_GIFTS) the tech will also need once stage 3 reads it, and `lesson` a Lesson
+## (Data.LESSONS) it waits for: the Shard Lamp on the Lamp core, the Shard Boiler on the Heat plate. The era's board has
 ## tiers 0 to 3 and the gate in column 4.
 
 const COAL_SEAMS := {
@@ -51,17 +52,19 @@ const TEARDOWN := {
 	"color": Color("b8a8f0"),
 	"name": "Teardown",
 	"era": 4,
-	"stage": 3,
 	"lane": "lore",
 	"tier": 0,
 	"slot": 0,
-	"unlock": "Teardown Bench, the Lessons list",
+	"unlock": "Teardown Bench, Lessons list, Iron Gears",
 	"icon": "wanderer",
 	"after": "ironfall_begun",
 	"requires": [],
 	"cost": {"bronze": 15, "flour": 40, "brick": 40},
 	"desc":
-	"Open a thing to see how it works. A Teardown Bench takes a part apart and the Kith keep one Lesson from it.",
+	(
+		"Open a thing to see how it works. A Teardown Bench takes a part apart and the Kith keep one Lesson from it."
+		+ " Parts come from the Wreck, the Lumen Camp and the Bloom patches."
+	),
 }
 const BLOOMERY := {
 	"abbr": "Bl",
@@ -154,6 +157,7 @@ const SHARD_LAMPS := {
 	"unlock": "Shard Lamp",
 	"icon": "watchtower",
 	"gift": "light",
+	"lesson": "lamp_core",
 	"requires": ["teardown"],
 	"cost": {"iron": 30, "brick": 60, "bronze": 20},
 	"desc": "A lamp post that burns one shard a long while and lights 3 tiles, once the Lamp core is learned.",
@@ -218,6 +222,7 @@ const SHARD_BOILER := {
 	"unlock": "Shard Boiler",
 	"icon": "kiln",
 	"gift": "craft",
+	"lesson": "heat_plate",
 	"requires": ["boiler", "shard_lamps"],
 	"cost": {"iron": 60, "brick": 80, "bronze": 30},
 	"desc": "A boiler that burns shards, so far less coal, once the Heat plate is learned.",

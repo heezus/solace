@@ -6,6 +6,7 @@ const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Main = preload("res://scripts/main.gd")
 const IronfallTests = preload("res://tests/ironfall_tests.gd")
+const TeardownTests = preload("res://tests/teardown_tests.gd")
 const CutsceneTests = preload("res://tests/cutscene_tests.gd")
 const TechLayout = preload("res://scripts/tech_layout.gd")
 const Ui = preload("res://scripts/ui.gd")
@@ -110,6 +111,7 @@ func _init() -> void:
 		return
 	if "ironfall" in OS.get_cmdline_user_args():  # `-- ironfall` runs only the Ironfall tests while iterating
 		IronfallTests.new().run(self)
+		TeardownTests.new().run(self)
 		CutsceneTests.new().run(self)
 		print("FAILED: %d" % failures if failures > 0 else "IRONFALL TESTS PASSED")
 		quit(1 if failures > 0 else 0)
@@ -198,6 +200,7 @@ func _init() -> void:
 	DevTests.new().run(self)
 	HomesTests.new().run(self)
 	IronfallTests.new().run(self)
+	TeardownTests.new().run(self)
 	CutsceneTests.new().run(self)
 	NewcomerTests.new().run(self)
 	UiTests.new().run(self)

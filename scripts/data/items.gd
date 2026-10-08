@@ -28,6 +28,17 @@ const ITEMS := {
 	"iron": {"name": "Iron", "color": Color("7d8791"), "era": 4},
 	"steel": {"name": "Steel", "color": Color("a9bfd1"), "era": 4},
 	"iron_tools": {"name": "Iron Tools", "one": "Iron Tool", "short": "Tools", "color": Color("56606b"), "era": 4},
+	# Iron Gears are what the Hull gear Lesson teaches (stage 2): not in ITEM_ORDER, so no top-bar counter. They are made by
+	# hand, kept in the stockpile and fitted to workshops by haulers (Data.GEARS_SPEED), one to a workshop.
+	"iron_gears":
+	{
+		"name": "Iron Gears",
+		"one": "Iron Gear",
+		"short": "Gears",
+		"color": Color("9aa3ad"),
+		"era": 4,
+		"desc": "A workshop fed a gear works 25% faster",
+	},
 }
 
 ## Order items appear in the top bar.
@@ -74,4 +85,13 @@ const RECIPES := {
 	"bronze_tools":
 	{"name": "Bronze Tools", "tech": "bronze_tools", "in": {"bronze": 1, "wood": 2}, "out": {"bronze_tools": 1}},
 	"iron_tools": {"name": "Iron Tools", "tech": "iron_tools", "in": {"iron": 1, "wood": 2}, "out": {"iron_tools": 1}},
+	# Learned from a part (`lesson`, Data.LESSONS), on top of the tech that opens the Bench.
+	"iron_gears":
+	{
+		"name": "Iron Gears",
+		"tech": "teardown",
+		"lesson": "hull_gear",
+		"in": {"iron": 2},
+		"out": {"iron_gears": 1},
+	},
 }

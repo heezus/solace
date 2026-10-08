@@ -49,7 +49,7 @@ func _arena() -> Array:
 func test_the_card_sits_in_the_gathering_tab_and_needs_cordage() -> void:
 	var def: Dictionary = Data.BUILDINGS["flax_field"]
 	t.check(Data.BUILD_TABS["Gathering"].has("flax_field"), "it is on the Gathering tab")
-	t.check(Data.BUILD_TABS["Gathering"].size() == 4, "the tab has four cards")
+	t.check(Data.BUILD_TABS["Gathering"].size() == 5, "the tab has five cards (the Rain Barrel waits for its Lesson)")
 	t.check(Data.BUILD_ORDER.has("flax_field"), "and in the build order")
 	t.check(def["kind"] == "field" and def["cost"] == {"fiber": 2}, "a field that costs 2 fiber and no grain")
 	t.check(def["tech"] == "cordage" and Data.TECHS.has(def["tech"]), "it comes with Cordage")

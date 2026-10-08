@@ -27,7 +27,7 @@ const IRON_TOOL_JOBS := 300
 
 ## The Goals panel for the era (Story.goal_list), once the Starfall is over.
 const GOALS_HEADER_ERA4 := "Ironfall goals %d/%d"
-const GOALS_IRONFALL_CLOSING := "More is coming: Teardown, steam and Livewire."
+const GOALS_IRONFALL_CLOSING := "More is coming: steam and Livewire."
 const GOALS_ERA4 := [
 	{
 		"id": "coal_seams",
@@ -54,4 +54,15 @@ const GOALS_ERA4 := [
 		"text": "Discover Iron Tools: a worker with an Iron Tool beats one with bronze by 75 points",
 		"tech": "iron_tools"
 	},
+	{
+		"id": "teardown",
+		"text": "Discover Teardown: parts come from the Wreck, the Lumen Camp and the Bloom patches",
+		"tech": "teardown"
+	},
+	{
+		"id": "bench",
+		"text": "Build a Teardown Bench near the Hearth (Lore tab): haulers carry parts to it",
+		"building": "teardown_bench"
+	},
+	{"id": "first_teardown", "text": "Take a part apart: send a party to the Wreck, and the Kith learn a Lesson"},
 ]

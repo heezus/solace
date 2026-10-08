@@ -16,6 +16,7 @@ const DataWords = preload("res://scripts/data/words.gd")
 const DataStarfall = preload("res://scripts/data/starfall.gd")
 const DataMenu = preload("res://scripts/data/menu.gd")
 const DataIronfall = preload("res://scripts/data/ironfall.gd")
+const DataTeardown = preload("res://scripts/data/teardown.gd")
 const DataCutscenes = preload("res://scripts/data/cutscenes.gd")
 
 # --- Items: data/items.gd ---
@@ -567,6 +568,57 @@ const IRON_TOOL_JOBS := DataIronfall.IRON_TOOL_JOBS
 const GOALS_HEADER_ERA4 := DataIronfall.GOALS_HEADER_ERA4
 const GOALS_IRONFALL_CLOSING := DataIronfall.GOALS_IRONFALL_CLOSING
 const GOALS_ERA4 := DataIronfall.GOALS_ERA4
+
+# --- Era 4, Ironfall, stage 2: Teardown: data/teardown.gd ---
+const PARTS := DataTeardown.PARTS
+const LESSON_ORDER := DataTeardown.LESSON_ORDER
+const LESSONS := DataTeardown.LESSONS
+const BENCH_SECONDS := DataTeardown.BENCH_SECONDS
+const BENCH_SLOTS := DataTeardown.BENCH_SLOTS
+const SCRAP_SECONDS := DataTeardown.SCRAP_SECONDS
+const SCRAP_IRON := DataTeardown.SCRAP_IRON
+const BENCH_NEEDS_ROAD := DataTeardown.BENCH_NEEDS_ROAD
+const WRECK_PARTS := DataTeardown.WRECK_PARTS
+const WRECK_TRIP_PARTS := DataTeardown.WRECK_TRIP_PARTS
+const CAMP_PARTS := DataTeardown.CAMP_PARTS
+const CAMP_GIVE_SECONDS := DataTeardown.CAMP_GIVE_SECONDS
+const BLOOM_KINDS := DataTeardown.BLOOM_KINDS
+const BLOOM_TILES := DataTeardown.BLOOM_TILES
+const BLOOM_GROUND := DataTeardown.BLOOM_GROUND
+const BLOOM_SAMPLING_PLACEHOLDER := DataTeardown.BLOOM_SAMPLING_PLACEHOLDER
+const GEARS_ITEM := DataTeardown.GEARS_ITEM
+const RAIN_BARREL_RADIUS := DataTeardown.RAIN_BARREL_RADIUS
+const RAIN_BARREL_FIELD := DataTeardown.RAIN_BARREL_FIELD
+const SPORE_REACH := DataTeardown.SPORE_REACH
+const ROOT_LIT := DataTeardown.ROOT_LIT
+const LESSONS_HEADING := DataTeardown.LESSONS_HEADING
+const LESSON_LOCKED := DataTeardown.LESSON_LOCKED
+const LESSON_FOUND := DataTeardown.LESSON_FOUND
+const LESSON_LEARNED := DataTeardown.LESSON_LEARNED
+const LESSON_WAITS := DataTeardown.LESSON_WAITS
+const LESSON_HINT := DataTeardown.LESSON_HINT
+const PART_CARD := DataTeardown.PART_CARD
+const PART_CARD_KNOWN := DataTeardown.PART_CARD_KNOWN
+const PACK_HEADING := DataTeardown.PACK_HEADING
+const PACK_EMPTY := DataTeardown.PACK_EMPTY
+const PACK_HINT := DataTeardown.PACK_HINT
+const BENCH_HEADING := DataTeardown.BENCH_HEADING
+const BENCH_IDLE := DataTeardown.BENCH_IDLE
+const BENCH_WAITING := DataTeardown.BENCH_WAITING
+const BENCH_WORKING := DataTeardown.BENCH_WORKING
+const BENCH_STRIPPING := DataTeardown.BENCH_STRIPPING
+const BENCH_ROOM := DataTeardown.BENCH_ROOM
+const BENCH_FULL := DataTeardown.BENCH_FULL
+const CARRY_BUTTON := DataTeardown.CARRY_BUTTON
+const PART_OPENED_LINE := DataTeardown.PART_OPENED_LINE
+const SCRAP_LINE := DataTeardown.SCRAP_LINE
+const WRECK_PART_LINE := DataTeardown.WRECK_PART_LINE
+const CAMP_GIVES_LINE := DataTeardown.CAMP_GIVES_LINE
+const SAMPLE_LINE := DataTeardown.SAMPLE_LINE
+const BLOOM_NO_LAND := DataTeardown.BLOOM_NO_LAND
+const BLOOM_NO_TECH := DataTeardown.BLOOM_NO_TECH
+const BLOOM_NONE_LEFT := DataTeardown.BLOOM_NONE_LEFT
+const BLOOM_NO_TEARDOWN := DataTeardown.BLOOM_NO_TEARDOWN
 
 # --- Cutscenes: data/cutscenes.gd ---
 const CUTSCENE_ART_DIR := DataCutscenes.CUTSCENE_ART_DIR

@@ -134,6 +134,7 @@ static func _table() -> Array:
 		["starfall_market", "Stage: Starfall, the market", _starfall_market],
 		["starfall_end", "Stage: Starfall, before the ending", _starfall_end],
 		["ironfall", "Stage: Ironfall, the Starfall is over", _ironfall],
+		["ironfall_teardown", "Stage: Ironfall, Teardown and the Wreck's parts", _ironfall_teardown],
 	]
 
 
@@ -228,6 +229,20 @@ static func _ironfall() -> Sim:
 	var s := _starfall_end()
 	_wait(s, END_FUSE + 6.0)
 	s.starfall.choose(0)
+	_wait(s, 2.0)
+	return s
+
+
+## Teardown is learned and the south is open: a Bench stands beside the Hearth and the Wreck's three parts are in the pack,
+## so the first Lessons are a haul away. The Lumen Camp is there for its own parts.
+static func _ironfall_teardown() -> Sim:
+	var s := _ironfall()
+	for tech in ["coal_seams", "teardown"]:
+		s.tech_tree.researched[tech] = true
+	_build(s, "teardown_bench")
+	for id in Data.WRECK_PARTS:
+		s.teardown.wreck_taken.append(id)
+		s.teardown.add_part(id)
 	_wait(s, 2.0)
 	return s
 

@@ -3,7 +3,9 @@ extends RefCounted
 ## wide as the map is then, laid under its south edge. It is made from the map's seed, so a seed always grows the same land,
 ## and it never touches what is already there. It is open country with forest and rock, and it holds the era's two ores:
 ## three Coal Seams near its north edge (the near side), each a few tiles that share one pile (World.seam_left), and
-## plentiful Iron Hills further in.
+## plentiful Iron Hills further in. Stage 2 adds the three Bloom patches at its far (south) edge: a small spread of Bloom
+## ground with a sample tile at its middle, one each of the Spore, Root and Sap samples, left to right (Data.BLOOM_TILES).
+## They are laid after the ore, from a random stream of their own, so the coal and iron of a seed are what stage 1 made.
 ##
 ## Fairness works like MapEast's: make() builds a strip, faults_of() says what is wrong with it, and a strip that fails is
 ## thrown away and another is made from the next attempt seed. The strip needs exactly COAL_SEAMS separate seams, enough iron
@@ -24,6 +26,10 @@ const IRON_MIN := 22  # Iron Hills tiles in the strip, at least
 const IRON_NEAR_MIN := 6  # ...of them in the first NEAR_ROWS rows
 const NEAR_ROWS := 13
 const MAX_CROSSINGS := 3  # river tiles between the Hearth and the strip, at most
+const BLOOM_ROWS := 8  # a patch lies in the strip's last rows: the far edge of the fog
+const BLOOM_GROUND_MIN := 5  # tiles in a patch (its ground and its sample), at least
+const BLOOM_GROUND_MAX := 9
+const BLOOM_APART := 7  # tiles between two patches' middles, at least
 const FOREST_PERCENT := 13
 const ROCK_PERCENT := 6
 const NEIGHBORS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
@@ -66,6 +72,9 @@ static func _attempt(s, land_seed: int) -> Array:
 	_scatter(strip, Terrain.noise_field(w, h, land_seed + 2, 0.13), w, h, ROCK_PERCENT, "rock")
 	_lay_coal(strip, w, h, rng)
 	_lay_iron(strip, w, h, rng)
+	var bloom_rng := RandomNumberGenerator.new()
+	bloom_rng.seed = land_seed + 9
+	_lay_bloom(strip, w, h, bloom_rng)
 	return strip
 
 
@@ -120,6 +129,42 @@ static func _lay_iron(strip: Array, w: int, h: int, rng: RandomNumberGenerator) 
 			at += NEIGHBORS[rng.randi_range(0, 3)]
 
 
+## The three Bloom patches, one in each third of the strip's width, in its last BLOOM_ROWS rows: a sample tile (spore, root, sap
+## from the west) with a handful of Bloom ground round it. A patch never covers ore, and it takes the trees and rocks it grows over.
+static func _lay_bloom(strip: Array, w: int, h: int, rng: RandomNumberGenerator) -> void:
+	for i in Data.BLOOM_KINDS.size():
+		var lo := 3 + Terrain.div(w * i, Data.BLOOM_KINDS.size())
+		var hi := Terrain.div(w * (i + 1), Data.BLOOM_KINDS.size()) - 4
+		var at := Vector2i(Terrain.div(lo + hi, 2), h - 4)
+		for attempt in 30:
+			var c := Vector2i(rng.randi_range(lo, hi), rng.randi_range(h - BLOOM_ROWS + 2, h - 3))
+			if _bare(strip[c.y * w + c.x]):
+				at = c
+				break
+		var want := rng.randi_range(BLOOM_GROUND_MIN, BLOOM_GROUND_MAX) - 1
+		var spread: Array = []
+		var edge: Array = [at]
+		while spread.size() < want and not edge.is_empty():
+			var from: Vector2i = edge.pop_front()
+			for n in NEIGHBORS:
+				var q: Vector2i = from + n
+				if q.x < 1 or q.x >= w - 1 or q.y < h - BLOOM_ROWS or q.y >= h:
+					continue
+				if q != at and not spread.has(q) and _bare(strip[q.y * w + q.x]) and rng.randi_range(0, 2) > 0:
+					spread.append(q)
+					edge.append(q)
+					if spread.size() >= want:
+						break
+		for q in spread:
+			strip[q.y * w + q.x] = Data.BLOOM_GROUND
+		strip[at.y * w + at.x] = Data.BLOOM_TILES[Data.BLOOM_KINDS[i]]
+
+
+## True for a strip tile a patch may cover: not ore, not another patch.
+static func _bare(tile: String) -> bool:
+	return tile in ["grass", "tree", "rock"]
+
+
 # --- Fairness ----------------------------------------------------------------------
 
 
@@ -143,9 +188,39 @@ static func faults_of(s, strip: Array) -> Array:
 		faults.append("too little iron (%d)" % iron)
 	if near < IRON_NEAR_MIN:
 		faults.append("too little iron in the near rows (%d)" % near)
+	faults.append_array(_bloom_faults(strip, w, int(strip.size() / w)))
 	var cross := crossings_to_south(s)
 	if cross > MAX_CROSSINGS:
 		faults.append("the new land is %d river tiles away (at most %d)" % [cross, MAX_CROSSINGS])
+	return faults
+
+
+## What is wrong with the Bloom patches in `strip` (`w` wide, `h` tall): one sample of each kind, each with enough ground, all
+## in the far rows and well apart.
+static func _bloom_faults(strip: Array, w: int, h: int) -> Array:
+	var faults: Array = []
+	var middles: Array = []
+	for kind in Data.BLOOM_KINDS:
+		var at: int = strip.find(Data.BLOOM_TILES[kind])
+		if at < 0 or strip.count(Data.BLOOM_TILES[kind]) != 1:
+			faults.append("no single %s sample" % kind)
+			continue
+		var p := Vector2i(at % w, floori(float(at) / w))
+		middles.append(p)
+		if p.y < h - BLOOM_ROWS:
+			faults.append("the %s patch is not at the far edge" % kind)
+		var ground := 1
+		for dy in range(-4, 5):
+			for dx in range(-4, 5):
+				var q := p + Vector2i(dx, dy)
+				if q.x >= 0 and q.x < w and q.y >= 0 and q.y < h and strip[q.y * w + q.x] == Data.BLOOM_GROUND:
+					ground += 1
+		if ground < BLOOM_GROUND_MIN:
+			faults.append("the %s patch has %d tiles" % [kind, ground])
+	for i in middles.size():
+		for j in range(i + 1, middles.size()):
+			if maxi(absi(middles[i].x - middles[j].x), absi(middles[i].y - middles[j].y)) < BLOOM_APART:
+				faults.append("two Bloom patches stand side by side")
 	return faults
 
 
