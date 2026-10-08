@@ -1,0 +1,8 @@
+{
+  "prompt": "Use case: illustration-story. Paint a Solace Phase B cinematic still, matching the approved Misty Highlands miniature painting in reference 1: sculpted chunky toy-like forms, painterly mossy stone/thatch/timber, atmospheric layered fog, warm hearth amber versus cool dusk, grounded beautiful mysterious highlands. Slightly lower cinematic camera than the game map, not photorealistic or flat vector. Landscape 16:10, about 1586x992. All important subjects within middle 80%, safe through 8% push-in. Bottom third calm, darker low-detail foreground for captions. No text, symbols resembling writing, UI, borders or watermarks. Cyan only Lumen/lamp; magenta and green only specified Bloom. Keep detail and focus above caption zone.\nScene: Wide quiet view of the SOUTHERN fog edge at dusk, mossy highland meadow, distant ridges, layered mist. Exactly THREE widely separated very faint magenta and sickly green ground patches FAR OFF near fog boundary in middle distance. Reuse thin sparse reaching shoots of reference2, barely detectable and not luminous gardens. Nobody is looking: NO people anywhere. Foreground is dark moss/earth calm and low detail; ominous subtle hints against otherwise beautiful land. No cyan comet, no town closeup, no monster or dense growth.",
+  "source": "exec-ba0f2cf9-0991-4edc-bc93-94219a742da4.png",
+  "references": [
+    "art/rendered/cutscenes/opening_3.png",
+    "bloom.png"
+  ]
+}

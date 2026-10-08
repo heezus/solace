@@ -4,7 +4,14 @@ Owner: the project owner (heezus). Two AI teams, one repo, coordinated by respon
 
 ## Active work
 
-### Codex — Phase A cutscene paintings
+### Codex — Ironfall art batch delivered
+- **Task:** the 2026-10-08 stage 1 art request, delivered as four small art-only PRs on `codex/ironfall-*`.
+- **Reserved files:** none after publication. Claude owns production loader/gameplay hooks; no production code was edited.
+- **Acceptance criteria:** Misty Highlands materials, preserved 1×1 map/building footprints, transparent originals and generated imports, native map/HUD previews. Five Phase B stills at the accepted 1586×992, safe focal points, dark caption foregrounds, no baked text, consistent Sela.
+- **Status:** tiles #90 (three variants each), buildings #91 (coal_mine/bloomery), five icons #92, five cutscene stills #93. Godot imports and native previews passed; current-head CI is required before Claude merges.
+- **Next action:** Claude reviews and wires map/item regions from `docs/art/ironfall/`. Coal and spent coal must share visual variant salt; remove placeholder tints. New icons use a sibling atlas without moving existing crops. Cutscene filenames load automatically. Use this released reservation entry after combining the four PRs; preserve every delivery note and decision-log entry.
+
+#### Delivered context — Phase A cutscene paintings
 - **Task:** nineteen story stills and five transparent memory overlays, delivered as six small art-only review PRs (#81–#86) on `codex/cutscenes-*` branches.
 - **Reserved files:** none after publication. Assets live in `art/rendered/cutscenes/`; prompt/provenance records and native caption previews in `docs/art/cutscenes/`. Claude owns playback code.
 - **Acceptance criteria:** Misty Highlands miniature art, no baked text or first-run Bloom, safe focal points through 8% push-in, darker caption foregrounds, Sela/traveller continuity, original alpha overlays and generated imports; requested 2560×1600.

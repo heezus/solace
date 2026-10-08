@@ -1,0 +1,47 @@
+[
+  {
+    "id": "ironfall_1",
+    "path": "art/rendered/cutscenes/ironfall_1.png",
+    "size": [
+      1586,
+      992
+    ],
+    "sha256": "0e5b7e5d7919756d48b7943ee3a3fa9975cebce2c4f55601ab568a2a55ecd536"
+  },
+  {
+    "id": "ironfall_2",
+    "path": "art/rendered/cutscenes/ironfall_2.png",
+    "size": [
+      1586,
+      992
+    ],
+    "sha256": "39f789b304e805732254a2a32c055c68d982aa806188db67b9baca48d746d330"
+  },
+  {
+    "id": "ironfall_3",
+    "path": "art/rendered/cutscenes/ironfall_3.png",
+    "size": [
+      1586,
+      992
+    ],
+    "sha256": "657d506a8e397b074dc8aa6e9ee2641bd32e7c3e1560f5aaa4bd75a9feed675c"
+  },
+  {
+    "id": "bloom_sign_1",
+    "path": "art/rendered/cutscenes/bloom_sign_1.png",
+    "size": [
+      1586,
+      992
+    ],
+    "sha256": "9fc444b39aebfff3bea96437b03f820dd2ca2d007124c06f183329157187d08d"
+  },
+  {
+    "id": "bloom_sign_2",
+    "path": "art/rendered/cutscenes/bloom_sign_2.png",
+    "size": [
+      1586,
+      992
+    ],
+    "sha256": "bd2f35f7f99ff48a9907cabd5f963c1728b0e35309d894f6d8b0ea6cc2f143a8"
+  }
+]

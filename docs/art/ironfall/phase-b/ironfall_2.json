@@ -1,0 +1,8 @@
+{
+  "prompt": "Use case: illustration-story. Paint a Solace Phase B cinematic still, matching the approved Misty Highlands miniature painting in reference 1: sculpted chunky toy-like forms, painterly mossy stone/thatch/timber, atmospheric layered fog, warm hearth amber versus cool dusk, grounded beautiful mysterious highlands. Slightly lower cinematic camera than the game map, not photorealistic or flat vector. Landscape 16:10, about 1586x992. All important subjects within middle 80%, safe through 8% push-in. Bottom third calm, darker low-detail foreground for captions. No text, symbols resembling writing, UI, borders or watermarks. Cyan only Lumen/lamp; magenta and green only specified Bloom. Keep detail and focus above caption zone.\nScene: Exactly TWO characters, one Lumen and one Kith, jointly turning over a manageable piece of the broken crash hull on a low stone workbench. A small pale cyan lamp core sits BETWEEN them, their hands support opposite ends of the same curved ribbed metal hull fragment. Lumen pale ivory/cyan cloak, Kith earthy rust/cream clothing; same chunky miniature scale, collaborative curiosity. Broken hull ribs in grass beyond. Amber dusk rimlight, restrained cyan core illumination. No Bloom, extra characters or writing.",
+  "source": "exec-bb9180ad-ddb4-4af0-9a38-a015bec33eb2.png",
+  "references": [
+    "art/rendered/cutscenes/opening_3.png",
+    "art/rendered/starfall-wreck.png"
+  ]
+}
