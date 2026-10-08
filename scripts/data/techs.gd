@@ -47,7 +47,7 @@ const ERA_TIER_NAMES := {
 	4: ["TIER I", "TIER II", "TIER III", "TIER IV", "THE GATE"],
 }
 ## The latest build stage whose techs can be researched (see `stage` above).
-const BUILT_STAGE := 2
+const BUILT_STAGE := 3
 ## A route set aside by a fork costs this many times its price once the fork's goal is learned.
 const FORK_LATER_COST := 1.5
 ## Tally Sticks makes every tech this share of its cost.

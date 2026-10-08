@@ -263,6 +263,7 @@ func add_building(type: String, p: Vector2i) -> void:
 		"pantry": 0.0,  # seconds since the household last used its goods
 		"site": "",  # "" or the scaffold's state: "waiting" for materials, "building" once they are in (scripts/homes.gd)
 		"site_t": 0.0,  # seconds the scaffold has stood
+		"burn": 0.0,  # a fed building (Boiler, Lamp, Pen): seconds left on what it was given, or until the Pen eats again
 	}
 	if Data.BUILDINGS[type].has("dig"):
 		b["ore"] = Data.TILES[_world.tile_at(p)]["yields"]
@@ -414,12 +415,14 @@ func is_powered(p: Vector2i) -> bool:
 	return in_range_of("power", p)
 
 
-## True if p is within the radius of any building of this kind.
+## True if p is within the radius of any building of this kind. A fed one (a Boiler) reaches only while it burns.
 func in_range_of(kind: String, p: Vector2i) -> bool:
 	for b in buildings:
 		var def: Dictionary = Data.BUILDINGS[b["type"]]
 		var bp: Vector2i = b["pos"]
-		if def["kind"] == kind and Vector2(bp).distance_to(Vector2(p)) <= def["radius"]:
+		if def["kind"] != kind or (def.get("fed", false) and b["burn"] <= 0.0):
+			continue
+		if Vector2(bp).distance_to(Vector2(p)) <= def["radius"]:
 			return true
 	return false
 
@@ -460,11 +463,27 @@ func set_home_cap(tier: int, n: int) -> bool:
 
 ## How many Cart Sheds stand, and so how many haulers pull hand carts (Data.CARTS_PER_SHED each).
 func carts_allowed() -> int:
+	return carts_of("hand")
+
+
+## How many carts of `kind` ("hand", "steam" or "beast") the buildings give: a Cart Shed a hand cart, a Steam Shed a Steam Cart (once
+## Rails is learned, so it has rail to run on) and a Beast Pen with a tamed beast a beast cart.
+func carts_of(kind: String) -> int:
 	var n := 0
+	if kind == "steam" and not _world.road_tiers.values().has(Data.RAIL_TIER):
+		return 0  # a Steam Cart with no Rail laid would only stand idle
 	for b in buildings:
-		if Data.BUILDINGS[b["type"]]["kind"] == "shed":
+		var def: Dictionary = Data.BUILDINGS[b["type"]]
+		if def["kind"] == "shed" and def.get("cart", "hand") == kind:
 			n += Data.CARTS_PER_SHED
+		elif def["kind"] == "pen" and kind == "beast" and is_tamed(b):
+			n += 1
 	return n
+
+
+## True for a Beast Pen whose beast is tame (it has been fed Data.BEAST_TAME seconds' worth of Grain).
+static func is_tamed(b: Dictionary) -> bool:
+	return Data.BUILDINGS[b["type"]]["kind"] == "pen" and b["progress"] >= Data.BEAST_TAME
 
 
 # --- Work --------------------------------------------------------------------
@@ -475,10 +494,11 @@ static func needs_worker(b: Dictionary) -> bool:
 	return Data.BUILDINGS[b["type"]]["kind"] in ["gatherer", "processor"]
 
 
-## True for the buildings haulers serve: the ones a Kith staffs, homes (goods in, upgrade materials in) and the Teardown Bench
-## (parts in).
+## True for the buildings haulers serve: the ones a Kith staffs, homes (goods in, upgrade materials in), the Teardown Bench (parts
+## in) and the fed ones (a Boiler's coal, a Shard Lamp's shard, a Beast Pen's grain).
 static func served(b: Dictionary) -> bool:
-	return needs_worker(b) or Data.BUILDINGS[b["type"]]["kind"] in ["house", "bench"]
+	var def: Dictionary = Data.BUILDINGS[b["type"]]
+	return needs_worker(b) or def["kind"] in ["house", "bench"] or def.get("fed", false)
 
 
 ## How many people building `b` needs at work: 1, or its `crew`.
@@ -574,6 +594,14 @@ static func buffered(dict: Dictionary) -> int:
 ## Would a worker standing at this building have something to do: room to put the goods, and (for a
 ## workshop) the inputs and the power?
 func wants_to_work(b: Dictionary) -> bool:
+	if Data.BUILDINGS[b["type"]].get("needs_power", false) and not is_powered(b["pos"]):
+		return false
+	return wants_power(b)
+
+
+## Would a worker at this building have something to do if it had power: room to put the goods and the inputs. A Boiler lights
+## when a machine in its reach says yes.
+func wants_power(b: Dictionary) -> bool:
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
 	match def["kind"]:
 		"gatherer":
@@ -581,8 +609,6 @@ func wants_to_work(b: Dictionary) -> bool:
 		"processor":
 			if def.has("dig") and _world.seam_spent(b["pos"]):
 				return false  # nothing left to dig
-			if def.get("needs_power", false) and not is_powered(b["pos"]):
-				return false
 			if def.get("trade", false) and not is_trading(b):
 				return false
 			var recipe := recipe_in(b)
@@ -655,6 +681,7 @@ static func _building_from_dict(d: Dictionary) -> Dictionary:
 	b["pantry"] = float(d.get("pantry", 0.0))
 	b["site"] = String(d.get("site", ""))
 	b["site_t"] = float(d.get("site_t", 0.0))
+	b["burn"] = float(d.get("burn", 0.0))  # a save from before steam has nothing burning
 	b["ore"] = String(d.get("ore", ""))
 	b["give"] = String(d.get("give", ""))
 	b["get"] = String(d.get("get", ""))

@@ -17,6 +17,7 @@ const SPRITE_OF := {
 	"road": "tile_path",
 	"gravel_road": "tile_path",  # the road tiers borrow the path tile, tinted, until they have art (docs/art/requests.md)
 	"paved_road": "tile_path",
+	"rail": "tile_path",
 	"bridge": "tile_bridge_wood",
 	"flax_field": "flax",
 }

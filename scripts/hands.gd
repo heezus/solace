@@ -119,7 +119,17 @@ static func item_at(s, p: Vector2i) -> String:
 	var tile: Dictionary = Data.TILES[s.world.tile_at(p)]
 	if tile.has("tech") and not s.tech_tree.researched.has(tile["tech"]):
 		return ""  # ore can't be dug before Prospecting
-	return tile["yields"]
+	return tile_item(s, s.world.tile_at(p))
+
+
+## What a hand harvest of a tile of this kind gives: what it yields, and a Shard from the Strange Stone once it is chipped.
+static func tile_item(s, tile: String) -> String:
+	return Data.SHARD_ITEM if tile == "shard" and chips_shard(s) else Data.TILES[tile]["yields"]
+
+
+## True once the Strange Stone has been found and Shard Lamps is learned: a hold on it chips a Shard off (a click no longer reads it).
+static func chips_shard(s) -> bool:
+	return s.shard_seen and s.tech_tree.researched.has("shard_lamps")
 
 
 ## How many Kith hold a Flint Tool.
@@ -132,9 +142,16 @@ static func tools_held(s) -> int:
 
 
 ## Harvests by hand before a Kith learns the next resource: Data.LEARN_CLICKS, but only Data.LEARN_FIRST for the very first
-## resource anyone learns, so the first lesson comes quickly.
+## resource anyone learns, so the first lesson comes quickly. Taught Hands II takes Data.TAUGHT_HANDS_II_SHARE of either.
 static func learn_needed(s) -> int:
-	return Data.LEARN_FIRST if s.people.learned_by.is_empty() else Data.LEARN_CLICKS
+	var n: int = Data.LEARN_FIRST if s.people.learned_by.is_empty() else Data.LEARN_CLICKS
+	return _taught_ii(s, n)
+
+
+static func _taught_ii(s, n: int) -> int:
+	if not s.tech_tree.researched.has("taught_hands_ii"):
+		return n
+	return maxi(ceili(n * Data.TAUGHT_HANDS_II_SHARE), 1)
 
 
 ## Count a harvest toward teaching `item`; at learn_needed the next Kith in Data.PEOPLE_NAMES learns it.
@@ -152,6 +169,19 @@ static func teach(s, item: String) -> void:
 	s.people.learn(item, who)
 	var job: Dictionary = Data.HUT_JOBS.get(item, Data.JOB_ANY)
 	s.events.append(Data.LEARNED_LINE % [who, job["craft"], job["title"]])
+	_spread(s, who)
+
+
+## Taught Hands II: a job learned spreads. The Kith learn, as well, every other resource the player has harvested at least
+## Data.TAUGHT_HANDS_II_SHARE of the harvests that teach one (rounded up; the ones that would teach it anyway are learned already).
+static func _spread(s, who: String) -> void:
+	if not s.tech_tree.researched.has("taught_hands_ii"):
+		return
+	var half := _taught_ii(s, learn_needed(s))
+	for other in s.hand_counts:
+		if not s.people.knows(other) and s.hand_counts[other] >= half:
+			s.people.learn(other, who)
+			s.events.append(Data.SPREAD_LINE % [who, Data.HUT_JOBS.get(other, Data.JOB_ANY)["craft"]])
 
 
 # --- Crafting by hand ----------------------------------------------------------

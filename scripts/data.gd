@@ -17,6 +17,7 @@ const DataStarfall = preload("res://scripts/data/starfall.gd")
 const DataMenu = preload("res://scripts/data/menu.gd")
 const DataIronfall = preload("res://scripts/data/ironfall.gd")
 const DataTeardown = preload("res://scripts/data/teardown.gd")
+const DataSteam = preload("res://scripts/data/steam.gd")
 const DataCutscenes = preload("res://scripts/data/cutscenes.gd")
 
 # --- Items: data/items.gd ---
@@ -179,6 +180,8 @@ const PATCH_MAX_TILES := DataTuning.PATCH_MAX_TILES
 const CARTS_PER_SHED := DataTuning.CARTS_PER_SHED
 const CART_LOAD := DataTuning.CART_LOAD
 const ROAD_SPEEDS := DataTuning.ROAD_SPEEDS
+const PAVED_TIER := DataTuning.PAVED_TIER
+const RAIL_TIER := DataTuning.RAIL_TIER
 const COPY_COST_STEP := DataTuning.COPY_COST_STEP
 const COPY_COST_CEILING := DataTuning.COPY_COST_CEILING
 const COPY_COST_TABS := DataTuning.COPY_COST_TABS
@@ -619,6 +622,46 @@ const BLOOM_NO_LAND := DataTeardown.BLOOM_NO_LAND
 const BLOOM_NO_TECH := DataTeardown.BLOOM_NO_TECH
 const BLOOM_NONE_LEFT := DataTeardown.BLOOM_NONE_LEFT
 const BLOOM_NO_TEARDOWN := DataTeardown.BLOOM_NO_TEARDOWN
+
+# --- Era 4, Ironfall, stage 3: steam and the end: data/steam.gd ---
+const BOILER_BURN := DataSteam.BOILER_BURN
+const SHARD_BOILER_BURN := DataSteam.SHARD_BOILER_BURN
+const LAMP_BURN := DataSteam.LAMP_BURN
+const LAMP_LIGHT := DataSteam.LAMP_LIGHT
+const LANTERN_DAYLIGHT := DataSteam.LANTERN_DAYLIGHT
+const SHARD_ITEM := DataSteam.SHARD_ITEM
+const BEAST_LOAD := DataSteam.BEAST_LOAD
+const STEAM_LOAD := DataSteam.STEAM_LOAD
+const STEAM_TRIPS := DataSteam.STEAM_TRIPS
+const BEAST_TAME := DataSteam.BEAST_TAME
+const BEAST_EAT := DataSteam.BEAST_EAT
+const STEEL_TOOL_JOBS := DataSteam.STEEL_TOOL_JOBS
+const IRON_PLOUGH_FIELD_BONUS := DataSteam.IRON_PLOUGH_FIELD_BONUS
+const TAUGHT_HANDS_II_SHARE := DataSteam.TAUGHT_HANDS_II_SHARE
+const BOILER_LIT := DataSteam.BOILER_LIT
+const BOILER_BANKED := DataSteam.BOILER_BANKED
+const BOILER_COLD := DataSteam.BOILER_COLD
+const FUEL_ROW := DataSteam.FUEL_ROW
+const LAMP_ROW := DataSteam.LAMP_ROW
+const LAMP_LIT := DataSteam.LAMP_LIT
+const LAMP_DARK := DataSteam.LAMP_DARK
+const NO_POWER_STATUS := DataSteam.NO_POWER_STATUS
+const LANTERN_LINE := DataSteam.LANTERN_LINE
+const CART_KINDS := DataSteam.CART_KINDS
+const STEAM_COLD := DataSteam.STEAM_COLD
+const RAIL_NOTE := DataSteam.RAIL_NOTE
+const SHED_ROW := DataSteam.SHED_ROW
+const PEN_TAMING := DataSteam.PEN_TAMING
+const PEN_TAMED := DataSteam.PEN_TAMED
+const PEN_NEEDS := DataSteam.PEN_NEEDS
+const SPREAD_LINE := DataSteam.SPREAD_LINE
+const SHARD_CHIPPED := DataSteam.SHARD_CHIPPED
+const SHARD_HINT := DataSteam.SHARD_HINT
+const LIVEWIRE_EVENT := DataSteam.LIVEWIRE_EVENT
+const LIVEWIRE_TITLE := DataSteam.LIVEWIRE_TITLE
+const LIVEWIRE_TEXT := DataSteam.LIVEWIRE_TEXT
+const LIVEWIRE_NOTE := DataSteam.LIVEWIRE_NOTE
+const LIVEWIRE_BUTTON := DataSteam.LIVEWIRE_BUTTON
 
 # --- Cutscenes: data/cutscenes.gd ---
 const CUTSCENE_ART_DIR := DataCutscenes.CUTSCENE_ART_DIR

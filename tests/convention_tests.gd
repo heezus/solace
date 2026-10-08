@@ -483,6 +483,8 @@ func test_tree_gates_every_building() -> void:
 		var s: Sim = t.fresh()
 		t.give(s, 999)
 		s.shard_seen = true
+		if def.has("lesson"):
+			s.teardown.lessons.append(def["lesson"])  # a building taught by a part also waits for its tech
 		for other in Data.TECHS:
 			if other != tech:
 				s.tech_tree.researched[other] = true

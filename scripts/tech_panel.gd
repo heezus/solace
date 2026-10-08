@@ -17,7 +17,7 @@ const Ranks = preload("res://scripts/ranks.gd")
 
 const BG := Ui.PANEL
 const STRIP_H := 170.0  # the strip about one tech: always this tall
-const STOCK_GAP := 6  # between the goods of the stock line: all of them (23 by Ironfall) still fit a 1280 window
+const STOCK_GAP := 5  # between the goods of the stock line: all of them (25 by Ironfall) still fit a 1280 window
 const STRIP_SIDE_W := 330.0  # its right column: needs, leads to, route
 
 var state: Sim
@@ -525,6 +525,7 @@ func _needs_text(tech: String) -> String:
 		parts.append(any[0])
 	elif any.size() > 1:
 		parts.append("one of " + " or ".join(any) + (Data.FORK_NOTE if Data.TECHS[tech].get("fork", false) else ""))
+	parts.append_array(state.tech_tree.open_needs(tech))  # a gift read, a Lesson learned
 	return ", ".join(parts) if not parts.is_empty() else "nothing, start here"
 
 

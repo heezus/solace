@@ -3,11 +3,13 @@ extends RefCounted
 ## list them in TECHS (a constant cannot merge two dictionaries). It sits in a folder of its own because every constant
 ## in scripts/data/*.gd must be re-exported by the Data facade, and these are only read through TECHS.
 ## Costs are placeholders to tune with the pacing bot. The first stage builds Coal Seams, Ironstone, Bloomery and Iron
-## Tools and the second Teardown; the rest carry `stage` 3, so they are on the board, locked, until their stage lands (Rules.tech_enabled).
+## Tools, the second Teardown and the third the rest (every tech carries a `stage`, and Data.BUILT_STAGE says how far the
+## game is built: a tech past it is on the board, locked, see Rules.tech_enabled).
 ## `after` is a story id (Data.STORY_EVENTS): the tech stays out of view until it has happened (Research.tech_visible).
-## `gift` names a Starfall gift (Data.LUMEN_GIFTS) the tech will also need once stage 3 reads it, and `lesson` a Lesson
-## (Data.LESSONS) it waits for: the Shard Lamp on the Lamp core, the Shard Boiler on the Heat plate. The era's board has
-## tiers 0 to 3 and the gate in column 4.
+## `gift` names a Starfall gift (Data.LUMEN_GIFTS) the tech needs read before it can be bought (Rules.tech_gate_missing), and
+## `lesson` a Lesson (Data.LESSONS) the building it unlocks waits for: the Shard Lamp on the Lamp core, the Shard Boiler on the
+## Heat plate. `lessons` (the gate) are Lessons that must all be learned: one of each Bloom sample is "one of each Bloom
+## sample" opened at the Bench. The era's board has tiers 0 to 3 and the gate in column 4.
 
 const COAL_SEAMS := {
 	"abbr": "Cs",
@@ -138,7 +140,7 @@ const RAILS := {
 	"lane": "fiber",
 	"tier": 2,
 	"slot": 0,
-	"unlock": "Rail, Steam Cart",
+	"unlock": "Rail, Steam Shed (the Steam Cart)",
 	"icon": "tile_road",
 	"requires": ["boiler", "bloomery"],
 	"cost": {"iron": 60, "coal": 60, "wood": 200},
@@ -269,6 +271,7 @@ const LIVEWIRE := {
 	"unlock": "The era ends",
 	"icon": "wanderer",
 	"requires": ["steel", "rails", "shard_boiler", "bloom_sampling"],
+	"lessons": ["spore", "root", "sap"],
 	"cost": {"steel": 100, "iron": 100, "brick": 60, "rope": 40},
 	"desc": "The lamps burn without a flame. Far to the north, something green moves in the fog.",
 }

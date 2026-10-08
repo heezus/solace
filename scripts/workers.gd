@@ -12,6 +12,7 @@ const Buildings = preload("res://scripts/buildings.gd")
 const Work = preload("res://scripts/work.gd")
 const Hands = preload("res://scripts/hands.gd")
 const GrowthNote = preload("res://scripts/growth_note.gd")
+const Steam = preload("res://scripts/steam.gd")
 
 
 ## One step of a worker's day at their building.
@@ -202,7 +203,12 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
 	b["alert"] = ""
 	if not Buildings.needs_worker(b):
-		b["status"] = def.get("status", def["desc"])
+		if def.get("fed", false):
+			Steam.tick_fed(s, b, delta)  # a Boiler, a Lamp or a Pen has no worker: it burns what haulers bring it
+			if b["alert"] != "":
+				b["status"] += road_note(s, b)  # hungry and unlinked: haulers cannot bring it anything
+		else:
+			b["status"] = Steam.shed_status(s, def)
 		return
 	if def.has("makes"):
 		Work.choose_tool(s, b)
@@ -221,7 +227,10 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 		s.town.set_status(b, "Cut off by water: build a Wooden Bridge (Paths & Haulers)", "Cut off: needs a bridge")
 		return
 	if def.get("needs_power", false) and not s.town.is_powered(b["pos"]):
-		s.town.set_status(b, "No power: build a Water Wheel nearby", "No power")
+		var how: String = (
+			Data.NO_POWER_STATUS if s.tech_tree.researched.has("boiler") else "No power: build a Water Wheel nearby"
+		)
+		s.town.set_status(b, how, "No power")
 		return
 	if not s.people.worker_home(b):
 		b["status"] = "%s walking here" % s.people.title_of(s.people.kith[b["worker"]])
