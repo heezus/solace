@@ -4,6 +4,13 @@ Owner: the project owner (heezus). Two AI teams, one repo, coordinated by respon
 
 ## Active work
 
+### Codex — shared character standard
+- **Task:** the owner's character-consistency request, informed by Claude's runtime contracts and the owner's relayed 35 px common-height decision. Branch `codex/character-standard`.
+- **Reserved files:** `docs/art/character-standard/`, `docs/design-system/mockups/character-standard.md` and its index/art-direction links. No production renderer or gameplay files reserved.
+- **Acceptance criteria:** one shared reference hierarchy, explicit map/title/cutscene detail and framing rules, current-versus-proposed native scale review and original Sela candidate/provenance. Clearly distinguish approved scale decisions from unapproved anatomy and exact hero height.
+- **Status:** reference spec and source audit supplied for review. Ordinary Kith/Lumen target 35 px; 38 px Sela candidate is unapproved. #93 remains held. Existing originals and production art/code are unchanged.
+- **Next action:** owner reviews the side-by-side candidate; Codex records accepted proportions before character replacements, Claude reads the same spec before wiring. Terrain/water is next; Teardown requests remain queued.
+
 ### Codex — Tool Bench art
 - **Task:** supply one Tool Bench miniature matching the existing workshops, on `codex/tool-bench-art`, PR #49; leave growth art pending the project owner's approval.
 - **Reserved files:** none; art reservation released on publication. Delivered files are `docs/art/tool-bench/`, the queue note and this handoff entry.

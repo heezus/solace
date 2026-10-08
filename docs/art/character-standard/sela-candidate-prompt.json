@@ -1,0 +1,10 @@
+{
+  "prompt": "Use case: stylized-concept. Solace character model-sheet candidate, ONE full-body Sela on transparent background. Reference1 is authoritative Kith miniature anatomy and camera; reference2 is ordinary Lumen miniature anatomy/materials; reference3 supplies ONLY Sela identity, pale blonde long loose hair, adult human face, ivory/pale gold/soft cyan costume and gold/cyan jewelry. Normalize Sela to the SAME compact sculpted toy-like head/body ratio as the Kith and ordinary Lumen: large readable head, short torso, sturdy short legs, chunky boots and hands, three-quarter overhead MAP angle exactly like references1 and2. Match their silhouette weight and painterly miniature materials. Sela should be only marginally taller (roughly 9%) when shown beside an ordinary figure, not a long-legged realistic fashion character. Keep recognizable face and warm open smile but simplify eyelashes/hair strands/costume jewelry so readable at 38 px. Two arms/two legs, relaxed standing posture, feet anchored level. Full outfit ivory tunic and trousers, gold edging, soft cyan short cloak/sash, small clasp. No new ornate armor or decorations. Preserve glamour through elegant color and confident expression, not realism. One figure centered with padding, no sheet text, no floor platform, no surrounding glow, no props, genuine transparent alpha. This is a review candidate, not production art.",
+  "source": "exec-45093e57-365e-4c2a-8c4f-665f21eb6618.png",
+  "references": [
+    "art/rendered/walk.png",
+    "art/rendered/starfall-lumen-strangers.png",
+    "art/sprites/lumen_lead.png"
+  ],
+  "status": "review candidate only"
+}
