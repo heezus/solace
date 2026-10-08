@@ -112,3 +112,6 @@ The project owner wants Codex to paint the ground and the water too, at the same
 - [ ] **The new southern land (Ironfall).** Drier, darker earth near the coal seams and iron hills, with a gentle edge to the meadow. Optional, carries on from the Ironfall stage 1 slot above.
 - [ ] **Bloom ground (stage 2).** The four Bloom patch tiles and the Spore and Root overlays are listed in the stage 2 slots above; paint the ground under them with the terrain so the patches sit in it.
 - [ ] **Acceptance.** Put a sprite and a terrain tile side by side at the default zoom (48 px): the same outline darkness, highlight direction (up and left) and saturation. Capture it in the engine as the earlier passes did, and note any shader changes here.
+
+### Shared character standard — PR #94
+Spec: `docs/design-system/mockups/character-standard.md`; native current/proposed source audit and one unapproved Sela candidate: `docs/art/character-standard/`. The owner-approved common map target is 35 px for ordinary Kith/Lumen, heroes slightly taller; exact Sela height and anatomical landmarks require visual review. Claude reads the same spec before wiring. #93 remains held. Terrain/water and Teardown are queued next; no new production character art is approved by this source audit.

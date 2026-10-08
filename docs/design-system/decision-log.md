@@ -785,3 +785,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Codex gets numbered template sheets, a short spec (light from the upper left, small palettes, neighbours share mid-tones) and `tests/tools/terrain_preview.gd`, which renders the real ground on a generated map. Everything is in `docs/art/terrain-kit/`.
 - Map generation needs no change for the art. The generator's height and wetness fields can become two shader mask channels when Codex asks for them (no save or map change). Details on page 22.
 
+
+## 2026-10-08: Shared character reference and review gate (PR #94)
+- Codex recorded one shared map/title/cutscene reference hierarchy, following the owner's consistency request and Claude's confirmed workflow.
+- Ordinary Kith/Lumen target 35 px; Sela is marginally taller. Exact 38 px and normalized anatomy remain proposals pending visual review.
+- Existing source comparison and one separate Sela candidate expose proportion/detail differences; no game sprite or renderer changed. #93 remains held.
+- Accepted 1586×992 cutscene originals retain prompts and provenance; future character art and wiring must reference the shared spec.
