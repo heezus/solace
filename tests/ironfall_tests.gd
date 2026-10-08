@@ -92,7 +92,7 @@ func test_ironfall_data_is_whole() -> void:
 		t.check(Data.ITEMS[item]["era"] == 4 and item in Data.ITEM_ORDER, "%s is an era-4 good" % item)
 	for item in ["coal", "iron_ore", "iron", "steel", "iron_tools"]:
 		var tex := Art.sprite("item_" + item)
-		t.check(tex != null and tex.get_width() <= 64, "%s has a placeholder icon, borrowed and recolored" % item)
+		t.check(tex != null and tex.get_width() > 0, "%s has an icon" % item)
 	for type in ["coal_mine", "bloomery"]:
 		t.check(Data.TECHS[Data.BUILDINGS[type]["tech"]]["era"] == 4, "%s comes with an era-4 tech" % type)
 		t.check(type in Data.BUILD_TABS["Metal"], "%s is on the Metal tab" % type)
