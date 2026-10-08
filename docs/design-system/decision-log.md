@@ -747,3 +747,8 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Every new art slot is logged in `docs/art/requests.md` for Codex; nothing was added to `art/`. A ninth stage start, `ironfall`, begins just after the Starfall ending.
 - Saves stay VERSION 1 and everything Ironfall adds is optional, so older saves keep loading. A CI test now loads a frozen save written before Ironfall (`tests/fixtures/save_before_ironfall.json`) and plays it a minute; a later format change adds a newer fixture beside it instead of editing this one.
 
+## 2026-10-08: Ironfall resource miniatures (PR #90)
+- Codex: coal_seam, iron_hills and spent_seam receive original transparent three-variant atlases, preserving the existing 1×1 footprints and stable visual selection contract.
+- Read coal as dark seam bands, iron as rust-red faces with grey flecks, and depletion as dull grey channels in the corresponding coal ridge shape. Keep contact edges soft rather than painting square ground bases.
+- Claude wires exact regions and removes the stand-in tints. Coal and spent coal should share the coal visual salt so exhaustion retains the paired silhouette; discovery and gameplay RNG remain unchanged.
+- Inspect beside plain ore and copper at 45 px inside the 48 px map baseline. Godot-generated imports and native comparison are supplied; actual map integration is a separate code step.
