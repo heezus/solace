@@ -804,7 +804,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - The separate Sela proportion image in `docs/art/character-standard/sela-candidate.png` is now the approved visual anatomy reference; retain its filename, original pixels and generation provenance.
 - Claude wires sizes after #94 merges. #93 stays held until its stills pass a comparison against the approved sheet; this approval does not automatically approve older paintings.
 
-## 2026-10-09: Livewire designed (page 23)
+## 2026-10-09: Livewire designed (PR #97)
 - Claude wrote the design page for era 5 (`23-livewire.md`), following page 18's Decided list: the one new mechanic is **Standing orders** (an Order Board with up to 9 one-line rules, verbs Run, Pause, Bring first, later Send), and the Bloom tide is the clock.
 - **The tide is learned, not walled off.** It advances about a tile every 90 s from the four Ironfall patches, slows on roads, stops in Arc Lamp light and Firebreaks, and is burnt back by the Scorcher, which needs power and coal. The Ironfall Bloom Lessons are what Tide Watch and the Scorcher rest on, and Living Ground (the small life-tree branch) turns burnt ground into richer Fields.
 - **Defaults for the project owner to change:** overgrown buildings are lost after 3 minutes and the Hearth's ring is safe, so Livewire cannot be lost (loss is Skyreach); the gate asks for five orders written and the ring held, besides Steel, Iron, Wire and Brick. Wire (from Copper) is the era's new good, and a Wire Mill and Power Poles carry power past the Boiler's 5 tiles.
