@@ -1,0 +1,265 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+OpenGL API 4.5 (Core Profile) Mesa 25.2.8-0ubuntu0.24.04.4 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 20.1.2, 256 bits)
+
+WARNING: 2D MSAA is not yet supported for GLES3.
+     at: render_target_set_msaa (drivers/gles3/storage/texture_storage.cpp:3210)
+[   0.0s] STAGE starfall_landing: building (a bot may play to it)
+[   2.2s] SHOT 01 starfall_landing_arrive
+    GOALS: All goals done. |   The star is coming down. Keep building while you wait.
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: BRONZE DAWN  ·  The stone age ends, and the land opens east under fog. Press Look east at the map's edge. || The first lesson is learned. What one Kith knows, the Hearth will soon know. || The first hut is at work. The Hearth grows stronger. || A good stock of berries. Nobody goes to sleep hungry tonight.
+    CARD: era=false moment=false
+    HAVE: wood 1103, stone 1185, flint 157, fiber 173, clay 161, berries 5401, grain 206, rope 22, charcoal 110, brick 156, flour 21, flint_tools 17, fish 20, tin 840, copper 41, bronze 20
+    KITH: 85
+[  17.5s] SHOT 02 starfall_landing_t45
+    GOALS: All goals done. |   The star is coming down. Keep building while you wait.
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: New Kith arrive at the Hearth while food lasts
+    CARD: era=false moment=false
+    HAVE: wood 1103, stone 1185, flint 157, fiber 173, clay 161, berries 6136, grain 206, rope 22, charcoal 82, brick 140, flour 21, flint_tools 14, fish 20, tin 864, copper 56, bronze 20
+    KITH: 90
+[  32.9s] SHOT 03 starfall_landing_t90
+    GOALS: All goals done. |   The star is coming down. Keep building while you wait.
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: New Kith arrive at the Hearth while food lasts || A Flint Tool wore out
+    CARD: era=false moment=false
+    HAVE: wood 1103, stone 1185, flint 157, fiber 173, clay 161, berries 6919, grain 206, rope 22, charcoal 47, brick 120, flour 21, flint_tools 9, fish 20, tin 894, copper 70, bronze 20
+    KITH: 95
+[  48.2s] SHOT 04 starfall_landing_t135
+    GOALS: All goals done. |   The star is coming down. Keep building while you wait.
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: A Flint Tool wore out
+    CARD: era=false moment=false
+    HAVE: wood 1103, stone 1185, flint 157, fiber 173, clay 161, berries 7718, grain 206, rope 22, charcoal 14, brick 100, flour 21, flint_tools 4, fish 20, tin 918, copper 84, bronze 20
+    KITH: 97
+[  63.5s] SHOT 05 starfall_landing_t180
+    GOALS: All goals done. |   The star is coming down. Keep building while you wait.
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: The Wanderer is over the whole sky by midnight. The watchers keep their eyes on it and their hands on the rail.
+    CARD: era=false moment=false
+    HAVE: wood 1103, stone 1185, flint 157, fiber 173, clay 161, berries 8499, grain 206, rope 22, brick 84, flour 21, fish 20, tin 948, copper 96, bronze 20
+    KITH: 97
+[  63.6s] STAGE starfall_camp: building (a bot may play to it)
+[  65.9s] SHOT 06 starfall_camp_arrive
+    GOALS: All goals done. |   The star is coming down. Keep building while you wait.
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: BRONZE DAWN  ·  The stone age ends, and the land opens east under fog. Press Look east at the map's edge. || The first lesson is learned. What one Kith knows, the Hearth will soon know. || The first hut is at work. The Hearth grows stronger. || A good stock of berries. Nobody goes to sleep hungry tonight.
+    CARD: era=false moment=false
+    HAVE: wood 963, stone 1075, flint 157, fiber 173, clay 161, berries 7791, grain 206, charcoal 2, brick 72, flour 21, flint_tools 3, fish 20, tin 930, copper 89, bronze 20
+    KITH: 97
+[  81.3s] SHOT 07 starfall_camp_t45
+    GOALS: All goals done. |   The star is coming down. Keep building while you wait.
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: 
+    CARD: era=false moment=false
+    HAVE: wood 963, stone 1075, flint 157, fiber 173, clay 161, berries 8542, grain 206, brick 54, flour 21, fish 20, copper_ore 8, tin 954, copper 97, bronze 20
+    KITH: 97
+[  96.5s] SHOT 08 starfall_camp_t90
+    GOALS: All goals done. |   The star is coming down. Keep building while you wait.
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: A Flint Tool wore out
+    CARD: era=false moment=false
+    HAVE: wood 963, stone 1075, flint 157, fiber 173, clay 161, berries 9312, grain 206, brick 36, flour 21, fish 20, copper_ore 32, tin 984, copper 97, bronze 20
+    KITH: 97
+[ 111.7s] SHOT 09 starfall_camp_t135
+    GOALS: All goals done. |   The star is coming down. Keep building while you wait.
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: The strangers have something to ask. (The Hunger)
+    CARD: era=false moment=true
+    HAVE: wood 963, stone 1075, flint 157, fiber 173, clay 161, berries 9939, grain 206, brick 22, flour 21, fish 20, copper_ore 46, tin 1002, copper 97, bronze 20
+    KITH: 97
+[ 127.0s] SHOT 10 starfall_camp_t180
+    GOALS: All goals done. |   The star is coming down. Keep building while you wait.
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: 
+    CARD: era=false moment=true
+    HAVE: wood 963, stone 1075, flint 157, fiber 173, clay 161, berries 9939, grain 206, brick 22, flour 21, fish 20, copper_ore 46, tin 1002, copper 97, bronze 20
+    KITH: 97
+[ 127.1s] STAGE starfall_market: building (a bot may play to it)
+[ 129.4s] SHOT 11 starfall_market_arrive
+    GOALS: All goals done. |   The star is coming down. Keep building while you wait.
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: BRONZE DAWN  ·  The stone age ends, and the land opens east under fog. Press Look east at the map's edge. || The first lesson is learned. What one Kith knows, the Hearth will soon know. || The first hut is at work. The Hearth grows stronger. || A good stock of berries. Nobody goes to sleep hungry tonight.
+    CARD: era=false moment=false
+    HAVE: wood 903, stone 1045, flint 157, fiber 173, clay 161, berries 7817, grain 206, brick 70, flour 21, flint_tools 3, fish 20, tin 930, copper 89, bronze 20
+    KITH: 97
+[ 144.8s] SHOT 12 starfall_market_t45
+    GOALS: All goals done. |   The star is coming down. Keep building while you wait.
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: A Flint Tool wore out
+    CARD: era=false moment=false
+    HAVE: wood 903, stone 1045, flint 157, fiber 173, clay 161, berries 8612, grain 206, brick 50, flour 21, fish 20, copper_ore 10, tin 960, copper 97, bronze 20
+    KITH: 97
+[ 160.1s] SHOT 13 starfall_market_t90
+    GOALS: All goals done. |   The star is coming down. Keep building while you wait.
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: A Flint Tool wore out
+    CARD: era=false moment=false
+    HAVE: wood 903, stone 1045, flint 157, fiber 173, clay 161, berries 9414, grain 206, brick 32, flour 21, fish 20, copper_ore 32, tin 984, copper 97, bronze 20
+    KITH: 97
+[ 175.3s] SHOT 14 starfall_market_t135
+    GOALS: All goals done. |   The star is coming down. Keep building while you wait.
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: 
+    CARD: era=false moment=true
+    HAVE: wood 903, stone 1045, flint 157, fiber 173, clay 161, berries 9967, grain 206, brick 22, flour 21, fish 20, copper_ore 46, tin 1002, copper 97, bronze 20
+    KITH: 97
+[ 190.6s] SHOT 15 starfall_market_t180
+    GOALS: All goals done. |   The star is coming down. Keep building while you wait.
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: 
+    CARD: era=false moment=true
+    HAVE: wood 903, stone 1045, flint 157, fiber 173, clay 161, berries 9967, grain 206, brick 22, flour 21, fish 20, copper_ore 46, tin 1002, copper 97, bronze 20
+    KITH: 97
+[ 190.7s] STAGE starfall_end: building (a bot may play to it)
+[ 192.9s] SHOT 16 starfall_end_arrive
+    GOALS: All goals done. |   The star is coming down. Keep building while you wait.
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: BRONZE DAWN  ·  The stone age ends, and the land opens east under fog. Press Look east at the map's edge. || The first lesson is learned. What one Kith knows, the Hearth will soon know. || The first hut is at work. The Hearth grows stronger. || A good stock of berries. Nobody goes to sleep hungry tonight.
+    CARD: era=false moment=false
+    HAVE: wood 903, stone 1045, flint 157, fiber 173, clay 161, berries 7817, grain 206, brick 70, flour 21, flint_tools 3, fish 20, tin 930, copper 89, bronze 20
+    KITH: 97
+[ 208.2s] SHOT 17 starfall_end_t45
+    GOALS: All goals done. |   The star is coming down. Keep building while you wait.
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: 
+    CARD: era=false moment=true
+    HAVE: wood 903, stone 1045, flint 157, fiber 173, clay 161, berries 7855, grain 206, brick 70, flour 21, flint_tools 3, fish 20, tin 930, copper 89, bronze 20
+    KITH: 97
+SCRIPT ERROR: Out of bounds get index '3' (on base: 'Array')
+          at: _layout (res://scripts/cutscene_player.gd:248)
+          GDScript backtrace (most recent call first):
+              [0] _layout (res://scripts/cutscene_player.gd:248)
+              [1] _process (res://scripts/cutscene_player.gd:141)
+[ 223.4s] SHOT 18 starfall_end_t90
+    GOALS: All goals done. |   The star is coming down. Keep building while you wait.
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: 
+    CARD: era=false moment=true
+    HAVE: wood 903, stone 1045, flint 157, fiber 173, clay 161, berries 7855, grain 206, brick 70, flour 21, flint_tools 3, fish 20, tin 930, copper 89, bronze 20
+    KITH: 97
+[ 238.6s] SHOT 19 starfall_end_t135
+    GOALS: All goals done. |   The star is coming down. Keep building while you wait.
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: 
+    CARD: era=false moment=true
+    HAVE: wood 903, stone 1045, flint 157, fiber 173, clay 161, berries 7855, grain 206, brick 70, flour 21, flint_tools 3, fish 20, tin 930, copper 89, bronze 20
+    KITH: 97
+[ 253.8s] SHOT 20 starfall_end_t180
+    GOALS: All goals done. |   The star is coming down. Keep building while you wait.
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: 
+    CARD: era=false moment=true
+    HAVE: wood 903, stone 1045, flint 157, fiber 173, clay 161, berries 7855, grain 206, brick 70, flour 21, flint_tools 3, fish 20, tin 930, copper 89, bronze 20
+    KITH: 97
+[ 254.0s] STAGE ironfall: building (a bot may play to it)
+[ 256.2s] SHOT 21 ironfall_arrive
+    GOALS: > Discover Coal Seams: it names the coal in the new land, south of the map |   Find coal in the south: lay roads south, the seams lie on the near side
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: The first lesson is learned. What one Kith knows, the Hearth will soon know. || The first hut is at work. The Hearth grows stronger. || A good stock of berries. Nobody goes to sleep hungry tonight. || The Wanderer is over the whole sky by midnight. The watchers keep their eyes on it and their hands on the rail.
+    CARD: era=false moment=false
+    HAVE: wood 903, stone 1045, flint 157, fiber 173, clay 161, berries 8038, grain 206, brick 64, flour 21, flint_tools 2, fish 20, tin 936, copper 93, bronze 20
+    KITH: 97
+[ 271.5s] SHOT 22 ironfall_t45
+    GOALS: > Discover Coal Seams: it names the coal in the new land, south of the map |   Find coal in the south: lay roads south, the seams lie on the near side
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: A Flint Tool wore out
+    CARD: era=false moment=false
+    HAVE: wood 903, stone 1045, flint 157, fiber 173, clay 161, berries 8783, grain 206, brick 48, flour 21, fish 20, copper_ore 16, tin 966, copper 97, bronze 20
+    KITH: 97
+[ 286.8s] SHOT 23 ironfall_t90
+    GOALS: > Discover Coal Seams: it names the coal in the new land, south of the map |   Find coal in the south: lay roads south, the seams lie on the near side
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: 
+    CARD: era=false moment=false
+    HAVE: wood 903, stone 1045, flint 157, fiber 173, clay 161, berries 9586, grain 206, brick 32, flour 21, fish 20, copper_ore 44, tin 990, copper 97, bronze 20
+    KITH: 97
+[ 302.1s] SHOT 24 ironfall_t135
+    GOALS: > Discover Coal Seams: it names the coal in the new land, south of the map |   Find coal in the south: lay roads south, the seams lie on the near side
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: A Flint Tool wore out
+    CARD: era=false moment=false
+    HAVE: wood 903, stone 1045, flint 157, fiber 173, clay 161, berries 10320, grain 206, brick 10, flour 21, fish 20, copper_ore 62, tin 1020, copper 97, bronze 20
+    KITH: 97
+[ 317.4s] SHOT 25 ironfall_t180
+    GOALS: > Discover Coal Seams: it names the coal in the new land, south of the map |   Find coal in the south: lay roads south, the seams lie on the near side
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: A Flint Tool wore out
+    CARD: era=false moment=false
+    HAVE: wood 903, stone 1045, flint 157, fiber 173, clay 161, berries 11109, grain 206, flour 21, fish 20, copper_ore 80, tin 1040, copper 97, bronze 20
+    KITH: 97
+[ 317.6s] STAGE ironfall_teardown: building (a bot may play to it)
+[ 319.8s] SHOT 26 ironfall_teardown_arrive
+    GOALS: > Find coal in the south: lay roads south, the seams lie on the near side |   Build a Coal Mine on a Coal Seam (it takes two Kith). Each seam holds about 500 and runs out
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: BRONZE DAWN  ·  The stone age ends, and the land opens east under fog. Press Look east at the map's edge. || The first lesson is learned. What one Kith knows, the Hearth will soon know. || The first hut is at work. The Hearth grows stronger. || A good stock of berries. Nobody goes to sleep hungry tonight.
+    CARD: era=false moment=false
+    HAVE: wood 903, stone 1045, flint 157, fiber 173, clay 161, berries 8059, grain 206, brick 24, flour 21, flint_tools 2, fish 20, tin 936, copper 93, bronze 20
+    KITH: 97
+[ 335.1s] SHOT 27 ironfall_teardown_t45
+    GOALS: > Find coal in the south: lay roads south, the seams lie on the near side |   Build a Coal Mine on a Coal Seam (it takes two Kith). Each seam holds about 500 and runs out
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: The Kith open the heat plate and learn from it: Shard Boiler. || The Lumen set a Lamp Core in the Kith's hands. "Open it," says Sela.
+    CARD: era=false moment=false
+    HAVE: wood 903, stone 1045, flint 157, fiber 173, clay 161, berries 8854, grain 206, brick 8, flour 21, fish 20, copper_ore 18, tin 966, copper 97, bronze 20
+    KITH: 97
+[ 350.4s] SHOT 28 ironfall_teardown_t90
+    GOALS: > Find coal in the south: lay roads south, the seams lie on the near side |   Build a Coal Mine on a Coal Seam (it takes two Kith). Each seam holds about 500 and runs out
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: The Lumen set a Seed Pod in the Kith's hands. "Open it," says Sela.
+    CARD: era=false moment=false
+    HAVE: wood 903, stone 1045, flint 157, fiber 173, clay 161, berries 9613, grain 206, flour 21, fish 20, copper_ore 44, tin 990, copper 97, bronze 20
+    KITH: 97
+[ 365.8s] SHOT 29 ironfall_teardown_t135
+    GOALS: > Find coal in the south: lay roads south, the seams lie on the near side |   Build a Coal Mine on a Coal Seam (it takes two Kith). Each seam holds about 500 and runs out
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: The Lamp Core teaches nothing new. The Kith strip it for 6 Iron. || A Flint Tool wore out
+    CARD: era=false moment=false
+    HAVE: wood 903, stone 1045, flint 157, fiber 173, clay 161, berries 10399, grain 206, flour 21, fish 20, copper_ore 62, tin 1020, copper 97, bronze 20, iron 6
+    KITH: 97
+[ 381.1s] SHOT 30 ironfall_teardown_t180
+    GOALS: > Find coal in the south: lay roads south, the seams lie on the near side |   Build a Coal Mine on a Coal Seam (it takes two Kith). Each seam holds about 500 and runs out
+    INFO: Rocks / Hold: +3 Stone, 0.4s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: 
+    CARD: era=false moment=false
+    HAVE: wood 903, stone 1045, flint 157, fiber 173, clay 161, berries 11168, grain 206, flour 21, fish 20, copper_ore 80, tin 1040, copper 97, bronze 20, iron 6
+    KITH: 97
+[ 381.2s] STAGE ironfall_steam: building (a bot may play to it)
+[ 383.5s] SHOT 31 ironfall_steam_arrive
+    GOALS: > Find coal in the south: lay roads south, the seams lie on the near side |   Build a Coal Mine on a Coal Seam (it takes two Kith). Each seam holds about 500 and runs out
+    INFO: Rocks / Hold: +3 Stone, 0.3s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: BRONZE DAWN  ·  The stone age ends, and the land opens east under fog. Press Look east at the map's edge. || The first lesson is learned. What one Kith knows, the Hearth will soon know. || The first hut is at work. The Hearth grows stronger. || A good stock of berries. Nobody goes to sleep hungry tonight.
+    CARD: era=false moment=false
+    HAVE: wood 1143, stone 1275, flint 157, fiber 173, clay 161, berries 8078, grain 206, brick 184, flour 21, flint_tools 2, fish 20, tin 942, copper 93, bronze 20, coal 294, iron 230
+    KITH: 97
+[ 398.7s] SHOT 32 ironfall_steam_t45
+    GOALS: > Find coal in the south: lay roads south, the seams lie on the near side |   Build a Coal Mine on a Coal Seam (it takes two Kith). Each seam holds about 500 and runs out
+    INFO: Rocks / Hold: +3 Stone, 0.3s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: The Kith open the heat plate and learn from it: Shard Boiler. || The Lumen set a Lamp Core in the Kith's hands. "Open it," says Sela.
+    CARD: era=false moment=false
+    HAVE: wood 1143, stone 1275, flint 157, fiber 173, clay 161, berries 8874, grain 206, brick 168, flour 21, fish 20, copper_ore 18, tin 966, copper 97, bronze 20, coal 294, iron 230
+    KITH: 97
+[ 414.0s] SHOT 33 ironfall_steam_t90
+    GOALS: > Find coal in the south: lay roads south, the seams lie on the near side |   Build a Coal Mine on a Coal Seam (it takes two Kith). Each seam holds about 500 and runs out
+    INFO: Rocks / Hold: +3 Stone, 0.3s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: The Lumen set a Seed Pod in the Kith's hands. "Open it," says Sela. || A Flint Tool wore out
+    CARD: era=false moment=false
+    HAVE: wood 1143, stone 1275, flint 157, fiber 173, clay 161, berries 9593, grain 206, brick 150, flour 21, fish 20, copper_ore 46, tin 996, copper 97, bronze 20, coal 294, iron 230
+    KITH: 97
+[ 429.4s] SHOT 34 ironfall_steam_t135
+    GOALS: > Find coal in the south: lay roads south, the seams lie on the near side |   Build a Coal Mine on a Coal Seam (it takes two Kith). Each seam holds about 500 and runs out
+    INFO: Rocks / Hold: +3 Stone, 0.3s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: The Lamp Core teaches nothing new. The Kith strip it for 6 Iron. || A Flint Tool wore out
+    CARD: era=false moment=false
+    HAVE: wood 1143, stone 1275, flint 157, fiber 173, clay 161, berries 10380, grain 206, brick 128, flour 21, fish 20, copper_ore 64, tin 1020, copper 97, bronze 20, coal 294, iron 236
+    KITH: 97
+[ 444.7s] SHOT 35 ironfall_steam_t180
+    GOALS: > Find coal in the south: lay roads south, the seams lie on the near side |   Build a Coal Mine on a Coal Seam (it takes two Kith). Each seam holds about 500 and runs out
+    INFO: Rocks / Hold: +3 Stone, 0.3s. Hold the mouse on it to gather. / Aro knows how to gather Stone: huts can gather it. / Cut a pass with a Road (3 Stone).
+    TOAST: 
+    CARD: era=false moment=false
+    HAVE: wood 1143, stone 1275, flint 157, fiber 173, clay 161, berries 11171, grain 206, brick 112, flour 21, fish 20, copper_ore 82, tin 1044, copper 97, bronze 20, coal 294, iron 236
+    KITH: 97
+[ 444.8s] DONE
