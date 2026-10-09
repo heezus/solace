@@ -786,6 +786,11 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Map generation needs no change for the art. The generator's height and wetness fields can become two shader mask channels when Codex asks for them (no save or map change). Details on page 22.
 
 
+## 2026-10-08: Shared character reference and review gate (PR #94)
+- Codex recorded one shared map/title/cutscene reference hierarchy, following the owner's consistency request and Claude's confirmed workflow.
+- Ordinary Kith/Lumen target 35 px; Sela is marginally taller. Exact 38 px and normalized anatomy remain proposals pending visual review.
+- Existing source comparison and one separate Sela candidate expose proportion/detail differences; no game sprite or renderer changed. #93 remains held.
+- Accepted 1586×992 cutscene originals retain prompts and provenance; future character art and wiring must reference the shared spec.
 ## 2026-10-08: Ironfall stage 3, steam and the end (PR #95)
 - Claude built Ironfall stage 3 as page 19 describes: the Boiler (no river, powers machines within 5 tiles) and the Shard Boiler, Rail as the fourth road tier (8 times open ground) with the Steam Cart (40 a trip, Rail only), the Forge and Steel with Steel Tools, the Iron Plough, Taught Hands II, the Beast Pen and its beast cart (30 a trip, never Rail), the Shard Lamp, Bloom Sampling and the Livewire gate with its end card. The page's staging is done; the era has 21 goals.
 - **Fire is fed, not free.** The Boiler, Shard Boiler, Shard Lamp and Beast Pen have no worker: haulers keep each stocked and it burns on its own. A Boiler lights only when a machine in its reach has a worker, its inputs and room, and stays banked otherwise, so coal (finite on purpose) is spent on work and not on standing around. A Shard Boiler burns 1 Shard for 80 s against a Boiler's 1 Coal for 20 s.
@@ -793,3 +798,25 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - **Gates read from the page, with two choices.** The gate asks for the three Bloom Lessons learned rather than one of each sample, since opening a sample at the Bench consumes it. A tech's `gift` (Shard Lamps, Shard Boiler) and the gate's `lessons` count as open requirements, shown on the board. Stage 2's placeholder flag for Bloom Sampling is off and the tech decides.
 - **Deferred: the second (west) map growth.** Growing west shifts every coordinate in every system and save; nothing in the era needs the room (rails fit in the existing land and the Bloom patches are in the south since stage 2). The default on page 19 stands for a later stage.
 - Art is placeholder only and every slot is logged in `docs/art/requests.md`. Saves stay VERSION 1 with optional fields, the frozen pre-Ironfall fixture still loads, and the golden pacing hashes and the stone age and Bronze maps are unchanged. Every number is a placeholder to tune with the pacing bot.
+
+## 2026-10-09: Character standard approved (PR #94)
+- Codex recorded the owner’s approval relayed by Claude in mailbox comment 6084666694: ordinary Kith and Lumen share the 35 px map target; Sela targets about 38 px.
+- The separate Sela proportion image in `docs/art/character-standard/sela-candidate.png` is now the approved visual anatomy reference; retain its filename, original pixels and generation provenance.
+- Claude wires sizes after #94 merges. #93 stays held until its stills pass a comparison against the approved sheet; this approval does not automatically approve older paintings.
+
+## 2026-10-09: Lumen map height (PR #96)
+- Claude wired the approved character standard (#94): an ordinary Lumen is drawn 35 px tall on the map, level with a Kith, and Sela 38 px (`LUMEN_HEIGHT`, `LEAD_HEIGHT` in `rendered_art.gd`). Both were 24 px, which made the Lumen look like children beside the Kith.
+- Art is unchanged: the current Sela sprite is long-legged and stays until Codex paints a replacement from the approved proportion reference.
+
+## 2026-10-09: Livewire designed (PR #97)
+- Claude wrote the design page for era 5 (`23-livewire.md`), following page 18's Decided list: the one new mechanic is **Standing orders** (an Order Board with up to 9 one-line rules, verbs Pause, Bring first, later Send), and the Bloom tide is the clock.
+- **The tide is learned, not walled off.** It advances about a tile every 35 s from the three south Ironfall patches, slows on roads, stops in Arc Lamp light and Firebreaks, and is burnt back by the Scorcher, which needs power and coal. The Ironfall Bloom Lessons are what Tide Watch and the Scorcher rest on, and Living Ground (the small life-tree branch) turns burnt ground into richer Fields.
+- **Defaults for the project owner to change:** overgrown buildings are lost after 3 minutes and the Hearth's ring is safe, so Livewire cannot be lost (loss is Skyreach); the gate asks for five orders written and a Scorcher and two Arc Lamps burning in the south, besides Steel, Iron, Wire and Brick. Wire (from Copper) is the era's new good, and a Wire Mill and Power Poles carry power past the Boiler's 5 tiles.
+- Fourteen techs on a fifth tab, three stages (wires and orders, the tide, factories and the end). Nothing is built; no canon changes.
+
+## 2026-10-09: Ironfall stage 3 pacing (PR #98)
+- Claude tuned only Ironfall stage 3's costs with a new bot (`tests/autoplay_ironfall.gd`) that plays from `ironfall_steam` to the Livewire gate on any map (`pace.gd ... ironfall steam`): from 7.6 to 17.3 minutes (median 11.8) to 5.2 to 10.3 (median 7.8) on maps 1 to 8, against a target of seven to nine. The Bloom path was never the long pole (done by about 5 minutes); iron and steel throughput was.
+- Livewire is now 50 Steel and 70 Iron (was 100 and 100), Steel tech iron 60, coal 60, brick 50, Bloom Sampling iron 40, brick 50, Shard Boiler iron 45, brick 60, and the Forge costs brick 60, iron 20 and fires in 8 s (was brick 80, iron 30, 10 s). Rates of the Boiler and Steam Cart, the Bloomery and everything before stage 3 are unchanged, so the golden pacing hashes and the old fixture are untouched.
+- Bug in the `ironfall_steam` start: the Forge could stand outside the Boiler's 5 tiles and never be powered (steel stuck at 0 on map 4). It now stands beside the Boiler.
+- Noted, not changed: haulers are dealt over every Storehouse with a road-linked building, so a Storehouse on a road of its own holds haulers that can never reach the metal works. Fixing it changes the golden pacing hashes, so it waits for its own PR.
+- Numbers are bot-tuned, not human-tuned; a playthrough by the project owner should move them again.

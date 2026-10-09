@@ -3,10 +3,16 @@ extends SceneTree
 ## of what held it up every minute. With `bronze` it plays on past Bronze Dawn to the first Bronze (the era's stage 1) and
 ## reports the minutes that took.
 ## With `star` it plays the whole era, on past the first Bronze to The Falling Star, and reports both spans.
-## Run: godot --headless --path . -s tests/tools/pace.gd -- [map|all] [minutes] [quiet] [bronze|star]
+## With `ironfall` it plays Ironfall (tests/autoplay_ironfall.gd) from a stage start to the Livewire gate and prints the clock at
+## each goal: `ironfall` alone starts where the era does, `steam` or `teardown` after it starts at that stage start. Maps other
+## than the starts' own (1) are played to the Falling Star first (minutes of real time); `cache` keeps that in user://pace_starts/
+## (clear the folder when an earlier era's numbers change).
+## Run: godot --headless --path . -s tests/tools/pace.gd -- [map|all] [minutes] [quiet] [bronze|star|ironfall [steam|teardown] [cache]]
 
 const Autoplay = preload("res://tests/autoplay.gd")
 const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
+const AutoplayIronfall = preload("res://tests/autoplay_ironfall.gd")
+const DevStarts = preload("res://scripts/dev_starts.gd")
 
 
 func _init() -> void:
@@ -21,6 +27,10 @@ func _init() -> void:
 		return
 	if "star" in args:
 		_star(maps, minutes, quiet)
+		return
+	if "ironfall" in args:
+		var from := "ironfall_steam" if "steam" in args else ("ironfall_teardown" if "teardown" in args else "ironfall")
+		_ironfall(maps, minutes, quiet, from, "user://pace_starts/" if "cache" in args else "")
 		return
 	var times: Array = []
 	for m in maps:
@@ -124,3 +134,37 @@ func _mean(xs: Array) -> float:
 	for x in xs:
 		total += x
 	return total / xs.size()
+
+
+## Ironfall: the clock at each goal from the start `from` to the Livewire gate, per map.
+func _ironfall(maps: Array, minutes: float, quiet: bool, from: String, cache: String) -> void:
+	var gates: Array = []
+	for m in maps:
+		var bot := AutoplayIronfall.new()
+		bot.trace = not quiet
+		var game := DevStarts.ironfall_on_map(m, from, cache)
+		var r: Dictionary = bot.play_from(game, minutes * 60.0)
+		gates.append(r["seconds"] / 60.0 if r["won"] else -1.0)
+		var shown: Array = []
+		for key in r["marks"]:
+			shown.append("%s %.1f" % [key, r["marks"][key] / 60.0])
+		print(
+			(
+				"map %d from %s: %s"
+				% [m, from, "gate at %.1f min" % gates[-1] if r["won"] else "no gate by %.1f min" % (bot.clock / 60.0)]
+			)
+		)
+		print("   marks (min): ", ", ".join(shown))
+		if not quiet:
+			for line in r["log"]:
+				print("   ", line)
+		print("   inv ", bot.s.economy.inv)
+	var won: Array = gates.filter(func(g): return g >= 0.0)
+	if not won.is_empty():
+		print(
+			(
+				"ironfall from %s: gate %.1f min on average (%.1f to %.1f), %d of %d maps"
+				% [from, _mean(won), won.min(), won.max(), won.size(), gates.size()]
+			)
+		)
+	quit(0)
