@@ -20,6 +20,7 @@ The source of truth for our game's universe. If something is written here, it's 
 3. [World & Lore](03-world-lore.md): setting, history, factions, rules of the world
 4. [Characters](04-characters.md): who lives here and what they want
 5. [Art Direction](05-art-direction.md): look, palette, audio mood, references
+   - [Shared character standard](mockups/character-standard.md): reference hierarchy, runtime sizes, detail rules and consistency review.
 6. [Mechanics](06-mechanics.md): core loop, systems, controls, progression
 7. [Glossary](07-glossary.md): every canonical name and term
 8. [First Playable](08-first-playable.md): scope of the first prototype

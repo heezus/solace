@@ -1,6 +1,7 @@
 # Solace: three visual directions
 
 ## Current follow-up: Misty Highlands
+For character work, use the [shared character standard](../../design-system/mockups/character-standard.md). The old studies below remain concepts; they do not override the approved rendered direction or the character review gate.
 
 the project owner's subsequent direction is grounded, atmospheric, beautiful and mysterious, with rendered miniature materials and sturdy stylized Kith. See the [rendered tile kit and dense-map scale tests](misty-highlands/README.md). The original three SVG studies below are retained for comparison; they are not the selected production direction. Raster studies are documentation-only and do not change the SVG production contract.
 
