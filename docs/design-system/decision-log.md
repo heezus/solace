@@ -804,6 +804,6 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - The separate Sela proportion image in `docs/art/character-standard/sela-candidate.png` is now the approved visual anatomy reference; retain its filename, original pixels and generation provenance.
 - Claude wires sizes after #94 merges. #93 stays held until its stills pass a comparison against the approved sheet; this approval does not automatically approve older paintings.
 
-## 2026-10-09: Lumen map height (PR #n)
+## 2026-10-09: Lumen map height (PR #96)
 - Claude wired the approved character standard (#94): an ordinary Lumen is drawn 35 px tall on the map, level with a Kith, and Sela 38 px (`LUMEN_HEIGHT`, `LEAD_HEIGHT` in `rendered_art.gd`). Both were 24 px, which made the Lumen look like children beside the Kith.
 - Art is unchanged: the current Sela sprite is long-legged and stays until Codex paints a replacement from the approved proportion reference.
