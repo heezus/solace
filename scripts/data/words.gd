@@ -187,6 +187,20 @@ const TECH_BLURBS := {
 	"steel": "Steel Tools make workers another 50% faster and last longer.",
 	"bloom_sampling": "Expeditions can take a sample from each patch of the Bloom.",
 	"livewire": "The era ends, and the lamps burn without a flame.",
+	"power_poles": "Poles carry power past a Boiler's reach and open Wire.",
+	"order_board": "A Board of three standing orders: Pause a workshop, Bring a good first.",
+	"tide_watch": "Draws the Bloom's front on the map.",
+	"generator": "A coal-fired Generator gives a whole net 8 units.",
+	"arc_lamps": "A lamp that needs power and keeps the tide out of its light.",
+	"foremen": "The Board holds three more orders.",
+	"powered_mines": "Mines on a net dig twice as fast.",
+	"factory_floor": "A floor that runs one recipe at three times the speed.",
+	"scorcher": "Burns the Bloom back from the ground.",
+	"firebreaks": "Cleared strips the tide goes round.",
+	"shard_dynamo": "A Generator that burns shards, with no coal.",
+	"chain_orders": "Three more orders, orders that run orders, and Send.",
+	"living_ground": "Burnt Bloom ground yields 50% more to Fields.",
+	"skyward": "The era ends, and something answers the lamp.",
 }
 
 # --- Era 2 (scripts/sim.gd, scripts/main.gd, scripts/tech_panel.gd) ---

@@ -358,7 +358,7 @@ func test_the_fourth_tab() -> void:
 	panel.setup(s)
 	panel.visible = true
 	panel.refresh()
-	t.check(panel.era_buttons.size() == 3 and panel.era_buttons.has(4), "a third tab, for the fourth era")
+	t.check(panel.era_buttons.size() == 4 and panel.era_buttons.has(4), "a tab for each era, the fourth among them")
 	t.check(panel.era_buttons[4].disabled, "it is locked in the stone age")
 	t.check(panel.era_buttons[4].tooltip_text == Data.ERA_TAB_LOCKED_IRONFALL, "and says when it opens")
 	s.tech_tree.researched["bronze_dawn"] = true

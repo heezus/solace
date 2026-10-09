@@ -136,6 +136,7 @@ static func _table() -> Array:
 		["ironfall", "Stage: Ironfall, the Starfall is over", _ironfall],
 		["ironfall_teardown", "Stage: Ironfall, Teardown and the Wreck's parts", _ironfall_teardown],
 		["ironfall_steam", "Stage: Ironfall, steam: a Boiler, a Forge and Rail to lay", _ironfall_steam],
+		["livewire", "Stage: Livewire, the wires hum", _livewire],
 	]
 
 
@@ -285,10 +286,50 @@ static func _steam_on(s: Sim) -> Sim:
 	return s
 
 
+## The Wires Hum card is put away and Livewire has begun, on top of the steam start: the gate's techs and the Bloom Lessons are
+## learned, the stores hold Steel, Rope and Copper for Power Poles, the Order Board and the Generator, and a Grindstone and a
+## Smelter stand beyond the Boiler's reach, ready to be put on a net.
+static func _livewire() -> Sim:
+	return _livewire_on(_ironfall_steam())
+
+
+static func _livewire_on(s: Sim) -> Sim:
+	for tech in ["shard_lamps", "shard_boiler", "steel", "bloom_sampling", "livewire"]:
+		s.tech_tree.researched[tech] = true
+	s.teardown.lessons.append_array(["spore", "root", "sap"])
+	for id in ["steel", "rope", "copper", "coal", "iron", "wood", "brick", "stone"]:
+		s.economy.add(id, 300)
+	for type in ["grindstone", "smelter"]:
+		_build_out_of_reach(s, type)
+	s.story.record(Data.LIVEWIRE_EVENT)  # the card is put away at once in a start: Livewire begins on the next tick
+	_wait(s, 2.0)
+	return s
+
+
+## Put `type` down on the nearest free tile to the Hearth that is out of every Boiler's reach, paid for like _build: a machine
+## for a Power Pole net to reach. Anywhere will do when there is no such spot.
+static func _build_out_of_reach(s: Sim, type: String) -> void:
+	for r in range(4, SPOT_RADIUS):
+		for dy in range(-r, r + 1):
+			for dx in range(-r, r + 1):
+				var p: Vector2i = s.world.camp_pos + Vector2i(dx, dy)
+				if maxi(absi(dx), absi(dy)) != r or s.town.is_powered(p):
+					continue
+				var why := s.town.placement_error(type, p)
+				if why == "Not enough materials" or why == "":
+					var price: Dictionary = s.town.price(type)
+					for id in price:
+						if s.economy.inv.get(id, 0) < price[id]:
+							s.economy.add(id, price[id] - s.economy.inv.get(id, 0))
+					if s.place(type, p):
+						return
+	_build(s, type, 2)
+
+
 # --- The Ironfall starts on any map (the pacing tool) --------------------------
 
 
-## The Ironfall start `id` ("ironfall", "ironfall_teardown" or "ironfall_steam") on the map made from `seed_value`, for the
+## The Ironfall start `id` ("ironfall", "ironfall_teardown", "ironfall_steam" or "livewire") on the map made from `seed_value`, for the
 ## pacing bot (tests/tools/pace.gd): a bot plays that map to the Falling Star (minutes of real time; map MAP_SEED uses the
 ## kept start), then the same scripted stages run on it as for the starts above. `dir` keeps the Falling Star of a map between
 ## runs ("" keeps none); the files in it are not fingerprinted, so clear it when an earlier era's numbers change.
@@ -298,7 +339,10 @@ static func ironfall_on_map(seed_value: int, id: String, dir := "") -> Sim:
 	if id == "ironfall":
 		return s
 	s = _teardown_on(s)
-	return s if id == "ironfall_teardown" else _steam_on(s)
+	if id == "ironfall_teardown":
+		return s
+	s = _steam_on(s)
+	return s if id == "ironfall_steam" else _livewire_on(s)
 
 
 ## The Falling Star on map `seed_value`: played by the bots, or read from `dir`.

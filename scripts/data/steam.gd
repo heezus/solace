@@ -72,7 +72,7 @@ const LIVEWIRE_EVENT := "livewire_lit"
 const LIVEWIRE_TITLE := "The Wires Hum"
 const LIVEWIRE_TEXT := (
 	"The lamps burn without a flame. The Kith lay their hands on the new wires and feel a hum run down them, "
-	+ "steady as a breath. And far to the north, in the fog, something green moves."
+	+ "steady as a breath. And far to the south, in the fog, something green moves."
 )
 const LIVEWIRE_NOTE := "The age of iron is done. The game goes on."
 const LIVEWIRE_BUTTON := "Keep building"

@@ -58,9 +58,11 @@ static func _collect(tech: String, researched: Dictionary, visible: Dictionary, 
 	out.append(tech)
 
 
-## True when `tech`'s effect is built (its `stage` is not past Data.BUILT_STAGE): the only techs that can be researched.
+## True when `tech`'s effect is built (its `stage` is not past Data.BUILT_STAGE, or its era's Data.ERA_BUILT_STAGE): the only
+## techs that can be researched.
 static func tech_enabled(tech: String) -> bool:
-	return int(Data.TECHS[tech].get("stage", 1)) <= Data.BUILT_STAGE
+	var def: Dictionary = Data.TECHS[tech]
+	return int(def.get("stage", 1)) <= int(Data.ERA_BUILT_STAGE.get(int(def.get("era", 1)), Data.BUILT_STAGE))
 
 
 ## The techs of era `era` (Data.TECHS `era`, 1 when it names none), in Data.TECH_ORDER.

@@ -6,7 +6,8 @@ extends RefCounted
 ## The story id recorded the first time the Starfall is over and its ending card is put away (Story.update): the era is entered.
 ## Techs with `after` (Data.TECHS) stay out of view until it has happened.
 const IRONFALL_EVENT := "ironfall_begun"
-const TECH_AFTER_EVENTS := ["ironfall_begun"]
+## (Era 5's opening, "livewire_begun", is in the list too: Data.LIVEWIRE_BEGUN.)
+const TECH_AFTER_EVENTS := ["ironfall_begun", "livewire_begun"]
 
 ## The land grows south when the first of these techs is learned, by SOUTH_ROWS rows (scripts/map_south.gd).
 const SOUTH_TECHS := ["coal_seams", "ironstone"]
