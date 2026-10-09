@@ -77,8 +77,6 @@ func on_built(type: String, _pos: Vector2i) -> void:
 
 ## Mark every goal that's met now. Goals stay done after that, even once the items are spent.
 func update(s) -> void:
-	if s.starfall.ended and s.starfall.pending == "":
-		record(Data.IRONFALL_EVENT)  # the Starfall is over and its card is put away: Ironfall begins
 	var lists: Array = [Data.GOALS]
 	if goal_list() != Data.GOALS:
 		lists.append(goal_list())  # the stone age's stay checked: its last goal is met by the dawn itself
@@ -86,6 +84,9 @@ func update(s) -> void:
 		for g in list:
 			if not goals_done.has(g["id"]) and goal_met(s, g):
 				goals_done[g["id"]] = true
+	# After the goals, so the era's last one (the Warning read) is ticked while its list is still in force.
+	if s.starfall.ended and s.starfall.pending == "":
+		record(Data.IRONFALL_EVENT)  # the Starfall is over and its card is put away: Ironfall begins
 
 
 ## The checklist in force: the stone age's, and the second era's once Bronze Dawn is discovered.
@@ -142,7 +143,7 @@ func goal_met(s, g: Dictionary) -> bool:
 			return _road_beside_ore(s, "copper_hills")
 		"first_bronze":
 			return s.economy.inv.get("bronze", 0) > 0
-		"strangers_come", "first_set", "wreck_found", "five_sets", "warning_read":
+		"strangers_come", "first_set", "wreck_found", "moments_answered", "warning_read":
 			return _starfall_goal_met(s, g["id"])
 		"first_teardown", "find_coal", "find_iron", "iron_mine", "first_iron", "rail_laid", "first_steel":
 			return _ironfall_goal_met(s, g["id"])
@@ -158,8 +159,8 @@ func _starfall_goal_met(s, id: String) -> bool:
 			return s.starfall.locked.has(Data.GLYPH_SETS[1]["id"])
 		"wreck_found":
 			return s.starfall.wreck_found
-		"five_sets":
-			return s.starfall.locked.size() >= 5
+		"moments_answered":
+			return s.starfall.answered.size() >= Data.MOMENT_ORDER.size()
 	return s.starfall.ended
 
 

@@ -216,12 +216,16 @@ func test_the_starfall_has_its_own_goals() -> void:
 	t.check(
 		s.story.goals_done.has("first_set") and s.story.goals_done.has("wreck_found"), "reading and finding tick theirs"
 	)
-	t.check(not s.story.goals_done.has("five_sets") and not s.story.goals_done.has("warning_read"), "later ones wait")
+	t.check(
+		not s.story.goals_done.has("moments_answered") and not s.story.goals_done.has("warning_read"), "later ones wait"
+	)
 	var late := _fallen()
-	late.starfall.ended = true
-	late.starfall.pending = "ending"  # the Warning is read and the card waits: the era's list is still in force
+	late.starfall.ended = true  # the Warning is read and the card is already put away: the first tick sees both
 	late.story.update(late)
-	t.check(late.story.goals_done.has("warning_read"), "the Warning read ticks the last")
+	t.check(
+		late.story.goals_done.has("warning_read"), "the Warning read ticks the last, even on the tick Ironfall begins"
+	)
+	t.check(late.story.goal_list() == Data.GOALS_ERA4, "and Ironfall's list is in force from then on")
 	# the Ironfall goals: coal in hand counts as found, whatever the fog says
 	var iron := _fallen()
 	iron.story.record(Data.IRONFALL_EVENT)
@@ -230,6 +234,10 @@ func test_the_starfall_has_its_own_goals() -> void:
 	iron.economy.add("coal", 5)
 	iron.story.update(iron)
 	t.check(iron.story.goals_done.has("find_coal"), "coal already in the stores counts as found")
+	t.check(not iron.story.goals_done.has("find_iron"), "and iron is not found by it")
+	iron.economy.add("iron", 5)
+	iron.story.update(iron)
+	t.check(iron.story.goals_done.has("find_iron"), "iron in the stores counts as found too")
 
 
 func test_starfall_saves_and_old_saves_load() -> void:

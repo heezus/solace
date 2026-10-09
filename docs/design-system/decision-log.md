@@ -822,7 +822,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Numbers are bot-tuned, not human-tuned; a playthrough by the project owner should move them again.
 
 ## 2026-10-09: Playtest fixes, Starfall goals and quiet loads (PR #100)
-- Claude fixed what the first playtester run found. **Starfall now has its own Goals panel** (nine goals in any order: strangers come, Glyph Wall, first set read, Lumen Camp, Expedition Post, the crash site, Market, five sets, the Warning), in force from the moment the star falls until Ironfall begins, so the panel no longer sits on the finished Dawn list.
+- Claude fixed what the first playtester run found. **Starfall now has its own Goals panel** (nine goals in any order: strangers come, Glyph Wall, first set read, Lumen Camp, Expedition Post, the crash site, Market, the three questions answered, the Warning), in force from the moment the star falls until Ironfall begins, so the panel no longer sits on the finished Dawn list.
 - **A loaded run, or a run started at a stage, stays quiet.** The warm lines and the Bronze Dawn banner are marked as told when a run loads (`scripts/flavor.gd`), so a stage start no longer stacks four old toasts over the map.
 - "Find coal" and "Find the Iron Hills" count as done when the coal or iron is already in the stores, since a stage start has the metal in hand without the fog lifted.
 - The cutscene player no longer lays out a still after the last one has ended (`stills[index]` out of bounds, once on entering Ironfall); a test reproduces it on the old code.

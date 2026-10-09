@@ -605,6 +605,6 @@ const GOALS_ERA3 := [
 		"text": "Build a Market once the strangers trust you enough to trade",
 		"building": "lumen_market"
 	},
-	{"id": "five_sets", "text": "Read five sets of glyphs"},
+	{"id": "moments_answered", "text": "Answer the strangers' three questions: they will ask, and the game waits"},
 	{"id": "warning_read", "text": "Copy and read the Warning: it ends the era"},
 ]
