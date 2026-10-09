@@ -306,14 +306,15 @@ static func _livewire_on(s: Sim) -> Sim:
 	return s
 
 
-## Put `type` down on the nearest free tile to the Hearth that is out of every Boiler's reach, paid for like _build: a machine
-## for a Power Pole net to reach. Anywhere will do when there is no such spot.
+## Put `type` down on the nearest free tile to the Hearth that is out of every engine's reach, lit or not (a Boiler reaches only
+## while it burns, which a start cannot count on), paid for like _build: a machine for a Power Pole net to reach. Anywhere will do
+## when there is no such spot.
 static func _build_out_of_reach(s: Sim, type: String) -> void:
 	for r in range(4, SPOT_RADIUS):
 		for dy in range(-r, r + 1):
 			for dx in range(-r, r + 1):
 				var p: Vector2i = s.world.camp_pos + Vector2i(dx, dy)
-				if maxi(absi(dx), absi(dy)) != r or s.town.is_powered(p):
+				if maxi(absi(dx), absi(dy)) != r or _in_reach_of_an_engine(s, p):
 					continue
 				var why := s.town.placement_error(type, p)
 				if why == "Not enough materials" or why == "":
@@ -324,6 +325,15 @@ static func _build_out_of_reach(s: Sim, type: String) -> void:
 					if s.place(type, p):
 						return
 	_build(s, type, 2)
+
+
+## True when an engine (a Water Wheel, a Boiler lit or not) reaches p.
+static func _in_reach_of_an_engine(s: Sim, p: Vector2i) -> bool:
+	return s.town.buildings.any(
+		func(b):
+			var def: Dictionary = Data.BUILDINGS[b["type"]]
+			return def["kind"] == "power" and Vector2(b["pos"]).distance_to(Vector2(p)) <= def["radius"] + 1.0
+	)
 
 
 # --- The Ironfall starts on any map (the pacing tool) --------------------------

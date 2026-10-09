@@ -553,10 +553,13 @@ func _expect_stage(id: String, s: Sim) -> void:
 				"Power Poles and the Order Board can be bought"
 			)
 			t.check(not s.tech_tree.researched.has("power_poles"), "though neither is learned yet")
-			var out := s.town.buildings.filter(
-				func(b): return b["type"] in ["grindstone", "smelter"] and not s.town.is_powered(b["pos"])
+			# The bots' own Grindstones and Smelters stand where they like (some by a Water Wheel), so look for one of each out of reach.
+			var out := func(type: String) -> bool:
+				return s.town.buildings.any(func(b): return b["type"] == type and not s.town.is_powered(b["pos"]))
+			t.check(
+				out.call("grindstone") and out.call("smelter"),
+				"a Grindstone and a Smelter stand unpowered, ready for a net"
 			)
-			t.check(out.size() == 2, "a Grindstone and a Smelter stand unpowered, ready for a net")
 			t.check(s.livewire.nets.is_empty() and s.livewire.orders.is_empty(), "with no net and no order yet")
 
 
