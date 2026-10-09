@@ -557,6 +557,9 @@ const DEBUG_FOG := DataMenu.DEBUG_FOG
 
 # --- Era 4, Ironfall: data/ironfall.gd ---
 const IRONFALL_EVENT := DataIronfall.IRONFALL_EVENT
+const GOALS_HEADER_ERA3 := DataStarfall.GOALS_HEADER_ERA3
+const GOALS_STARFALL_CLOSING := DataStarfall.GOALS_STARFALL_CLOSING
+const GOALS_ERA3 := DataStarfall.GOALS_ERA3
 const TECH_AFTER_EVENTS := DataIronfall.TECH_AFTER_EVENTS
 const SOUTH_TECHS := DataIronfall.SOUTH_TECHS
 const SOUTH_ROWS := DataIronfall.SOUTH_ROWS

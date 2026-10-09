@@ -19,6 +19,7 @@ func run(runner) -> void:
 	test_context_grows_with_welcome_and_trust()
 	test_the_camp_and_the_wall_open_with_the_story()
 	test_the_strangers_stand_closer_as_trust_grows()
+	test_the_starfall_has_its_own_goals()
 	test_starfall_saves_and_old_saves_load()
 
 
@@ -187,6 +188,48 @@ func test_the_strangers_stand_closer_as_trust_grows() -> void:
 	var camp := Vector2i(hearth.x + 4, hearth.y)
 	var home: Array = s.starfall.survivor_spots(hearth, camp)
 	t.check(home[0].distance_to(Vector2(camp) + Vector2(0.5, 0.5)) < 2.0, "and gather at a Lumen Camp once one stands")
+
+
+func test_the_starfall_has_its_own_goals() -> void:
+	var before: Sim = t.fresh()
+	t.check(before.story.goal_list() != Data.GOALS_ERA3, "before the star falls the Starfall goals are not in force")
+	var s := _fallen()
+	t.check(s.story.goal_list() == Data.GOALS_ERA3, "once the star falls the Starfall goals are")
+	t.check(Data.GOALS_ERA3.size() == 9, "nine of them")
+	var seen := {}
+	for g in Data.GOALS_ERA3:
+		t.check(g["text"] != "" and not seen.has(g["id"]), "%s: a goal with words and its own id" % g["id"])
+		seen[g["id"]] = true
+		t.check(
+			Data.GOALS_ERA2.filter(func(e): return e["id"] == g["id"]).is_empty(), "%s is not a dawn goal" % g["id"]
+		)
+	s.story.update(s)
+	t.check(s.story.done_count() == 0 and s.story.current_goal() == 0, "none is met yet")
+	_wait(s, Data.LANDING_DELAY + Data.ARRIVAL_DELAY)
+	s.story.update(s)
+	t.check(
+		s.story.goals_done.has("strangers_come") and s.story.current_goal() == 1, "the strangers coming ticks the first"
+	)
+	s.starfall.locked[Data.GLYPH_SETS[1]["id"]] = true
+	s.starfall.wreck_found = true
+	s.story.update(s)
+	t.check(
+		s.story.goals_done.has("first_set") and s.story.goals_done.has("wreck_found"), "reading and finding tick theirs"
+	)
+	t.check(not s.story.goals_done.has("five_sets") and not s.story.goals_done.has("warning_read"), "later ones wait")
+	var late := _fallen()
+	late.starfall.ended = true
+	late.starfall.pending = "ending"  # the Warning is read and the card waits: the era's list is still in force
+	late.story.update(late)
+	t.check(late.story.goals_done.has("warning_read"), "the Warning read ticks the last")
+	# the Ironfall goals: coal in hand counts as found, whatever the fog says
+	var iron := _fallen()
+	iron.story.record(Data.IRONFALL_EVENT)
+	iron.story.update(iron)
+	t.check(not iron.story.goals_done.has("find_coal"), "no coal seen, none in the stores: not found")
+	iron.economy.add("coal", 5)
+	iron.story.update(iron)
+	t.check(iron.story.goals_done.has("find_coal"), "coal already in the stores counts as found")
 
 
 func test_starfall_saves_and_old_saves_load() -> void:
