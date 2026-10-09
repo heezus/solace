@@ -38,6 +38,7 @@ The source of truth for our game's universe. If something is written here, it's 
 20. [Cutscenes](20-cutscenes.md): short skippable painted sequences that tie the eras into one story, the story spine, the sequence list, art rules and how they play (Phases A and B built)
 21. [Stage starts, save slots and debug keys](21-stage-starts.md): begin a new run at any stage on a fixed map with the town built, five save slots, and the F1 to F4 debug keys (built; nine starts, the last is Ironfall)
 22. [Terrain kit](22-terrain-kit.md): how the ground and water get painted to match the sprites and read as one surface (layers, template sheets, preview script; art by Codex)
+23. [Livewire](23-livewire.md): era 5 in detail, the Standing orders mechanic (the Order Board), power poles and factories, the Bloom tide as the clock, a 14-tech tree and three build stages (design, nothing built)
 - [Decision Log](decision-log.md)
 
 ### Mockups (visual specs from the visual design thread)
