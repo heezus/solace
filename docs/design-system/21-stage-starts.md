@@ -25,7 +25,7 @@ A stage start begins a **new run** at a chosen stage, on a fixed map (seed 1) wi
 | `starfall_end` | Five sets read, every question answered, the Warning copied and guessed right: the era ends at the next talk, a few seconds in. |
 | `ironfall` | The Starfall is over and its ending card put away: Ironfall has begun, its first techs are in view and the land waits to grow south. |
 | `ironfall_teardown` | Teardown and Coal Seams are learned, the south is open, a Teardown Bench stands beside the Hearth and the Wreck's three parts are in the pack, ready to be opened. |
-| `ironfall_steam` | On `ironfall_teardown`: Ironstone, Bloomery, Iron Tools, Boiler, Rails and the Blast Furnace are learned, a Boiler, a Forge and a Steam Shed stand near the Hearth, and the stores hold coal, iron, wood, brick and stone to lay Rail and feed them. |
+| `ironfall_steam` | On `ironfall_teardown`: Ironstone, Bloomery, Iron Tools, Boiler, Rails and the Blast Furnace are learned, a Boiler, a Forge (within the Boiler's 5 tiles, so it has power) and a Steam Shed stand near the Hearth, and the stores hold coal, iron, wood, brick and stone to lay Rail and feed them. |
 
 Nothing is committed as a save. `scripts/dev_starts.gd` builds a start on demand: the pacing bots (`tests/autoplay.gd`, `tests/autoplay_bronze.gd`) play the fixed map to the boundary, and the Starfall starts are a short scripted setup on top of the Falling Star using the normal `Sim`, `Starfall` and `Story` calls. So a start is deterministic, and it follows the balance by itself: change a price or a delay and the next build is the new stage.
 
@@ -36,6 +36,8 @@ The export ships the two bot scripts (the title screen reaches them through the 
 ### Adding a start
 
 One row in `DevStarts._table()` (id, label, the function that builds it) and the function. A Starfall-style stage is a small function that takes an earlier start and runs `_wait`, `_build` and direct `starfall` edits on it, like `_starfall_camp`. Ironfall stages will be more rows. `tests/dev_tests.gd` then checks it automatically: unique id, a Hearth and buildings, a round trip through the run save, a minute of ticking, and the same run on every build.
+
+`DevStarts.ironfall_on_map(seed, id, dir)` builds an Ironfall start (`ironfall`, `ironfall_teardown`, `ironfall_steam`) on any map seed, from that map's own Falling Star, so the pacing bot can be run across maps 1 to 8 (`tests/tools/pace.gd N MIN ironfall [steam|teardown] cache`; the Falling Star it plays is kept in `user://pace_starts/`, apart from the fingerprinted stage starts). The scripted stages are built by `*_on(sim)` helpers that both the dev menu starts and this function call, so the two stay the same.
 
 ## Debug keys
 

@@ -226,7 +226,7 @@ const SHARD_BOILER := {
 	"gift": "craft",
 	"lesson": "heat_plate",
 	"requires": ["boiler", "shard_lamps"],
-	"cost": {"iron": 60, "brick": 80, "bronze": 30},
+	"cost": {"iron": 45, "brick": 60, "bronze": 30},
 	"desc": "A boiler that burns shards, so far less coal, once the Heat plate is learned.",
 }
 const STEEL := {
@@ -241,7 +241,7 @@ const STEEL := {
 	"unlock": "Steel Tools: +50% more",
 	"icon": "item_bronze_tools",
 	"requires": ["iron_tools", "blast_furnace"],
-	"cost": {"iron": 80, "coal": 80, "brick": 60},
+	"cost": {"iron": 60, "coal": 60, "brick": 50},
 	"desc": "Hard, springy metal. Steel Tools make a worker another 50% faster and wear slowly.",
 }
 const BLOOM_SAMPLING := {
@@ -256,7 +256,7 @@ const BLOOM_SAMPLING := {
 	"unlock": "Bloom samples",
 	"icon": "wanderer",
 	"requires": ["teardown", "shard_lamps"],
-	"cost": {"iron": 50, "brick": 60, "rope": 60},
+	"cost": {"iron": 40, "brick": 50, "rope": 60},
 	"desc": "Expeditions can take a sample from each patch of the Bloom, and the Bloom Lessons open.",
 }
 const LIVEWIRE := {
@@ -272,6 +272,6 @@ const LIVEWIRE := {
 	"icon": "wanderer",
 	"requires": ["steel", "rails", "shard_boiler", "bloom_sampling"],
 	"lessons": ["spore", "root", "sap"],
-	"cost": {"steel": 100, "iron": 100, "brick": 60, "rope": 40},
+	"cost": {"steel": 50, "iron": 70, "brick": 60, "rope": 40},
 	"desc": "The lamps burn without a flame. Far to the north, something green moves in the fog.",
 }
