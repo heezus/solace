@@ -179,7 +179,10 @@ static func _play_era(id: String) -> String:
 
 ## The star has come down and the strangers have walked out of the fog.
 static func _starfall_landing() -> Sim:
-	var s := _falling_star()
+	return _landing_on(_falling_star())
+
+
+static func _landing_on(s: Sim) -> Sim:
 	_wait(s, Data.LANDING_DELAY + Data.ARRIVAL_DELAY + 1.0)
 	return s
 
@@ -187,7 +190,10 @@ static func _starfall_landing() -> Sim:
 ## The Glyph Wall has copied the first set and the Kith read it: the strangers have a name, and the Lumen Camp and the
 ## Expedition Post stand.
 static func _starfall_camp() -> Sim:
-	var s := _starfall_landing()
+	return _camp_on(_starfall_landing())
+
+
+static func _camp_on(s: Sim) -> Sim:
 	_build(s, "glyph_wall")
 	_wait(s, Data.COPY_SECONDS * 3.0 + 1.0)
 	_guess_right(s, 1)
@@ -200,7 +206,10 @@ static func _starfall_camp() -> Sim:
 
 ## Trust has grown, the Lumen would trade, and the Market stands.
 static func _starfall_market() -> Sim:
-	var s := _starfall_camp()
+	return _market_on(_starfall_camp())
+
+
+static func _market_on(s: Sim) -> Sim:
 	s.starfall.nudge(TRUST_MARKET - s.starfall.trust)
 	_wait(s, 2.0)
 	_build(s, "lumen_market")
@@ -211,7 +220,10 @@ static func _starfall_market() -> Sim:
 ## Five sets read and every question answered, the Warning copied and guessed right: the Kith read it at the next talk, a
 ## few seconds on, and the era ends.
 static func _starfall_end() -> Sim:
-	var s := _starfall_market()
+	return _end_on(_starfall_market())
+
+
+static func _end_on(s: Sim) -> Sim:
 	for n in range(1, 6):
 		s.starfall.locked[Data.GLYPH_SETS[n]["id"]] = true
 	for id in Data.MOMENT_ORDER:
@@ -227,7 +239,10 @@ static func _starfall_end() -> Sim:
 ## The Warning is read, the ending card put away and the first tick of Ironfall run: its techs are in view and the coal and
 ## iron wait in the land south of the map for Coal Seams or Ironstone.
 static func _ironfall() -> Sim:
-	var s := _starfall_end()
+	return _ironfall_on(_starfall_end())
+
+
+static func _ironfall_on(s: Sim) -> Sim:
 	_wait(s, END_FUSE + 6.0)
 	s.starfall.choose(0)
 	_wait(s, 2.0)
@@ -237,7 +252,10 @@ static func _ironfall() -> Sim:
 ## Teardown is learned and the south is open: a Bench stands beside the Hearth and the Wreck's three parts are in the pack,
 ## so the first Lessons are a haul away. The Lumen Camp is there for its own parts.
 static func _ironfall_teardown() -> Sim:
-	var s := _ironfall()
+	return _teardown_on(_ironfall())
+
+
+static func _teardown_on(s: Sim) -> Sim:
 	for tech in ["coal_seams", "teardown"]:
 		s.tech_tree.researched[tech] = true
 	_build(s, "teardown_bench", 1)
@@ -251,14 +269,56 @@ static func _ironfall_teardown() -> Sim:
 ## Steam is learned (Boiler, Rails, the Blast Furnace and what they follow) and a Boiler, a Forge and a Steam Shed stand near the
 ## Hearth with coal, iron and the materials for Rail in the stores: the Livewire gate is the next thing to build toward.
 static func _ironfall_steam() -> Sim:
-	var s := _ironfall_teardown()
+	return _steam_on(_ironfall_teardown())
+
+
+static func _steam_on(s: Sim) -> Sim:
 	for tech in ["ironstone", "bloomery", "iron_tools", "boiler", "rails", "blast_furnace"]:
 		s.tech_tree.researched[tech] = true
 	for id in ["coal", "iron", "wood", "brick", "stone"]:
 		s.economy.add(id, 300)
-	for type in ["boiler", "forge", "steam_shed"]:
-		_build(s, type, 2)
+	_build(s, "boiler", 2)
+	if not _build_beside(s, "forge", _where(s, "boiler")):
+		_build(s, "forge", 2)  # no room beside the Boiler: anywhere will do
+	_build(s, "steam_shed", 2)
 	_wait(s, 2.0)
+	return s
+
+
+# --- The Ironfall starts on any map (the pacing tool) --------------------------
+
+
+## The Ironfall start `id` ("ironfall", "ironfall_teardown" or "ironfall_steam") on the map made from `seed_value`, for the
+## pacing bot (tests/tools/pace.gd): a bot plays that map to the Falling Star (minutes of real time; map MAP_SEED uses the
+## kept start), then the same scripted stages run on it as for the starts above. `dir` keeps the Falling Star of a map between
+## runs ("" keeps none); the files in it are not fingerprinted, so clear it when an earlier era's numbers change.
+static func ironfall_on_map(seed_value: int, id: String, dir := "") -> Sim:
+	var s := _falling_star() if seed_value == MAP_SEED else _star_on_map(seed_value, dir)
+	s = _ironfall_on(_end_on(_market_on(_camp_on(_landing_on(s)))))
+	if id == "ironfall":
+		return s
+	s = _teardown_on(s)
+	return s if id == "ironfall_teardown" else _steam_on(s)
+
+
+## The Falling Star on map `seed_value`: played by the bots, or read from `dir`.
+static func _star_on_map(seed_value: int, dir: String) -> Sim:
+	var file := dir + "falling_star_map%d.run" % seed_value
+	var text := ""
+	if dir != "" and FileAccess.file_exists(file):
+		text = FileAccess.get_file_as_string(file)
+	if text == "":
+		var bot := AutoplayBronze.new()
+		bot.play_to_star(seed_value, BOT_LIMIT)
+		text = RunSave.to_json(RunSave.dump(bot.s))
+		if dir != "":
+			DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(dir))
+			var out := FileAccess.open(file, FileAccess.WRITE)
+			if out != null:
+				out.store_string(text)
+				out.close()
+	var s := Sim.new()
+	RunSave.restore(s, RunSave.from_json(text))
 	return s
 
 
@@ -278,6 +338,34 @@ static func _guess_right(s: Sim, n: int) -> void:
 		while s.starfall.guesses.get(g, "") != Data.GLYPHS[g]["word"]:
 			if s.starfall.cycle_guess(g) == "":
 				break
+
+
+## Where the first building of `type` stands.
+static func _where(s: Sim, type: String) -> Vector2i:
+	for b in s.town.buildings:
+		if b["type"] == type:
+			return b["pos"]
+	return s.world.camp_pos
+
+
+## Put `type` down on the nearest free tile to `at` that is within the Boiler's reach of it (5 tiles), paid for like _build.
+static func _build_beside(s: Sim, type: String, at: Vector2i) -> bool:
+	var reach: float = Data.BUILDINGS["boiler"]["radius"]
+	for r in range(1, int(reach) + 1):
+		for dy in range(-r, r + 1):
+			for dx in range(-r, r + 1):
+				var p: Vector2i = at + Vector2i(dx, dy)
+				if maxi(absi(dx), absi(dy)) != r or Vector2(p).distance_to(Vector2(at)) > reach:
+					continue
+				var why := s.town.placement_error(type, p)
+				if why == "Not enough materials" or why == "":
+					var price: Dictionary = s.town.price(type)
+					for id in price:
+						if s.economy.inv.get(id, 0) < price[id]:
+							s.economy.add(id, price[id] - s.economy.inv.get(id, 0))
+					if s.place(type, p):
+						return true
+	return false
 
 
 ## Put `type` down on the nearest free tile to the Hearth, paid for (the start gives the town the materials, as a bot

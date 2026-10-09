@@ -157,7 +157,7 @@ func test_stage_three_data_is_whole() -> void:
 		t.check(Data.TECHS[id]["era"] == 4 and int(Data.TECHS[id]["stage"]) == 3, "%s belongs to stage 3" % id)
 	t.check(Data.TECHS["livewire"]["lane"] == "gate", "Livewire is the gate")
 	t.check(
-		Data.TECHS["livewire"]["cost"] == {"steel": 100, "iron": 100, "brick": 60, "rope": 40},
+		Data.TECHS["livewire"]["cost"] == {"steel": 50, "iron": 70, "brick": 60, "rope": 40},
 		"and costs steel, iron, brick and rope"
 	)
 	t.check(Data.TECHS["livewire"]["lessons"] == ["spore", "root", "sap"], "and wants the three Bloom Lessons")
@@ -689,8 +689,8 @@ func test_livewire_ends_the_age() -> void:
 		s.economy.seen[tech] = true
 	for item in ["steel", "iron", "brick", "rope"]:
 		s.economy.seen[item] = true
-	s.economy.inv["steel"] = 100
-	s.economy.inv["iron"] = 100
+	s.economy.inv["steel"] = 50
+	s.economy.inv["iron"] = 70
 	s.economy.inv["brick"] = 60
 	s.economy.inv["rope"] = 40
 	t.check(not s.research("livewire"), "the gate does not open without the Bloom Lessons")
