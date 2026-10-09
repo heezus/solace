@@ -128,6 +128,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	time += delta
+	state.story.card_up = era_card.visible  # the next era waits for the card to be put away (Story.update)
 	if not paused:
 		for i in speed:
 			state.tick(delta)
@@ -653,6 +654,7 @@ func _watch_flavor() -> void:
 func _on_story(id: String) -> void:
 	if id in ["star_falling", Data.LIVEWIRE_EVENT]:
 		paused = true
+		state.story.card_up = true  # now: the rest of this frame's ticks must not begin the next era
 		era_card.open(id)
 		if not Profile.note_run(state):
 			_toast(Data.PROFILE_UNSAVED, 6.0)
@@ -775,6 +777,7 @@ func _draw() -> void:
 					Color(0.16, 0.62, 0.56, 0.18)
 				)
 	_draw_aura_ranges(hovered_type)
+	Overlays.wires(self, state, hover, placing, building_panel.selected())
 	Overlays.settlement_ring(self, state, placing == "dwelling", placing == "" and _over_hearth())
 	for b in state.town.buildings:
 		_draw_building(b)
@@ -914,7 +917,7 @@ func _draw_building(b: Dictionary) -> void:
 		var at := badge + Vector2(-wide / 2.0, px * 0.36)
 		draw_string(ThemeDB.fallback_font, at, digits, HORIZONTAL_ALIGNMENT_LEFT, -1, px, OUTLINE)
 	_draw_trips(b, tile)
-	_draw_rush(b, tile)
+	Overlays.rush_wedge(self, b, tile)
 
 
 ## Hold to harvest: an outline ring over the held tile, with a highlight arc filling clockwise from the top.
@@ -974,21 +977,6 @@ func _draw_trips(b: Dictionary, r: Rect2) -> void:
 		var c := r.position + Vector2(r.size.x / 2.0 + (n - (Data.TRIP_QUEUE - 1) / 2.0) * 12.0, -4.0)
 		draw_circle(c, 5.4, OUTLINE)
 		draw_circle(c, 3.6, GOAL_COLOR if n < b["trips"] else Color(Ui.TEXT, 0.4))
-
-
-## A rushed building shows its cooldown as a shrinking wedge in its top-left corner.
-func _draw_rush(b: Dictionary, r: Rect2) -> void:
-	if b["rush_cd"] <= 0.0:
-		return
-	var c := r.position + Vector2(8, 8)
-	var frac: float = b["rush_cd"] / Data.RUSH_COOLDOWN
-	draw_circle(c, 8.0, OUTLINE)
-	draw_circle(c, 6.0, Color(Ui.TEXT, 0.3))
-	var pts := PackedVector2Array([c])
-	for n in 13:
-		pts.append(c + Vector2.from_angle(-PI / 2.0 + TAU * frac * n / 12.0) * 6.0)
-	if frac > 0.02:
-		draw_colored_polygon(pts, GOAL_COLOR)
 
 
 func _draw_roads() -> void:

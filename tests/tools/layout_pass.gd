@@ -19,6 +19,7 @@ const CutscenePlayer = preload("res://scripts/cutscene_player.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
 const HudChecks = preload("res://tests/tools/hud_checks.gd")
 const PickerChecks = preload("res://tests/tools/picker_checks.gd")
+const LivewireChecks = preload("res://tests/tools/livewire_checks.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
 const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
 
@@ -31,6 +32,7 @@ const WALL := "A long line of text that has to wrap onto several lines inside th
 
 var main: Node
 var bot: AutoplayBronze
+var livewire_frame := -1  # the frame the bot made its Bronze: the pass then sets Livewire by hand and checks its HUD
 var dawn_frame := -1  # the frame Bronze Dawn was won; the pass plays on from there into the era it opens
 var before_growth := {}  # the map view the frame before the land grew east
 var grown_frame := -1
@@ -90,7 +92,11 @@ func _process(_delta: float) -> bool:
 	_hud_checks()
 	if dawn_frame > 0:
 		_era_two_checks()
-	if (dawn_frame > 0 and (bot.made_bronze() or frame > dawn_frame + ERA_FRAMES)) or frame > MAX_FRAMES:
+	if livewire_frame < 0 and dawn_frame > 0 and (bot.made_bronze() or frame > dawn_frame + ERA_FRAMES):
+		livewire_frame = frame
+	if livewire_frame > 0:
+		LivewireChecks.step(self, frame - livewire_frame)
+	if (livewire_frame > 0 and frame > livewire_frame + LivewireChecks.END) or frame > MAX_FRAMES:
 		_finish()
 	return false
 

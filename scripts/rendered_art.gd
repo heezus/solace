@@ -218,6 +218,11 @@ const SINGLE_BUILDINGS := {
 	"steam_shed": ["industry", 3],
 	"beast_pen": ["buildings", 3],
 	"shard_lamp": ["industry", 5],
+	# Livewire stage 1: stand-ins, each tinted (docs/art/requests.md has the slots).
+	"generator": ["workshops", 3],
+	"wire_mill": ["industry", 1],
+	"power_pole": ["workshops", 2],
+	"order_board": ["industry", 4],
 }
 ## The tint of a placeholder that borrows another one's sprite, by feature or building id.
 const TINTS := {
@@ -229,6 +234,10 @@ const TINTS := {
 	"steam_shed": Color(0.7, 0.75, 0.85),
 	"beast_pen": Color(0.8, 0.9, 1.0),
 	"shard_lamp": Color(0.6, 0.95, 1.0),
+	"generator": Color(1.0, 0.78, 0.35),
+	"wire_mill": Color(1.0, 0.78, 0.6),
+	"power_pole": Color(0.85, 0.7, 0.5),
+	"order_board": Color(1.0, 0.9, 0.55),
 }
 ## The fourteen Starfall icons, in the order of the "starfall-icons" regions: the three packs (Starfall.PACKS keys), the Shard,
 ## the four gifts (LUMEN_GIFTS keys) and the six glyph-set headings (GLYPH_SETS ids).
@@ -269,10 +278,11 @@ const ITEM_IDS := [
 	"bronze_tools"
 ]
 
-## Iron Gears and Steel Tools have no icon of their own yet: each borrows another's, recolored (docs/art/requests.md has the slots).
+## Iron Gears, Steel Tools and Wire have no icon of their own yet: each borrows another's, recolored (docs/art/requests.md has the slots).
 const BORROWED_ITEMS := {
 	"iron_gears": ["copper", Color(0.72, 0.76, 0.84)],
 	"steel_tools": ["iron_tools", Color(0.68, 0.84, 1.0)],
+	"wire": ["copper", Color(1.0, 0.86, 0.55)],
 }
 ## The five Ironfall icons, in the order of the "ironfall-items" regions (docs/art/ironfall/items).
 const IRONFALL_ITEM_IDS := ["coal", "iron_ore", "iron", "steel", "iron_tools"]

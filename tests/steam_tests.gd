@@ -480,14 +480,14 @@ func test_a_beast_pen_tames_a_beast() -> void:
 		pen["alert"] == "Needs Grain" and pen["status"].begins_with("Taming the beast"),
 		"an empty Pen asks for Grain: %s" % pen["status"]
 	)
-	t.check(Haulers._stock_wanted(s, pen) == {"grain": 4}, "haulers keep it stocked with Grain")
+	t.check(Haulers.stock_wanted(s, pen) == {"grain": 4}, "haulers keep it stocked with Grain")
 	for i in 90:
 		pen["inbuf"]["grain"] = 4
 		s.economy.inv["berries"] = 999
 		s.tick(1.0)
 	t.check(Buildings.is_tamed(pen), "fed Grain, the beast is tame")
 	t.check(pen["progress"] == Data.BEAST_TAME and pen["status"] == Data.PEN_TAMED, "(%s)" % pen["status"])
-	t.check(Haulers._stock_wanted(s, pen).is_empty(), "and the Pen asks for nothing more")
+	t.check(Haulers.stock_wanted(s, pen).is_empty(), "and the Pen asks for nothing more")
 	t.check(s.town.carts_of("beast") == 1, "it pulls a beast cart")
 	var carts: Array = s.people.kith.filter(func(k): return k["cart_kind"] == "beast")
 	t.check(carts.size() == 1, "one hauler drives it")

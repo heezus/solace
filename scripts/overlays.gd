@@ -234,6 +234,45 @@ static func settlement_ring(ci: CanvasItem, s, placing_home: bool, over_hearth: 
 	Art.pill(ci, c - Vector2(0, radius + 12.0 * k), "Build range", Ui.TEXT, Ui.LINE, 14)
 
 
+## A rushed building shows its cooldown as a shrinking wedge in its top-left corner.
+static func rush_wedge(ci: CanvasItem, b: Dictionary, r: Rect2) -> void:
+	if b["rush_cd"] <= 0.0:
+		return
+	var c := r.position + Vector2(8, 8)
+	var frac: float = b["rush_cd"] / Data.RUSH_COOLDOWN
+	ci.draw_circle(c, 8.0, OUTLINE)
+	ci.draw_circle(c, 6.0, Color(Ui.TEXT, 0.3))
+	var pts := PackedVector2Array([c])
+	for n in 13:
+		pts.append(c + Vector2.from_angle(-PI / 2.0 + TAU * frac * n / 12.0) * 6.0)
+	if frac > 0.02:
+		ci.draw_colored_polygon(pts, Ui.HIGHLIGHT)
+
+
+## Livewire: the wires between Power Poles that are joined (within Data.POLE_LINK tiles), and a dashed ring of Data.POLE_REACH
+## tiles round the pole being placed (`placing`, at `hover`), hovered or selected (`sel`, a building), where a machine or an
+## engine must stand. A pole being placed is wired to the poles it would join.
+static func wires(ci: CanvasItem, s, hover: Vector2i, placing: String, sel: Dictionary) -> void:
+	var poles: Array = []
+	for net in s.livewire.nets:
+		poles.append_array(net["poles"])
+	var reach: Array = []
+	if placing == "power_pole" and s.world.in_bounds(hover):
+		poles.append(hover)
+		reach.append(hover)
+	elif placing == "" and s.town.built_type(hover) == "power_pole":
+		reach.append(hover)
+	if not sel.is_empty() and sel["type"] == "power_pole":
+		reach.append(sel["pos"])
+	var k := Art.ui_k
+	for i in poles.size():
+		for j in range(i + 1, poles.size()):
+			if Vector2(poles[i]).distance_to(Vector2(poles[j])) <= Data.POLE_LINK:
+				ci.draw_line(center(poles[i]), center(poles[j]), Color("e9c46a", 0.8), 2.0 * k, true)
+	for p in reach:
+		Art.dashed_circle(ci, center(p), Data.POLE_REACH * TILE, Color("e9c46a", 0.6), 2.0 * k, 8.0 * k, 6.0 * k)
+
+
 ## What the placement ghost's pill says when the spot won't do.
 static func ghost_text(type: String, err: String) -> String:
 	if type == "dwelling" and err.begins_with("Must be within"):

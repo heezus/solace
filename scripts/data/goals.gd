@@ -38,6 +38,7 @@ const STORY_EVENTS := {
 	"ironfall_begun": "The Starfall was over, and the Kith turned to iron",
 	"teardown_lesson": "The Kith opened a part and kept what it taught",
 	"livewire_lit": "The wires hummed, and the age of iron was done",
+	"livewire_begun": "The wires were strung, and the Kith began to write their orders",
 }
 
 ## Techs that are story moments: tech id -> the STORY_EVENTS id the Story block records when it is researched.

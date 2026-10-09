@@ -90,7 +90,7 @@ The gate costs 50 Steel, 70 Iron, 60 Brick and 40 Rope, and the three Bloom Less
 - It rides on Starfall (the starstuff touched the beasts) and costs the player a short chain, not a system. The art slots are already logged in [17](17-needs-and-upgrades.md).
 
 ## Ending
-- Researching **Livewire** plays a short end card. The lamps burn without a flame, the Kith hear a hum down the new wires, and, far to the north, something green moves in the fog.
+- Researching **Livewire** plays a short end card. The lamps burn without a flame, the Kith hear a hum down the new wires, and, far to the south, something green moves in the fog.
 - The game keeps running so the player can keep building, as Bronze Dawn and Starfall do. Livewire (era 5) is the next design page.
 
 ## What stage 1 built, and where it differs (2026-10-07)

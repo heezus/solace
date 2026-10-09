@@ -111,7 +111,8 @@ func test_the_list_is_well_formed() -> void:
 		"starfall_end",
 		"ironfall",
 		"ironfall_teardown",
-		"ironfall_steam"
+		"ironfall_steam",
+		"livewire"
 	]:
 		t.check(seen.has(id), "the start %s is there" % id)
 	t.check(DevStarts.build("no_such_start") == null, "an unknown start builds nothing")
@@ -541,6 +542,22 @@ func _expect_stage(id: String, s: Sim) -> void:
 				s.tech_tree.researched.has("rails") and s.economy.inv.get("coal", 0) > 100,
 				"with Rails learned and coal in store"
 			)
+		"livewire":
+			t.check(
+				s.story.has_event(Data.LIVEWIRE_EVENT) and s.story.has_event(Data.LIVEWIRE_BEGUN),
+				"livewire: the Wires Hum card is put away and Livewire has begun"
+			)
+			t.check(s.story.goal_list() == Data.GOALS_ERA5, "with its own goals")
+			t.check(
+				s.tech_tree.can_research("power_poles") and s.tech_tree.can_research("order_board"),
+				"Power Poles and the Order Board can be bought"
+			)
+			t.check(not s.tech_tree.researched.has("power_poles"), "though neither is learned yet")
+			var out := s.town.buildings.filter(
+				func(b): return b["type"] in ["grindstone", "smelter"] and not s.town.is_powered(b["pos"])
+			)
+			t.check(out.size() == 2, "a Grindstone and a Smelter stand unpowered, ready for a net")
+			t.check(s.livewire.nets.is_empty() and s.livewire.orders.is_empty(), "with no net and no order yet")
 
 
 func test_starts_are_deterministic() -> void:

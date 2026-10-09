@@ -1,7 +1,8 @@
 extends RefCounted
 ## The Story block: the story moments that have happened (`events`, stable ids from Data.STORY_EVENTS, in the
 ## order they happened, for a future profile save) and the checklist (`goals_done`, from Data.GOALS, and from
-## Data.GOALS_ERA2 once Bronze Dawn is discovered and Data.GOALS_ERA4 once Ironfall begins: goal_list() is the one in force).
+## Data.GOALS_ERA2 once Bronze Dawn is discovered, Data.GOALS_ERA4 once Ironfall begins and Data.GOALS_ERA5 once Livewire does:
+## goal_list() is the one in force).
 ## It listens: the owner connects the other blocks' signals to the on_* methods below, so no block calls
 ## Story and Story never calls a block. record(id) notes a moment once. A goal is met when its `tech` is
 ## researched or its `building` stands, and the rest are checked by id against the Sim handed to
@@ -16,11 +17,14 @@ const Data = preload("res://scripts/data.gd")
 const Land = preload("res://scripts/land.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Buildings = preload("res://scripts/buildings.gd")
+const Power = preload("res://scripts/power.gd")
 
 var events: Array = []  # story ids, in the order they happened
 ## The first cairn went up before the Falling Star fell: a run flag, saved, that a future first contact will read.
 var cairn_before_landing := false
 var goals_done: Dictionary = {}  # goal id -> true; goals stay done once met, even after the items are spent
+## True while an era card is up (the owner sets it, never saved): the era after it begins the tick after it is put away.
+var card_up := false
 var _ore_tiles: Dictionary = {}  # tile id -> its positions in the grown land (see _ore)
 var _ore_width := 0
 
@@ -78,9 +82,13 @@ func on_built(type: String, _pos: Vector2i) -> void:
 func update(s) -> void:
 	if s.starfall.ended and s.starfall.pending == "":
 		record(Data.IRONFALL_EVENT)  # the Starfall is over and its card is put away: Ironfall begins
+	if events.has(Data.LIVEWIRE_EVENT) and not card_up:
+		record(Data.LIVEWIRE_BEGUN)  # the Wires Hum card is put away: Livewire begins
 	var lists: Array = [Data.GOALS]
 	if goal_list() != Data.GOALS:
 		lists.append(goal_list())  # the stone age's stay checked: its last goal is met by the dawn itself
+	if goal_list() == Data.GOALS_ERA5:
+		lists.append(Data.GOALS_ERA4)  # and so do Ironfall's: its gate is met by the card that opens Livewire
 	for list in lists:
 		for g in list:
 			if not goals_done.has(g["id"]) and goal_met(s, g):
@@ -89,6 +97,8 @@ func update(s) -> void:
 
 ## The checklist in force: the stone age's, and the second era's once Bronze Dawn is discovered.
 func goal_list() -> Array:
+	if Data.LIVEWIRE_BEGUN in events:
+		return Data.GOALS_ERA5
 	if Data.IRONFALL_EVENT in events:
 		return Data.GOALS_ERA4
 	return Data.GOALS_ERA2 if "bronze_dawn" in events else Data.GOALS
@@ -143,7 +153,7 @@ func goal_met(s, g: Dictionary) -> bool:
 			return s.teardown.lessons.size() > 0
 		"find_coal", "find_iron", "iron_mine", "first_iron", "rail_laid", "first_steel":
 			return _ironfall_goal_met(s, g["id"])
-	return false
+	return _livewire_goal_met(s, g["id"])
 
 
 ## The era 4 goals (Data.GOALS_ERA4) that are about the land, the metal and the Rail.
@@ -160,6 +170,22 @@ func _ironfall_goal_met(s, id: String) -> bool:
 		"first_steel":
 			return s.economy.inv.get("steel", 0) > 0 or s.economy.seen.has("steel")
 	return s.economy.inv.get("iron", 0) > 0
+
+
+## The era 5 goals (Data.GOALS_ERA5) that are about the net, the Wire and the orders.
+func _livewire_goal_met(s, id: String) -> bool:
+	match id:
+		"poles_laid":
+			return Power.poles_joined(s)
+		"net_machine":
+			return Power.working_net(s)
+		"wire_made":
+			return s.economy.inv.get("wire", 0) > 0 or s.economy.seen.has("wire")
+		"first_order":
+			return s.livewire.orders.any(func(o): return o["target"] != "")
+		"order_fired":
+			return s.livewire.orders.any(func(o): return o["fired"] >= 0.0)
+	return false
 
 
 ## Index into goal_list() of the first goal not yet done, or its size when all are.

@@ -6,6 +6,7 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 const Buildings = preload("res://scripts/buildings.gd")
+const Power = preload("res://scripts/power.gd")
 
 # --- The fed buildings ---------------------------------------------------------------------------------------------
 
@@ -37,20 +38,24 @@ static func _take(s, b: Dictionary, def: Dictionary) -> bool:
 	return true
 
 
-## A Boiler lights when a machine in its reach wants power and burns one fuel for def["burn"] seconds; lit, it burns down
-## whether or not the machine is still working. With no fuel it stays cold and says so.
+## A Boiler lights when a machine in its reach wants power, or the net it stands on is asked for more than its engines give, and
+## burns one fuel for def["burn"] seconds; lit, it burns down whether or not the machine is still working. With no fuel it stays
+## cold and says so. A Generator is the same, and reaches no tiles of its own: it feeds a net.
 static func _tick_boiler(s, b: Dictionary, def: Dictionary, delta: float) -> void:
 	var fuel: String = Data.ITEMS[fuel_of(def)]["name"]
 	b["burn"] = maxf(b["burn"] - delta, 0.0)
-	var wanted := machines_want(s, b)
+	var wanted := machines_want(s, b) or Power.wants(s, b)
 	if b["burn"] <= 0.0 and wanted and _take(s, b, def):
 		b["burn"] = def["burn"]
+		Power.lit(s, b)
 	var stored: int = b["inbuf"].get(fuel_of(def), 0)
 	if b["burn"] > 0.0:
 		b["status"] = Data.BOILER_LIT % [ceili(b["burn"]), stored]
 	elif wanted:
 		b["status"] = Data.BOILER_COLD % fuel
 		b["alert"] = "Needs " + fuel
+	elif def["radius"] <= 0.0:
+		b["status"] = Data.NET_BANKED % stored if not s.livewire.net_at(b["pos"]).is_empty() else Data.NET_NONE
 	else:
 		b["status"] = Data.BOILER_BANKED % stored
 

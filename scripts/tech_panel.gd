@@ -17,7 +17,7 @@ const Ranks = preload("res://scripts/ranks.gd")
 
 const BG := Ui.PANEL
 const STRIP_H := 170.0  # the strip about one tech: always this tall
-const STOCK_GAP := 5  # between the goods of the stock line: all of them (25 by Ironfall) still fit a 1280 window
+const STOCK_GAP := 5  # between the goods of the stock line
 const STRIP_SIDE_W := 330.0  # its right column: needs, leads to, route
 
 var state: Sim
@@ -101,9 +101,14 @@ func setup(game: Sim) -> void:
 	# What you have, so nothing needs closing to check what you can afford; one line says how the costs read.
 	stock_row = HBoxContainer.new()
 	stock_row.add_theme_constant_override("separation", STOCK_GAP)
+	var stock_flow := HFlowContainer.new()  # the goods wrap onto a second line when 26 of them outgrow the window
+	stock_flow.add_theme_constant_override("h_separation", STOCK_GAP)
+	stock_flow.add_theme_constant_override("v_separation", 2)
+	stock_flow.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var stock_cap := Ui.label(Data.STOCK_CAPTION, Ui.MIN_TEXT)
 	stock_cap.add_theme_color_override("font_color", Ui.TEXT_DIM)
 	stock_row.add_child(stock_cap)
+	stock_row.add_child(stock_flow)
 	for id in Data.ITEM_ORDER:
 		var box := HBoxContainer.new()
 		box.add_theme_constant_override("separation", 3)
@@ -113,11 +118,10 @@ func setup(game: Sim) -> void:
 		var count := Ui.label("", 14)
 		count.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		box.add_child(count)
-		stock_row.add_child(box)
+		stock_flow.add_child(box)
 		stock_chips[id] = {"box": box, "count": count}
 	queue_row = HBoxContainer.new()  # the queue sits at the end of the same line
 	queue_row.add_theme_constant_override("separation", 6)
-	queue_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stock_row.add_child(queue_row)
 	v.add_child(stock_row)
 
@@ -236,13 +240,16 @@ func _pick_era(e: int) -> void:
 	refresh()
 
 
-## Era 2's tab opens when Bronze Dawn is discovered, and era 4's (Ironfall) once the Starfall is over.
+## Era 2's tab opens when Bronze Dawn is discovered, era 4's (Ironfall) once the Starfall is over and era 5's (Livewire) once
+## the Wires Hum card is put away.
 func _era_open(e: int) -> bool:
 	match e:
 		2:
 			return state.tech_tree.researched.has("bronze_dawn")
 		4:
 			return state.story.has_event(Data.IRONFALL_EVENT)
+		5:
+			return state.story.has_event(Data.LIVEWIRE_BEGUN)
 	return true
 
 
@@ -277,7 +284,7 @@ func _on_open() -> void:
 	if not visible:
 		return
 	if not era_chosen:
-		board.set_era(4 if _era_open(4) else 2 if _era_open(2) else 1)
+		board.set_era(5 if _era_open(5) else 4 if _era_open(4) else 2 if _era_open(2) else 1)
 	if not view_chosen:
 		_apply_view("next")
 	board.fit(true)
@@ -330,7 +337,11 @@ func refresh() -> void:
 		tab.tooltip_text = (
 			Data.ERA_TAB_TIP % Data.ERAS[e]["name"]
 			if _era_open(e)
-			else Data.ERA_TAB_LOCKED_IRONFALL if e == 4 else Data.ERA_TAB_LOCKED
+			else (
+				Data.ERA_TAB_LOCKED_LIVEWIRE
+				if e == 5
+				else Data.ERA_TAB_LOCKED_IRONFALL if e == 4 else Data.ERA_TAB_LOCKED
+			)
 		)
 	for which in view_buttons:
 		view_buttons[which].button_pressed = which == view

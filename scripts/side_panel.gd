@@ -98,6 +98,7 @@ func refresh_goals(s: Sim) -> void:
 	var total := list.size()
 	var header := Data.GOALS_HEADER_ERA4 if list == Data.GOALS_ERA4 else Data.GOALS_HEADER
 	header = Data.GOALS_HEADER_ERA2 if list == Data.GOALS_ERA2 else header
+	header = Data.GOALS_HEADER_ERA5 if list == Data.GOALS_ERA5 else header
 	goal_header.text = header % [s.story.done_count(), total]
 	var done: Array = []
 	for g in list:
@@ -117,9 +118,9 @@ func refresh_goals(s: Sim) -> void:
 		goal_labels[0].text = Data.GOALS_ALL_DONE
 		var star_fell: bool = s.story.events.has("star_falling")
 		goal_labels[1].visible = star_fell
-		goal_labels[1].text = (
-			"  " + (Data.GOALS_IRONFALL_CLOSING if list == Data.GOALS_ERA4 else Data.GOALS_STAR_CLOSING)
-		)
+		var closing := Data.GOALS_IRONFALL_CLOSING if list == Data.GOALS_ERA4 else Data.GOALS_STAR_CLOSING
+		closing = Data.GOALS_LIVEWIRE_CLOSING if list == Data.GOALS_ERA5 else closing
+		goal_labels[1].text = "  " + closing
 		goal_labels[1].add_theme_color_override("font_color", Ui.TEXT_DIM)
 
 

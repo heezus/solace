@@ -40,6 +40,8 @@ var road_net: Dictionary = {}  # Roads' cache of the road networks and which bui
 var story_has: Callable = func(_id): return false
 ## (String) -> bool: is this Lesson learned? Sim connects it to the Teardown block; it opens a building's `lesson`.
 var lesson_has: Callable = func(_id): return false
+## (Vector2i) -> bool: does a Power Pole net that gives power reach this tile? Sim connects it to the Livewire block.
+var on_net: Callable = func(_p): return false
 var _world: World
 var _economy: Economy
 var _research: Research
@@ -412,7 +414,7 @@ func research_discount() -> float:
 
 
 func is_powered(p: Vector2i) -> bool:
-	return in_range_of("power", p)
+	return in_range_of("power", p) or on_net.call(p)
 
 
 ## True if p is within the radius of any building of this kind. A fed one (a Boiler) reaches only while it burns.

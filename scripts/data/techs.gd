@@ -25,6 +25,8 @@ extends RefCounted
 
 ## Era 4's techs are one constant each in their own folder (a constant cannot merge dictionaries); TECHS lists them.
 const IronfallTechs = preload("res://scripts/data/ironfall/techs.gd")
+## Era 5's likewise (scripts/data/livewire/techs.gd).
+const LivewireTechs = preload("res://scripts/data/livewire/techs.gd")
 
 ## The research board's bands, top to bottom. Bronze Dawn sits alone in the "gate" column.
 const LANES := {
@@ -40,14 +42,18 @@ const TIER_NAMES := ["TIER I", "TIER II", "TIER III", "TIER IV", "TIER V", "THE 
 
 ## The eras, each with a board of its own, and the column captions of each board (the last is the gate's column).
 ## Era 3, Starfall, has no tree: its magic is a set of gifts (design-system/16-starfall.md), so the next board is era 4.
-const ERAS := {1: {"name": "Stone Age"}, 2: {"name": "Bronze Dawn"}, 4: {"name": "Ironfall"}}
+const ERAS := {1: {"name": "Stone Age"}, 2: {"name": "Bronze Dawn"}, 4: {"name": "Ironfall"}, 5: {"name": "Livewire"}}
 const ERA_TIER_NAMES := {
 	1: TIER_NAMES,
 	2: ["TIER I", "TIER II", "TIER III", "TIER IV", "TIER V", "THE GATE"],
 	4: ["TIER I", "TIER II", "TIER III", "TIER IV", "THE GATE"],
+	5: ["TIER I", "TIER II", "TIER III", "TIER IV", "THE GATE"],
 }
 ## The latest build stage whose techs can be researched (see `stage` above).
 const BUILT_STAGE := 3
+## How far an era past Ironfall is built, by era: Livewire (5) is built in three stages (design-system/23-livewire.md), and a tech
+## of it is researchable once its `stage` is no more than this (Rules.tech_enabled). Eras before it are built to BUILT_STAGE.
+const ERA_BUILT_STAGE := {5: 1}
 ## A route set aside by a fork costs this many times its price once the fork's goal is learned.
 const FORK_LATER_COST := 1.5
 ## Tally Sticks makes every tech this share of its cost.
@@ -786,6 +792,21 @@ const TECHS := {
 	"steel": IronfallTechs.STEEL,
 	"bloom_sampling": IronfallTechs.BLOOM_SAMPLING,
 	"livewire": IronfallTechs.LIVEWIRE,
+	# --- Era 5: Livewire (design-system/23-livewire.md), defined in scripts/data/livewire/techs.gd ---
+	"power_poles": LivewireTechs.POWER_POLES,
+	"order_board": LivewireTechs.ORDER_BOARD,
+	"tide_watch": LivewireTechs.TIDE_WATCH,
+	"generator": LivewireTechs.GENERATOR,
+	"arc_lamps": LivewireTechs.ARC_LAMPS,
+	"foremen": LivewireTechs.FOREMEN,
+	"powered_mines": LivewireTechs.POWERED_MINES,
+	"factory_floor": LivewireTechs.FACTORY_FLOOR,
+	"scorcher": LivewireTechs.SCORCHER,
+	"firebreaks": LivewireTechs.FIREBREAKS,
+	"shard_dynamo": LivewireTechs.SHARD_DYNAMO,
+	"chain_orders": LivewireTechs.CHAIN_ORDERS,
+	"living_ground": LivewireTechs.LIVING_GROUND,
+	"skyward": LivewireTechs.SKYWARD,
 }
 
 ## Order for lists and tests (roots first, then by column).
@@ -851,4 +872,18 @@ const TECH_ORDER := [
 	"steel",
 	"bloom_sampling",
 	"livewire",
+	"power_poles",
+	"order_board",
+	"tide_watch",
+	"generator",
+	"arc_lamps",
+	"foremen",
+	"powered_mines",
+	"factory_floor",
+	"scorcher",
+	"firebreaks",
+	"shard_dynamo",
+	"chain_orders",
+	"living_ground",
+	"skyward",
 ]
