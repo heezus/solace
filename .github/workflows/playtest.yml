@@ -13,15 +13,15 @@ permissions:
 jobs:
   newbie:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 50
     strategy:
       fail-fast: false
       matrix:
-        mode: [bronze]
+        mode: [stages]
     env:
       GODOT_VERSION: 4.7.2
       NEWBIE_OUT: ${{ github.workspace }}/newbie-out
-      NEWBIE_MODE: ${{ matrix.mode == 'default' && '' || matrix.mode }}
+      STAGE_IDS: starfall_landing,starfall_camp,starfall_market,starfall_end,ironfall,ironfall_teardown,ironfall_steam
     steps:
       - uses: actions/checkout@v4
       - name: Install Godot
@@ -41,7 +41,7 @@ jobs:
           ffmpeg -loglevel error -f x11grab -framerate 10 -video_size 1280x800 -i :99 \
             -vf scale=960:-2 -c:v libx264 -preset veryfast -crf 31 -pix_fmt yuv420p "$NEWBIE_OUT/playtest.mp4" &
           FF=$!
-          timeout 840 ./godot --rendering-driver opengl3 --audio-driver Dummy --path . -s tests/tools/newbie_pass.gd 2>&1 | tee "$NEWBIE_OUT/godot-output.txt"
+          timeout 2700 ./godot --rendering-driver opengl3 --audio-driver Dummy --path . -s tests/tools/stage_pass.gd 2>&1 | tee "$NEWBIE_OUT/godot-output.txt"
           kill -INT $FF; wait $FF || true
           ls -la "$NEWBIE_OUT"
       - uses: actions/upload-artifact@v4
