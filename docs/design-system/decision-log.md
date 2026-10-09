@@ -821,7 +821,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Noted, not changed: haulers are dealt over every Storehouse with a road-linked building, so a Storehouse on a road of its own holds haulers that can never reach the metal works. Fixing it changes the golden pacing hashes, so it waits for its own PR.
 - Numbers are bot-tuned, not human-tuned; a playthrough by the project owner should move them again.
 
-## 2026-10-09: Playtest fixes, Starfall goals and quiet loads (PR #n)
+## 2026-10-09: Playtest fixes, Starfall goals and quiet loads (PR #100)
 - Claude fixed what the first playtester run found. **Starfall now has its own Goals panel** (nine goals in any order: strangers come, Glyph Wall, first set read, Lumen Camp, Expedition Post, the crash site, Market, five sets, the Warning), in force from the moment the star falls until Ironfall begins, so the panel no longer sits on the finished Dawn list.
 - **A loaded run, or a run started at a stage, stays quiet.** The warm lines and the Bronze Dawn banner are marked as told when a run loads (`scripts/flavor.gd`), so a stage start no longer stacks four old toasts over the map.
 - "Find coal" and "Find the Iron Hills" count as done when the coal or iron is already in the stores, since a stage start has the metal in hand without the fog lifted.
