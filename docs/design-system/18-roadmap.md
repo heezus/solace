@@ -21,6 +21,7 @@ Designed in detail on [19](19-ironfall.md).
 - **Bloom:** a few growth patches show at the edge of the fog. They do nothing yet.
 
 ## Era 5: Livewire
+Designed in detail on [23](23-livewire.md).
 - **Mechanic: Standing orders.** A Kith (or a machine) can be given a short rule, "when the Kiln is below 10, bring Clay", once, in a small picker. It is the next step after "hands, taught, dispatched, automated" ([14](14-hands-to-haulers.md)), and the player's automation dream: you stop moving stock and start writing rules.
 - **Beat:** the Bloom tide starts. Patches grow slowly toward the Hearth and eat what they touch.
 - **Pressure:** the tide is the clock. Burning it back needs power, so factories now have a reason to be built.
