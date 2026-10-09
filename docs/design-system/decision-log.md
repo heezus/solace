@@ -794,7 +794,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - **Deferred: the second (west) map growth.** Growing west shifts every coordinate in every system and save; nothing in the era needs the room (rails fit in the existing land and the Bloom patches are in the south since stage 2). The default on page 19 stands for a later stage.
 - Art is placeholder only and every slot is logged in `docs/art/requests.md`. Saves stay VERSION 1 with optional fields, the frozen pre-Ironfall fixture still loads, and the golden pacing hashes and the stone age and Bronze maps are unchanged. Every number is a placeholder to tune with the pacing bot.
 
-## 2026-10-09: Ironfall stage 3 pacing (PR #n)
+## 2026-10-09: Ironfall stage 3 pacing (PR #98)
 - Claude tuned only Ironfall stage 3's costs with a new bot (`tests/autoplay_ironfall.gd`) that plays from `ironfall_steam` to the Livewire gate on any map (`pace.gd ... ironfall steam`): from 7.6 to 17.3 minutes (median 11.8) to 5.2 to 10.3 (median 7.8) on maps 1 to 8, against a target of seven to nine. The Bloom path was never the long pole (done by about 5 minutes); iron and steel throughput was.
 - Livewire is now 50 Steel and 70 Iron (was 100 and 100), Steel tech iron 60, coal 60, brick 50, Bloom Sampling iron 40, brick 50, Shard Boiler iron 45, brick 60, and the Forge costs brick 60, iron 20 and fires in 8 s (was brick 80, iron 30, 10 s). Rates of the Boiler and Steam Cart, the Bloomery and everything before stage 3 are unchanged, so the golden pacing hashes and the old fixture are untouched.
 - Bug in the `ironfall_steam` start: the Forge could stand outside the Boiler's 5 tiles and never be powered (steel stuck at 0 on map 4). It now stands beside the Boiler.
