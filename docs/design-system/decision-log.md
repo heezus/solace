@@ -807,3 +807,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 ## 2026-10-09: Lumen map height (PR #96)
 - Claude wired the approved character standard (#94): an ordinary Lumen is drawn 35 px tall on the map, level with a Kith, and Sela 38 px (`LUMEN_HEIGHT`, `LEAD_HEIGHT` in `rendered_art.gd`). Both were 24 px, which made the Lumen look like children beside the Kith.
 - Art is unchanged: the current Sela sprite is long-legged and stays until Codex paints a replacement from the approved proportion reference.
+
+## 2026-10-09: Livewire designed (PR #97)
+- Claude wrote the design page for era 5 (`23-livewire.md`), following page 18's Decided list: the one new mechanic is **Standing orders** (an Order Board with up to 9 one-line rules, verbs Pause, Bring first, later Send), and the Bloom tide is the clock.
+- **The tide is learned, not walled off.** It advances about a tile every 35 s from the three south Ironfall patches, slows on roads, stops in Arc Lamp light and Firebreaks, and is burnt back by the Scorcher, which needs power and coal. The Ironfall Bloom Lessons are what Tide Watch and the Scorcher rest on, and Living Ground (the small life-tree branch) turns burnt ground into richer Fields.
+- **Defaults for the project owner to change:** overgrown buildings are lost after 3 minutes and the Hearth's ring is safe, so Livewire cannot be lost (loss is Skyreach); the gate asks for five orders written and a Scorcher and two Arc Lamps burning in the south, besides Steel, Iron, Wire and Brick. Wire (from Copper) is the era's new good, and a Wire Mill and Power Poles carry power past the Boiler's 5 tiles.
+- Fourteen techs on a fifth tab, three stages (wires and orders, the tide, factories and the end). Nothing is built; no canon changes.
