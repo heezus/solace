@@ -65,7 +65,7 @@ static func _lift_old_roads(s, world: Dictionary) -> void:
 		return
 	for p in s.world.roads:
 		if s.world.tile_at(p) != "river":
-			s.world.set_road_tier(p, Data.ROAD_SPEEDS.size() - 1)
+			s.world.set_road_tier(p, Data.PAVED_TIER)
 
 
 ## True when `d` looks like a run save this code can read: a Dictionary with this VERSION and every section.

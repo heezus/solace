@@ -21,21 +21,21 @@ const PARTS := {
 
 ## The finite list of Lessons, in the order the Lessons list shows them. `teaches` is the short name of what it gives, `note`
 ## says it in a sentence once learned. A Lesson with `live` false is learned and kept, and does nothing yet: the thing it
-## names is built in the next stage (the Shard Lamp, the Shard Boiler, Lantern Parties).
+## names is not built. All eight are live since stage 3 (the Shard Lamp, the Shard Boiler, Lantern Parties).
 const LESSON_ORDER := ["lamp_core", "heat_plate", "hull_gear", "seed_pod", "water_glass", "spore", "root", "sap"]
 const LESSONS := {
 	"lamp_core":
 	{
 		"name": "Lamp core",
 		"teaches": "Shard Lamp",
-		"live": false,
+		"live": true,
 		"note": "A lamp post that burns one shard a long while and lights 3 tiles.",
 	},
 	"heat_plate":
 	{
 		"name": "Heat plate",
 		"teaches": "Shard Boiler",
-		"live": false,
+		"live": true,
 		"note": "A boiler that burns shards, so far less coal.",
 	},
 	"hull_gear":
@@ -77,7 +77,7 @@ const LESSONS := {
 	{
 		"name": "Sap",
 		"teaches": "Lantern Parties",
-		"live": false,
+		"live": true,
 		"note": "Expeditions that may stay out past dusk.",
 	},
 }
@@ -106,9 +106,9 @@ const CAMP_GIVE_SECONDS := 45.0  # between one handover and the next, while a Lu
 const BLOOM_KINDS := ["spore", "root", "sap"]
 const BLOOM_TILES := {"spore": "bloom_spore", "root": "bloom_root", "sap": "bloom_sap"}
 const BLOOM_GROUND := "bloom_ground"
-## Taking a sample needs the Bloom Sampling tech, which is built in the next stage. Until then this flag stands in for it: with
-## it set (as it is now) the Kith may sample without the tech. Set it false when Bloom Sampling is built, and the tech decides.
-const BLOOM_SAMPLING_PLACEHOLDER := true
+## Taking a sample needs the Bloom Sampling tech (built in stage 3). In stage 2 this flag stood in for it: with it set the Kith
+## could sample without the tech. It is false now, and the tech decides.
+const BLOOM_SAMPLING_PLACEHOLDER := false
 
 # --- What the Lessons do ---
 const GEARS_ITEM := "iron_gears"  # made by hand (Data.RECIPES), fitted by haulers, one to a workshop (Data.BONUSES)

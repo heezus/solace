@@ -37,6 +37,7 @@ const STORY_EVENTS := {
 	"lean_enemies": "The Lumen and the Kith ended as enemies",
 	"ironfall_begun": "The Starfall was over, and the Kith turned to iron",
 	"teardown_lesson": "The Kith opened a part and kept what it taught",
+	"livewire_lit": "The wires hummed, and the age of iron was done",
 }
 
 ## Techs that are story moments: tech id -> the STORY_EVENTS id the Story block records when it is researched.
@@ -45,6 +46,7 @@ const STORY_TECHS := {
 	"bronze_dawn": "bronze_dawn",
 	"sky_watch": "wanderer_named",
 	"falling_star": "star_falling",
+	"livewire": "livewire_lit",
 }
 
 ## The opening checklist. A goal with `tech` or `building` is met once that is researched or built;

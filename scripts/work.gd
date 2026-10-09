@@ -40,6 +40,7 @@ static func harvest_amount(s, b: Dictionary, tile: Vector2i, item: String) -> in
 		more += Data.CALENDAR_FIELD_BONUS if s.tech_tree.researched.has("calendar") else 0.0
 		more += Data.PLOUGH_FIELD_BONUS if s.tech_tree.researched.has("plough") else 0.0
 		more += Data.PLOUGHSHARE_FIELD_BONUS if s.tech_tree.researched.has("bronze_ploughshare") else 0.0
+		more += Data.IRON_PLOUGH_FIELD_BONUS if s.tech_tree.researched.has("iron_plough") else 0.0
 		more += Lessons.rain_share(s, tile)
 	if more > 0.0:
 		b["field_extra"] = b.get("field_extra", 0.0) + n * more

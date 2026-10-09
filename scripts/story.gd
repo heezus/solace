@@ -141,12 +141,12 @@ func goal_met(s, g: Dictionary) -> bool:
 			return s.economy.inv.get("bronze", 0) > 0
 		"first_teardown":
 			return s.teardown.lessons.size() > 0
-		"find_coal", "find_iron", "iron_mine", "first_iron":
+		"find_coal", "find_iron", "iron_mine", "first_iron", "rail_laid", "first_steel":
 			return _ironfall_goal_met(s, g["id"])
 	return false
 
 
-## The era 4 goals (Data.GOALS_ERA4) that are about the land and the metal.
+## The era 4 goals (Data.GOALS_ERA4) that are about the land, the metal and the Rail.
 func _ironfall_goal_met(s, id: String) -> bool:
 	match id:
 		"find_coal":
@@ -155,6 +155,10 @@ func _ironfall_goal_met(s, id: String) -> bool:
 			return _ore_seen(s, "iron_hills")
 		"iron_mine":
 			return s.town.buildings.any(func(b): return b["type"] == "mine" and b.get("ore", "") == "iron_ore")
+		"rail_laid":
+			return s.world.road_tiers.values().has(Data.RAIL_TIER)
+		"first_steel":
+			return s.economy.inv.get("steel", 0) > 0 or s.economy.seen.has("steel")
 	return s.economy.inv.get("iron", 0) > 0
 
 

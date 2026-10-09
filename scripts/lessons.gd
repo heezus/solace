@@ -40,10 +40,17 @@ static func bloom_centres(s) -> Array:
 	return out
 
 
-## The two Bloom overlays, drawn over the ground (scripts/kith_art.gd calls it beside the Bloom sign). Spore: a ring of
+## The overlays of the Lessons, drawn over the ground (scripts/kith_art.gd calls it beside the Bloom sign). Lamp core: the pale
+## light of each burning Shard Lamp. Then the two Bloom overlays. Spore: a ring of
 ## Data.SPORE_REACH tiles round each sign, where the Bloom would eat. Root: the roads and rocks it crosses slowest, lit. Both
 ## are plain stand-ins until Codex paints them (docs/art/requests.md).
 static func draw_overlays(ci: CanvasItem, s) -> void:
+	for b in s.town.buildings:  # a burning Shard Lamp lights the tiles round it
+		var def: Dictionary = Data.BUILDINGS[b["type"]]
+		if def["kind"] == "lamp" and b["burn"] > 0.0 and s.fog.is_revealed(b["pos"]):
+			var lamp := (Vector2(b["pos"]) + Vector2(0.5, 0.5)) * TILE
+			ci.draw_circle(lamp, (def["light"] + 0.5) * TILE, Color(0.6, 0.95, 1.0, 0.1))
+			ci.draw_circle(lamp, (def["light"] * 0.5 + 0.25) * TILE, Color(0.7, 0.97, 1.0, 0.12))
 	if s.teardown.knows("spore"):
 		for c in bloom_centres(s):
 			if s.fog.is_revealed(c):

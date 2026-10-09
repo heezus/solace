@@ -103,6 +103,8 @@ static func _tile_text(m) -> String:
 		var tier: int = s.world.road_tier(p)
 		return Data.ROAD_HINT % [road_name(s, p), t["name"], Data.PEOPLE["many"], Data.ROAD_PACE[tier]]
 	var hint := Overlays.blocked_hint(s, p)
+	if s.world.tile_at(p) == "shard" and Hands.chips_shard(s):
+		return "%s\n%s\n%s" % [t["name"], hold_hint(s, "shard"), Data.SHARD_HINT]
 	if plain:
 		return "%s\n%s" % [t["plain_name"], Data.ORE_PLAIN_HINT % Data.TECHS[t["tech"]]["name"]]
 	if t["yields"] != "":

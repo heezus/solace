@@ -86,6 +86,8 @@ func _init() -> void:
 	teardown.said.connect(_announce)
 	teardown.moment.connect(story.record)
 	town.lesson_has = teardown.knows
+	tech_tree.gift_has = starfall.gift  # a tech may wait on a gift read or a Lesson learned (Ironfall)
+	tech_tree.lesson_has = teardown.knows
 
 
 # --- Map ---------------------------------------------------------------------
@@ -129,13 +131,13 @@ func gather_by_hand(p: Vector2i) -> String:
 	if not fog.is_revealed(p):
 		return ""
 	var tile := world.tile_at(p)
-	if tile == "shard":
+	if tile == "shard" and not Hands.chips_shard(self):
 		shard_seen = true
 		shard_found.emit()
 		return Data.SHARD_TEXT
 	if tile == "":
 		return ""
-	var item: String = Data.TILES[tile]["yields"]
+	var item: String = Hands.tile_item(self, tile)
 	if item == "" or (Data.TILES[tile].has("tech") and not tech_tree.researched.has(Data.TILES[tile]["tech"])):
 		return ""  # nothing to gather, or ore before Prospecting
 	var n := world.seam_draw(p, Hands.harvest_yield(self, item))  # a coal seam gives what is left of its pile

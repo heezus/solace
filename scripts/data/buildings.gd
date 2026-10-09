@@ -8,7 +8,7 @@ extends RefCounted
 ## Lumen has no research to gate it, and the card stays off the build bar until then.
 ## A "field" with `crop` "flax" sows flax instead of grain (World.flax_fields); it yields fiber as wild flax does.
 ## A `stone` bridge bears carts and walks at the top road tier; the Wooden Bridge bears the Kith only. A road has a
-## `tier` (0 path, 1 gravel, 2 paved; Data.ROAD_SPEEDS): dragging a higher tier over a lower one upgrades it in place for
+## `tier` (0 path, 1 gravel, 2 paved, 3 rail; Data.ROAD_SPEEDS): dragging a higher tier over a lower one upgrades it in place for
 ## the difference in cost, and the Stone Bridge does the same over a Wooden Bridge.
 ## A processor with `trade` has no fixed recipe: it swaps Data.TRADE_GIVE of the good it is set to give for
 ## Data.TRADE_GET of the one it is set to get (the building's `give` and `get`); a `trade_give` of its own replaces
@@ -23,6 +23,10 @@ extends RefCounted
 ## A processor with `dig` is a mine: it stands on one of its `on_tiles` and digs `dig` of whatever that tile yields
 ## each cycle, with no input and without walking. `crew` is how many people it needs (default 1); it works only
 ## while all of them are at it.
+## A building with `fed` has no worker: haulers bring it its `in` (Data.RECIPES-style, up to `stock` of it) and it burns that on its
+## own (scripts/steam.gd): a "power" with a `fuel` burns `burn` seconds of it for each item and powers machines within `radius`
+## only while lit; a "lamp" lights `light` tiles; a "pen" eats Grain while it tames its beast. A "shed" with a `cart` ("hand" by
+## default, "steam") turns a hauler into that kind of cart (Data.CART_KINDS); a tamed Beast Pen gives a beast cart.
 ## Buildings without a worker show `status`, or `desc` if they have none.
 const BUILDINGS := {
 	"camp":
@@ -87,6 +91,21 @@ const BUILDINGS := {
 		(
 			"A road laid in dressed stone: Kith and haulers move 50% faster than on a Road."
 			+ " Drag over a Road or a Gravel Road to upgrade it in place: you pay only the difference for each tile."
+		),
+	},
+	"rail":
+	{
+		"name": "Rail",
+		"kind": "road",
+		"tier": 3,
+		"tech": "rails",
+		"story": true,
+		"cost": {"wood": 2, "iron": 1},
+		"color": Color("6b7280"),
+		"desc":
+		(
+			"Iron strips on sleepers: Kith and haulers move 8 times as fast as over open ground. Steam Carts run only on Rail."
+			+ " Drag over a road to upgrade it in place: you pay only the difference for each tile. Rail stops at the river."
 		),
 	},
 	"bridge":
@@ -176,7 +195,7 @@ const BUILDINGS := {
 		"cost": {"wood": 10, "stone": 5},
 		"in": {},
 		"out": {},
-		"makes": ["flint_tools", "bronze_tools", "iron_tools"],
+		"makes": ["flint_tools", "bronze_tools", "iron_tools", "steel_tools"],
 		"time": 6.0,
 		"color": Color("8a8d91"),
 		"desc": "Makes tools so you do not have to. Keeps a spare or two ready, then waits until more are needed.",
@@ -216,6 +235,45 @@ const BUILDINGS := {
 		"needs_river": true,
 		"color": Color("2a9d8f"),
 		"desc": "Must touch the river. Powers machines within 3 tiles.",
+	},
+	"boiler":
+	{
+		"name": "Boiler",
+		"kind": "power",
+		"tech": "boiler",
+		"story": true,
+		"cost": {"stone": 30, "brick": 50, "iron": 10},
+		"radius": 5,
+		"fed": true,
+		"in": {"coal": 1},
+		"stock": 6,
+		"burn": 20.0,
+		"color": Color("b5543a"),
+		"desc":
+		(
+			"A closed vessel over a coal fire. Powers machines within 5 tiles, with no river needed, while it burns."
+			+ " It burns 1 Coal for every 20 seconds a machine wants power, and haulers bring the coal."
+		),
+	},
+	"shard_boiler":
+	{
+		"name": "Shard Boiler",
+		"kind": "power",
+		"tech": "shard_boiler",
+		"lesson": "heat_plate",
+		"story": true,
+		"cost": {"stone": 30, "brick": 50, "iron": 20, "bronze": 10},
+		"radius": 5,
+		"fed": true,
+		"in": {"shard": 1},
+		"stock": 4,
+		"burn": 80.0,
+		"color": Color("e9c46a"),
+		"desc":
+		(
+			"A Boiler built round the Lumen heat plate. Burns 1 Shard for 80 seconds of power and no coal at all."
+			+ " Powers machines within 5 tiles."
+		),
 	},
 	"grindstone":
 	{
@@ -309,6 +367,21 @@ const BUILDINGS := {
 		"color": Color("a65f45"),
 		"desc": "A clay stack fired with coal. Melts 2 Iron Ore and 1 Coal into Iron, slowly.",
 	},
+	"forge":
+	{
+		"name": "Forge",
+		"kind": "processor",
+		"job": "Smith",
+		"tech": "blast_furnace",
+		"story": true,
+		"cost": {"stone": 40, "brick": 80, "iron": 30},
+		"in": {"iron": 2, "coal": 1},
+		"out": {"steel": 1},
+		"time": 10.0,
+		"needs_power": true,
+		"color": Color("a9bfd1"),
+		"desc": "Needs power. A steady blast turns 2 Iron and 1 Coal into Steel. Stand it within 5 tiles of a Boiler.",
+	},
 	"crucible":
 	{
 		"name": "Crucible",
@@ -333,6 +406,22 @@ const BUILDINGS := {
 		"color": Color("c9a45c"),
 		"desc": "Turns a hauler into a hand cart: one Kith, three times a hauler's load, but only on roads.",
 		"status": "A hauler pulls a hand cart for it.",
+	},
+	"steam_shed":
+	{
+		"name": "Steam Shed",
+		"kind": "shed",
+		"cart": "steam",
+		"tech": "rails",
+		"story": true,
+		"cost": {"wood": 60, "iron": 40, "brick": 30},
+		"color": Color("6f7d8c"),
+		"desc":
+		(
+			"Turns a hauler into a Steam Cart: 4 times a hauler's load (40), but only on Rail, and it burns 1 Coal for every"
+			+ " 3 trips. With no coal it hauls like a plain hauler."
+		),
+		"status": "A hauler drives a Steam Cart for it.",
 	},
 	"trading_post":
 	{
@@ -483,6 +572,43 @@ const BUILDINGS := {
 		"desc": "A glass-lined barrel from the Water glass Lesson. Fields within 3 tiles never wilt: +20% Field yield.",
 		"status": "Holding the rain.",
 	},
+	"beast_pen":
+	{
+		"name": "Beast Pen",
+		"kind": "pen",
+		"tech": "beast_pen",
+		"story": true,
+		"cost": {"wood": 60, "grain": 30, "rope": 20},
+		"fed": true,
+		"in": {"grain": 1},
+		"stock": 4,
+		"color": Color("86b6c9"),
+		"desc":
+		(
+			"The starstuff touched the beasts. Feed a shard-touched beast Grain for a minute and it is tame:"
+			+ " it pulls a beast cart, 30 a trip on roads, with no coal. Never on Rail."
+		),
+	},
+	"shard_lamp":
+	{
+		"name": "Shard Lamp",
+		"kind": "lamp",
+		"tech": "shard_lamps",
+		"lesson": "lamp_core",
+		"story": true,
+		"cost": {"iron": 6, "brick": 8, "stone": 6},
+		"fed": true,
+		"in": {"shard": 1},
+		"stock": 2,
+		"burn": 300.0,
+		"light": 3,
+		"color": Color("9fe0f0"),
+		"desc":
+		(
+			"A lamp post built round the Lumen lamp core. One Shard burns for five minutes and it lights 3 tiles."
+			+ " With the Sap Lesson, a Lantern Party may stay out past dusk while one burns."
+		),
+	},
 	"guard_post":
 	{
 		"name": "Guard Post",
@@ -500,11 +626,23 @@ const BUILDINGS := {
 ## The build bar's tabs, in order. Craft by hand has its own small group beside them.
 const BUILD_TABS := {
 	"Homes": ["dwelling"],
-	"Gathering": ["gatherers_hut", "field", "flax_field", "fishing_weir", "rain_barrel"],
-	"Workshops": ["tool_bench", "charcoal_pit", "twine_post", "kiln", "water_wheel", "grindstone"],
-	"Metal": ["mine", "coal_mine", "smelter", "crucible", "bloomery"],
+	"Gathering": ["gatherers_hut", "field", "flax_field", "fishing_weir", "rain_barrel", "beast_pen"],
+	"Workshops":
+	["tool_bench", "charcoal_pit", "twine_post", "kiln", "water_wheel", "boiler", "shard_boiler", "grindstone"],
+	"Metal": ["mine", "coal_mine", "smelter", "crucible", "bloomery", "forge"],
 	"Logistics":
-	["road", "gravel_road", "paved_road", "bridge", "stone_bridge", "storehouse", "cart_shed", "trading_post"],
+	[
+		"road",
+		"gravel_road",
+		"paved_road",
+		"rail",
+		"bridge",
+		"stone_bridge",
+		"storehouse",
+		"cart_shed",
+		"steam_shed",
+		"trading_post"
+	],
 	"Lore":
 	[
 		"standing_stone",
@@ -516,7 +654,8 @@ const BUILD_TABS := {
 		"lumen_market",
 		"shared_shrine",
 		"guard_post",
-		"teardown_bench"
+		"teardown_bench",
+		"shard_lamp"
 	],
 }
 
@@ -525,6 +664,7 @@ const BUILD_ORDER := [
 	"road",
 	"gravel_road",
 	"paved_road",
+	"rail",
 	"bridge",
 	"stone_bridge",
 	"field",
@@ -536,6 +676,8 @@ const BUILD_ORDER := [
 	"gatherers_hut",
 	"kiln",
 	"water_wheel",
+	"boiler",
+	"shard_boiler",
 	"grindstone",
 	"fishing_weir",
 	"standing_stone",
@@ -545,7 +687,9 @@ const BUILD_ORDER := [
 	"smelter",
 	"crucible",
 	"bloomery",
+	"forge",
 	"cart_shed",
+	"steam_shed",
 	"trading_post",
 	"watchtower",
 	"glyph_wall",
@@ -556,6 +700,8 @@ const BUILD_ORDER := [
 	"guard_post",
 	"teardown_bench",
 	"rain_barrel",
+	"beast_pen",
+	"shard_lamp",
 ]
 
 ## Output a building holds before it stops, when nobody hauls it away.

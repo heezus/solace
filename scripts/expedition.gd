@@ -13,6 +13,7 @@ const Data = preload("res://scripts/data.gd")
 const Kith = preload("res://scripts/kith.gd")
 const Scouting = preload("res://scripts/scouting.gd")
 const Finds = preload("res://scripts/teardown_finds.gd")
+const Steam = preload("res://scripts/steam.gd")
 
 const AUTO_SECONDS := 5.0  # how often a standing order looks for a chance to send
 
@@ -105,7 +106,7 @@ static func plan(s) -> Dictionary:
 	var secs: float = s.people.round_trip(s.world.camp_pos, to)
 	if secs < 0.0:
 		return {"ok": false, "why": Data.POST_NO_WAY, "seconds": 0.0, "late": false}
-	var late := secs > Data.DAYLIGHT_SECONDS
+	var late := secs > Steam.daylight(s)
 	if count(s) >= Data.PARTY_SIZE * _posts(s):
 		return {"ok": false, "why": Data.POST_OUT, "seconds": secs, "late": late}
 	var lack := missing(s, o["pack"])
@@ -186,7 +187,7 @@ static func _arrive(s, k: Dictionary, task: Dictionary) -> void:
 
 
 static func _finish(s, k: Dictionary, task: Dictionary) -> void:
-	var late: bool = k["timer"] > Data.DAYLIGHT_SECONDS
+	var late: bool = k["timer"] > Steam.daylight(s)
 	if late:
 		s.events.append(Data.LATE_LINE)
 	if task["target"] == "wreck":
