@@ -1,0 +1,268 @@
+[
+	{
+		"anchor": "bottom_center",
+		"id": "pack_light",
+		"path": "res://art/rendered/starfall-icons.png",
+		"region": [
+			29,
+			64,
+			267,
+			244
+		],
+		"size": [
+			24.0,
+			24.0
+		],
+		"source_size": [
+			1254,
+			1254
+		]
+	},
+	{
+		"anchor": "bottom_center",
+		"id": "pack_standard",
+		"path": "res://art/rendered/starfall-icons.png",
+		"region": [
+			332,
+			44,
+			294,
+			271
+		],
+		"size": [
+			24.0,
+			24.0
+		],
+		"source_size": [
+			1254,
+			1254
+		]
+	},
+	{
+		"anchor": "bottom_center",
+		"id": "pack_heavy",
+		"path": "res://art/rendered/starfall-icons.png",
+		"region": [
+			648,
+			29,
+			285,
+			289
+		],
+		"size": [
+			24.0,
+			24.0
+		],
+		"source_size": [
+			1254,
+			1254
+		]
+	},
+	{
+		"anchor": "bottom_center",
+		"id": "shard",
+		"path": "res://art/rendered/starfall-icons.png",
+		"region": [
+			1014,
+			62,
+			182,
+			248
+		],
+		"size": [
+			24.0,
+			24.0
+		],
+		"source_size": [
+			1254,
+			1254
+		]
+	},
+	{
+		"anchor": "bottom_center",
+		"id": "gift_shardlight",
+		"path": "res://art/rendered/starfall-icons.png",
+		"region": [
+			26,
+			349,
+			275,
+			262
+		],
+		"size": [
+			24.0,
+			24.0
+		],
+		"source_size": [
+			1254,
+			1254
+		]
+	},
+	{
+		"anchor": "bottom_center",
+		"id": "gift_lumen_healer",
+		"path": "res://art/rendered/starfall-icons.png",
+		"region": [
+			329,
+			344,
+			301,
+			280
+		],
+		"size": [
+			24.0,
+			24.0
+		],
+		"source_size": [
+			1254,
+			1254
+		]
+	},
+	{
+		"anchor": "bottom_center",
+		"id": "gift_starfruit",
+		"path": "res://art/rendered/starfall-icons.png",
+		"region": [
+			665,
+			346,
+			284,
+			265
+		],
+		"size": [
+			24.0,
+			24.0
+		],
+		"source_size": [
+			1254,
+			1254
+		]
+	},
+	{
+		"anchor": "bottom_center",
+		"id": "gift_shardwork",
+		"path": "res://art/rendered/starfall-icons.png",
+		"region": [
+			998,
+			332,
+			219,
+			292
+		],
+		"size": [
+			24.0,
+			24.0
+		],
+		"source_size": [
+			1254,
+			1254
+		]
+	},
+	{
+		"anchor": "bottom_center",
+		"id": "set_name",
+		"path": "res://art/rendered/starfall-icons.png",
+		"region": [
+			25,
+			647,
+			271,
+			269
+		],
+		"size": [
+			24.0,
+			24.0
+		],
+		"source_size": [
+			1254,
+			1254
+		]
+	},
+	{
+		"anchor": "bottom_center",
+		"id": "set_light",
+		"path": "res://art/rendered/starfall-icons.png",
+		"region": [
+			335,
+			646,
+			268,
+			270
+		],
+		"size": [
+			24.0,
+			24.0
+		],
+		"source_size": [
+			1254,
+			1254
+		]
+	},
+	{
+		"anchor": "bottom_center",
+		"id": "set_body",
+		"path": "res://art/rendered/starfall-icons.png",
+		"region": [
+			649,
+			646,
+			271,
+			270
+		],
+		"size": [
+			24.0,
+			24.0
+		],
+		"source_size": [
+			1254,
+			1254
+		]
+	},
+	{
+		"anchor": "bottom_center",
+		"id": "set_growth",
+		"path": "res://art/rendered/starfall-icons.png",
+		"region": [
+			964,
+			646,
+			267,
+			270
+		],
+		"size": [
+			24.0,
+			24.0
+		],
+		"source_size": [
+			1254,
+			1254
+		]
+	},
+	{
+		"anchor": "bottom_center",
+		"id": "set_craft",
+		"path": "res://art/rendered/starfall-icons.png",
+		"region": [
+			31,
+			943,
+			268,
+			269
+		],
+		"size": [
+			24.0,
+			24.0
+		],
+		"source_size": [
+			1254,
+			1254
+		]
+	},
+	{
+		"anchor": "bottom_center",
+		"id": "set_warning",
+		"path": "res://art/rendered/starfall-icons.png",
+		"region": [
+			337,
+			943,
+			276,
+			269
+		],
+		"size": [
+			24.0,
+			24.0
+		],
+		"source_size": [
+			1254,
+			1254
+		]
+	}
+]

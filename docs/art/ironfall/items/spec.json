@@ -1,0 +1,82 @@
+[
+  {
+    "id": "coal",
+    "index": 0,
+    "path": "res://art/rendered/ironfall-items.png",
+    "region": [
+      30,
+      85,
+      482,
+      369
+    ],
+    "size": [
+      1536,
+      1024
+    ],
+    "sha256": "97bc58caf6f4fa9aa00d95515b6df0511e1cbd1cc9a9cacd554f537426114c25"
+  },
+  {
+    "id": "iron_ore",
+    "index": 1,
+    "path": "res://art/rendered/ironfall-items.png",
+    "region": [
+      551,
+      79,
+      452,
+      376
+    ],
+    "size": [
+      1536,
+      1024
+    ],
+    "sha256": "97bc58caf6f4fa9aa00d95515b6df0511e1cbd1cc9a9cacd554f537426114c25"
+  },
+  {
+    "id": "iron",
+    "index": 2,
+    "path": "res://art/rendered/ironfall-items.png",
+    "region": [
+      1045,
+      116,
+      463,
+      337
+    ],
+    "size": [
+      1536,
+      1024
+    ],
+    "sha256": "97bc58caf6f4fa9aa00d95515b6df0511e1cbd1cc9a9cacd554f537426114c25"
+  },
+  {
+    "id": "steel",
+    "index": 3,
+    "path": "res://art/rendered/ironfall-items.png",
+    "region": [
+      32,
+      585,
+      480,
+      394
+    ],
+    "size": [
+      1536,
+      1024
+    ],
+    "sha256": "97bc58caf6f4fa9aa00d95515b6df0511e1cbd1cc9a9cacd554f537426114c25"
+  },
+  {
+    "id": "iron_tools",
+    "index": 4,
+    "path": "res://art/rendered/ironfall-items.png",
+    "region": [
+      512,
+      536,
+      512,
+      421
+    ],
+    "size": [
+      1536,
+      1024
+    ],
+    "sha256": "97bc58caf6f4fa9aa00d95515b6df0511e1cbd1cc9a9cacd554f537426114c25"
+  }
+]

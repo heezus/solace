@@ -16,6 +16,7 @@ extends RefCounted
 ## of a building's goods and of the techs can decide who is served first.
 
 const Codec = preload("res://scripts/save_codec.gd")
+const Data = preload("res://scripts/data.gd")
 
 const VERSION := 1
 const PATH := "user://run.json"
@@ -44,6 +45,7 @@ static func restore(s, d) -> bool:
 		return false
 	s.tech_tree.from_dict(d["research"])
 	s.world.from_dict(d["world"])
+	_lift_old_roads(s, d["world"])
 	s.fog.from_dict(d["fog"])
 	s.economy.from_dict(d["economy"])
 	s.town.from_dict(d["buildings"])
@@ -52,6 +54,18 @@ static func restore(s, d) -> bool:
 	_game_from_dict(s, d["game"])
 	s.pathing.build()  # the walking grid is derived: read every cell of the restored map again
 	return true
+
+
+## A save from before road tiers has no "road_tiers": its roads were all one path, made faster by the techs. Keep what
+## the town had earned: with Paved Roads (or Causeways) known, every road on land is paved.
+static func _lift_old_roads(s, world: Dictionary) -> void:
+	if world.has("road_tiers"):
+		return
+	if not (s.tech_tree.researched.has("paved_roads") or s.tech_tree.researched.has("causeways")):
+		return
+	for p in s.world.roads:
+		if s.world.tile_at(p) != "river":
+			s.world.set_road_tier(p, Data.PAVED_TIER)
 
 
 ## True when `d` looks like a run save this code can read: a Dictionary with this VERSION and every section.
@@ -90,6 +104,11 @@ static func save(s, path: String = PATH) -> bool:
 	return true
 
 
+## True when a run save file is on disk at `path` (it may still turn out unreadable: load_into says so).
+static func exists(path: String = PATH) -> bool:
+	return FileAccess.file_exists(path)
+
+
 ## Read the run save at `path` into `s`. False, with `s` untouched, when the file is missing, is not JSON
 ## or is not a run save of this version.
 static func load_into(s, path: String = PATH) -> bool:
@@ -108,12 +127,14 @@ static func _game_to_dict(s) -> Dictionary:
 		"shard_seen": s.shard_seen,
 		"hand_counts": Codec.int_dict(s.hand_counts),
 		"harvest_tile": Codec.vec(s.harvest_tile),
-		"harvest_held": s.harvest_held,
+		"harvest_held": s.harvest_ring["held"],
 		"harvest_frac": s.harvest_frac,
 		"rushes": s.rushes,
 		"ranks": Codec.int_dict(s.ranks),
 		"events": s.events.duplicate(),
 		"sky": s.sky.to_dict(),
+		"starfall": s.starfall.to_dict(),
+		"teardown": s.teardown.to_dict(),
 	}
 
 
@@ -123,9 +144,11 @@ static func _game_from_dict(s, d: Dictionary) -> void:
 	s.shard_seen = bool(d.get("shard_seen", false))
 	s.hand_counts = Codec.int_dict(d.get("hand_counts", {}))
 	s.harvest_tile = Codec.to_vec(d.get("harvest_tile", [-1, -1]))
-	s.harvest_held = float(d.get("harvest_held", 0.0))
+	s.harvest_ring["held"] = float(d.get("harvest_held", 0.0))
 	s.harvest_frac = float(d.get("harvest_frac", 0.0))
 	s.rushes = int(d.get("rushes", 0))
 	s.ranks = Codec.int_dict(d.get("ranks", {}))
 	s.events = Codec.strings(d.get("events", []))
 	s.sky.from_dict(d.get("sky", {}))
+	s.starfall.from_dict(d.get("starfall", {}))
+	s.teardown.from_dict(d.get("teardown", {}))

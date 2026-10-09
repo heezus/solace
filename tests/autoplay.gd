@@ -15,6 +15,7 @@ const Ranks = preload("res://scripts/ranks.gd")
 const Roads = preload("res://scripts/roads.gd")
 const World = preload("res://scripts/world.gd")
 const Buildings = preload("res://scripts/buildings.gd")
+const Homes = preload("res://scripts/homes.gd")
 
 const DT := 0.1
 const THINK := 1.0  # seconds between decisions
@@ -36,6 +37,7 @@ const RAW_TILE := {
 }
 ## A hut is paused while everything it gathers is past this and not needed.
 const HUT_SURPLUS := 150
+const HUT_WAIT := 60.0  # seconds a food hut may stand unstaffed, with every Kith in a workshop, before one lets go
 ## Road tiles laid toward an unlinked building per decision.
 const LANE_ARM := 10  # how far the kept-open arms run out from the Hearth
 const HAULER_PER := 3.0  # buildings per hauler the bot keeps free
@@ -57,6 +59,7 @@ const MADE_ORDER := ["bronze", "copper", "flour", "brick", "charcoal", "rope"]
 
 var s: Sim
 var clock := 0.0
+var hut_unstaffed_since := -1.0  # game seconds the food huts have stood without a worker, -1 if they have one
 var clicks := 0.0
 var think := 0.0
 var lines: Array = []
@@ -80,6 +83,8 @@ func play(map_seed: int, max_seconds: float) -> Dictionary:
 ## Play `game` from here on: step() then advances it (tests/tools/play_pass.gd runs it under the live UI).
 func attach(game: Sim) -> void:
 	s = game
+	for id in Data.ITEM_ORDER:  # the bot knows the whole tree, so every tech shows from the start (see Research.tech_visible)
+		s.economy.seen[id] = true
 	s.tech_tree.set_goal(goal_tech)
 
 
@@ -164,7 +169,8 @@ func _short() -> Dictionary:
 	if _house_wanted():
 		_want(want, Data.BUILDINGS["dwelling"]["cost"], 1)
 	for type in _workshops_due():
-		_want(want, Data.BUILDINGS[type]["cost"], 1)
+		_want(want, s.town.price(type), 1)
+	_home_wants(want)
 	_goal_wants(want)
 	var tools: int = _workers() + 1 - Hands.tools_held(s) - s.economy.inv.get("flint_tools", 0)
 	if Hands.recipe_unlocked(s, "flint_tools") and tools > 0:
@@ -181,6 +187,45 @@ func _short() -> Dictionary:
 	if s.economy.food_total() < s.people.kith.size() * 4.0:
 		short["berries"] = short.get("berries", 0) + 10
 	return short
+
+
+## What the homes ask of the settlement (design-system/17-needs-and-upgrades.md), so the bot keeps it coming: the materials
+## of the next upgrade (for the lowest home that can still grow), a round of goods for every home above the first tier,
+## and flour stocked as the second food kind once any home needs two. Fish and the Longhouse's third food are left alone: a
+## Longhouse has nowhere higher to go, so its needs gate nothing the bot wants.
+func _home_wants(want: Dictionary) -> void:
+	var low := -1
+	var goods_homes := 0
+	for b in s.town.buildings:
+		if not Homes.is_home(b):
+			continue
+		var tier := Homes.tier_of(b)
+		if tier < Data.HOME_TIERS.size() - 1 and Homes.cap_allows(s, tier + 1) and (low < 0 or tier < low):
+			low = tier
+		if tier >= 1:
+			goods_homes += 1
+			_want(want, Data.HOME_TIERS[tier]["goods"], mini(goods_homes, 3) * Data.HOME_GOOD_ROUNDS)
+	if low >= 0 and s.tech_tree.researched.has("haulers"):
+		_want(want, Data.HOME_TIERS[low]["up"], 1)
+	if goods_homes > 0:
+		want["flour"] = maxi(want.get("flour", 0), Data.HOME_FOOD_STOCK + 2)
+
+
+## A Longhouse is content only with a third food, Fish: once a home has grown past the first tier the bot learns Nets and keeps
+## a Fishing Weir on the river bank for every few of them.
+func _fish() -> bool:
+	var grown := 0
+	for b in s.town.buildings:
+		if Homes.is_home(b) and Homes.tier_of(b) >= 1:
+			grown += 1
+	if grown == 0:
+		return false
+	if not s.town.unlocked("fishing_weir"):
+		return s.tech_tree.can_research("nets") and s.research("nets")
+	if _count("fishing_weir") >= mini(1 + int(grown / 4.0), 3):
+		return false
+	var near := func(p): return -Vector2(p).distance_to(Vector2(s.world.camp_pos)) if s.world.touches_river(p) else -INF
+	return _place_best("fishing_weir", near)
 
 
 ## More goods the bot wants than the techs and buildings above say (a later era's bot adds its own).
@@ -394,6 +439,14 @@ func _no_food_hut() -> bool:
 	return _huts_for("berries") < 1.0
 
 
+## Some Berries hut has its worker.
+func _food_hut_staffed() -> bool:
+	for b in s.town.buildings:
+		if b["type"] == "gatherers_hut" and b["focus"] == "berries" and Buildings.is_staffed(b):
+			return true
+	return false
+
+
 ## Huts set to gather `item` (a hut works one resource).
 func _huts_for(item: String) -> float:
 	var n := 0.0
@@ -419,6 +472,8 @@ func _decide() -> void:
 		if s.research("shelter"):
 			return  # no room left by the Hearth: Thatched Roofs make each Dwelling house more
 	if s.town.unlocked("storehouse") and _place_storehouse():
+		return
+	if _fish():
 		return
 	if _explore(short):
 		return
@@ -583,6 +638,14 @@ func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
 		for id in house:
 			if s.economy.inv.get(id, 0) < house[id]:
 				saving[id] = true
+	# Births need food coming in, and a hut nobody staffs feeds no one: a start that gave its few Kith to
+	# workshops first lets one workshop go until the first food hut has its hand.
+	var no_hand := _huts_for("berries") >= 1.0 and not _food_hut_staffed() and _workers() >= s.people.kith.size()
+	if not no_hand:
+		hut_unstaffed_since = -1.0
+	elif hut_unstaffed_since < 0.0:
+		hut_unstaffed_since = clock
+	var needs_hand := no_hand and clock - hut_unstaffed_since > HUT_WAIT  # a Kith walking to the hut doesn't count
 	for i in s.town.buildings.size():
 		var b: Dictionary = s.town.buildings[i]
 		var def: Dictionary = Data.BUILDINGS[b["type"]]
@@ -590,6 +653,8 @@ func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
 			# A hut whose goods pile up unneeded only keeps the haulers busy: its Kith can carry instead.
 			var id: String = b["focus"]
 			var idle: bool = s.economy.inv.get(id, 0) >= HUT_SURPLUS and not short.has(id)
+			if Data.FOOD_VALUE.has(id) and s.people.kith.size() < s.town.housing():
+				idle = false  # births need food the huts bring in, so a food hut keeps working while there is room
 			if idle != b["paused"]:
 				s.set_paused(i, idle)
 			continue
@@ -599,6 +664,9 @@ func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
 		var surplus: bool = s.economy.inv.get(made, 0) >= later.get(made, 0) + 10 and not short.has(made)
 		for id in def["in"]:
 			surplus = surplus or saving.has(id)
+		if needs_hand and Buildings.is_staffed(b):
+			surplus = true
+			needs_hand = false  # one workshop is enough to free a Kith
 		if surplus != b["paused"]:
 			s.set_paused(i, surplus)
 
@@ -632,7 +700,7 @@ func _water_wheel() -> bool:
 ## A Water Wheel on the bank with room for workshops around it, near the Hearth; explore toward
 ## the nearest bank if none is in sight.
 func _place_wheel() -> bool:
-	if not s.economy.can_afford(Data.BUILDINGS["water_wheel"]["cost"]):
+	if not s.economy.can_afford(s.town.price("water_wheel")):
 		return false
 	var radius: float = Data.BUILDINGS["water_wheel"]["radius"]
 	var room_around := func(p):
@@ -652,19 +720,49 @@ func _place_wheel() -> bool:
 	if _place_best("water_wheel", room_around):
 		return true
 	var bank := _nearest_bank()
-	return bank.x >= 0 and _explore_to(bank)
+	if bank.x >= 0 and _explore_to(bank):
+		return true
+	# No bank tile with room round it and nothing to explore: any free bank tile will do (a Grindstone then
+	# tears down a road beside it), else tear down a bank road. A second wheel takes this road too, when the first one's
+	# reach has no site left for a workshop (a wheel in a corner of the bank, on a map where the roads came later).
+	return _place_near_hearth("water_wheel") or _tear_down_for("water_wheel", s.world.touches_river)
+
+
+## The last resort, when the bank has no free site and nothing left to explore toward (the bot's own roads
+## took it): tear down the road on the tile that `suits` `type` with the most open ground round it, and
+## build there. Hearth lanes stay. True if it went up.
+func _tear_down_for(type: String, suits: Callable) -> bool:
+	var best := Vector2i(-1, -1)
+	var best_open := -1
+	for p in reach:
+		if not s.world.roads.has(p) or _lane(p) or s.world.tile_at(p) != "grass" or not suits.call(p):
+			continue
+		var open := 0
+		for dy in range(-3, 4):
+			for dx in range(-3, 4):
+				var q: Vector2i = p + Vector2i(dx, dy)
+				if s.world.tile_at(q) == "grass" and not s.town.building_at.has(q):
+					open += 1
+		if open > best_open:
+			best = p
+			best_open = open
+	if best.x < 0:
+		return false
+	s.demolish(best)
+	lines.append("%5.0f s    - Road at %s, for the %s" % [clock, best, Data.BUILDINGS[type]["name"]])
+	return s.place(type, best)
 
 
 func _place_workshop(type: String) -> bool:
 	if Data.BUILDINGS[type].get("needs_power", false):
 		if _count("water_wheel") == 0:
 			return false
-		if not s.economy.can_afford(Data.BUILDINGS[type]["cost"]):
+		if not s.economy.can_afford(s.town.price(type)):
 			return false
 		var placed := _place_best(
 			type, func(p): return -Vector2(p).distance_to(Vector2(s.world.camp_pos)) if s.town.is_powered(p) else -INF
 		)
-		return placed or (_count("water_wheel") < 3 and _place_wheel())
+		return placed or (_count("water_wheel") < 3 and _place_wheel()) or _tear_down_for(type, s.town.is_powered)
 	return _place_near_hearth(type)
 
 
@@ -698,7 +796,7 @@ func _flood_reach() -> void:
 ## Place `type` on the revealed tile with the best score (skipping -INF), if it can be afforded.
 ## Buildings go only where the Kith can walk; roads may push out from there.
 func _place_best(type: String, score: Callable, focus := "") -> bool:
-	if not s.town.unlocked(type) or not s.economy.can_afford(Data.BUILDINGS[type]["cost"]):
+	if not s.town.unlocked(type) or not s.economy.can_afford(s.town.price(type)):
 		return false
 	var best := Vector2i(-1, -1)
 	var best_score := -INF
@@ -728,13 +826,13 @@ func _spare(item: String) -> int:
 	if not s.tech_tree.queue.is_empty():
 		keep += int(Data.TECHS[s.tech_tree.queue[0]]["cost"].get(item, 0))
 	for type in _workshops_due():
-		keep += int(Data.BUILDINGS[type]["cost"].get(item, 0))
+		keep += int(s.town.price(type).get(item, 0))
 	return s.economy.inv.get(item, 0) - keep
 
 
 ## True if a road on `p` fits in what we can spare.
 func _road_affordable(p: Vector2i) -> bool:
-	var cost: Dictionary = Rules.cost_at("road", s.world.tile_at(p), s.tech_tree.researched.has("causeways"))
+	var cost: Dictionary = Rules.cost_at("road", s.world.tile_at(p))
 	for id in cost:
 		if cost[id] > _spare(id):
 			return false
@@ -745,7 +843,7 @@ func _road_affordable(p: Vector2i) -> bool:
 ## nearest road network that reaches a depot (or to a depot), a few tiles a decision. True if any went down.
 func _link_roads() -> bool:
 	for b in s.town.buildings:
-		if not Buildings.needs_worker(b) or b["paused"] or Roads.linked(s, b):
+		if not Buildings.served(b) or b["paused"] or Roads.linked(s, b):
 			continue
 		var path := _road_path(b["pos"])
 		var laid := 0

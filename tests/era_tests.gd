@@ -102,7 +102,7 @@ func mine_of(s: Sim) -> Dictionary:
 
 func test_era_two_tree_is_defined() -> void:
 	var mine := Rules.era_techs(2)
-	t.check(Data.ERAS.size() == 2 and mine.size() == 16, "the second era has 16 techs (%d)" % mine.size())
+	t.check(Data.ERAS.has(2) and mine.size() == 16, "the second era has 16 techs (%d)" % mine.size())
 	t.check(Data.ERA_TIER_NAMES.has(1) and Data.ERA_TIER_NAMES.has(2), "every era has its column captions")
 	for tech in PARENTS:
 		t.check(Data.TECHS.has(tech) and tech in mine, tech + " is an era-2 tech")
@@ -555,6 +555,8 @@ func test_a_grown_game_saves_and_loads() -> void:
 
 func test_the_tech_panel_has_a_tab_per_era() -> void:
 	var s: Sim = t.fresh()
+	for id in Data.ITEM_ORDER:  # everything has been found, so the board shows whole
+		s.economy.seen[id] = true
 	var panel := TechPanel.new()
 	panel.setup(s)
 	panel.visible = true
@@ -568,7 +570,7 @@ func test_the_tech_panel_has_a_tab_per_era() -> void:
 	t.check(panel.board.era == 1 and panel.title.text == Data.BOARD_TITLE % "Stone Age", "the board is the stone age's")
 	panel._pick_era(2)
 	t.check(panel.board.era == 1, "a locked tab does nothing")
-	t.check(panel.counter.text.contains("of 28"), "the counter counts the era's techs (%s)" % panel.counter.text)
+	t.check(panel.counter.text.contains("of 27"), "the counter counts the era's techs (%s)" % panel.counter.text)
 	s.tech_tree.researched["bronze_dawn"] = true
 	panel.refresh()
 	t.check(not panel.era_buttons[2].disabled, "Bronze Dawn opens the second tab")

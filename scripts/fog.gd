@@ -26,6 +26,12 @@ func widen(w: int) -> void:
 	width = w
 
 
+## Make the map `h` rows tall (the land grew south): what has been seen stays seen, and the new rows are fogged.
+func lengthen(h: int) -> void:
+	cells.resize(width * h)  # the new cells are zero, and the old rows keep their place
+	height = h
+
+
 func is_revealed(p: Vector2i) -> bool:
 	return p.x >= 0 and p.y >= 0 and p.x < width and p.y < height and cells[p.y * width + p.x] == 1
 

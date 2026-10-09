@@ -10,13 +10,16 @@ extends RefCounted
 ## The networks are cached in s.town.road_net and rebuilt when s.town.road_rev changes (place and demolish bump
 ## it): {"rev", "depots", "posts", "net": road tile -> network id, "depot_nets": depot pos -> [ids] (each depot's
 ## own doorstep id first), "link": building pos -> [network id, depot pos], "grid": an AStarGrid2D where
-## only road tiles are open, "cart_grid": the same without the Wooden Bridges: a cart will not cross one}.
+## only road tiles are open, "cart_grid": the same without the Wooden Bridges: a cart will not cross one, and (made when first
+## asked for) "beast_grid": the cart grid without Rail, "rail_grid": Rail only (no bridge, no building's cell)}.
 
 const Data = preload("res://scripts/data.gd")
 const Kith = preload("res://scripts/kith.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 
 const SIDES := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+## The kinds of building a road can run through (see _passage).
+const PASSAGE_KINDS := ["gatherer", "processor", "house", "shed", "tower", "power"]
 
 
 ## True once a road links building b to a depot.
@@ -76,6 +79,19 @@ static func _find_depots(s) -> Array:
 	return out
 
 
+## How Kith k moves along the roads: "walk" (any road), "cart" (a hand cart: any road but a Wooden Bridge), "beast" (the same, and
+## never over Rail) or "rail" (a Steam Cart with steam up: Rail only). A Steam Cart without steam (`hot`) walks like a hauler.
+static func ride(k: Dictionary) -> String:
+	if not k.get("cart", false):
+		return "walk"
+	match String(k.get("cart_kind", "hand")):
+		"steam":
+			return "rail" if k.get("hot", false) else "walk"
+		"beast":
+			return "beast"
+	return "cart"
+
+
 ## Walk Kith k to `to` along roads only (its own tile and `to` may be off the road: a depot or a
 ## building beside it). Returns false if the roads don't join them.
 static func walk(s, k: Dictionary, to: Vector2i) -> bool:
@@ -83,7 +99,7 @@ static func walk(s, k: Dictionary, to: Vector2i) -> bool:
 	if from == to:
 		k["path"] = []
 		return true
-	var path := _route(s, from, to, bool(k.get("cart", false)))
+	var path := _route(s, from, to, ride(k))
 	if path.is_empty():
 		return false
 	path.remove_at(0)
@@ -93,13 +109,18 @@ static func walk(s, k: Dictionary, to: Vector2i) -> bool:
 
 ## True when a cart can roll from `from` to `to` along the roads (a Wooden Bridge in the way stops it).
 static func cart_can_reach(s, from: Vector2i, to: Vector2i) -> bool:
-	return from == to or not _route(s, from, to, true).is_empty()
+	return from == to or not _route(s, from, to, "cart").is_empty()
+
+
+## True when Kith k, the way it rides now (see ride), can roll from `from` to `to`.
+static func can_reach(s, k: Dictionary, from: Vector2i, to: Vector2i) -> bool:
+	return from == to or not _route(s, from, to, ride(k)).is_empty()
 
 
 ## The road tiles from `from` to `to`, both ends included ([] when the roads don't join them). The two ends may be
-## off the road.
-static func _route(s, from: Vector2i, to: Vector2i, cart: bool) -> Array:
-	var grid: AStarGrid2D = _cache(s)["cart_grid" if cart else "grid"]
+## off the road. `how` is a ride (see ride).
+static func _route(s, from: Vector2i, to: Vector2i, how: String) -> Array:
+	var grid: AStarGrid2D = _grid(s, how)
 	var ends := [from, to]
 	var was: Array = ends.map(func(p): return grid.is_point_solid(p))
 	for p in ends:
@@ -139,10 +160,18 @@ static func _net_has_depot(c: Dictionary, id: int) -> bool:
 	return false
 
 
+## The grid for a way of riding. Rail and beast grids are made the first time they are asked for after the roads change.
+static func _grid(s, how: String) -> AStarGrid2D:
+	var c := _cache(s)
+	var key := "grid" if how == "walk" else how + "_grid"
+	if not c.has(key):
+		c[key] = _road_grid(s, how)
+	return c[key]
+
+
 static func _cache(s) -> Dictionary:
 	var c: Dictionary = s.town.road_net
-	var fast: Array = [s.tech_tree.researched.has("paved_roads"), s.tech_tree.researched.has("causeways")]
-	if c.get("rev", -1) == s.town.road_rev and c.get("fast", []) == fast:
+	if c.get("rev", -1) == s.town.road_rev:
 		return c
 	c = _build(s)
 	s.town.road_net = c
@@ -151,18 +180,23 @@ static func _cache(s) -> Dictionary:
 
 static func _build(s) -> Dictionary:
 	var net := {}
+	var through := {}  # building cells a road runs through, visited once per network
 	var next_id := 0
 	for start in s.world.roads:
 		if net.has(start):
 			continue
 		var todo: Array = [start]
 		net[start] = next_id
+		through.clear()
 		while not todo.is_empty():
 			var p: Vector2i = todo.pop_back()
 			for n in SIDES:
 				var q: Vector2i = p + n
 				if s.world.roads.has(q) and not net.has(q):
 					net[q] = next_id
+					todo.append(q)
+				elif _passage(s, q) and not through.has(q):
+					through[q] = true  # a building's courtyard: the roads on its other sides are the same network
 					todo.append(q)
 		next_id += 1
 	var at_depot := {}
@@ -175,7 +209,7 @@ static func _build(s) -> Dictionary:
 		at_depot[depot] = ids
 	var link := {}
 	for b in s.town.buildings:
-		if not Buildings.needs_worker(b):
+		if not Buildings.served(b):
 			continue
 		var best: Array = []
 		var best_d := INF
@@ -195,8 +229,8 @@ static func _build(s) -> Dictionary:
 						best_d = d
 		if not best.is_empty():
 			link[b["pos"]] = best
-	var grid := _road_grid(s, false)
-	var cart_grid := _road_grid(s, true)
+	var grid := _road_grid(s, "walk")
+	var cart_grid := _road_grid(s, "cart")
 	var waiting_posts: Array = []
 	for depot in all_depots:
 		for b in link:
@@ -207,7 +241,6 @@ static func _build(s) -> Dictionary:
 		"rev": s.town.road_rev,
 		"depots": all_depots,
 		"posts": waiting_posts,
-		"fast": [s.tech_tree.researched.has("paved_roads"), s.tech_tree.researched.has("causeways")],
 		"net": net,
 		"depot_nets": at_depot,
 		"link": link,
@@ -216,8 +249,9 @@ static func _build(s) -> Dictionary:
 	}
 
 
-## An AStarGrid2D where only the road tiles are open (not the Wooden Bridges, for a cart).
-static func _road_grid(s, cart: bool) -> AStarGrid2D:
+## An AStarGrid2D where only the road tiles are open. A cart does not cross a Wooden Bridge, a beast cart keeps off Rail and a Steam
+## Cart runs on Rail alone (and not through a building's cell).
+static func _road_grid(s, how: String) -> AStarGrid2D:
 	var grid := AStarGrid2D.new()
 	grid.region = Rect2i(0, 0, s.world.width, s.world.height)
 	grid.cell_size = Vector2.ONE
@@ -225,8 +259,25 @@ static func _road_grid(s, cart: bool) -> AStarGrid2D:
 	grid.update()
 	grid.fill_solid_region(grid.region, true)
 	for p in s.world.roads:
-		if cart and s.world.is_wooden_bridge(p):
+		var rail: bool = s.world.road_tier(p) == Data.RAIL_TIER
+		if (how != "walk" and s.world.is_wooden_bridge(p)) or (how == "beast" and rail) or (how == "rail" and not rail):
 			continue
 		grid.set_point_solid(p, false)
 		grid.set_point_weight_scale(p, s.pathing.walk_cost(p))
+	if how == "rail":
+		return grid
+	for p in s.town.building_at:  # a road runs through a building's cell, slower than on the open road
+		if _passage(s, p):
+			grid.set_point_solid(p, false)
+			grid.set_point_weight_scale(p, s.pathing.walk_cost(p) * Data.PASSAGE_COST)
 	return grid
+
+
+## True for a building's cell a road can run through: a hut, workshop, house, shed, tower or water wheel. A road ends at
+## the Hearth and Storehouses (depots), fields, monuments and bridges. Walking through one costs Data.PASSAGE_COST times
+## the open road.
+static func _passage(s, p: Vector2i) -> bool:
+	if not s.town.building_at.has(p):
+		return false
+	var b: Dictionary = s.town.buildings[s.town.building_at[p]]
+	return Data.BUILDINGS[b["type"]]["kind"] in PASSAGE_KINDS

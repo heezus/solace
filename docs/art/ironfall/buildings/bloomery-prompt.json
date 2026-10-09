@@ -1,0 +1,6 @@
+{
+  "prompt": "Solace ONE standalone 1x1 map building, transparent PNG, no text. Match existing industry miniature reference for chunky sculpted timber, rope lashings, warm thatch and matte rounded stone; elevated top-down three-quarter camera from front, soft upper-left light. One compact self-contained readable silhouette at46px inside48px tile. Tight contact shadow and sparse soil/moss at feet, not a square base, no landscape, no other buildings or people. Fully within frame with generous transparent margins. A squat hand-built clay bloomery stack, a thick tapered terracotta shaft with a dark top aperture and small fire mouth glowing warm amber-orange near the base, one modest pile of rough dark grey iron blooms at its foot, a small side leather bellows. Clay masonry and simple thick timber supports, no complete thatched building hiding the clay stack. Small wispy grey smoke only directly above chimney inside frame, keep it quiet; no huge opaque plume. Not a blast furnace, no shiny orange poured-metal gutter.",
+  "source": "exec-88fd93cb-e95b-4bd7-9ec3-ad2c4ccd706a.png",
+  "reference": "industry.png",
+  "mode": "built-in imagegen"
+}

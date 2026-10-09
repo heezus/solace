@@ -1,0 +1,40 @@
+[
+	{
+		"anchor": "bottom_center",
+		"id": "lumen_lead",
+		"path": "res://art/sprites/lumen_lead.png",
+		"region": [
+			277,
+			92,
+			524,
+			1333
+		],
+		"size": [
+			24.0,
+			24.0
+		],
+		"source_size": [
+			1078,
+			1459
+		]
+	},
+	{
+		"anchor": "bottom_center",
+		"id": "existing_kith",
+		"path": "res://art/rendered/walk.png",
+		"region": [
+			119,
+			362,
+			173,
+			358
+		],
+		"size": [
+			24.0,
+			24.0
+		],
+		"source_size": [
+			1448,
+			1086
+		]
+	}
+]

@@ -10,7 +10,9 @@ const Kith = preload("res://scripts/kith.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Work = preload("res://scripts/work.gd")
+const Hands = preload("res://scripts/hands.gd")
 const GrowthNote = preload("res://scripts/growth_note.gd")
+const Steam = preload("res://scripts/steam.gd")
 
 
 ## One step of a worker's day at their building.
@@ -116,7 +118,7 @@ static func next_gather_tile(s, k: Dictionary, b: Dictionary) -> Vector2i:
 
 ## A click on building i. Before Paths & Haulers a hut sends out a trip and a workshop is loaded and
 ## emptied by hand; a working building is also rushed. Returns a short note for the map, or "".
-static func click(s, i: int) -> String:
+static func click(s, i: int, full := false) -> String:
 	var b: Dictionary = s.town.buildings[i]
 	var kind: String = Data.BUILDINGS[b["type"]]["kind"]
 	if not Buildings.needs_worker(b):
@@ -125,7 +127,7 @@ static func click(s, i: int) -> String:
 		var held: int = Buildings.buffered(b["out"])
 		s.town.haul(i)
 		if kind == "gatherer":
-			var note := dispatch(s, i)
+			var note := dispatch(s, i, full)
 			return note if held == 0 else "+%d · %s" % [held, note]
 	if rush(s, i):
 		return "Rushed!"
@@ -134,22 +136,23 @@ static func click(s, i: int) -> String:
 	return ""
 
 
-## Queue one trip at hut i (up to Data.TRIP_QUEUE). Returns what happened, for the map.
-static func dispatch(s, i: int) -> String:
+## Queue one trip at hut i (up to Data.TRIP_QUEUE). With `full`, a hut with nothing waiting gets all of them, so one
+## click from the player sends the Kith out for a whole round. Returns what happened, for the map.
+static func dispatch(s, i: int, full := false) -> String:
 	var b: Dictionary = s.town.buildings[i]
 	if not s.people.knows_focus(b):
-		return "Nothing learned yet: %s" % teach_note(b)
+		return "Nothing learned yet: %s" % teach_note(s, b)
 	if b["trips"] >= Data.TRIP_QUEUE:
 		return "Trips full (%d)" % Data.TRIP_QUEUE
-	b["trips"] += 1
-	return "Trip %d/%d" % [b["trips"], Data.TRIP_QUEUE]
+	b["trips"] = Data.TRIP_QUEUE if full and b["trips"] == 0 else b["trips"] + 1
+	return "Trip%s %d/%d" % ["s" if full and b["trips"] == Data.TRIP_QUEUE else "", b["trips"], Data.TRIP_QUEUE]
 
 
 ## What a hut needs before it can work: its focus taught by hand, or something in reach to focus on.
-static func teach_note(b: Dictionary) -> String:
+static func teach_note(s, b: Dictionary) -> String:
 	if b["focus"] == "":
 		return "nothing in reach to gather"
-	return "gather %s by hand %dx to teach it" % [Data.ITEMS[b["focus"]]["name"], Data.LEARN_CLICKS]
+	return "gather %s by hand %dx to teach it" % [Data.ITEMS[b["focus"]]["name"], Hands.learn_needed(s)]
 
 
 ## True while building b is partway through a cycle that a rush can finish.
@@ -200,8 +203,15 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
 	b["alert"] = ""
 	if not Buildings.needs_worker(b):
-		b["status"] = def.get("status", def["desc"])
+		if def.get("fed", false):
+			Steam.tick_fed(s, b, delta)  # a Boiler, a Lamp or a Pen has no worker: it burns what haulers bring it
+			if b["alert"] != "":
+				b["status"] += road_note(s, b)  # hungry and unlinked: haulers cannot bring it anything
+		else:
+			b["status"] = Steam.shed_status(s, def)
 		return
+	if def.has("makes"):
+		Work.choose_tool(s, b)
 	if b["paused"]:
 		s.town.set_status(b, "Paused: its %s is free for other jobs" % s.people.building_job(b), "Paused")
 		return
@@ -217,10 +227,16 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 		s.town.set_status(b, "Cut off by water: build a Wooden Bridge (Paths & Haulers)", "Cut off: needs a bridge")
 		return
 	if def.get("needs_power", false) and not s.town.is_powered(b["pos"]):
-		s.town.set_status(b, "No power: build a Water Wheel nearby", "No power")
+		var how: String = (
+			Data.NO_POWER_STATUS if s.tech_tree.researched.has("boiler") else "No power: build a Water Wheel nearby"
+		)
+		s.town.set_status(b, how, "No power")
 		return
 	if not s.people.worker_home(b):
 		b["status"] = "%s walking here" % s.people.title_of(s.people.kith[b["worker"]])
+		return
+	if Work.enough(s, b):
+		b["status"] = Work.bench_text(s, b)
 		return
 	if not s.town.wants_to_work(b):
 		idle_reason(s, b, def)
@@ -240,7 +256,7 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 				b["status"] = Data.FORAGE_STATUS
 			"home":
 				if not s.people.knows_focus(b):
-					b["status"] = "Can't work it yet: " + teach_note(b)
+					b["status"] = "Can't work it yet: " + teach_note(s, b)
 				elif not Roads.automated(s, b) and b["trips"] <= 0:
 					b["status"] = "Waiting: click to send a trip" + road_note(s, b)
 				else:
@@ -269,6 +285,9 @@ static func idle_reason(s, b: Dictionary, def: Dictionary) -> void:
 		return
 	if def.get("trade", false) and not Buildings.is_trading(b):
 		s.town.set_status(b, Data.TRADE_UNSET, Data.TRADE_UNSET_ALERT)
+		return
+	if def.has("dig") and s.world.seam_spent(b["pos"]):
+		s.town.set_status(b, Data.SEAM_SPENT_STATUS, Data.SEAM_SPENT_ALERT)
 		return
 	var missing: Array = []
 	var recipe := Buildings.recipe_in(b)

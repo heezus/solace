@@ -255,7 +255,7 @@ func _build(type: String, near: String) -> void:
 	if not s.town.unlocked(type):
 		_research(Data.BUILDINGS[type]["tech"])
 		return
-	var cost: Dictionary = Data.BUILDINGS[type]["cost"]
+	var cost: Dictionary = s.town.price(type)
 	if not s.economy.can_afford(cost):
 		_gather_for(cost)
 		return

@@ -1,0 +1,29 @@
+{
+  "bronze_dawn_1": {
+    "source": "exec-44b31432-8e5b-44a2-9571-b57accff45ba.png",
+    "sha256": "b78fed3f31bf616df7b327c32ef807f57b9575bc401daab8d2063ca29efa11cf",
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  },
+  "bronze_dawn_2": {
+    "source": "exec-725c280d-a308-4dd7-87c6-8c3056bbeced.png",
+    "sha256": "ef1e8cfddd7a6578f15d4a0a6a615ac5326da78e52c88a51c1f644d7f731e977",
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  },
+  "bronze_dawn_3": {
+    "source": "exec-3958c0cd-c3d6-414b-b1b8-b6c85986f705.png",
+    "sha256": "6af880e363d3934ef1769ec8719b701dab38c0ed70c12fbd1728c6b93dc02afe",
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  }
+}

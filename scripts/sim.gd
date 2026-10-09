@@ -1,15 +1,13 @@
 extends RefCounted
-## Sim: the whole simulation, with no rendering, so it runs headless in tests. It is a thin owner. It holds
-## one of each block (`fog`, `world`, `pathing`, `economy`, `tech_tree`, `town`, `people`, `story`, `sky`) and
-## nothing else about them: callers reach a block through its name (`sim.economy.inv`, `sim.world.tile_at(p)`).
-## What stays here is what no single block can do: the commands that touch several blocks at once (`place`,
-## `demolish`, `research`, `gather_by_hand`...), the few flags of the run itself, and the tick order:
-##   1. Land.grow_if_due (the tick after Bronze Dawn, the map doubles east), economy.advance, then tech_tree.tick
+## Sim: the whole simulation, with no rendering, so it runs headless in tests. It is a thin owner. It holds one of each
+## block (`fog`, `world`, `pathing`, `economy`, `tech_tree`, `town`, `people`, `story`, `sky`, `starfall`) and nothing else
+## about them: callers reach a block through its name (`sim.economy.inv`, `sim.world.tile_at(p)`). What stays here is what
+## no single block can do: the commands that touch several blocks at once (`place`, `demolish`, `research`,
+## `gather_by_hand`...), the few flags of the run itself, and the tick order:
+##   1. Land.grow_if_due (the tick after Bronze Dawn the map grows east, in Ironfall south), economy.advance, tech_tree.tick
 ##   2. people.assign_jobs, economy.feed and people.grow, then story.update and sky.tick
-##   3. every Kith takes a step (Forage in a famine, else Workers, Haulers or a plain walk), and what they see is revealed
-##   4. every building takes its turn (Workers.tick_building), then the "Needs road" alert
-## The work cycle is in Work, Bonuses, Hands, Roads, Workers and Haulers: static modules that take the Sim.
-## Blocks never call each other to report: they emit signals, and _init connects them.
+##   3. every Kith takes a step (Forage, Workers, Haulers or a walk) and reveals what it sees; then each building's turn
+## The work cycle is in Work, Bonuses, Hands, Roads, Workers, Haulers (static, take the Sim). Blocks only emit signals.
 
 ## The Strange Stone was clicked (it reveals the hidden techs). Story listens.
 signal shard_found
@@ -27,9 +25,15 @@ const Research = preload("res://scripts/research.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Workers = preload("res://scripts/workers.gd")
 const Roads = preload("res://scripts/roads.gd")
+const Scouting = preload("res://scripts/scouting.gd")
+const Expedition = preload("res://scripts/expedition.gd")
 const Forage = preload("res://scripts/forage.gd")
 const Land = preload("res://scripts/land.gd")
+const Homes = preload("res://scripts/homes.gd")
 const SkyBlock = preload("res://scripts/sky.gd")
+const StarfallBlock = preload("res://scripts/starfall.gd")
+const TeardownBlock = preload("res://scripts/teardown.gd")
+const TeardownFinds = preload("res://scripts/teardown_finds.gd")
 
 var won := false
 var hand_tools := false  # you've made a Flint Tool, so hand gathering is doubled for good
@@ -37,8 +41,9 @@ var shard_seen := false  # the player has clicked the Strange Stone, revealing h
 var hand_counts: Dictionary = {}  # item -> times harvested by hand
 ## Hold to harvest: the tile being held, seconds held so far, and 0 to 1 of the current harvest.
 var harvest_tile := Vector2i(-1, -1)
-var harvest_held := 0.0
 var harvest_frac := 0.0
+## The live ring's seconds held, and "aside": progress waiting to be taken up again ({tile, held, left}, or {}).
+var harvest_ring: Dictionary = {"held": 0.0, "aside": {}}
 var rushes := 0  # buildings rushed so far
 var ranks: Dictionary = {}  # tech -> rank bought on its card (2 or 3); a researched tech is rank 1
 var events: Array = []  # messages for the UI to show and clear
@@ -56,11 +61,15 @@ var town := Buildings.new(world, economy, tech_tree, fog.is_revealed)
 var people := Kith.new(world, pathing, economy, tech_tree, town)
 var story := Story.new()  # story moments and the opening checklist
 var sky := SkyBlock.new(tech_tree, town)
+var starfall := StarfallBlock.new(town, economy)  # the era after the Falling Star: the landing, the strangers, the glyphs
+var teardown := TeardownBlock.new(town, economy)  # Ironfall: the parts, the Bench and the Lessons
 
 
 ## Wire the blocks together. Every signal connection in the game is here, so it is all in one place.
 func _init() -> void:
 	tech_tree.tech_researched.connect(story.on_tech_researched)
+	tech_tree.set_extra_discount(town.research_discount)
+	town.built.connect(story.on_built)
 	people.learned.connect(story.on_learned)
 	people.trip_started.connect(story.on_trip_started)
 	shard_found.connect(story.on_shard_found)
@@ -68,6 +77,17 @@ func _init() -> void:
 	people.announce.connect(_announce)
 	sky.sighted.connect(_announce)
 	economy.food_low.connect(_on_food_low)
+	town.story_has = story.has_event
+	tech_tree.story_has = story.has_event
+	story.recorded.connect(_on_story)
+	people.gift = starfall.gift
+	starfall.said.connect(_announce)
+	starfall.moment.connect(story.record)
+	teardown.said.connect(_announce)
+	teardown.moment.connect(story.record)
+	town.lesson_has = teardown.knows
+	tech_tree.gift_has = starfall.gift  # a tech may wait on a gift read or a Lesson learned (Ironfall)
+	tech_tree.lesson_has = teardown.knows
 
 
 # --- Map ---------------------------------------------------------------------
@@ -92,31 +112,17 @@ func _sight(base: int) -> int:
 
 
 ## Hold the mouse on tile p for `delta` more seconds (real time, not game speed). The ring fills over
-## Hands.hold_time; when it's full the tile is harvested and the ring starts again. Moving to another
-## tile starts over. Returns the harvest's text when one completes, else "".
+## Hands.hold_time; when it's full the tile is harvested and the ring starts again. A hold forgives a shaky
+## hand (Hands.hold): sliding to the next tile of the same kind keeps the ring, and a slip off the tile keeps
+## its progress waiting for Data.HOLD_KEEP seconds. Returns the harvest's text when one completes, else "".
 func hold_harvest(p: Vector2i, delta: float) -> String:
-	if p != harvest_tile:
-		release_harvest()
-		harvest_tile = p
-	var item := Hands.item_at(self, p)
-	if item == "":
-		harvest_frac = 0.0
-		return ""
-	var need := Hands.hold_time(self, item)
-	harvest_held += delta
-	if harvest_held < need:
-		harvest_frac = harvest_held / need
-		return ""
-	harvest_held -= need
-	harvest_frac = harvest_held / need
-	return gather_by_hand(p)
+	return Hands.hold(self, p, delta)
 
 
-## Let go: the ring empties.
-func release_harvest() -> void:
-	harvest_tile = Vector2i(-1, -1)
-	harvest_held = 0.0
-	harvest_frac = 0.0
+## Let go: the ring empties. With `keep`, its progress waits Data.HOLD_KEEP seconds for the next press on the same
+## tile (a click that let go early, a pointer that slipped onto a bar) before it is gone.
+func release_harvest(keep := false) -> void:
+	Hands.release(self, keep)
 
 
 ## Harvest tile p by hand: the item goes to the stockpile and the Kith watching learn from it. The Strange
@@ -125,16 +131,16 @@ func gather_by_hand(p: Vector2i) -> String:
 	if not fog.is_revealed(p):
 		return ""
 	var tile := world.tile_at(p)
-	if tile == "shard":
+	if tile == "shard" and not Hands.chips_shard(self):
 		shard_seen = true
 		shard_found.emit()
 		return Data.SHARD_TEXT
 	if tile == "":
 		return ""
-	var item: String = Data.TILES[tile]["yields"]
+	var item: String = Hands.tile_item(self, tile)
 	if item == "" or (Data.TILES[tile].has("tech") and not tech_tree.researched.has(Data.TILES[tile]["tech"])):
 		return ""  # nothing to gather, or ore before Prospecting
-	var n := Hands.harvest_yield(self, item)
+	var n := world.seam_draw(p, Hands.harvest_yield(self, item))  # a coal seam gives what is left of its pile
 	economy.add(item, n)
 	economy.note(item, n, Data.FLOW_HAND_SOURCE)
 	Hands.teach(self, item)
@@ -154,7 +160,7 @@ func research(tech: String) -> bool:
 
 ## What a finished tech sets off in the rest of the game (Research only reports that it finished).
 func _tech_done(tech: String) -> void:
-	if tech in ["paved_roads", "rafts", "causeways"]:
+	if tech == "rafts":
 		pathing.refresh()
 	if tech == "scouting":
 		for b in town.buildings:
@@ -170,6 +176,21 @@ func _tech_done(tech: String) -> void:
 ## Connected to Kith.announce: tell the player something (the UI shows and clears `events`).
 func _announce(message: String) -> void:
 	events.append(message)
+
+
+## Where the ship comes down: the far east of the map, on the nearest ground a party can reach.
+func _wreck_tile() -> Vector2i:
+	var far := Vector2i(world.width - 5, roundi(world.height / 2.0))
+	var near := Scouting.goal(self, far)
+	return near if near.x >= 0 else far
+
+
+## Connected to Story.recorded: the Falling Star starts the era after it (a Cairn built first means friendly strangers).
+func _on_story(id: String) -> void:
+	if id == "star_falling":
+		starfall.begin(story.cairn_before_landing, _wreck_tile())
+	elif id == "bloom_seen" and starfall.bloom.x >= 0:
+		fog.reveal(starfall.bloom, Data.BLOOM_SIGHT)  # the first sign shows at the edge of the fog
 
 
 ## Connected to Economy.food_low: the early warning, before anyone leaves.
@@ -191,8 +212,8 @@ func _has_tech(tech: String) -> bool:
 
 
 ## Build at p and set off what that does elsewhere: the fog lifts and the walking grid updates.
-func place(type: String, p: Vector2i) -> bool:
-	var done := town.place(type, p)
+func place(type: String, p: Vector2i, focus := "") -> bool:
+	var done := town.place(type, p, focus)
 	if done.is_empty():
 		return false
 	var cleared: String = done["cleared"]
@@ -259,6 +280,7 @@ func set_paused(i: int, on: bool) -> void:
 
 
 func tick(delta: float) -> void:
+	Hands.age_stash(self, delta)
 	Land.grow_if_due(self)
 	economy.advance(delta)
 	for tech in tech_tree.tick():
@@ -268,6 +290,10 @@ func tick(delta: float) -> void:
 	people.grow(delta, fed)
 	story.update(self)
 	sky.tick(delta)
+	starfall.tick(delta)
+	teardown.tick(delta)
+	TeardownFinds.camp_tick(self, delta)
+	Expedition.auto(self, delta)
 	if fed:
 		for k in people.kith:
 			if Forage.tick(self, k, delta):
@@ -277,6 +303,10 @@ func tick(delta: float) -> void:
 					Workers.tick(self, k, delta)
 				"haul":
 					Haulers.tick(self, k, delta)
+				"scout":
+					Scouting.tick(self, k, delta)
+				"expedition":
+					Expedition.tick(self, k, delta)
 				_:
 					people.step(k, delta)
 	for k in people.kith:
@@ -286,6 +316,7 @@ func tick(delta: float) -> void:
 			fog.reveal(here, _sight(Data.SIGHT_KITH))
 	for b in town.buildings:
 		town.tick_timers(b, delta)
+		Homes.tick(self, b, delta)
 		Workers.tick_building(self, b, delta, fed)
 		if (
 			tech_tree.researched.has("haulers")

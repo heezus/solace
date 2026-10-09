@@ -61,10 +61,10 @@ static func via_json(d: Dictionary) -> Dictionary:
 
 
 ## A new game on `map_seed` with a few things done, so the save has something in every block.
-## (The default 190 s is a moment when no float in the state is one that Godot's JSON parser reads back a
+## (The default 200 s is a moment when no float in the state is one that Godot's JSON parser reads back a
 ## last-digit off, e.g. 1.9000000000000006 as ...08: a known limit of the text round trip, which most
 ## moments of a run hit. A dump compared as text needs a moment that doesn't.)
-func _played(map_seed: int = 7, seconds: int = 180) -> Sim:
+func _played(map_seed: int = 7, seconds: int = 200) -> Sim:
 	var s := Sim.new()
 	s.generate(map_seed)
 	var bot := Autoplay.new()
@@ -427,6 +427,7 @@ func _clone(bot: Autoplay, game: Sim) -> Autoplay:
 
 func _copy_mind(from: Autoplay, to: Autoplay) -> void:
 	to.clock = from.clock
+	to.hut_unstaffed_since = from.hut_unstaffed_since
 	to.clicks = from.clicks
 	to.think = from.think
 	to.hold_tile = from.hold_tile
@@ -440,7 +441,7 @@ func _copy_mind(from: Autoplay, to: Autoplay) -> void:
 ## steps: they must stay the same, second for second.
 func test_a_loaded_game_carries_on_the_same() -> void:
 	var golden := GoldenTests.new()
-	var original := _bot_at(2, 600.0)
+	var original := _bot_at(2, 602.0)
 	var s := original.s
 	t.check(
 		not s.won and s.tech_tree.researched.has("haulers"),
@@ -462,8 +463,19 @@ func test_a_loaded_game_carries_on_the_same() -> void:
 			loaded.step(true)
 		var h1 := golden.state_hash(original.s)
 		var h2 := golden.state_hash(loaded.s)
-		if h1 != h2 or text(RunSave.dump(original.s)) != text(RunSave.dump(loaded.s)):
+		var dump_a := text(RunSave.dump(original.s))
+		var dump_b := text(RunSave.dump(loaded.s))
+		if h1 != h2 or dump_a != dump_b:
 			same = false
+			var at := 0
+			while at < mini(dump_a.length(), dump_b.length()) and dump_a[at] == dump_b[at]:
+				at += 1
+			print(
+				(
+					"first difference at %d: %s | %s"
+					% [at, dump_a.substr(maxi(at - 60, 0), 140), dump_b.substr(maxi(at - 60, 0), 140)]
+				)
+			)
 			t.check(
 				false,
 				"the copy went its own way within %d s (hash %s vs %s)" % [(chunk + 1) * 15, h1.left(10), h2.left(10)]

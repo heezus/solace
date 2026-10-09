@@ -41,6 +41,8 @@ func run(runner) -> void:
 	test_the_bar_hides_the_food_note_until_a_hut_and_a_dwelling_stand()
 	test_a_building_waiting_for_kith_points_at_the_fix()
 	test_the_food_flash_stays_legible()
+	test_interface_text_stays_legible()
+	test_research_illustrations_use_miniature_art()
 	test_the_goal_list_shows_the_current_goal_and_the_next()
 	test_every_skill_text_says_what_they_gather()
 
@@ -111,6 +113,10 @@ func test_card_line_always_fits() -> void:
 		if Data.BUILDINGS[type]["cost"].is_empty():
 			continue
 		s.tech_tree.researched[Data.BUILDINGS[type]["tech"]] = true
+		if Data.BUILDINGS[type].has("event"):
+			s.story.record(Data.BUILDINGS[type]["event"])  # the era after the star opens with its story
+		if Data.BUILDINGS[type].has("lesson"):
+			s.teardown.lessons.append(Data.BUILDINGS[type]["lesson"])  # a part's Lesson opens it
 		for width in [CARD_TEXT_W, 70.0, 40.0]:
 			var line: String = CardText.state_line(s, type, "", width)
 			t.check(
@@ -131,9 +137,12 @@ func test_card_line_always_fits() -> void:
 		CardText.short_names({"wood": 9}, hut_cost) == ["Wood", "Stone"], "the names of what is short, in cost order"
 	)
 	for type in Data.BUILDINGS:
-		if Data.BUILDINGS[type]["tech"] == "":
-			continue  # always available: never locked
 		var why: String = CardText.locked_reason(type, 100.0)
+		if Data.BUILDINGS[type]["tech"] == "":
+			t.check(
+				why == Data.CARD_WAIT or Data.BUILDINGS[type].has("event") == false, "%s: waits on the story" % type
+			)
+			continue  # no tech to name
 		t.check(CardText.lines(why, 100.0) <= 2, "%s: the reason fits two lines: %s" % [type, why])
 		t.check(not why.contains("..."), "and never with dots: " + why)
 		t.check(not why.contains(Data.BUILDINGS[type]["name"]), "%s: and never its own title again: %s" % [type, why])
@@ -142,19 +151,23 @@ func test_card_line_always_fits() -> void:
 ## The Lore cards (Standing Stone, Shard Cairn) stay off the build bar until their tech is on the board and reachable.
 func test_story_cards_stay_hidden_until_revealed() -> void:
 	var s = t.fresh()
+	for id in Data.ITEM_ORDER:  # everything has been found: only the research decides which cards show
+		s.economy.seen[id] = true
 	t.check(not CardText.shown(s, "shard_cairn"), "the Shard Cairn is hidden at the start")
 	t.check(not CardText.shown(s, "standing_stone"), "so is the Standing Stone")
 	t.check(CardText.shown(s, "gatherers_hut") and CardText.shown(s, "dwelling"), "ordinary cards always show")
 	s.tech_tree.researched["masonry"] = true
-	t.check(not CardText.shown(s, "standing_stone"), "Masonry alone doesn't show it: Megaliths needs Storytelling too")
+	t.check(not CardText.shown(s, "standing_stone"), "Masonry alone doesn't show it: Megaliths needs the Star Lore too")
 	s.tech_tree.researched["storytelling"] = true
-	t.check(CardText.shown(s, "standing_stone"), "it shows once Megaliths is reachable")
+	t.check(not CardText.shown(s, "standing_stone"), "Storytelling is no way in")
 	t.check(not CardText.shown(s, "shard_cairn"), "the Cairn stays hidden until the Strange Stone has been clicked")
 	s.shard_seen = true
 	t.check(CardText.shown(s, "shard_cairn"), "and shows after, when Star Lore is reachable")
+	s.tech_tree.researched["star_lore"] = true
+	t.check(CardText.shown(s, "standing_stone"), "the Standing Stone shows once Megaliths is reachable")
 	for type in Data.BUILDINGS:
 		var def: Dictionary = Data.BUILDINGS[type]
-		var era_two: bool = def.get("tech", "") != "" and int(Data.TECHS[def["tech"]].get("era", 1)) == 2
+		var era_two: bool = def.get("tech", "") != "" and int(Data.TECHS[def["tech"]].get("era", 1)) >= 2
 		t.check(
 			not def.get("story", false) or def["kind"] in ["aura", "cairn"] or era_two,
 			"only Lore and next-era buildings are story cards"
@@ -523,3 +536,29 @@ func test_a_row_of_buildings_gets_alert_badges_that_never_overlap() -> void:
 		var problems := badge_problems(s)
 		t.check(problems.is_empty(), "at ui scale %.2f: %s" % [k, problems])
 	Art.ui_k = keep
+
+
+## Small HUD text must remain legible on all shared surfaces, including selected controls.
+func test_interface_text_stays_legible() -> void:
+	for bg in [Ui.BAR, Ui.PANEL, Ui.CARD, Ui.CARD_LOCKED, Ui.CARD_DONE, Ui.SELECTED, Ui.HOVER]:
+		t.check(Ui.contrast(Ui.TEXT, bg) >= 4.5, "primary interface text meets 4.5:1")
+		t.check(Ui.contrast(Ui.TEXT_DIM, bg) >= 4.5, "secondary interface text meets 4.5:1")
+	t.check(Ui.contrast(Ui.LINE, Ui.ACTION) >= 4.5, "primary action label meets 4.5:1")
+	t.check(Ui.contrast(Ui.SHORT, Ui.CARD) >= 4.5, "shortfall text meets 4.5:1")
+
+
+## All research cards resolve to miniature atlas art, rather than legacy SVGs or drawn placeholders.
+func test_research_illustrations_use_miniature_art() -> void:
+	for tech in Data.TECH_ORDER:
+		var tex := Art.research_sprite(Data.TECHS[tech]["icon"])
+		t.check(tex is AtlasTexture, "research illustration is miniature art: " + tech)
+		if tex is AtlasTexture:
+			t.check(tex.region.size.x > 0 and tex.region.size.y > 0, "research region exists: " + tech)
+			var bounds := Rect2(Vector2.ZERO, tex.atlas.get_size())
+			t.check(bounds.encloses(tex.region), "research region fits its atlas: " + tech)
+	for lane in Ui.LANE_COLORS:
+		t.check(Ui.contrast(Ui.LANE_COLORS[lane], Ui.PANEL) >= 4.5, "research lane caption contrast: " + lane)
+	var button := Ui.button("Discover")
+	Ui.action_button(button)
+	t.check(button.get_theme_color("font_hover_pressed_color") == Ui.LINE, "brass action retains dark text when held")
+	button.free()

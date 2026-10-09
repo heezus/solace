@@ -61,6 +61,8 @@ func _block(stock: Dictionary = {}, done: Array = []) -> Research:
 		_eco.inv[id] = 0
 	for id in stock:
 		_eco.inv[id] = stock[id]
+	for id in _eco.inv:  # every item has been found, so these tests are about requirements, stock and the shard
+		_eco.seen[id] = true
 	return Research.new(_eco, _techs, _shard_seen)
 
 
@@ -107,25 +109,27 @@ func test_requirements() -> void:
 
 
 func test_requires_any() -> void:
-	var r := _block({}, ["masonry"])
-	t.check(r.missing_requirements("megaliths") == 1, "an open either-or counts as one")
-	t.check(not r.requirements_met("megaliths"), "and blocks the tech")
+	var r := _block({}, ["farming"])
+	t.check(r.missing_requirements("calendar") == 1, "an open either-or counts as one")
+	t.check(not r.requirements_met("calendar"), "and blocks the tech")
 	_techs["storytelling"] = true
-	t.check(r.missing_requirements("megaliths") == 0 and r.requirements_met("megaliths"), "either branch will do")
-	var r2 := _block({}, ["masonry", "star_lore"])
-	t.check(r2.missing_requirements("megaliths") == 0, "the other branch works too")
-	var r3 := _block({}, ["storytelling", "star_lore"])
-	t.check(r3.missing_requirements("megaliths") == 1, "the either-or doesn't stand in for a plain requirement")
-	t.check(r3.missing_requirements("calendar") == 1, "Calendar is short Farming only: its either-or is met")
-	var r4 := _block({}, ["farming"])
-	t.check(r4.missing_requirements("calendar") == 1, "Calendar's either-or is still open with Farming alone")
+	t.check(r.missing_requirements("calendar") == 0 and r.requirements_met("calendar"), "either branch will do")
+	var r2 := _block({}, ["farming", "megaliths"])
+	t.check(r2.missing_requirements("calendar") == 0, "the other branch works too")
+	var r3 := _block({}, ["storytelling", "megaliths"])
+	t.check(r3.missing_requirements("calendar") == 1, "the either-or doesn't stand in for a plain requirement")
+	var r4 := _block({}, ["masonry"])
+	t.check(r4.missing_requirements("megaliths") == 1, "Megaliths needs the Star Lore, a plain requirement")
+	t.check(not r4.requirements_met("megaliths"), "and Storytelling does not stand in for it")
 
 
 func test_hidden_techs_follow_the_shard() -> void:
 	var r := _block({"stone": 20, "flint": 10}, ["storytelling"])
 	t.check(Data.TECHS["star_lore"].get("hidden", false), "Star Lore is a hidden tech")
 	t.check(not r.tech_visible("star_lore"), "hidden until the shard is seen")
-	t.check(r.tech_visible("megaliths") and r.tech_visible("cordage"), "the rest are always visible")
+	t.check(
+		r.tech_visible("cordage") and not r.tech_visible("megaliths"), "the rest are visible; Megaliths wait behind it"
+	)
 	t.check(not r.requirements_met("star_lore"), "hidden means requirements aren't met")
 	t.check(not r.can_research("star_lore"), "even with its parent done and the cost in hand")
 	t.check(not r.research("star_lore") and not _techs.has("star_lore"), "and research refuses it")
@@ -226,9 +230,9 @@ func test_set_goal_to_nothing_and_clear() -> void:
 
 
 func test_goal_route_skips_hidden_techs() -> void:
-	var r := _block({}, ["masonry"])
-	r.set_goal("megaliths")
-	t.check(r.queue == ["storytelling", "megaliths"], "the either-or takes the visible branch")
+	var r := _block({}, ["farming"])
+	r.set_goal("calendar")
+	t.check(r.queue == ["storytelling", "calendar"], "the either-or takes the visible branch")
 	t.check("star_lore" not in r.queue, "never a hidden tech")
 
 
@@ -348,6 +352,9 @@ func test_sim_shares_the_techs_with_the_blocks() -> void:
 		"requirements"
 	)
 	t.check(not s.tech_tree.tech_visible("star_lore"), "hidden until the shard is seen")
+	for id in Data.ITEM_ORDER:  # everything has been found, so only the Strange Stone is missing
+		s.economy.seen[id] = true
+	s.tech_tree.researched["storytelling"] = true
 	s.shard_seen = true
 	t.check(s.tech_tree.tech_visible("star_lore"), "Sim.shard_seen is what the block reads")
 	t.check(not s.tech_tree.can_research("cordage"), "cordage is unaffordable with nothing in the stockpile")
@@ -395,8 +402,12 @@ func test_sim_queue_ticks() -> void:
 ## would leave too little to build it (the Gatherer's Hut costs 20 Wood, 10 Stone, then 10 Wood, 5 Stone more).
 func test_a_tech_says_what_its_building_costs() -> void:
 	t.check(Rules.buildings_of("gatherers_hut") == ["gatherers_hut"], "the Gatherer's Hut tech unlocks the hut")
-	t.check(Rules.buildings_of("haulers") == ["road", "bridge"], "Paths & Haulers unlocks the Road and the Bridge")
-	t.check(Rules.buildings_of("knapping").is_empty(), "Knapping unlocks no building")
+	t.check(
+		Rules.buildings_of("haulers") == ["road", "gravel_road", "bridge"],
+		"Paths & Haulers unlocks the Road, the Gravel Road and the Bridge"
+	)
+	t.check(Rules.buildings_of("knapping") == ["tool_bench"], "Knapping unlocks the Tool Bench")
+	t.check(Rules.buildings_of("foraging").is_empty(), "Foraging unlocks no building")
 	for type in Data.BUILD_ORDER:
 		var tech: String = Data.BUILDINGS[type]["tech"]
 		t.check(tech == "" or type in Rules.buildings_of(tech), "%s is listed under its tech" % type)
@@ -412,7 +423,7 @@ func test_a_tech_says_what_its_building_costs() -> void:
 		),
 		"two buildings, both named"
 	)
-	t.check(Ui.then_builds_text("knapping") == "", "and nothing for a tech with no building")
+	t.check(Ui.then_builds_text("foraging") == "", "and nothing for a tech with no building")
 	var tech_cost: Dictionary = Data.TECHS["gatherers_hut"]["cost"]
 	var inv := tech_cost.duplicate()
 	t.check(
@@ -423,7 +434,7 @@ func test_a_tech_says_what_its_building_costs() -> void:
 	t.check(Ui.build_warning(inv, "gatherers_hut") == "", "enough for both: no warning")
 	inv["wood"] -= 1
 	t.check(Ui.build_warning(inv, "gatherers_hut").contains("1 Wood"), "one Wood short of the building: it says so")
-	t.check(Ui.build_warning({}, "knapping") == "", "no building, no warning")
+	t.check(Ui.build_warning({}, "foraging") == "", "no building, no warning")
 	t.check(
 		Rules.left_after({"wood": 5}, {"wood": 9, "stone": 2}) == {"wood": 0, "stone": 0},
 		"what is left never goes below zero"

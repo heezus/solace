@@ -19,8 +19,14 @@ const Buildings = preload("res://scripts/buildings.gd")
 const Work = preload("res://scripts/work.gd")
 const HutFocus = preload("res://scripts/hut_focus.gd")
 const TradePicker = preload("res://scripts/trade_picker.gd")
+const GlyphPicker = preload("res://scripts/glyph_picker.gd")
+const ExpeditionPicker = preload("res://scripts/expedition_picker.gd")
+const PatchText = preload("res://scripts/patch_text.gd")
+const TeardownPanel = preload("res://scripts/teardown_panel.gd")
+const LessonsList = preload("res://scripts/lessons_list.gd")
+const Steam = preload("res://scripts/steam.gd")
 
-const INSET := Color("3b2a24")  # the `ui-bar` cocoa, sunk into the `ui-panel` card
+const INSET := Ui.BAR
 
 var state: Sim
 var pos := Vector2i(-1, -1)  # the selected building's tile
@@ -66,7 +72,7 @@ func setup(game: Sim) -> void:
 		v.add_child(parts[key])
 	parts["pace"].add_theme_color_override("font_color", Ui.TEXT_DIM)
 	parts["pace"].mouse_filter = Control.MOUSE_FILTER_STOP  # its tooltip has the exact numbers
-	var focus := HutFocus.new()  # what a hut works: one line, one click to change (scripts/hut_focus.gd)
+	var focus := HutFocus.new()  # what a hut works: a line and a button per resource in reach (scripts/hut_focus.gd)
 	focus.setup(game)
 	focus.changed.connect(refresh)
 	v.add_child(focus)
@@ -78,6 +84,29 @@ func setup(game: Sim) -> void:
 	v.add_child(trade)
 	v.move_child(trade, parts["recipe"].get_index())
 	parts["trade"] = trade
+	var glyphs := GlyphPicker.new()  # a Glyph Wall: the marks copied so far and a guess for each (scripts/glyph_picker.gd)
+	glyphs.setup(game)
+	glyphs.changed.connect(refresh)
+	v.add_child(glyphs)
+	v.move_child(glyphs, parts["recipe"].get_index())
+	parts["glyphs"] = glyphs
+	var post := ExpeditionPicker.new()  # an Expedition Post: target, pack, Send and Keep sending (scripts/expedition_picker.gd)
+	post.setup(game)
+	post.changed.connect(refresh)
+	v.add_child(post)
+	v.move_child(post, parts["recipe"].get_index())
+	parts["post"] = post
+	var bench := TeardownPanel.new()  # the Teardown Bench: its queue and the parts in the pack (scripts/teardown_panel.gd)
+	bench.setup(game)
+	bench.changed.connect(refresh)
+	v.add_child(bench)
+	v.move_child(bench, parts["recipe"].get_index())
+	parts["bench"] = bench
+	var lessons := LessonsList.new()  # the Lessons list, under the Bench's rows and beside the Glyph Wall's marks
+	lessons.setup(game)
+	v.add_child(lessons)
+	v.move_child(lessons, parts["recipe"].get_index())
+	parts["lessons"] = lessons
 	parts["holding"] = Ui.label("", Ui.MIN_TEXT)
 	v.add_child(parts["holding"])
 	var bar := ProgressBar.new()
@@ -138,7 +167,7 @@ func _button(text: String, bg: Color, border: Color) -> Button:
 	style.set_border_width_all(2)
 	b.add_theme_stylebox_override("normal", style)
 	var hover := style.duplicate()
-	hover.bg_color = bg.lightened(0.15)
+	hover.bg_color = bg.lightened(0.06)
 	b.add_theme_stylebox_override("hover", hover)
 	return b
 
@@ -190,11 +219,16 @@ func refresh() -> void:
 	parts["desc"].visible = def["kind"] not in ["gatherer", "processor"]  # what it gathers or makes says it better
 	parts["focus"].show_for(b)
 	parts["trade"].show_for(b)
+	parts["glyphs"].show_for(b)
+	parts["post"].show_for(b)
+	parts["bench"].show_for(b)
+	parts["lessons"].show_for(b)
 	parts["recipe"].text = recipe_text(state, b)
 	parts["recipe"].visible = parts["recipe"].text != ""
 	parts["worker"].text = worker_text(state, b)
 	parts["worker"].visible = Buildings.needs_worker(b)
-	parts["pace"].text = pace_text(state, b)
+	var patch := PatchText.panel_text(state, b) if def["kind"] == "gatherer" else ""
+	parts["pace"].text = pace_text(state, b) + ("\n" + patch if patch != "" else "")
 	parts["pace"].visible = parts["pace"].text != ""
 	parts["pace"].tooltip_text = Data.PACE_TIP % Work.text(state, b).replace("\n", "; ")
 	parts["click"].text = click_text(state, b)
@@ -228,9 +262,23 @@ static func recipe_text(s: Sim, b: Dictionary) -> String:
 			var used := Buildings.recipe_in(b)
 			var ins := Ui.cost_text(used) if not used.is_empty() else "nothing"
 			var made := Buildings.recipe_out(b)
-			return "%s → %s / %s s" % [ins, Ui.cost_text(made), str(snappedf(Work.time(s, b), 0.1))]
+			var line := "%s → %s / %s s" % [ins, Ui.cost_text(made), str(snappedf(Work.time(s, b), 0.1))]
+			return Work.bench_text(s, b) + "\n" + line if def.has("makes") else line
 		"gatherer":
 			return gather_text(s, s.town.focus_tiles(b), true)
+		"power", "lamp", "shed":
+			return _fed_text(def)
+	return ""
+
+
+## What a fed building burns and how long it lasts (a Boiler, a Shard Lamp), or what a Steam Shed makes of a hauler; "" for the rest.
+static func _fed_text(def: Dictionary) -> String:
+	if def["kind"] == "lamp":
+		return Data.LAMP_ROW % [int(def["burn"]), def["light"], def["stock"]]
+	if def["kind"] == "power" and def.get("fed", false):
+		return Data.FUEL_ROW % [Data.ITEMS[Steam.fuel_of(def)]["name"], int(def["burn"]), def["stock"]]
+	if def["kind"] == "shed" and def.get("cart", "hand") == "steam":
+		return Data.SHED_ROW % Data.STEAM_TRIPS
 	return ""
 
 
@@ -299,7 +347,7 @@ static func pace_text(s: Sim, b: Dictionary) -> String:
 	var boosts: Array = []
 	for bonus in Bonuses.active(s, b, ""):
 		if bonus["group"] == "speed":
-			boosts.append("%s (+%d%%)" % [bonus["name"], roundi(bonus["add"] * 100.0)])
+			boosts.append("%s (%+d%%)" % [bonus["name"], roundi(bonus["add"] * 100.0)])
 	if not boosts.is_empty():
 		lines.append(Data.PACE_BOOST % ", ".join(boosts))
 	return " ".join(lines)
@@ -326,7 +374,7 @@ static func gather_text(s: Sim, tiles: Array, short := false) -> String:
 	var item: String = Data.TILES[s.world.tile_at(tiles[0])]["yields"]
 	var known := ""
 	if not s.people.knows(item):
-		known = " (not learned yet)" if short else " not yet learned (gather by hand %dx)" % Data.LEARN_CLICKS
+		known = " (not learned yet)" if short else " not yet learned (gather by hand %dx)" % Hands.learn_needed(s)
 	var what := "%s x%d%s" % [Data.ITEMS[item]["name"], tiles.size(), known]
 	if short:
 		return "Gathers from the %d highlighted tiles: %s." % [tiles.size(), what]

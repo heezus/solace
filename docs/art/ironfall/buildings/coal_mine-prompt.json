@@ -1,0 +1,6 @@
+{
+  "prompt": "Solace ONE standalone 1x1 map building, transparent PNG, no text. Match existing industry miniature reference for chunky sculpted timber, rope lashings, warm thatch and matte rounded stone; elevated top-down three-quarter camera from front, soft upper-left light. One compact self-contained readable silhouette at46px inside48px tile. Tight contact shadow and sparse soil/moss at feet, not a square base, no landscape, no other buildings or people. Fully within frame with generous transparent margins. A compact timber mine head frame built over a black coal seam. Rough stout logs and low thatched shelter, simple rope pulley with a wooden bucket, dark entrance between split shale shoulders, small black coal spoil heap visible at front side. Coal is angular glossy black, not grey stone or orange copper. A small warm lantern on one post. No long railway, no locomotive, no steam machinery. Dark entrance and spoil distinguish it from existing ordinary mine; warm wood gives legibility.",
+  "source": "exec-cdb69ad4-fb6a-426d-ad1b-c22b1889cbf3.png",
+  "reference": "industry.png",
+  "mode": "built-in imagegen"
+}

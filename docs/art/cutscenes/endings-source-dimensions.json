@@ -1,0 +1,37 @@
+{
+  "starfall_end_1": {
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  },
+  "starfall_end_2": {
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  },
+  "starfall_end_3_neighbours": {
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  },
+  "starfall_end_3_enemies": {
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  },
+  "starfall_end_3_allies": {
+    "size": [
+      1586,
+      992
+    ],
+    "mode": "RGB"
+  }
+}

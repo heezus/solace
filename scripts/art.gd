@@ -1,8 +1,9 @@
 extends RefCounted
-## Flat, bold-outlined vector art: map features, building shapes and tech-tree arrows.
+## Rendered map art and icons, with vector fallbacks and interface drawing helpers.
 ## Static helpers that draw onto whichever CanvasItem is passed in, during its draw.
 
 const Data = preload("res://scripts/data.gd")
+const Rendered = preload("res://scripts/rendered_art.gd")
 
 const OUTLINE := Color("1b1b1f")
 ## The pale-cyan light of the Strange Stone and its cairn.
@@ -11,11 +12,24 @@ const SPRITE_DIR := "res://art/sprites/"
 const FOREST: Color = Data.TILES["tree"]["color"]
 
 ## Buildings whose sprite has another name.
-const SPRITE_OF := {"camp": "hearth", "road": "tile_path", "bridge": "tile_bridge_wood"}
+const SPRITE_OF := {
+	"camp": "hearth",
+	"road": "tile_path",
+	"gravel_road": "tile_path",  # the road tiers borrow the path tile, tinted, until they have art (docs/art/requests.md)
+	"paved_road": "tile_path",
+	"rail": "tile_path",
+	"bridge": "tile_bridge_wood",
+	"flax_field": "flax",
+}
 
 ## Map art is drawn in a 32-unit design space (`DESIGN`) and scaled up to the tile, so a 2-unit outline is 3 px at
 ## 48 px tiles. Sprites are drawn at their native scale, never redrawn thin.
 const DESIGN := 32.0
+
+## The least a dash step may advance, in px. A step cut short by a pattern edge can come out smaller than the float spacing
+## at the distance along the line, so `d += step` stood still and the loop never ended (the hut ghost's reach box froze the
+## game at some screen scales).
+const MIN_DASH_STEP := 0.01
 
 ## One screen pixel in map units (1 / the map's zoom), set by the map each frame: text, pills and badges keep the
 ## same size on screen whatever the zoom. 1.0 anywhere that draws at screen scale.
@@ -26,12 +40,17 @@ static var _hatch: Texture2D = null
 
 
 static func building_sprite(type: String) -> Texture2D:
+	if Rendered.BUILDINGS.has(type):
+		return Rendered.sprite("buildings", Rendered.BUILDINGS[type])
 	return sprite(SPRITE_OF.get(type, type))
 
 
-## The imported SVG sprite `name` from art/sprites, or null if it isn't there
+## A rendered atlas sprite or the imported legacy SVG, preserving existing caller IDs.
 ## (callers then draw the shapes themselves).
 static func sprite(name: String) -> Texture2D:
+	var rendered := Rendered.named(name)
+	if rendered != null:
+		return rendered
 	if not _sprites.has(name):
 		var path := SPRITE_DIR + name + ".svg"
 		var tex: Texture2D = null
@@ -59,7 +78,7 @@ static func fog_hatch(tile_px: int) -> Texture2D:
 static func item_icon(ci: CanvasItem, id: String, r: Rect2, a: float) -> void:
 	var tex := sprite("item_" + id)
 	if tex != null:
-		ci.draw_texture_rect(tex, r, false, Color(1, 1, 1, a))
+		Rendered.fit(ci, tex, r, Color(1, 1, 1, a))
 		return
 	var box := r.grow(-r.size.x * 0.2)
 	ci.draw_rect(box, Color(Data.ITEMS[id]["color"], a))
@@ -114,76 +133,65 @@ static func dashed_rect(ci: CanvasItem, r: Rect2, col: Color, width: float, on: 
 		ci.draw_polyline(part, col, width)
 
 
-## A small tech icon in `r`: its sprite, or a few shapes for the "@" icons and missing sprites.
-static func tech_icon(ci: CanvasItem, icon: String, r: Rect2, time: float) -> void:
-	var c := r.get_center()
-	var k := r.size.x / 32.0
-	if not icon.begins_with("@"):
-		var tex := sprite(icon)
-		if tex != null:
-			ci.draw_texture_rect(tex, r, false)
-			return
-	ci.draw_set_transform(c, 0.0, Vector2(k, k))
+## Research illustrations share map/item art; their IDs do not change gameplay or map sprites.
+static func research_sprite(icon: String) -> Texture2D:
 	match icon:
+		"granary":
+			return Rendered.sprite("research-landmarks", 0)
+		"smokehouse":
+			return Rendered.sprite("research-landmarks", 1)
+		"quarry":
+			return Rendered.sprite("research-landmarks", 2)
+		"wanderer":
+			return Rendered.sprite("research-landmarks", 3)
 		"@flint":
-			outlined_poly(
-				ci,
-				PackedVector2Array([Vector2(-9, 8), Vector2(-4, -10), Vector2(6, -6), Vector2(10, 7), Vector2(0, 11)]),
-				Color("4a4e69")
-			)
-			ci.draw_line(Vector2(-2, -6), Vector2(3, 6), Color("9aa0c0"), 1.5)
-		"@clay", "@rock":
-			ci.draw_rect(Rect2(-14, -14, 28, 28), Color("7cb342"))
-			feature(ci, icon.substr(1), Vector2.ZERO, Vector2i.ZERO, time)
-		"@irrigation", "@calendar":
-			ci.draw_rect(Rect2(-14, -14, 28, 28), Color("3a86c8") if icon == "@irrigation" else Color("14213d"))
-			if icon == "@calendar":
-				for p in [Vector2(-9, -9), Vector2(8, -10), Vector2(10, 6)]:
-					ci.draw_circle(p, 1.2, Color.WHITE)
-				outlined_circle(ci, Vector2(-6, 6), 5.0, Color("f1e3c8"))
-			else:
-				ci.draw_rect(Rect2(-8, -8, 16, 16), Color("8a6a44"))
-				for x in [-5, 0, 5]:
-					ci.draw_line(Vector2(x, 5), Vector2(x, -5), Color("f2c14e"), 2.0)
+			return sprite("item_flint")
+		"@clay":
+			return sprite("item_clay")
+		"@rock":
+			return Rendered.sprite("rocks", 0)
 		"@axe":
-			# A wooden haft with a flint head lashed on with cord.
-			ci.draw_line(Vector2(-9, 12), Vector2(6, -9), OUTLINE, 6.0)
-			ci.draw_line(Vector2(-9, 12), Vector2(6, -9), Color("a47148"), 3.0)
-			outlined_poly(
-				ci,
-				PackedVector2Array([Vector2(1, -13), Vector2(12, -11), Vector2(13, 0), Vector2(5, -3)]),
-				Color("4a4e69")
-			)
-			ci.draw_line(Vector2(1, -8), Vector2(6, -4), Color("e9c46a"), 2.0)
+			return sprite("item_flint_tools")
 		"@bread":
-			var loaf := PackedVector2Array()
-			for i in 16:
-				var a := PI + PI * i / 15.0
-				loaf.append(Vector2(cos(a) * 11.0, sin(a) * 8.0 + 4.0))
-			outlined_poly(ci, loaf, Color("d4a373"))
-			for x in [-5, 0, 5]:
-				ci.draw_line(Vector2(x - 2, -1), Vector2(x + 2, -3), Color("8d5a3b"), 1.5)
+			return Rendered.sprite("research-symbols", 0)
 		"@tally":
-			# A split stick with a row of notches cut across it.
-			ci.draw_line(Vector2(-12, 10), Vector2(12, -10), OUTLINE, 8.0)
-			ci.draw_line(Vector2(-12, 10), Vector2(12, -10), Color("c9a26b"), 5.0)
-			for i in 4:
-				var at := Vector2(-6 + i * 5, 5 - i * 4)
-				ci.draw_line(at + Vector2(-2, -3), at + Vector2(2, 3), OUTLINE, 1.5)
-		_:
-			outlined_circle(ci, Vector2.ZERO, 10.0, Color("9aa0a6"))
-	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+			return Rendered.sprite("research-symbols", 1)
+		"@irrigation":
+			return Rendered.sprite("research-symbols", 2)
+		"@calendar":
+			return Rendered.sprite("research-symbols", 3)
+		"kith", "hauler":
+			return Rendered.sprite("walk", 1)
+		"hauler_pack":
+			return Rendered.sprite("extras", 4)
+		"tile_road":
+			return Rendered.sprite("crossings-v2", 0)
+	return sprite(icon)
+
+
+## Centered, aspect-preserving illustrations on board cards and research recommendations.
+static func tech_icon(ci: CanvasItem, icon: String, r: Rect2, _time: float) -> void:
+	var tex := research_sprite(icon)
+	if tex == null:
+		return
+	var factor := minf(r.size.x / tex.get_width(), r.size.y / tex.get_height())
+	var extent := tex.get_size() * factor
+	ci.draw_texture_rect(tex, Rect2(r.get_center() - extent * 0.5, extent), false)
 
 
 ## A map tile's feature drawn at tile scale `k` (tile px / DESIGN), centered on c.
 static func map_feature(ci: CanvasItem, t: String, c: Vector2, p: Vector2i, time: float, k: float) -> void:
 	ci.draw_set_transform(c, 0.0, Vector2(k, k))
+	if t not in ["grass", "river", ""]:
+		contact_shadow(ci, Vector2(0, 14), Vector2(10, 2.5))
 	feature(ci, t, Vector2.ZERO, p, time)
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 ## A map tile's feature (tree, rock, river ripple...) centered on c, in design units.
 static func feature(ci: CanvasItem, t: String, c: Vector2, p: Vector2i, time: float) -> void:
+	if Rendered.feature(ci, t, c, p, time):
+		return
 	var jitter := Vector2(((p.x * 7 + p.y * 3) % 5) - 2, ((p.x * 3 + p.y * 5) % 5) - 2)
 	match t:
 		"tree":
@@ -244,6 +252,15 @@ static func feature(ci: CanvasItem, t: String, c: Vector2, p: Vector2i, time: fl
 				ci.draw_line(c + Vector2(x, 11), top, Color("6f9a3c"), 1.6)
 				outlined_circle(ci, top, 2.5, Color("6d8fe0"))
 				ci.draw_circle(top, 1.0, Color("f2c14e"))
+		"flax_field":
+			# Sown flax: the wild flax sprite in a pale blue-green with seed furrows under it, until it has its own art.
+			var sown := sprite("flax")
+			if sown != null:
+				ci.draw_texture_rect(sown, Rect2(c - Vector2(16, 16), Vector2(32, 32)), false, Color(0.82, 1.0, 0.96))
+			else:
+				feature(ci, "flax", c, p, time)
+			for i in 3:
+				ci.draw_line(c + Vector2(-12 + i * 12, 14), c + Vector2(-8 + i * 12, 14), Color(OUTLINE, 0.55), 1.5)
 		"grain":
 			# Gold heads on slender stalks, as in the Field sprite.
 			for i in 5:
@@ -257,9 +274,7 @@ static func feature(ci: CanvasItem, t: String, c: Vector2, p: Vector2i, time: fl
 					head.append(tip + Vector2(cos(a) * 2.6, sin(a) * 4.0 - 3.0))
 				outlined_poly(ci, head, Color("f2c14e"))
 		"river":
-			var w := sin(time * 2.0 + p.y * 0.9) * 3.0
-			ci.draw_line(c + Vector2(-10 + w, -4), c + Vector2(-2 + w, -4), Color(1, 1, 1, 0.5), 2.0)
-			ci.draw_line(c + Vector2(2 - w, 5), c + Vector2(10 - w, 5), Color(1, 1, 1, 0.5), 2.0)
+			pass  # Flow and reflections belong to the continuous terrain shader.
 		"copper_hills", "tin_stream":
 			var tex := sprite("tile_" + t)
 			if tex != null:
@@ -309,6 +324,17 @@ static func cairn_glow_alpha(approach: float, time: float) -> float:
 ## A building drawn in `r` (a tile, or the Hearth's 2x2): its SVG sprite at native scale (the sprite brings its own
 ## plate), or a plain plate in the building's color when it has none. `working` adds the charcoal pit's smoke.
 static func map_building(ci: CanvasItem, type: String, r: Rect2, working: bool, time: float) -> void:
+	if Rendered.building(ci, type, r):
+		if type == "charcoal_pit" and working:
+			var k := r.size.x / DESIGN
+			for i in 3:
+				var phase := fmod(time * 0.6 + i / 3.0, 1.0)
+				ci.draw_circle(
+					r.get_center() + Vector2(sin(phase * 6.0) * 2, -phase * 12) * k,
+					(1.0 + phase * 2) * k,
+					Color(0.6, 0.65, 0.65, (1.0 - phase) * 0.3)
+				)
+		return
 	var tex := building_sprite(type)
 	if tex != null:
 		ci.draw_texture_rect(tex, r, false)
@@ -376,7 +402,7 @@ static func dash_pattern(pts: PackedVector2Array, on: float, off: float, offset:
 			var phase := fposmod(pos + d, period)
 			var drawing := phase < on
 			var left := (on - phase) if drawing else (period - phase)
-			var step := minf(left, seg - d)
+			var step := maxf(minf(left, seg - d), MIN_DASH_STEP)
 			if drawing:
 				if cur.is_empty():
 					cur.append(a.lerp(b, d / seg))
@@ -451,3 +477,13 @@ static func draw_head(ci: CanvasItem, b: Vector2, col: Color) -> void:
 	var head := PackedVector2Array([b, b + Vector2(-12, -7), b + Vector2(-12, 7)])
 	ci.draw_colored_polygon(head, col)
 	ci.draw_polyline(PackedVector2Array([b, b + Vector2(-12, -7), b + Vector2(-12, 7), b]), OUTLINE, 1.5)
+
+
+## Tight soft grounding in the same draw space as the subject, never an opaque floating halo.
+static func contact_shadow(ci: CanvasItem, center: Vector2, radius: Vector2) -> void:
+	for layer in 3:
+		var points := PackedVector2Array()
+		var scale := 1.0 - layer * 0.18
+		for i in 24:
+			points.append(center + Vector2(cos(TAU * i / 24.0), sin(TAU * i / 24.0)) * radius * scale)
+		ci.draw_colored_polygon(points, Color(0.08, 0.12, 0.09, 0.07 + layer * 0.035))

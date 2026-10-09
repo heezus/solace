@@ -5,6 +5,10 @@ extends SceneTree
 const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Main = preload("res://scripts/main.gd")
+const IronfallTests = preload("res://tests/ironfall_tests.gd")
+const TeardownTests = preload("res://tests/teardown_tests.gd")
+const SteamTests = preload("res://tests/steam_tests.gd")
+const CutsceneTests = preload("res://tests/cutscene_tests.gd")
 const TechLayout = preload("res://scripts/tech_layout.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Rules = preload("res://scripts/rules.gd")
@@ -20,22 +24,43 @@ const PathingTests = preload("res://tests/pathing_tests.gd")
 const BuildingsTests = preload("res://tests/buildings_tests.gd")
 const KithTests = preload("res://tests/kith_tests.gd")
 const ArcTests = preload("res://tests/arc_tests.gd")
+const HoldTests = preload("res://tests/hold_tests.gd")
 const StoryTests = preload("res://tests/story_tests.gd")
 const SaveTests = preload("res://tests/save_tests.gd")
 const EraTests = preload("res://tests/era_tests.gd")
 const Stage2Tests = preload("res://tests/stage2_tests.gd")
 const SkyTests = preload("res://tests/sky_tests.gd")
+const CairnTests = preload("res://tests/cairn_tests.gd")
 const DawnTests = preload("res://tests/dawn_tests.gd")
 const EraFairTests = preload("res://tests/era_fair_tests.gd")
+const StoneStallTests = preload("res://tests/stone_stall_tests.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
 const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
 const GoldenTests = preload("res://tests/golden_tests.gd")
 const NewcomerTests = preload("res://tests/newcomer_tests.gd")
 const UiTests = preload("res://tests/ui_tests.gd")
+const TechBoardTests = preload("res://tests/techboard_tests.gd")
 const HutFocusTests = preload("res://tests/hut_focus_tests.gd")
+const ClearingTests = preload("res://tests/clearing_tests.gd")
 const GrowthTests = preload("res://tests/growth_tests.gd")
+const FieldTests = preload("res://tests/field_tests.gd")
+const PatchTests = preload("res://tests/patch_tests.gd")
 const ForageTests = preload("res://tests/forage_tests.gd")
 const HaulerTests = preload("res://tests/hauler_tests.gd")
+const RenderedTests = preload("res://tests/rendered_tests.gd")
+const FlaxFieldTests = preload("res://tests/flax_field_tests.gd")
+const ToolBenchTests = preload("res://tests/tool_bench_tests.gd")
+const PassageTests = preload("res://tests/passage_tests.gd")
+const DiscoveryTests = preload("res://tests/discovery_tests.gd")
+const LogisticsTests = preload("res://tests/logistics_tests.gd")
+const ForksTests = preload("res://tests/forks_tests.gd")
+const StarfallTests = preload("res://tests/starfall_tests.gd")
+const ExpeditionTests = preload("res://tests/expedition_tests.gd")
+const EndingTests = preload("res://tests/ending_tests.gd")
+const TradeTests = preload("res://tests/trade_tests.gd")
+const TitleTests = preload("res://tests/title_tests.gd")
+const DevTests = preload("res://tests/dev_tests.gd")
+const HomesTests = preload("res://tests/homes_tests.gd")
 const World = preload("res://scripts/world.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const Buildings = preload("res://scripts/buildings.gd")
@@ -53,6 +78,64 @@ func _init() -> void:
 		Stage2Tests.new().run(self)
 		SkyTests.new().run(self)
 		print("FAILED: %d" % failures if failures > 0 else "STAGE 2 TESTS PASSED")
+		quit(1 if failures > 0 else 0)
+		return
+	if "hold" in OS.get_cmdline_user_args():  # `-- hold` runs just the hold-to-harvest and hauler tests while iterating
+		HoldTests.new().run(self)
+		HaulerTests.new().run(self)
+		print("FAILED: %d" % failures if failures > 0 else "HOLD TESTS PASSED")
+		quit(1 if failures > 0 else 0)
+		return
+	if "logistics" in OS.get_cmdline_user_args():  # `-- logistics` runs only the Logistics tests while iterating
+		LogisticsTests.new().run(self)
+		print("FAILED: %d" % failures if failures > 0 else "LOGISTICS TESTS PASSED")
+		quit(1 if failures > 0 else 0)
+		return
+	if "starfall" in OS.get_cmdline_user_args():  # `-- starfall` runs only the Starfall tests while iterating
+		StarfallTests.new().run(self)
+		ExpeditionTests.new().run(self)
+		EndingTests.new().run(self)
+		TradeTests.new().run(self)
+		print("FAILED: %d" % failures if failures > 0 else "STARFALL TESTS PASSED")
+		quit(1 if failures > 0 else 0)
+		return
+	if "starts" in OS.get_cmdline_user_args():  # `-- starts` runs only the stage starts' tests (the bots play, so minutes)
+		DevTests.new().run(self)
+		DevTests.new().run_starts(self)
+		print("FAILED: %d" % failures if failures > 0 else "STARTS TESTS PASSED")
+		quit(1 if failures > 0 else 0)
+		return
+	if "forks" in OS.get_cmdline_user_args():  # `-- forks` runs only the fork tests while iterating
+		ForksTests.new().run(self)
+		print("FAILED: %d" % failures if failures > 0 else "FORKS TESTS PASSED")
+		quit(1 if failures > 0 else 0)
+		return
+	if "ironfall" in OS.get_cmdline_user_args():  # `-- ironfall` runs only the Ironfall tests while iterating
+		IronfallTests.new().run(self)
+		TeardownTests.new().run(self)
+		SteamTests.new().run(self)
+		CutsceneTests.new().run(self)
+		print("FAILED: %d" % failures if failures > 0 else "IRONFALL TESTS PASSED")
+		quit(1 if failures > 0 else 0)
+		return
+	if "steam" in OS.get_cmdline_user_args():  # `-- steam` runs only the stage 3 tests while iterating
+		SteamTests.new().run(self)
+		print("FAILED: %d" % failures if failures > 0 else "STEAM TESTS PASSED")
+		quit(1 if failures > 0 else 0)
+		return
+	if "homes" in OS.get_cmdline_user_args():  # `-- homes` runs only the Needs tests while iterating
+		HomesTests.new().run(self)
+		print("FAILED: %d" % failures if failures > 0 else "HOMES TESTS PASSED")
+		quit(1 if failures > 0 else 0)
+		return
+	if "save" in OS.get_cmdline_user_args():  # `-- save` runs only the save and load tests while iterating
+		SaveTests.new().run(self)
+		print("FAILED: %d" % failures if failures > 0 else "SAVE TESTS PASSED")
+		quit(1 if failures > 0 else 0)
+		return
+	if "bench" in OS.get_cmdline_user_args():  # `-- bench` runs only the Tool Bench tests while iterating
+		ToolBenchTests.new().run(self)
+		print("FAILED: %d" % failures if failures > 0 else "BENCH TESTS PASSED")
 		quit(1 if failures > 0 else 0)
 		return
 	test_map_has_every_resource_near_camp()
@@ -95,29 +178,56 @@ func _init() -> void:
 	KithTests.new().run(self)
 	StoryTests.new().run(self)
 	ArcTests.new().run(self)
+	HoldTests.new().run(self)
 	SaveTests.new().run(self)
 	EraTests.new().run(self)
 	Stage2Tests.new().run(self)
 	SkyTests.new().run(self)
+	CairnTests.new().run(self)
 	DawnTests.new().run(self)
 	EraFairTests.new().run(self)
 	HutFocusTests.new().run(self)
+	ClearingTests.new().run(self)
 	GrowthTests.new().run(self)
+	FieldTests.new().run(self)
+	PatchTests.new().run(self)
 	ForageTests.new().run(self)
 	HaulerTests.new().run(self)
+	FlaxFieldTests.new().run(self)
+	ToolBenchTests.new().run(self)
+	PassageTests.new().run(self)
+	DiscoveryTests.new().run(self)
+	LogisticsTests.new().run(self)
+	ForksTests.new().run(self)
+	StarfallTests.new().run(self)
+	ExpeditionTests.new().run(self)
+	EndingTests.new().run(self)
+	TradeTests.new().run(self)
+	TitleTests.new().run(self)
+	DevTests.new().run(self)
+	HomesTests.new().run(self)
+	IronfallTests.new().run(self)
+	TeardownTests.new().run(self)
+	SteamTests.new().run(self)
+	CutsceneTests.new().run(self)
 	NewcomerTests.new().run(self)
 	UiTests.new().run(self)
+	TechBoardTests.new().run(self)
 	if not "fast" in OS.get_cmdline_user_args():  # `-- fast` skips the bot's slow runs while iterating
 		test_pacing_bot()
+		StoneStallTests.new().run(self)
 		SaveTests.new().run_system(self)
+		DevTests.new().run_starts(self)  # builds every stage start: the bots play to each, so minutes
+	RenderedTests.new().run(self)
 	print("FAILED: %d" % failures if failures > 0 else "ALL TESTS PASSED")
 	quit(1 if failures > 0 else 0)
 
 
 ## A headless player (tests/autoplay_bronze.gd) plays the stone age on a few maps. It should reach Bronze Dawn
 ## in 8 to 25 simulated minutes; data.gd is tuned so it takes about 12 to 16. The game at that moment must match
-## tests/golden.json. It then plays on to its first Bronze, which should come 7 to 14 minutes later (the target is about
-## 8 to 12), and the game at that moment must match tests/golden_bronze.json.
+## tests/golden.json. It then plays on to its first Bronze, which should come 7 to 16 minutes later (the target is about
+## 10 to 14), and the game at that moment must match tests/golden_bronze.json. The Falling Star follows 8 to 36 minutes after
+## that: homes ask for more as they grow (page 17), so a whole run is about 45 to 60 minutes by bot.
 func test_pacing_bot() -> void:
 	var golden := GoldenTests.new()
 	var have_golden := golden.load_golden(self)
@@ -139,12 +249,12 @@ func test_pacing_bot() -> void:
 		check(r["won"], "the bot reaches Bronze Dawn on map %d" % map_seed)
 		check(minutes >= 8.0 and minutes <= 25.0, "map %d takes 8 to 25 minutes (%.1f)" % [map_seed, minutes])
 		check(
-			r["minutes"] >= 7.0 and r["minutes"] <= 14.0,
-			"map %d: the first Bronze takes 7 to 14 minutes more (%.1f)" % [map_seed, r["minutes"]]
+			r["minutes"] >= 7.0 and r["minutes"] <= 16.0,
+			"map %d: the first Bronze takes 7 to 16 minutes more (%.1f)" % [map_seed, r["minutes"]]
 		)
 		check(
-			star >= 8.0 and star <= 20.0,
-			"map %d: the Falling Star comes 8 to 20 minutes after it (%.1f)" % [map_seed, star]
+			star >= 8.0 and star <= 36.0,
+			"map %d: the Falling Star comes 8 to 36 minutes after it (%.1f)" % [map_seed, star]
 		)
 		if not r["won"] or r["minutes"] < 0.0 or star < 0.0:
 			for line in r["log"]:
@@ -169,7 +279,7 @@ func fresh() -> Sim:
 ## test that wants them sets them itself.
 func give(s: Sim, amount: int) -> void:
 	for id in Data.ITEM_ORDER:
-		s.economy.inv[id] = 0 if id == "bronze_tools" else amount
+		s.economy.inv[id] = 0 if id in ["bronze_tools", "iron_tools", "steel_tools"] else amount
 
 
 ## A spot where the river is 2 tiles wide between two open banks: {"river": its first tile, "side": the
@@ -267,7 +377,10 @@ func test_hand_gathering_and_tools() -> void:
 	check(s.economy.inv["flint_tools"] == 1, "have flint tools")
 	s.gather_by_hand(tree)
 	check(s.economy.inv["wood"] == 1, "flint tools don't change the yield by hand")
-	check(is_equal_approx(Hands.hold_time(s, "wood"), 0.7), "they shorten the hold to 0.7 s")
+	check(
+		is_equal_approx(Hands.hold_time(s, "wood"), Data.HAND_TOOLS["flint_tools"]["hold"]),
+		"they shorten the hold to %.1f s" % Data.HAND_TOOLS["flint_tools"]["hold"]
+	)
 	check(not s.shard_seen, "the shard starts unseen")
 	check(s.gather_by_hand(s.world.shard_pos) == Data.SHARD_TEXT, "shard shows flavor text")
 	check(s.shard_seen, "clicking the shard marks it seen")
@@ -292,9 +405,11 @@ func test_every_tech_is_reachable() -> void:
 	for i in Data.TECH_ORDER.size():
 		for tech in Data.TECH_ORDER:
 			s.research(tech)
-	var built := Data.TECH_ORDER.filter(Rules.tech_enabled)
-	check(s.tech_tree.researched.size() == built.size(), "every tech is reachable")
-	check(built.size() == Data.TECHS.size(), "and none waits for a later update")
+	var old_eras := Data.TECH_ORDER.filter(func(t): return int(Data.TECHS[t].get("era", 1)) <= 2)  # Ironfall has its own tests
+	var built := old_eras.filter(Rules.tech_enabled)
+	var done := s.tech_tree.researched.keys().filter(func(t): return t in old_eras)
+	check(done.size() == built.size(), "every tech is reachable")
+	check(built.size() == old_eras.size(), "and none waits for a later update")
 	check(s.won, "researching Bronze Dawn wins")
 
 
@@ -600,13 +715,16 @@ func test_tech_tree_is_a_web() -> void:
 	for tech in stone:
 		colors[Data.TECHS[tech]["color"].to_html()] = true
 	check(colors.size() == stone.size(), "every stone-age tech has its own color")
-	for tech in Data.TECHS:
-		check("star_lore" not in Data.TECHS[tech]["requires"], tech + " doesn't strictly need hidden Star Lore")
+	for tech in Data.TECHS:  # Megaliths is the one side branch behind the hidden Star Lore (the project owner, 2026-10-06)
+		check(
+			tech == "megaliths" or "star_lore" not in Data.TECHS[tech]["requires"],
+			tech + " doesn't strictly need hidden Star Lore"
+		)
 
 
 ## Tech tree v4 (mockups/tech-tree-v4.md): each link reads "you need X to invent Y".
 func test_tech_tree_v4() -> void:
-	check(TechLayout.links(1).size() == 51, "v4 plus the Storehouse has 51 links (%d)" % TechLayout.links(1).size())
+	check(TechLayout.links(1).size() == 50, "v4 plus the Storehouse has 50 links (%d)" % TechLayout.links(1).size())
 	check(Data.LANE_ORDER == ["fiber", "stone", "land", "hearth", "lore"], "lanes run Fiber, Stone, Land, Hearth, Lore")
 	check(Data.TECHS["bronze_dawn"]["tier"] == 5, "the gate sits after Tier V")
 	check(Data.TIER_NAMES.size() == 6, "every column has a caption")
@@ -674,31 +792,28 @@ func test_tech_effects() -> void:
 	var slow := s.pathing.walk_cost(road)
 	s.research("paved_roads")
 	s.tech_tree.researched["paved_roads"] = true
-	s.pathing.update_cell(road)
+	check(s.pathing.walk_cost(road) == slow, "the tech alone does not pave a road")
+	give(s, 50)
+	check(s.place("paved_road", road), "dragging a Paved Road over it does")
 	check(s.pathing.walk_cost(road) < slow, "paved roads are faster")
 	var grass := find_grass(s, false)
 	check(place_free(s, "field", grass), "sow a field")
 	check(s.world.tile_at(grass) == "grain", "field grows grain")
 
 
-## Megaliths needs Masonry and one of Storytelling or Star Lore; either one alone is enough.
+## Megaliths needs Masonry and the Star Lore, which is hidden until the Strange Stone is clicked.
 func test_requires_any() -> void:
 	var s := fresh()
 	give(s, 999)
-	for t in ["knapping", "fire", "masonry"]:
+	for t in ["knapping", "fire", "masonry", "storytelling"]:
 		check(s.research(t), "research " + t)
-	check(not s.tech_tree.requirements_met("megaliths"), "Megaliths needs Storytelling or Star Lore too")
-	check(s.tech_tree.missing_requirements("megaliths") == 1, "an either-or counts as one missing tech")
-	check(s.research("storytelling"), "research Storytelling")
-	check(s.tech_tree.can_research("megaliths"), "Storytelling alone unlocks Megaliths")
-	var s2 := fresh()
-	give(s2, 999)
-	s2.gather_by_hand(s2.world.shard_pos)
-	for t in ["knapping", "fire", "masonry", "star_lore"]:
-		s2.tech_tree.researched[t] = true
-	check(not s2.tech_tree.researched.has("storytelling"), "no Storytelling in the second camp")
-	check(s2.tech_tree.can_research("megaliths"), "Star Lore alone unlocks Megaliths")
-	check(s2.research("megaliths"), "research Megaliths through Star Lore")
+	check(not s.tech_tree.requirements_met("megaliths"), "Megaliths needs the Star Lore, not Storytelling")
+	check(s.tech_tree.missing_requirements("megaliths") == 1, "the Star Lore is the one missing tech")
+	check(not s.tech_tree.can_research("megaliths"), "Storytelling alone does not unlock Megaliths")
+	s.gather_by_hand(s.world.shard_pos)
+	check(s.research("star_lore"), "research Star Lore once the stone is clicked")
+	check(s.tech_tree.can_research("megaliths"), "Masonry and Star Lore unlock Megaliths")
+	check(s.research("megaliths"), "research Megaliths")
 
 
 func test_star_lore_is_hidden_until_the_shard_is_clicked() -> void:
@@ -707,7 +822,7 @@ func test_star_lore_is_hidden_until_the_shard_is_clicked() -> void:
 	check(s.research("storytelling"), "research Storytelling")
 	check(not s.tech_tree.tech_visible("star_lore"), "Star Lore is hidden at first")
 	check(not s.tech_tree.can_research("star_lore"), "hidden Star Lore can't be researched")
-	check(s.tech_tree.tech_visible("megaliths"), "other techs are visible")
+	check(s.tech_tree.tech_visible("cordage"), "other techs are visible")
 	s.gather_by_hand(s.world.shard_pos)
 	check(s.tech_tree.tech_visible("star_lore"), "clicking the Strange Stone reveals Star Lore")
 	check(s.research("star_lore"), "then it can be researched")
@@ -729,8 +844,8 @@ func test_shard_cairn() -> void:
 			check(s.place("shard_cairn", p), "cairn goes beside the shard")
 			s.tick(0.1)
 			check(
-				s.town.buildings[s.town.building_at[p]]["status"] == "It hums. Nothing more. Yet.",
-				"the cairn only hums"
+				s.town.buildings[s.town.building_at[p]]["status"] == Data.BUILDINGS["shard_cairn"]["status"],
+				"the cairn hums"
 			)
 			return
 

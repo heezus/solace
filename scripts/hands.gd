@@ -1,6 +1,6 @@
 extends RefCounted
 ## Working by hand (design-system/14-hands-to-haulers.md): what a hold-to-harvest gives and how long it
-## takes, teach by doing (a Kith who watches you harvest a resource Data.LEARN_CLICKS times learns to
+## takes, teach by doing (a Kith who watches you harvest a resource Data.LEARN_CLICKS times, 6 for the first, learns to
 ## gather it), and crafting. Static, and works on the Sim passed in.
 
 const Data = preload("res://scripts/data.gd")
@@ -33,6 +33,70 @@ static func hold_time(s, item: String) -> float:
 	return t_min
 
 
+## Hold on `p` for `delta` more seconds: the ring fills and, when full, the tile is harvested (its text, else "").
+## A shaky hand costs nothing. Sliding to a neighbouring tile of the same kind keeps the ring's progress; any other
+## move (a tile of another kind, bare ground, off the map) puts the progress aside for Data.HOLD_KEEP seconds, and
+## it comes back if the pointer returns to that tile in time (a press after an early release does the same).
+static func hold(s, p: Vector2i, delta: float) -> String:
+	if p != s.harvest_tile:
+		_move_ring(s, p)
+	var item := item_at(s, p)
+	if item == "":
+		s.harvest_frac = 0.0
+		return ""
+	var need := hold_time(s, item)
+	s.harvest_ring["held"] += delta
+	if s.harvest_ring["held"] < need:
+		s.harvest_frac = s.harvest_ring["held"] / need
+		return ""
+	s.harvest_ring["held"] -= need
+	s.harvest_frac = s.harvest_ring["held"] / need
+	return s.gather_by_hand(p)
+
+
+## Let go of the ring: it empties, or with `keep` its progress waits Data.HOLD_KEEP seconds (see hold).
+static func release(s, keep: bool) -> void:
+	if not keep:
+		s.harvest_ring["aside"] = {}
+	elif s.harvest_ring["held"] > 0.0:
+		_set_aside(s)
+	s.harvest_tile = Vector2i(-1, -1)
+	s.harvest_ring["held"] = 0.0
+	s.harvest_frac = 0.0
+
+
+## Waiting progress runs down in game time, and is gone when its time is out.
+static func age_stash(s, delta: float) -> void:
+	if s.harvest_ring["aside"].is_empty():
+		return
+	s.harvest_ring["aside"]["left"] -= delta
+	if s.harvest_ring["aside"]["left"] <= 0.0:
+		s.harvest_ring["aside"] = {}
+
+
+## The pointer is on a new tile `p`: the ring goes with it (same kind, next door), or its progress is put aside and
+## p's own waiting progress, if there is any, comes back.
+static func _move_ring(s, p: Vector2i) -> void:
+	var back: Dictionary = s.harvest_ring["aside"]
+	if s.harvest_ring["held"] > 0.0:
+		var from: Vector2i = s.harvest_tile
+		var item := item_at(s, from)
+		if item != "" and item == item_at(s, p) and maxi(absi(p.x - from.x), absi(p.y - from.y)) <= 1:
+			s.harvest_tile = p
+			return
+		_set_aside(s)
+	s.harvest_tile = p
+	s.harvest_ring["held"] = 0.0
+	if back.get("tile", Vector2i(-1, -1)) == p:
+		s.harvest_ring["held"] = back["held"]
+		if s.harvest_ring["aside"] == back:
+			s.harvest_ring["aside"] = {}
+
+
+static func _set_aside(s) -> void:
+	s.harvest_ring["aside"] = {"tile": s.harvest_tile, "held": s.harvest_ring["held"], "left": Data.HOLD_KEEP}
+
+
 ## The hand tools that apply to `item` now.
 static func _tools(s, item: String) -> Array:
 	var out: Array = []
@@ -55,7 +119,17 @@ static func item_at(s, p: Vector2i) -> String:
 	var tile: Dictionary = Data.TILES[s.world.tile_at(p)]
 	if tile.has("tech") and not s.tech_tree.researched.has(tile["tech"]):
 		return ""  # ore can't be dug before Prospecting
-	return tile["yields"]
+	return tile_item(s, s.world.tile_at(p))
+
+
+## What a hand harvest of a tile of this kind gives: what it yields, and a Shard from the Strange Stone once it is chipped.
+static func tile_item(s, tile: String) -> String:
+	return Data.SHARD_ITEM if tile == "shard" and chips_shard(s) else Data.TILES[tile]["yields"]
+
+
+## True once the Strange Stone has been found and Shard Lamps is learned: a hold on it chips a Shard off (a click no longer reads it).
+static func chips_shard(s) -> bool:
+	return s.shard_seen and s.tech_tree.researched.has("shard_lamps")
 
 
 ## How many Kith hold a Flint Tool.
@@ -67,12 +141,25 @@ static func tools_held(s) -> int:
 	return n
 
 
-## Count a harvest toward teaching `item`; at Data.LEARN_CLICKS the next Kith in Data.PEOPLE_NAMES learns it.
+## Harvests by hand before a Kith learns the next resource: Data.LEARN_CLICKS, but only Data.LEARN_FIRST for the very first
+## resource anyone learns, so the first lesson comes quickly. Taught Hands II takes Data.TAUGHT_HANDS_II_SHARE of either.
+static func learn_needed(s) -> int:
+	var n: int = Data.LEARN_FIRST if s.people.learned_by.is_empty() else Data.LEARN_CLICKS
+	return _taught_ii(s, n)
+
+
+static func _taught_ii(s, n: int) -> int:
+	if not s.tech_tree.researched.has("taught_hands_ii"):
+		return n
+	return maxi(ceili(n * Data.TAUGHT_HANDS_II_SHARE), 1)
+
+
+## Count a harvest toward teaching `item`; at learn_needed the next Kith in Data.PEOPLE_NAMES learns it.
 static func teach(s, item: String) -> void:
 	if Data.HAND_HOLD.has(item):
 		return  # ore isn't taught: a Mine digs it
 	s.hand_counts[item] = s.hand_counts.get(item, 0) + 1
-	if s.people.knows(item) or s.hand_counts[item] < Data.LEARN_CLICKS:
+	if s.people.knows(item) or s.hand_counts[item] < learn_needed(s):
 		return
 	var who: String = (
 		s.people.kith[s.people.learned_by.size() % s.people.kith.size()]["name"]
@@ -82,13 +169,27 @@ static func teach(s, item: String) -> void:
 	s.people.learn(item, who)
 	var job: Dictionary = Data.HUT_JOBS.get(item, Data.JOB_ANY)
 	s.events.append(Data.LEARNED_LINE % [who, job["craft"], job["title"]])
+	_spread(s, who)
+
+
+## Taught Hands II: a job learned spreads. The Kith learn, as well, every other resource the player has harvested at least
+## Data.TAUGHT_HANDS_II_SHARE of the harvests that teach one (rounded up; the ones that would teach it anyway are learned already).
+static func _spread(s, who: String) -> void:
+	if not s.tech_tree.researched.has("taught_hands_ii"):
+		return
+	var half := _taught_ii(s, learn_needed(s))
+	for other in s.hand_counts:
+		if not s.people.knows(other) and s.hand_counts[other] >= half:
+			s.people.learn(other, who)
+			s.events.append(Data.SPREAD_LINE % [who, Data.HUT_JOBS.get(other, Data.JOB_ANY)["craft"]])
 
 
 # --- Crafting by hand ----------------------------------------------------------
 
 
 static func recipe_unlocked(s, recipe: String) -> bool:
-	return s.tech_tree.researched.has(Data.RECIPES[recipe]["tech"])
+	var lesson: String = Data.RECIPES[recipe].get("lesson", "")  # a recipe taught by a part wants its Lesson learned too
+	return s.tech_tree.researched.has(Data.RECIPES[recipe]["tech"]) and (lesson == "" or s.teardown.knows(lesson))
 
 
 static func craft(s, recipe: String) -> bool:

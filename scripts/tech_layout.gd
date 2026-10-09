@@ -7,22 +7,23 @@ extends RefCounted
 ## Lines are orthogonal: a line to the next
 ## tier takes one vertical run in the gutter between the tiers; a line that skips tiers drops into the
 ## channel between lanes, runs along it, and climbs back up in the gutter before its target. Vertical
-## runs get their own 7px track in a gutter and horizontal runs their own track in a channel.
+## runs get their own track in a gutter and horizontal runs their own track in a channel. The cards are compact (one
+## line each: icon, name, a status mark) so a whole era fits a window; costs live in the Next steps view and the hover strip.
 
 const Data = preload("res://scripts/data.gd")
 
-const CARD_W := 212.0
-const CARD_H := 94.0
+const CARD_W := 190.0
+const CARD_H := 32.0
 const CARD := Vector2(CARD_W, CARD_H)
-const GATE_W := 132.0
+const GATE_W := 130.0
 const LEFT := 10.0
-const GUTTER := 56.0
+const GUTTER := 48.0
 const PITCH := CARD_W + GUTTER
-const HEADER := 24.0  # the tier names
-const CHANNEL := 30.0  # between lanes, on top of the gap under the last row
-const ROW := 102.0  # card height plus the gap between rows
+const HEADER := 22.0  # the tier names
+const CHANNEL := 20.0  # between lanes, on top of the gap under the last row
+const ROW := 38.0  # card height plus the gap between rows
 const GAP := ROW - CARD_H
-const STEP := 7.0  # track spacing for lines and ports
+const STEP := 5.0  # track spacing for lines and ports
 
 
 ## {"rects": {tech: Rect2}, "lanes": [{id, top, bottom}], "channels": [Vector2(top, bottom)],
@@ -131,12 +132,13 @@ static func _ports(lay: Dictionary, all: Array) -> Dictionary:
 			if Data.TECHS[k.get_slice(">", 0)]["tier"] == tier - 1:
 				before.append(outs[k])
 		var shift := 0.0
-		for cand in [0.0, 3.5, -3.5, 7.0, -7.0, 10.5, -10.5]:
+		var half := STEP / 2.0
+		for cand in [0.0, half, -half, STEP, -STEP, STEP * 1.5, -STEP * 1.5]:
 			var clear := true
 			for i in groups.size():
 				var py: float = _mid_y(lay, tech) + cand + (i - (groups.size() - 1) / 2.0) * STEP
 				for o in before:
-					clear = clear and absf(py - o) >= 3.0
+					clear = clear and absf(py - o) >= minf(3.0, half)
 			if clear:
 				shift = cand
 				break

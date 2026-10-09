@@ -77,15 +77,75 @@ static func visible_techs(shard_seen: bool) -> Dictionary:
 	return out
 
 
-## What building `type` costs on a tile: a Road on Rocks cuts a pass for PASS_COST, and once Causeways is known
-## (`causeways`) a Road on any other tile is laid in stone and brick.
-static func cost_at(type: String, tile: String, causeways := false) -> Dictionary:
-	if Data.BUILDINGS[type]["kind"] == "road":
-		if tile == "rock":
-			return Data.PASS_COST
-		if causeways:
-			return Data.CAUSEWAY_ROAD_COST
-	return Data.BUILDINGS[type]["cost"]
+## The road tier building `type` lays: a road's own tier, the top tier for a Stone Bridge, 0 for the rest.
+static func tier_of(type: String) -> int:
+	var def: Dictionary = Data.BUILDINGS[type]
+	return int(def.get("tier", Data.PAVED_TIER if def.get("stone", false) else 0))
+
+
+## The road type that lays tier `tier` of a road (see Data.BUILDINGS `tier`).
+static func road_type(tier: int) -> String:
+	for type in Data.BUILD_ORDER:
+		var def: Dictionary = Data.BUILDINGS[type]
+		if def["kind"] == "road" and int(def.get("tier", 0)) == tier:
+			return type
+	return "road"
+
+
+## True for a production building, whose copies cost more (Data.COPY_COST_TABS: the workshops and the metal works).
+static func is_production(type: String) -> bool:
+	for tab in Data.COPY_COST_TABS:
+		if type in Data.BUILD_TABS[tab]:
+			return true
+	return false
+
+
+## How many times its listed price the next copy of a production building costs with `copies` of it standing: 15% more
+## for each, never past Data.COPY_COST_CEILING. 1.0 for anything else.
+static func copy_multiplier(type: String, copies: int) -> float:
+	if not is_production(type):
+		return 1.0
+	return minf(1.0 + Data.COPY_COST_STEP * copies, Data.COPY_COST_CEILING)
+
+
+## What the next `type` costs with `copies` of it standing: the listed price times copy_multiplier, each item rounded
+## and never below 1.
+static func price(type: String, copies: int) -> Dictionary:
+	var cost: Dictionary = Data.BUILDINGS[type]["cost"]
+	var mult := copy_multiplier(type, copies)
+	if mult == 1.0:
+		return cost
+	var out := {}
+	for id in cost:
+		out[id] = maxi(1, roundi(cost[id] * mult))
+	return out
+
+
+## What is still owed for `cost` when `paid` has been spent already: the difference in each item, never below zero
+## (what was paid in another item is not given back).
+static func difference(cost: Dictionary, paid: Dictionary) -> Dictionary:
+	var out := {}
+	for id in cost:
+		var owed: int = cost[id] - paid.get(id, 0)
+		if owed > 0:
+			out[id] = owed
+	return out
+
+
+## What building `type` costs on a tile: a Road on Rocks cuts a pass for PASS_COST (plus what its tier adds over a plain
+## road), and laying over what stands there (`current`, a built_type of a road or bridge) costs only the difference
+## from what it cost.
+static func cost_at(type: String, tile: String, current := "") -> Dictionary:
+	var cost: Dictionary = Data.BUILDINGS[type]["cost"]
+	if current != "":
+		return difference(cost, Data.BUILDINGS[current]["cost"])
+	if Data.BUILDINGS[type]["kind"] == "road" and tile == "rock":
+		var pass_cost: Dictionary = Data.PASS_COST.duplicate()
+		var extra := difference(cost, Data.BUILDINGS["road"]["cost"])
+		for id in extra:
+			pass_cost[id] = pass_cost.get(id, 0) + extra[id]
+		return pass_cost
+	return cost
 
 
 ## The buildings a tech unlocks, in build order (Paths & Haulers gives the Road and the Wooden Bridge).

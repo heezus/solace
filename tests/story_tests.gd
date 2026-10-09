@@ -60,7 +60,42 @@ func test_story_ids_are_stable_and_unique() -> void:
 	for tech in Data.STORY_TECHS:
 		t.check(Data.TECHS.has(tech), tech + " (a story tech) is a real tech")
 		t.check(Data.STORY_EVENTS.has(Data.STORY_TECHS[tech]), tech + " records an id listed in STORY_EVENTS")
-	var ids := ["first_lesson", "first_trip", "shard_found", "haulers", "bronze_dawn", "wanderer_named", "star_falling"]
+	var ids := [
+		"first_lesson",
+		"first_trip",
+		"shard_found",
+		"haulers",
+		"bronze_dawn",
+		"wanderer_named",
+		"star_falling",
+		"cairn_raised",
+		"star_landed",
+		"lumen_arrived",
+		"name_read",
+		"market_open",
+		"shrine_raised",
+		"guard_raised",
+		"wreck_found",
+		"light_read",
+		"body_read",
+		"growth_read",
+		"craft_read",
+		"hunger_shared",
+		"hunger_held",
+		"shards_given",
+		"shards_traded",
+		"shards_refused",
+		"dark_kept",
+		"dark_refused",
+		"warning_read",
+		"bloom_seen",
+		"lean_allies",
+		"lean_neighbours",
+		"lean_enemies",
+		"ironfall_begun",
+		"teardown_lesson",
+		"livewire_lit"
+	]
 	t.check(Data.STORY_EVENTS.keys() == ids, "the ids are the stable ones a profile save will keep")
 
 
@@ -205,7 +240,7 @@ func test_learning_by_watching_records_a_lesson() -> void:
 	var people := Monitor.new()
 	people.watch(s.people, "learned")
 	var tree: Vector2i = t.find_tile(s, "tree")
-	for i in Data.LEARN_CLICKS - 1:
+	for i in Data.LEARN_FIRST - 1:
 		s.gather_by_hand(tree)
 	t.check(people.count() == 0 and s.story.events.is_empty(), "nothing learned before the last click")
 	s.gather_by_hand(tree)
@@ -287,6 +322,9 @@ func test_kith_messages_reach_the_player() -> void:
 
 func test_a_hidden_tech_waits_for_the_stone() -> void:
 	var s: Sim = t.fresh()
+	for id in Data.ITEM_ORDER:  # everything has been found, so only the Strange Stone is missing
+		s.economy.seen[id] = true
+	s.tech_tree.researched["storytelling"] = true
 	t.check(not s.tech_tree.tech_visible("star_lore"), "hidden before the Strange Stone")
 	s.gather_by_hand(s.world.shard_pos)
 	t.check(s.tech_tree.tech_visible("star_lore"), "visible after: the signal did not replace the flag")
@@ -339,6 +377,6 @@ func test_the_goal_order_researches_before_it_lays() -> void:
 		done_early = done_early or s.story.goals_done.has(id)
 	t.check(not done_early, "neither is done at the start")
 	var stable := ["learn_wood", "learn_berries", "learn_stone", "flax", "knapping", "tools", "hut_tech", "hut"]
-	stable += ["trip", "berries", "dwelling", "charcoal", "twine", "haulers", "road", "rush", "kiln", "wheel"]
+	stable += ["trip", "berries", "dwelling", "twine", "haulers", "road", "rush", "charcoal", "kiln", "wheel"]
 	stable += ["grind", "storehouse", "calendar", "bronze"]
 	t.check(ids == stable, "the goal ids and their order are the stable ones a save keeps")

@@ -6,6 +6,8 @@ extends RefCounted
 ## `unlock` is the card's one-line summary, `icon` a sprite in art/sprites ("@name" for a drawn one),
 ## and `side` marks an optional branch that Bronze Dawn doesn't need.
 ## `requires` must all be researched; `requires_any` (optional) needs just one of its techs.
+## `fork` (true on a tech with a `requires_any`) makes that list a fork: two routes to one goal. Learning one sets the others
+## aside (out of view) until the goal is learned, and then they cost FORK_LATER_COST times as much. A fork never strands a run.
 ## `effect` marks a tech whose bonus Sim applies while it is researched.
 ## `hidden` techs stay out of the tree until the player has clicked the Strange Stone.
 ## `rank` gives a tech optional ranks II and III, bought on its card (never needed for Bronze Dawn):
@@ -21,6 +23,9 @@ extends RefCounted
 ## effect ships in: a tech past BUILT_STAGE is on the board, locked, and can't be bought, so nobody pays for a tech
 ## that does nothing yet.
 
+## Era 4's techs are one constant each in their own folder (a constant cannot merge dictionaries); TECHS lists them.
+const IronfallTechs = preload("res://scripts/data/ironfall/techs.gd")
+
 ## The research board's bands, top to bottom. Bronze Dawn sits alone in the "gate" column.
 const LANES := {
 	"hearth": {"name": "Hearth", "color": Color("ff7b39")},
@@ -34,10 +39,17 @@ const LANE_ORDER := ["fiber", "stone", "land", "hearth", "lore"]
 const TIER_NAMES := ["TIER I", "TIER II", "TIER III", "TIER IV", "TIER V", "THE GATE"]
 
 ## The eras, each with a board of its own, and the column captions of each board (the last is the gate's column).
-const ERAS := {1: {"name": "Stone Age"}, 2: {"name": "Bronze Dawn"}}
-const ERA_TIER_NAMES := {1: TIER_NAMES, 2: ["TIER I", "TIER II", "TIER III", "TIER IV", "TIER V", "THE GATE"]}
+## Era 3, Starfall, has no tree: its magic is a set of gifts (design-system/16-starfall.md), so the next board is era 4.
+const ERAS := {1: {"name": "Stone Age"}, 2: {"name": "Bronze Dawn"}, 4: {"name": "Ironfall"}}
+const ERA_TIER_NAMES := {
+	1: TIER_NAMES,
+	2: ["TIER I", "TIER II", "TIER III", "TIER IV", "TIER V", "THE GATE"],
+	4: ["TIER I", "TIER II", "TIER III", "TIER IV", "THE GATE"],
+}
 ## The latest build stage whose techs can be researched (see `stage` above).
-const BUILT_STAGE := 2
+const BUILT_STAGE := 3
+## A route set aside by a fork costs this many times its price once the fork's goal is learned.
+const FORK_LATER_COST := 1.5
 ## Tally Sticks makes every tech this share of its cost.
 const TALLY_DISCOUNT := 0.9
 
@@ -74,13 +86,16 @@ const TECHS := {
 		"lane": "stone",
 		"tier": 0,
 		"slot": 0,
-		"unlock": "Flint Tools",
+		"unlock": "Flint Tools, Tool Bench",
 		"icon": "@flint",
 		"requires": [],
 		"cost": {"flint": 5, "stone": 10},
 		"rank": {"item": "flint"},
 		"desc":
-		"Shape flint. Craft Flint Tools: a harvest by hand takes 0.7s, and each Kith holding one works 50% faster.",
+		(
+			"Shape flint. Craft Flint Tools: a harvest by hand takes 0.6s, and each Kith holding one works 50% faster."
+			+ " A Tool Bench makes them for you."
+		),
 	},
 	"cordage":
 	{
@@ -90,12 +105,12 @@ const TECHS := {
 		"lane": "fiber",
 		"tier": 0,
 		"slot": 0,
-		"unlock": "Rope, Twine Post",
+		"unlock": "Rope, Twine Post, Flax Field",
 		"icon": "twine_post",
 		"requires": [],
 		"cost": {"fiber": 15},
 		"rank": {"building": "twine_post"},
-		"desc": "Twist fiber into rope, by hand or at a Twine Post.",
+		"desc": "Twist fiber into rope, by hand or at a Twine Post. Keep some back to sow Flax Fields.",
 	},
 	"fire":
 	{
@@ -274,11 +289,12 @@ const TECHS := {
 		"lane": "fiber",
 		"tier": 2,
 		"slot": 1,
-		"unlock": "Road, Wooden Bridge",
+		"unlock": "Road, Gravel Road, Wooden Bridge",
 		"icon": "hauler",
 		"requires": ["cordage", "gatherers_hut"],
-		"cost": {"rope": 30, "wood": 50},
-		"desc": "Idle Kith carry goods between buildings and the stockpile. Unlocks Roads and Wooden Bridges.",
+		"cost": {"rope": 20, "wood": 40},
+		"desc":
+		"Idle Kith carry goods between buildings and the stockpile. Unlocks Roads, Gravel Roads and Wooden Bridges.",
 	},
 	"storehouse":
 	{
@@ -350,8 +366,7 @@ const TECHS := {
 		"unlock": "Standing Stone",
 		"icon": "standing_stone",
 		"side": true,
-		"requires": ["masonry"],
-		"requires_any": ["storytelling", "star_lore"],
+		"requires": ["masonry", "star_lore"],
 		"cost": {"stone": 60, "rope": 20},
 		"desc": "Raise great stones. Buildings right next to a Standing Stone work twice as fast.",
 	},
@@ -426,12 +441,13 @@ const TECHS := {
 		"lane": "stone",
 		"tier": 3,
 		"slot": 0,
-		"unlock": "Roads 4x",
+		"unlock": "Paved Road",
 		"icon": "tile_road",
 		"requires": ["haulers", "masonry"],
 		"cost": {"stone": 100, "wood": 60, "brick": 20, "rope": 20},
 		"effect": "paved_roads",
-		"desc": "Roads are 4x faster than open ground, up from 2x.",
+		"desc":
+		"Lay Paved Roads, 3x faster than open ground (a Road is 2x, Gravel 2.5x). Drag over a road to pave it in place.",
 	},
 	"baking":
 	{
@@ -604,7 +620,10 @@ const TECHS := {
 		"requires": ["tally_sticks", "plough"],
 		"cost": {"wood": 100, "rope": 50, "copper": 12},
 		"desc":
-		"A Cart Shed turns haulers into carts. A cart carries twice the load, but only on roads, and a Wooden Bridge will not bear it.",
+		(
+			"A Cart Shed turns a hauler into a hand cart. One Kith pulls it and it carries three times the load,"
+			+ " but only on roads, and a Wooden Bridge will not bear it."
+		),
 	},
 	"alloying":
 	{
@@ -630,12 +649,12 @@ const TECHS := {
 		"lane": "stone",
 		"tier": 2,
 		"slot": 0,
-		"unlock": "Stone Bridge, Roads 5x",
+		"unlock": "Stone Bridge",
 		"icon": "stone_bridge",
 		"requires": ["the_wheel", "mining"],
 		"cost": {"stone": 120, "brick": 80, "copper": 20},
 		"desc":
-		"Roads are laid in stone: 1 Stone and 1 Brick, five times as fast as open ground. The Stone Bridge spans the river and bears carts.",
+		"The Stone Bridge spans the river, walks at paved pace and bears carts. Click a Wooden Bridge with it to rebuild it in stone.",
 	},
 	"markets":
 	{
@@ -700,6 +719,7 @@ const TECHS := {
 		"icon": "granary",
 		"requires": ["plough"],
 		"requires_any": ["markets", "kilns_ii"],
+		"fork": true,
 		"cost": {"brick": 100, "grain": 100, "wood": 100},
 		"desc": "Stored food holds more people: housing grows by 1 for every 20 food in store.",
 	},
@@ -749,6 +769,23 @@ const TECHS := {
 		"cost": {"bronze": 60, "brick": 100, "flour": 60, "rope": 40},
 		"desc": "It is not a star. It is coming down.",
 	},
+	# --- Era 4: Ironfall (design-system/19-ironfall.md), defined in scripts/data/ironfall/techs.gd ---
+	"coal_seams": IronfallTechs.COAL_SEAMS,
+	"ironstone": IronfallTechs.IRONSTONE,
+	"teardown": IronfallTechs.TEARDOWN,
+	"bloomery": IronfallTechs.BLOOMERY,
+	"boiler": IronfallTechs.BOILER,
+	"beast_pen": IronfallTechs.BEAST_PEN,
+	"iron_tools": IronfallTechs.IRON_TOOLS,
+	"rails": IronfallTechs.RAILS,
+	"shard_lamps": IronfallTechs.SHARD_LAMPS,
+	"taught_hands_ii": IronfallTechs.TAUGHT_HANDS_II,
+	"blast_furnace": IronfallTechs.BLAST_FURNACE,
+	"iron_plough": IronfallTechs.IRON_PLOUGH,
+	"shard_boiler": IronfallTechs.SHARD_BOILER,
+	"steel": IronfallTechs.STEEL,
+	"bloom_sampling": IronfallTechs.BLOOM_SAMPLING,
+	"livewire": IronfallTechs.LIVEWIRE,
 }
 
 ## Order for lists and tests (roots first, then by column).
@@ -798,4 +835,20 @@ const TECH_ORDER := [
 	"bronze_ploughshare",
 	"star_charts",
 	"falling_star",
+	"coal_seams",
+	"ironstone",
+	"teardown",
+	"bloomery",
+	"boiler",
+	"beast_pen",
+	"iron_tools",
+	"rails",
+	"shard_lamps",
+	"taught_hands_ii",
+	"blast_furnace",
+	"iron_plough",
+	"shard_boiler",
+	"steel",
+	"bloom_sampling",
+	"livewire",
 ]

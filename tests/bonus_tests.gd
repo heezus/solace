@@ -7,6 +7,7 @@ const Sim = preload("res://scripts/sim.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Work = preload("res://scripts/work.gd")
+const Patch = preload("res://scripts/patch.gd")
 
 var t  # the runner, tests/run_tests.gd
 
@@ -47,7 +48,8 @@ func test_bonuses_add_within_and_multiply_across() -> void:
 		"Stone Axe is a click tool: x3 Wood, so a bundle is %d Wood" % (Data.BUNDLE * 3)
 	)
 	var cycles := 60.0 / Data.BUILDINGS["gatherers_hut"]["time"]
-	t.check(is_equal_approx(60.0 / Work.time(s, hut), cycles * 2.5), "speed x2.5 and the bundle multiply")
+	var patch := Patch.speed(s, hut)  # a hut with several tiles in reach is faster still (scripts/patch.gd)
+	t.check(is_equal_approx(60.0 / Work.time(s, hut), cycles * 2.5 * patch), "speed x2.5 and the bundle multiply")
 	var text := Work.text(s, hut)
 	t.check(text.contains("x Speed 2.5"), "the panel shows the speed math: " + text)
 	t.check(text.contains("Flint Tools +50%") and text.contains("Standing Stone +100%"), "and names each bonus")
@@ -69,7 +71,10 @@ func test_workers_take_tools() -> void:
 	t.check(s.economy.inv["flint_tools"] == 1, "from the stockpile")
 	t.check(Hands.tools_held(s) == 1, "one Kith holds a tool")
 	t.check(is_equal_approx(Bonuses.speed(s, hut), 1.5), "a worker with a tool works 50% faster")
-	t.check(is_equal_approx(Work.time(s, hut), Data.BUILDINGS["gatherers_hut"]["time"] / 1.5), "so each job is shorter")
+	t.check(
+		is_equal_approx(Work.time(s, hut), Data.BUILDINGS["gatherers_hut"]["time"] / (1.5 * Patch.speed(s, hut))),
+		"so each job is shorter"
+	)
 	var q := s.world.camp_pos + Vector2i(2, 0)
 	t.place_free(s, "gatherers_hut", q)
 	s.tick(0.1)
@@ -111,11 +116,17 @@ func test_hand_gathering_keeps_its_tools() -> void:
 	s.economy.inv["wood"] = 0
 	s.gather_by_hand(tree)
 	t.check(s.economy.inv["wood"] == 1, "a Flint Tool shortens the hold, it doesn't add Wood")
-	t.check(is_equal_approx(Hands.hold_time(s, "wood"), 0.7), "you keep a tool for yourself: the hold stays 0.7 s")
+	t.check(
+		is_equal_approx(Hands.hold_time(s, "wood"), Data.HAND_TOOLS["flint_tools"]["hold"]),
+		"you keep a tool for yourself: the hold stays %.1f s" % Data.HAND_TOOLS["flint_tools"]["hold"]
+	)
 	s.tech_tree.researched["stone_axe"] = true
 	s.gather_by_hand(tree)
 	t.check(s.economy.inv["wood"] == 4, "the Stone Axe is a yield tool: 3 Wood a harvest")
-	t.check(is_equal_approx(Hands.hold_time(s, "wood"), 0.7), "and the Flint Tool still sets the hold")
+	t.check(
+		is_equal_approx(Hands.hold_time(s, "wood"), Data.HAND_TOOLS["flint_tools"]["hold"]),
+		"and the Flint Tool still sets the hold"
+	)
 	s.tech_tree.researched["ochre"] = true
 	var clay: Vector2i = t.find_tile(s, "clay")
 	s.fog.reveal_all()
@@ -128,7 +139,7 @@ func test_bonus_table_is_well_formed() -> void:
 	for id in Data.BONUSES:
 		var b: Dictionary = Data.BONUSES[id]
 		t.check(b["group"] in ["speed", "yield", "output"], "%s is a Speed, Yield or Output bonus" % id)
-		t.check(b["add"] > 0.0, "%s adds something" % id)
+		t.check(b["add"] > 0.0 or b.get("dark", false), "%s adds something (or is a slowdown while dark)" % id)
 		t.check(not b.has("tech") or Data.TECHS.has(b["tech"]), "%s names a real tech" % id)
 		t.check(not b.has("rank_of") or Data.TECHS[b["rank_of"]].has("rank"), "%s is a ranked tech's bonus" % id)
 		t.check(not b.has("item") or Data.ITEMS.has(b["item"]), "%s names a real item" % id)

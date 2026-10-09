@@ -22,7 +22,7 @@ var t  # the runner, tests/run_tests.gd
 
 func run(runner) -> void:
 	t = runner
-	test_learning_at_ten_clicks()
+	test_learning_after_a_few_clicks()
 	test_huts_gather_only_what_is_learned()
 	test_dispatch_trips_and_queue_cap()
 	test_no_loop_before_haulers_loop_after()
@@ -54,16 +54,16 @@ func run_for(s: Sim, seconds: float) -> void:
 		s.tick(0.1)
 
 
-func test_learning_at_ten_clicks() -> void:
+func test_learning_after_a_few_clicks() -> void:
 	var s: Sim = t.fresh()
 	var tree: Vector2i = t.find_tile(s, "tree")
-	for i in Data.LEARN_CLICKS - 1:
+	for i in Data.LEARN_FIRST - 1:
 		s.gather_by_hand(tree)
-	t.check(not s.people.knows("wood"), "9 clicks: nobody has learned Wood yet")
-	t.check(s.hand_counts["wood"] == Data.LEARN_CLICKS - 1, "hand clicks are counted per resource")
+	t.check(not s.people.knows("wood"), "one click short: nobody has learned Wood yet")
+	t.check(s.hand_counts["wood"] == Data.LEARN_FIRST - 1, "hand clicks are counted per resource")
 	s.events.clear()
 	s.gather_by_hand(tree)
-	t.check(s.people.knows("wood"), "the 10th click teaches a Kith to gather Wood")
+	t.check(s.people.knows("wood"), "click %d (the first lesson) teaches a Kith to gather Wood" % Data.LEARN_FIRST)
 	var first: String = Data.PEOPLE_NAMES[0]
 	t.check(s.people.learned_by["wood"] == first, "the first learner is " + first)
 	var toast: String = Data.LEARNED_LINE % [first, Data.HUT_JOBS["wood"]["craft"], "Woodcutter"]
@@ -88,7 +88,10 @@ func test_huts_gather_only_what_is_learned() -> void:
 	t.check(Workers.dispatch(s, r[1]).begins_with("Nothing learned"), "so a hut can't send a trip yet")
 	t.check(b["trips"] == 0, "and nothing is queued")
 	var preview := BuildingPanel.gather_text(s, s.town.focus_tiles(b))
-	t.check(preview.contains("not yet learned (gather by hand 10x)"), "the preview says what isn't learned: " + preview)
+	t.check(
+		preview.contains("not yet learned (gather by hand %dx)" % Data.LEARN_FIRST),
+		"the preview says what isn't learned: " + preview
+	)
 	s.people.learned_by["wood"] = "Aro"
 	preview = BuildingPanel.gather_text(s, s.town.focus_tiles(b))
 	t.check(preview.contains("Wood x") and not preview.contains("Wood x1 (not"), "Wood is learned: " + preview)
@@ -123,6 +126,22 @@ func test_dispatch_trips_and_queue_cap() -> void:
 	t.check(Buildings.buffered(b["out"]) == 0, "straight to the stockpile, not the hut")
 	run_for(s, 20.0)
 	t.check(s.economy.inv["wood"] == wood + bundle * Data.TRIP_QUEUE, "then the hut waits for the next click")
+
+
+func test_player_click_sends_a_round() -> void:
+	var r := hut_camp()
+	var s: Sim = r[0]
+	var i: int = r[1]
+	var b: Dictionary = s.town.buildings[i]
+	s.people.learned_by["wood"] = "Aro"
+	run_for(s, 3.0)
+	t.check(Workers.click(s, i, true) == "Trips %d/%d" % [Data.TRIP_QUEUE, Data.TRIP_QUEUE], "one click queues a round")
+	t.check(Workers.click(s, i, true).begins_with("Trips full"), "clicking again doesn't pile on")
+	t.check(b["trips"] == Data.TRIP_QUEUE, "the queue still holds just %d" % Data.TRIP_QUEUE)
+	run_for(s, 90.0)
+	t.check(b["trips"] == 0, "the whole round was gathered")
+	b["trips"] = 1
+	t.check(Workers.click(s, i, true) == "Trip 2/%d" % Data.TRIP_QUEUE, "a hut with a trip waiting takes one more")
 
 
 func test_no_loop_before_haulers_loop_after() -> void:
@@ -204,10 +223,13 @@ func test_rush_and_its_cooldown() -> void:
 func test_click_yield_math() -> void:
 	var s: Sim = t.fresh()
 	t.check(Hands.harvest_yield(s, "wood") == 1, "base: 1 a harvest")
-	t.check(is_equal_approx(Hands.hold_time(s, "wood"), 1.0), "held for 1 s")
+	t.check(is_equal_approx(Hands.hold_time(s, "wood"), Data.HOLD_TIME), "held for %.1f s" % Data.HOLD_TIME)
 	s.hand_tools = true
 	t.check(Hands.harvest_yield(s, "stone") == 1, "Flint Tools don't raise the yield")
-	t.check(is_equal_approx(Hands.hold_time(s, "stone"), 0.7), "they shorten the hold to 0.7 s")
+	t.check(
+		is_equal_approx(Hands.hold_time(s, "stone"), Data.HAND_TOOLS["flint_tools"]["hold"]),
+		"they shorten the hold to %.1f s" % Data.HAND_TOOLS["flint_tools"]["hold"]
+	)
 	s.tech_tree.researched["stone_axe"] = true
 	t.check(Hands.harvest_yield(s, "wood") == 3, "Stone Axe: x3 for Wood")
 	t.check(Hands.harvest_yield(s, "stone") == 1, "the Stone Axe is for Wood only")
@@ -231,28 +253,39 @@ func test_hold_to_harvest() -> void:
 	var s: Sim = t.fresh()
 	var tree: Vector2i = t.find_tile(s, "tree")
 	var rock: Vector2i = t.find_tile(s, "rock")
-	t.check(s.hold_harvest(tree, 0.5) == "", "half a second: nothing yet")
+	var need := Data.HOLD_TIME
+	t.check(s.hold_harvest(tree, need * 0.5) == "", "half the hold: nothing yet")
 	t.check(is_equal_approx(s.harvest_frac, 0.5), "the ring is half full")
-	t.check(s.hold_harvest(tree, 0.5) == "+1 Wood", "a full second: the harvest pops")
+	t.check(s.hold_harvest(tree, need * 0.5) == "+1 Wood", "a full hold: the harvest pops")
 	t.check(s.economy.inv["wood"] == 1 and is_equal_approx(s.harvest_frac, 0.0), "and the ring starts again")
 	for i in 25:
 		s.hold_harvest(tree, 0.1)
-	t.check(s.economy.inv["wood"] == 3, "holding keeps harvesting: 2 more in 2.5 s (%d)" % s.economy.inv["wood"])
-	s.hold_harvest(tree, 0.9)
+	var more := 1 + floori(2.5 / need)
+	t.check(
+		s.economy.inv["wood"] == more,
+		"holding keeps harvesting: %d in all after 2.5 s (%d)" % [more, s.economy.inv["wood"]]
+	)
+	s.hold_harvest(tree, need * 0.9)
 	s.hold_harvest(rock, 0.2)
-	t.check(s.economy.inv["stone"] == 0 and is_equal_approx(s.harvest_frac, 0.2), "moving to another tile starts over")
+	t.check(
+		s.economy.inv["stone"] == 0 and is_equal_approx(s.harvest_frac, 0.2 / need),
+		"moving to another tile starts over"
+	)
 	s.release_harvest()
 	t.check(s.harvest_frac == 0.0 and s.harvest_tile == Vector2i(-1, -1), "letting go empties the ring")
-	s.hold_harvest(rock, 0.9)
+	s.hold_harvest(rock, need * 0.9)
 	s.release_harvest()
 	s.hold_harvest(rock, 0.2)
 	t.check(s.economy.inv["stone"] == 0, "a released hold doesn't count toward the next")
 	s.hand_tools = true
-	t.check(s.hold_harvest(rock, 0.5) == "+1 Stone", "Flint Tools: 0.7 s a harvest")
+	t.check(
+		s.hold_harvest(rock, Data.HAND_TOOLS["flint_tools"]["hold"] + 0.01) == "+1 Stone",
+		"Flint Tools: %.1f s a harvest" % Data.HAND_TOOLS["flint_tools"]["hold"]
+	)
 	t.check(s.hold_harvest(s.world.camp_pos, 5.0) == "", "the Hearth isn't a resource")
 	for i in Data.LEARN_CLICKS:
-		s.hold_harvest(rock, 0.7)
-	t.check(s.people.knows("stone"), "learning takes %d harvests" % Data.LEARN_CLICKS)
+		s.hold_harvest(rock, Data.HAND_TOOLS["flint_tools"]["hold"])
+	t.check(s.people.knows("stone"), "learning takes %d harvests" % Data.LEARN_FIRST)
 
 
 func test_rank_costs_and_effects() -> void:
@@ -301,7 +334,8 @@ func test_rank_costs_and_effects() -> void:
 
 ## Tech costs grow by tier (14-hands-to-haulers.md), and each tier pays in goods earlier tiers teach.
 func test_tier_costs_scale() -> void:
-	var bands := [[10, 20], [25, 60], [80, 150], [200, 400], [200, 400], [500, 700]]
+	# Tier III starts at 60: Paths & Haulers is cheaper since 2026-10-03, so the roads come sooner.
+	var bands := [[10, 20], [25, 60], [60, 150], [200, 400], [200, 400], [500, 700]]
 	var made_by := {"rope": "cordage", "charcoal": "fire", "brick": "pottery", "flour": "grindstone"}
 	var avg: Array = []
 	for tier in bands.size():

@@ -29,6 +29,12 @@ func run(runner) -> void:
 	test_the_click_bubble_stops_nagging_while_the_food_is_comfortable()
 	test_a_food_hut_with_a_foraging_worker_shows_no_bubble()
 	test_the_focus_survives_a_save()
+	test_a_hut_goes_down_working_the_resource_picked()
+	test_a_pick_at_placement_is_for_that_hut_only()
+	test_tab_steps_through_the_resources_in_reach()
+	test_a_hut_left_unchosen_says_so_once()
+	test_the_placement_picker_sits_by_the_ghost()
+	test_the_panel_picker_sets_the_focus_and_the_save_keeps_it()
 	test_an_old_save_gets_a_default_focus()
 
 
@@ -260,25 +266,40 @@ func test_the_panel_line_and_the_range_text() -> void:
 	var b: Dictionary = s.town.buildings[s.town.building_at[p]]
 	t.check(HutFocus.label_text(s, b) == "Gathering: Berries", "a hut with one choice reads 'Gathering: Berries'")
 	_put(s, p + Vector2i(2, 2), "tree")
-	t.check(
-		HutFocus.label_text(s, b).begins_with("Gathering: Berries"), "with a second choice it still leads with that"
-	)
-	t.check(HutFocus.label_text(s, b).contains("click to change"), "and hints that a click changes it")
+	t.check(HutFocus.label_text(s, b) == "Gathering: Berries", "with a second choice the line stays the same")
 	var button := HutFocus.new()
 	button.setup(s)
 	button.show_for(b)
-	t.check(
-		button.visible and button.text.begins_with("Gathering: Berries") and not button.disabled, "the panel button"
-	)
+	t.check(button.visible and button.line.text.begins_with("Gathering: Berries"), "the panel line")
+	t.check(button.row.visible and button.row.get_child_count() == 2, "with a row of two buttons: one per resource")
+	var names: Array = button.row.get_children().map(func(c): return c.text)
+	t.check(names == ["Wood", "Berries"], "named in plain words: %s" % [names])
+	t.check(button.row.get_child(1).button_pressed and not button.row.get_child(0).button_pressed, "Berries is pressed")
+	t.check(String(button.row.get_child(0).tooltip_text).contains("Wood"), "and each says in a tooltip what it does")
 	button.cycle()
-	t.check(b["focus"] == "wood", "one click cycles the focus to the next item")
+	t.check(b["focus"] == "wood", "Tab or R (cycle) moves the focus to the next item")
 	button.show_for(b)
-	t.check(button.text.begins_with("Gathering: Wood"), "and the line follows")
+	t.check(button.line.text.begins_with("Gathering: Wood"), "and the line follows")
+	t.check(
+		button.row.get_child(0).button_pressed and not button.row.get_child(1).button_pressed, "and the pressed button"
+	)
+	button.row.get_child(1).pressed.emit()
+	t.check(b["focus"] == "berries", "one click on a button picks that resource")
+	button.row.get_child(1).pressed.emit()
+	t.check(b["focus"] == "berries", "and a second click on it keeps it")
 	button.free()
 	var hearth := HutFocus.new()
 	hearth.setup(s)
 	hearth.show_for(s.town.buildings[0])
 	t.check(not hearth.visible, "the Hearth has no focus line")
+	var lone := HutFocus.new()
+	lone.setup(s)
+	lone.show_for(b)
+	_put(s, p + Vector2i(2, 2), "grass")
+	lone.show_for(b)
+	t.check(not lone.row.visible and lone.line.text == "Gathering: Berries", "one resource in reach: just the line")
+	lone.free()
+	_put(s, p + Vector2i(2, 2), "tree")
 	hearth.free()
 	s.town.set_focus(s.town.building_at[p], "berries")
 	var tiles := s.town.tiles_of(p, "berries")
@@ -438,3 +459,143 @@ func test_an_old_save_gets_a_default_focus() -> void:
 	var copy := Sim.new()
 	t.check(RunSave.restore(copy, d), "a save with no focus field still loads")
 	t.check(copy.town.buildings[copy.town.building_at[p]]["focus"] == "wood", "the hut takes what a new hut would")
+
+
+## A spot with flint-like choice: Wood, Clay and Berries all in reach of the arena's centre, Wood nearest.
+func _three(s: Sim, p: Vector2i) -> void:
+	_put(s, p + Vector2i(1, 0), "tree")
+	_put(s, p + Vector2i(-2, 0), "clay")
+	_put(s, p + Vector2i(0, 2), "berry")
+
+
+func test_a_hut_goes_down_working_the_resource_picked() -> void:
+	var a := _arena()
+	var s: Sim = a[0]
+	var p: Vector2i = a[1]
+	_three(s, p)
+	t.check(s.town.default_focus(p) == "wood", "set up: the default is the nearest, Wood")
+	t.check(s.place("gatherers_hut", p, "clay"), "a hut placed with Clay picked")
+	t.check(s.town.buildings[s.town.building_at[p]]["focus"] == "clay", "starts on Clay, with no extra click")
+	t.check(
+		s.town.focus_tiles(s.town.buildings[s.town.building_at[p]]).size() == 1, "and its range holds the clay tile"
+	)
+	var other := _arena()
+	var s2: Sim = other[0]
+	_three(s2, other[1])
+	t.check(s2.place("gatherers_hut", other[1], "stone"), "a pick that is not in reach...")
+	t.check(s2.town.buildings[s2.town.building_at[other[1]]]["focus"] == "wood", "...is ignored: the default stands")
+
+
+func test_a_pick_at_placement_is_for_that_hut_only() -> void:
+	var a := _arena()
+	var s: Sim = a[0]
+	var p: Vector2i = a[1]
+	_three(s, p)
+	var q: Vector2i = p + Vector2i(-3, -3)
+	_put(s, q + Vector2i(1, 0), "tree")
+	_put(s, q + Vector2i(-2, 0), "clay")
+	var before: String = s.town.default_focus(q)
+	s.place("gatherers_hut", p, "berries")
+	t.check(s.town.default_focus(q) == before, "choosing for one hut does not move another spot's default")
+	s.place("gatherers_hut", q)
+	t.check(s.town.buildings[s.town.building_at[q]]["focus"] == before, "the next hut, placed with no pick, takes it")
+	t.check(s.town.buildings[s.town.building_at[p]]["focus"] == "berries", "and the first keeps its pick")
+
+
+func test_tab_steps_through_the_resources_in_reach() -> void:
+	var a := _arena()
+	var s: Sim = a[0]
+	var p: Vector2i = a[1]
+	t.check(HutFocus.pick_options(s, p).is_empty(), "bare ground: no choice to offer")
+	t.check(HutFocus.pick_next(s, p, "") == "", "and Tab changes nothing")
+	_put(s, p + Vector2i(1, 0), "tree")
+	t.check(HutFocus.pick_options(s, p).is_empty(), "one resource: still no choice")
+	_put(s, p + Vector2i(-2, 0), "clay")
+	_put(s, p + Vector2i(0, 2), "berry")
+	t.check(HutFocus.pick_options(s, p) == ["wood", "clay", "berries"], "three in reach: all offered, in item order")
+	var pick := ""
+	t.check(HutFocus.pick_chosen(s, p, pick) == "wood", "nothing picked: the default, Wood")
+	pick = HutFocus.pick_next(s, p, pick)
+	t.check(pick == "clay", "Tab: Clay")
+	pick = HutFocus.pick_next(s, p, pick)
+	t.check(pick == "berries", "Tab: Berries")
+	pick = HutFocus.pick_next(s, p, pick)
+	t.check(pick == "wood", "Tab: around to Wood")
+	t.check(HutFocus.pick_chosen(s, p, "stone") == "wood", "a pick that is out of reach here shows the default")
+	t.check(
+		s.town.tiles_of(p, HutFocus.pick_chosen(s, p, "clay")).size() == 1, "and the range overlay follows the pick"
+	)
+
+
+func test_a_hut_left_unchosen_says_so_once() -> void:
+	var a := _arena()
+	var s: Sim = a[0]
+	var p: Vector2i = a[1]
+	_put(s, p + Vector2i(1, 0), "tree")
+	_put(s, p + Vector2i(-2, 0), "clay")
+	s.place("gatherers_hut", p)
+	var note := HutFocus.pick_note(s, p, "")
+	t.check(
+		note == "This hut works Wood. Clay is in reach too: pick it in the hut panel.", "the toast names both: " + note
+	)
+	t.check(HutFocus.pick_note(s, p, "wood") == "", "no toast when the player picked")
+	_put(s, p + Vector2i(0, 2), "berry")
+	note = HutFocus.pick_note(s, p, "")
+	t.check(note.contains("Clay and Berries are in reach too: pick one"), "with two others it lists them: " + note)
+	var b := _arena()
+	var s2: Sim = b[0]
+	_put(s2, b[1] + Vector2i(1, 0), "tree")
+	s2.place("gatherers_hut", b[1])
+	t.check(HutFocus.pick_note(s2, b[1], "") == "", "and none when there was nothing else to pick")
+
+
+func test_the_placement_picker_sits_by_the_ghost() -> void:
+	var a := _arena()
+	var s: Sim = a[0]
+	var p: Vector2i = a[1]
+	_three(s, p)
+	var bounds := Rect2(Vector2.ZERO, Vector2(4000, 4000))
+	var rects := HutFocus.pick_rects(s, p, bounds)
+	t.check(rects["rows"].size() == 3 and bounds.encloses(rects["panel"]), "three rows, inside the map view")
+	var ghost := Rect2(Vector2(p) * 48.0, Vector2(48, 48))
+	t.check(rects["panel"].end.y <= ghost.position.y, "above the ghost, not over it")
+	var wood: Rect2 = rects["rows"]["wood"]
+	t.check(HutFocus.pick_at(s, p, bounds, wood.get_center()) == "wood", "a click on a row finds its resource")
+	t.check(HutFocus.pick_at(s, p, bounds, ghost.get_center()) == "", "and one on the ghost finds none")
+	t.check(
+		HutFocus.pick_over(s, p, bounds, wood.get_center()), "the panel holds the ghost still while the mouse is on it"
+	)
+	t.check(not HutFocus.pick_over(s, p, bounds, ghost.get_center()), "the ghost tile is not the panel")
+	var top := Rect2(Vector2(0, ghost.position.y - 10.0), Vector2(4000, 4000))
+	t.check(
+		HutFocus.pick_rects(s, p, top)["panel"].position.y >= ghost.end.y, "with no room above it goes below the ghost"
+	)
+	t.check(HutFocus.pick_rects(s, p, top)["panel"].end.y <= top.end.y, "and stays in the view")
+	s.place("gatherers_hut", p)
+	t.check(HutFocus.pick_rects(s, p, bounds).is_empty(), "a spot that is taken has no picker")
+
+
+func test_the_panel_picker_sets_the_focus_and_the_save_keeps_it() -> void:
+	var a := _arena()
+	var s: Sim = a[0]
+	var p: Vector2i = a[1]
+	_three(s, p)
+	s.place("gatherers_hut", p)
+	var i: int = s.town.building_at[p]
+	var b: Dictionary = s.town.buildings[i]
+	var panel := HutFocus.new()
+	panel.setup(s)
+	panel.show_for(b)
+	panel.choose("clay")
+	t.check(b["focus"] == "clay" and b["gather_index"] == 0, "the panel picker sets Clay")
+	t.check(HutFocus.pick_at(s, p, Rect2(0, 0, 4000, 4000), Vector2.ZERO) == "", "set_focus leaves no picker behind")
+	var d := RunSave.dump(s)
+	var copy := Sim.new()
+	t.check(RunSave.restore(copy, RunSave.from_json(RunSave.to_json(d))), "a save with the picked hut loads")
+	t.check(copy.town.buildings[copy.town.building_at[p]]["focus"] == "clay", "the hut is still on Clay")
+	var again := HutFocus.new()
+	again.setup(copy)
+	again.show_for(copy.town.buildings[copy.town.building_at[p]])
+	t.check(again.row.get_child(1).button_pressed, "and its button shows it pressed")
+	again.free()
+	panel.free()

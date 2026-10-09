@@ -4,25 +4,35 @@ extends RefCounted
 
 ## Harvest a resource by hand this many times and a watching Kith learns it: huts may then gather it.
 const LEARN_CLICKS := 10
+## ...but the very first resource the Kith learn takes only this many, so the first lesson comes quickly.
+const LEARN_FIRST := 6
 ## A hut trip brings back a bundle: this many times your harvest yield for that resource.
 const BUNDLE := 3
 ## Trips a hut can have queued before Paths & Haulers (the one under way counts).
 const TRIP_QUEUE := 3
+## Walking through a building's cell on a road costs this many times the open road (a road may run through a building).
+const PASSAGE_COST := 2.0
 ## Clicking a working building finishes its cycle now, then it can't be rushed for this long.
 const RUSH_COOLDOWN := 5.0
 ## Gathering by hand is a hold: a ring fills over the tile for HOLD_TIME seconds, then the harvest pops,
 ## and it repeats while you hold. A harvest's yield is base x tool x rank.
-const HOLD_TIME := 1.0
+const HOLD_TIME := 0.8
+## A hold forgives a shaky hand: progress on a ring that was let go early, or that slipped off its tile (onto bare
+## ground, a bar, another kind of tile), waits this many seconds for the pointer to come back. Sliding to the next tile of
+## the same kind keeps the ring at once.
+const HOLD_KEEP := 0.6
 ## Ore is dug slowly by hand: seconds of holding for one harvest of these items (HOLD_TIME for everything else).
 ## A hand tool's hold is a share of HOLD_TIME, so Flint Tools shorten these in the same proportion.
-const HAND_HOLD := {"copper_ore": 3.0, "tin": 4.0}
+const HAND_HOLD := {"copper_ore": 2.4, "tin": 3.2, "coal": 2.4, "iron_ore": 2.8, "shard": 5.0}
 ## Hand tools: the best one that applies counts for each part. `hold` shortens the hold (seconds),
 ## `mult` multiplies the yield. `crafted` needs a Flint Tool made once, `tech` a researched tech
 ## (Bronze Tools is era 2's slot), `item` limits it to one resource.
 const HAND_TOOLS := {
-	"flint_tools": {"name": "Flint Tools", "hold": 0.7, "crafted": true},
+	"flint_tools": {"name": "Flint Tools", "hold": 0.6, "crafted": true},
 	"stone_axe": {"name": "Stone Axe", "mult": 3, "tech": "stone_axe", "item": "wood"},
 	"bronze_tools": {"name": "Bronze Tools", "hold": 0.4, "tech": "bronze_tools"},
+	"iron_tools": {"name": "Iron Tools", "hold": 0.3, "tech": "iron_tools"},
+	"steel_tools": {"name": "Steel Tools", "hold": 0.25, "tech": "steel"},
 }
 
 ## Food each Kith eats per second.
@@ -115,26 +125,96 @@ const BONUSES := {
 	# Bronze Tools: the tool a worker holds is bronze, +100% Speed in place of a Flint Tool's +50% (so +50% over flint).
 	"bronze_tools":
 	{"name": "Bronze Tools", "group": "speed", "add": 1.0, "kinds": ["gatherer", "processor"], "tool": "bronze_tools"},
+	# Era 4: Iron Tools, +75% Speed over bronze (flint is +50%, bronze +100%, iron +175%).
+	"iron_tools":
+	{"name": "Iron Tools", "group": "speed", "add": 1.75, "kinds": ["gatherer", "processor"], "tool": "iron_tools"},
+	# Era 4, stage 3: Steel Tools, another +50% Speed over iron (+225%), and the Blast Furnace's second Iron from each firing.
+	"steel_tools":
+	{"name": "Steel Tools", "group": "speed", "add": 2.25, "kinds": ["gatherer", "processor"], "tool": "steel_tools"},
+	"blast_furnace":
+	{"name": "Blast Furnace", "group": "output", "add": 1.0, "tech": "blast_furnace", "types": ["bloomery"]},
+	# Era 3 gifts (a glyph set read, `gift`; they work within Data.SHARDLIGHT_RADIUS of a Shard Cairn, `near_cairn`).
+	"shardlight":
+	{"name": "Shardlight", "group": "speed", "add": 0.25, "kinds": ["gatherer"], "gift": "light", "near_cairn": true},
+	"starfruit":
+	{
+		"name": "Starfruit",
+		"group": "yield",
+		"add": 0.5,
+		"item": "berries",
+		"kinds": ["gatherer"],
+		"gift": "growth",
+		"near_cairn": true
+	},
+	"shardwork":
+	# Era 4, stage 2: what two Lessons give (scripts/teardown.gd). `lesson` needs it learned; `fed` needs one of that good in the
+	{"name": "Shardwork", "group": "speed", "add": 0.25, "kinds": ["processor"], "gift": "craft", "near_cairn": true},
+	# workshop's input; `near_types` needs a building of one of those types within `radius` tiles.
+	"iron_gears":
+	{
+		"name": "Iron Gears",
+		"group": "speed",
+		"add": 0.25,
+		"kinds": ["processor"],
+		"lesson": "hull_gear",
+		"fed": "iron_gears"
+	},
+	"starfruit_smoke":
+	{
+		"name": "Starfruit in smoke",
+		"group": "yield",
+		"add": 0.5,
+		"item": "berries",
+		"kinds": ["gatherer"],
+		"gift": "growth",
+		"lesson": "seed_pod",
+		"near_types": ["coal_mine", "bloomery"],
+		"radius": 4.0
+	},
+	# A Guard Post (stage 4): the Kith near one work a little faster, `near_guard` (Data.GUARD_RADIUS), at a cost in trust.
+	"watchful":
+	{"name": "Guard Post", "group": "speed", "add": 0.15, "kinds": ["gatherer", "processor"], "near_guard": true},
+	# The Warning (a moment, scripts/starfall.gd): while the Kith keep dark the workshops run slower.
+	"lights_out": {"name": "Lights out", "group": "speed", "add": -0.5, "kinds": ["processor"], "dark": true},
 }
 ## A tool lasts this many jobs (harvests or work cycles) in a worker's hands: flint, then bronze (one per 200 jobs).
 const TOOL_JOBS := 40
 const BRONZE_TOOL_JOBS := 200
+## A Tool Bench keeps this many tools spare in the stockpile, on top of one for each working Kith who holds none.
+const TOOL_SPARES := 2
 ## The tool items a worker takes from the stockpile, best first.
-const TOOL_ITEMS := ["bronze_tools", "flint_tools"]
+const TOOL_ITEMS := ["steel_tools", "iron_tools", "bronze_tools", "flint_tools"]
 const CALENDAR_FIELD_BONUS := 0.25  # extra yield from Fields
 const PLOUGH_FIELD_BONUS := 0.5  # ...and the Plough's share, on top
 const PLOUGHSHARE_FIELD_BONUS := 0.5  # ...and the Bronze Ploughshare's, on top of that
+## Rich patch: a Gatherer's Hut works faster the more tiles of its one resource lie in its reach (its worker walks to the
+## ripest, and has more to choose from). Each tile beyond the first adds PATCH_STEP to its Speed, up to PATCH_MAX_TILES tiles
+## in all: more tiles than that do not help. Wild tiles and Fields count alike (see scripts/patch.gd).
+const PATCH_STEP := 0.1
+const PATCH_MAX_TILES := 8
 
 ## Era 2, stage 2.
-## Carts (The Wheel): each Cart Shed turns CARTS_PER_SHED haulers into carts. A cart carries CART_LOAD times what a
-## hauler does, walks roads only (a Wooden Bridge will not bear it: it needs a Stone Bridge) and waits where it stands
-## when the roads do not reach.
-const CARTS_PER_SHED := 2
-const CART_LOAD := 2
-## Causeways: every road walks at this cost (the Road's WALK_COST is 0.5, paved 0.25; 0.2 is five times open ground),
-## and a new Road costs this instead of its Wood. A Road cut through Rocks still costs PASS_COST.
-const CAUSEWAY_WALK_COST := 0.2
-const CAUSEWAY_ROAD_COST := {"stone": 1, "brick": 1}
+## Hand carts (The Wheel, Bronze Dawn): each Cart Shed turns CARTS_PER_SHED hauler into a hand cart. One Kith pulls it, and
+## it carries CART_LOAD times what a hauler does. It walks roads only (a Wooden Bridge will not bear it: it needs a Stone
+## Bridge) and waits where it stands when the roads do not reach. (The old cart took two haulers at 2x: no gain.)
+const CARTS_PER_SHED := 1
+const CART_LOAD := 3
+## Road tiers (design-system/17-needs-and-upgrades.md): path, gravel, paved and (Ironfall) rail. A road tile's walk cost is the open road's
+## (WALK_COST "road") divided by its tier's speed, so higher tiers are faster. A Stone Bridge walks at the top tier.
+const ROAD_SPEEDS := [1.0, 1.25, 1.5, 4.0]
+## The tier of a paved road, the top one before Rail: a Stone Bridge walks at it, and a save from before road tiers lifts its roads
+## to it. (Rail is the tier above, Data.RAIL_TIER.)
+const PAVED_TIER := 2
+const RAIL_TIER := 3
+## Copy cost: every standing copy of a production building makes the next one cost this share more, up to
+## COPY_COST_CEILING times the listed price. The build bar tabs that hold production buildings are COPY_COST_TABS.
+## Homes, roads, bridges, fields, storage and the Lore buildings stay flat.
+const COPY_COST_STEP := 0.15
+const COPY_COST_CEILING := 4.0
+const COPY_COST_TABS := ["Workshops", "Metal"]
+## Scouting by clicking fog: the nearest idle Kith walks there, lifts the fog this many tiles around it (Scouting research
+## adds to it, like every sight) and walks home.
+const SCOUT_SIGHT := 5
 ## Granaries: every GRANARY_FOOD food in the stockpile houses one more person, up to GRANARY_HOMES.
 const GRANARY_FOOD := 20.0
 const GRANARY_HOMES := 30

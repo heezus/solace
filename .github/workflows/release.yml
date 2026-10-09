@@ -1,10 +1,13 @@
-name: Windows build
+name: Desktop builds
 
-# Builds a single-file Windows .exe of the game. Pull requests only prove the export works; a push to
+# Builds a single-file Windows .exe and a universal macOS .app of the game. Pull requests only prove the export works; a push to
 # main also publishes it as the rolling "latest" release, so one stable link always has the newest build.
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
   pull_request:
     paths:
       - export_presets.cfg
@@ -41,6 +44,13 @@ jobs:
       - name: Import project
         run: ./godot --headless --path . --import
 
+      # The bots that make the later stage starts take minutes, so they run here once and both builds ship the result
+      # (stage_starts/ is not in the repo; the game falls back to building a start on demand without it).
+      - name: Bake the stage starts
+        run: |
+          ./godot --headless --path . -s tests/tools/bake_starts.gd
+          ls -l stage_starts
+
       - name: Export Windows build
         run: |
           mkdir -p build
@@ -54,10 +64,19 @@ jobs:
           zip -q Solace-windows.zip Solace.exe
           ls -l
 
+      - name: Export macOS build (universal, ad-hoc signed)
+        run: |
+          ./godot --headless --path . --export-release "macOS" build/Solace-macos.zip
+          test -s build/Solace-macos.zip
+          unzip -l build/Solace-macos.zip | grep -q "Solace.app/Contents/MacOS/"
+          ls -l build
+
       - uses: actions/upload-artifact@v4
         with:
-          name: Solace-windows
-          path: build/Solace-windows.zip
+          name: Solace-builds
+          path: |
+            build/Solace-windows.zip
+            build/Solace-macos.zip
 
       - name: Publish the rolling latest release
         if: github.ref == 'refs/heads/main'
@@ -66,7 +85,7 @@ jobs:
         run: |
           short="${GITHUB_SHA::7}"
           gh release delete latest --cleanup-tag --yes || true
-          gh release create latest build/Solace-windows.zip \
+          gh release create latest build/Solace-windows.zip build/Solace-macos.zip \
             --target "$GITHUB_SHA" \
             --title "Solace, newest build ($short)" \
-            --notes "Windows build of main at $short. Unzip, then double-click Solace.exe. Windows may warn that it is an unknown app: click More info, then Run anyway."
+            --notes "Builds of main at $short. Windows: unzip Solace-windows.zip, double-click Solace.exe (if Windows warns, click More info, then Run anyway). Mac: unzip Solace-macos.zip, then right-click Solace.app and choose Open (or run xattr -dr com.apple.quarantine Solace.app in Terminal first)."

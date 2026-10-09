@@ -1,0 +1,73 @@
+# Cutscenes: one story across the eras
+
+Status: **Phases A and B built** (2026-10-07), the first proposed on the project owner's ask: a few short, skippable painted sequences that tie the eras into one telling, so a run reads as a story and not as stages pushed together. Codex paints the stills; the engine plays them. Phase C (`livewire`, `skyreach`, the resets) is not built. It builds on [18 Roadmap](18-roadmap.md) (the arc), [16 Starfall](16-starfall.md) (Sela and the moments) and [05 Art direction](05-art-direction.md) (the Misty Highlands look).
+
+## The idea in one line
+Every sequence is the same voice, the Kith's own telling: plain, earthy, a little wry, never more than three short lines on a still. A sequence is 2 to 4 painted stills with a slow push-in or fade between them. No voice and no sound, since there is no sound yet. Esc, Space or a click skips it, and a setting can turn them all off.
+
+## The story spine
+The Kith make a home. A light falls. Strangers come out of the fog and the Kith choose how to meet them. With iron the Kith learn to open what the strangers carried, and the thing that hunted the strangers across the stars follows, slowly. The run ends in a reset, and each reset is a told ending that sends the Kith back to the first fire, remembering.
+
+Rules that keep it one story:
+- Each sequence answers "what changed for the Kith", not "what did we build". A new building or tech is never the subject.
+- Sela and the Lumen come back by name; the Bloom is only ever signs, a tide, then arrival, as in [18](18-roadmap.md).
+- The tone shifts exactly as canon says: hopeful first, ominous after the star falls ([03](03-world-lore.md)). Resets return to hope, with a small wrongness the Kith now know.
+- Nothing here changes canon. Anything that would goes to [open-questions](open-questions.md) first.
+
+## How it meets what Codex already paints
+Draft PR #73 (moment vignettes) paints single header images for the Hunger, Shards and Warning cards and the Starfall end card, tile-sized Bloom signs, and "arrival presentation" art. Those stay as they are: a **vignette** is one picture on a choice card the player is answering. A **cutscene** is a full-screen sequence between play and choices. They share people and places, so Sela's look, the Bloom signs and the arrival art are reused as cutscene stills, not painted twice. If #73's arrival art is accepted, it becomes the first still of `first_contact`.
+
+## The sequences
+Ids are stable (the Chronicle can record them, [13](13-three-perspectives.md)). "Trigger" is an existing Story id or era event.
+
+| Id | When | Stills | Lines (a still per row) |
+|---|---|---|---|
+| `opening` | New game, after the title | 3 | "Solace was quiet when the Kith came." / "They raised a fire and called the place home." / "Nothing yet told them they were not alone." (a faint cyan point low in the sky) |
+| `bronze_dawn` | Bronze Dawn is discovered | 3 | "Copper and tin, and a new color in the fire." / "The roads reached farther than anyone had walked." / "East, under the fog, something waited." |
+| `falling_star` | Before the "Falling Star" card, end of Bronze Dawn | 4 | "A star came down." / "The Kith watched it fall. Nobody spoke." / "It landed beyond the hills." / "In the morning, the silence began." |
+| `first_contact` | The strangers arrive (`guests` or `wary` variant of the first two stills) | 3 | wary: "Three strangers came out of the fog, and stopped." guests: "Three strangers came to the Cairn, as guests." / "The tall one smiled anyway." / "She tapped her chest and said a word, and waited." |
+| `starfall_end` | The Starfall ending, after the choice is made; the last still has three variants by Lumen lean | 3 | "The ship would not fly again." / "What the Lumen carried, the Kith began to read." / neighbours: "They would be neighbours." enemies: "They kept their distance." allies: "They stopped counting whose fire it was." |
+| `ironfall` | Ironfall is entered | 3 | "Iron, and a way to open things." / "The Lumen showed what their ship was made of." / "At the edge of the fog, something was growing." |
+| `bloom_sign` | The first Bloom patch is seen | 2 | "It was not there yesterday." / "Sela stopped smiling. She knew what it was." |
+| `livewire` | Livewire is entered | 3 | "Light without fire." / "The growth came slowly, and did not stop." / "So the Kith began to give their machines orders." |
+| `skyreach` | Skyreach is entered | 3 | "The Kith learned to read the sky." / "What hunted the Lumen across the stars had followed." / "It was not coming to fight. It was coming to stay." |
+| `reset_exodus` | Exodus | 3 | "Pack what you know." / "Leave the fire lit for whoever follows." / "A new valley. The same people." |
+| `reset_cataclysm` | Cataclysm | 3 | "The magic reached too far, and the world broke." / "The Kith woke in the ruins." / "They dug. Some of it was theirs." |
+| `reset_loop` | Time loop | 3 | "The morning came again." / "Only the Kith remembered." / "The fire was lit. They knew what was coming." |
+
+After any reset the next run's `opening` plays in full, with one added still: the Hearth with a small mark of what carried, and no new line.
+
+Phases, so art and code can run ahead of the eras:
+- **A (the eras that exist):** `opening`, `bronze_dawn`, `falling_star`, `first_contact`, `starfall_end` (16 stills plus 3 variant stills: a second `first_contact` 1 for the guests version, and two more `starfall_end` 3 for the other leans; 19 images in all).
+- **B (with Ironfall stage 1):** `ironfall`, `bloom_sign` (5 stills).
+- **C (later):** `livewire`, `skyreach` and the three resets.
+
+## Rules for the stills
+- 2560x1600 (16:10, the title's ratio), original painted PNGs in `art/rendered/cutscenes/<id>_<n>.png` (`n` from 1), plus the Godot import file. Compose the subject in the middle 80%: the player pans and pushes in 6 to 8% over the still.
+- Leave the bottom third calm and darker, since the lines sit there. No text in any image; the lines are drawn by the game.
+- The same Misty Highlands light as the title: warm hearth against a cool dusk, cyan only for the Lumen, magenta and green only for the Bloom, and only as hints until Livewire.
+- Sela's look follows [the art brief](../art/starfall-art-brief.md); the Kith and Lumen use the traveller kit's clothing so they match the map.
+
+## How it plays (design)
+- `Data.CUTSCENES` holds, per id: the trigger, the lines, the art paths and the pan. A `CutscenePlayer` control draws a still, a dark gradient and the lines, fades between stills and pauses the simulation while it runs.
+- It listens to `Story.recorded` and to era changes, so no gameplay code changes. Each id plays once per run.
+- **Art not painted yet is fine:** with a missing image the sequence shows the lines over a dark panel with the fade, so the story ships first and the paintings drop in later by name.
+- Skippable at any point, and the pause menu gets a "Cutscenes" on/off. A skip still records the story id.
+- Every run plays every sequence in full, so no seen-list is needed. The on/off setting is kept apart from the run save, in the profile or beside it (`scripts/profile.gd` already holds the Chronicle and knowledge, [13](13-three-perspectives.md)).
+
+## Repeat runs remember (the project owner, 2026-10-07)
+On a later run the same sequences hint at what the Kith carried over, without a new set of paintings. Two cheap tools, both chosen from the profile ([13](13-three-perspectives.md), [18](18-roadmap.md) echoes and the Chronicle):
+- **Variant lines.** A sequence may swap one line (never more than one) when the profile holds a matching echo or reset. Examples: `first_contact` line 3 after a read Lumen glyph set: "She said a word. This time a few of the Kith knew it." `bloom_sign` line 1 after a Bloom sample echo: "It was not there yesterday. Some of the Kith had seen it before." `opening` line 2 after an Exodus: "They raised a fire, the way they remembered." After a Time loop, `opening` line 3: "Something felt like déjà vu." Each variant is a hint, never a spoiler or a stat.
+- **Memory overlays.** Five transparent full-frame layers drawn over any still, so no still is painted twice: `memory_exodus` (a faint trail of footprints and a travelling haze), `memory_cataclysm` (hairline cracks and drifting ember specks at the edges), `memory_loop` (a pale second image, like an echo of the same scene), `memory_glyph` (a thin cyan glimmer, for a Lumen echo) and `memory_bloom` (a faint magenta-green tint at the edges, for a Bloom echo). The most recent reset picks one of the first three, and each held echo kind can add its own, at low opacity.
+- Both are chosen by code from the profile, so a first run shows none of them. A run with no profile data (the profile save is not built yet) plays the plain sequences. Variants change tone only; the lines and stills always still tell the same story.
+
+## What is built (2026-10-07)
+- `Data.CUTSCENES` (`scripts/data/cutscenes.gd`) holds seven sequences: `opening`, `bronze_dawn`, `falling_star`, `first_contact`, `starfall_end`, `ironfall` and `bloom_sign`. Each has its triggers (Story ids), its stills (a picture name and a line, and the variants) and sometimes an `after`. `scripts/cutscene_player.gd` is a full-window control on the top layer of the game scene; the owner needs only one line to add it.
+- It listens to `Story.recorded`. `opening` plays when a fresh run is attached (nothing recorded, one building, nothing learned), so a loaded game never replays it. `falling_star` starts on `star_falling` and plays over the Falling Star card, `first_contact` on `lumen_arrived` (the first still has the `guests` version), `starfall_end` on the lean (the last still has the allies, neighbours and enemies versions), `ironfall` on `ironfall_begun`, and `bloom_sign` on `bloom_seen` but only after Ironfall has begun, so it follows the ending and `ironfall` instead of crowding them. Several waiting play in the order of the table.
+- While one plays the game is held paused and handed back as it was. Esc, Space or a click (a click is ignored for the first third of a second) skips the sequence in hand; a skip changes nothing in the run, since the trigger is a story id that is already recorded. A still with no picture shows its line over a dark panel with the same fades, which is how `ironfall` and `bloom_sign` play until Codex paints them (Phase B art slots are in [requests](../art/requests.md)). Stills are 1586x992: they cover the window with a 7% push-in, a dark gradient sits behind the lines in the bottom third, and a different window shape crops the edges, never the middle.
+- The pause menu has a **Cutscenes** switch (on by default), kept in `user://cutscenes.cfg`, apart from the run save and the profile.
+- **Repeat runs.** Variant lines and memory overlays are chosen from the profile's chronicle as it stood when the run began, less what the run itself has already told, so a run never echoes itself. Built: `first_contact` line 3 after `name_read`, `bloom_sign` line 1 after `bloom_seen`, and the overlays `memory_glyph` (after `name_read`) and `memory_bloom` (after `bloom_seen`). **A hook, not live:** the `opening` lines after an Exodus or a Time loop and the `memory_exodus`, `memory_cataclysm` and `memory_loop` overlays are in the data, waiting on `reset_*` ids that no run records yet (the profile has no resets), so they never match today. The Bloom echo is a stand-in for a Bloom sample echo (stage 2); when the echoes and resets exist, only the `needs` ids in the data change.
+
+## Open (defaults stand until the project owner says otherwise)
+- **Replays.** *Decided (the project owner, 2026-10-07):* every run plays every sequence in full. Skip is always there, and the pause menu can turn them all off.
+- **Wiring.** *Default:* Phase A rides along with the Ironfall stage 1 PR; Codex paints in the meantime and the lines-over-dark fallback covers the gap.

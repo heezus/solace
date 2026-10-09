@@ -14,6 +14,7 @@ const Bonuses = preload("res://scripts/bonuses.gd")
 const Rules = preload("res://scripts/rules.gd")
 const Workers = preload("res://scripts/workers.gd")
 const Roads = preload("res://scripts/roads.gd")
+const Scouting = preload("res://scripts/scouting.gd")
 const Hands = preload("res://scripts/hands.gd")
 const World = preload("res://scripts/world.gd")
 const Buildings = preload("res://scripts/buildings.gd")
@@ -21,6 +22,9 @@ const Work = preload("res://scripts/work.gd")
 const KithArt = preload("res://scripts/kith_art.gd")
 const SidePanel = preload("res://scripts/side_panel.gd")
 const HoverText = preload("res://scripts/hover_text.gd")
+const PatchView = preload("res://scripts/patch_view.gd")
+const FieldText = preload("res://scripts/field_text.gd")
+const PatchText = preload("res://scripts/patch_text.gd")
 const Messages = preload("res://scripts/messages.gd")
 const ToastStack = preload("res://scripts/toast_stack.gd")
 const EastPointer = preload("res://scripts/east_pointer.gd")
@@ -28,12 +32,26 @@ const Land = preload("res://scripts/land.gd")
 const MessageLog = preload("res://scripts/message_log.gd")
 const HutFocus = preload("res://scripts/hut_focus.gd")
 const EraCard = preload("res://scripts/era_card.gd")
+const MomentCard = preload("res://scripts/moment_card.gd")
+const GameMenu = preload("res://scripts/game_menu.gd")
+const Launch = preload("res://scripts/launch.gd")
+const DebugKeys = preload("res://scripts/debug_keys.gd")
 const Profile = preload("res://scripts/profile.gd")
+const Clearing = preload("res://scripts/clearing.gd")
+const WorldGround = preload("res://scripts/world_ground.gd")
+const RoadLayer = preload("res://scripts/road_layer.gd")
+const Rendered = preload("res://scripts/rendered_art.gd")
+const BridgeArt = preload("res://scripts/bridge_art.gd")
+const Homes = preload("res://scripts/homes.gd")
+const HomeView = preload("res://scripts/home_view.gd")
+const GrowthArt = preload("res://scripts/growth_art.gd")
+const CutscenePlayer = preload("res://scripts/cutscene_player.gd")
 
 const TILE: float = Overlays.TILE
 const MAP_ORIGIN := Vector2.ZERO  # the node's transform pans and zooms the map
-const ZOOM_PX := [32.0, 48.0, 64.0]  # a tile's size on screen at each zoom step (scroll or pinch)
-const DEFAULT_ZOOM := 1
+const ZOOM_PX := [24.0, 32.0, 40.0, 48.0, 56.0, 64.0, 80.0]  # a tile's size on screen at each zoom step (scroll or pinch)
+const DEFAULT_ZOOM := 3  # 48 px, the size the map is drawn for
+const SCROLL_ZOOM_STEP := 1.0  # two-finger scroll that makes one zoom step
 const PAN_SPEED := 720.0  # screen px a second while an arrow key or WASD is held
 const FRAME_W := 4.0  # the cocoa frame round the map view
 const BANNER_SECONDS := 14.0  # how long the Bronze Dawn banner stays up
@@ -44,7 +62,7 @@ const KITH: Color = Ui.KITH
 const SIDE_W := 264.0
 const BAD: Color = Ui.BAD
 const GOAL_COLOR: Color = Ui.HIGHLIGHT
-const LINE_TYPES := ["road", "bridge", "stone_bridge", "field"]  # laid by dragging
+const LINE_TYPES := ["road", "gravel_road", "paved_road", "rail", "bridge", "stone_bridge", "field"]  # laid by dragging
 const AURA_FILL := Color(0.55, 0.45, 0.6, 0.2)
 const NUDGE_TIME := 2.0  # seconds the "hold it down" hint stays after a click that let go too soon
 
@@ -56,12 +74,16 @@ var cam := Vector2.ZERO  # the map point (in map px at TILE) at the middle of th
 var view := Rect2()  # the map view on screen: between the bars, left of the side panel, edge to edge
 var panning := false  # the middle button is down: dragging pans
 var zoom_wait := 0.0  # seconds before a pinch may step the zoom again
+var scroll_zoom := 0.0  # two-finger scroll gathered towards the next zoom step
 var frame: Panel
 var state: Sim
 var placing := ""  # building type being placed, "" when not placing
+var pick_focus := ""  # what the Gatherer's Hut being placed will work, once the player picked (see HutFocus.pick_*)
 var hover := Vector2i(-1, -1)
 var drag_from := Vector2i(-1, -1)  # where a road, bridge or field drag started
 var time := 0.0
+var ground := WorldGround.new()
+var road_tiers := RoadLayer.new()
 var popups: Array = []  # {pos: Vector2, text: String, t: float}
 var rubble: Array = []  # {pos: Vector2i, t: float}, torn-down buildings fading out
 
@@ -77,6 +99,8 @@ var side_panel: SidePanel
 var info_label: Label  # the side panel's hover text
 var tech_panel: TechPanel
 var era_card: EraCard  # the Falling Star's card, put up once
+var game_menu: GameMenu  # Esc: Resume, Save, Load, Quit to title
+var moment_card: MomentCard  # a Starfall moment or the ending, put up when the strangers ask (Starfall.pending)
 var building_panel: BuildingPanel  # the selected building's card, docked in the side panel
 var banner_shown := false  # the Bronze Dawn banner has been shown
 var ui_refresh := 0.0
@@ -92,7 +116,9 @@ var nudge := {}
 func _ready() -> void:
 	Ui.apply_theme()
 	state = Sim.new()
-	state.generate(randi())
+	if not Launch.start_into(state):
+		state = Sim.new()
+		state.generate(randi())
 	cam = Overlays.center(state.world.camp_pos)  # start looking at the Hearth
 	_build_ui()
 	state.tech_tree.tech_researched.connect(_on_tech_researched)
@@ -105,6 +131,9 @@ func _process(delta: float) -> void:
 	if not paused:
 		for i in speed:
 			state.tick(delta)
+	if state.starfall.pending != "" and not moment_card.visible:
+		paused = true  # the strangers are asking something: the game waits behind the card
+		moment_card.open(state.starfall)
 	for e in state.events:
 		if e == Data.BORN_EVENT % Data.PEOPLE["one"]:
 			var at := Overlays.center(state.world.camp_pos) - Vector2(0, 12)
@@ -120,7 +149,7 @@ func _process(delta: float) -> void:
 	state.events.clear()
 	if state.won and not banner_shown:
 		banner_shown = true  # the stone age ends with a banner, and the game goes on
-		messages.push(Data.ERA_BANNER_TITLE + "  ·  " + Data.ERA_BANNER_TEXT.replace("\n", " "), BANNER_SECONDS)
+		messages.push(Data.ERA_BANNER_TITLE + "  ·  " + Data.ERA_BANNER_TEXT, BANNER_SECONDS)
 	messages.keep_counts = state.tech_tree.researched.has("tally_sticks")
 	for p in popups:
 		p["t"] += delta
@@ -136,9 +165,13 @@ func _process(delta: float) -> void:
 	_watch_flavor()
 	messages.advance(delta)
 	zoom_wait -= delta
-	_pan_with_keys(delta)
+	if not tech_panel.visible:  # the research board takes the arrows and WASD while it is open
+		_pan_with_keys(delta)
 	_layout()
-	hover = _tile_under()
+	if placing != "gatherers_hut":
+		pick_focus = ""
+	if not _over_picker():  # over the hut picker the ghost stays put, so its choices can be clicked
+		hover = _tile_under()
 	_hold(delta)
 	ui_refresh -= delta
 	if ui_refresh <= 0.0:
@@ -169,6 +202,9 @@ func _layout() -> void:
 	toasts.size = Vector2(maxf(view.size.x - 32.0, 100.0), maxf(view.size.y - 28.0, 100.0))
 	toasts.position = Vector2(16, top + 14)  # stacked from the bottom edge up, so the lit area stays in view
 	msg_log.position = Vector2(16, vp.y - bottom - msg_log.size.y - 16)
+	era_card.place(view)
+	moment_card.place(view)
+	game_menu.place(view)
 	side_panel.position = Vector2(view.end.x, top)
 	side_panel.size = Vector2(SIDE_W, view.size.y)
 	var k: float = ZOOM_PX[zoom_step] / TILE
@@ -238,6 +274,15 @@ func _zoom(dir: int) -> void:
 	_layout()
 
 
+## Two-finger scroll (negative is up): gathered until it makes a zoom step, then one step in (up) or out (down).
+func _scroll(amount: float) -> void:
+	scroll_zoom += amount
+	if absf(scroll_zoom) >= SCROLL_ZOOM_STEP and zoom_wait <= 0.0:
+		zoom_wait = 0.12
+		_zoom(1 if scroll_zoom < 0.0 else -1)
+		scroll_zoom = 0.0
+
+
 # --- Input -------------------------------------------------------------------
 
 
@@ -249,6 +294,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		panning = event.pressed and view.has_point(get_global_mouse_position())
 	elif event is InputEventMouseMotion and panning:
 		cam -= event.relative / scale.x
+	elif event is InputEventPanGesture and view.has_point(get_global_mouse_position()):
+		_scroll(event.delta.y)  # a trackpad or Magic Mouse scrolls with this, not the wheel buttons
 	elif event is InputEventMagnifyGesture and zoom_wait <= 0.0 and absf(event.factor - 1.0) > 0.04:
 		zoom_wait = 0.25
 		_zoom(1 if event.factor > 1.0 else -1)
@@ -262,6 +309,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			placing = ""
 			drag_from = Vector2i(-1, -1)
 			building_panel.select(Vector2i(-1, -1))
+		elif event.button_index == MOUSE_BUTTON_LEFT and _click_picker():
+			pass  # a click on one of the hut picker's choices
 		elif event.button_index == MOUSE_BUTTON_LEFT and state.world.in_bounds(p):
 			if placing in LINE_TYPES:
 				drag_from = p  # laid on release, with a preview while dragging
@@ -275,18 +324,33 @@ func _unhandled_input(event: InputEvent) -> void:
 				_set_speed(0)
 			KEY_1, KEY_2, KEY_3:
 				_set_speed(event.keycode - KEY_0)
+			KEY_F1, KEY_F2, KEY_F3, KEY_F4:
+				DebugKeys.press(self, event.keycode)  # does nothing unless the pause menu's Debug keys switch is on
 			KEY_X:
 				placing = "" if placing == "demolish" else "demolish"
+			KEY_TAB, KEY_R:
+				_cycle_hut_focus()
 			KEY_HOME:
 				center_on(state.world.camp_pos)
+			KEY_EQUAL, KEY_PLUS, KEY_KP_ADD:
+				_zoom(1)
+			KEY_MINUS, KEY_KP_SUBTRACT:
+				_zoom(-1)
 			KEY_ESCAPE:
+				if game_menu.is_open():
+					game_menu.close()
+				elif placing == "" and not tech_panel.visible and building_panel.selected().is_empty():
+					if not era_card.visible and not moment_card.visible:
+						game_menu.open()  # nothing to cancel: Esc is the menu
 				placing = ""
 				tech_panel.visible = false
 				building_panel.select(Vector2i(-1, -1))
 
 
-## 0 toggles pause; 1, 2 or 3 sets the speed and unpauses.
+## 0 toggles pause; 1, 2 or 3 sets the speed and unpauses. The game waits while the end card is up.
 func _set_speed(v: int) -> void:
+	if era_card.visible or moment_card.visible or game_menu.is_open():
+		return
 	if v == 0:
 		paused = not paused
 	else:
@@ -328,29 +392,90 @@ func _click_tile(p: Vector2i) -> void:
 	if placing != "":
 		var err := state.town.placement_error(placing, p)
 		if err == "":
-			state.place(placing, p)
-			if not state.economy.can_afford(Data.BUILDINGS[placing]["cost"]):
+			_place_at(p)
+			if not state.economy.can_afford(state.town.price(placing)):
 				placing = ""
 		else:
 			_toast(err, 2.0)
 		return
 	if state.town.building_at.has(p):
-		var note := Workers.click(state, state.town.building_at[p])
+		var note := Workers.click(state, state.town.building_at[p], true)
 		if note != "":
 			popups.append({"pos": _tile_center(p), "text": note, "t": 0.0})
 		building_panel.select(p)
 		return
+	if not state.fog.is_revealed(p):
+		var note := Scouting.send(state, p)  # clicking fog sends the nearest idle Kith to look: no road, no building needed
+		if note != "":
+			_toast(note, 3.0)
+		return
 	if Hands.item_at(state, p) == "" and state.world.tile_at(p) != "shard":
 		building_panel.select(Vector2i(-1, -1))  # clicking bare ground puts the card away; holding a resource keeps it
-	if state.world.tile_at(p) == "shard" and state.fog.is_revealed(p):
+	if state.world.tile_at(p) == "shard" and state.fog.is_revealed(p) and not Hands.chips_shard(state):
 		var first_look := not state.shard_seen
 		_toast(state.gather_by_hand(p) + ("\nA new idea stirs in the tech tree: Star Lore." if first_look else ""), 8.0)
 		return
-	# Everything else is gathered by holding: _process fills the ring while the button stays down.
-	state.release_harvest()
+	# Everything else is gathered by holding: _process fills the ring while the button stays down. A ring that is
+	# still waiting on this tile from a tap or a slip (Data.HOLD_KEEP) is taken up again.
 	holding = true
 	press_tile = p
 	press_harvested = false
+
+
+## A hut goes down working what the player picked (else its default); a hut with a choice left unmade says so once.
+func _place_at(p: Vector2i) -> void:
+	var hut := placing == "gatherers_hut"
+	state.place(placing, p, pick_focus if hut else "")
+	if hut:
+		var note := HutFocus.pick_note(state, p, pick_focus)
+		if note != "":
+			_toast(note, 7.0)
+		pick_focus = ""
+
+
+## Tab or R: while placing a hut, the next resource in reach; with a hut selected, its next resource.
+func _cycle_hut_focus() -> void:
+	if placing == "gatherers_hut":
+		pick_focus = HutFocus.pick_next(state, hover, pick_focus)
+	elif placing == "" and building_panel.visible:
+		building_panel.parts["focus"].cycle()
+
+
+## The visible map in its own drawing space: what the hut picker keeps inside.
+func _view_local() -> Rect2:
+	return Rect2((view.position - position) / scale.x, view.size / scale.x)
+
+
+func _over_picker() -> bool:
+	return (
+		placing == "gatherers_hut"
+		and state.world.in_bounds(hover)
+		and HutFocus.pick_over(state, hover, _view_local(), get_local_mouse_position())
+	)
+
+
+## A left click on a picker choice picks it (true), and one on the panel between choices is swallowed.
+func _click_picker() -> bool:
+	if not _over_picker():
+		return false
+	var item := HutFocus.pick_at(state, hover, _view_local(), get_local_mouse_position())
+	if item != "":
+		pick_focus = item
+	return true
+
+
+## The hut ghost's marker (what it will work) and picker (when there is a choice), over a spot it can stand on.
+func _draw_hut_picker() -> void:
+	if (
+		placing != "gatherers_hut"
+		or not state.world.in_bounds(hover)
+		or state.town.placement_error(placing, hover) != ""
+	):
+		return
+	HutFocus.draw_marker(
+		self, _tile_rect(hover).grow(-2.0 * TILE / Art.DESIGN), HutFocus.pick_chosen(state, hover, pick_focus)
+	)
+	HutFocus.draw_picker(self, state, hover, pick_focus, _view_local())
 
 
 ## Hold to harvest, each frame the button is down: over a Control (a bar, a panel) it doesn't count.
@@ -361,7 +486,7 @@ func _hold(delta: float) -> void:
 		_stop_holding()
 		return
 	if get_viewport().gui_get_hovered_control() != null or not state.world.in_bounds(hover):
-		state.release_harvest()
+		state.release_harvest(true)  # a slip onto a bar or off the map: the progress waits a moment
 		return
 	var msg := state.hold_harvest(hover, delta)
 	if msg != "":
@@ -376,13 +501,25 @@ func _stop_holding() -> void:
 		nudge = {"tile": press_tile, "frac": frac, "t": 0.0}
 	holding = false
 	press_harvested = false
-	state.release_harvest()
+	state.release_harvest(true)  # let go early and the next press on the tile carries on
+
+
+## Demolish on unbuilt ground: a resource tile is cleared to grass for good, anything else says why it stays.
+func _clear_land(p: Vector2i) -> void:
+	if Clearing.clear(state, p) == "":
+		var why: String = Clearing.check(state, p)["text"]
+		if why != "":
+			_toast(why + ".", 2.0)
+		return
+	rubble.append({"pos": p, "t": 0.0})
+	popups.append({"pos": _tile_center(p), "text": "Cleared", "t": 0.0})
 
 
 ## Tear down what's at p for half its cost back.
 func _demolish(p: Vector2i) -> void:
 	var type := state.town.built_type(p)
 	if type == "":
+		_clear_land(p)
 		return
 	if Data.BUILDINGS[type]["kind"] == "camp":
 		_toast("The Hearth stays: it's the heart of the settlement.", 2.0)
@@ -456,6 +593,15 @@ func _build_ui() -> void:
 	layer.add_child(era_card)
 	era_card.setup()
 	era_card.closed.connect(func(): paused = false)
+	moment_card = MomentCard.new()
+	layer.add_child(moment_card)
+	moment_card.setup()
+	moment_card.chose.connect(_on_moment_chosen)
+	game_menu = GameMenu.new()
+	layer.add_child(game_menu)
+	game_menu.setup(state)
+	game_menu.paused_changed.connect(func(on: bool): paused = on)
+	CutscenePlayer.attach(layer, state, self)  # last, so a sequence plays over every card
 
 
 func _refresh_ui() -> void:
@@ -502,14 +648,23 @@ func _watch_flavor() -> void:
 		_toast(Data.FLAVOR_STOCK, 5.0)
 
 
-## The story moments that do something on screen: the Falling Star ends the era with a card (the game waits behind it)
-## and goes into the profile, the save that outlives a run.
+## The story moments that do something on screen: the Falling Star and Livewire end an era with a card (the game waits
+## behind it) and go into the profile, the save that outlives a run.
 func _on_story(id: String) -> void:
-	if id == "star_falling":
+	if id in ["star_falling", Data.LIVEWIRE_EVENT]:
 		paused = true
-		era_card.open()
+		era_card.open(id)
 		if not Profile.note_run(state):
 			_toast(Data.PROFILE_UNSAVED, 6.0)
+
+
+## The player answered a Starfall moment (or put the ending away): the game goes on. Saved at an ending.
+func _on_moment_chosen(index: int) -> void:
+	var ending: bool = state.starfall.pending == "ending"
+	state.starfall.choose(index)
+	paused = false
+	if ending and not Profile.note_run(state):
+		_toast(Data.PROFILE_UNSAVED, 6.0)
 
 
 ## A discovery that unlocks buildings: their cards and tab glow, and a toast says where to find them.
@@ -533,7 +688,10 @@ func _on_tech_researched(tech: String) -> void:
 
 
 ## What a tile is drawn as: ore not yet named by its tech shows as plain ground.
-func _feature_name(tile: String) -> String:
+func _feature_name(p: Vector2i) -> String:
+	if state.world.flax_fields.has(p):
+		return "flax_field"  # sown flax is drawn apart from the wild patches
+	var tile := state.world.tile_at(p)
 	var tech: String = Data.TILES[tile].get("tech", "")
 	return "plain_ore" if tech != "" and not state.tech_tree.researched.has(tech) else tile
 
@@ -561,6 +719,9 @@ func _visible_tiles() -> Rect2i:
 
 func _draw() -> void:
 	var seen := _visible_tiles()
+	Rendered.map_seed = state.world.map_seed
+	ground.draw(self, state, seen)
+	road_tiers.sync(self, state)
 	# Ground.
 	for y in range(seen.position.y, seen.end.y):
 		for x in range(seen.position.x, seen.end.x):
@@ -570,15 +731,6 @@ func _draw() -> void:
 				draw_rect(_tile_rect(p), Data.FOG)
 				draw_texture_rect(Art.fog_hatch(int(TILE)), _tile_rect(p), false)
 				continue
-			var t := state.world.tile_at(p)
-			var base: Color = (
-				Data.TILES["grass"]["color"]
-				if t in ["tree", "rock", "berry", "grain", "flax", "shard"]
-				else Data.TILES[t]["color"]
-			)
-			if t == "grass" and (x + y) % 2 == 0:
-				base = Data.GRASS_ALT  # the checker: two grass shades, 4% apart
-			draw_rect(_tile_rect(p), base)
 	_draw_roads()
 
 	# Features.
@@ -587,7 +739,13 @@ func _draw() -> void:
 			var p := Vector2i(x, y)
 			if not state.fog.is_revealed(p):
 				continue
-			Art.map_feature(self, _feature_name(state.world.tile_at(p)), _tile_center(p), p, time, TILE / Art.DESIGN)
+			Art.map_feature(self, _feature_name(p), _tile_center(p), p, time, TILE / Art.DESIGN)
+			if state.world.fields.has(p):
+				var r := _tile_rect(p).grow(-6.0)
+				for row in 3:
+					draw_line(
+						r.position + Vector2(0, r.size.y - row * 3), r.end - Vector2(0, row * 3), Color("63594570"), 1.0
+					)
 
 	# Ranges: a hut's gathering tiles, power range for wheels, Standing Stone reach.
 	var hovered_type := ""
@@ -598,6 +756,14 @@ func _draw() -> void:
 		and (placing == "gatherers_hut" or (placing == "" and hovered_type == "gatherers_hut"))
 	):
 		_draw_gather_range(hover)
+	if (
+		state.world.in_bounds(hover)
+		and (
+			(Data.BUILDINGS.has(placing) and Data.BUILDINGS[placing]["kind"] == "field")
+			or (placing == "" and FieldText.is_sown(state, hover))
+		)
+	):
+		PatchView.draw_huts_reaching(self, state, hover)  # the huts that would reap this field
 	if placing == "water_wheel" and state.world.in_bounds(hover):
 		draw_circle(_tile_center(hover), Data.BUILDINGS["water_wheel"]["radius"] * TILE, Color(0.16, 0.62, 0.56, 0.18))
 	if placing == "grindstone" or hovered_type in ["water_wheel", "grindstone"]:
@@ -620,6 +786,9 @@ func _draw() -> void:
 			_draw_gather_range(sel["pos"])
 		Overlays.flow_arrows(self, state, sel, time)
 	KithArt.draw_all(self, state, time)
+	KithArt.draw_wreck(self, state, time)
+	KithArt.draw_bloom_sign(self, state, time)
+	KithArt.draw_strangers(self, state, time)
 	Overlays.fog_edges(self, state, seen)
 	Overlays.alert_badges(self, state)
 
@@ -632,18 +801,23 @@ func _draw() -> void:
 		var note := ""
 		if Data.BUILDINGS[placing]["kind"] in ["gatherer", "processor"]:
 			note = BuildingPanel.trip_text(state, hover)
-		elif placing == "road" and state.world.tile_at(hover) == "rock":
-			note = "Cut a pass · %s" % Ui.cost_text(Data.PASS_COST)
-		elif placing == "road" and state.world.tile_at(hover) == "tree":
-			note = (
-				"Fell the trees · %s"
-				% Ui.cost_text(Rules.cost_at("road", "tree", state.tech_tree.researched.has("causeways")))
-			)
-		Overlays.placement_ghost(self, state, placing, hover, note)
+		elif Data.BUILDINGS[placing]["kind"] == "road" and state.world.tile_at(hover) == "rock":
+			note = "Cut a pass · %s" % Ui.cost_text(state.town.cost_here(placing, hover))
+		elif Data.BUILDINGS[placing]["kind"] == "road" and state.world.tile_at(hover) == "tree":
+			note = "Fell the trees · %s" % Ui.cost_text(state.town.cost_here(placing, hover))
+		elif state.world.roads.has(hover) and state.town.placement_error(placing, hover) == "":
+			note = "Upgrade · %s" % Ui.cost_text(state.town.cost_here(placing, hover))
+		Overlays.placement_ghost(
+			self,
+			state,
+			placing,
+			hover,
+			PatchText.with_pill(state, placing, hover, HutFocus.pick_chosen(state, hover, pick_focus), note)
+		)
 	elif state.world.in_bounds(hover) and not state.fog.is_revealed(hover):
 		var fr := _tile_rect(hover)
 		Art.dashed_rect(self, fr.grow(-1), Color(1, 1, 1, 0.6), 2.0, 5.0, 4.0)
-		Art.pill(self, Vector2(fr.get_center().x, fr.end.y + 4), "Unexplored", Ui.TEXT, OUTLINE, 14)
+		Art.pill(self, Vector2(fr.get_center().x, fr.end.y + 4), Data.UNEXPLORED_PILL, Ui.TEXT, OUTLINE, 14)
 	elif state.world.in_bounds(hover) and state.fog.is_revealed(hover) and Overlays.blocked_hint(state, hover) != "":
 		draw_rect(_tile_rect(hover).grow(-1), Color(1, 1, 1, 0.8), false, 2.0)
 		var r := _tile_rect(hover)
@@ -653,7 +827,9 @@ func _draw() -> void:
 	elif state.world.in_bounds(hover):
 		draw_rect(_tile_rect(hover).grow(-1), Color(1, 1, 1, 0.8), false, 2.0)  # the Info panel says what it is
 
+	_draw_hut_picker()
 	_draw_hold_ring()
+	_draw_waiting_ring()
 	_draw_nudge()
 	if paused:
 		var top_mid := (Vector2(view.get_center().x, view.position.y + 12.0) - position) / scale.x
@@ -696,7 +872,8 @@ func _draw_gather_range(p: Vector2i) -> void:
 	var reach := Rect2(MAP_ORIGIN + Vector2(p - Vector2i(r, r)) * TILE, Vector2.ONE * (2 * r + 1) * TILE)
 	draw_rect(reach, Color(GOAL_COLOR, 0.18))
 	Art.dashed_rect(self, reach, GOAL_COLOR, 2.0 * Art.ui_k, 10.0 * Art.ui_k, 6.0 * Art.ui_k)
-	for t in state.town.tiles_of(p, state.town.focus_at(p)):  # only what the hut works
+	var focus := HutFocus.pick_chosen(state, p, pick_focus) if placing == "gatherers_hut" else state.town.focus_at(p)
+	for t in state.town.tiles_of(p, focus):  # only what the hut works
 		draw_rect(_tile_rect(t).grow(-3), Color(1, 0.82, 0.4, 0.35))
 		draw_rect(_tile_rect(t).grow(-3), GOAL_COLOR, false, 2.0)
 
@@ -707,7 +884,13 @@ func _draw_building(b: Dictionary) -> void:
 	var k := TILE / Art.DESIGN
 	var r := Overlays.footprint(state, p)  # a tile, or the Hearth's 2x2
 	var working: bool = b["status"] == "Working"
-	Art.map_building(self, b["type"], r, working, time)
+	Art.contact_shadow(self, Vector2(r.get_center().x, r.end.y - 2.0), r.size * Vector2(0.38, 0.055))
+	if Homes.is_home(b) and Homes.tier_of(b) > 0:
+		GrowthArt.draw_house(self, Homes.tier_of(b) + 1, r)  # a Homestead or a Longhouse has its own roof
+	else:
+		Art.map_building(self, b["type"], r, working, time)
+	if Homes.is_home(b):
+		HomeView.draw(self, b, r)  # any scaffold, over the house (scripts/home_look.gd)
 	if b["type"] == "shard_cairn":
 		Art.cairn_glow(self, r, state.sky.approach(), time)
 	var tile := _tile_rect(p).grow(-2.0 * k)
@@ -745,6 +928,21 @@ func _draw_hold_ring() -> void:
 	if state.harvest_frac > 0.0:
 		var to := -PI / 2.0 + TAU * state.harvest_frac
 		draw_arc(c, radius, -PI / 2.0, to, maxi(4, int(40 * state.harvest_frac)), GOAL_COLOR, 4.0, true)
+
+
+## A ring that is waiting (a tap that let go early, a slip off the tile): it stays on its tile, fading as its time runs out.
+func _draw_waiting_ring() -> void:
+	var w: Dictionary = state.harvest_ring["aside"]
+	if w.is_empty() or Hands.item_at(state, w["tile"]) == "" or (not nudge.is_empty() and nudge["tile"] == w["tile"]):
+		return  # (a quick click's hint already draws that ring)
+	var fade: float = clampf(w["left"] / Data.HOLD_KEEP, 0.0, 1.0)
+	var c := _tile_center(w["tile"])
+	var radius := TILE * 0.42
+	draw_arc(c, radius, 0.0, TAU, 40, Color(OUTLINE, 0.6 * fade), 7.0, true)
+	draw_arc(c, radius, 0.0, TAU, 40, Color(1, 1, 1, 0.2 * fade), 3.0, true)
+	var frac: float = w["held"] / Hands.hold_time(state, Hands.item_at(state, w["tile"]))
+	var to := -PI / 2.0 + TAU * clampf(frac, 0.0, 1.0)
+	draw_arc(c, radius, -PI / 2.0, to, maxi(4, int(40 * frac)), Color(GOAL_COLOR, fade), 4.0, true)
 
 
 ## A quick click on a resource: the ring shows how far the hold got and fades, with a hint to keep the button down.
@@ -794,25 +992,9 @@ func _draw_rush(b: Dictionary, r: Rect2) -> void:
 
 
 func _draw_roads() -> void:
-	var dirt: Color = Data.BUILDINGS["road"]["color"]
-	if state.tech_tree.researched.has("causeways"):
-		dirt = dirt.lerp(Data.BUILDINGS["stone_bridge"]["color"], 0.7)  # the roads are laid in stone now
-	var k := TILE / Art.DESIGN
 	var seen := _visible_tiles()
 	for p in state.world.roads:
 		if not seen.has_point(p) or not state.fog.is_revealed(p):
 			continue
-		var c := _tile_center(p)
 		if state.world.tile_at(p) == "river":
-			var bridge := Art.sprite("stone_bridge" if state.world.stone_bridges.has(p) else "tile_bridge_wood")
-			if bridge != null:
-				draw_texture_rect(bridge, _tile_rect(p), false)
-				continue
-			draw_rect(_tile_rect(p).grow_individual(0, -5 * k, 0, -5 * k), Color("8d6e63"))
-			continue
-		draw_circle(c, 8.0 * k, dirt)
-		for n in World.NEIGHBORS:
-			if state.world.roads.has(p + n) or state.town.building_at.has(p + n):
-				var half := Vector2(n) * TILE * 0.5
-				var w := Vector2(absf(n.y), absf(n.x)) * 8.0 * k
-				draw_colored_polygon(PackedVector2Array([c - w, c + w, c + half + w, c + half - w]), dirt)
+			BridgeArt.draw(self, state, p)

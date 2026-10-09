@@ -25,7 +25,7 @@ var wrap_width := 260.0
 static func _style() -> StyleBoxFlat:
 	var s := Ui.bar_style(Ui.PANEL, true)
 	s.border_width_bottom = 0
-	s.border_width_left = 3
+	s.border_width_left = 1
 	s.set_content_margin_all(12)
 	return s
 
@@ -43,7 +43,20 @@ func setup(game: Sim, width: float) -> void:
 		var g := Ui.label("", 14)
 		g.autowrap_mode = TextServer.AUTOWRAP_WORD
 		g.custom_minimum_size = Vector2(wrap_width, 0)
-		v.add_child(g)
+		if i == 0:
+			var current := PanelContainer.new()
+			var style := Ui.panel_style(Ui.CARD, 6)
+			style.border_color = Ui.HIGHLIGHT
+			style.border_width_left = 3
+			style.border_width_top = 0
+			style.border_width_right = 0
+			style.border_width_bottom = 0
+			current.add_theme_stylebox_override("panel", style)
+			g.custom_minimum_size.x = wrap_width - 12.0
+			current.add_child(g)
+			v.add_child(current)
+		else:
+			v.add_child(g)
 		goal_labels.append(g)
 	sky_view = SkyView.new()
 	v.add_child(sky_view)
@@ -83,8 +96,9 @@ func refresh_goals(s: Sim) -> void:
 	var list := s.story.goal_list()
 	var cur := s.story.current_goal()
 	var total := list.size()
-	var era_two := list == Data.GOALS_ERA2
-	goal_header.text = (Data.GOALS_HEADER_ERA2 if era_two else Data.GOALS_HEADER) % [s.story.done_count(), total]
+	var header := Data.GOALS_HEADER_ERA4 if list == Data.GOALS_ERA4 else Data.GOALS_HEADER
+	header = Data.GOALS_HEADER_ERA2 if list == Data.GOALS_ERA2 else header
+	goal_header.text = header % [s.story.done_count(), total]
 	var done: Array = []
 	for g in list:
 		if s.story.goals_done.has(g["id"]):
@@ -101,6 +115,12 @@ func refresh_goals(s: Sim) -> void:
 	if cur >= total:
 		goal_labels[0].visible = true
 		goal_labels[0].text = Data.GOALS_ALL_DONE
+		var star_fell: bool = s.story.events.has("star_falling")
+		goal_labels[1].visible = star_fell
+		goal_labels[1].text = (
+			"  " + (Data.GOALS_IRONFALL_CLOSING if list == Data.GOALS_ERA4 else Data.GOALS_STAR_CLOSING)
+		)
+		goal_labels[1].add_theme_color_override("font_color", Ui.TEXT_DIM)
 
 
 ## Show `text` under the card; a card that doesn't fit scrolls (the bar only shows when it must).

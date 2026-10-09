@@ -45,6 +45,8 @@ const HUT_JOBS := {
 const JOB_ANY := {"title": "Gatherer", "craft": "to gather"}  # for an item with no entry above
 const JOB_HAULER := "Hauler"
 const JOB_IDLE := "Idle"
+const JOB_SCOUT := "Scout"
+const JOB_PARTY := "Traveller"  # a Kith out with an expedition party
 
 ## Messages and labels that name the people. Each is formatted with PEOPLE["one"] or PEOPLE["many"]
 ## (the noun they use is noted beside it).
@@ -53,8 +55,10 @@ const LEARNED_LINE := "%s learned %s and is now the %s."  # name, "to chop wood"
 const BORN_POPUP := "+1 %s"  # one
 const BORN_TOAST := "New %s arrive at the Hearth while food lasts"  # many
 const NAMELESS := "A %s"  # one: who learns a job when no one is named
-const BRIDGE_HINT := "Wooden Bridge. %s and haulers cross the river here."  # many
-const ROAD_HINT := "Road on %s. %s walk twice as fast here."  # tile name, many
+const BRIDGE_HINT := "%s. %s and haulers cross the river here."  # bridge name, many
+const ROAD_HINT := "%s on %s. %s walk %s here."  # road name, tile name, many, how fast ("twice as fast")
+## How fast each road tier is walked, as ROAD_HINT says it (Data.ROAD_SPEEDS times the road's twice the open ground).
+const ROAD_PACE := ["twice as fast", "2.5 times as fast", "three times as fast", "eight times as fast"]
 const FOOD_TIP := "Every %s eats food: Berries, then Fish, then any Flour that isn't in use."  # one
 ## The Food readout while the warning is up, formatted with the time left ("45 s").
 const FOOD_LOW_TEXT := "Low: %s left. Gather berries!"
@@ -66,8 +70,8 @@ const FORAGE_MAKER := "Foraged by idle %s"  # many
 const STARVING_TEXT := "Food: none! The %s have stopped working"  # many
 const TOOLS_LABEL := "Tools %d/%d %s"  # held, people, many
 const TOOLS_TIP := (
-	"%s holding a Flint Tool work 50%% faster, and a Bronze Tool 100%% faster. "
-	+ "Flint lasts %d jobs and bronze %d; spares in the stockpile: %d."
+	"%s holding a Flint Tool work 50%% faster, a Bronze Tool 100%%, an Iron Tool 175%% and a Steel Tool 225%%. "
+	+ "Flint lasts %d jobs, bronze %d, iron %d and steel %d; spares in the stockpile: %d."
 )  # many
 const FOOD_NOTE := "Food worth %s each. The %s eat it."  # many
 const HUNGRY_THEN := "the %s go hungry"  # many

@@ -4,6 +4,7 @@ extends RefCounted
 ## `placing`, `nudge` and the building panel. The one place a hint about the tile under the mouse is shown.
 
 const Data = preload("res://scripts/data.gd")
+const Rules = preload("res://scripts/rules.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Overlays = preload("res://scripts/overlays.gd")
 const Roads = preload("res://scripts/roads.gd")
@@ -11,12 +12,18 @@ const Workers = preload("res://scripts/workers.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Hands = preload("res://scripts/hands.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
+const FieldText = preload("res://scripts/field_text.gd")
+const PatchText = preload("res://scripts/patch_text.gd")
+const HutFocus = preload("res://scripts/hut_focus.gd")
 
 
 static func text(m) -> String:
 	var s = m.state
 	if m.placing == "demolish":
-		return "Demolish: click a building, road or field to tear it down for half its cost back. Right-click to stop."
+		return (
+			"Demolish: click a building, road or field to tear it down for half its cost back, or a resource tile "
+			+ "(forest, rocks, clay...) to clear it to grass for good. Right-click to stop."
+		)
 	if m.placing != "":
 		return _placing_text(m)
 	if not s.world.in_bounds(m.hover):
@@ -33,19 +40,27 @@ static func _placing_text(m) -> String:
 	var t := "Placing %s. Left-click open grassland, right-click to stop." % def["name"]
 	if def["kind"] in ["road", "bridge", "field"]:
 		t = "Laying %s: click, or drag and release to lay a line. Right-click to stop." % def["name"]
-	t += (
-		"\nCost (have/need): "
-		+ (Ui.progress_text(s.economy.inv, def["cost"], 99) if not def["cost"].is_empty() else "free")
-	)
+	var cost: Dictionary = s.town.cost_here(m.placing, m.hover) if s.world.in_bounds(m.hover) else def["cost"]
+	t += "\nCost (have/need): " + (Ui.progress_text(s.economy.inv, cost, 99) if not cost.is_empty() else "free")
+	var copies: int = s.town.copies(m.placing)
+	if Rules.is_production(m.placing) and copies > 0:
+		t += "\n" + Data.COPY_COST_NOTE % [copies, roundi((Rules.copy_multiplier(m.placing, copies) - 1.0) * 100.0)]
 	if s.world.in_bounds(m.hover):
 		var err: String = s.town.placement_error(m.placing, m.hover)
 		if err != "":
 			t += "\n\nCan't build here: " + err + "."
+		if def["kind"] == "field" and err == "":
+			t += "\n\n" + FieldText.placing_text(s, m.hover, def)
 		if m.placing == "gatherers_hut":
-			var tiles: Array = s.town.tiles_of(m.hover, s.town.default_focus(m.hover))
+			var chosen := HutFocus.pick_chosen(s, m.hover, m.pick_focus)
+			var tiles: Array = s.town.tiles_of(m.hover, chosen)
 			t += "\n\n" + BuildingPanel.gather_text(s, tiles)
+			var patch := PatchText.placement_text(s, m.hover, chosen)
+			t += "\n" + patch if patch != "" else ""
 			if not tiles.is_empty():
-				t += "\nIt will work the resource nearest it: click the hut afterwards to change."
+				t += "\nIt works the resource nearest it, unless you pick another."
+			if not HutFocus.pick_options(s, m.hover).is_empty():
+				t += " Click one in the picker by the hut, or press Tab or R."
 		if s.tech_tree.researched.has("haulers") and def["kind"] in ["gatherer", "processor"]:
 			t += "\n" + _road_preview(s, m.hover)
 	return t
@@ -69,6 +84,11 @@ static func _kith_here(s, p: Vector2i) -> String:
 	return ", ".join(names)
 
 
+## The name of the road or bridge at p: "Road", "Gravel Road", "Paved Road", "Wooden Bridge" or "Stone Bridge".
+static func road_name(s, p: Vector2i) -> String:
+	return Data.BUILDINGS[s.town.built_type(p)]["name"]
+
+
 ## What's on the hovered tile: a building, a road, a resource or open ground.
 static func _tile_text(m) -> String:
 	var s = m.state
@@ -79,9 +99,12 @@ static func _tile_text(m) -> String:
 	var plain: bool = t.has("tech") and not s.tech_tree.researched.has(t["tech"])  # ore not yet known
 	if s.world.roads.has(p):
 		if s.world.tile_at(p) == "river":
-			return Data.BRIDGE_HINT % Data.PEOPLE["many"]
-		return Data.ROAD_HINT % [t["name"], Data.PEOPLE["many"]]
+			return Data.BRIDGE_HINT % [road_name(s, p), Data.PEOPLE["many"]]
+		var tier: int = s.world.road_tier(p)
+		return Data.ROAD_HINT % [road_name(s, p), t["name"], Data.PEOPLE["many"], Data.ROAD_PACE[tier]]
 	var hint := Overlays.blocked_hint(s, p)
+	if s.world.tile_at(p) == "shard" and Hands.chips_shard(s):
+		return "%s\n%s\n%s" % [t["name"], hold_hint(s, "shard"), Data.SHARD_HINT]
 	if plain:
 		return "%s\n%s" % [t["plain_name"], Data.ORE_PLAIN_HINT % Data.TECHS[t["tech"]]["name"]]
 	if t["yields"] != "":
@@ -89,10 +112,19 @@ static func _tile_text(m) -> String:
 		var how := "Hold the mouse on it to gather."
 		if not m.nudge.is_empty() and m.nudge["tile"] == p:
 			how = "You let go too soon: keep the mouse down until the ring fills."
-		var out := "%s\n%s. %s" % [t["name"], hold_hint(s, item), how]
+		var tile_name: String = t["name"]
+		if s.world.flax_fields.has(p):
+			tile_name = Data.BUILDINGS["flax_field"]["name"]
+		elif s.world.fields.has(p):
+			tile_name = Data.FIELD_TITLE % Data.ITEMS[item]["name"]
+		var out := "%s\n%s. %s" % [tile_name, hold_hint(s, item), how]
+		if s.world.seam_of.has(p):  # a finite seam: what is left in the ground
+			out += "\n" + Data.SEAM_LEFT % [s.world.seam_left[s.world.seam_of[p]], Data.COAL_PER_SEAM]
 		if Data.FOOD_VALUE.has(item):
 			out += " It's food: the %s eat it." % Data.PEOPLE["many"]
 		out += "\n" + (Data.MINE_TIP if t.get("mine_only", false) else learn_text(s, item))
+		if FieldText.is_sown(s, p):
+			out += "\n\n" + FieldText.tile_text(s, p)
 		return out + ("\n" + hint + "." if hint != "" else "")
 	var info: String = t["name"]
 	if t.has("hint"):
@@ -153,7 +185,7 @@ static func learn_text(s, item: String) -> String:
 		return "%s knows how to gather %s: huts can gather it." % [s.people.learned_by[item], item_name]
 	return (
 		"Harvested by hand %d/%d. A %s is watching and will learn %s."
-		% [s.hand_counts.get(item, 0), Data.LEARN_CLICKS, Data.PEOPLE["one"], item_name]
+		% [s.hand_counts.get(item, 0), Hands.learn_needed(s), Data.PEOPLE["one"], item_name]
 	)
 
 

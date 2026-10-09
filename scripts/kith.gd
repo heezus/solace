@@ -33,6 +33,8 @@ const Research = preload("res://scripts/research.gd")
 const World = preload("res://scripts/world.gd")
 
 const _TASK_POINTS := ["tile", "depot"]  # the task entries that are tile positions (saved as [x, y])
+## The carts in the order haulers are given them (Buildings.carts_of): the best load first.
+const CART_ORDER := ["steam", "hand", "beast"]
 
 ## The people, each: {pos: Vector2 (tile coords), path: Array of Vector2i, job: "" | "work" | "haul",
 ##  building: int, phase: String, timer: float, carry: Dictionary, task: Dictionary, name: String,
@@ -42,6 +44,7 @@ var learned_by: Dictionary = {}  # item -> name of the person who learned to gat
 var births := 0  # people named so far, for the next name
 var grow_timer := 0.0
 var starve_timer := 0.0
+var gift: Callable = func(_set_id: String) -> bool: return false  # (set id) -> true once that glyph set is read (Starfall)
 var _world: World
 var _pathing: Pathing
 var _economy: Economy
@@ -81,7 +84,10 @@ func add_kith() -> void:
 		"seen": Vector2i(-99, -99),  # the tile they last lifted the fog around
 		"tool": 0,  # jobs left on the tool they hold, 0 for none
 		"tool_id": "",  # which tool it is (Data.TOOL_ITEMS), "" for none
-		"cart": false,  # a hauler pushing a cart (see Buildings.carts_allowed): it carries more but walks roads only
+		"cart": false,  # a hauler pulling a cart (see Buildings.carts_of): carries 3x (a Steam Cart 4x) but walks roads only
+		"cart_kind": "",  # which cart it is: "hand", "beast" or "steam" (Data.CART_KINDS), "" for none
+		"fire": 0,  # a Steam Cart's trips left on the Coal it has burned
+		"hot": false,  # a Steam Cart has steam up for the trip it is on: it runs on Rail alone
 		"trip": false,  # a hut worker out on a clicked trip, carrying the bundle to the stockpile
 		"name": _next_name(),
 	}
@@ -99,7 +105,8 @@ func _next_name() -> String:
 
 ## Seconds between births. Storytelling shortens it.
 func grow_time() -> float:
-	return Data.GROW_TIME * (Data.STORYTELLING_GROW if _research.unlocked("storytelling") else 1.0)
+	var healed: float = Data.HEALER_GROW if gift.call("body") else 1.0  # the Lumen Healer's leaves
+	return Data.GROW_TIME * (Data.STORYTELLING_GROW if _research.unlocked("storytelling") else 1.0) * healed
 
 
 ## True when there is food enough for one more mouth: the stockpile covers the birth (and a small reserve
@@ -200,15 +207,25 @@ func assign_jobs() -> void:
 			if b[slot] < 0 and not _staff(i, b, slot):
 				out_of_hands = true
 				break
-	var carts := _town.carts_allowed()  # the first haulers in the list push the carts
+	var carts := {}  # the first haulers in the list push the carts: Steam Carts first, then hand carts, then beast carts
+	for kind in CART_ORDER:
+		carts[kind] = _town.carts_of(kind)
 	for k in kith:
 		if k["job"] == "" and _research.unlocked("haulers"):
 			drop_task(k)  # a forager hands in what they carry
 			k["job"] = "haul"
 			k["phase"] = ""
-		k["cart"] = k["job"] == "haul" and carts > 0
-		if k["cart"]:
-			carts -= 1
+		var kind := ""
+		if k["job"] == "haul":
+			for c in CART_ORDER:
+				if carts[c] > 0:
+					kind = c
+					carts[c] -= 1
+					break
+		k["cart"] = kind != ""
+		k["cart_kind"] = kind
+		if kind != "steam":
+			k["hot"] = false
 
 
 ## Send the first idle person (else the first hauler) to building `i`, to fill its place `slot`. False when
@@ -301,7 +318,7 @@ func worker_home(b: Dictionary) -> bool:
 # --- Tools -------------------------------------------------------------------
 
 
-## A worker without a tool takes the best one from the stockpile (Bronze Tools before Flint Tools).
+## A worker without a tool takes the best one from the stockpile (Iron before Bronze before Flint Tools).
 func equip(k: Dictionary) -> void:
 	if k["tool"] > 0:
 		return
@@ -316,7 +333,14 @@ func equip(k: Dictionary) -> void:
 
 ## How many jobs a new tool of `id` lasts.
 static func tool_jobs(id: String) -> int:
-	return Data.BRONZE_TOOL_JOBS if id == "bronze_tools" else Data.TOOL_JOBS
+	match id:
+		"steel_tools":
+			return Data.STEEL_TOOL_JOBS
+		"iron_tools":
+			return Data.IRON_TOOL_JOBS
+		"bronze_tools":
+			return Data.BRONZE_TOOL_JOBS
+	return Data.TOOL_JOBS
 
 
 ## The tool a worker holds: its item id, "" for none. A save from before Bronze Tools holds a Flint Tool.
@@ -333,7 +357,10 @@ func wear(b: Dictionary) -> void:
 	var k: Dictionary = kith[b["worker"]]
 	if k["tool"] > 0:
 		var id := tool_of(k)
-		k["tool"] -= 1
+		k["wear_acc"] = float(k.get("wear_acc", 0.0)) + (Data.HEALER_WEAR if gift.call("body") else 1.0)
+		if k["wear_acc"] >= 1.0:
+			k["wear_acc"] -= 1.0
+			k["tool"] -= 1
 		if k["tool"] == 0:
 			k["tool_id"] = ""
 			announce.emit(Data.TOOL_WORE_OUT % Data.ITEMS[id]["one"])
@@ -370,6 +397,10 @@ func job_of(k: Dictionary) -> String:
 			return building_job(_town.buildings[k["building"]])
 		"haul":
 			return Data.JOB_HAULER
+		"scout":
+			return Data.JOB_SCOUT
+		"expedition":
+			return Data.JOB_PARTY
 	return Data.JOB_IDLE
 
 
@@ -435,6 +466,19 @@ func step(k: Dictionary, delta: float) -> bool:
 
 
 # --- Trips -------------------------------------------------------------------
+
+
+## Seconds to walk from `from` to `to` and back (roads shorten it), or -1.0 when water cuts the way off.
+func round_trip(from: Vector2i, to: Vector2i) -> float:
+	if from == to:
+		return 0.0
+	var path := _pathing.path(from, to)
+	if path.is_empty():
+		return -1.0
+	var secs := 0.0
+	for i in range(1, path.size()):
+		secs += Vector2(path[i - 1]).distance_to(Vector2(path[i])) * _pathing.walk_cost(path[i]) / Data.KITH_SPEED
+	return secs * 2.0
 
 
 ## The Camp or Storehouse closest to p.
@@ -516,6 +560,9 @@ static func _person_from_dict(d: Dictionary) -> Dictionary:
 		k[key] = int(d[key])
 	k["tool_id"] = String(d.get("tool_id", "flint_tools" if int(d["tool"]) > 0 else ""))  # older saves: flint
 	k["cart"] = bool(d.get("cart", false))
+	k["cart_kind"] = String(d.get("cart_kind", "hand" if k["cart"] else ""))  # before steam the only cart was the hand cart
+	k["fire"] = int(d.get("fire", 0))
+	k["hot"] = bool(d.get("hot", false))
 	k["timer"] = float(d["timer"])
 	k["task"] = _int_task(k["task"])
 	return k

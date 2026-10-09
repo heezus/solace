@@ -1,8 +1,14 @@
 extends Control
-## The tech board: lane bands, tier columns, one card per tech and neutral lines between them. Hovering a card
+## The tech board: lane bands, tier columns, one compact card per tech and neutral lines between them. Hovering a card
 ## lights the lines to the techs it needs and the ones it leads to (one step each way) and dims the rest.
-## Two views: the whole board, or "next steps", a plain grid of just what can be discovered next.
-## Drag empty space to pan.
+##
+## The board always opens fitted: scaled to show a whole era in the space it has. From there the wheel (or the + and
+## - buttons, or a pinch) zooms about the pointer, dragging empty space or a card pans, arrows or WASD pan while the
+## board is open, and Fit (F) snaps back. The view eases to where it is going, and it is clamped so the tree can never
+## be moved out of sight: zoomed out it is centred, zoomed in its edges stop at the edges of the board.
+##
+## Everything is drawn in screen space, so text stays sharp at any zoom. A label is never drawn under MIN_PX (14): at a
+## low zoom the icon goes first so the name keeps the room, and a name too long for its card is trimmed with an ellipsis.
 
 signal card_clicked(tech: String)
 signal hover_changed(tech: String)
@@ -15,135 +21,270 @@ const TechLayout = preload("res://scripts/tech_layout.gd")
 const Ranks = preload("res://scripts/ranks.gd")
 const Rules = preload("res://scripts/rules.gd")
 
-const MET := Color("c9b59b")
-const NEEDED := Color("8a6d5a")
-const GOLD := Color("ffd166")
+const MET := Ui.TEXT_DIM
+const NEEDED := Ui.EDGE
+const GOLD := Ui.HIGHLIGHT
 const DONE_BG := Ui.CARD_DONE
 const READY_BG := Ui.CARD
 const LOCKED_BG := Ui.CARD_LOCKED
-const LOCKED_TEXT := Color("b5a08a")
-const GRID_COLS := 4  # the next-steps view: cards per row
-const GRID_GAP := 24.0
-const GRID_MARGIN := 16.0
-const PIP := 20.0  # a cost item's sprite
-const HIDDEN_EDGE := Color("c9b59b")
-const GATE := Color("e3a857")
-const GATE_BG := Color("3a2f1f")
+const LOCKED_TEXT := Ui.TEXT_DIM
+const HIDDEN_EDGE := Ui.TEXT_DIM
+const GATE := Ui.HIGHLIGHT
+const GATE_BG := Ui.BAR
+
+const MIN_ZOOM := 0.25  # a floor for the fit, so a tiny window never divides by nothing
+const MAX_ZOOM := 2.0
+const MAX_FIT := 1.3  # a small board is not blown up past this when it is fitted
+const PAD := 6.0  # the margin the fit leaves around the board, in screen px
+const WHEEL_STEP := 1.2  # one wheel notch zooms by this much
+const BUTTON_STEP := 1.25  # the + and - buttons
+const KEY_SPEED := 650.0  # screen px a second while an arrow or WASD key is held
+const PAN_GESTURE := 14.0  # a trackpad's two-finger scroll, in px per unit of its delta
+const EASE := 14.0  # how fast the view eases to its goal
+const DRAG_START := 5.0  # px the pointer moves with the button down before a press becomes a pan
+const NAME_PX := 15.0  # a card's name, in board px (its screen size is this times the zoom)
+const MIN_PX := 14  # no label is drawn smaller than this on screen (the HUD's own minimum)
+const ICON_ZOOM := 0.8  # below this zoom a card drops its icon to leave room for the name
 
 var state: Sim
 var lay: Dictionary
 var era := 1  # the era whose board is shown
+var selected := ""  # persistent presentation focus after a card click
 var hovered := ""
+var material_hits: Array = []  # screen-space gate price symbols from the latest draw
 var chain := {}  # techs lit by the hover: the hovered one, what it directly needs and what directly needs it
-var view := "all"  # "next": a grid of what can be discovered next; "all": the whole board
-var grid := {}  # tech -> Rect2, the cards in the next-steps view
 var bold: Font
-var pan_from := Vector2(-1, -1)
+var zoom := 1.0  # the view now: board px to screen px
+var origin := Vector2.ZERO  # and where the board's top left is, in this control's pixels
+var goal_zoom := 1.0  # the view the eased motion is heading for
+var goal_origin := Vector2.ZERO
+var fitted := true  # the whole era is in view (kept so across window resizes)
+var pressing := false  # the left button is down on the board
+var dragging := false  # ...and has moved far enough to be a pan, not a click
+var press_at := Vector2.ZERO
+var press_tech := ""  # the card under the press, if any: released without a drag it is a click
 
 
 func setup(game: Sim) -> void:
 	state = game
 	lay = TechLayout.build(era)
-	custom_minimum_size = lay["size"]
-	mouse_filter = Control.MOUSE_FILTER_PASS  # unhandled wheel events reach the ScrollContainer
+	mouse_filter = Control.MOUSE_FILTER_STOP
+	clip_contents = true
+	size_flags_vertical = Control.SIZE_EXPAND_FILL
+	size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	custom_minimum_size = Vector2(0, 160)
 	var fv := FontVariation.new()
 	fv.base_font = ThemeDB.fallback_font
 	fv.variation_embolden = 0.6
 	bold = fv
+	resized.connect(_on_resized)
 
 
+# --- Cards and the view ------------------------------------------------------
+
+
+## A card's rectangle in board px (the layout's own coordinates).
 func card_rect(tech: String) -> Rect2:
-	if view == "next" and grid.has(tech):
-		return grid[tech]
 	return lay["rects"].get(tech, Rect2())
 
 
-## Whether the current view shows this tech's card.
+## A card's rectangle in this control's pixels, as it is drawn now.
+func card_screen_rect(tech: String) -> Rect2:
+	var r := card_rect(tech)
+	return Rect2(origin + r.position * zoom, r.size * zoom)
+
+
+## The whole board in this control's pixels, as it is drawn now.
+func board_screen_rect() -> Rect2:
+	return Rect2(origin, lay["size"] * zoom)
+
+
+## A point on the board, in this control's pixels.
+func to_screen(p: Vector2) -> Vector2:
+	return origin + p * zoom
+
+
+## A point of this control, on the board.
+func to_board(p: Vector2) -> Vector2:
+	return (p - origin) / zoom
+
+
+## Whether the board has a card for this tech.
 func shows(tech: String) -> bool:
-	return lay["rects"].has(tech) if view == "all" else grid.has(tech)
+	return lay["rects"].has(tech)
 
 
-## Show another era's board (each era has its own tree).
+## Show another era's board (each era has its own tree), fitted.
 func set_era(e: int) -> void:
 	if e == era:
 		return
 	era = e
+	selected = ""
 	lay = TechLayout.build(era)
 	_set_hover("")
-	grid = {}
-	update_view()
-	queue_redraw()
+	_rebuild_chain()
+	fit(true)
 
 
-## The techs that can be discovered next: not done, everything they need is, built, and in this era's tree. Affordable
-## ones first.
-func next_techs() -> Array:
-	var out: Array = Rules.era_techs(era).filter(
-		func(t):
-			return (
-				not state.tech_tree.researched.has(t) and Rules.tech_enabled(t) and state.tech_tree.requirements_met(t)
-			)
-	)
-	out.sort_custom(func(a, b): return state.tech_tree.can_research(a) and not state.tech_tree.can_research(b))
+## The zoom and origin that put a board of size `content` in a view of size `view`: as big as fits (never past
+## MAX_FIT), centred, with PAD to spare. Pure, so the tests can ask it about any window.
+static func fit_for(content: Vector2, view: Vector2) -> Dictionary:
+	var z := 1.0
+	if view.x > 0.0 and view.y > 0.0 and content.x > 0.0 and content.y > 0.0:
+		z = clampf(minf((view.x - PAD * 2.0) / content.x, (view.y - PAD * 2.0) / content.y), MIN_ZOOM, MAX_FIT)
+	return {"zoom": z, "origin": ((view - content * z) / 2.0).round()}
+
+
+## The smallest zoom: the one that fits the whole era.
+func min_zoom() -> float:
+	return fit_for(lay["size"], size)["zoom"]
+
+
+## Where the board's top left may sit at zoom `z`: centred along an axis where the board is smaller than the view,
+## otherwise held so the board's edges never leave the view's.
+func clamp_origin(o: Vector2, z: float) -> Vector2:
+	var board: Vector2 = lay["size"] * z
+	var out := o
+	for axis in 2:
+		if board[axis] <= size[axis]:
+			out[axis] = ((size[axis] - board[axis]) / 2.0)
+		else:
+			out[axis] = clampf(o[axis], size[axis] - board[axis], 0.0)
 	return out
 
 
-## Switch views, and lay out the grid of next steps when that is the view.
-func set_view(v: String) -> void:
-	view = v
-	_set_hover("")
-	update_view()
-
-
-## Keep the view's layout and size right (the grid follows what is next as techs are discovered).
-func update_view() -> void:
-	if view == "all":
-		grid = {}
-		custom_minimum_size = lay["size"]
-		return
-	var techs := next_techs()
-	if techs.size() != grid.size() or techs.any(func(t): return not grid.has(t)):
-		grid = {}
-		for i in techs.size():
-			var col := i % GRID_COLS
-			var row := floori(float(i) / GRID_COLS)
-			grid[techs[i]] = Rect2(
-				Vector2(
-					GRID_MARGIN + col * (TechLayout.CARD_W + GRID_GAP),
-					GRID_MARGIN + row * (TechLayout.CARD_H + GRID_GAP)
-				),
-				TechLayout.CARD
-			)
-	var rows := ceili(float(maxi(grid.size(), 1)) / GRID_COLS)
-	custom_minimum_size = Vector2(
-		GRID_MARGIN * 2 + GRID_COLS * (TechLayout.CARD_W + GRID_GAP),
-		GRID_MARGIN * 2 + rows * (TechLayout.CARD_H + GRID_GAP)
-	)
+## Fit the whole era in view (the Fit button, F, a new era, a new window size). `snap` skips the easing.
+func fit(snap := false) -> void:
+	var f := fit_for(lay["size"], size)
+	goal_zoom = f["zoom"]
+	goal_origin = f["origin"]
+	fitted = true
+	if snap:
+		settle()
 	queue_redraw()
 
 
+## Zoom by `factor` about the screen point `at`, which stays under the pointer. Clamped between the fit and MAX_ZOOM.
+func zoom_at(factor: float, at: Vector2) -> void:
+	var lo := min_zoom()
+	var z := clampf(goal_zoom * factor, lo, maxf(MAX_ZOOM, lo))
+	if is_equal_approx(z, goal_zoom):
+		return
+	var anchor := (at - goal_origin) / goal_zoom
+	goal_zoom = z
+	goal_origin = clamp_origin(at - anchor * z, z)
+	fitted = z <= lo + 0.001
+	queue_redraw()
+
+
+## Move the view by `by` screen px (the content follows the pointer), at once and clamped.
+func pan_by(by: Vector2) -> void:
+	goal_origin = clamp_origin(goal_origin + by, goal_zoom)
+	origin = clamp_origin(origin + by, zoom)
+	fitted = goal_zoom <= min_zoom() + 0.001
+	queue_redraw()
+
+
+## Jump to the goal view without easing (what a test or a new window wants).
+func settle() -> void:
+	zoom = goal_zoom
+	origin = goal_origin
+	queue_redraw()
+
+
+func _on_resized() -> void:
+	if lay.is_empty():
+		return
+	if fitted:
+		fit(true)
+		return
+	goal_zoom = maxf(goal_zoom, min_zoom())
+	goal_origin = clamp_origin(goal_origin, goal_zoom)
+	settle()
+
+
+func _process(delta: float) -> void:
+	if state == null or not is_visible_in_tree():
+		return
+	var dir := Vector2(
+		(
+			float(Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT))
+			- float(Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT))
+		),
+		(
+			float(Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN))
+			- float(Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP))
+		)
+	)
+	if dir != Vector2.ZERO:
+		pan_by(-dir.normalized() * KEY_SPEED * delta)  # moving the view right moves the board left
+	if absf(zoom - goal_zoom) > 0.0005 or origin.distance_to(goal_origin) > 0.3:
+		var k := 1.0 - exp(-EASE * delta)
+		zoom = lerpf(zoom, goal_zoom, k)
+		origin = origin.lerp(goal_origin, k)
+		queue_redraw()
+	elif zoom != goal_zoom or origin != goal_origin:
+		settle()
+
+
+# --- Input -------------------------------------------------------------------
+
+
 func _tech_at(p: Vector2) -> String:
+	var at := to_board(p)
 	for tech in Rules.era_techs(era):
-		if shows(tech) and state.tech_tree.tech_visible(tech) and card_rect(tech).has_point(p):
+		if shows(tech) and state.tech_tree.tech_visible(tech) and card_rect(tech).has_point(at):
 			return tech
 	return ""
 
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
-		if pan_from.x >= 0.0 and event.button_mask & MOUSE_BUTTON_MASK_LEFT:
-			_pan(event.relative)
+		if pressing:
+			if not dragging and event.position.distance_to(press_at) >= DRAG_START:
+				dragging = true
+				_set_hover("")
+			if dragging:
+				pan_by(event.relative)
+			return
+		if event.button_mask & MOUSE_BUTTON_MASK_MIDDLE:
+			pan_by(event.relative)
 			return
 		_set_hover(_tech_at(event.position))
-	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-		if event.pressed:
-			var tech := _tech_at(event.position)
-			if tech != "":
-				card_clicked.emit(tech)
+		tooltip_text = Data.TECHS[hovered]["name"] if hovered != "" else ""
+		for hit in material_hits:
+			if hit["rect"].has_point(event.position):
+				tooltip_text = hit["tip"]
+				break
+	elif event is InputEventMouseButton:
+		_on_button(event)
+	elif event is InputEventMagnifyGesture:
+		zoom_at(event.factor, event.position)
+	elif event is InputEventPanGesture:
+		pan_by(-event.delta * PAN_GESTURE)
+
+
+func _on_button(event: InputEventMouseButton) -> void:
+	match event.button_index:
+		MOUSE_BUTTON_LEFT:
+			if event.pressed:
+				pressing = true
+				dragging = false
+				press_at = event.position
+				press_tech = _tech_at(event.position)
 			else:
-				pan_from = event.position
-		else:
-			pan_from = Vector2(-1, -1)
+				var clicked := pressing and not dragging and press_tech != "" and _tech_at(event.position) == press_tech
+				pressing = false
+				dragging = false
+				if clicked:
+					card_clicked.emit(press_tech)
+				press_tech = ""
+		MOUSE_BUTTON_WHEEL_UP:
+			if event.pressed:
+				zoom_at(pow(WHEEL_STEP, maxf(event.factor, 1.0)), event.position)
+		MOUSE_BUTTON_WHEEL_DOWN:
+			if event.pressed:
+				zoom_at(1.0 / pow(WHEEL_STEP, maxf(event.factor, 1.0)), event.position)
 
 
 func _notification(what: int) -> void:
@@ -151,21 +292,30 @@ func _notification(what: int) -> void:
 		_set_hover("")
 
 
-func _pan(by: Vector2) -> void:
-	var scroll := get_parent() as ScrollContainer
-	if scroll != null:
-		scroll.scroll_horizontal -= int(by.x)
-		scroll.scroll_vertical -= int(by.y)
+func focus_tech() -> String:
+	return hovered if hovered != "" else selected
+
+
+func set_selected(tech: String) -> void:
+	selected = tech if shows(tech) and state.tech_tree.tech_visible(tech) else ""
+	_rebuild_chain()
+	queue_redraw()
+
+
+func _rebuild_chain() -> void:
+	chain = {}
+	var tech := focus_tech()
+	if tech != "":
+		chain[tech] = true
+		_add_neighbors(tech)
 
 
 func _set_hover(tech: String) -> void:
 	if tech == hovered:
 		return
 	hovered = tech
-	chain = {}
-	if tech != "" and view == "all":
-		chain[tech] = true
-		_add_neighbors(tech)
+	tooltip_text = Data.TECHS[tech]["name"] if tech != "" else ""
+	_rebuild_chain()
 	hover_changed.emit(tech)
 	queue_redraw()
 
@@ -179,26 +329,62 @@ func _add_neighbors(tech: String) -> void:
 			chain[e["to"]] = true
 
 
+# --- Drawing (all in screen px) ----------------------------------------------
+
+
+func _p(v: Vector2) -> Vector2:
+	return origin.round() + v * zoom
+
+
+func _r(r: Rect2) -> Rect2:
+	return Rect2(_p(r.position), r.size * zoom)
+
+
+## A label's size on screen for a board size of `base`: it scales with the zoom but is never under MIN_PX.
+func _px(base: float) -> int:
+	return maxi(roundi(base * zoom), MIN_PX)
+
+
+## A line's width on screen: it scales a little, so it never vanishes zoomed out or turns heavy zoomed in.
+func _w(base: float) -> float:
+	return base * clampf(zoom, 0.8, 1.5)
+
+
+func _text(at: Vector2, s: String, px: int, col: Color, width := -1.0, heavy := false) -> void:
+	draw_string(
+		bold if heavy else ThemeDB.fallback_font,
+		at,
+		s,
+		HORIZONTAL_ALIGNMENT_LEFT,
+		width,
+		px,
+		col,
+		TextServer.JUSTIFICATION_NONE,
+		TextServer.DIRECTION_AUTO,
+		TextServer.ORIENTATION_HORIZONTAL,
+		TextServer.OVERRUN_TRIM_ELLIPSIS
+	)
+
+
 func _draw() -> void:
-	if view == "next":
-		_draw_next()
+	material_hits.clear()
+	if lay.is_empty() or state == null:
 		return
-	var font := ThemeDB.fallback_font
+	var board_w: float = lay["size"].x
 	for i in lay["lanes"].size():
 		var lane: Dictionary = lay["lanes"][i]
-		var band := Rect2(0, lane["top"] - 6.0, size.x, lane["bottom"] - lane["top"] + 12.0)
+		var band := _r(Rect2(0, lane["top"] - 6.0, board_w, lane["bottom"] - lane["top"] + 12.0))
 		draw_rect(band, Color(0, 0, 0, 0.14 if i % 2 == 0 else 0.07))
-		var col: Color = Data.LANES[lane["id"]]["color"]
+		var col: Color = Ui.LANE_COLORS[lane["id"]]
 		draw_rect(Rect2(band.position, Vector2(4, band.size.y)), col)
-		var lane_name: String = Data.LANES[lane["id"]]["name"].to_upper()
 		var spaced := ""
-		for ch in lane_name:
+		for ch in Data.LANES[lane["id"]]["name"].to_upper():
 			spaced += ch + " "
-		draw_string(font, Vector2(TechLayout.LEFT, lane["top"] - 10.0), spaced, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, col)
+		_text(_p(Vector2(TechLayout.LEFT, lane["top"] - 8.0)), spaced, _px(NAME_PX - 1.0), col)
 	var captions: Array = Data.ERA_TIER_NAMES[era]
 	for t in captions.size():
 		var x := TechLayout.LEFT + t * TechLayout.PITCH
-		draw_string(font, Vector2(x, 16), captions[t], HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(Ui.TEXT, 0.75))
+		_text(_p(Vector2(x, 15)), captions[t], _px(NAME_PX - 1.0), Color(Ui.TEXT, 0.75))
 	for lit in [false, true]:
 		for e in lay["edges"]:
 			_draw_edge(e, lit)
@@ -207,44 +393,32 @@ func _draw() -> void:
 		_draw_card(tech)
 
 
-## The next-steps view: just the cards, in a grid, or a note when there is nothing to discover yet.
-func _draw_next() -> void:
-	if grid.is_empty():
-		draw_string(
-			ThemeDB.fallback_font,
-			Vector2(GRID_MARGIN, 40),
-			Data.NEXT_NONE,
-			HORIZONTAL_ALIGNMENT_LEFT,
-			-1,
-			14,
-			Color(Ui.TEXT, 0.7)
-		)
-	for tech in grid:
-		_draw_card(tech)
-
-
 func _edge_visible(e: Dictionary) -> bool:
 	return state.tech_tree.tech_visible(e["from"]) and state.tech_tree.tech_visible(e["to"])
 
 
-## Lines under the hover chain are drawn last, in gold, over the rest.
+## Focused prerequisites use brass, outgoing unlocks moss; other connections recede.
 func _draw_edge(e: Dictionary, lit_pass: bool) -> void:
 	if not _edge_visible(e):
 		return
-	var lit: bool = hovered != "" and (e["from"] == hovered or e["to"] == hovered)
+	var focused := focus_tech()
+	var lit: bool = focused != "" and (e["from"] == focused or e["to"] == focused)
 	if lit != lit_pass:
 		return
 	var met: bool = state.tech_tree.researched.has(e["from"])
 	var col := MET if met else NEEDED
 	var w := 2.5 if met else 2.0
 	if lit:
-		col = GOLD
+		col = Ui.GOOD if e["from"] == focused else GOLD
 		w = 3.5
 	elif not chain.is_empty():
 		col.a = 0.25
-	var pts := Art.rounded(e["pts"], 14.0)
-	draw_polyline(pts, col, w, true)
-	Art.small_head(self, pts[pts.size() - 1], col, 7.0)
+	var pts := PackedVector2Array()
+	for p in e["pts"]:
+		pts.append(_p(p))
+	pts = Art.rounded(pts, 14.0 * zoom)
+	draw_polyline(pts, col, _w(w), true)
+	Art.small_head(self, pts[pts.size() - 1], col, 7.0 * clampf(zoom, 0.8, 1.4))
 
 
 ## "or" where either-or parents share one way in: only when both parents show.
@@ -254,266 +428,209 @@ func _draw_or_pills() -> void:
 		if shown.size() < 2:
 			continue
 		var c: Vector2 = lay["pills"][tech]
-		var r := Rect2(c - Vector2(11, 8), Vector2(22, 16))
+		var r := _r(Rect2(c - Vector2(14, 9), Vector2(28, 18)))
 		var box := StyleBoxFlat.new()
 		box.bg_color = Ui.BAR
 		box.border_color = GOLD if chain.has(tech) else NEEDED
 		box.set_border_width_all(2)
 		box.set_corner_radius_all(8)
 		draw_style_box(box, r)
-		draw_string(
-			ThemeDB.fallback_font, r.position + Vector2(5, 12), "or", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Ui.TEXT
-		)
+		var px := _px(NAME_PX - 2.0)
+		_text(Vector2(r.position.x + (r.size.x - px) / 2.0, r.get_center().y + px * 0.35), "or", px, Ui.TEXT)
 
 
 func _draw_card(tech: String) -> void:
-	var r := card_rect(tech)
+	var sr := _r(card_rect(tech))
 	var t: Dictionary = Data.TECHS[tech]
 	var dim := not chain.is_empty() and not chain.has(tech)
-	var a := 0.25 if dim else 1.0
+	var a := 0.55 if dim else 1.0
 	if not state.tech_tree.tech_visible(tech):
-		if not state.fog.is_revealed(state.world.shard_pos):
-			return  # nothing to give away before the Strange Stone has been seen
-		Art.dashed_rect(self, r, Color(HIDDEN_EDGE, a), 2.0, 6.0, 4.0)
-		draw_string(bold, r.position + Vector2(16, 28), "? ? ?", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(Ui.TEXT, a))
-		draw_string(
-			ThemeDB.fallback_font,
-			r.position + Vector2(16, 46),
-			Data.HIDDEN_CARD_HINT,
-			HORIZONTAL_ALIGNMENT_LEFT,
-			-1,
-			11,
-			Color(HIDDEN_EDGE, a)
-		)
+		_draw_hidden(sr, a)
 		return
 	if t["lane"] == "gate":
-		_draw_gate(tech, r, a)
+		_draw_gate(tech, sr, a)
 		return
 	var done: bool = state.tech_tree.researched.has(tech)
 	var is_ready := state.tech_tree.can_research(tech)
 	var unbuilt := not Rules.tech_enabled(tech)  # its effect ships in the next update: shown, locked, never bought
 	var open := state.tech_tree.requirements_met(tech) and not unbuilt
-	var bg := DONE_BG if done else (READY_BG if open else LOCKED_BG)
+	var bg := Ui.SELECTED if tech == selected else (DONE_BG if done else (READY_BG if open else LOCKED_BG))
 	var box := StyleBoxFlat.new()
 	box.bg_color = Color(bg, a)
-	box.border_color = Color(GOLD if is_ready else Art.OUTLINE, a)
-	box.set_border_width_all(3 if is_ready or not t.get("side", false) else 2)
-	box.set_corner_radius_all(6)
-	draw_style_box(box, r)
-	var icon := Rect2(r.position + Vector2(8, 8), Vector2(36, 36))
-	draw_rect(icon, Color(0.13, 0.08, 0.06, a))
-	Art.tech_icon(self, t["icon"], icon, 0.0)
-	if not open and not done:
-		draw_rect(icon, Color(0.13, 0.09, 0.07, 0.55))  # locked: washed out
-	if dim:
-		draw_rect(icon, Color(0.13, 0.08, 0.06, 0.75))
-	draw_rect(icon, Color(Art.OUTLINE, a), false, 2.0)
-	var text := Color(Ui.TEXT, a) if open or done else Color(LOCKED_TEXT, a)
-	var x := r.position.x + 52.0  # the text beside the icon
-	var x0 := r.position.x + 8.0  # the cost rows run the whole width under it
-	draw_string(bold, Vector2(x, r.position.y + 22), t["name"], HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 78.0, 14, text)
-	var builds := Rules.buildings_of(tech)
-	var shows_build := not done and not builds.is_empty() and not unbuilt  # a second cost row: what the building costs after
-	var unlock: String = t["unlock"] + ("  ·  " + Data.TECH_OPTIONAL if t.get("side", false) else "")
-	var sub := Color(text, text.a * 0.8)
-	draw_string(
-		ThemeDB.fallback_font,
-		Vector2(x, r.position.y + 37),
-		unlock,
-		HORIZONTAL_ALIGNMENT_LEFT,
-		r.size.x - (100.0 if Ranks.has_ranks(tech) else 62.0),
-		10,
-		sub
-	)
-	var next_rank := Ranks.next_cost(state, tech)
-	if done and not next_rank.is_empty():
-		# The next rank's cost, bought by clicking the card.
-		var label := "Rank %s:" % Data.RANK_NAMES[Ranks.rank(state, tech) + 1]
-		var col := Color(GOLD, a) if Ranks.can_buy(state, tech) else Color(Ui.TEXT, 0.7 * a)
-		draw_string(
-			ThemeDB.fallback_font, Vector2(x0, r.position.y + 62), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, col
-		)
-		var w := ThemeDB.fallback_font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x
-		_draw_cost(next_rank, Vector2(x0 + w + 5.0, r.position.y + 48), a)
-		_draw_check(r.position + Vector2(r.size.x - 16, 13), a)
-	elif done:
-		draw_string(
-			ThemeDB.fallback_font,
-			Vector2(x0, r.position.y + 62),
-			Data.TECH_DONE,
-			HORIZONTAL_ALIGNMENT_LEFT,
-			-1,
-			10,
-			Color(Ui.GOOD, a)
-		)
-		_draw_check(r.position + Vector2(r.size.x - 16, 13), a)
-	elif unbuilt:
-		draw_string(
-			ThemeDB.fallback_font,
-			Vector2(x0, r.position.y + 62),
-			Data.TECH_UNBUILT,
-			HORIZONTAL_ALIGNMENT_LEFT,
-			-1,
-			10,
-			Color(GOLD, 0.8 * a)
-		)
-	else:
-		_draw_cost(state.tech_tree.cost_of(tech), Vector2(x0, r.position.y + 48), a)
-		if shows_build:
-			_draw_build_cost(tech, builds[0], Vector2(x0, r.position.y + 70), a)
-	if is_ready:
-		draw_circle(r.position + Vector2(r.size.x - 12, 12), 4.0, Color(GOLD, a))
-	elif not open and not done:
-		_draw_lock(r.position + Vector2(r.size.x - 16, 8), a * 0.7)
-	if Ranks.has_ranks(tech):
-		_draw_rank_pips(tech, r, a)
-	var q := state.tech_tree.queue.find(tech)
-	if q >= 0 and not is_ready:
-		Art.outlined_circle(self, r.position + Vector2(r.size.x - 14, r.size.y - 13), 8.0, Color(GOLD, a))
-		draw_string(
-			bold,
-			r.position + Vector2(r.size.x - 18, r.size.y - 9),
-			str(q + 1),
-			HORIZONTAL_ALIGNMENT_LEFT,
-			-1,
-			11,
-			Art.OUTLINE
-		)
+	box.border_color = GOLD if tech == selected else Color(GOLD if is_ready or tech == hovered else Ui.EDGE, a)
+	box.set_border_width_all(2 if is_ready or tech == selected or tech == hovered else 1)
+	box.set_corner_radius_all(Ui.RADIUS)
+	draw_style_box(box, sr)
+	if tech == selected:
+		draw_rect(Rect2(sr.position + Vector2(1, 1), Vector2(2, sr.size.y - 2)), GOLD)
+	var pad := 6.0 * clampf(zoom, 0.8, 1.3)
+	var x := sr.position.x + pad
+	if card_icon_fits(tech, sr):
+		var side := minf(sr.size.y - 8.0, 24.0 * zoom)
+		var icon := Rect2(Vector2(x, sr.position.y + (sr.size.y - side) / 2.0 - 1.0), Vector2(side, side))
+		draw_rect(icon, Color(Ui.BAR, a))
+		Art.tech_icon(self, t["icon"], icon, 0.0)
+		if not open and not done:
+			draw_rect(icon, Color(Ui.BAR, 0.55))  # locked: washed out
+		if dim:
+			draw_rect(icon, Color(Ui.BAR, 0.75))
+		draw_rect(icon, Color(Ui.EDGE, a), false, 1.0)
+		x += side + pad
+	var ranked := Ranks.has_ranks(tech)
+	var right := sr.end.x - (34.0 if ranked else 24.0) * clampf(zoom, 0.8, 1.3)
+	var text := Ui.TEXT if open or done else LOCKED_TEXT
+	var px := _px(NAME_PX)
+	var mid := sr.position.y + sr.size.y * 0.5 - 1.0
+	_text(Vector2(x, mid + px * 0.35), t["name"], px, text, maxf(right - x, 10.0), true)
+	if open and not done and not unbuilt:
+		_draw_afford(tech, sr, is_ready, a)
+	_draw_marks(tech, sr, a, is_ready, open, done)
 
 
-## Cost as item sprites with have/need counts, the count red where the stockpile is short.
-func _draw_cost(cost: Dictionary, at: Vector2, a: float, stock: Dictionary = {}) -> void:
-	var x := at.x
-	var held: Dictionary = stock if not stock.is_empty() else state.economy.inv
-	var font := ThemeDB.fallback_font
+## Names take priority over pictures. Keep status marks and 14 px text at every zoom.
+func card_icon_fits(tech: String, sr: Rect2) -> bool:
+	if zoom < ICON_ZOOM:
+		return false
+	var k := clampf(zoom, 0.8, 1.3)
+	var side := minf(sr.size.y - 8.0, 24.0 * zoom)
+	var reserve := (34.0 if Ranks.has_ranks(tech) else 24.0) * k
+	var room := sr.size.x - 18.0 * k - side - reserve
+	return bold.get_string_size(Data.TECHS[tech]["name"], HORIZONTAL_ALIGNMENT_LEFT, -1, _px(NAME_PX)).x <= room
+
+
+## Gate titles wrap rather than losing the era's destination to an ellipsis.
+func title_lines(text: String, width: float, px: int) -> PackedStringArray:
+	var lines := PackedStringArray()
+	var line := ""
+	for word in text.split(" "):
+		var next := word if line == "" else line + " " + word
+		if line != "" and bold.get_string_size(next, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x > width:
+			lines.append(line)
+			line = word
+		else:
+			line = next
+	if line != "":
+		lines.append(line)
+	return lines
+
+
+## A thin bar along the foot of a card that can be discovered: how much of its price is in the stockpile. Gold, and full,
+## when it can be paid for now.
+func _draw_afford(tech: String, sr: Rect2, is_ready: bool, a: float) -> void:
+	var cost := state.tech_tree.cost_of(tech)
+	var total := 0
+	var got := 0
 	for id in cost:
-		var have: int = held.get(id, 0)
-		var need: int = cost[id]
-		Art.item_icon(self, id, Rect2(x, at.y, PIP, PIP), a)
-		var s := "%d/%d" % [mini(have, need), need]
-		var col := Color(Ui.TEXT, 0.9 * a) if have >= need else Color(Ui.SHORT, a)
-		draw_string(font, Vector2(x + PIP + 1, at.y + 15), s, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, col)
-		x += PIP + 1.0 + font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x + 8.0
+		total += int(cost[id])
+		got += mini(int(state.economy.inv.get(id, 0)), int(cost[id]))
+	var h := maxf(3.0 * zoom, 3.0)
+	var track := Rect2(sr.position.x + 5.0, sr.end.y - h - 4.0, sr.size.x - 10.0, h)
+	draw_rect(track, Color(0, 0, 0, 0.35 * a))
+	var fill := Rect2(track.position, Vector2(track.size.x * float(got) / float(maxi(total, 1)), h))
+	draw_rect(fill, Color(GOLD if is_ready else Ui.TEXT_DIM, (1.0 if is_ready else 0.7) * a))
 
 
-## "Builds:" and what the tech's first building costs, in the same colored squares. A count is red where paying
-## for the tech would leave the stockpile short of it (shown as what you'd have left over the cost).
-func _draw_build_cost(tech: String, type: String, at: Vector2, a: float) -> void:
-	var label := "builds:"
-	draw_string(
-		ThemeDB.fallback_font,
-		Vector2(at.x, at.y + 14),
-		label,
-		HORIZONTAL_ALIGNMENT_LEFT,
-		-1,
-		9,
-		Color(Ui.TEXT, 0.6 * a)
-	)
-	var w := ThemeDB.fallback_font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 9).x
-	var left := Rules.left_after(state.economy.inv, state.tech_tree.cost_of(tech))
-	_draw_cost(Data.BUILDINGS[type]["cost"], Vector2(at.x + w + 5.0, at.y), a, left)
+## The right end of a card: a check when discovered, a gold dot when it can be paid for now, a lock when it waits on
+## others, the queue place when it is queued; and the diamonds of the optional upgrades for a tech that has them.
+func _draw_marks(tech: String, sr: Rect2, a: float, is_ready: bool, open: bool, done: bool) -> void:
+	var k := clampf(zoom, 0.8, 1.3)
+	var ranked := Ranks.has_ranks(tech)
+	var c := Vector2(sr.end.x - 14.0 * k, sr.position.y + sr.size.y * (0.36 if ranked else 0.5))
+	var q := state.tech_tree.queue.find(tech)
+	if done:
+		var pts := PackedVector2Array([c + Vector2(-5, 0) * k, c + Vector2(-1, 4) * k, c + Vector2(6, -4) * k])
+		draw_polyline(pts, Color(Ui.GOOD, a), 2.5, true)
+	elif is_ready:
+		Art.outlined_circle(self, c, 5.0 * k, Color(GOLD, a))
+	elif q >= 0:
+		Art.outlined_circle(self, c, 8.0 * k, Color(GOLD, a))
+		var px := _px(NAME_PX - 2.0)
+		_text(c + Vector2(-px * 0.3, px * 0.33), str(q + 1), px, Art.OUTLINE, -1.0, true)
+	elif not open:
+		draw_arc(c + Vector2(0, -1) * k, 3.5 * k, PI, TAU, 8, Color(LOCKED_TEXT, a * 0.8), 1.5, true)
+		draw_rect(Rect2(c + Vector2(-4, -1) * k, Vector2(8, 7) * k), Color(LOCKED_TEXT, a * 0.8))
+	if ranked:
+		_draw_rank_pips(tech, Vector2(sr.end.x - 14.0 * k, sr.position.y + sr.size.y * 0.72), a, k)
 
 
-## Ranks I to III as three small diamonds at the end of the summary line, gold for each rank held.
-func _draw_rank_pips(tech: String, r: Rect2, a: float) -> void:
+## Ranks I to III as three small diamonds, gold for each rank held.
+func _draw_rank_pips(tech: String, center: Vector2, a: float, k: float) -> void:
 	var held := Ranks.rank(state, tech)
 	for i in Data.MAX_RANK:
-		var c := r.position + Vector2(r.size.x - 44 + i * 11, 32.0)
-		var pts := PackedVector2Array(
-			[c + Vector2(0, -3.5), c + Vector2(3.5, 0), c + Vector2(0, 3.5), c + Vector2(-3.5, 0)]
-		)
-		draw_colored_polygon(pts, Color(GOLD, a) if i < held else Color(Ui.TEXT, 0.12 * a))
+		var c := center + Vector2((i - 1) * 9.0 * k, 0)
+		var s := 3.5 * k
+		var pts := PackedVector2Array([c + Vector2(0, -s), c + Vector2(s, 0), c + Vector2(0, s), c + Vector2(-s, 0)])
+		draw_colored_polygon(pts, Color(GOLD, a) if i < held else Color(Ui.TEXT, 0.18 * a))
 		pts.append(pts[0])
 		draw_polyline(pts, Color(Art.OUTLINE, a), 1.5, true)
 
 
-func _draw_check(c: Vector2, a: float) -> void:
-	var pts := PackedVector2Array([c + Vector2(-5, 0), c + Vector2(-1, 4), c + Vector2(6, -4)])
-	draw_polyline(pts, Color(Ui.GOOD, a), 2.5, true)
+## A tech the player has not met yet (Star Lore): a dashed outline and where to look, once the Strange Stone is seen.
+func _draw_hidden(sr: Rect2, a: float) -> void:
+	if not state.fog.is_revealed(state.world.shard_pos):
+		return  # nothing to give away before the Strange Stone has been seen
+	Art.dashed_rect(self, sr, Color(HIDDEN_EDGE, a), 2.0, 6.0, 4.0)
+	var px := _px(NAME_PX - 1.0)
+	_text(
+		Vector2(sr.position.x + 10.0, sr.get_center().y + px * 0.35),
+		"? " + Data.HIDDEN_CARD_HINT,
+		px,
+		Color(HIDDEN_EDGE, a),
+		sr.size.x - 16.0
+	)
 
 
-func _draw_lock(p: Vector2, a: float) -> void:
-	draw_arc(p + Vector2(4, 5), 3.5, PI, TAU, 8, Color(LOCKED_TEXT, a), 1.5, true)
-	draw_rect(Rect2(p + Vector2(0, 5), Vector2(8, 7)), Color(LOCKED_TEXT, a))
-
-
-## Bronze Dawn: one tall card spanning every lane, listing what it needs and costs.
-func _draw_gate(tech: String, r: Rect2, a: float) -> void:
+## Bronze Dawn and the era's last gate: one tall card spanning every lane, listing what it needs and costs. The list of
+## what it needs drops out when the board is small, and its count stays.
+func _draw_gate(tech: String, sr: Rect2, a: float) -> void:
 	var t: Dictionary = Data.TECHS[tech]
 	var is_ready := state.tech_tree.can_research(tech)
 	var box := StyleBoxFlat.new()
 	box.bg_color = Color(GATE_BG, a)
-	box.border_color = Color(GOLD if is_ready else Art.OUTLINE, a)
-	box.set_border_width_all(3)
+	box.border_color = GOLD if tech == selected else Color(GOLD if is_ready or tech == hovered else Ui.EDGE, a)
+	box.set_border_width_all(1)
 	box.set_corner_radius_all(8)
-	draw_style_box(box, r)
-	draw_rect(r.grow(-5), Color(GATE, a), false, 3.0)
-	var icon := Rect2(r.position + Vector2((r.size.x - 44) / 2.0, 18), Vector2(44, 44))
-	Art.tech_icon(self, t["icon"], icon, 0.0)
-	var y := r.position.y + 84
-	draw_string(
-		bold, Vector2(r.position.x + 12, y), t["name"], HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 20, 14, Color(GATE, a)
+	draw_style_box(box, sr)
+	draw_rect(Rect2(sr.position + Vector2(1, 1), Vector2(3, sr.size.y - 2)), Color(GATE, a))
+	var side := clampf(34.0 * zoom, 24.0, 48.0)
+	var x := sr.position.x + 12.0
+	var width := sr.size.x - 22.0
+	var y := sr.position.y + 12.0
+	Art.tech_icon(
+		self, t["icon"], Rect2(Vector2(sr.position.x + (sr.size.x - side) / 2.0, y), Vector2(side, side)), 0.0
 	)
-	y += 22
+	var px := _px(NAME_PX)
+	var line := float(px) + 4.0
+	y += side + line
+	for title_line in title_lines(t["name"], width, px):
+		_text(Vector2(x, y), title_line, px, GATE, width, true)
+		y += line
+	y -= line
 	var needs: Array = t["requires"]
 	var left := needs.filter(func(n): return not state.tech_tree.researched.has(n)).size()
-	var head := "NEEDS ALL %d" % needs.size() if left > 0 else "ALL MET"
-	draw_string(
-		ThemeDB.fallback_font,
-		Vector2(r.position.x + 12, y),
-		head,
-		HORIZONTAL_ALIGNMENT_LEFT,
-		-1,
-		10,
-		Color(Ui.TEXT, 0.75 * a)
-	)
-	for n in needs:
-		y += 16
-		var col := Color(Ui.GOOD, a) if state.tech_tree.researched.has(n) else Color(LOCKED_TEXT, a)
-		draw_string(
-			ThemeDB.fallback_font,
-			Vector2(r.position.x + 12, y),
-			Data.TECHS[n]["name"],
-			HORIZONTAL_ALIGNMENT_LEFT,
-			r.size.x - 20,
-			11,
-			col
-		)
-	y += 26
+	var small := _px(NAME_PX - 2.0)
+	y += line
+	_text(Vector2(x, y), Data.GATE_NEEDS % needs.size() if left > 0 else Data.GATE_MET, small, Color(Ui.TEXT, 0.8 * a))
+	if zoom >= ICON_ZOOM:
+		for n in needs:
+			y += line
+			var col := Color(Ui.GOOD, a) if state.tech_tree.researched.has(n) else Color(LOCKED_TEXT, a)
+			_text(Vector2(x, y), Data.TECHS[n]["name"], small, col, width)
+	else:
+		y += line
+		_text(Vector2(x, y), Data.GATE_COUNT % [needs.size() - left, needs.size()], small, Color(Ui.TEXT, 0.8 * a))
+	y += line * 1.3
 	if not Rules.tech_enabled(tech):
-		draw_string(
-			ThemeDB.fallback_font,
-			Vector2(r.position.x + 12, y),
-			Data.TECH_UNBUILT,
-			HORIZONTAL_ALIGNMENT_LEFT,
-			r.size.x - 20,
-			11,
-			Color(GOLD, 0.8 * a)
-		)
+		_text(Vector2(x, y), Data.TECH_UNBUILT, small, Color(GOLD, 0.8 * a), width)
 		return
-	draw_string(
-		ThemeDB.fallback_font,
-		Vector2(r.position.x + 12, y),
-		"COST",
-		HORIZONTAL_ALIGNMENT_LEFT,
-		-1,
-		10,
-		Color(Ui.TEXT, 0.75 * a)
-	)
+	_text(Vector2(x, y), Data.GATE_COST, small, Color(Ui.TEXT, 0.8 * a))
 	var cost := state.tech_tree.cost_of(tech)
 	for id in cost:
-		y += 16
+		y += line
 		var have: int = state.economy.inv.get(id, 0)
 		var need: int = cost[id]
 		var col := Color(Ui.TEXT, a) if have >= need else Color(Ui.SHORT, a)
-		var line := "%d/%d" % [mini(have, need), need]
-		Art.item_icon(self, id, Rect2(r.position.x + 10, y - 13, 16, 16), a)
-		draw_string(
-			ThemeDB.fallback_font,
-			Vector2(r.position.x + 30, y),
-			line,
-			HORIZONTAL_ALIGNMENT_LEFT,
-			r.size.x - 40,
-			11,
-			col
-		)
+		var icon_rect := Rect2(x, y - small - 1.0, small + 2.0, small + 2.0)
+		Art.item_icon(self, id, icon_rect, a)
+		material_hits.append({"rect": icon_rect, "tip": "%s: have %d / need %d" % [Data.ITEMS[id]["name"], have, need]})
+		_text(Vector2(x + small + 6.0, y), "%d/%d" % [mini(have, need), need], small, col, width - small - 6.0)
