@@ -280,6 +280,8 @@ const BORROWED_PX := 64  # the recolored copy's size: items are shown at 20 to 4
 
 const LEAD_SPRITE_PATH := "res://art/sprites/lumen_lead.png"
 const LEAD_SPRITE_REGION := Rect2(277, 92, 524, 1333)
+const LUMEN_HEIGHT := 35.0  # an ordinary Lumen on the map, level with a Kith
+const LEAD_HEIGHT := 38.0  # Sela, marginally taller
 
 static var map_seed := 0
 static var _textures := {}
@@ -354,10 +356,13 @@ static func icon(id: String) -> Texture2D:
 	return sprite("starfall-icons", index) if index >= 0 else null
 
 
-## A Lumen stranger standing at `at` (the middle of its feet), one of three figures, drawn at the 24 px target.
+## A Lumen stranger standing at `at` (the middle of its feet), one of three figures. The Lumen stand as tall as the Kith
+## (35 px, the shared character standard, docs/design-system/mockups/character-standard.md); Sela, a hero, is a little taller.
 static func stranger(ci: CanvasItem, at: Vector2, index: int) -> void:
-	var tex: Texture2D = lead_sprite() if index % 3 == 0 else sprite("starfall-lumen-strangers", index % 3)
-	fit(ci, tex, Rect2(at + Vector2(-12, -24), Vector2(24, 24)))
+	var lead := index % 3 == 0
+	var tex: Texture2D = lead_sprite() if lead else sprite("starfall-lumen-strangers", index % 3)
+	var h := LEAD_HEIGHT if lead else LUMEN_HEIGHT
+	fit(ci, tex, Rect2(at + Vector2(-h * 0.5, -h), Vector2(h, h)))
 
 
 ## Sela, the lead stranger (stranger 0): her own one-pose sprite, cut from art/sprites/lumen_lead.png.
