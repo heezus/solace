@@ -1,7 +1,8 @@
 extends RefCounted
 ## The Story block: the story moments that have happened (`events`, stable ids from Data.STORY_EVENTS, in the
 ## order they happened, for a future profile save) and the checklist (`goals_done`, from Data.GOALS, and from
-## Data.GOALS_ERA2 once Bronze Dawn is discovered and Data.GOALS_ERA4 once Ironfall begins: goal_list() is the one in force).
+## Data.GOALS_ERA2 once Bronze Dawn is discovered, Data.GOALS_ERA3 once the star falls and Data.GOALS_ERA4 once Ironfall
+## begins: goal_list() is the one in force).
 ## It listens: the owner connects the other blocks' signals to the on_* methods below, so no block calls
 ## Story and Story never calls a block. record(id) notes a moment once. A goal is met when its `tech` is
 ## researched or its `building` stands, and the rest are checked by id against the Sim handed to
@@ -76,8 +77,6 @@ func on_built(type: String, _pos: Vector2i) -> void:
 
 ## Mark every goal that's met now. Goals stay done after that, even once the items are spent.
 func update(s) -> void:
-	if s.starfall.ended and s.starfall.pending == "":
-		record(Data.IRONFALL_EVENT)  # the Starfall is over and its card is put away: Ironfall begins
 	var lists: Array = [Data.GOALS]
 	if goal_list() != Data.GOALS:
 		lists.append(goal_list())  # the stone age's stay checked: its last goal is met by the dawn itself
@@ -85,12 +84,17 @@ func update(s) -> void:
 		for g in list:
 			if not goals_done.has(g["id"]) and goal_met(s, g):
 				goals_done[g["id"]] = true
+	# After the goals, so the era's last one (the Warning read) is ticked while its list is still in force.
+	if s.starfall.ended and s.starfall.pending == "":
+		record(Data.IRONFALL_EVENT)  # the Starfall is over and its card is put away: Ironfall begins
 
 
 ## The checklist in force: the stone age's, and the second era's once Bronze Dawn is discovered.
 func goal_list() -> Array:
 	if Data.IRONFALL_EVENT in events:
 		return Data.GOALS_ERA4
+	if "star_falling" in events:
+		return Data.GOALS_ERA3
 	return Data.GOALS_ERA2 if "bronze_dawn" in events else Data.GOALS
 
 
@@ -139,20 +143,41 @@ func goal_met(s, g: Dictionary) -> bool:
 			return _road_beside_ore(s, "copper_hills")
 		"first_bronze":
 			return s.economy.inv.get("bronze", 0) > 0
-		"first_teardown":
-			return s.teardown.lessons.size() > 0
-		"find_coal", "find_iron", "iron_mine", "first_iron", "rail_laid", "first_steel":
+		"strangers_come", "first_set", "wreck_found", "moments_answered", "warning_read":
+			return _starfall_goal_met(s, g["id"])
+		"first_teardown", "find_coal", "find_iron", "iron_mine", "first_iron", "rail_laid", "first_steel":
 			return _ironfall_goal_met(s, g["id"])
 	return false
+
+
+## The Starfall goals (Data.GOALS_ERA3) that are not about a building.
+func _starfall_goal_met(s, id: String) -> bool:
+	match id:
+		"strangers_come":
+			return s.starfall.arrived()
+		"first_set":
+			return s.starfall.locked.has(Data.GLYPH_SETS[1]["id"])
+		"wreck_found":
+			return s.starfall.wreck_found
+		"moments_answered":
+			return s.starfall.answered.size() >= Data.MOMENT_ORDER.size()
+	return s.starfall.ended
 
 
 ## The era 4 goals (Data.GOALS_ERA4) that are about the land, the metal and the Rail.
 func _ironfall_goal_met(s, id: String) -> bool:
 	match id:
-		"find_coal":
-			return _ore_seen(s, "coal_seam")
+		"first_teardown":
+			return s.teardown.lessons.size() > 0
+		"find_coal":  # seen in the fog, or already in the stores (a run that starts with coal in hand)
+			return _ore_seen(s, "coal_seam") or s.economy.inv.get("coal", 0) > 0 or s.economy.seen.has("coal")
 		"find_iron":
-			return _ore_seen(s, "iron_hills")
+			return (
+				_ore_seen(s, "iron_hills")
+				or s.economy.inv.get("iron_ore", 0) > 0
+				or s.economy.seen.has("iron_ore")
+				or s.economy.inv.get("iron", 0) > 0
+			)
 		"iron_mine":
 			return s.town.buildings.any(func(b): return b["type"] == "mine" and b.get("ore", "") == "iron_ore")
 		"rail_laid":
