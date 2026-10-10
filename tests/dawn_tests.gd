@@ -181,13 +181,12 @@ func test_the_panel_reads_dawn_goals() -> void:
 	t.check(not panel.goal_labels[1].visible, "with no closing line before the star falls")
 	d.story.record("star_falling")
 	panel.refresh_goals(d)
-	t.check(panel.goal_header.text == "Dawn goals 9/9", "the count stays 9/9 after the fall: " + panel.goal_header.text)
-	t.check(panel.goal_labels[0].text == Data.GOALS_ALL_DONE, "the first line still says all done")
 	t.check(
-		panel.goal_labels[1].visible and panel.goal_labels[1].text.strip_edges() == Data.GOALS_STAR_CLOSING,
-		"and a closing line says what comes next once the star has fallen"
+		panel.goal_header.text == "Starfall goals 0/%d" % Data.GOALS_ERA3.size(),
+		"once the star falls the Starfall list takes over: " + panel.goal_header.text
 	)
-	t.check(panel.goal_header.tooltip_text.count("Done: ") == 9, "and hovering the count lists them")
+	t.check(panel.goal_labels[0].text == "> " + Data.GOALS_ERA3[0]["text"], "and its first goal is the one in gold")
+	t.check(d.story.goals_done.size() >= 9, "the dawn's goals stay done")
 	var before := Sim.new()
 	before.generate(1)
 	panel.refresh_goals(before)
