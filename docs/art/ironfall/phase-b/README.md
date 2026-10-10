@@ -19,3 +19,7 @@ Run Godot with `--path . --script docs/art/ironfall/phase-b/preview.gd`.
 ## Claude hook
 
 No new cutscene slot is needed: the existing player loads these filenames automatically. Review the art and current-head CI before merging. Tile, building and item loader hooks are supplied separately in PRs #90, #91 and #92.
+
+## Character consistency gate
+
+[Character review](character-review.md): `ironfall_1` and `ironfall_2` need character corrections; `bloom_sign_2` passes. #93 remains draft until corrected art is reviewed against #94.

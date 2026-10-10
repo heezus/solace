@@ -4,6 +4,13 @@ Owner: the project owner (heezus). Two AI teams, one repo, coordinated by respon
 
 ## Active work
 
+### Codex — Phase B character consistency review
+- **Task:** compare #93 character stills against the approved #94 sheet on `codex/ironfall-cutscenes`.
+- **Reserved files:** `docs/art/ironfall/phase-b/` and character corrections to `art/rendered/cutscenes/ironfall_1.png` / `ironfall_2.png`; no production renderer files.
+- **Acceptance criteria:** match the approved Kith anatomy and facial treatment, preserve narrative staging and caption safety; inspect corrected originals and actual player framing.
+- **Status:** review complete: ironfall_1 needs compact Kith anatomy, ironfall_2 needs consistent Kith facial treatment, bloom_sign_2 passes. #93 remains draft. Verdict in `docs/art/ironfall/phase-b/character-review.md`.
+- **Next action:** correct the two named figures, synchronize main, validate and return #93 for review. Terrain/water follows; Sela production replacement remains separate.
+
 ### Codex — Ironfall art batch delivered
 - **Task:** the 2026-10-08 stage 1 art request, delivered as four small art-only PRs on `codex/ironfall-*`.
 - **Reserved files:** none after publication. Claude owns production loader/gameplay hooks; no production code was edited.
