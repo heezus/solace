@@ -18,6 +18,7 @@ const BOT_LIMIT := 70.0 * 60.0  # the most game seconds a bot may play to reach 
 const STEP := 0.5  # seconds of one scripted tick
 const SPOT_RADIUS := 16  # how far from the Hearth a scripted building may be put
 const TRUST_MARKET := 40.0  # trust at the market start: well past the point where the Lumen would trade
+const TIDE_START_SECONDS := 420.0  # how long the tide has crept at the Livewire tide start
 const END_FUSE := 4.0  # seconds before the Kith talk the last guesses over at the ending start
 
 const REV := 1  # bump when a bot's play changes without a change to Data: it throws away every start kept on disk
@@ -137,6 +138,7 @@ static func _table() -> Array:
 		["ironfall_teardown", "Stage: Ironfall, Teardown and the Wreck's parts", _ironfall_teardown],
 		["ironfall_steam", "Stage: Ironfall, steam: a Boiler, a Forge and Rail to lay", _ironfall_steam],
 		["livewire", "Stage: Livewire, the wires hum", _livewire],
+		["livewire_tide", "Stage: Livewire, the tide: seven minutes in, every tool learned", _livewire_tide],
 	]
 
 
@@ -303,6 +305,24 @@ static func _livewire_on(s: Sim) -> Sim:
 		_build_out_of_reach(s, type)
 	s.story.record(Data.LIVEWIRE_EVENT)  # the card is put away at once in a start: Livewire begins on the next tick
 	_wait(s, 2.0)
+	return s
+
+
+## Livewire seven minutes into the tide: the stage 1 and 2 techs are learned, the stores hold Wire, Coal and Steel for Poles, Arc
+## Lamps, Scorchers and Firebreaks, and the Bloom has crept for TIDE_START_SECONDS out of the south patches, so its front is on the
+## map and Tide Watch has something to show.
+static func _livewire_tide() -> Sim:
+	return _livewire_tide_on(_livewire())
+
+
+static func _livewire_tide_on(s: Sim) -> Sim:
+	for tech in [
+		"power_poles", "order_board", "generator", "tide_watch", "arc_lamps", "scorcher", "firebreaks", "living_ground"
+	]:
+		s.tech_tree.researched[tech] = true
+	for id in ["wire", "coal", "steel", "copper", "brick"]:
+		s.economy.add(id, 200)
+	_wait(s, TIDE_START_SECONDS)
 	return s
 
 

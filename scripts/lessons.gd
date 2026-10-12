@@ -6,6 +6,7 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 const Art = preload("res://scripts/art.gd")
+const TideLook = preload("res://scripts/tide_look.gd")
 
 const TILE := 48.0  # map px per tile at the default zoom (scripts/overlays.gd)
 
@@ -45,6 +46,7 @@ static func bloom_centres(s) -> Array:
 ## Data.SPORE_REACH tiles round each sign, where the Bloom would eat. Root: the roads and rocks it crosses slowest, lit. Both
 ## are plain stand-ins until Codex paints them (docs/art/requests.md).
 static func draw_overlays(ci: CanvasItem, s) -> void:
+	TideLook.draw(ci, s)  # the tide, when it has begun (Livewire stage 2)
 	for b in s.town.buildings:  # a burning Shard Lamp lights the tiles round it
 		var def: Dictionary = Data.BUILDINGS[b["type"]]
 		if def["kind"] == "lamp" and b["burn"] > 0.0 and s.fog.is_revealed(b["pos"]):

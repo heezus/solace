@@ -232,7 +232,7 @@ func refresh() -> void:
 	parts["bench"].show_for(b)
 	parts["lessons"].show_for(b)
 	parts["orders"].show_for(b)
-	parts["net"].text = Power.note(state, b)
+	parts["net"].text = "\n".join([Power.note(state, b), state.tide.note(state, b)].filter(func(l): return l != ""))
 	parts["net"].visible = parts["net"].text != ""
 	parts["recipe"].text = recipe_text(state, b)
 	parts["recipe"].visible = parts["recipe"].text != ""
@@ -279,6 +279,12 @@ static func recipe_text(s: Sim, b: Dictionary) -> String:
 			return gather_text(s, s.town.focus_tiles(b), true)
 		"power", "lamp", "shed":
 			return _fed_text(def)
+		"scorcher":
+			return Data.SCORCHER_ROW % [int(def["reach"]), int(Data.SCORCH_SECONDS)]
+		"arc_lamp":
+			return Data.ARC_ROW % int(def["light"])
+		"firebreak":
+			return Data.FIREBREAK_NOTE % int(Data.TIDE_SLOW_FIREBREAK)
 	return ""
 
 

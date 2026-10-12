@@ -10,9 +10,10 @@ const Rules = preload("res://scripts/rules.gd")
 const HudChecks = preload("res://tests/tools/hud_checks.gd")
 
 const START := 1  # frames after the Bronze when the state is set; the checks follow
-const END := 32  # and the pass may end after this
-## The four new buildings, each on a tab of its own, in the order they are checked.
-const CARDS := ["power_pole", "generator", "wire_mill", "order_board"]
+const AFTER := START + 4 + 4 * 7  # the frame after the seven build cards (the CARDS below) have been walked
+const END := AFTER + 16  # and the pass may end after this
+## The new buildings (four of stage 1, three of the tide), each on a tab of its own, in the order they are checked.
+const CARDS := ["power_pole", "generator", "wire_mill", "order_board", "arc_lamp", "scorcher", "firebreak"]
 
 
 ## One frame of the walk: `n` frames since the bot's Bronze.
@@ -28,29 +29,29 @@ static func step(layout, n: int) -> void:
 			layout._check_min_text("with the Livewire board open")
 			layout._shot("tech_board_livewire")
 			main.tech_panel.visible = false
-		START + 4, START + 8, START + 12, START + 16:
+		START + 4, START + 8, START + 12, START + 16, START + 20, START + 24, START + 28:
 			main.bottom_bar.show_tab_of(CARDS[floori((n - START - 4) / 4.0)])
 			main.ui_refresh = 0.0
-		START + 5, START + 9, START + 13, START + 17:
+		START + 5, START + 9, START + 13, START + 17, START + 21, START + 25, START + 29:
 			var type: String = CARDS[floori((n - START - 5) / 4.0)]
 			layout._report(card(main, type))
 			layout._check_build_cards("on the %s tab" % Data.BUILDINGS[type]["name"])
-		START + 20:
+		AFTER:
 			var at := put_board(main)
 			layout._report([] if at.x >= 0 else ["no room for an Order Board by the Hearth"])
 			main.building_panel.select(at)
 			main.ui_refresh = 0.0
-		START + 22:
+		AFTER + 2:
 			layout._check_card_is_docked("the Order Board's card")
 			layout._check_fit("with the Order Board's card open")
 			layout._report(orders(main))
 			layout._check_min_text("with the Order Board's card open")
 			layout._shot("order_board_card")
-		START + 24:
+		AFTER + 4:
 			var pole := put_pole(main)
 			main.building_panel.select(pole)
 			main.ui_refresh = 0.0
-		START + 26:
+		AFTER + 6:
 			layout._check_card_is_docked("a Power Pole's card")
 			layout._check_fit("with a Power Pole's card open")
 			if not main.building_panel.parts["net"].visible:
@@ -58,9 +59,20 @@ static func step(layout, n: int) -> void:
 			main.building_panel.select(Vector2i(-1, -1))
 			layout._report(HudChecks.third_row(main, "with Wire in the row"))
 			layout._report(wire_chip(main))
-		START + 28:
+		AFTER + 8:
 			layout._check_top_bar_text("in Livewire")
 			layout._report(goals(main))
+		AFTER + 10:
+			var forge := put_overgrown(main)
+			layout._report([] if forge.x >= 0 else ["no room for a building by the Hearth"])
+			main.building_panel.select(forge)
+			main.ui_refresh = 0.0
+		AFTER + 12:
+			layout._check_card_is_docked("an overgrown building's card")
+			layout._check_fit("with an overgrown building's card open")
+			layout._report(tide_note(main))
+			layout._check_min_text("with the tide's note on a card")
+			layout._shot("tide_card")
 
 
 ## The state a Livewire town would be in when the Wires Hum card is put away, set by hand.
@@ -68,7 +80,7 @@ static func enter(main: Node) -> void:
 	var s = main.state
 	for tech in ["blast_furnace", "steel", "rails", "shard_boiler", "bloom_sampling", "livewire", "boiler"]:
 		s.tech_tree.researched[tech] = true
-	for tech in ["power_poles", "order_board", "generator"]:
+	for tech in ["power_poles", "order_board", "generator", "tide_watch", "arc_lamps", "scorcher", "firebreaks"]:
 		s.tech_tree.researched[tech] = true
 	for event in [Data.IRONFALL_EVENT, Data.LIVEWIRE_EVENT, Data.LIVEWIRE_BEGUN]:
 		if not s.story.has_event(event):
@@ -83,7 +95,7 @@ static func enter(main: Node) -> void:
 	main.ui_refresh = 0.0
 
 
-## The fifth tab is open and chosen, and the board shows all fourteen cards, the eleven of later stages locked.
+## The fifth tab is open and chosen, and the board shows all fourteen cards, the four of later stages locked.
 static func board(main: Node, when: String) -> Array:
 	var problems: Array = []
 	var panel = main.tech_panel
@@ -99,7 +111,7 @@ static func board(main: Node, when: String) -> Array:
 	for tech in Rules.era_techs(5):
 		if not panel.board.shows(tech):
 			problems.append("%s: %s has no card on the Livewire board" % [when, tech])
-		if Rules.tech_enabled(tech) != (int(Data.TECHS[tech]["stage"]) == 1):
+		if Rules.tech_enabled(tech) != (int(Data.TECHS[tech]["stage"]) <= 2):
 			problems.append("%s: %s is %s" % [when, tech, "open" if Rules.tech_enabled(tech) else "locked"])
 	return problems
 
@@ -200,4 +212,31 @@ static func goals(main: Node) -> Array:
 	var want: String = Data.GOALS_HEADER_ERA5 % [main.state.story.done_count(), Data.GOALS_ERA5.size()]
 	if header != want:
 		return ["the Goals header says '%s', not '%s'" % [header, want]]
+	return []
+
+
+## A Forge near the Hearth with the Bloom on it and Tide Watch learned: it is overgrown, and its card says so and when the rest comes.
+static func put_overgrown(main: Node) -> Vector2i:
+	var s = main.state
+	var at := spot(main, "forge")
+	if at.x < 0:
+		return at
+	s.place("forge", at)
+	s.tide.begin(s)
+	s.tide.grown[at] = true
+	s.tide.hit[at] = 20.0
+	s.tide.front[at + Vector2i(3, 0)] = s.tide.time + 60.0
+	s.tide.tick(s, 0.0)
+	return at
+
+
+## The overgrown building's card has the tide's line, whole and inside the side panel.
+static func tide_note(main: Node) -> Array:
+	var part: Control = main.building_panel.parts["net"]
+	if not part.visible or not part.text.contains("Overgrown"):
+		return ["an overgrown building's card says '%s', not that it is overgrown" % part.text]
+	var side: Rect2 = main.side_panel.get_global_rect()
+	var r: Rect2 = part.get_global_rect()
+	if r.position.x < side.position.x - 0.5 or r.end.x > side.end.x + 0.5:
+		return ["the tide's note (%s) runs out of the side panel (%s)" % [r, side]]
 	return []

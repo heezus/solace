@@ -42,6 +42,10 @@ var story_has: Callable = func(_id): return false
 var lesson_has: Callable = func(_id): return false
 ## (Vector2i) -> bool: does a Power Pole net that gives power reach this tile? Sim connects it to the Livewire block.
 var on_net: Callable = func(_p): return false
+## (Vector2i) -> bool: does the Bloom stand on the building at this tile (it is overgrown)? Sim connects it to the Tide block.
+var overgrown: Callable = func(_p): return false
+## (Vector2i) -> bool: is this tile Bloom ground the tide took? Nothing is built on it.
+var on_bloom: Callable = func(_p): return false
 var _world: World
 var _economy: Economy
 var _research: Research
@@ -118,6 +122,8 @@ func placement_error(type: String, p: Vector2i) -> String:
 
 ## Why `type` can't go at p for want of room: something stands there, or it is a one-of-a-kind building (`unique`) that stands already.
 func _taken_error(type: String, p: Vector2i) -> String:
+	if on_bloom.call(p):
+		return Data.TIDE_BUILD_ERROR
 	if building_at.has(p):
 		return "Something is already there"
 	if Data.BUILDINGS[type].get("unique", false) and copies(type) > 0:
@@ -422,7 +428,7 @@ func in_range_of(kind: String, p: Vector2i) -> bool:
 	for b in buildings:
 		var def: Dictionary = Data.BUILDINGS[b["type"]]
 		var bp: Vector2i = b["pos"]
-		if def["kind"] != kind or (def.get("fed", false) and b["burn"] <= 0.0):
+		if def["kind"] != kind or (def.get("fed", false) and b["burn"] <= 0.0) or overgrown.call(bp):
 			continue
 		if Vector2(bp).distance_to(Vector2(p)) <= def["radius"]:
 			return true

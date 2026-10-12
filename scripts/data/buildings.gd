@@ -682,6 +682,62 @@ const BUILDINGS := {
 		),
 		"status": "The orders are read every few seconds.",
 	},
+	# Era 5, stage 2: holding the tide (scripts/tide.gd). `draws` is a machine with no worker that asks the net for power.
+	"arc_lamp":
+	{
+		"name": "Arc Lamp",
+		"kind": "arc_lamp",
+		"tech": "arc_lamps",
+		"story": true,
+		"cost": {"steel": 4, "wire": 6, "brick": 10},
+		"needs_power": true,
+		"draws": true,
+		"light": 5,
+		"color": Color("f3e6a1"),
+		"desc":
+		(
+			"A white arc on a pole. The Bloom does not enter its light, 5 tiles round, while it has power, and a building"
+			+ " standing in it is not lost. Stand it within 2 tiles of a Power Pole."
+		),
+		"status": "It lights its tiles while the net gives power.",
+	},
+	"scorcher":
+	{
+		"name": "Scorcher",
+		"kind": "scorcher",
+		"tech": "scorcher",
+		"story": true,
+		"cost": {"steel": 10, "wire": 8, "brick": 20},
+		"needs_power": true,
+		"draws": true,
+		"fed": true,
+		"in": {"coal": 1},
+		"stock": 6,
+		"burn": 120.0,
+		"reach": 4,
+		"color": Color("e0642b"),
+		"desc":
+		(
+			"A jet of flame on a pump. It burns the Bloom ground nearest it clear, a tile every 30 seconds within 4 tiles,"
+			+ " and 1 Coal does 4 tiles. Burnt ground is never taken again. Stand it within 2 tiles of a Power Pole;"
+			+ " haulers bring the coal."
+		),
+	},
+	"firebreak":
+	{
+		"name": "Firebreak",
+		"kind": "firebreak",
+		"tech": "firebreaks",
+		"story": true,
+		"cost": {"wood": 4, "stone": 1},
+		"color": Color("6e5a45"),
+		"desc":
+		(
+			"A strip of bare, trodden ground. The Bloom takes 10 times as long to cross it, so a line of them buys a few minutes."
+			+ " Drag a line of them."
+		),
+		"status": "Bare ground.",
+	},
 	"guard_post":
 	{
 		"name": "Guard Post",
@@ -710,6 +766,7 @@ const BUILD_TABS := {
 		"boiler",
 		"shard_boiler",
 		"generator",
+		"scorcher",
 		"grindstone"
 	],
 	"Metal": ["mine", "coal_mine", "smelter", "crucible", "bloomery", "forge", "wire_mill"],
@@ -725,7 +782,8 @@ const BUILD_TABS := {
 		"cart_shed",
 		"steam_shed",
 		"trading_post",
-		"power_pole"
+		"power_pole",
+		"firebreak"
 	],
 	"Lore":
 	[
@@ -740,7 +798,8 @@ const BUILD_TABS := {
 		"guard_post",
 		"teardown_bench",
 		"shard_lamp",
-		"order_board"
+		"order_board",
+		"arc_lamp"
 	],
 }
 
@@ -791,6 +850,9 @@ const BUILD_ORDER := [
 	"wire_mill",
 	"power_pole",
 	"order_board",
+	"arc_lamp",
+	"scorcher",
+	"firebreak",
 ]
 
 ## Output a building holds before it stops, when nobody hauls it away.

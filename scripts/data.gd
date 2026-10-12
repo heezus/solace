@@ -19,6 +19,7 @@ const DataIronfall = preload("res://scripts/data/ironfall.gd")
 const DataTeardown = preload("res://scripts/data/teardown.gd")
 const DataSteam = preload("res://scripts/data/steam.gd")
 const DataLivewire = preload("res://scripts/data/livewire.gd")
+const DataTide = preload("res://scripts/data/tide.gd")
 const DataCutscenes = preload("res://scripts/data/cutscenes.gd")
 
 # --- Items: data/items.gd ---
@@ -729,7 +730,49 @@ const ORDER_PAUSED_NOTE := DataLivewire.ORDER_PAUSED_NOTE
 const BOARD_STATUS := DataLivewire.BOARD_STATUS
 const GOALS_HEADER_ERA5 := DataLivewire.GOALS_HEADER_ERA5
 const GOALS_LIVEWIRE_CLOSING := DataLivewire.GOALS_LIVEWIRE_CLOSING
+const GOALS_WIRES := DataLivewire.GOALS_WIRES
 const GOALS_ERA5 := DataLivewire.GOALS_ERA5
+
+# --- Era 5, Livewire, stage 2: the tide: data/tide.gd ---
+const TIDE_STEP_SECONDS := DataTide.TIDE_STEP_SECONDS
+const TIDE_SLOW_ROAD := DataTide.TIDE_SLOW_ROAD
+const TIDE_SLOW_RAIL := DataTide.TIDE_SLOW_RAIL
+const TIDE_SLOW_FIREBREAK := DataTide.TIDE_SLOW_FIREBREAK
+const TIDE_SLOW_LAMP := DataTide.TIDE_SLOW_LAMP
+const TIDE_HEARTH_RING := DataTide.TIDE_HEARTH_RING
+const TIDE_RETRY_SECONDS := DataTide.TIDE_RETRY_SECONDS
+const TIDE_KEEPS := DataTide.TIDE_KEEPS
+const OVERGROWN_LOST_SECONDS := DataTide.OVERGROWN_LOST_SECONDS
+const TIDE_WARN_SECONDS := DataTide.TIDE_WARN_SECONDS
+const TIDE_ETA_SECONDS := DataTide.TIDE_ETA_SECONDS
+const TIDE_ETA_HORIZON := DataTide.TIDE_ETA_HORIZON
+const SCORCH_REACH := DataTide.SCORCH_REACH
+const SCORCH_SECONDS := DataTide.SCORCH_SECONDS
+const ASH_FIELD_BONUS := DataTide.ASH_FIELD_BONUS
+const POWERED_MINE_SPEED := DataTide.POWERED_MINE_SPEED
+const TILE_BLOOM_TIDE := DataTide.TILE_BLOOM_TIDE
+const TIDE_BEGAN_LINE := DataTide.TIDE_BEGAN_LINE
+const TIDE_BUILD_ERROR := DataTide.TIDE_BUILD_ERROR
+const TIDE_STAYS := DataTide.TIDE_STAYS
+const OVERGROWN_STATUS := DataTide.OVERGROWN_STATUS
+const OVERGROWN_HELD := DataTide.OVERGROWN_HELD
+const OVERGROWN_ALERT := DataTide.OVERGROWN_ALERT
+const OVERGROWN_LOST_LINE := DataTide.OVERGROWN_LOST_LINE
+const TIDE_REACHES_LINE := DataTide.TIDE_REACHES_LINE
+const TIDE_REACHES_NOTE := DataTide.TIDE_REACHES_NOTE
+const TIDE_FRONT_NOTE := DataTide.TIDE_FRONT_NOTE
+const SCORCHER_NO_POWER := DataTide.SCORCHER_NO_POWER
+const SCORCHER_NOTHING := DataTide.SCORCHER_NOTHING
+const SCORCHER_BURNING := DataTide.SCORCHER_BURNING
+const SCORCHER_COLD := DataTide.SCORCHER_COLD
+const SCORCHER_ROW := DataTide.SCORCHER_ROW
+const ARC_LIT := DataTide.ARC_LIT
+const ARC_DARK := DataTide.ARC_DARK
+const ARC_ROW := DataTide.ARC_ROW
+const FIREBREAK_NOTE := DataTide.FIREBREAK_NOTE
+const TIDE_HERE_BLOOM := DataTide.TIDE_HERE_BLOOM
+const TIDE_HERE_ASH := DataTide.TIDE_HERE_ASH
+const GOALS_TIDE := DataTide.GOALS_TIDE
 
 # --- Cutscenes: data/cutscenes.gd ---
 const CUTSCENE_ART_DIR := DataCutscenes.CUTSCENE_ART_DIR

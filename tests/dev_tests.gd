@@ -112,7 +112,8 @@ func test_the_list_is_well_formed() -> void:
 		"ironfall",
 		"ironfall_teardown",
 		"ironfall_steam",
-		"livewire"
+		"livewire",
+		"livewire_tide"
 	]:
 		t.check(seen.has(id), "the start %s is there" % id)
 	t.check(DevStarts.build("no_such_start") == null, "an unknown start builds nothing")
@@ -561,6 +562,20 @@ func _expect_stage(id: String, s: Sim) -> void:
 				"a Grindstone and a Smelter stand unpowered, ready for a net"
 			)
 			t.check(s.livewire.nets.is_empty() and s.livewire.orders.is_empty(), "with no net and no order yet")
+		"livewire_tide":
+			t.check(
+				s.tide.begun and s.tide.time >= DevStarts.TIDE_START_SECONDS - 1.0,
+				"livewire_tide: the tide has been creeping"
+			)
+			t.check(
+				not s.tide.grown.is_empty() and not s.tide.front.is_empty(), "with ground taken and a front on the map"
+			)
+			t.check(
+				["power_poles", "tide_watch", "arc_lamps", "scorcher", "firebreaks"].all(
+					func(tech): return s.tech_tree.researched.has(tech)
+				),
+				"and the tools learned"
+			)
 
 
 func test_starts_are_deterministic() -> void:

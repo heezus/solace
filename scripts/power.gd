@@ -14,10 +14,20 @@ const Buildings = preload("res://scripts/buildings.gd")
 ## One tick: rebuild the nets if the buildings changed, then count what each gives and is asked.
 static func update(s) -> void:
 	var lw = s.livewire
-	if lw.net_rev != s.town.road_rev:
+	if lw.net_rev != _rev(s):
 		_rebuild(s)
 	for n in lw.nets:
 		_count(s, n)
+
+
+## What the nets were last built from: the buildings (Buildings.road_rev) and whether Powered Mines is learned (a Mine joins a net then).
+static func _rev(s) -> int:
+	return s.town.road_rev * 2 + (1 if s.tech_tree.researched.has("powered_mines") else 0)
+
+
+## True when a building of kind `def` joins a net as a machine: it needs power, or it is a Mine and Powered Mines is learned.
+static func is_machine(s, def: Dictionary) -> bool:
+	return def.get("needs_power", false) or (def.has("dig") and s.tech_tree.researched.has("powered_mines"))
 
 
 ## The units an engine gives while it is going: a Water Wheel always, a fed one (a Boiler, a Generator) while it burns.
@@ -30,7 +40,12 @@ static func gives_now(b: Dictionary) -> int:
 
 ## True when a machine asks for power: it has its crew and would work if it had it, and nothing holds it.
 static func asking(s, b: Dictionary) -> bool:
-	return not b["paused"] and Buildings.is_staffed(b) and not s.livewire.is_held(b) and s.town.wants_power(b)
+	if s.tide.is_overgrown(b):
+		return false
+	if Data.BUILDINGS[b["type"]].get("draws", false):
+		return s.tide.draws(b)  # an Arc Lamp or a Scorcher: no worker, it draws while it lights or burns
+	var held: bool = s.livewire.is_held(b) and b["progress"] <= 0.0  # a held machine finishes the job it is on, power and all
+	return not b["paused"] and Buildings.is_staffed(b) and not held and s.town.wants_power(b)
 
 
 ## An engine on a net lights when the net is asked for more than the engines already burning give.
@@ -75,12 +90,12 @@ static func poles_joined(s) -> bool:
 ## index, so a demolition between ticks never points them at the wrong building.
 static func _rebuild(s) -> void:
 	var lw = s.livewire
-	lw.net_rev = s.town.road_rev
+	lw.net_rev = _rev(s)
 	lw.nets = []
 	lw.net_of = {}
 	var poles: Array = []
 	for b in s.town.buildings:
-		if Data.BUILDINGS[b["type"]]["kind"] == "pole":
+		if Data.BUILDINGS[b["type"]]["kind"] == "pole" and not s.tide.is_overgrown_at(b["pos"]):
 			poles.append(b["pos"])
 	if poles.is_empty():
 		return
@@ -102,7 +117,7 @@ static func _rebuild(s) -> void:
 	for b in s.town.buildings:
 		var def: Dictionary = Data.BUILDINGS[b["type"]]
 		var engine: bool = def["kind"] == "power"
-		if not engine and not def.get("needs_power", false):
+		if not engine and not is_machine(s, def):
 			continue
 		var best := -1
 		var best_d := Data.POLE_REACH + 0.001
@@ -134,7 +149,7 @@ static func _join(group: Array, i: int, j: int) -> void:
 static func _count(s, n: Dictionary) -> void:
 	var given := 0
 	for p in n["engines"]:
-		if s.town.building_at.has(p):
+		if s.town.building_at.has(p) and not s.tide.is_overgrown_at(p):
 			given += gives_now(s.town.buildings[s.town.building_at[p]])
 	var asks := 0
 	for p in n["machines"]:
@@ -142,6 +157,11 @@ static func _count(s, n: Dictionary) -> void:
 			asks += Data.MACHINE_ASK
 	n["given"] = given
 	n["asks"] = asks
+	var covered := {}  # machines in a lit engine's own reach run at full speed whatever the net does (it powers them itself)
+	for p in n["machines"]:
+		if s.town.in_range_of("power", p):
+			covered[p] = true
+	n["covered"] = covered
 
 
 # --- Words ---------------------------------------------------------------------------------------------------------
@@ -152,7 +172,7 @@ static func _count(s, n: Dictionary) -> void:
 static func note(s, b: Dictionary) -> String:
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
 	var kind: String = def["kind"]
-	var machine: bool = def.get("needs_power", false)
+	var machine: bool = is_machine(s, def)
 	if kind != "pole" and kind != "power" and not machine:
 		return ""
 	var n: Dictionary = s.livewire.net_at(b["pos"])
