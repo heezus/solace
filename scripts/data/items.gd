@@ -43,6 +43,14 @@ const ITEMS := {
 		"era": 4,
 		"desc": "Chipped from the Strange Stone. Burns long in a Shard Lamp or a Shard Boiler",
 	},
+	# Era 5 (Livewire). Wire is drawn from Copper at a Wire Mill (which needs power) and is what the era's machines are made of.
+	"wire":
+	{
+		"name": "Wire",
+		"color": Color("e0a96d"),
+		"era": 5,
+		"desc": "Copper drawn thin at a Wire Mill. Generators, factories and the gate use it",
+	},
 	# Iron Gears are what the Hull gear Lesson teaches (stage 2): not in ITEM_ORDER, so no top-bar counter. They are made by
 	# hand, kept in the stockpile and fitted to workshops by haulers (Data.GEARS_SPEED), one to a workshop.
 	"iron_gears":
@@ -76,6 +84,7 @@ const ITEM_ORDER := [
 	"copper",
 	"bronze",
 	"bronze_tools",
+	"wire",
 	"coal",
 	"iron_ore",
 	"iron",

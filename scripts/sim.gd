@@ -1,7 +1,7 @@
 extends RefCounted
 ## Sim: the whole simulation, with no rendering, so it runs headless in tests. It is a thin owner. It holds one of each
-## block (`fog`, `world`, `pathing`, `economy`, `tech_tree`, `town`, `people`, `story`, `sky`, `starfall`) and nothing else
-## about them: callers reach a block through its name (`sim.economy.inv`, `sim.world.tile_at(p)`). What stays here is what
+## block (`fog`, `world`, `pathing`, `economy`, `tech_tree`, `town`, `people`, `story`, `sky`, `starfall`, `teardown`,
+## `livewire`) and nothing else about them: callers reach a block through its name (`sim.economy.inv`). What stays here is what
 ## no single block can do: the commands that touch several blocks at once (`place`, `demolish`, `research`,
 ## `gather_by_hand`...), the few flags of the run itself, and the tick order:
 ##   1. Land.grow_if_due (the tick after Bronze Dawn the map grows east, in Ironfall south), economy.advance, tech_tree.tick
@@ -34,6 +34,7 @@ const SkyBlock = preload("res://scripts/sky.gd")
 const StarfallBlock = preload("res://scripts/starfall.gd")
 const TeardownBlock = preload("res://scripts/teardown.gd")
 const TeardownFinds = preload("res://scripts/teardown_finds.gd")
+const LivewireBlock = preload("res://scripts/livewire.gd")
 
 var won := false
 var hand_tools := false  # you've made a Flint Tool, so hand gathering is doubled for good
@@ -42,14 +43,12 @@ var hand_counts: Dictionary = {}  # item -> times harvested by hand
 ## Hold to harvest: the tile being held, seconds held so far, and 0 to 1 of the current harvest.
 var harvest_tile := Vector2i(-1, -1)
 var harvest_frac := 0.0
-## The live ring's seconds held, and "aside": progress waiting to be taken up again ({tile, held, left}, or {}).
-var harvest_ring: Dictionary = {"held": 0.0, "aside": {}}
+var harvest_ring: Dictionary = {"held": 0.0, "aside": {}}  # seconds held, and "aside": progress kept ({tile, held, left}, or {})
 var rushes := 0  # buildings rushed so far
 var ranks: Dictionary = {}  # tech -> rank bought on its card (2 or 3); a researched tech is rank 1
 var events: Array = []  # messages for the UI to show and clear
 var fog := Fog.new()
-## The researched techs, built first: Economy and Research both hold this one set.
-var tech_set: Dictionary = {}
+var tech_set: Dictionary = {}  # the researched techs, built first: Economy and Research both hold this one set
 var world := World.new()  # the map: tiles, camp and shard positions, roads and fields
 var pathing := Pathing.new(world, _has_tech)  # the walking grid and A*; it reads `world` and the techs
 var economy := Economy.new(tech_set)  # stockpile, food and flows; it reads the techs but never writes them
@@ -63,6 +62,7 @@ var story := Story.new()  # story moments and the opening checklist
 var sky := SkyBlock.new(tech_tree, town)
 var starfall := StarfallBlock.new(town, economy)  # the era after the Falling Star: the landing, the strangers, the glyphs
 var teardown := TeardownBlock.new(town, economy)  # Ironfall: the parts, the Bench and the Lessons
+var livewire := LivewireBlock.new()  # Livewire: the Power Pole nets and the Order Board's standing orders
 
 
 ## Wire the blocks together. Every signal connection in the game is here, so it is all in one place.
@@ -85,6 +85,8 @@ func _init() -> void:
 	starfall.moment.connect(story.record)
 	teardown.said.connect(_announce)
 	teardown.moment.connect(story.record)
+	livewire.said.connect(_announce)
+	town.on_net = livewire.powered_at
 	town.lesson_has = teardown.knows
 	tech_tree.gift_has = starfall.gift  # a tech may wait on a gift read or a Lesson learned (Ironfall)
 	tech_tree.lesson_has = teardown.knows
@@ -111,22 +113,19 @@ func _sight(base: int) -> int:
 # --- Working by hand ---------------------------------------------------------
 
 
-## Hold the mouse on tile p for `delta` more seconds (real time, not game speed). The ring fills over
-## Hands.hold_time; when it's full the tile is harvested and the ring starts again. A hold forgives a shaky
-## hand (Hands.hold): sliding to the next tile of the same kind keeps the ring, and a slip off the tile keeps
-## its progress waiting for Data.HOLD_KEEP seconds. Returns the harvest's text when one completes, else "".
+## Hold the mouse on tile p for `delta` more seconds (real time, not game speed). The ring fills over Hands.hold_time; when
+## it's full the tile is harvested and the ring starts again. A hold forgives a shaky hand (Hands.hold): sliding to the next
+## tile of the same kind keeps the ring, a slip off the tile keeps its progress for Data.HOLD_KEEP seconds. Returns the text.
 func hold_harvest(p: Vector2i, delta: float) -> String:
 	return Hands.hold(self, p, delta)
 
 
-## Let go: the ring empties. With `keep`, its progress waits Data.HOLD_KEEP seconds for the next press on the same
-## tile (a click that let go early, a pointer that slipped onto a bar) before it is gone.
+## Let go: the ring empties. With `keep`, its progress waits Data.HOLD_KEEP seconds for the next press on the same tile.
 func release_harvest(keep := false) -> void:
 	Hands.release(self, keep)
 
 
-## Harvest tile p by hand: the item goes to the stockpile and the Kith watching learn from it. The Strange
-## Stone gives its text and tells Story instead.
+## Harvest tile p by hand: the item goes to the stockpile and the Kith watching learn. The Strange Stone tells Story instead.
 func gather_by_hand(p: Vector2i) -> String:
 	if not fog.is_revealed(p):
 		return ""
@@ -289,6 +288,7 @@ func tick(delta: float) -> void:
 	var fed := economy.feed(people.kith.size(), delta)
 	people.grow(delta, fed)
 	story.update(self)
+	livewire.tick(self, delta)
 	sky.tick(delta)
 	starfall.tick(delta)
 	teardown.tick(delta)

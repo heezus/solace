@@ -25,6 +25,8 @@ const PatchText = preload("res://scripts/patch_text.gd")
 const TeardownPanel = preload("res://scripts/teardown_panel.gd")
 const LessonsList = preload("res://scripts/lessons_list.gd")
 const Steam = preload("res://scripts/steam.gd")
+const Power = preload("res://scripts/power.gd")
+const OrdersPanel = preload("res://scripts/orders_panel.gd")
 
 const INSET := Ui.BAR
 
@@ -67,7 +69,7 @@ func setup(game: Sim) -> void:
 	close.pressed.connect(func(): closed.emit())
 	head.add_child(close)
 
-	for key in ["desc", "recipe", "worker", "pace", "click"]:
+	for key in ["desc", "recipe", "net", "worker", "pace", "click"]:
 		parts[key] = _wrapped(Ui.MIN_TEXT)
 		v.add_child(parts[key])
 	parts["pace"].add_theme_color_override("font_color", Ui.TEXT_DIM)
@@ -107,6 +109,12 @@ func setup(game: Sim) -> void:
 	v.add_child(lessons)
 	v.move_child(lessons, parts["recipe"].get_index())
 	parts["lessons"] = lessons
+	var orders := OrdersPanel.new()  # the Order Board: the standing orders, written with buttons (scripts/orders_panel.gd)
+	orders.setup(game)
+	orders.changed.connect(refresh)
+	v.add_child(orders)
+	v.move_child(orders, parts["recipe"].get_index())
+	parts["orders"] = orders
 	parts["holding"] = Ui.label("", Ui.MIN_TEXT)
 	v.add_child(parts["holding"])
 	var bar := ProgressBar.new()
@@ -223,6 +231,9 @@ func refresh() -> void:
 	parts["post"].show_for(b)
 	parts["bench"].show_for(b)
 	parts["lessons"].show_for(b)
+	parts["orders"].show_for(b)
+	parts["net"].text = Power.note(state, b)
+	parts["net"].visible = parts["net"].text != ""
 	parts["recipe"].text = recipe_text(state, b)
 	parts["recipe"].visible = parts["recipe"].text != ""
 	parts["worker"].text = worker_text(state, b)
@@ -303,6 +314,8 @@ static func click_text(s: Sim, b: Dictionary) -> String:
 static func worker_text(s: Sim, b: Dictionary) -> String:
 	if b["paused"]:
 		return Data.WORKER_PAUSED % Data.PEOPLE["one"]
+	if s.livewire.is_held(b):
+		return Data.ORDER_PAUSED_NOTE
 	if b["worker"] < 0:
 		return Data.WORKER_NONE % Data.PEOPLE["one"]
 	var k: Dictionary = s.people.kith[b["worker"]]

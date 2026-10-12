@@ -132,11 +132,12 @@ static func birth_order(kith_name: String) -> int:
 
 
 ## What building `cand` wants stocked, item -> the amount its stock should reach (haulers bring the difference): a workshop
-## two rounds of its recipe, unless it is paused or has made enough; a home its goods and upgrade materials.
-static func _stock_wanted(s, cand: Dictionary) -> Dictionary:
+## two rounds of its recipe, unless it is paused (by hand, or by a standing order) or has made enough; a home its goods and
+## upgrade materials.
+static func stock_wanted(s, cand: Dictionary) -> Dictionary:
 	if Homes.is_home(cand):
 		return Homes.wanted(cand)
-	if cand["paused"] or Work.enough(s, cand):
+	if cand["paused"] or s.livewire.is_held(cand) or Work.enough(s, cand):
 		return {}
 	if Buildings.is_tamed(cand):
 		return {}  # the beast is tame: it needs no more Grain
@@ -161,6 +162,7 @@ static func _find_task(s, k: Dictionary, steam := true) -> bool:
 		return false
 	var best := {}
 	var best_d := INF
+	var best_first := false  # the best so far is on a kind of building a Bring first serves ahead of the rest
 	if k["cart"] and k["cart_kind"] == "steam":
 		k["hot"] = steam and Steam.can_stoke(s, k)  # steam up for this trip? It runs on Rail alone when it is
 	for i in s.town.buildings.size():
@@ -172,11 +174,15 @@ static func _find_task(s, k: Dictionary, steam := true) -> bool:
 		var starved: bool = not Buildings.recipe_in(cand).is_empty() and Buildings.buffered(cand["inbuf"]) - fitted == 0
 		if starved or Buildings.buffered(cand["out"]) >= Data.BUFFER_CAP:
 			d /= 3.0
-		if d >= best_d or (k["cart"] and not Roads.can_reach(s, k, here, cand["pos"])):
+		var first: bool = s.livewire.serves_first(cand)
+		if (best_first and not first) or (first == best_first and d >= best_d):
+			continue
+		if k["cart"] and not Roads.can_reach(s, k, here, cand["pos"]):
 			continue
 		if Buildings.buffered(cand["out"]) > 0 and not cand["claimed"]:
 			best = {"kind": "pickup", "building": i}
 			best_d = d
+			best_first = first
 			continue
 		var part: String = (
 			s.teardown.next_to_carry(Teardown.flying(s.people.kith)) if cand["type"] == "teardown_bench" else ""
@@ -184,14 +190,18 @@ static func _find_task(s, k: Dictionary, steam := true) -> bool:
 		if part != "":
 			best = {"kind": "part", "building": i, "part": part}
 			best_d = d
+			best_first = first
 			continue
-		var inputs := _stock_wanted(s, cand)
+		var inputs := stock_wanted(s, cand)
 		for id in inputs:
+			if s.livewire.kept_back(cand, id):
+				continue  # a Bring first is short of this good and names other buildings
 			var want: int = inputs[id] - cand["inbuf"].get(id, 0) - cand["incoming"].get(id, 0)
 			var n := mini(mini(want, s.economy.inv.get(id, 0)), carry_cap(s, k))
 			if n > 0:
 				best = {"kind": "deliver", "building": i, "item": id, "amount": n}
 				best_d = d
+				best_first = first
 				break
 	if best.is_empty():
 		return k["hot"] and _find_task(s, k, false)  # no work on its Rail: the cart goes cold and hauls like a plain hauler

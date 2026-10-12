@@ -19,7 +19,8 @@ const Hands = preload("res://scripts/hands.gd")
 const RAW := [
 	"wood", "stone", "flint", "fiber", "clay", "berries", "grain", "fish", "copper_ore", "tin", "coal", "iron_ore"
 ]
-const ROWS := [0, 7, 13, 18, 25]  # where each row of goods starts in ITEM_ORDER: raw, made, Bronze Dawn's five, Ironfall's seven
+## Where each row of goods starts in ITEM_ORDER: raw, made, Bronze Dawn's five with Livewire's Wire (made of Copper), Ironfall's seven.
+const ROWS := [0, 7, 13, 19, 26]
 const LOSS := Ui.SHORT  # `alert`, lifted to read on cocoa
 ## The Food readout's text while the warning is up: light enough to read on the bar (over 4.5 to 1) at every moment.
 const ALARM_TEXT := Ui.SHORT

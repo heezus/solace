@@ -558,7 +558,7 @@ func test_sim_surface_stays_small() -> void:
 	for p in script.get_script_property_list():
 		if p["usage"] & PROPERTY_USAGE_SCRIPT_VARIABLE and not String(p["name"]).begins_with("_"):
 			fields.append(p["name"])
-	t.check(fields.size() <= 22, "Sim's public fields are the blocks and a few run flags (%d)" % fields.size())
+	t.check(fields.size() <= 23, "Sim's public fields are the blocks and a few run flags (%d)" % fields.size())
 	var source := FileAccess.get_file_as_string("res://scripts/sim.gd")
 	t.check(source.count("\n") < 330, "sim.gd stays a thin owner (%d lines)" % source.count("\n"))
 

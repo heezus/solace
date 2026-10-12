@@ -572,9 +572,9 @@ func test_iron_gears() -> void:
 	)
 	w["inbuf"]["iron_gears"] = 0
 	t.check(is_equal_approx(Bonuses.speed(s, w), plain), "none, no bonus")
-	t.check(Haulers._stock_wanted(s, w).get("iron_gears", 0) == 1, "haulers fit one gear to a workshop")
+	t.check(Haulers.stock_wanted(s, w).get("iron_gears", 0) == 1, "haulers fit one gear to a workshop")
 	s.teardown.lessons.erase("hull_gear")
-	t.check(not Haulers._stock_wanted(s, w).has("iron_gears"), "but only once the Lesson is learned")
+	t.check(not Haulers.stock_wanted(s, w).has("iron_gears"), "but only once the Lesson is learned")
 	w["inbuf"]["iron_gears"] = 1
 	t.check(is_equal_approx(Bonuses.speed(s, w), plain), "and a gear does nothing before it")
 	t.check(gears_are_described(), "the speed-up is in the workshop card")

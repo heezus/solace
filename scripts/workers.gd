@@ -235,6 +235,9 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 	if not s.people.worker_home(b):
 		b["status"] = "%s walking here" % s.people.title_of(s.people.kith[b["worker"]])
 		return
+	if s.livewire.is_held(b) and b["progress"] <= 0.0:
+		s.town.set_status(b, Data.ORDER_PAUSED_STATUS, Data.ORDER_PAUSED_ALERT)  # a standing order: the job is done, so it waits
+		return
 	if Work.enough(s, b):
 		b["status"] = Work.bench_text(s, b)
 		return
@@ -264,8 +267,9 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 			_:
 				b["status"] = "Working"
 		return
-	b["status"] = "Working"
-	b["progress"] += delta
+	var speed: float = s.livewire.speed_of(b)  # 1.0 unless it is on a Power Pole net that is short
+	b["status"] = "Working" if speed >= 1.0 else Data.NET_SLOW % roundi(speed * 100.0)
+	b["progress"] += delta * speed
 	if b["progress"] < Work.time(s, b):
 		return
 	Work.finish_cycle(s, b)
