@@ -80,7 +80,7 @@ static func visible_techs(shard_seen: bool) -> Dictionary:
 ## The road tier building `type` lays: a road's own tier, the top tier for a Stone Bridge, 0 for the rest.
 static func tier_of(type: String) -> int:
 	var def: Dictionary = Data.BUILDINGS[type]
-	return int(def.get("tier", Data.ROAD_SPEEDS.size() - 1 if def.get("stone", false) else 0))
+	return int(def.get("tier", Data.PAVED_TIER if def.get("stone", false) else 0))
 
 
 ## The road type that lays tier `tier` of a road (see Data.BUILDINGS `tier`).

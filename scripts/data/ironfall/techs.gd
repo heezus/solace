@@ -3,10 +3,13 @@ extends RefCounted
 ## list them in TECHS (a constant cannot merge two dictionaries). It sits in a folder of its own because every constant
 ## in scripts/data/*.gd must be re-exported by the Data facade, and these are only read through TECHS.
 ## Costs are placeholders to tune with the pacing bot. The first stage builds Coal Seams, Ironstone, Bloomery and Iron
-## Tools; the rest carry `stage` 3, so they are on the board, locked, until their stage lands (Rules.tech_enabled).
+## Tools, the second Teardown and the third the rest (every tech carries a `stage`, and Data.BUILT_STAGE says how far the
+## game is built: a tech past it is on the board, locked, see Rules.tech_enabled).
 ## `after` is a story id (Data.STORY_EVENTS): the tech stays out of view until it has happened (Research.tech_visible).
-## `gift` names a Starfall gift (Data.LUMEN_GIFTS) the tech will also need once stage 2 reads it. The era's board has
-## tiers 0 to 3 and the gate in column 4.
+## `gift` names a Starfall gift (Data.LUMEN_GIFTS) the tech needs read before it can be bought (Rules.tech_gate_missing), and
+## `lesson` a Lesson (Data.LESSONS) the building it unlocks waits for: the Shard Lamp on the Lamp core, the Shard Boiler on the
+## Heat plate. `lessons` (the gate) are Lessons that must all be learned: one of each Bloom sample is "one of each Bloom
+## sample" opened at the Bench. The era's board has tiers 0 to 3 and the gate in column 4.
 
 const COAL_SEAMS := {
 	"abbr": "Cs",
@@ -51,17 +54,19 @@ const TEARDOWN := {
 	"color": Color("b8a8f0"),
 	"name": "Teardown",
 	"era": 4,
-	"stage": 3,
 	"lane": "lore",
 	"tier": 0,
 	"slot": 0,
-	"unlock": "Teardown Bench, the Lessons list",
+	"unlock": "Teardown Bench, Lessons list, Iron Gears",
 	"icon": "wanderer",
 	"after": "ironfall_begun",
 	"requires": [],
 	"cost": {"bronze": 15, "flour": 40, "brick": 40},
 	"desc":
-	"Open a thing to see how it works. A Teardown Bench takes a part apart and the Kith keep one Lesson from it.",
+	(
+		"Open a thing to see how it works. A Teardown Bench takes a part apart and the Kith keep one Lesson from it."
+		+ " Parts come from the Wreck, the Lumen Camp and the Bloom patches."
+	),
 }
 const BLOOMERY := {
 	"abbr": "Bl",
@@ -135,7 +140,7 @@ const RAILS := {
 	"lane": "fiber",
 	"tier": 2,
 	"slot": 0,
-	"unlock": "Rail, Steam Cart",
+	"unlock": "Rail, Steam Shed (the Steam Cart)",
 	"icon": "tile_road",
 	"requires": ["boiler", "bloomery"],
 	"cost": {"iron": 60, "coal": 60, "wood": 200},
@@ -154,6 +159,7 @@ const SHARD_LAMPS := {
 	"unlock": "Shard Lamp",
 	"icon": "watchtower",
 	"gift": "light",
+	"lesson": "lamp_core",
 	"requires": ["teardown"],
 	"cost": {"iron": 30, "brick": 60, "bronze": 20},
 	"desc": "A lamp post that burns one shard a long while and lights 3 tiles, once the Lamp core is learned.",
@@ -218,8 +224,9 @@ const SHARD_BOILER := {
 	"unlock": "Shard Boiler",
 	"icon": "kiln",
 	"gift": "craft",
+	"lesson": "heat_plate",
 	"requires": ["boiler", "shard_lamps"],
-	"cost": {"iron": 60, "brick": 80, "bronze": 30},
+	"cost": {"iron": 45, "brick": 60, "bronze": 30},
 	"desc": "A boiler that burns shards, so far less coal, once the Heat plate is learned.",
 }
 const STEEL := {
@@ -234,7 +241,7 @@ const STEEL := {
 	"unlock": "Steel Tools: +50% more",
 	"icon": "item_bronze_tools",
 	"requires": ["iron_tools", "blast_furnace"],
-	"cost": {"iron": 80, "coal": 80, "brick": 60},
+	"cost": {"iron": 60, "coal": 60, "brick": 50},
 	"desc": "Hard, springy metal. Steel Tools make a worker another 50% faster and wear slowly.",
 }
 const BLOOM_SAMPLING := {
@@ -249,7 +256,7 @@ const BLOOM_SAMPLING := {
 	"unlock": "Bloom samples",
 	"icon": "wanderer",
 	"requires": ["teardown", "shard_lamps"],
-	"cost": {"iron": 50, "brick": 60, "rope": 60},
+	"cost": {"iron": 40, "brick": 50, "rope": 60},
 	"desc": "Expeditions can take a sample from each patch of the Bloom, and the Bloom Lessons open.",
 }
 const LIVEWIRE := {
@@ -264,6 +271,7 @@ const LIVEWIRE := {
 	"unlock": "The era ends",
 	"icon": "wanderer",
 	"requires": ["steel", "rails", "shard_boiler", "bloom_sampling"],
-	"cost": {"steel": 100, "iron": 100, "brick": 60, "rope": 40},
+	"lessons": ["spore", "root", "sap"],
+	"cost": {"steel": 50, "iron": 70, "brick": 60, "rope": 40},
 	"desc": "The lamps burn without a flame. Far to the north, something green moves in the fog.",
 }

@@ -138,8 +138,9 @@ func _process(delta: float) -> void:
 		start_next()
 	if active:
 		advance(delta)
-		_layout()
-		queue_redraw()
+		if active:  # the last still just ended the sequence: nothing left to lay out
+			_layout()
+			queue_redraw()
 
 
 ## Start the first queued sequence whose `after` moment has happened. False when none is ready.

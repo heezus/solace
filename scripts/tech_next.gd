@@ -128,6 +128,7 @@ static func needs_text(s, tech: String) -> String:
 	if not any.is_empty() and not any.any(func(r): return s.tech_tree.researched.has(r)):
 		var names: Array = any.map(func(r): return Data.TECHS[r]["name"])
 		parts.append(names[0] if names.size() == 1 else "one of " + " or ".join(names))
+	parts.append_array(s.tech_tree.open_needs(tech))  # a gift read, a Lesson learned
 	return " and ".join(parts)
 
 

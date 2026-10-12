@@ -11,6 +11,7 @@ const GrowthArt = preload("res://scripts/growth_art.gd")
 const Overlays = preload("res://scripts/overlays.gd")
 const Rendered = preload("res://scripts/rendered_art.gd")
 const Expedition = preload("res://scripts/expedition.gd")
+const Lessons = preload("res://scripts/lessons.gd")
 
 const KITH := Color("e76f51")
 const SPRITE := Overlays.TILE  # the sprite's square: drawn at 1.5x, so its 2-unit outline is 3 px
@@ -76,6 +77,7 @@ static func draw_all(ci: CanvasItem, s, time: float) -> void:
 			GrowthArt.draw_hand_cart(
 				ci, Rect2(at + Vector2(-SPRITE * 0.52, -SPRITE * 0.82), Vector2(SPRITE * 1.04, SPRITE * 1.04)), cargo
 			)
+			_cart_mark(ci, at, k, time)
 			continue
 		if Expedition.is_party(k):
 			Rendered.party_pack(ci, at, flip)  # behind the body: only the Kith out with a party carry one
@@ -83,6 +85,28 @@ static func draw_all(ci: CanvasItem, s, time: float) -> void:
 		var above := at + Vector2(-10, -SPRITE * 1.08)  # over the head
 		for id in k["carry"]:
 			Art.item_icon(ci, id, Rect2(above, Vector2(20, 20)), 1.0)
+
+
+## What tells a Steam Cart or a beast cart from the hand cart it borrows the picture of, drawn over it until Codex paints them
+## (docs/art/requests.md): a chimney with a plume of smoke while the steam is up, or a small beast out in front.
+static func _cart_mark(ci: CanvasItem, at: Vector2, k: Dictionary, time: float) -> void:
+	match String(k.get("cart_kind", "hand")):
+		"steam":
+			var top := at + Vector2(SPRITE * 0.3, -SPRITE * 0.62)
+			ci.draw_rect(Rect2(top, Vector2(7, 11)), Color("1b1b1f"))
+			ci.draw_rect(Rect2(top + Vector2(1, 1), Vector2(5, 9)), Color("6f7d8c"))
+			if k.get("hot", false):
+				for i in 3:
+					var rise := fposmod(time * 0.9 + i * 0.33, 1.0)
+					ci.draw_circle(
+						top + Vector2(3.5 + sin(rise * 6.0 + i) * 3.0, -rise * 18.0),
+						3.0 + rise * 3.0,
+						Color(0.85, 0.85, 0.88, 0.7 * (1.0 - rise))
+					)
+		"beast":
+			var body := at + Vector2(-SPRITE * 0.62, -SPRITE * 0.3)
+			Art.outlined_circle(ci, body, 8.0, Color("8b6b4a"))
+			Art.outlined_circle(ci, body + Vector2(-8, -4), 5.0, Color("9bb85c"))  # shard-touched: a green tinge
 
 
 ## The strangers of the era after the Falling Star (Starfall.survivor_spots): three pale-cloaked Lumen figures in a soft light
@@ -118,6 +142,7 @@ static func draw_wreck(ci: CanvasItem, s, time: float) -> void:
 ## The first Bloom sign (Starfall.bloom), once the Warning is read and the fog is lifted there: a patch of growth nobody
 ## planted, magenta and sickly green, slowly breathing. Stand-in art until Codex draws it (docs/art/starfall-art-brief.md).
 static func draw_bloom_sign(ci: CanvasItem, s, time: float) -> void:
+	Lessons.draw_overlays(ci, s)  # the Spore and Root Lessons (stage 2 of Ironfall), when learned
 	var b: Vector2i = s.starfall.bloom
 	if b.x < 0 or not s.fog.is_revealed(b):
 		return

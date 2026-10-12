@@ -726,6 +726,12 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - The project owner asked that repeat runs hint at what carried over. Page 20 now has variant lines (one swapped line, chosen from the profile's resets and echoes) and five transparent memory overlays that sit over any still, so no still is painted twice.
 - The project owner also confirmed (2026-10-07, on a card) that the Beast Pen and beast cart ship in Ironfall as one optional branch (stage 3). That closes every Ironfall fork on page 19; stage 1 can be built.
 
+## 2026-10-05: Tool Bench miniature (PR #49)
+- Codex supplied one transparent low timber Tool Bench, matching the accepted rendered Twine Post and Kiln rather than the historical flat SVG style.
+- Large contrasting flint, stone hammer and unfinished axe head communicate tool making; stone feet and upper-left light match adjacent workshop subjects. The 1×1 gameplay footprint remains the interface.
+- Native 48/24/96 px comparisons use the existing aspect-preserving fit helper. At 24 px the bench silhouette survives while individual tool details rely on its label.
+- Art-only delivery under `docs/art/tool-bench/`; production slot/loading/imports remain with Claude. Growth assets stay pending the project owner's approval of page 17.
+
 ## 2026-10-07: Stage starts, save slots and debug keys (PR #80)
 - Claude follows the project owner's ask to test and debug from any stage: a new run can begin at eight stages (Stone Age to just before the Starfall ending) on a fixed map with the town built. There is no separate dev build; the starts ship in the normal game, on the Load screen next to the player's own saves.
 - Starts are built on demand, never committed: the pacing bots play to the boundary and a small script sets up the Starfall stages, so they stay deterministic and follow the balance. A start is read-only; Save writes only to one of five slots (a slot file is a run save plus a `meta` key, so the save version is unchanged, and the old single save moves into a slot).
@@ -748,8 +754,86 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Saves stay VERSION 1 and everything Ironfall adds is optional, so older saves keep loading. A CI test now loads a frozen save written before Ironfall (`tests/fixtures/save_before_ironfall.json`) and plays it a minute; a later format change adds a newer fixture beside it instead of editing this one.
 
 
+## 2026-10-08: Ironfall material icons (PR #92)
+- Codex painted five transparent miniature icons: coal, iron ore, iron, steel and iron tools.
+- A sibling atlas preserves every existing item crop; exact regions and ID order are supplied for Claude to wire.
+- Rough iron uses one oxidized bar; steel uses two brighter silver-blue bars, readable at small HUD sizes.
+- Godot imports and a 24/32/40 px native review accompany the original pixels and recorded prompts.
+
+## 2026-10-08: Ironfall mine and bloomery silhouettes (PR #91)
+- Codex: give Coal Mine a dark entrance, black spoil and a timber bucket head frame; give Bloomery an exposed clay stack, bellows and warm fire mouth to distinguish it from the stone smelter.
+- Match existing raised miniature camera/materials and 1×1 footprint; preserve existing building fit and selection behavior. Color is painted, so Claude removes placeholder tints when wiring the new exact region keys.
+- Keep the smoke wisp short and static in this asset; continuous flame/smoke animation is an optional engine layer. Native 46/96 px comparison and generated imports are supplied.
+
+## 2026-10-08: Ironfall resource miniatures (PR #90)
+- Codex: coal_seam, iron_hills and spent_seam receive original transparent three-variant atlases, preserving the existing 1×1 footprints and stable visual selection contract.
+- Read coal as dark seam bands, iron as rust-red faces with grey flecks, and depletion as dull grey channels in the corresponding coal ridge shape. Keep contact edges soft rather than painting square ground bases.
+- Claude wires exact regions and removes the stand-in tints. Coal and spent coal should share the coal visual salt so exhaustion retains the paired silhouette; discovery and gameplay RNG remain unchanged.
+- Inspect beside plain ore and copper at 45 px inside the 48 px map baseline. Godot-generated imports and native comparison are supplied; actual map integration is a separate code step.
+
+
+## 2026-10-08: Ironfall stage 2, Teardown, parts and Lessons (PR #89)
+- Claude built Ironfall stage 2 as page 19 describes: the Teardown tech and Bench (iron and brick, one per town, beside the Hearth), eight parts that are whole one-off objects in the pack and on the Bench, 40 s a part and a queue of three. Taking a part apart consumes it and teaches one permanent Lesson; a second copy is stripped in 8 s for 6 Iron. The Lessons are a finite list of eight, shown on the Lore tab beside the Glyph Wall as locked, found or learned.
+- Parts come from the Wreck (always three: Heat plate, Lamp core, Hull gear, one a trip, two on a heavy pack, half when late), the Lumen Camp by the lean the Starfall ended on (low none, middle two, high four, one every 45 s) and three Bloom patches at the far edge of the south land. A fairness test checks all 24 seeds: three patches, reachable on foot, far from the Hearth, and the Wreck's parts are enough for the Boiler and Lamp path with no help from the Lumen.
+- Lessons with a target in stage 2 are live: Hull gear gives Iron Gears (+25% speed in a workshop), Water glass the Rain Barrel (+20% Field yield within 3 tiles), Seed pod a second home for Starfruit (near coal smoke), Spore and Root two map overlays. Lamp core, Heat plate and Sap are learned and kept, and wait for stage 3 (Shard Lamp, Shard Boiler, Lantern Parties).
+- **Placeholder:** Bloom Sampling is a stage-3 tech, so taking a sample is gated by `Data.BLOOM_SAMPLING_PLACEHOLDER` (true now). Stage 3 sets it false and the tech decides (`TeardownFinds.sampling_open`). Deviation from page 19's default: the Bloom patches are in the south land, not the west one, since the west land does not exist until Rails.
+- Art is placeholder only and every slot is logged in `docs/art/requests.md`. Saves stay VERSION 1 with everything optional, the frozen pre-Ironfall fixture still loads, and the golden pacing hashes and the stone age and Bronze maps are unchanged. The Sim's test limits went up by one field and ten lines for the new block.
+
+## 2026-10-08: Terrain kit for Codex, ground and water at sprite fidelity (PR #89)
+- Claude decided to keep the continuous terrain shader and give it better material, not to switch to autotile pieces: the ground is a world-space blend of masks with no tile grid, so edge pieces would add seams. The repeat comes from one mirrored meadow texture, soft texture density and a plain river blend.
+- The kit asks for non-mirrored seamless sheets at 96 px per tile (meadow in three variants, woodland, water, earth, southern earth), a decal atlas placed by the map-seeded hash, and a painted bank strip. The shader mixes two non-repeating scales and low-frequency variants so nothing looks tiled. The project owner asked for exactly this look: seamless, same fidelity as the sprites.
+- Codex gets numbered template sheets, a short spec (light from the upper left, small palettes, neighbours share mid-tones) and `tests/tools/terrain_preview.gd`, which renders the real ground on a generated map. Everything is in `docs/art/terrain-kit/`.
+- Map generation needs no change for the art. The generator's height and wetness fields can become two shader mask channels when Codex asks for them (no save or map change). Details on page 22.
+
+
+## 2026-10-08: Shared character reference and review gate (PR #94)
+- Codex recorded one shared map/title/cutscene reference hierarchy, following the owner's consistency request and Claude's confirmed workflow.
+- Ordinary Kith/Lumen target 35 px; Sela is marginally taller. Exact 38 px and normalized anatomy remain proposals pending visual review.
+- Existing source comparison and one separate Sela candidate expose proportion/detail differences; no game sprite or renderer changed. #93 remains held.
+- Accepted 1586×992 cutscene originals retain prompts and provenance; future character art and wiring must reference the shared spec.
+## 2026-10-08: Ironfall stage 3, steam and the end (PR #95)
+- Claude built Ironfall stage 3 as page 19 describes: the Boiler (no river, powers machines within 5 tiles) and the Shard Boiler, Rail as the fourth road tier (8 times open ground) with the Steam Cart (40 a trip, Rail only), the Forge and Steel with Steel Tools, the Iron Plough, Taught Hands II, the Beast Pen and its beast cart (30 a trip, never Rail), the Shard Lamp, Bloom Sampling and the Livewire gate with its end card. The page's staging is done; the era has 21 goals.
+- **Fire is fed, not free.** The Boiler, Shard Boiler, Shard Lamp and Beast Pen have no worker: haulers keep each stocked and it burns on its own. A Boiler lights only when a machine in its reach has a worker, its inputs and room, and stays banked otherwise, so coal (finite on purpose) is spent on work and not on standing around. A Shard Boiler burns 1 Shard for 80 s against a Boiler's 1 Coal for 20 s.
+- **Steam Carts fall back to hauling.** A cart with no Coal, or with nothing it can reach on Rail, hauls like a plain hauler, so a Steam Shed is never worse than no shed. Rail is an ordinary road for everyone else, which keeps a half-laid line useful; only the beast cart keeps off it. Because Rail is now the top of the speed ladder, the Stone Bridge and the lifting of pre-tier saves name the paved tier explicitly.
+- **Gates read from the page, with two choices.** The gate asks for the three Bloom Lessons learned rather than one of each sample, since opening a sample at the Bench consumes it. A tech's `gift` (Shard Lamps, Shard Boiler) and the gate's `lessons` count as open requirements, shown on the board. Stage 2's placeholder flag for Bloom Sampling is off and the tech decides.
+- **Deferred: the second (west) map growth.** Growing west shifts every coordinate in every system and save; nothing in the era needs the room (rails fit in the existing land and the Bloom patches are in the south since stage 2). The default on page 19 stands for a later stage.
+- Art is placeholder only and every slot is logged in `docs/art/requests.md`. Saves stay VERSION 1 with optional fields, the frozen pre-Ironfall fixture still loads, and the golden pacing hashes and the stone age and Bronze maps are unchanged. Every number is a placeholder to tune with the pacing bot.
+
+## 2026-10-09: Character standard approved (PR #94)
+- Codex recorded the owner’s approval relayed by Claude in mailbox comment 6084666694: ordinary Kith and Lumen share the 35 px map target; Sela targets about 38 px.
+- The separate Sela proportion image in `docs/art/character-standard/sela-candidate.png` is now the approved visual anatomy reference; retain its filename, original pixels and generation provenance.
+- Claude wires sizes after #94 merges. #93 stays held until its stills pass a comparison against the approved sheet; this approval does not automatically approve older paintings.
+
+## 2026-10-09: Lumen map height (PR #96)
+- Claude wired the approved character standard (#94): an ordinary Lumen is drawn 35 px tall on the map, level with a Kith, and Sela 38 px (`LUMEN_HEIGHT`, `LEAD_HEIGHT` in `rendered_art.gd`). Both were 24 px, which made the Lumen look like children beside the Kith.
+- Art is unchanged: the current Sela sprite is long-legged and stays until Codex paints a replacement from the approved proportion reference.
+
+## 2026-10-09: Livewire designed (PR #97)
+- Claude wrote the design page for era 5 (`23-livewire.md`), following page 18's Decided list: the one new mechanic is **Standing orders** (an Order Board with up to 9 one-line rules, verbs Pause, Bring first, later Send), and the Bloom tide is the clock.
+- **The tide is learned, not walled off.** It advances about a tile every 35 s from the three south Ironfall patches, slows on roads, stops in Arc Lamp light and Firebreaks, and is burnt back by the Scorcher, which needs power and coal. The Ironfall Bloom Lessons are what Tide Watch and the Scorcher rest on, and Living Ground (the small life-tree branch) turns burnt ground into richer Fields.
+- **Defaults for the project owner to change:** overgrown buildings are lost after 3 minutes and the Hearth's ring is safe, so Livewire cannot be lost (loss is Skyreach); the gate asks for five orders written and a Scorcher and two Arc Lamps burning in the south, besides Steel, Iron, Wire and Brick. Wire (from Copper) is the era's new good, and a Wire Mill and Power Poles carry power past the Boiler's 5 tiles.
+- Fourteen techs on a fifth tab, three stages (wires and orders, the tide, factories and the end). Nothing is built; no canon changes.
+
+## 2026-10-09: Ironfall stage 3 pacing (PR #98)
+- Claude tuned only Ironfall stage 3's costs with a new bot (`tests/autoplay_ironfall.gd`) that plays from `ironfall_steam` to the Livewire gate on any map (`pace.gd ... ironfall steam`): from 7.6 to 17.3 minutes (median 11.8) to 5.2 to 10.3 (median 7.8) on maps 1 to 8, against a target of seven to nine. The Bloom path was never the long pole (done by about 5 minutes); iron and steel throughput was.
+- Livewire is now 50 Steel and 70 Iron (was 100 and 100), Steel tech iron 60, coal 60, brick 50, Bloom Sampling iron 40, brick 50, Shard Boiler iron 45, brick 60, and the Forge costs brick 60, iron 20 and fires in 8 s (was brick 80, iron 30, 10 s). Rates of the Boiler and Steam Cart, the Bloomery and everything before stage 3 are unchanged, so the golden pacing hashes and the old fixture are untouched.
+- Bug in the `ironfall_steam` start: the Forge could stand outside the Boiler's 5 tiles and never be powered (steel stuck at 0 on map 4). It now stands beside the Boiler.
+- Noted, not changed: haulers are dealt over every Storehouse with a road-linked building, so a Storehouse on a road of its own holds haulers that can never reach the metal works. Fixing it changes the golden pacing hashes, so it waits for its own PR.
+- Numbers are bot-tuned, not human-tuned; a playthrough by the project owner should move them again.
+
+## 2026-10-09: Playtest fixes, Starfall goals and quiet loads (PR #100)
+- Claude fixed what the first playtester run found. **Starfall now has its own Goals panel** (nine goals in any order: strangers come, Glyph Wall, first set read, Lumen Camp, Expedition Post, the crash site, Market, the three questions answered, the Warning), in force from the moment the star falls until Ironfall begins, so the panel no longer sits on the finished Dawn list.
+- **A loaded run, or a run started at a stage, stays quiet.** The warm lines and the Bronze Dawn banner are marked as told when a run loads (`scripts/flavor.gd`), so a stage start no longer stacks four old toasts over the map.
+- "Find coal" and "Find the Iron Hills" count as done when the coal or iron is already in the stores, since a stage start has the metal in hand without the fog lifted.
+- The cutscene player no longer lays out a still after the last one has ended (`stills[index]` out of bounds, once on entering Ironfall); a test reproduces it on the old code.
+
 ## 2026-10-08: Ironfall and Bloom Phase B paintings (PR #93)
 - Codex painted all five requested stills at the accepted Phase B size of 1586×992, without baked text.
 - The new bloomery, established hull and human Lumen materials connect the story paintings to map art; Sela retains her approved study design.
 - Bloom appears first as three faint distant ground patches, then sparse shoots; Sela's concern replaces her usual smile.
 - Important action stays above caption foregrounds; production-player captures check near-end push-in at 1280×800 and a 1600×900 crop.
+
+## 2026-10-12: Phase B character consistency corrections (PR #93)
+- Codex corrected the smith’s head/body proportions and the hull-scene Kith’s facial rendering against the approved #94 Kith reference, preserving narrative staging and scene materials.
+- Sela’s Bloom inspection remains unchanged after passing the character check; the two corrected 1586×992 originals retain exact edit prompts and source provenance.
+- Lift the character-consistency hold for review; Claude merges only after required CI passes. No runtime or gameplay changes are introduced by these corrections.

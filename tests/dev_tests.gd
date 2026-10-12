@@ -109,7 +109,9 @@ func test_the_list_is_well_formed() -> void:
 		"starfall_camp",
 		"starfall_market",
 		"starfall_end",
-		"ironfall"
+		"ironfall",
+		"ironfall_teardown",
+		"ironfall_steam"
 	]:
 		t.check(seen.has(id), "the start %s is there" % id)
 	t.check(DevStarts.build("no_such_start") == null, "an unknown start builds nothing")
@@ -522,6 +524,23 @@ func _expect_stage(id: String, s: Sim) -> void:
 			t.check(s.starfall.ended and s.starfall.pending == "", "ironfall: the Starfall is over and put away")
 			t.check(s.story.has_event(Data.IRONFALL_EVENT), "and Ironfall has begun")
 			t.check(s.tech_tree.tech_visible("coal_seams"), "so its first techs are in view")
+		"ironfall_teardown":
+			t.check(
+				s.teardown.has_bench() and s.teardown.pack.size() + s.teardown.bench.size() == 3,
+				"ironfall_teardown: a Bench and three parts"
+			)
+			t.check(s.world.is_grown_south(), "and the south is open")
+		"ironfall_steam":
+			t.check(
+				["boiler", "forge", "steam_shed"].all(
+					func(type): return s.town.buildings.any(func(b): return b["type"] == type)
+				),
+				"ironfall_steam: a Boiler, a Forge and a Steam Shed stand"
+			)
+			t.check(
+				s.tech_tree.researched.has("rails") and s.economy.inv.get("coal", 0) > 100,
+				"with Rails learned and coal in store"
+			)
 
 
 func test_starts_are_deterministic() -> void:

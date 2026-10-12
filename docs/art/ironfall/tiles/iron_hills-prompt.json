@@ -1,0 +1,10 @@
+{
+  "prompt": "Solace map resource art. THREE clearly separated painted miniature variants in ONE ROW of three equally sized cells; landscape3:1 transparent PNG. Use reference existing rocks ONLY for painterly sculpted materials, chunky silhouettes, raised top-down three-quarter camera and soft upper-left lighting. Each is a standalone low resource outcrop that fits ONE game tile, not a landscape or square platform. Transparent gaps and generous margins around each, same feet/baseline and comparable coverage, tight soft contact shadow only. No text, labels, border, no opaque backdrop. Natural tiny moss/soil at feet, no full grass tile. Readable at45px. Rust-red rounded low ironstone hills/outcrops with dark grey exposed ore flecks and dull ferruginous streaks. Three silhouettes matching existing ore rock coverage: taller ridge, two split rocks, low broad rubble ridge. Red-brown iron oxide distinct from bright orange copper crystals, tiny dull metallic flecks. No gold, no glowing gems, no mine, no buildings.",
+  "source": "exec-6cfec2be-2897-421b-8491-7d47d5bd011b.png",
+  "reference": "rocks.png",
+  "grid": [
+    3,
+    1
+  ],
+  "mode": "built-in imagegen"
+}

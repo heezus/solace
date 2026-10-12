@@ -1,0 +1,42 @@
+[
+  {
+    "id": "coal_mine",
+    "path": "res://art/rendered/coal_mine.png",
+    "source_size": [
+      1327,
+      1185
+    ],
+    "sha256": "c8a8862065f6544aa34e2977357761db25fce6f9e1878e443f9935484f0928f3",
+    "region": [
+      61,
+      45,
+      1221,
+      1066
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  },
+  {
+    "id": "bloomery",
+    "path": "res://art/rendered/bloomery.png",
+    "source_size": [
+      1278,
+      1230
+    ],
+    "sha256": "6b48b92407038e0e8824a8a73a2a01bb0653c9d6d857a16607c04d2be39f895d",
+    "region": [
+      80,
+      49,
+      1167,
+      1073
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  }
+]

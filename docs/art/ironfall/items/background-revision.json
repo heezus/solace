@@ -1,0 +1,4 @@
+{
+  "prompt": "Background-extraction edit ONLY. Preserve these FIVE painted icons exactly: coal, iron ore, rough iron bar, two steel bars, crossed iron tools in current3x2 grid/current positions/colors/materials. REMOVE ALL brown/grey/light colored background haze, soft fog, gradient backdrop, halos, aura and glow outside the actual object contours. Genuine fully transparent alpha outside objects; crisp softly antialiased silhouette edges, no surrounding cloud. Keep empty bottom-right cell completely transparent. No text, no redesign, no extra icons, no rescaling or rearrangement. Transparent output.",
+  "source": "exec-7cd1784f-ef2d-40d0-8152-147c28796303.png"
+}

@@ -32,7 +32,7 @@ var camp_pos := Vector2i.ZERO
 var shard_pos := Vector2i(-1, -1)
 var roads: Dictionary = {}  # Vector2i -> true (a bridge is a road over the river)
 var stone_bridges: Dictionary = {}  # Vector2i -> true, the bridges among them that are stone (they bear carts)
-var road_tiers: Dictionary = {}  # Vector2i -> 1 (gravel) or 2 (paved) for the roads laid above the plain path (tier 0)
+var road_tiers: Dictionary = {}  # Vector2i -> 1 (gravel), 2 (paved) or 3 (rail) for the roads laid above the plain path (tier 0)
 var fields: Dictionary = {}  # Vector2i -> true, grain tiles that were sown
 var flax_fields: Dictionary = {}  # Vector2i -> true, flax tiles that were sown (wild flax is not in here)
 var seam_of: Dictionary = {}  # Vector2i -> seam number, for every tile of a finite seam (coal), spent or not
@@ -178,7 +178,7 @@ func gather_tiles(p: Vector2i, radius: int) -> Array:
 # --- Roads and fields ----------------------------------------------------------
 
 
-## Lay a road (or a bridge, on a river tile) at p, of tier `tier` (0 path, 1 gravel, 2 paved). The tile itself is left as
+## Lay a road (or a bridge, on a river tile) at p, of tier `tier` (0 path, 1 gravel, 2 paved, 3 rail). The tile itself is left as
 ## it is.
 func add_road(p: Vector2i, tier := 0) -> void:
 	roads[p] = true
@@ -199,10 +199,10 @@ func set_road_tier(p: Vector2i, tier: int) -> void:
 		road_tiers.erase(p)
 
 
-## The tier of the road at p: 0 path, 1 gravel, 2 paved. A Stone Bridge is the top tier. 0 where there is no road.
+## The tier of the road at p: 0 path, 1 gravel, 2 paved, 3 rail. A Stone Bridge is paved. 0 where there is no road.
 func road_tier(p: Vector2i) -> int:
 	if stone_bridges.has(p):
-		return Data.ROAD_SPEEDS.size() - 1
+		return Data.PAVED_TIER
 	return int(road_tiers.get(p, 0))
 
 

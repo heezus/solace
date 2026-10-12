@@ -9,3 +9,9 @@ Compared the three character still originals against the approved shared charact
 | `bloom_sign_2` | Pass character check | Sela retains the approved large expressive head, compact anatomy, blonde hair, ivory/gold clothing and cyan clasp/cape. Crouching explains reduced apparent height. Kith remain compact; expressions and scene lighting fit the story. |
 
 #93 remains draft until the first two corrections are reviewed. This verdict does not change production sprites or approve unrelated paintings. The two ground-only stills were outside this character review. Synchronize main and rerun necessary import/player checks when the corrected originals are ready. Claude owns size wiring; #96 already supplies 35 px ordinary Lumen and 38 px Sela, with the older Sela sprite still in production.
+
+## Corrections — 2026-10-12
+
+Both named figures were edited with built-in ImageGen using the standing Kith sprite sheet as the explicit anatomy/face reference. Original generated outputs remain 1586×992. The smith now has a larger readable head, shorter torso and compact legs; the hull-scene Kith now has shaped eyes, brows, nose and modeled cheeks instead of dot eyes. Narrative poses, props, atmosphere and dark caption foregrounds remain visually consistent with the earlier paintings; this is an AI edit, not a byte-identical background composite.
+
+**Updated verdict: pass for the three character stills.** `bloom_sign_2` remains unchanged. Godot imports and production-player framing are checked with the revised originals before publication. The character-consistency hold can lift; Claude still reviews the images and waits for green CI before merging. The exact edit prompts and source basenames are in the two `*-character-fix.json` records. Earlier verdicts above are retained as history.

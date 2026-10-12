@@ -9,6 +9,8 @@ Use transparent rendered subjects, coherent three-quarter miniature lighting and
 See the [real Godot integration and captures](../art/overhaul/misty-highlands/engine/README.md) and [asset provenance](../../art/rendered/README.md). Full directional animation, separate Hearth fire and water-wheel motion remain follow-up work. Terrain uses small-scale meadow and woodland ground with soft transitions derived from revealed tree groups, damp banks and flowing water with modular crossings. Worn aprons and tight contact shadows seat subjects in the ground. These are visual regions, not new biome gameplay rules. The interface now follows the [miniature interface specification](mockups/miniature-interface.md): charcoal green surfaces, ivory text, restrained brass actions, moss success and ember warnings. This supersedes the cocoa-and-cream UI palette while preserving the established controls and map scale.
 
 ## Original visual style
+Character art and wiring follow the [shared character standard](mockups/character-standard.md). The current source audit distinguishes approved scale decisions from unresolved body proportions; existing title/cutscene characters are not blanket approval for future generation.
+
 **Decided (2026-09-29): clean vector, in the spirit of Advance Wars.** The look is a bright, toy-like tactical cartoon:
 - Flat, saturated colors with minimal shading
 - Bold dark outlines so every building and unit reads instantly

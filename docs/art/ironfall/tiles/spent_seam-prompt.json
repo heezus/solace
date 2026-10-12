@@ -1,0 +1,10 @@
+{
+  "prompt": "Precise-object-edit of reference coal seam atlas into spent_seam atlas. Preserve ALL THREE outcrop shapes, camera, width, positioning and feet outlines exactly, same three cells. Remove every black coal seam and every shiny dark coal chip: replace with ash-grey dusty dull hollowed channels, small pale rubble and chipped rock. Slightly collapsed scraped faces but same silhouette/cell footprint, exhausted not fresh ore. Desaturate moss to sparse muted grey-green flecks; no charcoal, no remaining coal glints, no new materials, no fire, no mine. Same soft upper-left light and miniature paint. Genuine transparent background and gaps. No text or labels.",
+  "source": "exec-4f99753a-36c4-498a-a140-8e832626495c.png",
+  "reference": "coal_seam.png",
+  "grid": [
+    3,
+    1
+  ],
+  "mode": "built-in imagegen"
+}

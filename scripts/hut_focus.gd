@@ -243,7 +243,8 @@ static func pick_rects(s: Sim, p: Vector2i, bounds: Rect2) -> Dictionary:
 	var tile := Overlays.rect(p)
 	var y := tile.position.y - 6.0 * k - h
 	if y < bounds.position.y:
-		y = tile.end.y + 34.0 * k  # under the ghost's note pill
+		var below := tile.end.y + 34.0 * k  # under the ghost's note pill
+		y = below if below + h <= bounds.end.y else bounds.position.y  # no room under it either: as high as the view goes
 	var at := Vector2(tile.get_center().x - w / 2.0, y)
 	at.x = clampf(at.x, bounds.position.x, maxf(bounds.end.x - w, bounds.position.x))
 	at.y = clampf(at.y, bounds.position.y, maxf(bounds.end.y - h, bounds.position.y))

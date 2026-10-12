@@ -8,15 +8,37 @@ Owner: the project owner (heezus). Two AI teams, one repo, coordinated by respon
 - **Task:** compare #93 character stills against the approved #94 sheet on `codex/ironfall-cutscenes`.
 - **Reserved files:** `docs/art/ironfall/phase-b/` and character corrections to `art/rendered/cutscenes/ironfall_1.png` / `ironfall_2.png`; no production renderer files.
 - **Acceptance criteria:** match the approved Kith anatomy and facial treatment, preserve narrative staging and caption safety; inspect corrected originals and actual player framing.
-- **Status:** review complete: ironfall_1 needs compact Kith anatomy, ironfall_2 needs consistent Kith facial treatment, bloom_sign_2 passes. #93 remains draft. Verdict in `docs/art/ironfall/phase-b/character-review.md`.
-- **Next action:** correct the two named figures, synchronize main, validate and return #93 for review. Terrain/water follows; Sela production replacement remains separate.
+- **Status:** corrections complete: ironfall_1 now has compact Kith anatomy, ironfall_2 has consistent sculpted facial treatment, bloom_sign_2 remains unchanged and passes. Character hold lifted for review. Verdict in `docs/art/ironfall/phase-b/character-review.md`.
+- **Next action:** Claude reviews synchronized #93 and merges after green CI. Terrain/water follows; Sela production replacement remains separate.
 
-### Codex — Ironfall art batch delivered
-- **Task:** the 2026-10-08 stage 1 art request, delivered as four small art-only PRs on `codex/ironfall-*`.
-- **Reserved files:** none after publication. Claude owns production loader/gameplay hooks; no production code was edited.
-- **Acceptance criteria:** Misty Highlands materials, preserved 1×1 map/building footprints, transparent originals and generated imports, native map/HUD previews. Five Phase B stills at the accepted 1586×992, safe focal points, dark caption foregrounds, no baked text, consistent Sela.
-- **Status:** tiles #90 (three variants each), buildings #91 (coal_mine/bloomery), five icons #92, five cutscene stills #93. Godot imports and native previews passed; current-head CI is required before Claude merges.
-- **Next action:** Claude reviews and wires map/item regions from `docs/art/ironfall/`. Coal and spent coal must share visual variant salt; remove placeholder tints. New icons use a sibling atlas without moving existing crops. Cutscene filenames load automatically. Use this released reservation entry after combining the four PRs; preserve every delivery note and decision-log entry.
+
+### Codex — shared character standard (delivered #94)
+- **Task:** the owner's character-consistency request, informed by Claude's runtime contracts and the owner's relayed 35 px common-height decision. Branch `codex/character-standard`.
+- **Reserved files:** `docs/art/character-standard/`, `docs/design-system/mockups/character-standard.md` and its index/art-direction links. No production renderer or gameplay files reserved.
+- **Acceptance criteria:** one shared reference hierarchy, explicit map/title/cutscene detail and framing rules, current-versus-proposed native scale review and original Sela candidate/provenance. Record approved scale and Sela anatomy with the approval source; retain original evidence.
+- **Status:** owner approval relayed by Claude in mailbox comment 6084666694: ordinary Kith/Lumen 35 px, Sela about 38 px and the Sela proportion reference approved. #94 merged; #96 wired sizes. The old Sela sprite remains until a separate replacement.
+- **Next action:** Both agents use the merged spec; #93 correction review is recorded above. Terrain/water is next; Teardown requests remain queued.
+
+### Codex — Tool Bench art
+- **Task:** supply one Tool Bench miniature matching the existing workshops, on `codex/tool-bench-art`, PR #49; leave growth art pending the project owner's approval.
+- **Reserved files:** none; art reservation released on publication. Delivered files are `docs/art/tool-bench/`, the queue note and this handoff entry.
+- **Acceptance criteria:** transparent low wooden workbench with flint, stone hammer and half-shaped tool; inspect beside existing workshop art at 48 px and 24 px; document exact source/prompt and wiring needs. Preserve the 1×1 logical footprint.
+- **Status:** synchronized with main `1bdb95c` after #75/#78/#79; fresh CI required. Art complete for review; transparent Tool Bench and native 48/24/96 px comparison inspected. Capture and focused lint/format checks passed. Production loading is unchanged.
+- **Next action:** Claude reviews the focused art PR and integrates the rendered slot following `docs/art/tool-bench/README.md`; the terrain study #48 is closed unmerged.
+
+#### Delivered context — Lead stranger and Kith title v4 (merged #75/#78)
+- **Task:** the project owner requested v4: slightly smaller foreground characters and dusk lighting matching the original background, retaining title-menu space, Hearth fire, falling star and Bloom hint. Branch `codex/lumen-lead-stranger`, PR #75.
+- **Reserved files:** none after publication; delivered `art/rendered/title_alt.png`, relit `title-pair-foreground.png` with imports, `docs/art/title-pair/` v4/source/layers/menu previews and v3 archive; current art requests and design decisions. No Claude-reserved code edits.
+- **Acceptance criteria:** pair about 13% smaller (canvas height 68% versus 78%), cool ambient fill with restrained warm/cool rim light, actual original background unchanged, both faces inside frame, menu clear and narrative landmarks visible.
+- **Status:** v4 complete. Original source byte check, foreground source byte check, Godot imports, native layered render and actual title-menu captures at 1280×800/1600×900 passed. Output remains 1586×992; right shoulder/arm crop is intentional foreground framing. Prior versions archived. Full CI tracked on #75; synchronization with main resolves shared docs conflicts.
+- **Next action:** Await the project owner’s visual review and green CI; Claude merges afterward. Alternate title selection already exists in #74; original-title #68 is merged, so both images are available. Sela map/portrait art remains separate; the Kith character is title art only, not a gameplay visitor. Saved #73 art and overhaul documentation cleanup remain queued.
+
+### Codex — Ironfall art batch
+- **Task:** the 2026-10-08 request: coal_seam, iron_hills, spent_seam first; coal_mine/bloomery next; five item icons; then five Phase B cutscene stills. Small art-only PRs on `codex/ironfall-*`.
+- **Reserved files:** new named PNG/import assets for these slots under `art/rendered/`, `docs/art/ironfall/`, five Phase B PNG/imports under `art/rendered/cutscenes/`, and related request/decision entries. Existing shared renderer, gameplay and atlases are not edited; Claude wires new slots.
+- **Acceptance criteria:** Misty Highlands miniature materials, 1×1 map/building footprints, native 48 px and small icon readability, original alpha plus Godot imports. Phase B stills: 1586×992 accepted, central 80% safe, calm dark caption foreground, no baked text, Sela consistent with current art.
+- **Status:** tiles published for review in #90: three original transparent three-variant atlases, imports and native 45/90 px comparisons. Main `e4ee8af`; no production code edits. Tile reservation released; remaining batch assets still reserved.
+- **Next action:** continue coal_mine/bloomery, five icons and Phase B stills without gameplay changes. Supply exact regions, names and tint-removal notes for Claude.
 
 #### Delivered context — Phase A cutscene paintings
 - **Task:** nineteen story stills and five transparent memory overlays, delivered as six small art-only review PRs (#81–#86) on `codex/cutscenes-*` branches.

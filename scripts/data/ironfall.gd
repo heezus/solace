@@ -27,7 +27,7 @@ const IRON_TOOL_JOBS := 300
 
 ## The Goals panel for the era (Story.goal_list), once the Starfall is over.
 const GOALS_HEADER_ERA4 := "Ironfall goals %d/%d"
-const GOALS_IRONFALL_CLOSING := "More is coming: Teardown, steam and Livewire."
+const GOALS_IRONFALL_CLOSING := "The age of iron is done. The game goes on."
 const GOALS_ERA4 := [
 	{
 		"id": "coal_seams",
@@ -53,5 +53,49 @@ const GOALS_ERA4 := [
 		"id": "iron_tools",
 		"text": "Discover Iron Tools: a worker with an Iron Tool beats one with bronze by 75 points",
 		"tech": "iron_tools"
+	},
+	{
+		"id": "teardown",
+		"text": "Discover Teardown: parts come from the Wreck, the Lumen Camp and the Bloom patches",
+		"tech": "teardown"
+	},
+	{
+		"id": "bench",
+		"text": "Build a Teardown Bench near the Hearth (Lore tab): haulers carry parts to it",
+		"building": "teardown_bench"
+	},
+	{"id": "first_teardown", "text": "Take a part apart: send a party to the Wreck, and the Kith learn a Lesson"},
+	{
+		"id": "boiler",
+		"text": "Discover Boiler, then build one (Workshops tab): coal in, power out within 5 tiles",
+		"building": "boiler"
+	},
+	{"id": "rail_laid", "text": "Discover Rails and lay Rail (Logistics tab): 8 times open ground"},
+	{
+		"id": "steam_shed",
+		"text": "Build a Steam Shed: a hauler drives a Steam Cart, 40 a trip, only on Rail",
+		"building": "steam_shed"
+	},
+	{
+		"id": "forge",
+		"text": "Discover Blast Furnace, then build a Forge within 5 tiles of a Boiler",
+		"building": "forge"
+	},
+	{"id": "first_steel", "text": "Make the first Steel"},
+	{"id": "steel", "text": "Discover Steel: Steel Tools make a worker another 50% faster than iron", "tech": "steel"},
+	{
+		"id": "shard_lamp",
+		"text": "Discover Shard Lamps and learn the Lamp core, then build a Shard Lamp (Lore tab)",
+		"building": "shard_lamp"
+	},
+	{
+		"id": "bloom_sampling",
+		"text": "Discover Bloom Sampling: send an expedition to the Bloom patches in the far south",
+		"tech": "bloom_sampling"
+	},
+	{
+		"id": "livewire",
+		"text": "Discover Livewire, the gate: 100 Steel, 100 Iron, 60 Brick, 40 Rope and the three Bloom Lessons",
+		"tech": "livewire"
 	},
 ]

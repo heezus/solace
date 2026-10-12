@@ -22,4 +22,4 @@ No new cutscene slot is needed: the existing player loads these filenames automa
 
 ## Character consistency gate
 
-[Character review](character-review.md): `ironfall_1` and `ironfall_2` need character corrections; `bloom_sign_2` passes. #93 remains draft until corrected art is reviewed against #94.
+[Character review](character-review.md): the corrected `ironfall_1` and `ironfall_2` now pass alongside unchanged `bloom_sign_2`, against approved #94. Character hold lifted for Claude’s review; green CI is still required. Exact correction prompts and original source basenames are retained in `*-character-fix.json`.

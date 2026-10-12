@@ -37,6 +37,7 @@ func run(runner) -> void:
 	test_an_earlier_run_is_echoed_by_one_line_and_some_overlays()
 	test_cutscenes_off_plays_nothing()
 	test_keys_and_clicks_skip()
+	test_the_last_still_ending_in_a_frame_lays_nothing_out()
 	test_tools_can_switch_the_player_off()
 
 
@@ -405,6 +406,19 @@ func test_keys_and_clicks_skip() -> void:
 	t.check(not p.active and "falling_star" in p.played, "a click after that skips")
 	p._input(click)
 	t.check(not p.active, "and with nothing playing it is no business of the player's")
+	finish(p)
+
+
+func test_the_last_still_ending_in_a_frame_lays_nothing_out() -> void:
+	var s: Sim = t.fresh()
+	s.story.record("first_lesson")
+	var p := player_for(s, FakeHost.new())
+	s.story.record("ironfall_begun")
+	p.start_next()
+	var stills: int = p.stills.size()
+	for i in stills:
+		p._process(Data.CUTSCENE_STILL_SECONDS + 0.1)  # the frame that ends the sequence must not index past its stills
+	t.check(not p.active and "ironfall" in p.played, "a sequence ended by a frame's own clock ends cleanly")
 	finish(p)
 
 

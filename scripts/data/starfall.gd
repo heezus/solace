@@ -371,8 +371,10 @@ const PACKS := {
 	"heavy": {"name": "Heavy pack", "cost": {"berries": 24, "rope": 8, "flint": 6}, "finds": 3},
 }
 const PACK_ORDER := ["light", "standard", "heavy"]
-const TARGETS := {"wreck": "The crash site (east)", "fog": "The nearest fog"}
-const TARGET_ORDER := ["wreck", "fog"]
+## `bloom` (Ironfall, scripts/teardown_finds.gd) goes to the nearest Bloom patch in the far south for its sample; the picker
+## offers it only while a patch is left to sample.
+const TARGETS := {"wreck": "The crash site (east)", "fog": "The nearest fog", "bloom": "A Bloom patch (far south)"}
+const TARGET_ORDER := ["wreck", "fog", "bloom"]
 const POST_TARGET := "Going to: %s"
 const POST_PACK := "Pack: %s (%s), %d marks"  # name, cost, finds
 const POST_HINT := "Click a line to change it. A party leaves when you press Send, or again and again while Keep sending is on."
@@ -575,3 +577,34 @@ const ENDING_SAYS := (
 )
 const ENDING_NOTE := "The Bloom has been seen. The game goes on."
 const ENDING_BUTTON := "Keep building"
+
+## The Goals panel while the Starfall lasts (Story.goal_list), from the moment the star falls until the era ends: in any
+## order, like the other eras'. A goal with `building` is met once one stands; Story.goal_met() checks the rest by id.
+const GOALS_HEADER_ERA3 := "Starfall goals %d/%d"
+const GOALS_STARFALL_CLOSING := "The Warning is read. Keep building: the strangers are waiting on you."
+const GOALS_ERA3 := [
+	{
+		"id": "strangers_come",
+		"text": "Wait for the strangers to come out of the fog: keep building while the star's light fades"
+	},
+	{
+		"id": "glyph_wall",
+		"text": "Build a Glyph Wall and copy the strangers' glyphs, then guess what they mean",
+		"building": "glyph_wall"
+	},
+	{"id": "first_set", "text": "Read the first set of glyphs: the strangers will have a name"},
+	{"id": "lumen_camp", "text": "Build a Lumen Camp, a place for the strangers to stand", "building": "lumen_camp"},
+	{
+		"id": "expedition_post",
+		"text": "Build an Expedition Post and send a party to look for the crash site",
+		"building": "expedition_post"
+	},
+	{"id": "wreck_found", "text": "Find the crash site: the ship came down somewhere in the fog"},
+	{
+		"id": "lumen_market",
+		"text": "Build a Market once the strangers trust you enough to trade",
+		"building": "lumen_market"
+	},
+	{"id": "moments_answered", "text": "Answer the strangers' three questions: they will ask, and the game waits"},
+	{"id": "warning_read", "text": "Copy and read the Warning: it ends the era"},
+]

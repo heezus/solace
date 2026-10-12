@@ -19,7 +19,7 @@ const Hands = preload("res://scripts/hands.gd")
 const RAW := [
 	"wood", "stone", "flint", "fiber", "clay", "berries", "grain", "fish", "copper_ore", "tin", "coal", "iron_ore"
 ]
-const ROWS := [0, 7, 13, 18, 23]  # where each row of goods starts in ITEM_ORDER: raw, made, Bronze Dawn's five, Ironfall's five
+const ROWS := [0, 7, 13, 18, 25]  # where each row of goods starts in ITEM_ORDER: raw, made, Bronze Dawn's five, Ironfall's seven
 const LOSS := Ui.SHORT  # `alert`, lifted to read on cocoa
 ## The Food readout's text while the warning is up: light enough to read on the bar (over 4.5 to 1) at every moment.
 const ALARM_TEXT := Ui.SHORT
@@ -287,10 +287,12 @@ func refresh(paused: bool, speed: int) -> void:
 			Data.TOOL_JOBS,
 			Data.BRONZE_TOOL_JOBS,
 			Data.IRON_TOOL_JOBS,
+			Data.STEEL_TOOL_JOBS,
 			(
 				state.economy.inv.get("flint_tools", 0)
 				+ state.economy.inv.get("bronze_tools", 0)
 				+ state.economy.inv.get("iron_tools", 0)
+				+ state.economy.inv.get("steel_tools", 0)
 			)
 		]
 	)

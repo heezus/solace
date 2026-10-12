@@ -58,7 +58,7 @@ const NAMELESS := "A %s"  # one: who learns a job when no one is named
 const BRIDGE_HINT := "%s. %s and haulers cross the river here."  # bridge name, many
 const ROAD_HINT := "%s on %s. %s walk %s here."  # road name, tile name, many, how fast ("twice as fast")
 ## How fast each road tier is walked, as ROAD_HINT says it (Data.ROAD_SPEEDS times the road's twice the open ground).
-const ROAD_PACE := ["twice as fast", "2.5 times as fast", "three times as fast"]
+const ROAD_PACE := ["twice as fast", "2.5 times as fast", "three times as fast", "eight times as fast"]
 const FOOD_TIP := "Every %s eats food: Berries, then Fish, then any Flour that isn't in use."  # one
 ## The Food readout while the warning is up, formatted with the time left ("45 s").
 const FOOD_LOW_TEXT := "Low: %s left. Gather berries!"
@@ -70,8 +70,8 @@ const FORAGE_MAKER := "Foraged by idle %s"  # many
 const STARVING_TEXT := "Food: none! The %s have stopped working"  # many
 const TOOLS_LABEL := "Tools %d/%d %s"  # held, people, many
 const TOOLS_TIP := (
-	"%s holding a Flint Tool work 50%% faster, a Bronze Tool 100%% and an Iron Tool 175%%. "
-	+ "Flint lasts %d jobs, bronze %d and iron %d; spares in the stockpile: %d."
+	"%s holding a Flint Tool work 50%% faster, a Bronze Tool 100%%, an Iron Tool 175%% and a Steel Tool 225%%. "
+	+ "Flint lasts %d jobs, bronze %d, iron %d and steel %d; spares in the stockpile: %d."
 )  # many
 const FOOD_NOTE := "Food worth %s each. The %s eat it."  # many
 const HUNGRY_THEN := "the %s go hungry"  # many

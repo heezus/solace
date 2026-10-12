@@ -10,6 +10,8 @@ const Sim = preload("res://scripts/sim.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Expedition = preload("res://scripts/expedition.gd")
 const IconRow = preload("res://scripts/icon_row.gd")
+const Finds = preload("res://scripts/teardown_finds.gd")
+const Steam = preload("res://scripts/steam.gd")
 
 var state: Sim
 var key := ""  # what the rows were built from, so they are built again only when it changes
@@ -44,7 +46,7 @@ func show_for(b: Dictionary) -> void:
 			"pack_" + pack, _line_button(pack_text(state), Callable(self, "_next_pack")), Data.PACKS[pack]["name"]
 		)
 	)
-	var trip := trip_text(plan)
+	var trip := trip_text(plan, state)
 	if trip != "":
 		add_child(_wrapped(trip, Ui.SHORT if plan["late"] else Ui.TEXT_DIM))
 	if not plan["ok"]:
@@ -73,12 +75,12 @@ static func pack_text(s: Sim) -> String:
 
 
 ## "About 90 s there and back, before dusk at 220 s." or the too-far warning, "" when there is no trip to speak of.
-static func trip_text(plan: Dictionary) -> String:
+static func trip_text(plan: Dictionary, s: Sim) -> String:
 	if plan["seconds"] <= 0.0:
 		return ""
 	if plan["late"]:
 		return Data.POST_LATE
-	return Data.POST_TRIP % [roundi(plan["seconds"]), roundi(Data.DAYLIGHT_SECONDS)]
+	return Data.POST_TRIP % [roundi(plan["seconds"]), roundi(Steam.daylight(s))]
 
 
 ## "Keep sending: on".
@@ -87,7 +89,7 @@ static func keep_text(s: Sim) -> String:
 
 
 func _next_target() -> void:
-	_cycle("target", Data.TARGET_ORDER)
+	_cycle("target", Data.TARGET_ORDER.filter(func(id): return Finds.target_listed(state, id)))  # a Bloom patch only once listed
 
 
 func _next_pack() -> void:

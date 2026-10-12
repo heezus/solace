@@ -25,7 +25,7 @@ func hold_a_hut(main: Node) -> Array:
 			s.economy.inv[id] = maxi(s.economy.inv[id], 40)
 	spot = Vector2i(-1, -1)
 	for r in range(2, 7):
-		for dy in range(-r, r + 1):
+		for dy in range(r, -r - 1, -1):  # lowest row first: the picker opens above the ghost, so it fits a small window
 			for dx in range(-r, r + 1):
 				var p: Vector2i = s.world.camp_pos + Vector2i(dx, dy)
 				if spot.x < 0 and s.town.placement_error("gatherers_hut", p) == "":

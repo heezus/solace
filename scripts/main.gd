@@ -27,6 +27,7 @@ const FieldText = preload("res://scripts/field_text.gd")
 const PatchText = preload("res://scripts/patch_text.gd")
 const Messages = preload("res://scripts/messages.gd")
 const ToastStack = preload("res://scripts/toast_stack.gd")
+const Flavor = preload("res://scripts/flavor.gd")
 const EastPointer = preload("res://scripts/east_pointer.gd")
 const Land = preload("res://scripts/land.gd")
 const MessageLog = preload("res://scripts/message_log.gd")
@@ -62,7 +63,7 @@ const KITH: Color = Ui.KITH
 const SIDE_W := 264.0
 const BAD: Color = Ui.BAD
 const GOAL_COLOR: Color = Ui.HIGHLIGHT
-const LINE_TYPES := ["road", "gravel_road", "paved_road", "bridge", "stone_bridge", "field"]  # laid by dragging
+const LINE_TYPES := ["road", "gravel_road", "paved_road", "rail", "bridge", "stone_bridge", "field"]  # laid by dragging
 const AURA_FILL := Color(0.55, 0.45, 0.6, 0.2)
 const NUDGE_TIME := 2.0  # seconds the "hold it down" hint stays after a click that let go too soon
 
@@ -121,6 +122,8 @@ func _ready() -> void:
 		state.generate(randi())
 	cam = Overlays.center(state.world.camp_pos)  # start looking at the Hearth
 	_build_ui()
+	Flavor.mark_told(state, told)  # a loaded run has had its warm lines and its banner already
+	banner_shown = state.won
 	state.tech_tree.tech_researched.connect(_on_tech_researched)
 	state.story.recorded.connect(_on_story)
 	_toast(Data.CAMP_TOAST % Data.PEOPLE["many"] + "\n" + Data.CAMERA_HINT, 9.0)  # one toast, low on the map
@@ -411,7 +414,7 @@ func _click_tile(p: Vector2i) -> void:
 		return
 	if Hands.item_at(state, p) == "" and state.world.tile_at(p) != "shard":
 		building_panel.select(Vector2i(-1, -1))  # clicking bare ground puts the card away; holding a resource keeps it
-	if state.world.tile_at(p) == "shard" and state.fog.is_revealed(p):
+	if state.world.tile_at(p) == "shard" and state.fog.is_revealed(p) and not Hands.chips_shard(state):
 		var first_look := not state.shard_seen
 		_toast(state.gather_by_hand(p) + ("\nA new idea stirs in the tech tree: Star Lore." if first_look else ""), 8.0)
 		return
@@ -639,21 +642,16 @@ func _watch_food() -> void:
 
 ## Say each warm line once, when its first moment comes (the story ids it waits for are in Data.FLAVOR_STORY).
 func _watch_flavor() -> void:
-	for id in Data.FLAVOR_STORY:
-		if state.story.events.has(id) and not told.has(id):
-			told[id] = true
-			_toast(Data.FLAVOR_STORY[id], 5.0)
-	if not told.has("stock") and state.economy.inv.get(Data.FLAVOR_STOCK_ITEM, 0) >= Data.FLAVOR_STOCK_AMOUNT:
-		told["stock"] = true
-		_toast(Data.FLAVOR_STOCK, 5.0)
+	for line in Flavor.due(state, told):
+		_toast(line, 5.0)
 
 
-## The story moments that do something on screen: the Falling Star ends the era with a card (the game waits behind it)
-## and goes into the profile, the save that outlives a run.
+## The story moments that do something on screen: the Falling Star and Livewire end an era with a card (the game waits
+## behind it) and go into the profile, the save that outlives a run.
 func _on_story(id: String) -> void:
-	if id == "star_falling":
+	if id in ["star_falling", Data.LIVEWIRE_EVENT]:
 		paused = true
-		era_card.open()
+		era_card.open(id)
 		if not Profile.note_run(state):
 			_toast(Data.PROFILE_UNSAVED, 6.0)
 

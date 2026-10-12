@@ -129,7 +129,7 @@ func test_road_tiers_have_their_own_speed_and_price() -> void:
 	t.check(is_equal_approx(s.pathing.walk_cost(row[0]), base), "a path walks at the road pace")
 	t.check(is_equal_approx(s.pathing.walk_cost(row[1]), base / 1.25), "gravel 1.25 times as fast")
 	t.check(is_equal_approx(s.pathing.walk_cost(row[2]), base / 1.5), "paved 1.5 times as fast")
-	t.check(Data.ROAD_SPEEDS == [1.0, 1.25, 1.5], "the speeds the page proposes")
+	t.check(Data.ROAD_SPEEDS == [1.0, 1.25, 1.5, 4.0], "the speeds the page proposes, and Rail's")
 	t.check(
 		(
 			[s.town.built_type(row[0]), s.town.built_type(row[1]), s.town.built_type(row[2])]
