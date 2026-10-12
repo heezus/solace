@@ -826,3 +826,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - **A loaded run, or a run started at a stage, stays quiet.** The warm lines and the Bronze Dawn banner are marked as told when a run loads (`scripts/flavor.gd`), so a stage start no longer stacks four old toasts over the map.
 - "Find coal" and "Find the Iron Hills" count as done when the coal or iron is already in the stores, since a stage start has the metal in hand without the fog lifted.
 - The cutscene player no longer lays out a still after the last one has ended (`stills[index]` out of bounds, once on entering Ironfall); a test reproduces it on the old code.
+
+## 2026-10-12: Bigger map, slimmer bottom bar (PR pending)
+- Claude answered the project owner's note that the map is small beside the panels around it. The bottom bar's Craft by hand group was one tall column of seven buttons and set the whole bar at 245 px; it is now a grid of two columns, and the bar is about 130 px at 1280x800. The map went from 1010x380 to 1010x500 px (about 30% more play area) with no card, tab or button changed in size or meaning.
+- The top bar (four fixed rows of chips, kept steady since playtest 4 so the map never jumps) and the side panel are untouched for now; the next step, if the map still feels small, is a collapsible side panel.
