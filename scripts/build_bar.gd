@@ -25,6 +25,8 @@ const LOWER_Y := 41.0  # the price pips run along the bottom
 const WHY_Y := 22.0  # a locked card has no state line or price: its reason (two lines at most) starts here
 const LOCKED_BG: Color = Ui.CARD_LOCKED
 const LOCKED_TEXT: Color = Ui.TEXT_DIM
+const CRAFT_COLUMNS := 2
+const CRAFT_W := 118.0
 const DEMOLISH_SIZE := 40.0
 const DEMOLISH_W := 112.0  # the hammer and its one-word label
 const PULSE_SECONDS := 4.0  # how long a card and its tab glow after research unlocks it
@@ -64,7 +66,7 @@ func setup(game: Sim) -> void:
 	var tab_scroll := ScrollContainer.new()
 	tab_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	tab_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	tab_scroll.custom_minimum_size.y = 44
+	tab_scroll.custom_minimum_size.y = 38
 	v.add_child(tab_scroll)
 	var tabs := HBoxContainer.new()
 	tabs.add_theme_constant_override("separation", 4)
@@ -100,15 +102,20 @@ func setup(game: Sim) -> void:
 	var craft := VBoxContainer.new()
 	craft.add_theme_constant_override("separation", 4)
 	craft.add_child(Ui.heading("Craft by hand"))
+	var craft_grid := GridContainer.new()  # two columns keep the bar low: seven recipes in one column made it 245 px tall
+	craft_grid.columns = CRAFT_COLUMNS
+	craft_grid.add_theme_constant_override("h_separation", 4)
+	craft_grid.add_theme_constant_override("v_separation", 4)
+	craft.add_child(craft_grid)
 	for r in Data.RECIPES:
 		var b := Ui.button(Data.RECIPES[r]["name"])
-		b.custom_minimum_size = Vector2(120, 26)
+		b.custom_minimum_size = Vector2(CRAFT_W, 26)
 		var sprite := Ui.item_sprite(r) if Data.ITEMS.has(r) else null
 		b.icon = sprite if sprite != null else Ui.swatch_texture(Ui.tech_color(Data.RECIPES[r]["tech"]))
 		b.expand_icon = true
 		b.add_theme_constant_override("icon_max_width", 18)
 		b.pressed.connect(func(): craft_picked.emit(r))
-		craft.add_child(b)
+		craft_grid.add_child(b)
 		craft_buttons[r] = b
 	h.add_child(craft)
 	demolish_button = _demolish_button()  # the far right: small, ghost style, red only while it is the tool in use
