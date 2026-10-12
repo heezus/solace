@@ -25,12 +25,16 @@ static func draw(ci: CanvasItem, s) -> void:
 	var tide = s.tide
 	if not tide.begun:
 		return
-	for p in tide.grown:
-		if s.fog.is_revealed(p) and s.world.tile_at(p) != Data.TILE_BLOOM_TIDE:
-			ci.draw_rect(_rect(p), WASH)
-	for p in tide.burnt:
-		if s.fog.is_revealed(p):
-			ci.draw_rect(_rect(p).grow(-2.0), ASH)
+	var seen := Rect2i(0, 0, s.world.width, s.world.height)  # only the tiles in view: the Bloom may cover most of the map
+	if ci.has_method("_visible_tiles"):
+		seen = ci._visible_tiles()
+	for y in range(seen.position.y, seen.end.y):
+		for x in range(seen.position.x, seen.end.x):
+			var p := Vector2i(x, y)
+			if tide.grown.has(p) and s.fog.is_revealed(p) and s.world.tile_at(p) != Data.TILE_BLOOM_TIDE:
+				ci.draw_rect(_rect(p), WASH)
+			elif tide.burnt.has(p) and s.fog.is_revealed(p):
+				ci.draw_rect(_rect(p).grow(-2.0), ASH)
 	for b in s.town.buildings:
 		var def: Dictionary = Data.BUILDINGS[b["type"]]
 		var at := (Vector2(b["pos"]) + Vector2(0.5, 0.5)) * TILE

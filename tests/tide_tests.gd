@@ -34,6 +34,7 @@ func run(runner, helpers) -> void:
 	test_living_ground_and_powered_mines()
 	test_the_tide_saves_and_loads()
 	test_edge_cases_from_the_review()
+	test_what_the_pr_review_found()
 
 
 # --- Helpers -------------------------------------------------------------------
@@ -169,8 +170,10 @@ func test_what_slows_it() -> void:
 	)
 	var lamp := put(s, "shard_lamp", c + Vector2i(-5, -5))
 	lamp["burn"] = 100.0
+	s.tide.refresh_lights(s)
 	t.check(is_equal_approx(s.tide.cost(s, c + Vector2i(-5, -4)), 70.0), "a burning Shard Lamp's light: twice as long")
 	lamp["burn"] = 0.0
+	s.tide.refresh_lights(s)
 	t.check(is_equal_approx(s.tide.cost(s, c + Vector2i(-5, -4)), 35.0), "a cold one does nothing")
 
 
@@ -471,3 +474,57 @@ func test_edge_cases_from_the_review() -> void:
 	var net: Dictionary = base.net_of(w, wc)
 	t.check(net["asks"] == 5 and net["given"] == 3, "five ask a net that gives 3")
 	t.check(w.livewire.speed_of(machines[0]) == 1.0, "yet the Boiler powers them itself, so they run full speed")
+
+
+# --- What the review of the tide found ------------------------------------------
+
+
+func test_what_the_pr_review_found() -> void:
+	# an overgrown machine asks nothing of the net, and a Boiler does not light for it
+	var s := quiet()
+	var c: Vector2i = base.meadow(s)
+	var forge := put(s, "forge", c)
+	forge["worker"] = 0
+	forge["inbuf"] = {"iron_ore": 4, "coal": 4}
+	s.tide.grown[c] = true
+	s.tide.hit[c] = 1.0
+	t.check(not Power.asking(s, forge), "an overgrown machine asks for no power")
+	# an overgrown home does nothing and wants nothing
+	var home := put(s, "dwelling", c + Vector2i(3, 0))
+	s.tide.grown[home["pos"]] = true
+	s.tide.hit[home["pos"]] = 1.0
+	t.check(Haulers.stock_wanted(s, home).is_empty(), "an overgrown home is brought nothing")
+	# a lost building bumps the road revision (depots and nets are worked out again)
+	var rev: int = s.town.road_rev
+	s.lose_building(s.town.building_at[home["pos"]])
+	t.check(s.town.road_rev > rev, "losing a building makes the roads and nets look again")
+	# a Scorcher that has lost its power holds nothing, however much burn it has left
+	var d := quiet()
+	var dc: Vector2i = base.meadow(d)
+	var cold := put(d, "scorcher", dc)
+	cold["burn"] = 50.0
+	var mill := put(d, "grindstone", dc + Vector2i(2, 0))
+	d.tide.grown[mill["pos"]] = true
+	d.tide.hit[mill["pos"]] = 10.0
+	d.tide.refresh_lights(d)
+	t.check(not d.tide.is_held_at(d, mill["pos"]), "an unpowered Scorcher holds no building")
+	# Tide Watch does not warn of a building a lit Arc Lamp keeps the front out of
+	var w := quiet()
+	var wc: Vector2i = base.meadow(w)
+	w.tech_tree.researched["tide_watch"] = true
+	powered(w, wc)
+	put(w, "arc_lamp", wc + Vector2i(1, 0))
+	w.tick(0.5)
+	var safe := put(w, "grindstone", wc + Vector2i(2, 2))
+	w.tide.front[wc + Vector2i(6, 6)] = w.tide.time
+	w.tide.project(w)
+	t.check(not w.tide.eta.has(safe["pos"]), "no arrival time for a building inside a lit lamp's light")
+	# a demolished overgrown building leaves Bloom ground, not a stale tile
+	var g := quiet()
+	var gc: Vector2i = base.meadow(g)
+	put(g, "grindstone", gc)
+	g.tide.grown[gc] = true
+	g.tide.hit[gc] = 5.0
+	g.demolish(gc)
+	g.tick(0.5)
+	t.check(g.world.tile_at(gc) == Data.TILE_BLOOM_TIDE, "the ground under a demolished overgrown building is Bloom")

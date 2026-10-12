@@ -19,6 +19,8 @@ const Steam = preload("res://scripts/steam.gd")
 static func tick(s, k: Dictionary, delta: float) -> void:
 	var b: Dictionary = s.town.buildings[k["building"]]
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
+	if s.tide.is_overgrown(b):
+		return  # the Bloom stands on it: the crew waits for the ground to be burnt clear
 	match k["phase"]:
 		"to_site":
 			if k["path"].is_empty() and Kith.tile_of(k) != b["pos"] and not s.people.walk_to(k, b["pos"]):

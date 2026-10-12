@@ -68,6 +68,8 @@ static func machines_want(s, boiler: Dictionary) -> bool:
 	for o in s.town.buildings:
 		if not Data.BUILDINGS[o["type"]].get("needs_power", false) or o["paused"] or not Buildings.is_staffed(o):
 			continue
+		if s.tide.is_overgrown(o):
+			continue
 		if Vector2(o["pos"]).distance_to(Vector2(boiler["pos"])) <= reach and s.town.wants_power(o):
 			return true
 	return false

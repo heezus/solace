@@ -40,6 +40,8 @@ static func gives_now(b: Dictionary) -> int:
 
 ## True when a machine asks for power: it has its crew and would work if it had it, and nothing holds it.
 static func asking(s, b: Dictionary) -> bool:
+	if s.tide.is_overgrown(b):
+		return false
 	if Data.BUILDINGS[b["type"]].get("draws", false):
 		return s.tide.draws(b)  # an Arc Lamp or a Scorcher: no worker, it draws while it lights or burns
 	var held: bool = s.livewire.is_held(b) and b["progress"] <= 0.0  # a held machine finishes the job it is on, power and all

@@ -280,6 +280,7 @@ func lose_building(i: int) -> void:
 	people.drop_tasks_at(i)
 	town.remove_at(i)
 	people.shift_buildings_after(i)
+	town.road_rev += 1  # the depots, roads and nets are worked out again without it
 
 
 ## A paused building frees its worker and gets no deliveries until it's resumed.

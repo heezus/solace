@@ -32,6 +32,8 @@ var _told: Dictionary = {}  # building tile -> true once Tide Watch has warned o
 var _eta_clock := 0.0
 var _eta_rev := -1
 var _lamps: Array = []  # the lit Arc Lamps' tiles and light, this tick
+var _burning: Array = []  # the burning Shard Lamps' tiles and light, this tick
+var _fires: Array = []  # the burning Scorchers' tiles, this tick
 
 # --- Each tick -----------------------------------------------------------------------------------------------------
 
@@ -43,7 +45,7 @@ func tick(s, delta: float) -> void:
 			return
 		begin(s)
 	time += delta
-	_lamps = _lit_lamps(s)
+	refresh_lights(s)
 	var due: Array = []
 	for p in front:
 		if front[p] <= time:
@@ -117,6 +119,19 @@ func _lit_by_arc(p: Vector2i) -> bool:
 	return false
 
 
+## Work out which lamps and Scorchers are lit, once a tick (the spread and Tide Watch ask about them for many tiles).
+func refresh_lights(s) -> void:
+	_lamps = _lit_lamps(s)
+	_burning = []
+	_fires = []
+	for b in s.town.buildings:
+		var def: Dictionary = Data.BUILDINGS[b["type"]]
+		if def["kind"] == "lamp" and b["burn"] > 0.0:
+			_burning.append({"pos": b["pos"], "light": float(def["light"])})
+		elif def["kind"] == "scorcher" and b["burn"] > 0.0 and s.town.is_powered(b["pos"]):
+			_fires.append(b["pos"])
+
+
 ## The Arc Lamps that give light now: standing, not overgrown, on ground a net that gives power reaches.
 func _lit_lamps(s) -> Array:
 	var out: Array = []
@@ -142,10 +157,9 @@ func cost(s, p: Vector2i) -> float:
 	return Data.TIDE_STEP_SECONDS * slow
 
 
-func _burning_lamp_lights(s, p: Vector2i) -> bool:
-	for b in s.town.buildings:
-		var def: Dictionary = Data.BUILDINGS[b["type"]]
-		if def["kind"] == "lamp" and b["burn"] > 0.0 and Vector2(b["pos"]).distance_to(Vector2(p)) <= def["light"]:
+func _burning_lamp_lights(_s, p: Vector2i) -> bool:
+	for l in _burning:
+		if Vector2(l["pos"]).distance_to(Vector2(p)) <= l["light"]:
 			return true
 	return false
 
@@ -183,6 +197,8 @@ func _overgrown(s, delta: float) -> void:
 	for p in hit.keys():
 		if not s.town.building_at.has(p):
 			hit.erase(p)
+			if grown.has(p):
+				_convert(s, p)  # demolished by hand: the ground under it is Bloom now
 		elif not grown.has(p):
 			hit.erase(p)
 			s.town.road_rev += 1
@@ -193,13 +209,12 @@ func _overgrown(s, delta: float) -> void:
 
 
 ## True when an Arc Lamp's light or a burning Scorcher's reach covers tile p, so an overgrown building there is not lost.
-func is_held_at(s, p: Vector2i) -> bool:
+func is_held_at(_s, p: Vector2i) -> bool:
 	if _lit_by_arc(p):
 		return true
-	for b in s.town.buildings:
-		if Data.BUILDINGS[b["type"]]["kind"] == "scorcher" and b["burn"] > 0.0:
-			if Vector2(b["pos"]).distance_to(Vector2(p)) <= Data.SCORCH_REACH:
-				return true
+	for f in _fires:
+		if Vector2(f).distance_to(Vector2(p)) <= Data.SCORCH_REACH:
+			return true
 	return false
 
 
@@ -220,11 +235,16 @@ func _lose(s, p: Vector2i) -> void:
 func scorch_target(b: Dictionary) -> Vector2i:
 	var best := Vector2i(-1, -1)
 	var best_d := INF
-	for p in grown:
-		var d := Vector2(p).distance_to(Vector2(b["pos"]))
-		if d <= Data.SCORCH_REACH and (d < best_d or (d == best_d and p.x + p.y * 4096 < best.x + best.y * 4096)):
-			best = p
-			best_d = d
+	var reach := int(Data.SCORCH_REACH)
+	for dy in range(-reach, reach + 1):
+		for dx in range(-reach, reach + 1):
+			var p: Vector2i = b["pos"] + Vector2i(dx, dy)
+			if not grown.has(p):
+				continue
+			var d := Vector2(p).distance_to(Vector2(b["pos"]))
+			if d <= Data.SCORCH_REACH and (d < best_d or (d == best_d and p.x + p.y * 4096 < best.x + best.y * 4096)):
+				best = p
+				best_d = d
 	return best
 
 
@@ -304,16 +324,16 @@ func project(s) -> void:
 	for b in s.town.buildings:
 		if not hit.has(b["pos"]) and not grown.has(b["pos"]) and b["type"] not in ["camp", "firebreak"]:
 			targets[b["pos"]] = true
-	var due: Dictionary = front.duplicate()
+	var heap: Array = []  # [tide time, tile], the soonest on top
+	var due: Dictionary = {}
+	for p in front:
+		_push(heap, [front[p], p])
+		due[p] = front[p]
 	var done := {}
-	while not due.is_empty() and not targets.is_empty():
-		var best := Vector2i(-1, -1)
-		var best_t := INF
-		for p in due:
-			if due[p] < best_t:
-				best = p
-				best_t = due[p]
-		due.erase(best)
+	while not heap.is_empty() and not targets.is_empty():
+		var top: Array = _pop(heap)
+		var best: Vector2i = top[1]
+		var best_t: float = top[0]
 		if best_t - time > Data.TIDE_ETA_HORIZON:
 			break
 		if done.has(best) or grown.has(best) or burnt.has(best) or _in_ring(s, best):
@@ -325,8 +345,53 @@ func project(s) -> void:
 			targets.erase(best)
 		for d in SIDES:
 			var n: Vector2i = best + d
-			if s.world.in_bounds(n) and not done.has(n) and not due.has(n) and not is_bloom(s, n) and not burnt.has(n):
-				due[n] = at + cost(s, n)
+			if (
+				s.world.in_bounds(n)
+				and not done.has(n)
+				and not is_bloom(s, n)
+				and not burnt.has(n)
+				and not _lit_by_arc(n)
+			):
+				var t := at + cost(s, n)
+				if not due.has(n) or t < due[n]:
+					due[n] = t
+					_push(heap, [t, n])
+
+
+static func _push(heap: Array, item: Array) -> void:
+	heap.append(item)
+	var i := heap.size() - 1
+	while i > 0:
+		var parent := floori((i - 1) / 2.0)
+		if heap[parent][0] <= heap[i][0]:
+			break
+		var tmp = heap[parent]
+		heap[parent] = heap[i]
+		heap[i] = tmp
+		i = parent
+
+
+static func _pop(heap: Array) -> Array:
+	var top: Array = heap[0]
+	var last: Array = heap.pop_back()
+	if not heap.is_empty():
+		heap[0] = last
+		var i := 0
+		while true:
+			var l := 2 * i + 1
+			var r := l + 1
+			var m := i
+			if l < heap.size() and heap[l][0] < heap[m][0]:
+				m = l
+			if r < heap.size() and heap[r][0] < heap[m][0]:
+				m = r
+			if m == i:
+				break
+			var tmp = heap[m]
+			heap[m] = heap[i]
+			heap[i] = tmp
+			i = m
+	return top
 
 
 ## "4 min", "50 s": a duration in words.

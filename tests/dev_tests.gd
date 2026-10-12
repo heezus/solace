@@ -572,7 +572,7 @@ func _expect_stage(id: String, s: Sim) -> void:
 			)
 			t.check(
 				["power_poles", "tide_watch", "arc_lamps", "scorcher", "firebreaks"].all(
-					func(id): return s.tech_tree.researched.has(id)
+					func(tech): return s.tech_tree.researched.has(tech)
 				),
 				"and the tools learned"
 			)
