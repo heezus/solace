@@ -1,8 +1,8 @@
 extends PanelContainer
 ## The top bar: Kith and jobs, food with its time left (flashing red when it is about to run out), and a
 ## chip per good in four rows. Every chip is the same fixed-width widget in every era: a sprite that carries the
-## good's color, its count in cream and its net rate per second under it (moss up, alert red down; the name is in the
-## tooltip). The third row, the second era's goods, lines up under the first two rows' columns. Hovering a chip drops
+## good's color and its count, moss while it is gaining and alert red while it is falling (the name and the rate per
+## second are in the tooltip). The third row, the second era's goods, lines up under the first two rows' columns. Hovering a chip drops
 ## a panel explaining where that good comes from and where it goes. Every chip keeps EDGE_PAD from the bar's edges.
 ## No line in the bar is ever cut short: long ones wrap onto a second line.
 
@@ -33,16 +33,15 @@ const MINUS := "−"
 const CHIP_W := 80.0
 const ICON := 24.0  # a good's sprite, with nothing behind it
 ## A row of chips keeps this height whether or not its goods have appeared yet. Four rows fill the bar's goods area.
-const ROW_H := 38.0
+const ROW_H := 30.0
 const CHIP_GAP := 3  # between the chips of a row, the same in every row
-const CHIP_STACK := -10  # the rate sits this close under the count
-const CHIP_VPAD := 1  # a chip keeps this much above and below, so it is 38 px tall and four rows fit the bar
+const CHIP_VPAD := 1  # a chip keeps this much above and below, so four rows fit the bar
 const EDGE_PAD := 6.0  # the goods keep this much clear of the bar's top and bottom edge (the bottom rule is on top of it)
 const RULE_W := 3  # the rule along the bar's bottom edge
 ## The bar is never shorter than its tallest block, the Kith block with its name, jobs line and three lines of note,
 ## plus the panel's margins: it is reserved from the first frame, so a chip, a note or a long line appearing later can
 ## never make it (or the map under it) grow.
-const BAR_H := 167.0  # four rows of chips (4 x ROW_H) between the edge padding and the rule
+const BAR_H := 135.0  # four rows of chips (4 x ROW_H) between the edge padding and the rule
 const FOOD_W := 190.0
 const COUNT_SIZE := 18  # numbers are 18
 const KITH_W := 216.0  # the Kith block, wide enough for "Jobs filled 19 of 19  ·  25 hauling"
@@ -171,7 +170,8 @@ func setup(game: Sim) -> void:
 	flow_panel.add_child(flow_box)
 
 
-## A fixed-width chip: the item's sprite, the count and the net rate under it (the name is in its tooltip).
+## A fixed-width chip: the item's sprite and the count, green while the good is gaining and red while it is falling (the name and
+## the rate are in its tooltip).
 func _chip(id: String, width: float) -> PanelContainer:
 	var box := PanelContainer.new()
 	box.custom_minimum_size = Vector2(width, 0)
@@ -182,20 +182,15 @@ func _chip(id: String, width: float) -> PanelContainer:
 	box.add_child(h)
 	var icon := Ui.item_icon(id, ICON)
 	h.add_child(icon)
-	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", CHIP_STACK)
 	var count := Ui.label("", COUNT_SIZE)
-	var rate := Ui.label("", Ui.MIN_TEXT)
-	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	v.add_child(count)
-	v.add_child(rate)
-	h.add_child(v)
+	count.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	h.add_child(count)
 	Ui.ignore_mouse(h)
-	_fix_width(box, [count, rate], width)
+	_fix_width(box, [count], width)
 	box.tooltip_text = item_tip(id)
 	box.mouse_entered.connect(_show_flow.bind(id))
 	box.mouse_exited.connect(_hide_flow.bind(id))
-	chips[id] = {"box": box, "count": count, "rate": rate, "icon": icon}
+	chips[id] = {"box": box, "count": count, "icon": icon}
 	return box
 
 
@@ -307,8 +302,7 @@ func refresh(paused: bool, speed: int) -> void:
 		c["box"].visible = state.economy.seen.has(id)
 		c["count"].text = str(n)
 		c["count"].modulate = Color(1, 1, 1, 0.5 if n == 0 and absf(r) < 0.005 else 1.0)
-		c["rate"].text = rate_text(r) + "/s"
-		c["rate"].add_theme_color_override("font_color", rate_color(r))
+		c["count"].add_theme_color_override("font_color", Ui.TEXT if absf(r) < 0.005 else rate_color(r))  # the rate is in the tooltip
 		c["box"].tooltip_text = "" if flow_item == id else chip_tip(id, n, r)
 		c["box"].add_theme_stylebox_override(
 			"panel", _outline(Ui.HIGHLIGHT if flow_item == id else Color(0, 0, 0, 0), CHIP_VPAD)

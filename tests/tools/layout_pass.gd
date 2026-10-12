@@ -52,6 +52,7 @@ var base := {}  # the top bar's height and the map's place before the stress cas
 var saved := {}  # the stockpile as it was, put back after them
 var row_at: Array = []  # the buildings placed by hand for the badge check
 var goals_height := 0.0  # the Goals list's height before a card opens
+var last_side_open := true
 var frozen := false  # the bot's ticking is paused while a check sets the state by hand
 var picker := PickerChecks.new()  # the hut picker's checks (tests/tools/picker_checks.gd)
 
@@ -216,7 +217,9 @@ func _check() -> void:
 					% [frame, last_scale.x, main.scale.x, last_bars, bars]
 				)
 			)
-	var view_changed: bool = main.view != last_view
+	var side_open: bool = main.side_panel.visible  # the side panel folding or opening (a card) changes the view on purpose
+	var view_changed: bool = main.view != last_view and side_open == last_side_open
+	last_side_open = side_open
 	if view_changed and last_view.size != Vector2.ZERO and vp == last_vp and refit_due == 0:
 		problems.append(
 			"frame %d: the map view went %s -> %s with the window unchanged" % [frame, last_view, main.view]

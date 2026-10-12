@@ -87,13 +87,8 @@ static func _same_chip(ref: Dictionary, c: Dictionary, id: String, when: String)
 		problems.append("%s: the %s chip is %s, the first row's are %s" % [when, id, b.size, a.size])
 	if c["icon"].size != ICON_SIZE or c["icon"].size != ref["icon"].size:
 		problems.append("%s: the %s sprite is %s, not %s like the first row" % [when, id, c["icon"].size, ICON_SIZE])
-	for part in ["count", "rate"]:
-		if c[part] == null:
-			problems.append("%s: the %s chip has no %s line like the first row's" % [when, id, part])
-		elif c[part].get_theme_font_size("font_size") != ref[part].get_theme_font_size("font_size"):
-			problems.append("%s: the %s chip's %s is a different size from the first row's" % [when, id, part])
-	if c["rate"] != null and c["rate"].get_theme_font_size("font_size") < Ui.MIN_TEXT:
-		problems.append("%s: the %s chip's rate is under %d px" % [when, id, Ui.MIN_TEXT])
+	if c["count"].get_theme_font_size("font_size") != ref["count"].get_theme_font_size("font_size"):
+		problems.append("%s: the %s chip's count is a different size from the first row's" % [when, id])
 	var pa: StyleBox = a.get_theme_stylebox("panel")
 	var pb: StyleBox = b.get_theme_stylebox("panel")
 	for side in 4:

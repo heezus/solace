@@ -3,6 +3,8 @@ extends PanelContainer
 ## building's card (scripts/building_panel.gd, with an x to close it) above whatever the mouse is over.
 ## Nothing floats over the map, and a building's details are never shown twice.
 
+signal fold_pressed  # the Fold button: the panel goes away (scripts/hud_fold.gd)
+
 const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Ui = preload("res://scripts/ui.gd")
@@ -36,9 +38,16 @@ func setup(game: Sim, width: float) -> void:
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 6)
 	add_child(v)
+	var head := HBoxContainer.new()
+	v.add_child(head)
 	goal_header = Ui.label("Goals", 18)
 	goal_header.mouse_filter = Control.MOUSE_FILTER_STOP
-	v.add_child(goal_header)
+	goal_header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(goal_header)
+	var fold := Ui.button("Fold ▸")
+	fold.tooltip_text = "Put this panel away for a bigger map (G brings it back)"
+	fold.pressed.connect(func(): fold_pressed.emit())
+	head.add_child(fold)
 	for i in GOALS_SHOWN:
 		var g := Ui.label("", 14)
 		g.autowrap_mode = TextServer.AUTOWRAP_WORD

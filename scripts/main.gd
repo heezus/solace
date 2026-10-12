@@ -33,6 +33,8 @@ const Land = preload("res://scripts/land.gd")
 const MessageLog = preload("res://scripts/message_log.gd")
 const HutFocus = preload("res://scripts/hut_focus.gd")
 const EraCard = preload("res://scripts/era_card.gd")
+const HudFold = preload("res://scripts/hud_fold.gd")
+const HoldRings = preload("res://scripts/hold_rings.gd")
 const MomentCard = preload("res://scripts/moment_card.gd")
 const GameMenu = preload("res://scripts/game_menu.gd")
 const Launch = preload("res://scripts/launch.gd")
@@ -97,6 +99,7 @@ var was_starving := false
 var top_bar: TopBar
 var bottom_bar: BuildBar
 var side_panel: SidePanel
+var hud := HudFold.new()  # the side panel folds away (G); a selected building opens it
 var info_label: Label  # the side panel's hover text
 var tech_panel: TechPanel
 var era_card: EraCard  # the Falling Star's card, put up once
@@ -200,7 +203,9 @@ func _layout() -> void:
 		fit_bars = fit_bars.max(Vector2(top_bar.size.y, bottom_bar.size.y))
 	var top := fit_bars.x
 	var bottom := fit_bars.y
-	view = Rect2(0, top, maxf(vp.x - SIDE_W, 100.0), maxf(vp.y - top - bottom, 100.0))
+	var card_open := not building_panel.selected().is_empty()
+	var side_w := SIDE_W if hud.is_open(card_open) else 0.0
+	view = Rect2(0, top, maxf(vp.x - side_w, 100.0), maxf(vp.y - top - bottom, 100.0))
 	frame.position = view.position
 	frame.size = view.size
 	toasts.size = Vector2(maxf(view.size.x - 32.0, 100.0), maxf(view.size.y - 28.0, 100.0))
@@ -211,6 +216,8 @@ func _layout() -> void:
 	game_menu.place(view)
 	side_panel.position = Vector2(view.end.x, top)
 	side_panel.size = Vector2(SIDE_W, view.size.y)
+	hud.place(view, card_open)
+	bottom_bar.place_drawer(view)
 	var k: float = ZOOM_PX[zoom_step] / TILE
 	scale = Vector2(k, k)
 	var map_size := Vector2(state.world.width, state.world.height) * TILE
@@ -332,6 +339,10 @@ func _unhandled_input(event: InputEvent) -> void:
 				DebugKeys.press(self, event.keycode)  # does nothing unless the pause menu's Debug keys switch is on
 			KEY_X:
 				placing = "" if placing == "demolish" else "demolish"
+			KEY_G:
+				hud.toggle()
+			KEY_B:
+				bottom_bar.toggle_drawer()
 			KEY_TAB, KEY_R:
 				_cycle_hut_focus()
 			KEY_HOME:
@@ -348,6 +359,7 @@ func _unhandled_input(event: InputEvent) -> void:
 						game_menu.open()  # nothing to cancel: Esc is the menu
 				placing = ""
 				tech_panel.visible = false
+				bottom_bar.close_drawer()
 				building_panel.select(Vector2i(-1, -1))
 
 
@@ -498,7 +510,7 @@ func _hold(delta: float) -> void:
 		popups.append({"pos": _tile_center(hover), "text": msg, "t": 0.0})
 
 
-## Let go. A press on a resource that ended before its ring filled shows the hold hint (see _draw_nudge).
+## Let go. A press on a resource that ended before its ring filled shows the hold hint (see HoldRings).
 func _stop_holding() -> void:
 	if holding and not press_harvested and Hands.item_at(state, press_tile) != "":
 		var frac := state.harvest_frac if state.harvest_tile == press_tile else 0.0
@@ -565,6 +577,7 @@ func _build_ui() -> void:
 	bottom_bar = BuildBar.new()
 	layer.add_child(bottom_bar)
 	bottom_bar.setup(state)
+	layer.add_child(bottom_bar.drawer)  # the open tab's cards, over the foot of the map
 	bottom_bar.build_picked.connect(_pick_building)
 	bottom_bar.craft_picked.connect(func(r): Hands.craft(state, r))
 	bottom_bar.tech_pressed.connect(func(): tech_panel.visible = not tech_panel.visible)
@@ -576,6 +589,8 @@ func _build_ui() -> void:
 	side_panel.setup(state, SIDE_W)
 	info_label = side_panel.info_label
 	building_panel = side_panel.building_panel
+	hud.setup(layer, side_panel)
+	side_panel.fold_pressed.connect(func(): hud.set_folded(true))
 	building_panel.closed.connect(func(): building_panel.select(Vector2i(-1, -1)))
 
 	# Toasts stack up from the bottom of the map (placed in _layout, so they never cover the bars); the log opens over the map.
@@ -615,6 +630,7 @@ func _refresh_ui() -> void:
 	building_panel.refresh()
 	east_pointer.refresh(state)
 	side_panel.refresh_goals(state)
+	hud.refresh(side_panel.goal_labels[0].text)
 	side_panel.sky_view.refresh()
 	side_panel.show_info("" if get_viewport().gui_get_hovered_control() != null else HoverText.text(self))
 
@@ -829,9 +845,7 @@ func _draw() -> void:
 		draw_rect(_tile_rect(hover).grow(-1), Color(1, 1, 1, 0.8), false, 2.0)  # the Info panel says what it is
 
 	_draw_hut_picker()
-	_draw_hold_ring()
-	_draw_waiting_ring()
-	_draw_nudge()
+	HoldRings.draw(self)
 	if paused:
 		var top_mid := (Vector2(view.get_center().x, view.position.y + 12.0) - position) / scale.x
 		Art.pill(self, top_mid, "Paused · Space to resume", GOAL_COLOR, OUTLINE, 16)
@@ -916,54 +930,6 @@ func _draw_building(b: Dictionary) -> void:
 		draw_string(ThemeDB.fallback_font, at, digits, HORIZONTAL_ALIGNMENT_LEFT, -1, px, OUTLINE)
 	_draw_trips(b, tile)
 	Overlays.rush_wedge(self, b, tile)
-
-
-## Hold to harvest: an outline ring over the held tile, with a highlight arc filling clockwise from the top.
-func _draw_hold_ring() -> void:
-	if not holding or not state.world.in_bounds(state.harvest_tile) or Hands.item_at(state, state.harvest_tile) == "":
-		return
-	var c := _tile_center(state.harvest_tile)
-	var radius := TILE * 0.42
-	draw_arc(c, radius, 0.0, TAU, 40, OUTLINE, 7.0, true)
-	draw_arc(c, radius, 0.0, TAU, 40, Color(1, 1, 1, 0.3), 3.0, true)
-	if state.harvest_frac > 0.0:
-		var to := -PI / 2.0 + TAU * state.harvest_frac
-		draw_arc(c, radius, -PI / 2.0, to, maxi(4, int(40 * state.harvest_frac)), GOAL_COLOR, 4.0, true)
-
-
-## A ring that is waiting (a tap that let go early, a slip off the tile): it stays on its tile, fading as its time runs out.
-func _draw_waiting_ring() -> void:
-	var w: Dictionary = state.harvest_ring["aside"]
-	if w.is_empty() or Hands.item_at(state, w["tile"]) == "" or (not nudge.is_empty() and nudge["tile"] == w["tile"]):
-		return  # (a quick click's hint already draws that ring)
-	var fade: float = clampf(w["left"] / Data.HOLD_KEEP, 0.0, 1.0)
-	var c := _tile_center(w["tile"])
-	var radius := TILE * 0.42
-	draw_arc(c, radius, 0.0, TAU, 40, Color(OUTLINE, 0.6 * fade), 7.0, true)
-	draw_arc(c, radius, 0.0, TAU, 40, Color(1, 1, 1, 0.2 * fade), 3.0, true)
-	var frac: float = w["held"] / Hands.hold_time(state, Hands.item_at(state, w["tile"]))
-	var to := -PI / 2.0 + TAU * clampf(frac, 0.0, 1.0)
-	draw_arc(c, radius, -PI / 2.0, to, maxi(4, int(40 * frac)), Color(GOAL_COLOR, fade), 4.0, true)
-
-
-## A quick click on a resource: the ring shows how far the hold got and fades, with a hint to keep the button down.
-func _draw_nudge() -> void:
-	if nudge.is_empty():
-		return
-	var p: Vector2i = nudge["tile"]
-	var fade: float = clampf(2.0 * (1.0 - nudge["t"] / NUDGE_TIME), 0.0, 1.0)
-	var c := _tile_center(p)
-	var radius := TILE * 0.42
-	draw_arc(c, radius, 0.0, TAU, 40, Color(OUTLINE, fade), 7.0, true)
-	draw_arc(c, radius, 0.0, TAU, 40, Color(1, 1, 1, 0.3 * fade), 3.0, true)
-	var to := -PI / 2.0 + TAU * maxf(nudge["frac"], 0.12)  # always a little arc, so the ring reads as unfinished
-	draw_arc(c, radius, -PI / 2.0, to, 12, Color(GOAL_COLOR, fade), 4.0, true)
-	var item := Hands.item_at(state, p)
-	if item != "":
-		var secs := str(snappedf(Hands.hold_time(state, item), 0.1))
-		Art.pill(
-			self, c + Vector2(0, TILE * 0.7), "Hold the mouse down for %ss to gather" % secs, GOAL_COLOR, OUTLINE, 12
-		)
 
 
 ## A hut that hauls by clicks (before Paths & Haulers, or with no road link) shows its trip queue as
