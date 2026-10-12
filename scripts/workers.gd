@@ -202,6 +202,11 @@ static func rush(s, i: int) -> bool:
 static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
 	b["alert"] = ""
+	if s.tide.is_overgrown(b):  # the Bloom stands on it: it does nothing until the ground is burnt clear
+		b["status"] = s.tide.note(s, b)
+		b["alert"] = Data.OVERGROWN_ALERT
+		b["burn"] = 0.0
+		return
 	if not Buildings.needs_worker(b):
 		if def.get("fed", false):
 			Steam.tick_fed(s, b, delta)  # a Boiler, a Lamp or a Pen has no worker: it burns what haulers bring it
@@ -209,6 +214,8 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 				b["status"] += road_note(s, b)  # hungry and unlinked: haulers cannot bring it anything
 		else:
 			b["status"] = Steam.shed_status(s, def)
+			if def["kind"] == "arc_lamp":
+				b["status"] = Data.ARC_LIT % def["light"] if s.town.is_powered(b["pos"]) else Data.ARC_DARK
 		return
 	if def.has("makes"):
 		Work.choose_tool(s, b)

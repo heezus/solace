@@ -1,6 +1,6 @@
 # Era 5: Livewire
 
-Status: **stage 1 built** (2026-10-09), stages 2 and 3 are design only. Mechanics page, so Claude owns it. Everything marked *default* is a pick Claude made that the project owner can change; every number is a first guess to tune with the pacing bot. It follows [18](18-roadmap.md) (the shape, the Bloom and the Decided list) and picks up where [Ironfall](19-ironfall.md) ends, on the "The Wires Hum" card.
+Status: **stages 1 and 2 built** (2026-10-09 and 2026-10-12), stage 3 is design only. Mechanics page, so Claude owns it. Everything marked *default* is a pick Claude made that the project owner can change; every number is a first guess to tune with the pacing bot. It follows [18](18-roadmap.md) (the shape, the Bloom and the Decided list) and picks up where [Ironfall](19-ironfall.md) ends, on the "The Wires Hum" card.
 
 ## The feeling
 - Ironfall was machines and borrowed knowledge. **Livewire is rules and pressure.** The Kith stop moving stock by hand and start writing down how the town should run, while something green creeps up from the south patches and the clock is real for the first time.
@@ -75,8 +75,8 @@ Lore-lane cards are gated by Lessons where it reads well, never by a plain requi
 
 ## Staging (how it gets built)
 Three stages, each its own PR with placeholder art and every art slot logged in `docs/art/requests.md`.
-1. **Wires and orders.** The era's opening (a fifth tab and a Goals list), Power Poles and the net, the Generator, Wire and the Wire Mill, the Order Board and the Pause and Bring first verbs, and the Ironfall end card's line about "far to the north" changed to the south, where the tide starts. The era is playable without the tide.
-2. **The tide.** The tide model, Tide Watch, overgrown buildings, Arc Lamps, Firebreaks, the Scorcher, Living Ground, Foremen and Powered Mines.
+1. **Wires and orders (built).** The era's opening (a fifth tab and a Goals list), Power Poles and the net, the Generator, Wire and the Wire Mill, the Order Board and the Pause and Bring first verbs, and the Ironfall end card's line about "far to the north" changed to the south, where the tide starts. The era is playable without the tide.
+2. **The tide (built).** The tide model, Tide Watch, overgrown buildings, Arc Lamps, Firebreaks, the Scorcher, Living Ground, Foremen and Powered Mines.
 3. **Factories and the end.** Factory Floor, Shard Dynamo, Chain Orders and the Send verb, the gate and its end card.
 
 ## Saves and tests (the plan)
@@ -111,3 +111,22 @@ Stage 1 is in the game (placeholder art; every slot is in [requests](../art/requ
 - **The research board's stock line wraps.** With Wire there are 26 goods, and with three-digit counts the line no longer fits a 1280 window, so the goods sit in a wrapping flow (`scripts/tech_panel.gd`); the queue keeps the end of the line.
 
 **Tests.** `tests/livewire_tests.gd` (data, opening, tab, techs, the net, the Generator, Wire) and `tests/orders_tests.gd` (the Board, Pause, Bring first, the feed, goals, saves, panels), run with `-- livewire`; `dev_tests.gd` builds the `livewire` start; the layout pass (`tests/tools/livewire_checks.gd`) walks the fifth tab, the four new build cards, the Board's card with three orders and a pole's card.
+
+## What stage 2 built, and where it differs
+Stage 2 is in the game (placeholder art; the slots are in [requests](../art/requests.md)). The tide starts the tick after Livewire begins (`scripts/tide.gd`, numbers in `scripts/data/tide.gd`), seven more techs open (Tide Watch, Arc Lamps, Foremen, Powered Mines, Scorcher, Firebreaks, Living Ground; only Factory Floor, Shard Dynamo, Chain Orders and Skyward stay locked), and the Goals panel gains four lines (Tide Watch, an Arc Lamp, a Scorcher, the first Bloom ground burnt clear). Dev start `livewire_tide` ([21](21-stage-starts.md)) begins seven minutes into the tide with every tool learned.
+
+**The creep.** A flood fill that takes time, never chance: a tile joins the Bloom 35 s after a neighbour does over open ground, 105 s over a road or a river tile, 210 s over Rail, 350 s over a Firebreak, and 70 s in the light of a burning Shard Lamp, so a map always floods the same way. It never enters the 6-tile ring round the Hearth, burnt ground, or an Arc Lamp's light (it waits at the edge and asks again every 10 s, so a lamp going dark lets it in). The three south patches are permanent sources. Plain ground, trees and Fields under it become Bloom ground (`bloom_tide`, not buildable: "The Bloom is here: burn it clear first"); ore, rivers and roads keep their own tile and only count as taken, so a road is not lost, and a road tile the Bloom stands on still carries haulers.
+
+**What it eats.** A building on taken ground is overgrown at once: it stops and asks nothing of a net, and is lost 3 minutes later with its stock, a line in the feed and its ground turned Bloom. It is held (the count stops, it stays dead) while an Arc Lamp lights it or a Scorcher is burning within reach, and works again when the ground is burnt clear. The Hearth cannot fall.
+
+**Holding it.** The **Arc Lamp** (Lore tab, 4 Steel, 6 Wire, 10 Brick) draws from the net and lights 5 tiles while powered. The **Scorcher** (Workshops tab, 10 Steel, 8 Wire, 20 Brick) draws from the net, burns 1 Coal per 120 s of burning, and each 30 s of burning turns the nearest Bloom tile within 4 tiles into burnt ground. The **Firebreak** (Logistics tab, 4 Wood, 1 Stone) is a 1x1 building dragged out as a line like Road, not a land action; the page's "Land tab" became Logistics. **Burnt ground** goes back to grass, is drawn with an ash tint, can be built on again, and is never taken again, so winning ground back is permanent.
+
+**Reading it.** **Tide Watch** draws the front as an outline on the map (brighter within 30 s), puts "the Bloom reaches this in about 4 min" on the card of each building it is heading for (worked out from the real front every 3 s, up to 20 minutes ahead), says so once in the feed when the front is 3 minutes away. Without it nothing is worked out.
+
+**The two side techs.** **Living Ground**: a Field on burnt ground yields half as much again (`Tide.ash_share`). **Powered Mines**: a Mine (or any dig building) within 2 tiles of a Pole joins its net once the tech is learned and digs twice as fast while the net is not short (`Data.POWERED_MINE_SPEED`); a Mine off a net digs as before. **Foremen** adds the 3 order slots stage 1 already counted.
+
+**Fixes to stage 1 that stage 2 needed.** A machine held by a standing order that is mid-job still asks for power until the job is done; a machine inside a lit engine's own reach runs at full speed whatever its net does (it is powered by that engine, not rationed by the net); a Bring first claim no longer counts stock that already covers the want.
+
+**Saves.** `game.tide` holds the clock, the taken, burnt and front tiles, the overgrown counts and the count lost; a Livewire save from stage 1 without it starts the tide on its first tick, and VERSION is still 1. Visual changes touch only `scripts/tide_look.gd` (a code-drawn wash, ash, glow, flame ring, overgrown tint and front) and the new `bloom_tide` tile, so Codex can paint over them by name.
+
+**Tests.** `tests/tide_tests.gd`, run with `-- livewire`; `dev_tests.gd` builds `livewire_tide`; the layout pass walks the three new build cards and an overgrown building's card. Every number is a first guess to tune with the pacing bot; the Livewire pacing bot arrives with stage 3.

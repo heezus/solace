@@ -35,6 +35,7 @@ const StarfallBlock = preload("res://scripts/starfall.gd")
 const TeardownBlock = preload("res://scripts/teardown.gd")
 const TeardownFinds = preload("res://scripts/teardown_finds.gd")
 const LivewireBlock = preload("res://scripts/livewire.gd")
+const TideBlock = preload("res://scripts/tide.gd")
 
 var won := false
 var hand_tools := false  # you've made a Flint Tool, so hand gathering is doubled for good
@@ -63,6 +64,7 @@ var sky := SkyBlock.new(tech_tree, town)
 var starfall := StarfallBlock.new(town, economy)  # the era after the Falling Star: the landing, the strangers, the glyphs
 var teardown := TeardownBlock.new(town, economy)  # Ironfall: the parts, the Bench and the Lessons
 var livewire := LivewireBlock.new()  # Livewire: the Power Pole nets and the Order Board's standing orders
+var tide := TideBlock.new()  # Livewire stage 2: the Bloom's creep out of the south, and what holds it back
 
 
 ## Wire the blocks together. Every signal connection in the game is here, so it is all in one place.
@@ -86,7 +88,10 @@ func _init() -> void:
 	teardown.said.connect(_announce)
 	teardown.moment.connect(story.record)
 	livewire.said.connect(_announce)
+	tide.said.connect(_announce)
 	town.on_net = livewire.powered_at
+	town.overgrown = tide.is_overgrown_at
+	town.on_bloom = tide.bloom_at
 	town.lesson_has = teardown.knows
 	tech_tree.gift_has = starfall.gift  # a tech may wait on a gift read or a Lesson learned (Ironfall)
 	tech_tree.lesson_has = teardown.knows
@@ -268,6 +273,15 @@ func _remove_building(i: int) -> void:
 	people.shift_buildings_after(i)
 
 
+## The Bloom takes the building at index i: its worker goes idle and whatever it held is lost with it.
+func lose_building(i: int) -> void:
+	var b: Dictionary = town.buildings[i]
+	people.release_worker(b)
+	people.drop_tasks_at(i)
+	town.remove_at(i)
+	people.shift_buildings_after(i)
+
+
 ## A paused building frees its worker and gets no deliveries until it's resumed.
 func set_paused(i: int, on: bool) -> void:
 	town.set_paused(i, on)
@@ -289,6 +303,7 @@ func tick(delta: float) -> void:
 	people.grow(delta, fed)
 	story.update(self)
 	livewire.tick(self, delta)
+	tide.tick(self, delta)
 	sky.tick(delta)
 	starfall.tick(delta)
 	teardown.tick(delta)

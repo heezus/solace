@@ -137,7 +137,7 @@ static func birth_order(kith_name: String) -> int:
 static func stock_wanted(s, cand: Dictionary) -> Dictionary:
 	if Homes.is_home(cand):
 		return Homes.wanted(cand)
-	if cand["paused"] or s.livewire.is_held(cand) or Work.enough(s, cand):
+	if cand["paused"] or s.livewire.is_held(cand) or s.tide.is_overgrown(cand) or Work.enough(s, cand):
 		return {}
 	if Buildings.is_tamed(cand):
 		return {}  # the beast is tame: it needs no more Grain

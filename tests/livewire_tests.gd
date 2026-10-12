@@ -20,22 +20,12 @@ const SaveSlots = preload("res://scripts/save_slots.gd")
 const DebugKeys = preload("res://scripts/debug_keys.gd")
 const Art = preload("res://scripts/art.gd")
 const OrdersTests = preload("res://tests/orders_tests.gd")
+const TideTests = preload("res://tests/tide_tests.gd")
 
-## The three techs the stage builds, and the eleven it leaves locked.
+## The three techs of stage 1, the seven of stage 2 (the tide), and the four the era still leaves locked.
 const STAGE_ONE := ["power_poles", "order_board", "generator"]
-const LATER := [
-	"tide_watch",
-	"arc_lamps",
-	"foremen",
-	"powered_mines",
-	"factory_floor",
-	"scorcher",
-	"firebreaks",
-	"shard_dynamo",
-	"chain_orders",
-	"living_ground",
-	"skyward"
-]
+const STAGE_TWO := ["tide_watch", "arc_lamps", "foremen", "powered_mines", "scorcher", "firebreaks", "living_ground"]
+const LATER := ["factory_floor", "shard_dynamo", "chain_orders", "skyward"]
 
 var t  # the runner, tests/run_tests.gd
 
@@ -53,6 +43,7 @@ func run(runner) -> void:
 	test_the_generator_burns_only_while_the_net_asks()
 	test_the_wire_mill_draws_wire()
 	OrdersTests.new().run(runner, self)  # the Order Board, the goals, the saves and the panels
+	TideTests.new().run(runner, self)  # stage 2: the tide, Arc Lamps, the Scorcher, Tide Watch
 
 
 # --- Helpers ------------------------------------------------------------------
@@ -113,15 +104,17 @@ func net_of(s: Sim, p: Vector2i) -> Dictionary:
 
 func test_the_data_is_whole() -> void:
 	t.check(Data.BUILT_STAGE == 3, "Ironfall is still built to stage 3")
-	t.check(Data.ERA_BUILT_STAGE == {5: 1}, "and Livewire to stage 1")
-	for id in STAGE_ONE + LATER:
+	t.check(Data.ERA_BUILT_STAGE == {5: 2}, "and Livewire to stage 2")
+	for id in STAGE_ONE + STAGE_TWO + LATER:
 		t.check(Data.TECHS.has(id) and Data.TECH_ORDER.has(id), "%s is on the board" % id)
 		t.check(Data.TECHS[id]["era"] == 5, "%s belongs to era 5" % id)
-	t.check(STAGE_ONE.size() + LATER.size() == 14, "fourteen techs in all")
+	t.check(STAGE_ONE.size() + STAGE_TWO.size() + LATER.size() == 14, "fourteen techs in all")
 	for id in STAGE_ONE:
 		t.check(int(Data.TECHS[id]["stage"]) == 1 and Rules.tech_enabled(id), "%s is built (stage 1)" % id)
+	for id in STAGE_TWO:
+		t.check(int(Data.TECHS[id]["stage"]) == 2 and Rules.tech_enabled(id), "%s is built (stage 2)" % id)
 	for id in LATER:
-		t.check(int(Data.TECHS[id]["stage"]) >= 2 and not Rules.tech_enabled(id), "%s waits for a later stage" % id)
+		t.check(int(Data.TECHS[id]["stage"]) >= 3 and not Rules.tech_enabled(id), "%s waits for stage 3" % id)
 	t.check(Data.TECHS["skyward"]["lane"] == "gate", "Skyward is the gate")
 	t.check(Rules.tech_enabled("livewire") and Rules.tech_enabled("steel"), "Ironfall's techs are all still on sale")
 	t.check(
@@ -167,7 +160,7 @@ func test_the_data_is_whole() -> void:
 	)
 	for item in Data.ITEM_ORDER:
 		t.check(Art.sprite("item_" + item) != null or Data.ITEMS[item].has("sprite"), "%s has an icon" % item)
-	t.check(Data.GOALS_ERA5.size() == 8, "eight goals")
+	t.check(Data.GOALS_ERA5.size() == 12, "twelve goals")
 	var ids: Array = Data.GOALS_ERA5.map(func(g): return g["id"])
 	t.check(ids.size() == ids.duplicate().filter(func(x): return ids.count(x) == 1).size(), "each once")
 	t.check(RunSave.VERSION == 1, "the save version is unchanged")
@@ -334,11 +327,12 @@ func test_a_short_net_runs_everything_slower() -> void:
 	var s := town()
 	var c := meadow(s)
 	put(s, "power_pole", c)
-	var boiler := put(s, "boiler", c + Vector2i(0, 2))
+	var boiler := put(s, "generator", c + Vector2i(0, 2))  # a Generator reaches no tiles of its own: it only feeds the net
 	boiler["burn"] = 999.0
 	var machines: Array = []
-	for p in [Vector2i(-2, 0), Vector2i(2, 0), Vector2i(0, -2), Vector2i(-1, -1), Vector2i(1, -1)]:
-		var mill := put(s, "grindstone", c + p)
+	var spots := [-2, 0, 2, 0, 0, -2, -1, -1, 1, -1, -1, 1, -1, 0, 1, 0, 0, -1, 0, 1]
+	for i in range(0, spots.size(), 2):
+		var mill := put(s, "grindstone", c + Vector2i(spots[i], spots[i + 1]))
 		mill["worker"] = machines.size()
 		mill["inbuf"] = {"wheat": 9, "grain": 9}
 		machines.append(mill)
@@ -349,14 +343,14 @@ func test_a_short_net_runs_everything_slower() -> void:
 			each["inbuf"][id] = recipe[id] * 4
 	var net := net_of(s, c)
 	t.check(
-		net["given"] == 3 and net["asks"] == 5,
-		"five machines ask 5 of a net that gives 3 (%d of %d)" % [net["asks"], net["given"]]
+		net["given"] == 8 and net["asks"] == 10,
+		"ten machines ask 10 of a net that gives 8 (%d of %d)" % [net["asks"], net["given"]]
 	)
 	t.check(Power.shortfall(net) == 2, "it is short by 2")
-	t.check(is_equal_approx(s.livewire.speed_of(machines[0]), 0.6), "and every machine runs at 60%%")
+	t.check(is_equal_approx(s.livewire.speed_of(machines[0]), 0.8), "and every machine runs at 80%%")
 	t.check(Power.note(s, machines[0]).contains("Net short by 2"), "the card says: %s" % Power.note(s, machines[0]))
 	t.check(
-		Power.note(s, boiler).contains("Net short by 2") or Power.note(s, boiler).contains("5 asked"),
+		Power.note(s, boiler).contains("Net short by 2") or Power.note(s, boiler).contains("10 asked"),
 		"so does the engine's"
 	)
 	t.check(s.town.is_powered(machines[0]["pos"]), "all of them are powered, none dark")
@@ -366,7 +360,7 @@ func test_a_short_net_runs_everything_slower() -> void:
 	var steps := 0
 	var grew := 0.0
 	var people: Sim = s
-	people.people.found(10)
+	people.people.found(12)
 	for i in 40:
 		s.economy.inv["berries"] = 999
 		var was: float = m["progress"]
@@ -375,13 +369,13 @@ func test_a_short_net_runs_everything_slower() -> void:
 			grew = m["progress"] - was
 			steps += 1
 			break
-	t.check(steps == 1 and absf(grew - 0.5 * 0.6) < 0.001, "a tick of work moves it 60%% as far (%.3f)" % grew)
+	t.check(steps == 1 and absf(grew - 0.5 * 0.8) < 0.001, "a tick of work moves it 80%% as far (%.3f)" % grew)
 	t.check(m["status"].begins_with("Working slowly"), "and its card says so: %s" % m["status"])
 	# more power and the same net is whole again
 	var gen := put(s, "generator", c + Vector2i(1, 1))
 	gen["burn"] = 999.0
 	net = net_of(s, c)
-	t.check(net["given"] == 11 and s.livewire.speed_of(m) == 1.0, "a lit Generator makes it whole")
+	t.check(net["given"] == 16 and s.livewire.speed_of(m) == 1.0, "a second lit Generator makes it whole")
 	t.check(not Power.note(s, m).contains("short"), "and the card stops saying short")
 	var dark := town()
 	var dc := meadow(dark)

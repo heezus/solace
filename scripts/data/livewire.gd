@@ -90,8 +90,8 @@ const BOARD_STATUS := "%d of %d orders written · %d holding now"  # written, al
 
 # --- Goals ---
 const GOALS_HEADER_ERA5 := "Livewire goals %d/%d"
-const GOALS_LIVEWIRE_CLOSING := "Wires and orders are done. Stage 2, the tide, comes next."
-const GOALS_ERA5 := [
+const GOALS_LIVEWIRE_CLOSING := "Wires, orders and the tide are in hand. Factories and the gate come next."
+const GOALS_WIRES := [
 	{
 		"id": "power_poles",
 		"text": "Discover Power Poles: wire carries power past a Boiler's 5 tiles",
@@ -120,3 +120,5 @@ const GOALS_ERA5 := [
 	{"id": "first_order", "text": "Write a first standing order at the Board: pick a good, a number and a verb"},
 	{"id": "order_fired", "text": "Watch an order fire: the event feed says so when its rule holds"},
 ]
+## The whole checklist: the wires and orders of stage 1, then the tide's goals (data/tide.gd).
+const GOALS_ERA5 := GOALS_WIRES + preload("res://scripts/data/tide.gd").GOALS_TIDE

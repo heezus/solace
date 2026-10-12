@@ -21,6 +21,8 @@ static func tick_fed(s, b: Dictionary, delta: float) -> void:
 			_tick_lamp(s, b, def, delta)
 		"pen":
 			_tick_pen(s, b, def, delta)
+		"scorcher":
+			s.tide.tick_scorcher(s, b, def, delta)
 
 
 ## The item a fed building burns (the one in its `in`).
