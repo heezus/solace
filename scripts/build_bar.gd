@@ -27,6 +27,7 @@ const LOCKED_BG: Color = Ui.CARD_LOCKED
 const LOCKED_TEXT: Color = Ui.TEXT_DIM
 const CRAFT_COLUMNS := 4  # the recipes sit in two rows of this many
 const CRAFT_W := 150.0
+const CLOSED_DROP := 1200.0  # a closed drawer waits this far below the map view
 const CRAFT_TAB := "Craft"  # the drawer's last tab: Craft by hand
 const STRIP_H := 36.0  # the bar is this one row (the cards open in a drawer above it)
 const DEMOLISH_W := 112.0  # the hammer and its one-word label
@@ -46,6 +47,7 @@ var build_scroll: ScrollContainer
 var drawer: PanelContainer  # the open tab's cards, over the foot of the map (see _build_drawer)
 var drawer_open := false
 var craft_box: GridContainer
+var _view := Rect2()
 
 
 func setup(game: Sim) -> void:
@@ -143,7 +145,7 @@ func _picked(type: String) -> void:
 
 func close_drawer() -> void:
 	drawer_open = false
-	drawer.visible = false
+	place_drawer(_view)
 	_apply_visibility()
 
 
@@ -154,17 +156,19 @@ func toggle_drawer() -> void:
 		_show_tab(tab)
 
 
-## Lay the drawer along the foot of the map view (`view`, the area between the bars and left of the side panel).
+## Lay the drawer along the foot of the map view (`view`, the area between the bars and left of the side panel). Closed, it
+## stays laid out but waits below the window, so a tab click shows it (and its cards are where they should be) at once.
 func place_drawer(view: Rect2) -> void:
+	_view = view
 	var h := BUTTON.y + 16.0 + 8.0
-	drawer.position = Vector2(view.position.x, view.end.y - h)
+	drawer.position = Vector2(view.position.x, view.end.y - h if drawer_open else view.end.y + CLOSED_DROP)
 	drawer.size = Vector2(view.size.x, h)
 
 
 func _show_tab(tab_name: String) -> void:
 	tab = tab_name
 	drawer_open = true
-	drawer.visible = true
+	place_drawer(_view)
 	_apply_visibility()
 
 

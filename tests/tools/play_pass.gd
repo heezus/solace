@@ -271,8 +271,9 @@ func _script() -> void:
 	)
 	for tab in main.bottom_bar.tab_buttons:
 		_then(func(): _click_visible(main.bottom_bar.tab_buttons[tab]))
-		for type in Data.BUILD_TABS[tab]:
+		for type in Data.BUILD_TABS.get(tab, []):
 			_then(func(): _move(main.bottom_bar.build_buttons[type]["button"].get_global_rect().get_center()))
+	_then(func(): _click_control(main.bottom_bar.tab_buttons["Craft"]))
 	for r in main.bottom_bar.craft_buttons:
 		_then(func(): _click_control(main.bottom_bar.craft_buttons[r]))
 	# Place a hut by the forest from the build bar, then send trips and open its panel.

@@ -56,4 +56,9 @@ func place(view: Rect2, card_open: bool) -> void:
 
 ## The chip says the current goal (the side panel's first goal line, without its marker).
 func refresh(goal_text: String) -> void:
-	chip.text = "Goal: " + goal_text.trim_prefix("> ").strip_edges()
+	var line := goal_text.trim_prefix("> ").strip_edges()
+	for cut in [" (", ". "]:  # the chip keeps the headline; the panel has the rest
+		var at := line.find(cut)
+		if at > 0:
+			line = line.substr(0, at)
+	chip.text = "Goal: " + line
