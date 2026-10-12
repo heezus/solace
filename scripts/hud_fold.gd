@@ -57,8 +57,10 @@ func place(view: Rect2, card_open: bool) -> void:
 ## The chip says the current goal (the side panel's first goal line, without its marker).
 func refresh(goal_text: String) -> void:
 	var line := goal_text.trim_prefix("> ").strip_edges()
-	for cut in [" (", ". "]:  # the chip keeps the headline; the panel has the rest
-		var at := line.find(cut)
-		if at > 0:
-			line = line.substr(0, at)
+	var at := line.find(". ")  # the chip keeps the headline; the panel has the rest
+	if at > 0:
+		line = line.substr(0, at)
+	var note := line.find(" (")
+	if note > 0 and note + 2 < line.length() and not line[note + 2].is_valid_int():  # a progress count like (2/5) stays
+		line = line.substr(0, note)
 	chip.text = "Goal: " + line

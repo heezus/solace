@@ -99,6 +99,7 @@ var was_starving := false
 var top_bar: TopBar
 var bottom_bar: BuildBar
 var side_panel: SidePanel
+var last_side_w := -1.0  # the side panel's width at the last layout (the map keeps its place when it changes)
 var hud := HudFold.new()  # the side panel folds away (G); a selected building opens it
 var info_label: Label  # the side panel's hover text
 var tech_panel: TechPanel
@@ -205,6 +206,8 @@ func _layout() -> void:
 	var bottom := fit_bars.y
 	var card_open := not building_panel.selected().is_empty()
 	var side_w := SIDE_W if hud.is_open(card_open) else 0.0
+	var side_delta := side_w - last_side_w if last_side_w >= 0.0 else 0.0
+	last_side_w = side_w
 	view = Rect2(0, top, maxf(vp.x - side_w, 100.0), maxf(vp.y - top - bottom, 100.0))
 	frame.position = view.position
 	frame.size = view.size
@@ -221,6 +224,7 @@ func _layout() -> void:
 	var k: float = ZOOM_PX[zoom_step] / TILE
 	scale = Vector2(k, k)
 	var map_size := Vector2(state.world.width, state.world.height) * TILE
+	cam.x -= side_delta / (2.0 * k)  # the panel opening or closing leaves the map where it was
 	var half := view.size / (2.0 * k)
 	for axis in 2:
 		cam[axis] = (
@@ -340,9 +344,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_X:
 				placing = "" if placing == "demolish" else "demolish"
 			KEY_G:
-				hud.toggle()
+				if not _modal_up():
+					_toggle_side_panel()
 			KEY_B:
-				bottom_bar.toggle_drawer()
+				if not _modal_up():
+					bottom_bar.toggle_drawer()
 			KEY_TAB, KEY_R:
 				_cycle_hut_focus()
 			KEY_HOME:
@@ -354,13 +360,35 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_ESCAPE:
 				if game_menu.is_open():
 					game_menu.close()
-				elif placing == "" and not tech_panel.visible and building_panel.selected().is_empty():
+				elif (
+					placing == ""
+					and not tech_panel.visible
+					and building_panel.selected().is_empty()
+					and not bottom_bar.drawer_open
+				):
 					if not era_card.visible and not moment_card.visible:
 						game_menu.open()  # nothing to cancel: Esc is the menu
 				placing = ""
 				tech_panel.visible = false
 				bottom_bar.close_drawer()
 				building_panel.select(Vector2i(-1, -1))
+
+
+func _modal_up() -> bool:
+	return era_card.visible or moment_card.visible or game_menu.is_open()
+
+
+## G: close an open building card and fold, else flip the player's choice (a card holds the panel open).
+func _toggle_side_panel() -> void:
+	if building_panel.selected().is_empty():
+		hud.toggle()
+	else:
+		_fold_side_panel()
+
+
+func _fold_side_panel() -> void:
+	hud.set_folded(true)
+	building_panel.select(Vector2i(-1, -1))
 
 
 ## 0 toggles pause; 1, 2 or 3 sets the speed and unpauses. The game waits while the end card is up.
@@ -590,13 +618,14 @@ func _build_ui() -> void:
 	info_label = side_panel.info_label
 	building_panel = side_panel.building_panel
 	hud.setup(layer, side_panel)
-	side_panel.fold_pressed.connect(func(): hud.set_folded(true))
+	side_panel.fold_pressed.connect(_fold_side_panel)
 	building_panel.closed.connect(func(): building_panel.select(Vector2i(-1, -1)))
 
 	# Toasts stack up from the bottom of the map (placed in _layout, so they never cover the bars); the log opens over the map.
 	toasts = ToastStack.new()
 	layer.add_child(toasts)
 	toasts.setup(messages)
+	layer.move_child(bottom_bar.drawer, toasts.get_index())  # the drawer over the toasts, so a toast never eats its clicks
 	east_pointer = EastPointer.new()
 	layer.add_child(east_pointer)
 	east_pointer.setup()
