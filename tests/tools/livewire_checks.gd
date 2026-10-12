@@ -121,12 +121,13 @@ static func board(main: Node, when: String) -> Array:
 static func card(main: Node, type: String) -> Array:
 	var bar: Control = main.bottom_bar
 	var box: Control = bar.build_buttons[type]["button"]
-	if bar.tab != bar.tab_of(type) or not box.is_visible_in_tree():
+	if bar.tab != bar.tab_of(type) or not bar.drawer_open or not box.is_visible_in_tree():
 		return ["the %s card isn't showing on its %s tab" % [type, bar.tab_of(type)]]
 	var r: Rect2 = box.get_global_rect()
 	var problems: Array = []
-	if r.position.y < bar.get_global_rect().position.y or r.end.y > bar.get_global_rect().end.y:
-		problems.append("the %s card (%s) runs out of the bottom bar's height" % [type, r])
+	var drawer: Rect2 = bar.drawer.get_global_rect()
+	if r.position.y < drawer.position.y or r.end.y > drawer.end.y:
+		problems.append("the %s card (%s) runs out of the card drawer's height" % [type, r])
 	if box.size.x < bar.BUTTON.x or box.size.y < bar.BUTTON.y:
 		problems.append("the %s card is %s, under the usual %s" % [type, box.size, bar.BUTTON])
 	return problems

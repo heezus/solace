@@ -34,6 +34,7 @@ func run() -> void:
 	var bar := BuildBar.new()
 	root.add_child(bar)
 	bar.setup(state)
+	root.add_child(bar.drawer)
 	bar.refresh("", 3)
 	root.mode = Window.MODE_WINDOWED
 	root.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
@@ -42,14 +43,18 @@ func run() -> void:
 	for width in [800, 1100, 1280, 1600]:
 		root.size = Vector2i(width, 800)
 		await settle()
-		for tab in Data.BUILD_TABS:
+		bar.place_drawer(Rect2(0, 0, width, 700.0))
+		for tab in Data.BUILD_TABS.keys() + [BuildBar.CRAFT_TAB]:
 			bar._show_tab(tab)
 			await settle()
 			check(
 				bar.get_global_rect().end.x <= width + 1,
 				"%d/%s: bar extends past window %s" % [width, tab, bar.get_global_rect()]
 			)
-			for action in [bar.tech_button, bar.demolish_button] + bar.craft_buttons.values():
+			for action in (
+				[bar.tech_button, bar.demolish_button]
+				+ (bar.craft_buttons.values() if tab == BuildBar.CRAFT_TAB else [])
+			):
 				var box: Rect2 = action.get_global_rect()
 				check(
 					box.position.x >= 0 and box.end.x <= width + 1,
@@ -66,7 +71,8 @@ func run() -> void:
 				check(viewport.encloses(box), "%d/%s: cannot scroll full card into view: %s" % [width, tab, type])
 				check(card.size.x >= BuildBar.BUTTON.x, "Readable card width preserved")
 		if width == 1280:
-			root.size = Vector2i(1280, 160)
+			root.size = Vector2i(1280, 200)
+			bar.place_drawer(Rect2(0, 0, 1280, 200.0 - bar.size.y))
 			bar._show_tab("Logistics")
 			bar.build_scroll.scroll_horizontal = 0
 			await settle()

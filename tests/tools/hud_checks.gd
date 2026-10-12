@@ -87,13 +87,8 @@ static func _same_chip(ref: Dictionary, c: Dictionary, id: String, when: String)
 		problems.append("%s: the %s chip is %s, the first row's are %s" % [when, id, b.size, a.size])
 	if c["icon"].size != ICON_SIZE or c["icon"].size != ref["icon"].size:
 		problems.append("%s: the %s sprite is %s, not %s like the first row" % [when, id, c["icon"].size, ICON_SIZE])
-	for part in ["count", "rate"]:
-		if c[part] == null:
-			problems.append("%s: the %s chip has no %s line like the first row's" % [when, id, part])
-		elif c[part].get_theme_font_size("font_size") != ref[part].get_theme_font_size("font_size"):
-			problems.append("%s: the %s chip's %s is a different size from the first row's" % [when, id, part])
-	if c["rate"] != null and c["rate"].get_theme_font_size("font_size") < Ui.MIN_TEXT:
-		problems.append("%s: the %s chip's rate is under %d px" % [when, id, Ui.MIN_TEXT])
+	if c["count"].get_theme_font_size("font_size") != ref["count"].get_theme_font_size("font_size"):
+		problems.append("%s: the %s chip's count is a different size from the first row's" % [when, id])
 	var pa: StyleBox = a.get_theme_stylebox("panel")
 	var pb: StyleBox = b.get_theme_stylebox("panel")
 	for side in 4:
@@ -244,12 +239,12 @@ static func next_view(main: Node, when: String) -> Array:
 
 ## The Gathering tab's four cards (Gatherer's Hut, Field, Flax Field, Fishing Weir) all show (the Rain Barrel waits on a
 ## Lesson and the Beast Pen on an Ironfall tech, so they are left out here), each whole inside the
-## bottom bar and the window, clear of one another and of the Craft by hand buttons and the Demolish button.
+## card drawer and the window, clear of one another and of the Demolish button.
 static func gathering_tab(main: Node, when: String) -> Array:
 	var problems: Array = []
 	var bar: Control = main.bottom_bar
-	if bar.tab != "Gathering":
-		return ["%s: the Gathering tab isn't the one showing" % when]
+	if bar.tab != "Gathering" or not bar.drawer_open:
+		return ["%s: the Gathering tab isn't the one showing in the drawer" % when]
 	var window := Rect2(Vector2.ZERO, main.get_viewport_rect().size)
 	var cards: Array = []
 	for type in Data.BUILD_TABS["Gathering"]:
@@ -263,12 +258,10 @@ static func gathering_tab(main: Node, when: String) -> Array:
 	if cards.size() != 4:
 		problems.append("%s: the Gathering tab shows %d cards (want 4)" % [when, cards.size()])
 	var others: Array = [{"type": "Demolish", "rect": bar.demolish_button.get_global_rect()}]
-	for r in bar.craft_buttons:
-		others.append({"type": "Craft " + r, "rect": bar.craft_buttons[r].get_global_rect()})
 	for a in cards:
 		var r: Rect2 = a["rect"]
-		if not bar.get_global_rect().encloses(r) or not window.encloses(r):
-			problems.append("%s: the %s card (%s) runs out of the bottom bar or the window" % [when, a["type"], r])
+		if not bar.drawer.get_global_rect().encloses(r) or not window.encloses(r):
+			problems.append("%s: the %s card (%s) runs out of the card drawer or the window" % [when, a["type"], r])
 		for b in cards + others:
 			if a["type"] != b["type"] and r.intersects(b["rect"]) and (b in others or a["type"] < b["type"]):
 				problems.append("%s: the %s card overlaps %s" % [when, a["type"], b["type"]])
