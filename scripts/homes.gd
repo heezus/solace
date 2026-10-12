@@ -193,7 +193,7 @@ static func _tidy(x: float) -> float:
 ## One tick of a home (any other building is left alone): count up to the next look at its needs and take it, then
 ## move a scaffold along.
 static func tick(s, b: Dictionary, delta: float) -> void:
-	if not is_home(b):
+	if not is_home(b) or s.tide.is_overgrown(b):
 		return
 	b["check"] = _tidy(b["check"] + delta)
 	while b["check"] >= Data.HOME_CHECK_SECONDS:

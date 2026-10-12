@@ -14,7 +14,14 @@ const Lessons = preload("res://scripts/lessons.gd")
 ## Seconds for one work cycle at this building: its base time, shortened by the Speed group and, for a hut, by the
 ## Speed its patch gives (more tiles of its resource in reach: scripts/patch.gd).
 static func time(s, b: Dictionary) -> float:
-	return Data.BUILDINGS[b["type"]]["time"] / (Bonuses.speed(s, b) * Patch.speed(s, b))
+	var t: float = Data.BUILDINGS[b["type"]]["time"] / (Bonuses.speed(s, b) * Patch.speed(s, b))
+	if (
+		Data.BUILDINGS[b["type"]].has("dig")
+		and s.tech_tree.researched.has("powered_mines")
+		and s.livewire.powered_at(b["pos"])
+	):
+		t /= Data.POWERED_MINE_SPEED  # Powered Mines: a Mine on a net that gives power digs twice as fast
+	return t
 
 
 ## Seconds for a hut worker to harvest `tile`. Irrigation halves it for Fields touching the river.
@@ -42,6 +49,7 @@ static func harvest_amount(s, b: Dictionary, tile: Vector2i, item: String) -> in
 		more += Data.PLOUGHSHARE_FIELD_BONUS if s.tech_tree.researched.has("bronze_ploughshare") else 0.0
 		more += Data.IRON_PLOUGH_FIELD_BONUS if s.tech_tree.researched.has("iron_plough") else 0.0
 		more += Lessons.rain_share(s, tile)
+		more += s.tide.ash_share(s, tile)  # Living Ground: a Field on burnt ground
 	if more > 0.0:
 		b["field_extra"] = b.get("field_extra", 0.0) + n * more
 		if b["field_extra"] >= 1.0:

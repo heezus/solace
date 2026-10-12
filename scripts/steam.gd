@@ -21,6 +21,8 @@ static func tick_fed(s, b: Dictionary, delta: float) -> void:
 			_tick_lamp(s, b, def, delta)
 		"pen":
 			_tick_pen(s, b, def, delta)
+		"scorcher":
+			s.tide.tick_scorcher(s, b, def, delta)
 
 
 ## The item a fed building burns (the one in its `in`).
@@ -65,6 +67,8 @@ static func machines_want(s, boiler: Dictionary) -> bool:
 	var reach: float = Data.BUILDINGS[boiler["type"]]["radius"]
 	for o in s.town.buildings:
 		if not Data.BUILDINGS[o["type"]].get("needs_power", false) or o["paused"] or not Buildings.is_staffed(o):
+			continue
+		if s.tide.is_overgrown(o):
 			continue
 		if Vector2(o["pos"]).distance_to(Vector2(boiler["pos"])) <= reach and s.town.wants_power(o):
 			return true

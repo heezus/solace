@@ -54,9 +54,10 @@ func powered_at(p: Vector2i) -> bool:
 	return net_at(p).get("given", 0) > 0
 
 
-## How fast the machine at b runs: 1.0, or the net's ratio when it is on a net that is short.
+## How fast the machine at b runs: 1.0, or the net's ratio when it is on a net that is short (not a machine a lit engine powers itself).
 func speed_of(b: Dictionary) -> float:
-	return Power.speed(net_at(b["pos"]))
+	var n := net_at(b["pos"])
+	return 1.0 if n.get("covered", {}).has(b["pos"]) else Power.speed(n)
 
 
 ## True while a Pause holds building b: it finishes the job it is on and waits.
@@ -111,8 +112,9 @@ func _claim(s, o: Dictionary) -> void:
 		if b["type"] == o["target"]:
 			var want: int = Haulers.stock_wanted(s, b).get(o["item"], 0)
 			unmet += maxi(want - b["inbuf"].get(o["item"], 0) - b["incoming"].get(o["item"], 0), 0)
-	o["claim"] = o["claim"] + Data.ORDER_EVAL_SECONDS if unmet > 0 else 0.0
-	if unmet > 0 and o["claim"] <= Data.BRING_SKIP_SECONDS and s.economy.inv.get(o["item"], 0) < unmet:
+	var short: bool = unmet > 0 and s.economy.inv.get(o["item"], 0) < unmet  # the targets want more than the stockpile holds
+	o["claim"] = o["claim"] + Data.ORDER_EVAL_SECONDS if short else 0.0
+	if short and o["claim"] <= Data.BRING_SKIP_SECONDS:
 		if not _kept.has(o["item"]):
 			_kept[o["item"]] = []
 		_kept[o["item"]].append(o["target"])

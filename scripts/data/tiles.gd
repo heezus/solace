@@ -132,6 +132,16 @@ const TILES := {
 		"hint": "A Bloom sample lies here. A party can bring it home.",
 		"stays": "The Bloom stays · nobody knows how to clear it",
 	},
+	# Era 5, stage 2: ground the tide has taken (scripts/tide.gd). It looks like the patches' Bloom ground; a Scorcher burns it clear.
+	"bloom_tide":
+	{
+		"name": "Bloom Ground",
+		"yields": "",
+		"color": Color("8a4f9a"),
+		"buildable": false,
+		"hint": "Bloom ground the tide has taken. A Scorcher within 4 tiles can burn it clear.",
+		"stays": "The Bloom stays · a Scorcher can burn it clear",
+	},
 	"spent_seam":
 	{
 		"name": "Spent Seam",

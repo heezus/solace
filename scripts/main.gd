@@ -65,7 +65,7 @@ const KITH: Color = Ui.KITH
 const SIDE_W := 264.0
 const BAD: Color = Ui.BAD
 const GOAL_COLOR: Color = Ui.HIGHLIGHT
-const LINE_TYPES := ["road", "gravel_road", "paved_road", "rail", "bridge", "stone_bridge", "field"]  # laid by dragging
+const LINE_TYPES := ["road", "gravel_road", "paved_road", "rail", "bridge", "stone_bridge", "field", "firebreak"]  # laid by dragging
 const AURA_FILL := Color(0.55, 0.45, 0.6, 0.2)
 const NUDGE_TIME := 2.0  # seconds the "hold it down" hint stays after a click that let go too soon
 

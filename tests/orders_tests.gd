@@ -490,9 +490,14 @@ func test_the_goals() -> void:
 	s.livewire.tick(s, 3.0)
 	s.story.update(s)
 	t.check(s.story.goals_done.has("order_fired"), "until it does")
+	s.tech_tree.researched["tide_watch"] = true  # the tide's four goals
+	put(s, "arc_lamp", s.world.camp_pos + Vector2i(2, 2))
+	put(s, "scorcher", s.world.camp_pos + Vector2i(3, 2))
+	s.tide.burnt[Vector2i(1, 1)] = true
+	s.story.update(s)
 	t.check(
 		s.story.current_goal() == Data.GOALS_ERA5.size() and s.story.done_count() == Data.GOALS_ERA5.size(),
-		"and all eight are done"
+		"and all twelve are done"
 	)
 	var early := town()
 	early.story.record(Data.LIVEWIRE_BEGUN)

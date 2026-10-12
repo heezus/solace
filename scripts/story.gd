@@ -209,6 +209,8 @@ func _livewire_goal_met(s, id: String) -> bool:
 			return s.livewire.orders.any(func(o): return o["target"] != "")
 		"order_fired":
 			return s.livewire.orders.any(func(o): return o["fired"] >= 0.0)
+		"burnt_clear":
+			return not s.tide.burnt.is_empty()
 	return false
 
 
