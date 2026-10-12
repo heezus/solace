@@ -50,6 +50,12 @@ var craft_box: GridContainer
 var _view := Rect2()
 
 
+## The drawer is parented to the HUD layer by main; one that was never parented (a test's bar) goes with the bar.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE and is_instance_valid(drawer) and drawer.get_parent() == null:
+		drawer.free()
+
+
 func setup(game: Sim) -> void:
 	state = game
 	add_theme_stylebox_override("panel", Ui.bar_style(Ui.BAR, false))
