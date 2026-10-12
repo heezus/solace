@@ -1,0 +1,10 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: precise-object-edit. Image 1 is the EDIT TARGET Solace ironfall_1 cinematic still. Image 2 is the AUTHORITATIVE Kith anatomy/face reference sprite sheet (third row bearded Kith). Correct ONLY the smith character at right: larger readable head, compact short torso and sturdy shorter legs in the same sculpted painted miniature anatomy as the third-row Kith. Preserve adult bearded identity, rust scarf, cream sleeves, work apron and boots; match sculpted eyes/brows/cheeks from reference, adapted to focused downward gaze. Keep his feet location, hands gripping the same long tongs and rough iron bar, and the character's overall scene envelope approximately unchanged. Do not enlarge him relative to the building. Preserve bloomery, furnace, bellows, shelter, bar/tongs, dusk settlement, mountains and calm dark lower third; preserve camera, framing, palette and lighting. Firelight warms his left-facing face and sleeves; cool dusk fill. No text or new props. Return single landscape 16:10 image at 1586x992 if supported, no border.",
+  "source": "exec-c812d390-f59e-4e2e-a746-91d9f9f56073.png",
+  "references": [
+    "art/rendered/cutscenes/ironfall_1.png (previous revision)",
+    "art/rendered/walk.png"
+  ],
+  "approved_standard": "#94"
+}

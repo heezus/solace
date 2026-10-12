@@ -1,0 +1,10 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: precise-object-edit. Image 1 is EDIT TARGET Solace ironfall_2 cinematic still. Image 2 is authoritative Kith anatomy and facial STYLE sprite sheet. Correct ONLY the Kith character on the RIGHT: replace the flat dot-eyed doll face with a sculpted human miniature face matching reference's first row: shaped expressive almond eyes with iris/highlight, visible eyebrows, small nose and modeled cheeks, focused friendly expression looking left toward the hull. Preserve compact large-head short-torso anatomy, rust hood, cream scarf/sleeves, gloves, boots and exact hand contact with the hull. Match face finish and detail density to the Lumen on the left. Keep both characters' footprints, overall size and poses. Preserve Lumen unchanged, hull piece, bench, cyan lamp, wreck, valley, sunset lighting, landscape composition and calm dark lower third. No text or new props. Single landscape16:10 at1586x992 if supported. Do not make a new character scene, edit the right Kith only.",
+  "source": "exec-e2620686-0679-4bf7-a184-30671f631c65.png",
+  "references": [
+    "art/rendered/cutscenes/ironfall_2.png (previous revision)",
+    "art/rendered/walk.png"
+  ],
+  "approved_standard": "#94"
+}

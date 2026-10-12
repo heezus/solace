@@ -248,16 +248,14 @@ func test_a_still_without_a_painting_shows_its_line() -> void:
 	var s: Sim = t.fresh()
 	s.story.record("first_lesson")
 	var p := player_for(s, FakeHost.new())
-	t.check(
-		p.texture("ironfall_1") == null and p.texture("bloom_sign_2") == null, "the Ironfall stills are not painted yet"
-	)
-	t.check(p.texture("opening_1") != null, "the opening's is")
+	t.check(p.texture("no_such_still") == null, "a still with no painting has no texture")
+	t.check(p.texture("opening_1") != null and p.texture("ironfall_1") != null, "the painted ones do")
 	s.story.record("ironfall_begun")
 	p.start_next()
 	t.check(p.active and p.current == "ironfall", "the sequence plays all the same")
 	t.check(p._caption.text == "Iron, and a way to open things.", "with its line")
 	p._process(0.1)
-	t.check(p._caption.modulate.a >= 0.0 and p.active, "and lays its caption out with no picture")
+	t.check(p._caption.modulate.a >= 0.0 and p.active, "and lays its caption out")
 	for i in 3:
 		p.advance(Data.CUTSCENE_STILL_SECONDS)
 	t.check(not p.active, "and ends on time")

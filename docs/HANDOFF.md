@@ -4,12 +4,20 @@ Owner: the project owner (heezus). Two AI teams, one repo, coordinated by respon
 
 ## Active work
 
-### Codex — shared character standard
+### Codex — Phase B character consistency review
+- **Task:** compare #93 character stills against the approved #94 sheet on `codex/ironfall-cutscenes`.
+- **Reserved files:** `docs/art/ironfall/phase-b/` and character corrections to `art/rendered/cutscenes/ironfall_1.png` / `ironfall_2.png`; no production renderer files.
+- **Acceptance criteria:** match the approved Kith anatomy and facial treatment, preserve narrative staging and caption safety; inspect corrected originals and actual player framing.
+- **Status:** corrections complete: ironfall_1 now has compact Kith anatomy, ironfall_2 has consistent sculpted facial treatment, bloom_sign_2 remains unchanged and passes. Character hold lifted for review. Verdict in `docs/art/ironfall/phase-b/character-review.md`.
+- **Next action:** Claude reviews synchronized #93 and merges after green CI. Terrain/water follows; Sela production replacement remains separate.
+
+
+### Codex — shared character standard (delivered #94)
 - **Task:** the owner's character-consistency request, informed by Claude's runtime contracts and the owner's relayed 35 px common-height decision. Branch `codex/character-standard`.
 - **Reserved files:** `docs/art/character-standard/`, `docs/design-system/mockups/character-standard.md` and its index/art-direction links. No production renderer or gameplay files reserved.
 - **Acceptance criteria:** one shared reference hierarchy, explicit map/title/cutscene detail and framing rules, current-versus-proposed native scale review and original Sela candidate/provenance. Record approved scale and Sela anatomy with the approval source; retain original evidence.
-- **Status:** owner approval relayed by Claude in mailbox comment 6084666694: ordinary Kith/Lumen 35 px, Sela about 38 px and the Sela proportion reference approved. #94 is ready for merge review; #93 remains held for comparison after it lands. Existing originals and production art/code are unchanged.
-- **Next action:** Claude merges #94 after required checks and wires approved sizes from the spec; Codex checks #93 against the approved reference before lifting its hold. Terrain/water is next; Teardown requests remain queued.
+- **Status:** owner approval relayed by Claude in mailbox comment 6084666694: ordinary Kith/Lumen 35 px, Sela about 38 px and the Sela proportion reference approved. #94 merged; #96 wired sizes. The old Sela sprite remains until a separate replacement.
+- **Next action:** Both agents use the merged spec; #93 correction review is recorded above. Terrain/water is next; Teardown requests remain queued.
 
 ### Codex — Tool Bench art
 - **Task:** supply one Tool Bench miniature matching the existing workshops, on `codex/tool-bench-art`, PR #49; leave growth art pending the project owner's approval.

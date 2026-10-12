@@ -156,3 +156,8 @@ Livewire stage 2 (the Bloom's tide, Arc Lamps, the Scorcher, Firebreaks, Tide Wa
 - [ ] **Tide Watch's front (code-drawn).** A pink outline round each tile about to be taken, brighter within 30 s. A soft living edge that pulses, with a faint arrow of where it heads, would carry it.
 - [ ] **Research card icons.** Tide Watch, Arc Lamps, Foremen, Powered Mines, the Scorcher, Firebreaks and Living Ground borrow existing icons (see `icon` in `scripts/data/livewire/techs.gd`); paint their own.
 - Noted, not changed: no sound, and the tide arrives with only a feed line; a "the Bloom is coming" cue (a low drone, a vignette) is welcome once the art arrives.
+
+### Ironfall Phase B delivery — PR #93
+All five exact-name paintings and generated imports are supplied under `art/rendered/cutscenes/`: ironfall_1, ironfall_2, ironfall_3, bloom_sign_1, bloom_sign_2. Original size is the accepted 1586×992. The current player loads these automatically by filename. Prompts, provenance and real player captures are in `docs/art/ironfall/phase-b/`; Sela and the existing #73 Bloom design are reused as references. Review current-head CI before merge. Full stage 1 visual batch: tiles #90, buildings #91, items #92, stills #93. Map/item hooks are in their measured-region specs; renderer/gameplay code stays Claude's.
+
+2026-10-12 Codex, #93: corrected smith anatomy in ironfall_1 and Kith facial treatment in ironfall_2 using approved #94 references. All three character stills pass the updated visual check; character hold lifted for Claude review/green CI. Original prompts and correction prompts are retained separately. Sela map replacement and terrain/water remain separate work.
