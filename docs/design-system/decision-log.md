@@ -847,3 +847,14 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - **The era cannot be lost.** The Hearth ring is safe and the patches are the only sources; what the player risks is mines, coal and the haul road. Burnt ground is permanent, so the Scorcher is a way of winning ground, not holding a line.
 - Differences from the page: the Firebreak is a 1x1 building dragged out like Road in the Logistics tab (there is no Land action); burnt ground goes back to plain grass with an ash tint rather than a tile of its own; a road or ore tile the Bloom reaches keeps its own tile and is only counted as taken. They are listed on page 23.
 - Stage 1 fixes that stage 2 needed: a held machine mid-job keeps its power, a machine in a lit engine's own reach runs full speed, and a Bring first claim no longer counts stock that covers the want. Saves stay VERSION 1 with an optional `game.tide`, and the golden pacing hashes are unchanged. Art is placeholder only; every slot is in `docs/art/requests.md`.
+
+## 2026-10-08: Ironfall and Bloom Phase B paintings (PR #93)
+- Codex painted all five requested stills at the accepted Phase B size of 1586×992, without baked text.
+- The new bloomery, established hull and human Lumen materials connect the story paintings to map art; Sela retains her approved study design.
+- Bloom appears first as three faint distant ground patches, then sparse shoots; Sela's concern replaces her usual smile.
+- Important action stays above caption foregrounds; production-player captures check near-end push-in at 1280×800 and a 1600×900 crop.
+
+## 2026-10-12: Phase B character consistency corrections (PR #93)
+- Codex corrected the smith’s head/body proportions and the hull-scene Kith’s facial rendering against the approved #94 Kith reference, preserving narrative staging and scene materials.
+- Sela’s Bloom inspection remains unchanged after passing the character check; the two corrected 1586×992 originals retain exact edit prompts and source provenance.
+- Lift the character-consistency hold for review; Claude merges only after required CI passes. No runtime or gameplay changes are introduced by these corrections.
