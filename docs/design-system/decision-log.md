@@ -858,3 +858,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Codex corrected the smith’s head/body proportions and the hull-scene Kith’s facial rendering against the approved #94 Kith reference, preserving narrative staging and scene materials.
 - Sela’s Bloom inspection remains unchanged after passing the character check; the two corrected 1586×992 originals retain exact edit prompts and source provenance.
 - Lift the character-consistency hold for review; Claude merges only after required CI passes. No runtime or gameplay changes are introduced by these corrections.
+
+## 2026-10-13: Livewire stage 3, factories and the gate (PR #105)
+- Claude built the Factory Floor, Shard Dynamo, Chain Orders and the Skyward gate, so every Livewire tech is now on sale; the Send verb, a 2x2 footprint and the Livewire pacing bot are left for later and said so on page 23.
+- The Floor copies one of five existing workshops at three times the speed instead of owning recipes, so the existing recipes stay the single source of truth and the Tool Bench's `make` field is reused.
+- The gate asks for two deeds on top of its price and techs, five written standing orders and the south held, so the era's end rewards its mechanic and its pressure, not only a stockpile (the page's default).
+- Chain Orders is a "While order N holds" button on each order; the end of the era plays the Falling Star's card with Skyward's words and the game keeps running.

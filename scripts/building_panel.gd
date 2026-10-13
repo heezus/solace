@@ -27,6 +27,7 @@ const LessonsList = preload("res://scripts/lessons_list.gd")
 const Steam = preload("res://scripts/steam.gd")
 const Power = preload("res://scripts/power.gd")
 const OrdersPanel = preload("res://scripts/orders_panel.gd")
+const FloorPicker = preload("res://scripts/floor_picker.gd")
 
 const INSET := Ui.BAR
 
@@ -109,6 +110,12 @@ func setup(game: Sim) -> void:
 	v.add_child(lessons)
 	v.move_child(lessons, parts["recipe"].get_index())
 	parts["lessons"] = lessons
+	var floor_pick := FloorPicker.new()  # a Factory Floor: the recipe it copies (scripts/floor_picker.gd)
+	floor_pick.setup(game)
+	floor_pick.changed.connect(refresh)
+	v.add_child(floor_pick)
+	v.move_child(floor_pick, parts["recipe"].get_index())
+	parts["floor"] = floor_pick
 	var orders := OrdersPanel.new()  # the Order Board: the standing orders, written with buttons (scripts/orders_panel.gd)
 	orders.setup(game)
 	orders.changed.connect(refresh)
@@ -232,6 +239,7 @@ func refresh() -> void:
 	parts["bench"].show_for(b)
 	parts["lessons"].show_for(b)
 	parts["orders"].show_for(b)
+	parts["floor"].show_for(b)
 	parts["net"].text = "\n".join([Power.note(state, b), state.tide.note(state, b)].filter(func(l): return l != ""))
 	parts["net"].visible = parts["net"].text != ""
 	parts["recipe"].text = recipe_text(state, b)

@@ -302,6 +302,28 @@ const BUILDINGS := {
 			+ " for more than the others give. Stand it within 2 tiles of a Power Pole; haulers bring the coal."
 		),
 	},
+	"shard_dynamo":
+	{
+		"name": "Shard Dynamo",
+		"kind": "power",
+		"tech": "shard_dynamo",
+		"lesson": "heat_plate",
+		"story": true,
+		"cost": {"brick": 60, "iron": 30, "steel": 10, "wire": 20},
+		"radius": 0,
+		"gives": 8,
+		"fed": true,
+		"in": {"shard": 1},
+		"stock": 4,
+		"burn": 160.0,
+		"color": Color("9fe0f0"),
+		"desc":
+		(
+			"A Generator that burns the Lumen heat plate's way: 1 Shard for every 160 seconds the net asks for more than the"
+			+ " others give, and no coal. It gives a whole net 8 units. Stand it within 2 tiles of a Power Pole; haulers bring"
+			+ " the Shards."
+		),
+	},
 	"grindstone":
 	{
 		"name": "Grindstone",
@@ -423,6 +445,24 @@ const BUILDINGS := {
 		"needs_power": true,
 		"color": Color("d98a4a"),
 		"desc": "Needs power. Draws Copper into Wire, the good of the age of the wire.",
+	},
+	"factory_floor":
+	{
+		"name": "Factory Floor",
+		"kind": "processor",
+		"job": "Floor hand",
+		"tech": "factory_floor",
+		"story": true,
+		"cost": {"brick": 60, "iron": 40, "wire": 20},
+		"crew": 2,
+		"floor": ["twine_post", "kiln", "bloomery", "forge", "wire_mill"],
+		"needs_power": true,
+		"color": Color("c0c6cc"),
+		"desc":
+		(
+			"Needs power and two Kith. Runs one chosen recipe (Rope, Bricks, Iron, Steel or Wire) at three times a workshop's"
+			+ " speed, and eats its inputs three times as fast. Pick the recipe on its card."
+		),
 	},
 	"crucible":
 	{
@@ -766,10 +806,11 @@ const BUILD_TABS := {
 		"boiler",
 		"shard_boiler",
 		"generator",
+		"shard_dynamo",
 		"scorcher",
 		"grindstone"
 	],
-	"Metal": ["mine", "coal_mine", "smelter", "crucible", "bloomery", "forge", "wire_mill"],
+	"Metal": ["mine", "coal_mine", "smelter", "crucible", "bloomery", "forge", "wire_mill", "factory_floor"],
 	"Logistics":
 	[
 		"road",
@@ -847,6 +888,8 @@ const BUILD_ORDER := [
 	"beast_pen",
 	"shard_lamp",
 	"generator",
+	"shard_dynamo",
+	"factory_floor",
 	"wire_mill",
 	"power_pole",
 	"order_board",

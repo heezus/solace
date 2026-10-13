@@ -20,6 +20,7 @@ const DataTeardown = preload("res://scripts/data/teardown.gd")
 const DataSteam = preload("res://scripts/data/steam.gd")
 const DataLivewire = preload("res://scripts/data/livewire.gd")
 const DataTide = preload("res://scripts/data/tide.gd")
+const DataSkyward = preload("res://scripts/data/skyward.gd")
 const DataCutscenes = preload("res://scripts/data/cutscenes.gd")
 
 # --- Items: data/items.gd ---
@@ -789,3 +790,24 @@ const CUTSCENES_HELP := DataCutscenes.CUTSCENES_HELP
 const CUTSCENES := DataCutscenes.CUTSCENES
 const CUTSCENE_VARIANT_LINES := DataCutscenes.CUTSCENE_VARIANT_LINES
 const CUTSCENE_MEMORY := DataCutscenes.CUTSCENE_MEMORY
+
+# --- Livewire stage 3: data/skyward.gd ---
+const FLOOR_SPEED := DataSkyward.FLOOR_SPEED
+const FLOOR_RECIPE_BUTTON := DataSkyward.FLOOR_RECIPE_BUTTON
+const FLOOR_RECIPE_TIP := DataSkyward.FLOOR_RECIPE_TIP
+const FLOOR_MAKING := DataSkyward.FLOOR_MAKING
+const FLOOR_ROW := DataSkyward.FLOOR_ROW
+const ORDER_WHILE_NONE := DataSkyward.ORDER_WHILE_NONE
+const ORDER_WHILE := DataSkyward.ORDER_WHILE
+const ORDER_WHILE_TIP := DataSkyward.ORDER_WHILE_TIP
+const ORDER_WHILE_TEXT := DataSkyward.ORDER_WHILE_TEXT
+const SOUTH_ROWS_BELOW_HEARTH := DataSkyward.SOUTH_ROWS_BELOW_HEARTH
+const DEED_ORDERS := DataSkyward.DEED_ORDERS
+const DEED_LAMPS := DataSkyward.DEED_LAMPS
+const DEED_NAMES := DataSkyward.DEED_NAMES
+const SKYWARD_EVENT := DataSkyward.SKYWARD_EVENT
+const SKYWARD_TITLE := DataSkyward.SKYWARD_TITLE
+const SKYWARD_TEXT := DataSkyward.SKYWARD_TEXT
+const SKYWARD_NOTE := DataSkyward.SKYWARD_NOTE
+const SKYWARD_BUTTON := DataSkyward.SKYWARD_BUTTON
+const GOALS_FACTORIES := DataSkyward.GOALS_FACTORIES

@@ -95,7 +95,8 @@ func test_story_ids_are_stable_and_unique() -> void:
 		"ironfall_begun",
 		"teardown_lesson",
 		"livewire_lit",
-		"livewire_begun"
+		"livewire_begun",
+		"skyward_raised"
 	]
 	t.check(Data.STORY_EVENTS.keys() == ids, "the ids are the stable ones a profile save will keep")
 

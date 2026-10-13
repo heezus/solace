@@ -113,7 +113,8 @@ func test_the_list_is_well_formed() -> void:
 		"ironfall_teardown",
 		"ironfall_steam",
 		"livewire",
-		"livewire_tide"
+		"livewire_tide",
+		"livewire_gate"
 	]:
 		t.check(seen.has(id), "the start %s is there" % id)
 	t.check(DevStarts.build("no_such_start") == null, "an unknown start builds nothing")
@@ -575,6 +576,18 @@ func _expect_stage(id: String, s: Sim) -> void:
 					func(tech): return s.tech_tree.researched.has(tech)
 				),
 				"and the tools learned"
+			)
+		"livewire_gate":
+			t.check(
+				["factory_floor", "shard_dynamo", "chain_orders"].all(
+					func(tech): return s.tech_tree.researched.has(tech)
+				),
+				"livewire_gate: the factory techs are learned"
+			)
+			t.check(not s.tech_tree.researched.has("skyward"), "with the gate itself still to come")
+			t.check(
+				s.economy.inv.get("steel", 0) >= 120 and s.economy.inv.get("wire", 0) >= 120,
+				"and the gate's price in store"
 			)
 
 

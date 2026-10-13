@@ -9,6 +9,7 @@ signal changed
 const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Ui = preload("res://scripts/ui.gd")
+const Chain = preload("res://scripts/order_chain.gd")
 
 var state: Sim
 var key := ""  # what the rows were built from, so they are built again only when an order or a slot changes
@@ -88,6 +89,8 @@ func _add_order(i: int, o: Dictionary) -> void:
 	)
 	var target: String = Data.BUILDINGS[o["target"]]["name"] if o["target"] != "" else "Choose"
 	row.add_child(_pick(target, Data.ORDER_TARGET_TIP, func(): lw.cycle_target(state, i)))
+	if state.tech_tree.researched.has("chain_orders") and lw.orders.size() > 1:
+		row.add_child(_pick(Chain.button(o), Data.ORDER_WHILE_TIP, func(): Chain.cycle(lw.orders, i)))
 	row.add_child(_pick(Data.ORDER_CLEAR, Data.ORDER_CLEAR_TIP, func(): lw.clear(i)))
 	var status := _wrapped("", Ui.TEXT_DIM)
 	v.add_child(status)

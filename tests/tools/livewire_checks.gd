@@ -10,15 +10,35 @@ const Rules = preload("res://scripts/rules.gd")
 const HudChecks = preload("res://tests/tools/hud_checks.gd")
 
 const START := 1  # frames after the Bronze when the state is set; the checks follow
-const AFTER := START + 4 + 4 * 7  # the frame after the seven build cards (the CARDS below) have been walked
-const END := AFTER + 16  # and the pass may end after this
-## The new buildings (four of stage 1, three of the tide), each on a tab of its own, in the order they are checked.
-const CARDS := ["power_pole", "generator", "wire_mill", "order_board", "arc_lamp", "scorcher", "firebreak"]
+const AFTER := START + 4 + 4 * 9  # the frame after the nine build cards (the CARDS below) have been walked
+const END := AFTER + 20  # and the pass may end after this
+## The new buildings (four of stage 1, three of the tide, two of the factories), each on a tab of its own, in the order they are checked.
+const CARDS := [
+	"power_pole",
+	"generator",
+	"wire_mill",
+	"order_board",
+	"arc_lamp",
+	"scorcher",
+	"firebreak",
+	"factory_floor",
+	"shard_dynamo"
+]
 
 
 ## One frame of the walk: `n` frames since the bot's Bronze.
 static func step(layout, n: int) -> void:
 	var main: Node = layout.main
+	if n >= START + 4 and n < AFTER:  # each card: its tab one frame, the card itself the next
+		var which := n - START - 4
+		var type: String = CARDS[floori(which / 4.0)]
+		if which % 4 == 0:
+			main.bottom_bar.show_tab_of(type)
+			main.ui_refresh = 0.0
+		elif which % 4 == 1:
+			layout._report(card(main, type))
+			layout._check_build_cards("on the %s tab" % Data.BUILDINGS[type]["name"])
+		return
 	match n:
 		START:
 			layout.frozen = true
@@ -29,13 +49,6 @@ static func step(layout, n: int) -> void:
 			layout._check_min_text("with the Livewire board open")
 			layout._shot("tech_board_livewire")
 			main.tech_panel.visible = false
-		START + 4, START + 8, START + 12, START + 16, START + 20, START + 24, START + 28:
-			main.bottom_bar.show_tab_of(CARDS[floori((n - START - 4) / 4.0)])
-			main.ui_refresh = 0.0
-		START + 5, START + 9, START + 13, START + 17, START + 21, START + 25, START + 29:
-			var type: String = CARDS[floori((n - START - 5) / 4.0)]
-			layout._report(card(main, type))
-			layout._check_build_cards("on the %s tab" % Data.BUILDINGS[type]["name"])
 		AFTER:
 			var at := put_board(main)
 			layout._report([] if at.x >= 0 else ["no room for an Order Board by the Hearth"])
@@ -73,6 +86,17 @@ static func step(layout, n: int) -> void:
 			layout._report(tide_note(main))
 			layout._check_min_text("with the tide's note on a card")
 			layout._shot("tide_card")
+		AFTER + 14:
+			var plant := put_floor(main)
+			layout._report([] if plant.x >= 0 else ["no room for a Factory Floor by the Hearth"])
+			main.building_panel.select(plant)
+			main.ui_refresh = 0.0
+		AFTER + 16:
+			layout._check_card_is_docked("a Factory Floor's card")
+			layout._check_fit("with a Factory Floor's card open")
+			layout._report(floor_picker(main))
+			layout._check_min_text("with a Factory Floor's card open")
+			layout._shot("factory_floor_card")
 
 
 ## The state a Livewire town would be in when the Wires Hum card is put away, set by hand.
@@ -82,6 +106,9 @@ static func enter(main: Node) -> void:
 		s.tech_tree.researched[tech] = true
 	for tech in ["power_poles", "order_board", "generator", "tide_watch", "arc_lamps", "scorcher", "firebreaks"]:
 		s.tech_tree.researched[tech] = true
+	for tech in ["factory_floor", "shard_dynamo", "chain_orders"]:
+		s.tech_tree.researched[tech] = true
+	s.teardown.lessons.append("heat_plate")
 	for event in [Data.IRONFALL_EVENT, Data.LIVEWIRE_EVENT, Data.LIVEWIRE_BEGUN]:
 		if not s.story.has_event(event):
 			s.story.events.append(event)  # quietly: the card and the toast are not what is under test
@@ -95,7 +122,7 @@ static func enter(main: Node) -> void:
 	main.ui_refresh = 0.0
 
 
-## The fifth tab is open and chosen, and the board shows all fourteen cards, the four of later stages locked.
+## The fifth tab is open and chosen, and the board shows all fourteen cards, every stage open.
 static func board(main: Node, when: String) -> Array:
 	var problems: Array = []
 	var panel = main.tech_panel
@@ -111,7 +138,7 @@ static func board(main: Node, when: String) -> Array:
 	for tech in Rules.era_techs(5):
 		if not panel.board.shows(tech):
 			problems.append("%s: %s has no card on the Livewire board" % [when, tech])
-		if Rules.tech_enabled(tech) != (int(Data.TECHS[tech]["stage"]) <= 2):
+		if Rules.tech_enabled(tech) != (int(Data.TECHS[tech]["stage"]) <= 3):
 			problems.append("%s: %s is %s" % [when, tech, "open" if Rules.tech_enabled(tech) else "locked"])
 	return problems
 
@@ -241,3 +268,29 @@ static func tide_note(main: Node) -> Array:
 	if r.position.x < side.position.x - 0.5 or r.end.x > side.end.x + 0.5:
 		return ["the tide's note (%s) runs out of the side panel (%s)" % [r, side]]
 	return []
+
+
+## A Factory Floor beside the Hearth, on a net, so its card has a recipe to show. Returns its tile.
+static func put_floor(main: Node) -> Vector2i:
+	var s = main.state
+	var at := spot(main, "factory_floor")
+	if at.x >= 0:
+		s.place("factory_floor", at)
+	return at
+
+
+## The Floor's card has its recipe line and button, whole and inside the side panel.
+static func floor_picker(main: Node) -> Array:
+	var part: Control = main.building_panel.parts["floor"]
+	if not part.visible:
+		return ["a Factory Floor's card shows no recipe"]
+	var problems: Array = []
+	var side: Rect2 = main.side_panel.get_global_rect()
+	for node in HudChecks._all(part):
+		if node is Control and node.is_visible_in_tree():
+			var r: Rect2 = node.get_global_rect()
+			if r.position.x < side.position.x - 0.5 or r.end.x > side.end.x + 0.5:
+				problems.append("the Floor's '%s' (%s) runs out of the side panel (%s)" % [node.name, r, side])
+			if node is Button and node.get_minimum_size().x > r.size.x + 1.0:
+				problems.append("the Floor's button '%s' is cut off" % node.text)
+	return problems

@@ -14,6 +14,7 @@ signal said(message: String)
 const Data = preload("res://scripts/data.gd")
 const Haulers = preload("res://scripts/haulers.gd")
 const Power = preload("res://scripts/power.gd")
+const Chain = preload("res://scripts/order_chain.gd")
 
 ## The standing orders, each: {item, compare, number, verb, target, holding, fired, born, said, claim}. `target` is a building type
 ## ("" until one is chosen), `fired` the game time it last began to hold (-1 for never), `born` when it was written, `said` when it
@@ -84,7 +85,9 @@ func _read(s) -> void:
 	_kept = {}
 	var board := has_board(s)
 	for o in orders:
-		var live: bool = board and o["target"] != "" and when_holds(s, o) and _stands(s, o["target"])
+		var live: bool = (
+			board and o["target"] != "" and Chain.ready(orders, o) and when_holds(s, o) and _stands(s, o["target"])
+		)
 		if live and not o["holding"]:
 			o["fired"] = time
 			if time - o["said"] >= Data.ORDER_FEED_SECONDS or o["said"] < 0.0:
@@ -173,6 +176,7 @@ func add(s) -> bool:
 				"born": time,
 				"said": -1.0,
 				"claim": 0.0,
+				"after": 0,
 			}
 		)
 	)
@@ -183,6 +187,7 @@ func add(s) -> bool:
 func clear(i: int) -> void:
 	if i >= 0 and i < orders.size():
 		orders.remove_at(i)
+		Chain.forget(orders, i)
 
 
 ## The goods an order can read: the ones the Kith have held, in the top bar's order.
@@ -260,7 +265,7 @@ func text(o: Dictionary) -> String:
 			if o["verb"] == "pause"
 			else Data.ORDER_BRING_TEXT % [Data.ITEMS[o["item"]]["name"], kind]
 		)
-	return Data.ORDER_WHEN % [Data.ITEMS[o["item"]]["name"], o["compare"], o["number"], what]
+	return Data.ORDER_WHEN % [Data.ITEMS[o["item"]]["name"], o["compare"], o["number"], what] + Chain.suffix(o)
 
 
 ## When order o last fired, or that it holds now, or that it has gone stale (not fired for Data.ORDER_STALE_SECONDS).
@@ -329,6 +334,7 @@ func from_dict(d: Dictionary) -> void:
 					"born": float(saved.get("born", 0.0)),
 					"said": float(saved.get("said", -1.0)),
 					"claim": float(saved.get("claim", 0.0)),
+					"after": clampi(int(saved.get("after", 0)), 0, Data.ORDER_SLOTS * 3),
 				}
 			)
 		)

@@ -79,7 +79,7 @@ Lore-lane cards are gated by Lessons where it reads well, never by a plain requi
 Three stages, each its own PR with placeholder art and every art slot logged in `docs/art/requests.md`.
 1. **Wires and orders (built).** The era's opening (a fifth tab and a Goals list), Power Poles and the net, the Generator, Wire and the Wire Mill, the Order Board and the Pause and Bring first verbs, and the Ironfall end card's line about "far to the north" changed to the south, where the tide starts. The era is playable without the tide.
 2. **The tide (built).** The tide model, Tide Watch, overgrown buildings, Arc Lamps, Firebreaks, the Scorcher, Living Ground, Foremen and Powered Mines.
-3. **Factories and the end.** Factory Floor, Shard Dynamo, Chain Orders and the Send verb, the gate and its end card.
+3. **Factories and the end (built, Send left for later).** Factory Floor, Shard Dynamo, Chain Orders, the gate with its two deeds and its end card.
 
 ## Saves and tests (the plan)
 Optional fields only with defaults, so saves stay VERSION 1 and the frozen pre-Ironfall fixture loads unchanged. A `livewire` entry under `game` holds the orders, the tide fronts and the net is rebuilt on load. The golden pacing runs for earlier eras must not change; a stage-start and a pacing bot for the era follow the Ironfall pattern.
@@ -132,3 +132,25 @@ Stage 2 is in the game (placeholder art; the slots are in [requests](../art/requ
 **Saves.** `game.tide` holds the clock, the taken, burnt and front tiles, the overgrown counts and the count lost; a Livewire save from stage 1 without it starts the tide on its first tick, and VERSION is still 1. Visual changes touch only `scripts/tide_look.gd` (a code-drawn wash, ash, glow, flame ring, overgrown tint and front) and the new `bloom_tide` tile, so Codex can paint over them by name.
 
 **Tests.** `tests/tide_tests.gd`, run with `-- livewire`; `dev_tests.gd` builds `livewire_tide`; the layout pass walks the three new build cards and an overgrown building's card. Every number is a first guess to tune with the pacing bot; the Livewire pacing bot arrives with stage 3.
+
+## What stage 3 built, and where it differs
+Stage 3 is in the game (placeholder art; the slots are in [requests](../art/requests.md)), and every Livewire tech is now on sale (`Data.ERA_BUILT_STAGE` is `{5: 3}`). Six goals join the list (a Factory Floor, a Shard Dynamo, Chain Orders, five orders written, the south held, Skyward). Dev start `livewire_gate` ([21](21-stage-starts.md)) is the tide start with the three factory techs learned and the gate's price in store.
+
+**Factory Floor** (Metal tab, 60 Brick, 40 Iron, 20 Wire; needs power; two hands). It copies one workshop from five (Twine Post, Kiln, Bloomery, Forge, Wire Mill; only the ones the Kith can build are offered) and works that recipe at three times the speed (`Data.FLOOR_SPEED`), so it makes three times as much from the same stock in the same time. The card's **Recipe** button steps through the choices (`scripts/floor_picker.gd`); stepping returns what was loaded to the stores. The choice is the building's `make` (the field the Tool Bench already uses), saved with it; a save without one loads the first workshop. Haulers feed it by the copied recipe.
+
+**Shard Dynamo** (Workshops tab, 60 Brick, 30 Iron, 10 Steel, 20 Wire; needs the Heat plate Lesson). A Generator that burns 1 Shard per 160 s of burning instead of Coal, and gives its net 8 units. It is a `fed` power building like the Generator and uses the same net code.
+
+**Chain Orders** adds three order slots (nine in all with Foremen) and a **While** button on each order when more than one is written: "While order 2 holds" makes an order read only while that other order is holding (`scripts/order_chain.gd`, the order's `after`, 0 for nothing). Tearing up an order frees the ones that waited on it and moves later places up. Saved with the order; an old save has no chains.
+
+**The gate.** Skyward costs 120 Steel, 100 Iron, 120 Wire and 100 Brick, needs the Factory Floor, Scorcher, Chain Orders and Shard Dynamo, and two **deeds** (`scripts/gate.gd`): **five standing orders written** (each with a kind of building chosen) and **the south held** (a Scorcher burning and two Arc Lamps lit, all on a net, in the land eight or more rows south of the Hearth). A tech's `deeds` list sits beside `lesson` and `gift`: the research card says what is missing ("Write five standing orders", "Hold the south") and the tech cannot be bought until both are done. Researching it plays the end card (`Data.SKYWARD_*`, the Falling Star's card again) and records `skyward_raised`; the game keeps running.
+
+**Where it differs from the page, and why.**
+- **Not built: the Send verb.** Pause and Bring first stay the only verbs. Send needs a second target on an order (a destination for goods) and a choice about what a hauler does with it; it wants its own pass, and nothing in the gate depends on it.
+- **Floor and Dynamo are 1x1**, as the Generator is: a 2x2 footprint still touches placement, roads and the overlays, and no stage has taken that on.
+- **The Floor's recipe list** is the five workshops above, not "Bricks, Rope, Iron, Steel, Tools, Wire" by good: copying a workshop keeps the existing recipes as the one source of truth. Tools stay with the Tool Bench.
+- **Allies make the Dynamo cheaper** is not built (the page's trust lean): no lean changes any Livewire number yet.
+- **No Livewire pacing bot yet.** Every cost in the era is a first guess; the bot is the next piece of work.
+
+**Saves.** `make` on a Floor, `after` on an order; VERSION is still 1 and an old save loads with the defaults.
+
+**Tests.** `tests/skyward_tests.gd`, run with `-- livewire`; `dev_tests.gd` builds `livewire_gate`; the layout pass walks the Floor's card and the While button.

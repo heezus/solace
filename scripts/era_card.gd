@@ -63,13 +63,15 @@ func place(area: Rect2) -> void:
 	size = area.size
 
 
-## Put the card up: the Falling Star's, or (with the story id Data.LIVEWIRE_EVENT) the end of Ironfall's.
+## Put the card up: the Falling Star's, or (with the story id Data.LIVEWIRE_EVENT) the end of Ironfall's, or (with Data.SKYWARD_EVENT)
+## the end of Livewire's.
 func open(story_id := "star_falling") -> void:
 	var live: bool = story_id == Data.LIVEWIRE_EVENT
-	_words["title"].text = Data.LIVEWIRE_TITLE if live else Data.ERA_END_TITLE
-	_words["text"].text = Data.LIVEWIRE_TEXT if live else Data.ERA_END_TEXT
-	_words["note"].text = Data.LIVEWIRE_NOTE if live else Data.ERA_END_NOTE
-	_words["button"].text = Data.LIVEWIRE_BUTTON if live else Data.ERA_END_BUTTON
+	var sky: bool = story_id == Data.SKYWARD_EVENT
+	_words["title"].text = Data.SKYWARD_TITLE if sky else (Data.LIVEWIRE_TITLE if live else Data.ERA_END_TITLE)
+	_words["text"].text = Data.SKYWARD_TEXT if sky else (Data.LIVEWIRE_TEXT if live else Data.ERA_END_TEXT)
+	_words["note"].text = Data.SKYWARD_NOTE if sky else (Data.LIVEWIRE_NOTE if live else Data.ERA_END_NOTE)
+	_words["button"].text = Data.SKYWARD_BUTTON if sky else (Data.LIVEWIRE_BUTTON if live else Data.ERA_END_BUTTON)
 	visible = true
 
 

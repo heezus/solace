@@ -1,6 +1,6 @@
 extends RefCounted
 ## Livewire stage 1 (design-system/23-livewire.md): wires and orders. The era's opening and its fifth tab and Goals list, the
-## techs (three built, eleven locked), Power Poles and the net, the Generator, Wire and the Wire Mill, the Order Board with its
+## techs (all fourteen built over three stages), Power Poles and the net, the Generator, Wire and the Wire Mill, the Order Board with its
 ## Pause and Bring first verbs, the saves and the panels. Run from tests/run_tests.gd, which owns check() and the helpers.
 
 const Data = preload("res://scripts/data.gd")
@@ -21,11 +21,12 @@ const DebugKeys = preload("res://scripts/debug_keys.gd")
 const Art = preload("res://scripts/art.gd")
 const OrdersTests = preload("res://tests/orders_tests.gd")
 const TideTests = preload("res://tests/tide_tests.gd")
+const SkywardTests = preload("res://tests/skyward_tests.gd")
 
-## The three techs of stage 1, the seven of stage 2 (the tide), and the four the era still leaves locked.
+## The three techs of stage 1, the seven of stage 2 (the tide), and the four of stage 3 (the factories and the gate).
 const STAGE_ONE := ["power_poles", "order_board", "generator"]
 const STAGE_TWO := ["tide_watch", "arc_lamps", "foremen", "powered_mines", "scorcher", "firebreaks", "living_ground"]
-const LATER := ["factory_floor", "shard_dynamo", "chain_orders", "skyward"]
+const STAGE_THREE := ["factory_floor", "shard_dynamo", "chain_orders", "skyward"]
 
 var t  # the runner, tests/run_tests.gd
 
@@ -35,7 +36,7 @@ func run(runner) -> void:
 	test_the_data_is_whole()
 	test_the_age_begins_when_the_card_is_put_away()
 	test_the_fifth_tab_and_the_tree()
-	test_only_stage_one_can_be_bought()
+	test_the_first_techs_can_be_bought()
 	test_poles_join_into_nets()
 	test_engines_and_machines_on_a_net()
 	test_a_short_net_runs_everything_slower()
@@ -44,6 +45,7 @@ func run(runner) -> void:
 	test_the_wire_mill_draws_wire()
 	OrdersTests.new().run(runner, self)  # the Order Board, the goals, the saves and the panels
 	TideTests.new().run(runner, self)  # stage 2: the tide, Arc Lamps, the Scorcher, Tide Watch
+	SkywardTests.new().run(runner, self)  # stage 3: the Factory Floor, the Dynamo, Chain Orders, the Skyward gate
 
 
 # --- Helpers ------------------------------------------------------------------
@@ -104,17 +106,17 @@ func net_of(s: Sim, p: Vector2i) -> Dictionary:
 
 func test_the_data_is_whole() -> void:
 	t.check(Data.BUILT_STAGE == 3, "Ironfall is still built to stage 3")
-	t.check(Data.ERA_BUILT_STAGE == {5: 2}, "and Livewire to stage 2")
-	for id in STAGE_ONE + STAGE_TWO + LATER:
+	t.check(Data.ERA_BUILT_STAGE == {5: 3}, "and Livewire to stage 3")
+	for id in STAGE_ONE + STAGE_TWO + STAGE_THREE:
 		t.check(Data.TECHS.has(id) and Data.TECH_ORDER.has(id), "%s is on the board" % id)
 		t.check(Data.TECHS[id]["era"] == 5, "%s belongs to era 5" % id)
-	t.check(STAGE_ONE.size() + STAGE_TWO.size() + LATER.size() == 14, "fourteen techs in all")
+	t.check(STAGE_ONE.size() + STAGE_TWO.size() + STAGE_THREE.size() == 14, "fourteen techs in all")
 	for id in STAGE_ONE:
 		t.check(int(Data.TECHS[id]["stage"]) == 1 and Rules.tech_enabled(id), "%s is built (stage 1)" % id)
 	for id in STAGE_TWO:
 		t.check(int(Data.TECHS[id]["stage"]) == 2 and Rules.tech_enabled(id), "%s is built (stage 2)" % id)
-	for id in LATER:
-		t.check(int(Data.TECHS[id]["stage"]) >= 3 and not Rules.tech_enabled(id), "%s waits for stage 3" % id)
+	for id in STAGE_THREE:
+		t.check(int(Data.TECHS[id]["stage"]) == 3 and Rules.tech_enabled(id), "%s is built (stage 3)" % id)
 	t.check(Data.TECHS["skyward"]["lane"] == "gate", "Skyward is the gate")
 	t.check(Rules.tech_enabled("livewire") and Rules.tech_enabled("steel"), "Ironfall's techs are all still on sale")
 	t.check(
@@ -160,7 +162,7 @@ func test_the_data_is_whole() -> void:
 	)
 	for item in Data.ITEM_ORDER:
 		t.check(Art.sprite("item_" + item) != null or Data.ITEMS[item].has("sprite"), "%s has an icon" % item)
-	t.check(Data.GOALS_ERA5.size() == 12, "twelve goals")
+	t.check(Data.GOALS_ERA5.size() == 18, "eighteen goals")
 	var ids: Array = Data.GOALS_ERA5.map(func(g): return g["id"])
 	t.check(ids.size() == ids.duplicate().filter(func(x): return ids.count(x) == 1).size(), "each once")
 	t.check(RunSave.VERSION == 1, "the save version is unchanged")
@@ -237,7 +239,7 @@ func test_the_fifth_tab_and_the_tree() -> void:
 		t.check(Data.TECH_BLURBS.has(tech), "%s has a blurb" % tech)
 
 
-func test_only_stage_one_can_be_bought() -> void:
+func test_the_first_techs_can_be_bought() -> void:
 	var s := town()
 	s.story.record(Data.LIVEWIRE_BEGUN)
 	for id in ["steel", "iron", "wire", "brick", "rope", "wood", "stone", "coal"]:
@@ -250,9 +252,6 @@ func test_only_stage_one_can_be_bought() -> void:
 	t.check(not s.tech_tree.can_research("generator"), "the Generator waits for Power Poles")
 	t.check(s.research("power_poles"), "bought")
 	t.check(s.tech_tree.can_research("generator"), "and then the Generator can be")
-	for id in LATER:
-		s.tech_tree.researched["boiler"] = true
-		t.check(not s.tech_tree.can_research(id), "%s cannot be bought yet" % id)
 	t.check(not s.town.unlocked("order_board"), "the Board is not on offer before its tech")
 	s.research("order_board")
 	t.check(s.town.unlocked("order_board"), "after it, it is")
