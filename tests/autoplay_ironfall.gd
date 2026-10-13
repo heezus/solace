@@ -28,6 +28,8 @@ const COAL_SPARE := 150  # coal the stockpile keeps beyond the gate's needs befo
 const WAIT_FOR_ROOM := 90.0  # seconds a building may stay affordable and unplaced before the plan goes on without it
 const WORKSHOPS_BIG := 8  # the most of one kind of workshop the bot builds in the era (the stone age's cap is 4)
 const POSTS := 2  # Expedition Posts: a second sends the second party for the Bloom samples
+## The techs the metal works stand on, taken before any other: the road to Bloom Sampling passes through none of them.
+const GROUND_TECHS := ["coal_seams", "ironstone", "bloomery", "boiler"]
 ## The buildings the minute's trace reports on.
 const TRACED := [
 	"forge", "bloomery", "boiler", "coal_mine", "mine", "kiln", "charcoal_pit", "smelter", "crucible", "twine_post"
@@ -75,13 +77,16 @@ func _drop_stranded_posts() -> void:
 		lines.append("%5d s    - stranded Storehouse at %s torn down" % [int(clock), at])
 
 
-## The research goal, in the order a player would take it: Bloom Sampling first (three trips to the far south and three
-## Lessons are the long pole and cost little), then the rest of the metal works before any other tech (the Bloomeries and
-## Forges take the brick and iron that the techs would), then the gate.
+## The research goal, in the order a player would take it: the techs of the metal works (Coal Seams, Ironstone, Bloomery, Boiler), then
+## Bloom Sampling (three trips to the far south and three Lessons are the long pole and cost little), then the rest of the
+## metal works before any other tech (the Bloomeries and Forges take the brick and iron that the techs would), then the gate.
 func _aim() -> void:
 	var done: Dictionary = s.tech_tree.researched
 	var want := GATE
-	if not done.has("bloom_sampling"):
+	var ground := GROUND_TECHS.filter(func(id): return not done.has(id))
+	if not ground.is_empty():
+		want = ground[0]  # the metal's ground first: the way to Bloom Sampling does not pass through the Coal Seams
+	elif not done.has("bloom_sampling"):
 		want = "bloom_sampling"
 	elif _works_due():
 		want = ""
@@ -585,7 +590,30 @@ func _place_forge() -> bool:
 func _place_bench() -> bool:
 	if not s.town.unlocked("teardown_bench") or _count("teardown_bench") >= 1:
 		return false
-	return _place_best("teardown_bench", func(p): return -Vector2(p).distance_to(Vector2(s.world.camp_pos)))
+	if _place_best("teardown_bench", func(p): return -Vector2(p).distance_to(Vector2(s.world.camp_pos))):
+		return true
+	return _make_room_for("teardown_bench")
+
+
+## A bench that can be paid for but has no ground within the Hearth's reach (the town has filled it): a player tears down the
+## nearest Gatherer's Hut to make room, and so does the bot. True when it did (the next decision places the bench).
+func _make_room_for(type: String) -> bool:
+	if not s.economy.can_afford(s.town.price(type)):
+		return false
+	var best := Vector2i(-1, -1)
+	var best_d := INF
+	for b in s.town.buildings:
+		if b["type"] != "gatherers_hut":
+			continue
+		var d := Vector2(b["pos"]).distance_to(Vector2(s.world.camp_pos))
+		if d <= Data.HEARTH_RADIUS and d < best_d:
+			best = b["pos"]
+			best_d = d
+	if best.x < 0:
+		return false
+	s.demolish(best)
+	lines.append("%5.0f s    - Gatherer's Hut at %s torn down to make room for the %s" % [clock, best, type])
+	return true
 
 
 ## A second Expedition Post, so two parties can walk to the Bloom at once.

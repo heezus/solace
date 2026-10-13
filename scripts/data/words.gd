@@ -351,13 +351,13 @@ const HOME_MISSING_GOOD := "%d %s"  # how many more, an item's name
 const HOME_MISSING_ROAD := "a road to the Hearth"
 const HOME_MISSING_HAULERS := "Paths & Haulers, to carry goods in"
 const HOME_CAPPED := "Held at your cap on %ss"  # a tier name
-const HOME_CAP_ROW := "%s or better"  # a tier name
-const HOME_CAP_VALUE := "%d of %s"  # homes that have reached it, the cap
-const HOME_CAP_NONE := "any"
+const HOME_CAP_ROW := "%ss: %d so far"  # a tier name, the homes that have reached it or better
+const HOME_CAP_VALUE := "Limit: %s"  # the cap
+const HOME_CAP_NONE := "none"
 const HOME_CAP_TIP := (
-	"The most homes you allow to reach %s or better. Homes grow on their own while the settlement keeps them supplied;"
-	+ " lower this to keep it small. Homes already there stay."
-)  # a tier name
+	"Homes grow into %ss on their own while the settlement keeps them supplied. This is the most %ss you allow (a Longhouse"
+	+ " counts too). Press - to stop growth at a limit, + to lift it. Homes that are already there stay."
+)  # a tier name, twice
 const HOME_BUSY := "Waiting for the builders: %d scaffolds are already up"  # a number
 
 const HOME_NO_STOCK := "Waiting for %s in the stockpile"  # item names, "Bronze, Brick"
