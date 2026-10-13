@@ -21,7 +21,7 @@ jobs:
     env:
       GODOT_VERSION: 4.7.2
       NEWBIE_OUT: ${{ github.workspace }}/newbie-out
-      STAGE_IDS: starfall_landing,starfall_camp,starfall_market,starfall_end,ironfall,ironfall_teardown,ironfall_steam
+      STAGE_IDS: starfall_camp,ironfall,livewire,livewire_tide,livewire_gate
     steps:
       - uses: actions/checkout@v4
       - name: Install Godot
