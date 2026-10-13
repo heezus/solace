@@ -315,11 +315,15 @@ func to_dict() -> Dictionary:
 func from_dict(d: Dictionary) -> void:
 	time = float(d.get("time", 0.0))
 	orders = []
+	var kept: Array = []  # each surviving order's place in the saved list, counting from 1
+	var saved_at := 0
 	for saved in d.get("orders", []):
+		saved_at += 1
 		var type := String(saved.get("target", ""))
 		var item := String(saved.get("item", Data.ORDER_START_ITEM))
 		if (type != "" and not Data.BUILDINGS.has(type)) or not Data.ITEMS.has(item):
 			continue  # a rule about something the game no longer has is dropped
+		kept.append(saved_at)
 		(
 			orders
 			. append(
@@ -334,10 +338,11 @@ func from_dict(d: Dictionary) -> void:
 					"born": float(saved.get("born", 0.0)),
 					"said": float(saved.get("said", -1.0)),
 					"claim": float(saved.get("claim", 0.0)),
-					"after": clampi(int(saved.get("after", 0)), 0, Data.ORDER_SLOTS * 3),
+					"after": maxi(int(saved.get("after", 0)), 0),
 				}
 			)
 		)
+	Chain.settle(orders, kept)
 	nets = []
 	net_of = {}
 	net_rev = -1

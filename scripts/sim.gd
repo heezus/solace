@@ -66,7 +66,7 @@ var starfall := StarfallBlock.new(town, economy)  # the era after the Falling St
 var teardown := TeardownBlock.new(town, economy)  # Ironfall: the parts, the Bench and the Lessons
 var livewire := LivewireBlock.new()  # Livewire: the Power Pole nets and the Order Board's standing orders
 var tide := TideBlock.new()  # Livewire stage 2: the Bloom's creep out of the south, and what holds it back
-var gate := Gate.new(livewire, town, world)  # Livewire stage 3: the Skyward gate's two deeds
+var gate := Gate.new(livewire, town, world, tide)  # Livewire stage 3: the Skyward gate's two deeds
 
 
 ## Wire the blocks together. Every signal connection in the game is here, so it is all in one place.

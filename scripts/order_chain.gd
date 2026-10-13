@@ -21,6 +21,14 @@ static func forget(orders: Array, i: int) -> void:
 			o["after"] -= 1
 
 
+## After a load: `kept[i]` is the place order i had in the saved list. Each `after` still names a saved place; point it at the
+## order that now has that place, or at nothing when that order was dropped, is the order itself or does not exist.
+static func settle(orders: Array, kept: Array) -> void:
+	for i in orders.size():
+		var now: int = kept.find(orders[i]["after"]) + 1 if orders[i]["after"] > 0 else 0
+		orders[i]["after"] = 0 if now == i + 1 else now
+
+
 ## Step order i to wait on the next other order, and from the last of them to nothing.
 static func cycle(orders: Array, i: int) -> void:
 	var o: Dictionary = orders[i]

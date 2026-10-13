@@ -456,6 +456,7 @@ const BUILDINGS := {
 		"cost": {"brick": 60, "iron": 40, "wire": 20},
 		"crew": 2,
 		"floor": ["twine_post", "kiln", "bloomery", "forge", "wire_mill"],
+		"time": 4.0,  # a stand-in: a Floor works at its recipe's workshop time over FLOOR_SPEED (Work.time), but this lets cards show a pace
 		"needs_power": true,
 		"color": Color("c0c6cc"),
 		"desc":

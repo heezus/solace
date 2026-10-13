@@ -87,7 +87,7 @@ func test_the_floor_copies_a_workshop_faster() -> void:
 	var s := town()
 	var c := powered(s)
 	var floor_b: Dictionary = base.put(s, "factory_floor", c + Vector2i(2, 0))
-	t.check(floor_b["make"] == "twine_post", "a Floor starts on the first workshop")
+	t.check(s.town.unlocked(floor_b["make"]), "a Floor starts on a workshop the Kith can build: %s" % floor_b["make"])
 	var kiln: Dictionary = base.put(s, "kiln", c + Vector2i(-3, 0))
 	floor_b["make"] = "kiln"
 	t.check(Buildings.recipe_out(floor_b) == Buildings.recipe_out(kiln), "it makes what the Kiln makes")
@@ -239,6 +239,17 @@ func test_chain_orders_save_and_tear_up() -> void:
 	s.livewire.clear(0)
 	t.check(s.livewire.orders[1]["after"] == 0, "an order that waited on the torn-up one waits on nothing")
 	t.check(s.livewire.orders[0]["after"] == 2, "and a later place moves up (3 became 2)")
+	# an order dropped on load (its good is gone) shifts the places: a chain follows the order, not the number
+	var dropped := reloaded(
+		s,
+		func(d):
+			var list: Array = d["game"]["livewire"]["orders"]
+			list.insert(0, {"item": "no_such_good", "after": 0})
+			list[1]["after"] = 1  # waited on the dropped order: now waits on nothing
+			list[2]["after"] = 2  # waited on the order in saved place 2, which is now first
+	)
+	t.check(dropped.livewire.orders.size() == 2, "(the order for a missing good is dropped)")
+	t.check(dropped.livewire.orders[0]["after"] == 0 and dropped.livewire.orders[1]["after"] == 1, "the chain is kept")
 	var again := reloaded(s, func(d): d["game"]["livewire"]["orders"].map(func(o): o.erase("after")))
 	t.check(again.livewire.orders.all(func(o): return o["after"] == 0), "an old save has no chains")
 
@@ -280,6 +291,9 @@ func test_the_deeds() -> void:
 	scorch["burn"] = 0.0
 	t.check(not s.gate.south_held(), "a Scorcher that is out does not")
 	scorch["burn"] = 5.0
+	s.tide.hit[lamp1["pos"]] = 5.0
+	t.check(not s.gate.south_held(), "a lamp the Bloom has overgrown is dark")
+	s.tide.hit.erase(lamp1["pos"])
 	s.town.remove_at(s.town.building_at[lamp2["pos"]])
 	s.livewire.tick(s, 0.0)
 	t.check(not s.gate.south_held(), "one lamp is not enough")

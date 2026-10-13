@@ -8,12 +8,14 @@ const Data = preload("res://scripts/data.gd")
 var _livewire  # the Order Board's orders
 var _town  # the buildings and what is powered
 var _world  # where the Hearth is
+var _tide  # which buildings the Bloom has overgrown
 
 
-func _init(livewire, town, world) -> void:
+func _init(livewire, town, world, tide) -> void:
 	_livewire = livewire
 	_town = town
 	_world = world
+	_tide = tide
 
 
 ## True when the deed `id` (Data.DEED_NAMES) is done now.
@@ -41,7 +43,7 @@ func south_held() -> bool:
 		var kind: String = Data.BUILDINGS[b["type"]]["kind"]
 		if kind == "scorcher" and b["burn"] > 0.0 and _town.is_powered(b["pos"]):
 			scorching = true
-		elif kind == "arc_lamp" and _town.is_powered(b["pos"]):
+		elif kind == "arc_lamp" and _town.is_powered(b["pos"]) and not _tide.is_overgrown_at(b["pos"]):
 			lamps += 1
 	return scorching and lamps >= Data.DEED_LAMPS
 

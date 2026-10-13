@@ -279,7 +279,7 @@ func add_building(type: String, p: Vector2i) -> void:
 	if Data.BUILDINGS[type].has("makes"):
 		b["make"] = Data.BUILDINGS[type]["makes"][0]
 	if Data.BUILDINGS[type].has("floor"):
-		b["make"] = Data.BUILDINGS[type]["floor"][0]
+		b["make"] = FloorRecipe.first_open(self, type)
 	if Data.BUILDINGS[type]["kind"] == "gatherer":
 		for t in gather_tiles(p):
 			b["gather_items"].append(Data.TILES[_world.tile_at(t)]["yields"])
