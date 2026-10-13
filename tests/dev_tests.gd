@@ -111,7 +111,10 @@ func test_the_list_is_well_formed() -> void:
 		"starfall_end",
 		"ironfall",
 		"ironfall_teardown",
-		"ironfall_steam"
+		"ironfall_steam",
+		"livewire",
+		"livewire_tide",
+		"livewire_gate"
 	]:
 		t.check(seen.has(id), "the start %s is there" % id)
 	t.check(DevStarts.build("no_such_start") == null, "an unknown start builds nothing")
@@ -540,6 +543,51 @@ func _expect_stage(id: String, s: Sim) -> void:
 			t.check(
 				s.tech_tree.researched.has("rails") and s.economy.inv.get("coal", 0) > 100,
 				"with Rails learned and coal in store"
+			)
+		"livewire":
+			t.check(
+				s.story.has_event(Data.LIVEWIRE_EVENT) and s.story.has_event(Data.LIVEWIRE_BEGUN),
+				"livewire: the Wires Hum card is put away and Livewire has begun"
+			)
+			t.check(s.story.goal_list() == Data.GOALS_ERA5, "with its own goals")
+			t.check(
+				s.tech_tree.can_research("power_poles") and s.tech_tree.can_research("order_board"),
+				"Power Poles and the Order Board can be bought"
+			)
+			t.check(not s.tech_tree.researched.has("power_poles"), "though neither is learned yet")
+			# The bots' own Grindstones and Smelters stand where they like (some by a Water Wheel), so look for one of each out of reach.
+			var out := func(type: String) -> bool:
+				return s.town.buildings.any(func(b): return b["type"] == type and not s.town.is_powered(b["pos"]))
+			t.check(
+				out.call("grindstone") and out.call("smelter"),
+				"a Grindstone and a Smelter stand unpowered, ready for a net"
+			)
+			t.check(s.livewire.nets.is_empty() and s.livewire.orders.is_empty(), "with no net and no order yet")
+		"livewire_tide":
+			t.check(
+				s.tide.begun and s.tide.time >= DevStarts.TIDE_START_SECONDS - 1.0,
+				"livewire_tide: the tide has been creeping"
+			)
+			t.check(
+				not s.tide.grown.is_empty() and not s.tide.front.is_empty(), "with ground taken and a front on the map"
+			)
+			t.check(
+				["power_poles", "tide_watch", "arc_lamps", "scorcher", "firebreaks"].all(
+					func(tech): return s.tech_tree.researched.has(tech)
+				),
+				"and the tools learned"
+			)
+		"livewire_gate":
+			t.check(
+				["factory_floor", "shard_dynamo", "chain_orders"].all(
+					func(tech): return s.tech_tree.researched.has(tech)
+				),
+				"livewire_gate: the factory techs are learned"
+			)
+			t.check(not s.tech_tree.researched.has("skyward"), "with the gate itself still to come")
+			t.check(
+				s.economy.inv.get("steel", 0) >= 120 and s.economy.inv.get("wire", 0) >= 120,
+				"and the gate's price in store"
 			)
 
 

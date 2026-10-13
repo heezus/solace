@@ -8,6 +8,7 @@ const Main = preload("res://scripts/main.gd")
 const IronfallTests = preload("res://tests/ironfall_tests.gd")
 const TeardownTests = preload("res://tests/teardown_tests.gd")
 const SteamTests = preload("res://tests/steam_tests.gd")
+const LivewireTests = preload("res://tests/livewire_tests.gd")
 const CutsceneTests = preload("res://tests/cutscene_tests.gd")
 const TechLayout = preload("res://scripts/tech_layout.gd")
 const Ui = preload("res://scripts/ui.gd")
@@ -114,6 +115,7 @@ func _init() -> void:
 		IronfallTests.new().run(self)
 		TeardownTests.new().run(self)
 		SteamTests.new().run(self)
+		LivewireTests.new().run(self)
 		CutsceneTests.new().run(self)
 		print("FAILED: %d" % failures if failures > 0 else "IRONFALL TESTS PASSED")
 		quit(1 if failures > 0 else 0)
@@ -121,6 +123,11 @@ func _init() -> void:
 	if "steam" in OS.get_cmdline_user_args():  # `-- steam` runs only the stage 3 tests while iterating
 		SteamTests.new().run(self)
 		print("FAILED: %d" % failures if failures > 0 else "STEAM TESTS PASSED")
+		quit(1 if failures > 0 else 0)
+		return
+	if "livewire" in OS.get_cmdline_user_args():  # `-- livewire` runs only the Livewire tests while iterating
+		LivewireTests.new().run(self)
+		print("FAILED: %d" % failures if failures > 0 else "LIVEWIRE TESTS PASSED")
 		quit(1 if failures > 0 else 0)
 		return
 	if "homes" in OS.get_cmdline_user_args():  # `-- homes` runs only the Needs tests while iterating
@@ -209,6 +216,7 @@ func _init() -> void:
 	IronfallTests.new().run(self)
 	TeardownTests.new().run(self)
 	SteamTests.new().run(self)
+	LivewireTests.new().run(self)
 	CutsceneTests.new().run(self)
 	NewcomerTests.new().run(self)
 	UiTests.new().run(self)

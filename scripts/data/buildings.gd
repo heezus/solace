@@ -28,6 +28,10 @@ extends RefCounted
 ## only while lit; a "lamp" lights `light` tiles; a "pen" eats Grain while it tames its beast. A "shed" with a `cart` ("hand" by
 ## default, "steam") turns a hauler into that kind of cart (Data.CART_KINDS); a tamed Beast Pen gives a beast cart.
 ## Buildings without a worker show `status`, or `desc` if they have none.
+## Livewire (page 23): a "pole" (the Power Pole) joins a net with the poles within Data.POLE_LINK tiles; a machine (`needs_power`) or
+## an engine (a "power" with `gives`, the units it adds to a net: Water Wheel 2, Boiler 3 while lit, Generator 8) within
+## Data.POLE_REACH tiles of a pole is on that net (scripts/power.gd). A "board" (the Order Board) holds the standing orders
+## (scripts/livewire.gd). A "power" with a `radius` of 0 reaches nothing of its own: it feeds a net or nothing.
 const BUILDINGS := {
 	"camp":
 	{
@@ -232,6 +236,7 @@ const BUILDINGS := {
 		"tech": "water_wheel",
 		"cost": {"wood": 30, "rope": 10},
 		"radius": 3,
+		"gives": 2,
 		"needs_river": true,
 		"color": Color("2a9d8f"),
 		"desc": "Must touch the river. Powers machines within 3 tiles.",
@@ -244,6 +249,7 @@ const BUILDINGS := {
 		"story": true,
 		"cost": {"stone": 30, "brick": 50, "iron": 10},
 		"radius": 5,
+		"gives": 3,
 		"fed": true,
 		"in": {"coal": 1},
 		"stock": 6,
@@ -264,6 +270,7 @@ const BUILDINGS := {
 		"story": true,
 		"cost": {"stone": 30, "brick": 50, "iron": 20, "bronze": 10},
 		"radius": 5,
+		"gives": 3,
 		"fed": true,
 		"in": {"shard": 1},
 		"stock": 4,
@@ -273,6 +280,48 @@ const BUILDINGS := {
 		(
 			"A Boiler built round the Lumen heat plate. Burns 1 Shard for 80 seconds of power and no coal at all."
 			+ " Powers machines within 5 tiles."
+		),
+	},
+	"generator":
+	{
+		"name": "Generator",
+		"kind": "power",
+		"tech": "generator",
+		"story": true,
+		"cost": {"stone": 40, "brick": 60, "iron": 30},
+		"radius": 0,
+		"gives": 8,
+		"fed": true,
+		"in": {"coal": 1},
+		"stock": 6,
+		"burn": 25.0,
+		"color": Color("e9a23b"),
+		"desc":
+		(
+			"A great flywheel on a coal fire. It gives a whole net 8 units, and burns 1 Coal for every 25 seconds the net asks"
+			+ " for more than the others give. Stand it within 2 tiles of a Power Pole; haulers bring the coal."
+		),
+	},
+	"shard_dynamo":
+	{
+		"name": "Shard Dynamo",
+		"kind": "power",
+		"tech": "shard_dynamo",
+		"lesson": "heat_plate",
+		"story": true,
+		"cost": {"brick": 60, "iron": 30, "steel": 10, "wire": 20},
+		"radius": 0,
+		"gives": 8,
+		"fed": true,
+		"in": {"shard": 1},
+		"stock": 4,
+		"burn": 160.0,
+		"color": Color("9fe0f0"),
+		"desc":
+		(
+			"A Generator that burns the Lumen heat plate's way: 1 Shard for every 160 seconds the net asks for more than the"
+			+ " others give, and no coal. It gives a whole net 8 units. Stand it within 2 tiles of a Power Pole; haulers bring"
+			+ " the Shards."
 		),
 	},
 	"grindstone":
@@ -381,6 +430,40 @@ const BUILDINGS := {
 		"needs_power": true,
 		"color": Color("a9bfd1"),
 		"desc": "Needs power. A steady blast turns 2 Iron and 1 Coal into Steel. Stand it within 5 tiles of a Boiler.",
+	},
+	"wire_mill":
+	{
+		"name": "Wire Mill",
+		"kind": "processor",
+		"job": "Wiredrawer",
+		"tech": "power_poles",
+		"story": true,
+		"cost": {"stone": 30, "brick": 40, "iron": 20},
+		"in": {"copper": 1},
+		"out": {"wire": 1},
+		"time": 6.0,
+		"needs_power": true,
+		"color": Color("d98a4a"),
+		"desc": "Needs power. Draws Copper into Wire, the good of the age of the wire.",
+	},
+	"factory_floor":
+	{
+		"name": "Factory Floor",
+		"kind": "processor",
+		"job": "Floor hand",
+		"tech": "factory_floor",
+		"story": true,
+		"cost": {"brick": 60, "iron": 40, "wire": 20},
+		"crew": 2,
+		"floor": ["twine_post", "kiln", "bloomery", "forge", "wire_mill"],
+		"time": 4.0,  # a stand-in: a Floor works at its recipe's workshop time over FLOOR_SPEED (Work.time), but this lets cards show a pace
+		"needs_power": true,
+		"color": Color("c0c6cc"),
+		"desc":
+		(
+			"Needs power and two Kith. Runs one chosen recipe (Rope, Bricks, Iron, Steel or Wire) at three times a workshop's"
+			+ " speed, and eats its inputs three times as fast. Pick the recipe on its card."
+		),
 	},
 	"crucible":
 	{
@@ -609,6 +692,93 @@ const BUILDINGS := {
 			+ " With the Sap Lesson, a Lantern Party may stay out past dusk while one burns."
 		),
 	},
+	"power_pole":
+	{
+		"name": "Power Pole",
+		"kind": "pole",
+		"tech": "power_poles",
+		"story": true,
+		"cost": {"wood": 2, "iron": 1},
+		"color": Color("a9825a"),
+		"desc":
+		(
+			"Poles within 3 tiles of one another join into a net. A machine or an engine within 2 tiles of a pole is on its net,"
+			+ " and draws from it or feeds it. A short net runs every machine on it slower."
+		),
+	},
+	"order_board":
+	{
+		"name": "Order Board",
+		"kind": "board",
+		"tech": "order_board",
+		"story": true,
+		"cost": {"wood": 40, "brick": 40, "iron": 10},
+		"near_hearth": true,
+		"unique": true,
+		"color": Color("d9c27a"),
+		"desc":
+		(
+			"Where the town's standing orders are written: when a good in the stores is below or above a number, pause a workshop"
+			+ " or bring a good first. Three orders. Must be within 6 tiles of the Hearth."
+		),
+		"status": "The orders are read every few seconds.",
+	},
+	# Era 5, stage 2: holding the tide (scripts/tide.gd). `draws` is a machine with no worker that asks the net for power.
+	"arc_lamp":
+	{
+		"name": "Arc Lamp",
+		"kind": "arc_lamp",
+		"tech": "arc_lamps",
+		"story": true,
+		"cost": {"steel": 4, "wire": 6, "brick": 10},
+		"needs_power": true,
+		"draws": true,
+		"light": 5,
+		"color": Color("f3e6a1"),
+		"desc":
+		(
+			"A white arc on a pole. The Bloom does not enter its light, 5 tiles round, while it has power, and a building"
+			+ " standing in it is not lost. Stand it within 2 tiles of a Power Pole."
+		),
+		"status": "It lights its tiles while the net gives power.",
+	},
+	"scorcher":
+	{
+		"name": "Scorcher",
+		"kind": "scorcher",
+		"tech": "scorcher",
+		"story": true,
+		"cost": {"steel": 10, "wire": 8, "brick": 20},
+		"needs_power": true,
+		"draws": true,
+		"fed": true,
+		"in": {"coal": 1},
+		"stock": 6,
+		"burn": 120.0,
+		"reach": 4,
+		"color": Color("e0642b"),
+		"desc":
+		(
+			"A jet of flame on a pump. It burns the Bloom ground nearest it clear, a tile every 30 seconds within 4 tiles,"
+			+ " and 1 Coal does 4 tiles. Burnt ground is never taken again. Stand it within 2 tiles of a Power Pole;"
+			+ " haulers bring the coal."
+		),
+	},
+	"firebreak":
+	{
+		"name": "Firebreak",
+		"kind": "firebreak",
+		"tech": "firebreaks",
+		"story": true,
+		"cost": {"wood": 4, "stone": 1},
+		"color": Color("6e5a45"),
+		"desc":
+		(
+			"A strip of bare, trodden ground. The Bloom takes 10 times as long to cross it, so a line of them buys a few minutes."
+			+ " Drag a line of them."
+		),
+		"status": "Bare ground.",
+	},
 	"guard_post":
 	{
 		"name": "Guard Post",
@@ -628,8 +798,20 @@ const BUILD_TABS := {
 	"Homes": ["dwelling"],
 	"Gathering": ["gatherers_hut", "field", "flax_field", "fishing_weir", "rain_barrel", "beast_pen"],
 	"Workshops":
-	["tool_bench", "charcoal_pit", "twine_post", "kiln", "water_wheel", "boiler", "shard_boiler", "grindstone"],
-	"Metal": ["mine", "coal_mine", "smelter", "crucible", "bloomery", "forge"],
+	[
+		"tool_bench",
+		"charcoal_pit",
+		"twine_post",
+		"kiln",
+		"water_wheel",
+		"boiler",
+		"shard_boiler",
+		"generator",
+		"shard_dynamo",
+		"scorcher",
+		"grindstone"
+	],
+	"Metal": ["mine", "coal_mine", "smelter", "crucible", "bloomery", "forge", "wire_mill", "factory_floor"],
 	"Logistics":
 	[
 		"road",
@@ -641,7 +823,9 @@ const BUILD_TABS := {
 		"storehouse",
 		"cart_shed",
 		"steam_shed",
-		"trading_post"
+		"trading_post",
+		"power_pole",
+		"firebreak"
 	],
 	"Lore":
 	[
@@ -655,7 +839,9 @@ const BUILD_TABS := {
 		"shared_shrine",
 		"guard_post",
 		"teardown_bench",
-		"shard_lamp"
+		"shard_lamp",
+		"order_board",
+		"arc_lamp"
 	],
 }
 
@@ -702,6 +888,15 @@ const BUILD_ORDER := [
 	"rain_barrel",
 	"beast_pen",
 	"shard_lamp",
+	"generator",
+	"shard_dynamo",
+	"factory_floor",
+	"wire_mill",
+	"power_pole",
+	"order_board",
+	"arc_lamp",
+	"scorcher",
+	"firebreak",
 ]
 
 ## Output a building holds before it stops, when nobody hauls it away.

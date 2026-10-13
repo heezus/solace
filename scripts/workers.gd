@@ -19,6 +19,8 @@ const Steam = preload("res://scripts/steam.gd")
 static func tick(s, k: Dictionary, delta: float) -> void:
 	var b: Dictionary = s.town.buildings[k["building"]]
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
+	if s.tide.is_overgrown(b):
+		return  # the Bloom stands on it: the crew waits for the ground to be burnt clear
 	match k["phase"]:
 		"to_site":
 			if k["path"].is_empty() and Kith.tile_of(k) != b["pos"] and not s.people.walk_to(k, b["pos"]):
@@ -202,6 +204,11 @@ static func rush(s, i: int) -> bool:
 static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
 	b["alert"] = ""
+	if s.tide.is_overgrown(b):  # the Bloom stands on it: it does nothing until the ground is burnt clear
+		b["status"] = s.tide.note(s, b)
+		b["alert"] = Data.OVERGROWN_ALERT
+		b["burn"] = 0.0
+		return
 	if not Buildings.needs_worker(b):
 		if def.get("fed", false):
 			Steam.tick_fed(s, b, delta)  # a Boiler, a Lamp or a Pen has no worker: it burns what haulers bring it
@@ -209,6 +216,8 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 				b["status"] += road_note(s, b)  # hungry and unlinked: haulers cannot bring it anything
 		else:
 			b["status"] = Steam.shed_status(s, def)
+			if def["kind"] == "arc_lamp":
+				b["status"] = Data.ARC_LIT % def["light"] if s.town.is_powered(b["pos"]) else Data.ARC_DARK
 		return
 	if def.has("makes"):
 		Work.choose_tool(s, b)
@@ -234,6 +243,9 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 		return
 	if not s.people.worker_home(b):
 		b["status"] = "%s walking here" % s.people.title_of(s.people.kith[b["worker"]])
+		return
+	if s.livewire.is_held(b) and b["progress"] <= 0.0:
+		s.town.set_status(b, Data.ORDER_PAUSED_STATUS, Data.ORDER_PAUSED_ALERT)  # a standing order: the job is done, so it waits
 		return
 	if Work.enough(s, b):
 		b["status"] = Work.bench_text(s, b)
@@ -264,8 +276,9 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 			_:
 				b["status"] = "Working"
 		return
-	b["status"] = "Working"
-	b["progress"] += delta
+	var speed: float = s.livewire.speed_of(b)  # 1.0 unless it is on a Power Pole net that is short
+	b["status"] = "Working" if speed >= 1.0 else Data.NET_SLOW % roundi(speed * 100.0)
+	b["progress"] += delta * speed
 	if b["progress"] < Work.time(s, b):
 		return
 	Work.finish_cycle(s, b)

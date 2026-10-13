@@ -9,10 +9,10 @@ signal changed  # a toast came, went or was dismissed, or the log grew
 
 const Data = preload("res://scripts/data.gd")
 
-const MAX_SHOWN := 4  # toasts on screen at once; the oldest makes room for a new one (it stays in the log)
+const MAX_SHOWN := 3  # toasts on screen at once; the oldest makes room for a new one (it stays in the log)
 const LOG_MAX := 60
 const MIN_SECONDS := 3.0
-const MAX_SECONDS := 9.0
+const MAX_SECONDS := 7.0
 
 var active: Array = []  # {"id", "text", "left" (seconds), "sticky", "key"}, oldest first
 var history: Array = []  # {"text", "at" (seconds of play), "sticky"}, oldest first

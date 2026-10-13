@@ -25,6 +25,9 @@ const PatchText = preload("res://scripts/patch_text.gd")
 const TeardownPanel = preload("res://scripts/teardown_panel.gd")
 const LessonsList = preload("res://scripts/lessons_list.gd")
 const Steam = preload("res://scripts/steam.gd")
+const Power = preload("res://scripts/power.gd")
+const OrdersPanel = preload("res://scripts/orders_panel.gd")
+const FloorPicker = preload("res://scripts/floor_picker.gd")
 
 const INSET := Ui.BAR
 
@@ -67,7 +70,7 @@ func setup(game: Sim) -> void:
 	close.pressed.connect(func(): closed.emit())
 	head.add_child(close)
 
-	for key in ["desc", "recipe", "worker", "pace", "click"]:
+	for key in ["desc", "recipe", "net", "worker", "pace", "click"]:
 		parts[key] = _wrapped(Ui.MIN_TEXT)
 		v.add_child(parts[key])
 	parts["pace"].add_theme_color_override("font_color", Ui.TEXT_DIM)
@@ -107,6 +110,18 @@ func setup(game: Sim) -> void:
 	v.add_child(lessons)
 	v.move_child(lessons, parts["recipe"].get_index())
 	parts["lessons"] = lessons
+	var floor_pick := FloorPicker.new()  # a Factory Floor: the recipe it copies (scripts/floor_picker.gd)
+	floor_pick.setup(game)
+	floor_pick.changed.connect(refresh)
+	v.add_child(floor_pick)
+	v.move_child(floor_pick, parts["recipe"].get_index())
+	parts["floor"] = floor_pick
+	var orders := OrdersPanel.new()  # the Order Board: the standing orders, written with buttons (scripts/orders_panel.gd)
+	orders.setup(game)
+	orders.changed.connect(refresh)
+	v.add_child(orders)
+	v.move_child(orders, parts["recipe"].get_index())
+	parts["orders"] = orders
 	parts["holding"] = Ui.label("", Ui.MIN_TEXT)
 	v.add_child(parts["holding"])
 	var bar := ProgressBar.new()
@@ -223,6 +238,10 @@ func refresh() -> void:
 	parts["post"].show_for(b)
 	parts["bench"].show_for(b)
 	parts["lessons"].show_for(b)
+	parts["orders"].show_for(b)
+	parts["floor"].show_for(b)
+	parts["net"].text = "\n".join([Power.note(state, b), state.tide.note(state, b)].filter(func(l): return l != ""))
+	parts["net"].visible = parts["net"].text != ""
 	parts["recipe"].text = recipe_text(state, b)
 	parts["recipe"].visible = parts["recipe"].text != ""
 	parts["worker"].text = worker_text(state, b)
@@ -268,6 +287,12 @@ static func recipe_text(s: Sim, b: Dictionary) -> String:
 			return gather_text(s, s.town.focus_tiles(b), true)
 		"power", "lamp", "shed":
 			return _fed_text(def)
+		"scorcher":
+			return Data.SCORCHER_ROW % [int(def["reach"]), int(Data.SCORCH_SECONDS)]
+		"arc_lamp":
+			return Data.ARC_ROW % int(def["light"])
+		"firebreak":
+			return Data.FIREBREAK_NOTE % int(Data.TIDE_SLOW_FIREBREAK)
 	return ""
 
 
@@ -303,6 +328,8 @@ static func click_text(s: Sim, b: Dictionary) -> String:
 static func worker_text(s: Sim, b: Dictionary) -> String:
 	if b["paused"]:
 		return Data.WORKER_PAUSED % Data.PEOPLE["one"]
+	if s.livewire.is_held(b):
+		return Data.ORDER_PAUSED_NOTE
 	if b["worker"] < 0:
 		return Data.WORKER_NONE % Data.PEOPLE["one"]
 	var k: Dictionary = s.people.kith[b["worker"]]

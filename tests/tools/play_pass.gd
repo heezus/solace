@@ -271,8 +271,9 @@ func _script() -> void:
 	)
 	for tab in main.bottom_bar.tab_buttons:
 		_then(func(): _click_visible(main.bottom_bar.tab_buttons[tab]))
-		for type in Data.BUILD_TABS[tab]:
+		for type in Data.BUILD_TABS.get(tab, []):
 			_then(func(): _move(main.bottom_bar.build_buttons[type]["button"].get_global_rect().get_center()))
+	_then(func(): _click_control(main.bottom_bar.tab_buttons["Craft"]))
 	for r in main.bottom_bar.craft_buttons:
 		_then(func(): _click_control(main.bottom_bar.craft_buttons[r]))
 	# Place a hut by the forest from the build bar, then send trips and open its panel.
@@ -700,8 +701,7 @@ func _road_drag_check() -> void:
 
 
 ## A cutscene player over the live scene: a fresh run opens with its cutscene, which holds the game paused and draws a painted
-## still; Esc skips it and puts everything back; a story moment starts the next, and a sequence with no painting yet plays its
-## lines over a dark panel.
+## still; Esc skips it and puts everything back; a story moment starts the next (Ironfall, painted).
 func _cutscene_checks() -> void:
 	var layer := CanvasLayer.new()
 	root.add_child(layer)
@@ -720,7 +720,7 @@ func _cutscene_checks() -> void:
 	_then(func(): _expect(player.active and player.current == "falling_star", "a queued sequence did not start"), 2)
 	_then(func(): player.skip())
 	_then(func(): player.enqueue("ironfall"))
-	_then(func(): _expect(player.active and player.texture("ironfall_1") == null, "no painting: lines over dark"), 4)
+	_then(func(): _expect(player.active and player.texture("ironfall_1") != null, "the Ironfall still did not load"), 4)
 	_then(func(): player.skip())
-	_then(func(): _expect(not player.active and not main.paused, "the lines-only cutscene did not end"))
+	_then(func(): _expect(not player.active and not main.paused, "the Ironfall cutscene did not end"))
 	_then(func(): layer.queue_free())  # the run goes on without it: the later sequences are not this check's business

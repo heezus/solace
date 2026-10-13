@@ -33,6 +33,8 @@ static func meta_of(d: Dictionary) -> Dictionary:
 		era = Data.ERA_STARFALL
 	if Data.IRONFALL_EVENT in d["story"].get("events", []):
 		era = Data.ERA_IRONFALL
+	if Data.LIVEWIRE_BEGUN in d["story"].get("events", []):
+		era = Data.ERA_LIVEWIRE
 	return {
 		"era": era,
 		"minutes": int(float(d["economy"].get("flows", {}).get("clock", 0.0)) / 60.0),

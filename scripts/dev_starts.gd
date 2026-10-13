@@ -18,6 +18,7 @@ const BOT_LIMIT := 70.0 * 60.0  # the most game seconds a bot may play to reach 
 const STEP := 0.5  # seconds of one scripted tick
 const SPOT_RADIUS := 16  # how far from the Hearth a scripted building may be put
 const TRUST_MARKET := 40.0  # trust at the market start: well past the point where the Lumen would trade
+const TIDE_START_SECONDS := 420.0  # how long the tide has crept at the Livewire tide start
 const END_FUSE := 4.0  # seconds before the Kith talk the last guesses over at the ending start
 
 const REV := 1  # bump when a bot's play changes without a change to Data: it throws away every start kept on disk
@@ -136,6 +137,9 @@ static func _table() -> Array:
 		["ironfall", "Stage: Ironfall, the Starfall is over", _ironfall],
 		["ironfall_teardown", "Stage: Ironfall, Teardown and the Wreck's parts", _ironfall_teardown],
 		["ironfall_steam", "Stage: Ironfall, steam: a Boiler, a Forge and Rail to lay", _ironfall_steam],
+		["livewire", "Stage: Livewire, the wires hum", _livewire],
+		["livewire_tide", "Stage: Livewire, the tide: seven minutes in, every tool learned", _livewire_tide],
+		["livewire_gate", "Stage: Livewire, the factories: the gate is all that is left", _livewire_gate],
 	]
 
 
@@ -285,10 +289,93 @@ static func _steam_on(s: Sim) -> Sim:
 	return s
 
 
+## The Wires Hum card is put away and Livewire has begun, on top of the steam start: the gate's techs and the Bloom Lessons are
+## learned, the stores hold Steel, Rope and Copper for Power Poles, the Order Board and the Generator, and a Grindstone and a
+## Smelter stand beyond the Boiler's reach, ready to be put on a net.
+static func _livewire() -> Sim:
+	return _livewire_on(_ironfall_steam())
+
+
+static func _livewire_on(s: Sim) -> Sim:
+	for tech in ["shard_lamps", "shard_boiler", "steel", "bloom_sampling", "livewire"]:
+		s.tech_tree.researched[tech] = true
+	s.teardown.lessons.append_array(["spore", "root", "sap"])
+	for id in ["steel", "rope", "copper", "coal", "iron", "wood", "brick", "stone"]:
+		s.economy.add(id, 300)
+	for type in ["grindstone", "smelter"]:
+		_build_out_of_reach(s, type)
+	s.story.record(Data.LIVEWIRE_EVENT)  # the card is put away at once in a start: Livewire begins on the next tick
+	_wait(s, 2.0)
+	return s
+
+
+## Livewire seven minutes into the tide: the stage 1 and 2 techs are learned, the stores hold Wire, Coal and Steel for Poles, Arc
+## Lamps, Scorchers and Firebreaks, and the Bloom has crept for TIDE_START_SECONDS out of the south patches, so its front is on the
+## map and Tide Watch has something to show.
+static func _livewire_tide() -> Sim:
+	return _livewire_tide_on(_livewire())
+
+
+static func _livewire_tide_on(s: Sim) -> Sim:
+	for tech in [
+		"power_poles", "order_board", "generator", "tide_watch", "arc_lamps", "scorcher", "firebreaks", "living_ground"
+	]:
+		s.tech_tree.researched[tech] = true
+	for id in ["wire", "coal", "steel", "copper", "brick"]:
+		s.economy.add(id, 200)
+	_wait(s, TIDE_START_SECONDS)
+	return s
+
+
+## Livewire's last stage: on the tide start, the Factory Floor, Shard Dynamo and Chain Orders are learned and the stores hold what
+## the Skyward gate costs, so the player has only the two deeds (five orders written, the south held) and the last tech left.
+static func _livewire_gate() -> Sim:
+	return _livewire_gate_on(_livewire_tide())
+
+
+static func _livewire_gate_on(s: Sim) -> Sim:
+	for tech in ["factory_floor", "shard_dynamo", "chain_orders"]:
+		s.tech_tree.researched[tech] = true
+	for id in ["steel", "iron", "wire", "brick"]:
+		s.economy.add(id, 200)
+	_wait(s, 2.0)
+	return s
+
+
+## Put `type` down on the nearest free tile to the Hearth that is out of every engine's reach, lit or not (a Boiler reaches only
+## while it burns, which a start cannot count on), paid for like _build: a machine for a Power Pole net to reach. Anywhere will do
+## when there is no such spot.
+static func _build_out_of_reach(s: Sim, type: String) -> void:
+	for r in range(4, SPOT_RADIUS):
+		for dy in range(-r, r + 1):
+			for dx in range(-r, r + 1):
+				var p: Vector2i = s.world.camp_pos + Vector2i(dx, dy)
+				if maxi(absi(dx), absi(dy)) != r or _in_reach_of_an_engine(s, p):
+					continue
+				var why := s.town.placement_error(type, p)
+				if why == "Not enough materials" or why == "":
+					var price: Dictionary = s.town.price(type)
+					for id in price:
+						if s.economy.inv.get(id, 0) < price[id]:
+							s.economy.add(id, price[id] - s.economy.inv.get(id, 0))
+					if s.place(type, p):
+						return
+	_build(s, type, 2)
+
+
+## True when an engine (a Water Wheel, a Boiler lit or not) reaches p.
+static func _in_reach_of_an_engine(s: Sim, p: Vector2i) -> bool:
+	return s.town.buildings.any(
+		func(b):
+			var def: Dictionary = Data.BUILDINGS[b["type"]]
+			return def["kind"] == "power" and Vector2(b["pos"]).distance_to(Vector2(p)) <= def["radius"] + 1.0
+	)
+
+
 # --- The Ironfall starts on any map (the pacing tool) --------------------------
 
 
-## The Ironfall start `id` ("ironfall", "ironfall_teardown" or "ironfall_steam") on the map made from `seed_value`, for the
+## The Ironfall start `id` ("ironfall", "ironfall_teardown", "ironfall_steam" or "livewire") on the map made from `seed_value`, for the
 ## pacing bot (tests/tools/pace.gd): a bot plays that map to the Falling Star (minutes of real time; map MAP_SEED uses the
 ## kept start), then the same scripted stages run on it as for the starts above. `dir` keeps the Falling Star of a map between
 ## runs ("" keeps none); the files in it are not fingerprinted, so clear it when an earlier era's numbers change.
@@ -298,7 +385,10 @@ static func ironfall_on_map(seed_value: int, id: String, dir := "") -> Sim:
 	if id == "ironfall":
 		return s
 	s = _teardown_on(s)
-	return s if id == "ironfall_teardown" else _steam_on(s)
+	if id == "ironfall_teardown":
+		return s
+	s = _steam_on(s)
+	return s if id == "ironfall_steam" else _livewire_on(s)
 
 
 ## The Falling Star on map `seed_value`: played by the bots, or read from `dir`.

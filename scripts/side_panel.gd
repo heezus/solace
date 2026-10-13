@@ -3,6 +3,8 @@ extends PanelContainer
 ## building's card (scripts/building_panel.gd, with an x to close it) above whatever the mouse is over.
 ## Nothing floats over the map, and a building's details are never shown twice.
 
+signal fold_pressed  # the Fold button: the panel goes away (scripts/hud_fold.gd)
+
 const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Ui = preload("res://scripts/ui.gd")
@@ -36,9 +38,16 @@ func setup(game: Sim, width: float) -> void:
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 6)
 	add_child(v)
+	var head := HBoxContainer.new()
+	v.add_child(head)
 	goal_header = Ui.label("Goals", 18)
 	goal_header.mouse_filter = Control.MOUSE_FILTER_STOP
-	v.add_child(goal_header)
+	goal_header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(goal_header)
+	var fold := Ui.button("Fold ▸")
+	fold.tooltip_text = "Put this panel away for a bigger map (G brings it back)"
+	fold.pressed.connect(func(): fold_pressed.emit())
+	head.add_child(fold)
 	for i in GOALS_SHOWN:
 		var g := Ui.label("", 14)
 		g.autowrap_mode = TextServer.AUTOWRAP_WORD
@@ -98,6 +107,8 @@ func refresh_goals(s: Sim) -> void:
 	var total := list.size()
 	var header := Data.GOALS_HEADER_ERA4 if list == Data.GOALS_ERA4 else Data.GOALS_HEADER
 	header = Data.GOALS_HEADER_ERA2 if list == Data.GOALS_ERA2 else header
+	header = Data.GOALS_HEADER_ERA3 if list == Data.GOALS_ERA3 else header
+	header = Data.GOALS_HEADER_ERA5 if list == Data.GOALS_ERA5 else header
 	goal_header.text = header % [s.story.done_count(), total]
 	var done: Array = []
 	for g in list:
@@ -117,9 +128,14 @@ func refresh_goals(s: Sim) -> void:
 		goal_labels[0].text = Data.GOALS_ALL_DONE
 		var star_fell: bool = s.story.events.has("star_falling")
 		goal_labels[1].visible = star_fell
-		goal_labels[1].text = (
-			"  " + (Data.GOALS_IRONFALL_CLOSING if list == Data.GOALS_ERA4 else Data.GOALS_STAR_CLOSING)
-		)
+		var closing := Data.GOALS_STAR_CLOSING
+		if list == Data.GOALS_ERA4:
+			closing = Data.GOALS_IRONFALL_CLOSING
+		elif list == Data.GOALS_ERA3:
+			closing = Data.GOALS_STARFALL_CLOSING
+		elif list == Data.GOALS_ERA5:
+			closing = Data.GOALS_LIVEWIRE_CLOSING
+		goal_labels[1].text = "  " + closing
 		goal_labels[1].add_theme_color_override("font_color", Ui.TEXT_DIM)
 
 

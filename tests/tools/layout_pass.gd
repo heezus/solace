@@ -15,10 +15,13 @@ const HoverText = preload("res://scripts/hover_text.gd")
 const Hands = preload("res://scripts/hands.gd")
 const UiTests = preload("res://tests/ui_tests.gd")
 const Ui = preload("res://scripts/ui.gd")
+const Messages = preload("res://scripts/messages.gd")
 const CutscenePlayer = preload("res://scripts/cutscene_player.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
 const HudChecks = preload("res://tests/tools/hud_checks.gd")
 const PickerChecks = preload("res://tests/tools/picker_checks.gd")
+const LivewireChecks = preload("res://tests/tools/livewire_checks.gd")
+const FoldChecks = preload("res://tests/tools/fold_checks.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
 const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
 
@@ -31,6 +34,7 @@ const WALL := "A long line of text that has to wrap onto several lines inside th
 
 var main: Node
 var bot: AutoplayBronze
+var livewire_frame := -1  # the frame the bot made its Bronze: the pass then sets Livewire by hand and checks its HUD
 var dawn_frame := -1  # the frame Bronze Dawn was won; the pass plays on from there into the era it opens
 var before_growth := {}  # the map view the frame before the land grew east
 var grown_frame := -1
@@ -50,6 +54,7 @@ var base := {}  # the top bar's height and the map's place before the stress cas
 var saved := {}  # the stockpile as it was, put back after them
 var row_at: Array = []  # the buildings placed by hand for the badge check
 var goals_height := 0.0  # the Goals list's height before a card opens
+var last_side_open := true
 var frozen := false  # the bot's ticking is paused while a check sets the state by hand
 var picker := PickerChecks.new()  # the hut picker's checks (tests/tools/picker_checks.gd)
 
@@ -60,6 +65,7 @@ func _init() -> void:
 	var scene: PackedScene = load("res://scenes/main.tscn")
 	main = scene.instantiate()
 	root.add_child(main)
+	main.hud.folded = false  # the pass walks the side panel; the fold has its own check (_check_fold)
 
 
 func _process(_delta: float) -> bool:
@@ -79,10 +85,14 @@ func _process(_delta: float) -> bool:
 		main.ui_refresh = 0.0  # refresh the bars every frame, so any wobble shows
 	if frame == RESIZE_AT:
 		root.size = Vector2i(1600, 800)  # wider: the map must refit (re-centre; the bars keep their heights)
+	if frame in [8, RESIZE_AT + 8, SHRINK_AT + 8]:
+		main.bottom_bar._show_tab("Gathering")  # the drawer opens for the Gathering tab check
 	if frame == RESIZE_AT + 10:
 		_report(HudChecks.gathering_tab(main, "at 1600x800"))
+		main.bottom_bar.close_drawer()
 	if frame == SHRINK_AT + 10:
 		_report(HudChecks.gathering_tab(main, "at 1100x700"))
+		main.bottom_bar.close_drawer()
 	if frame == SHRINK_AT:
 		root.size = Vector2i(1100, 700)  # then a window of another shape: everything must still fit
 	if frame > 5:
@@ -90,7 +100,11 @@ func _process(_delta: float) -> bool:
 	_hud_checks()
 	if dawn_frame > 0:
 		_era_two_checks()
-	if (dawn_frame > 0 and (bot.made_bronze() or frame > dawn_frame + ERA_FRAMES)) or frame > MAX_FRAMES:
+	if livewire_frame < 0 and dawn_frame > 0 and (bot.made_bronze() or frame > dawn_frame + ERA_FRAMES):
+		livewire_frame = frame
+	if livewire_frame > 0:
+		LivewireChecks.step(self, frame - livewire_frame)
+	if (livewire_frame > 0 and frame > livewire_frame + LivewireChecks.END) or frame > MAX_FRAMES:
 		_finish()
 	return false
 
@@ -210,7 +224,9 @@ func _check() -> void:
 					% [frame, last_scale.x, main.scale.x, last_bars, bars]
 				)
 			)
-	var view_changed: bool = main.view != last_view
+	var side_open: bool = main.side_panel.visible  # the side panel folding or opening (a card) changes the view on purpose
+	var view_changed: bool = main.view != last_view and side_open == last_side_open
+	last_side_open = side_open
 	if view_changed and last_view.size != Vector2.ZERO and vp == last_vp and refit_due == 0:
 		problems.append(
 			"frame %d: the map view went %s -> %s with the window unchanged" % [frame, last_view, main.view]
@@ -255,6 +271,7 @@ func _hud_checks() -> void:
 			goals_height = _goals_height()
 		9:
 			_report(HudChecks.gathering_tab(main, "at 1280x800"))
+			main.bottom_bar.close_drawer()
 		8:
 			frozen = true
 			_show_hearth_panel()
@@ -343,7 +360,8 @@ func _hud_checks() -> void:
 			main.messages.push("Discovered a thing", 30.0)
 			main.msg_log.toggle()
 		58:
-			_check_log_opens()
+			FoldChecks.log_opens(self)
+			FoldChecks.fold(self)
 			main.msg_log.visible = false
 			main.tech_panel.view_chosen = false
 			main.tech_panel.visible = true
@@ -764,8 +782,8 @@ func _check_toast_stack() -> void:
 	for id in main.toasts.panels:
 		var p: Control = main.toasts.panels[id]
 		rects.append(p.get_global_rect())
-	if rects.size() < 4:
-		problems.append("only %d toasts stacked (want 4)" % rects.size())
+	if rects.size() < Messages.MAX_SHOWN:
+		problems.append("only %d toasts stacked (want %d)" % [rects.size(), Messages.MAX_SHOWN])
 	for i in rects.size():
 		for j in range(i + 1, rects.size()):
 			if rects[i].intersects(rects[j]):
@@ -848,22 +866,6 @@ func _check_build_cards(when: String) -> void:
 			)
 		):
 			problems.append("%s: the story card %s shows before it is revealed" % [when, type])
-
-
-func _check_log_opens() -> void:
-	hud_checks += 1
-	if not main.msg_log.visible:
-		problems.append("the message log didn't open")
-		return
-	if main.msg_log.list.get_child_count() < 1:
-		problems.append("the message log is empty")
-	if not Rect2(Vector2.ZERO, main.get_viewport_rect().size).encloses(main.msg_log.get_global_rect()):
-		problems.append("the message log runs off the window (%s)" % main.msg_log.get_global_rect())
-	var found := false
-	for l in _labels(main.msg_log):
-		found = found or l.text == "Discovered a thing"
-	if not found:
-		problems.append("the newest message isn't in the log")
 
 
 ## The research board again in the 1100x700 window (the canvas never goes under 1280x800: its longer side grows):

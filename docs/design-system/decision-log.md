@@ -820,3 +820,47 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Bug in the `ironfall_steam` start: the Forge could stand outside the Boiler's 5 tiles and never be powered (steel stuck at 0 on map 4). It now stands beside the Boiler.
 - Noted, not changed: haulers are dealt over every Storehouse with a road-linked building, so a Storehouse on a road of its own holds haulers that can never reach the metal works. Fixing it changes the golden pacing hashes, so it waits for its own PR.
 - Numbers are bot-tuned, not human-tuned; a playthrough by the project owner should move them again.
+
+## 2026-10-09: Playtest fixes, Starfall goals and quiet loads (PR #100)
+- Claude fixed what the first playtester run found. **Starfall now has its own Goals panel** (nine goals in any order: strangers come, Glyph Wall, first set read, Lumen Camp, Expedition Post, the crash site, Market, the three questions answered, the Warning), in force from the moment the star falls until Ironfall begins, so the panel no longer sits on the finished Dawn list.
+- **A loaded run, or a run started at a stage, stays quiet.** The warm lines and the Bronze Dawn banner are marked as told when a run loads (`scripts/flavor.gd`), so a stage start no longer stacks four old toasts over the map.
+- "Find coal" and "Find the Iron Hills" count as done when the coal or iron is already in the stores, since a stage start has the metal in hand without the fog lifted.
+- The cutscene player no longer lays out a still after the last one has ended (`stills[index]` out of bounds, once on entering Ironfall); a test reproduces it on the old code.
+
+## 2026-10-09: Livewire stage 1, wires and orders (PR #99)
+- Claude built Livewire stage 1 as page 23 describes: the era opens the tick after the "The Wires Hum" card is put away, with a fifth research tab and eight goals; Power Poles (nets of poles within 3 tiles, machines and engines within 2), the Generator, Wire and the Wire Mill, and the Order Board with Pause and Bring first. Fourteen techs are on the board, three bought (Power Poles, Order Board, Generator) and eleven locked until their stage. The Ironfall card's "far to the north" is now "far to the south", where the tide will start.
+- **Power is shared, not rationed to a few.** A net that gives less than it is asked runs every machine on it at the ratio, and the cards say "Net short by N". Engines light by need (a Generator burns Coal only while the net asks for more than the others give), and anything not on a net keeps the Boiler's 5 tiles and the Wheel exactly as before, so nothing in the earlier eras moves.
+- **Orders are rules the Kith carry out, with guards.** Pause stops only workshops and mines, finishes the job under way and keeps the worker and stock; Bring first serves a kind ahead of the rest and drops its claim on the stockpile after 60 s; the Pause wins when both name a building. The Board reads its rules every 3 s, writes at most a line a minute for each, and marks one that has not fired in 5 minutes.
+- Differences from the page are listed on it: the Generator is 1x1 like every building (no 2x2 footprint exists yet), and Power Poles and the Order Board hang from the new era's `after` rather than the Ironfall gate tech. Art is placeholder only and every slot is logged in `docs/art/requests.md`.
+- Saves stay VERSION 1 with an optional `game.livewire` entry (the net is rebuilt on load), the frozen pre-Ironfall fixture still loads, and the golden pacing hashes are unchanged. Every number is a first guess to tune with the pacing bot.
+
+## 2026-10-12: HUD declutter, the map is most of the screen (PR #103)
+- Claude answered the project owner's note that the screen was still too busy (and the playtest scorecard's readability findings) with one pass over the HUD. The map at 1280x800 went from 1010x380 (the old layout) to about 1280x620 and is now most of the screen.
+- **The side panel folds away.** It starts folded; a one-line goal chip at the map's top right says the current goal (its first clause) and opens the panel. Key G, the chip and the panel's Fold button toggle it, and the choice is kept between runs (`user://hud.cfg`). A building's card opens the panel by itself and it goes back to the player's choice when the card closes.
+- **The bottom bar is a thin strip.** Only the tabs show (Homes, Gathering, Workshops, Metal, Logistics, Lore, Craft) with Demolish; clicking a tab, or B, opens the card drawer over the foot of the map and picking a card closes it. Craft by hand moved into the Craft tab (four columns), so the bar no longer carries its own tall group. Esc closes the drawer.
+- **The top bar is one line per good and the toasts are quieter.** Each chip is one line, a sprite and its count, moss while it gains and red while it falls (the rate per second is in the tooltip), in a bar of 135 px; at most three toasts show at once and none stays longer than 7 s.
+- Supersedes the earlier bottom-bar entry for this day (the two-column Craft grid, PR #101, closed). Left for later: balance (the pacing bot owns it), a second look at the first minutes, and the "No room: build a Dwelling" note (unchanged, still dim).
+
+## 2026-10-12: Livewire stage 2, the tide
+- Claude built Livewire stage 2 as page 23 describes: the Bloom creeps out of the three south patches from the tick Livewire begins (35 s a tile, slower over roads, rivers, Rail and Firebreaks, never into the Hearth's 6-tile ring), overgrows the buildings it reaches and takes them after 3 minutes, and the Kith answer with Tide Watch, Arc Lamps, Firebreaks, the Scorcher, Living Ground, Foremen and Powered Mines.
+- **It is clockwork, not luck.** The front is a flood fill with a fixed cost per tile, so a map always floods the same way and the pacing bot and the stage start can rely on it; no gameplay random number is drawn.
+- **The era cannot be lost.** The Hearth ring is safe and the patches are the only sources; what the player risks is mines, coal and the haul road. Burnt ground is permanent, so the Scorcher is a way of winning ground, not holding a line.
+- Differences from the page: the Firebreak is a 1x1 building dragged out like Road in the Logistics tab (there is no Land action); burnt ground goes back to plain grass with an ash tint rather than a tile of its own; a road or ore tile the Bloom reaches keeps its own tile and is only counted as taken. They are listed on page 23.
+- Stage 1 fixes that stage 2 needed: a held machine mid-job keeps its power, a machine in a lit engine's own reach runs full speed, and a Bring first claim no longer counts stock that covers the want. Saves stay VERSION 1 with an optional `game.tide`, and the golden pacing hashes are unchanged. Art is placeholder only; every slot is in `docs/art/requests.md`.
+
+## 2026-10-08: Ironfall and Bloom Phase B paintings (PR #93)
+- Codex painted all five requested stills at the accepted Phase B size of 1586×992, without baked text.
+- The new bloomery, established hull and human Lumen materials connect the story paintings to map art; Sela retains her approved study design.
+- Bloom appears first as three faint distant ground patches, then sparse shoots; Sela's concern replaces her usual smile.
+- Important action stays above caption foregrounds; production-player captures check near-end push-in at 1280×800 and a 1600×900 crop.
+
+## 2026-10-12: Phase B character consistency corrections (PR #93)
+- Codex corrected the smith’s head/body proportions and the hull-scene Kith’s facial rendering against the approved #94 Kith reference, preserving narrative staging and scene materials.
+- Sela’s Bloom inspection remains unchanged after passing the character check; the two corrected 1586×992 originals retain exact edit prompts and source provenance.
+- Lift the character-consistency hold for review; Claude merges only after required CI passes. No runtime or gameplay changes are introduced by these corrections.
+
+## 2026-10-13: Livewire stage 3, factories and the gate (PR #105)
+- Claude built the Factory Floor, Shard Dynamo, Chain Orders and the Skyward gate, so every Livewire tech is now on sale; the Send verb, a 2x2 footprint and the Livewire pacing bot are left for later and said so on page 23.
+- The Floor copies one of five existing workshops at three times the speed instead of owning recipes, so the existing recipes stay the single source of truth and the Tool Bench's `make` field is reused.
+- The gate asks for two deeds on top of its price and techs, five written standing orders and the south held, so the era's end rewards its mechanic and its pressure, not only a stockpile (the page's default).
+- Chain Orders is a "While order N holds" button on each order; the end of the era plays the Falling Star's card with Skyward's words and the game keeps running.
