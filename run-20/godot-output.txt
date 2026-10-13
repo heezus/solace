@@ -1,0 +1,193 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+OpenGL API 4.5 (Core Profile) Mesa 25.2.8-0ubuntu0.24.04.4 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 20.1.2, 256 bits)
+
+WARNING: 2D MSAA is not yet supported for GLES3.
+     at: render_target_set_msaa (drivers/gles3/storage/texture_storage.cpp:3210)
+[   0.0s] STAGE starfall_camp: building (a bot may play to it)
+[   2.2s] SHOT 01 starfall_camp_arrive
+    GOALS: > Find the crash site: the ship came down somewhere in the fog |   Build a Market once the strangers trust you enough to trade
+    INFO: Gatherer's Hut / Paused: its Knapper is free for other jobs / Road: linked, haulers carry for it /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: The Kith gather at the Hearth. Hold the mouse on a tree to begin.
+Arrows or WASD move the map, the wheel zooms (or + and -), Home returns to the Hearth, Esc opens the menu.
+    CARD: era=false moment=false
+    HAVE: wood 963, stone 1075, flint 157, fiber 173, clay 161, berries 7792, grain 206, charcoal 2, brick 72, flour 21, flint_tools 3, fish 20, tin 930, copper 89, bronze 20
+    KITH: 97
+[  17.4s] SHOT 02 starfall_camp_t45
+    GOALS: > Find the crash site: the ship came down somewhere in the fog |   Build a Market once the strangers trust you enough to trade
+    INFO: Gatherer's Hut / Paused: its Knapper is free for other jobs / Road: linked, haulers carry for it /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: 
+    CARD: era=false moment=false
+    HAVE: wood 963, stone 1075, flint 157, fiber 173, clay 161, berries 8551, grain 206, brick 54, flour 21, fish 20, copper_ore 6, tin 954, copper 97, bronze 20
+    KITH: 97
+[  32.8s] SHOT 03 starfall_camp_t90
+    GOALS: > Find the crash site: the ship came down somewhere in the fog |   Build a Market once the strangers trust you enough to trade
+    INFO: Gatherer's Hut / Paused: its Knapper is free for other jobs / Road: linked, haulers carry for it /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: 
+    CARD: era=false moment=false
+    HAVE: wood 963, stone 1075, flint 157, fiber 173, clay 161, berries 9324, grain 206, brick 36, flour 21, fish 20, copper_ore 32, tin 986, copper 97, bronze 20
+    KITH: 97
+[  48.0s] SHOT 04 starfall_camp_t135
+    GOALS: > Find the crash site: the ship came down somewhere in the fog |   Build a Market once the strangers trust you enough to trade
+    INFO: Gatherer's Hut / Paused: its Knapper is free for other jobs / Road: linked, haulers carry for it /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: The strangers have something to ask. (The Hunger)
+    CARD: era=false moment=true
+    HAVE: wood 963, stone 1075, flint 157, fiber 173, clay 161, berries 9937, grain 206, brick 22, flour 21, fish 20, copper_ore 46, tin 1004, copper 97, bronze 20
+    KITH: 97
+[  63.2s] SHOT 05 starfall_camp_t180
+    GOALS: > Find the crash site: the ship came down somewhere in the fog |   Build a Market once the strangers trust you enough to trade
+    INFO: Gatherer's Hut / Paused: its Knapper is free for other jobs / Road: linked, haulers carry for it /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: 
+    CARD: era=false moment=true
+    HAVE: wood 963, stone 1075, flint 157, fiber 173, clay 161, berries 9937, grain 206, brick 22, flour 21, fish 20, copper_ore 46, tin 1004, copper 97, bronze 20
+    KITH: 97
+[  63.3s] STAGE ironfall: building (a bot may play to it)
+[  65.6s] SHOT 06 ironfall_arrive
+    GOALS: > Discover Coal Seams: it names the coal in the new land, south of the map |   Find coal in the south: lay roads south, the seams lie on the near side
+    INFO: Gatherer's Hut / Paused: its Knapper is free for other jobs / Road: linked, haulers carry for it /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: The Kith gather at the Hearth. Hold the mouse on a tree to begin.
+Arrows or WASD move the map, the wheel zooms (or + and -), Home returns to the Hearth, Esc opens the menu. || The Wanderer is over the whole sky by midnight. The watchers keep their eyes on it and their hands on the rail.
+    CARD: era=false moment=false
+    HAVE: wood 903, stone 1045, flint 157, fiber 173, clay 161, berries 8038, grain 206, brick 64, flour 21, flint_tools 2, fish 20, tin 936, copper 93, bronze 20
+    KITH: 97
+[  80.9s] SHOT 07 ironfall_t45
+    GOALS: > Discover Coal Seams: it names the coal in the new land, south of the map |   Find coal in the south: lay roads south, the seams lie on the near side
+    INFO: Gatherer's Hut / Paused: its Knapper is free for other jobs / Road: linked, haulers carry for it /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: A Flint Tool wore out
+    CARD: era=false moment=false
+    HAVE: wood 903, stone 1045, flint 157, fiber 173, clay 161, berries 8793, grain 206, brick 48, flour 21, fish 20, copper_ore 16, tin 966, copper 97, bronze 20
+    KITH: 97
+[  96.2s] SHOT 08 ironfall_t90
+    GOALS: > Discover Coal Seams: it names the coal in the new land, south of the map |   Find coal in the south: lay roads south, the seams lie on the near side
+    INFO: Gatherer's Hut / Paused: its Knapper is free for other jobs / Road: linked, haulers carry for it /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: 
+    CARD: era=false moment=false
+    HAVE: wood 903, stone 1045, flint 157, fiber 173, clay 161, berries 9592, grain 206, brick 32, flour 21, fish 20, copper_ore 44, tin 990, copper 97, bronze 20
+    KITH: 97
+[ 111.4s] SHOT 09 ironfall_t135
+    GOALS: > Discover Coal Seams: it names the coal in the new land, south of the map |   Find coal in the south: lay roads south, the seams lie on the near side
+    INFO: Gatherer's Hut / Paused: its Knapper is free for other jobs / Road: linked, haulers carry for it /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: 
+    CARD: era=false moment=false
+    HAVE: wood 903, stone 1045, flint 157, fiber 173, clay 161, berries 10398, grain 206, brick 10, flour 21, fish 20, copper_ore 62, tin 1020, copper 97, bronze 20
+    KITH: 97
+[ 126.7s] SHOT 10 ironfall_t180
+    GOALS: > Discover Coal Seams: it names the coal in the new land, south of the map |   Find coal in the south: lay roads south, the seams lie on the near side
+    INFO: Gatherer's Hut / Paused: its Knapper is free for other jobs / Road: linked, haulers carry for it /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: 
+    CARD: era=false moment=false
+    HAVE: wood 903, stone 1045, flint 157, fiber 173, clay 161, berries 11163, grain 206, flour 21, fish 20, copper_ore 80, tin 1040, copper 97, bronze 20
+    KITH: 97
+[ 126.8s] STAGE livewire: building (a bot may play to it)
+[ 129.1s] SHOT 11 livewire_arrive
+    GOALS: > Discover Power Poles: wire carries power past a Boiler's 5 tiles |   Lay two Power Poles within 3 tiles of each other (Logistics tab): they join into a net
+    INFO: Gatherer's Hut / Paused: its Knapper is free for other jobs / Road: linked, haulers carry for it /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: The Kith gather at the Hearth. Hold the mouse on a tree to begin.
+Arrows or WASD move the map, the wheel zooms (or + and -), Home returns to the Hearth, Esc opens the menu.
+    CARD: era=false moment=false
+    HAVE: wood 1443, stone 1502, flint 157, fiber 173, clay 161, berries 8105, grain 206, rope 300, brick 419, flour 21, flint_tools 2, fish 20, tin 948, copper 394, bronze 20, coal 594, iron 530, steel 300
+    KITH: 97
+[ 144.3s] SHOT 12 livewire_t45
+    GOALS: > Discover Power Poles: wire carries power past a Boiler's 5 tiles |   Lay two Power Poles within 3 tiles of each other (Logistics tab): they join into a net
+    INFO: Gatherer's Hut / Paused: its Knapper is free for other jobs / Road: linked, haulers carry for it /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: The Kith open the heat plate and learn from it: Shard Boiler. || The Lumen set a Lamp Core in the Kith's hands. "Open it," says Sela.
+    CARD: era=false moment=false
+    HAVE: wood 1443, stone 1502, flint 157, fiber 173, clay 161, berries 8879, grain 206, rope 300, brick 403, flour 21, fish 20, copper_ore 20, tin 970, copper 397, bronze 20, coal 594, iron 530, steel 300
+    KITH: 97
+[ 159.7s] SHOT 13 livewire_t90
+    GOALS: > Discover Power Poles: wire carries power past a Boiler's 5 tiles |   Lay two Power Poles within 3 tiles of each other (Logistics tab): they join into a net
+    INFO: Gatherer's Hut / Paused: its Knapper is free for other jobs / Road: linked, haulers carry for it /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: The Lumen set a Seed Pod in the Kith's hands. "Open it," says Sela. || A Flint Tool wore out
+    CARD: era=false moment=false
+    HAVE: wood 1443, stone 1502, flint 157, fiber 173, clay 161, berries 9680, grain 206, rope 300, brick 383, flour 21, fish 20, copper_ore 46, tin 998, copper 397, bronze 20, coal 594, iron 530, steel 300
+    KITH: 97
+[ 175.0s] SHOT 14 livewire_t135
+    GOALS: > Discover Power Poles: wire carries power past a Boiler's 5 tiles |   Lay two Power Poles within 3 tiles of each other (Logistics tab): they join into a net
+    INFO: Gatherer's Hut / Paused: its Knapper is free for other jobs / Road: linked, haulers carry for it /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: A Flint Tool wore out
+    CARD: era=false moment=false
+    HAVE: wood 1443, stone 1502, flint 157, fiber 173, clay 161, berries 10465, grain 206, rope 300, brick 363, flour 21, fish 20, copper_ore 64, tin 1026, copper 397, bronze 20, coal 594, iron 536, steel 300
+    KITH: 97
+[ 190.3s] SHOT 15 livewire_t180
+    GOALS: > Discover Power Poles: wire carries power past a Boiler's 5 tiles |   Lay two Power Poles within 3 tiles of each other (Logistics tab): they join into a net
+    INFO: Gatherer's Hut / Paused: its Knapper is free for other jobs / Road: linked, haulers carry for it /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: 
+    CARD: era=false moment=false
+    HAVE: wood 1443, stone 1502, flint 157, fiber 173, clay 161, berries 11158, grain 206, rope 300, brick 347, flour 21, fish 20, copper_ore 82, tin 1048, copper 397, bronze 20, coal 594, iron 536, steel 300
+    KITH: 97
+[ 190.4s] STAGE livewire_tide: building (a bot may play to it)
+[ 192.8s] SHOT 16 livewire_tide_arrive
+    GOALS: > Lay two Power Poles within 3 tiles of each other (Logistics tab): they join into a net |   Put a machine and an engine on one net: each within 2 tiles of a pole (a Forge or Grindstone, and a Boiler or Wheel)
+    INFO: Gatherer's Hut / Paused: its Knapper is free for other jobs / Road: linked, haulers carry for it /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: The Kith gather at the Hearth. Hold the mouse on a tree to begin.
+Arrows or WASD move the map, the wheel zooms (or + and -), Home returns to the Hearth, Esc opens the menu.
+    CARD: era=false moment=false
+    HAVE: wood 1443, stone 1502, flint 157, fiber 173, clay 161, berries 14040, grain 206, rope 300, brick 451, flour 21, fish 20, copper_ore 176, tin 1142, copper 597, bronze 20, wire 200, coal 794, iron 536, steel 500
+    KITH: 97
+[ 208.1s] SHOT 17 livewire_tide_t45
+    GOALS: > Lay two Power Poles within 3 tiles of each other (Logistics tab): they join into a net |   Put a machine and an engine on one net: each within 2 tiles of a pole (a Forge or Grindstone, and a Boiler or Wheel)
+    INFO: Gatherer's Hut / Paused: its Knapper is free for other jobs / Road: linked, haulers carry for it /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: 
+    CARD: era=false moment=false
+    HAVE: wood 1443, stone 1502, flint 157, fiber 173, clay 161, berries 14727, grain 206, rope 300, brick 433, flour 21, fish 20, copper_ore 194, tin 1160, copper 597, bronze 20, wire 200, coal 794, iron 536, steel 500
+    KITH: 97
+[ 223.4s] SHOT 18 livewire_tide_t90
+    GOALS: > Lay two Power Poles within 3 tiles of each other (Logistics tab): they join into a net |   Put a machine and an engine on one net: each within 2 tiles of a pole (a Forge or Grindstone, and a Boiler or Wheel)
+    INFO: Gatherer's Hut / Paused: its Knapper is free for other jobs / Road: linked, haulers carry for it /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: 
+    CARD: era=false moment=false
+    HAVE: wood 1443, stone 1502, flint 157, fiber 173, clay 161, berries 15378, grain 206, rope 300, brick 415, flour 21, fish 20, copper_ore 212, tin 1178, copper 597, bronze 20, wire 200, coal 794, iron 536, steel 500
+    KITH: 97
+[ 238.8s] SHOT 19 livewire_tide_t135
+    GOALS: > Lay two Power Poles within 3 tiles of each other (Logistics tab): they join into a net |   Put a machine and an engine on one net: each within 2 tiles of a pole (a Forge or Grindstone, and a Boiler or Wheel)
+    INFO: Gatherer's Hut / Paused: its Knapper is free for other jobs / Road: linked, haulers carry for it /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: The Bloom reaches the Storehouse in about 3 min
+    CARD: era=false moment=false
+    HAVE: wood 1443, stone 1502, flint 157, fiber 173, clay 161, berries 16049, grain 206, rope 300, brick 395, flour 21, fish 20, copper_ore 230, tin 1196, copper 597, bronze 20, wire 200, coal 794, iron 536, steel 500
+    KITH: 97
+[ 254.1s] SHOT 20 livewire_tide_t180
+    GOALS: > Lay two Power Poles within 3 tiles of each other (Logistics tab): they join into a net |   Put a machine and an engine on one net: each within 2 tiles of a pole (a Forge or Grindstone, and a Boiler or Wheel)
+    INFO: Gatherer's Hut / Paused: its Knapper is free for other jobs / Road: linked, haulers carry for it /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: It is lower. Everyone on the tower can see that it is lower.
+    CARD: era=false moment=false
+    HAVE: wood 1443, stone 1502, flint 157, fiber 173, clay 161, berries 16722, grain 206, rope 300, brick 377, flour 21, fish 20, copper_ore 250, tin 1214, copper 597, bronze 20, wire 200, coal 794, iron 536, steel 500
+    KITH: 97
+[ 254.2s] STAGE livewire_gate: building (a bot may play to it)
+[ 256.5s] SHOT 21 livewire_gate_arrive
+    GOALS: > Lay two Power Poles within 3 tiles of each other (Logistics tab): they join into a net |   Put a machine and an engine on one net: each within 2 tiles of a pole (a Forge or Grindstone, and a Boiler or Wheel)
+    INFO: Gatherer's Hut / Paused: its Knapper is free for other jobs / Road: linked, haulers carry for it /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: The Kith gather at the Hearth. Hold the mouse on a tree to begin.
+Arrows or WASD move the map, the wheel zooms (or + and -), Home returns to the Hearth, Esc opens the menu.
+    CARD: era=false moment=false
+    HAVE: wood 1443, stone 1502, flint 157, fiber 173, clay 161, berries 14093, grain 206, rope 300, brick 649, flour 21, fish 20, copper_ore 178, tin 1142, copper 597, bronze 20, wire 400, coal 794, iron 736, steel 700
+    KITH: 97
+[ 271.9s] SHOT 22 livewire_gate_t45
+    GOALS: > Lay two Power Poles within 3 tiles of each other (Logistics tab): they join into a net |   Put a machine and an engine on one net: each within 2 tiles of a pole (a Forge or Grindstone, and a Boiler or Wheel)
+    INFO: Gatherer's Hut / Paused: its Knapper is free for other jobs / Road: linked, haulers carry for it /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: 
+    CARD: era=false moment=false
+    HAVE: wood 1443, stone 1502, flint 157, fiber 173, clay 161, berries 14748, grain 206, rope 300, brick 631, flour 21, fish 20, copper_ore 196, tin 1160, copper 597, bronze 20, wire 400, coal 794, iron 736, steel 700
+    KITH: 97
+[ 287.2s] SHOT 23 livewire_gate_t90
+    GOALS: > Lay two Power Poles within 3 tiles of each other (Logistics tab): they join into a net |   Put a machine and an engine on one net: each within 2 tiles of a pole (a Forge or Grindstone, and a Boiler or Wheel)
+    INFO: Gatherer's Hut / Paused: its Knapper is free for other jobs / Road: linked, haulers carry for it /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: 
+    CARD: era=false moment=false
+    HAVE: wood 1443, stone 1502, flint 157, fiber 173, clay 161, berries 15411, grain 206, rope 300, brick 611, flour 21, fish 20, copper_ore 214, tin 1178, copper 597, bronze 20, wire 400, coal 794, iron 736, steel 700
+    KITH: 97
+[ 302.5s] SHOT 24 livewire_gate_t135
+    GOALS: > Lay two Power Poles within 3 tiles of each other (Logistics tab): they join into a net |   Put a machine and an engine on one net: each within 2 tiles of a pole (a Forge or Grindstone, and a Boiler or Wheel)
+    INFO: Gatherer's Hut / Paused: its Knapper is free for other jobs / Road: linked, haulers carry for it /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: The Bloom reaches the Storehouse in about 3 min
+    CARD: era=false moment=false
+    HAVE: wood 1443, stone 1502, flint 157, fiber 173, clay 161, berries 16087, grain 206, rope 300, brick 595, flour 21, fish 20, copper_ore 232, tin 1196, copper 597, bronze 20, wire 400, coal 794, iron 736, steel 700
+    KITH: 97
+[ 317.8s] SHOT 25 livewire_gate_t180
+    GOALS: > Lay two Power Poles within 3 tiles of each other (Logistics tab): they join into a net |   Put a machine and an engine on one net: each within 2 tiles of a pole (a Forge or Grindstone, and a Boiler or Wheel)
+    INFO: Sef III the Hauler /  / Gatherer's Hut / Paused: its Knapper is free for other jobs / Road: linked, haulers carry for it /  / Click to finish a cycle early while it's working. / Click to select it.
+    TOAST: It is lower. Everyone on the tower can see that it is lower.
+    CARD: era=false moment=false
+    HAVE: wood 1443, stone 1502, flint 157, fiber 173, clay 161, berries 16736, grain 206, rope 300, brick 575, flour 21, fish 20, copper_ore 250, tin 1214, copper 597, bronze 20, wire 400, coal 794, iron 736, steel 700
+    KITH: 97
+[ 317.9s] DONE
