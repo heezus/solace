@@ -63,3 +63,48 @@ jobs:
           git add -A
           git commit -qm "Playtest run ${{ github.run_number }} (${{ github.sha }})"
           git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" playtest-shots-${{ matrix.mode }}
+
+  pace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    env:
+      GODOT_VERSION: 4.7.2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Godot
+        run: |
+          curl -sSL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip
+          mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
+      - name: Import project
+        run: ./godot --headless --path . --import
+      - name: Real-play pacing (bots play whole eras; nobody observes a scripted start)
+        run: |
+          mkdir -p pace-out
+          ./godot --headless --path . -s tests/tools/pace.gd -- all 45 quiet > pace-out/stone_age.txt 2>&1 &
+          ./godot --headless --path . -s tests/tools/pace.gd -- 1 60 quiet star > pace-out/bronze_map1.txt 2>&1 &
+          ./godot --headless --path . -s tests/tools/pace.gd -- 2 60 quiet star > pace-out/bronze_map2.txt 2>&1 &
+          ./godot --headless --path . -s tests/tools/pace.gd -- 1 60 quiet ironfall > pace-out/ironfall_map1.txt 2>&1 &
+          ./godot --headless --path . -s tests/tools/pace.gd -- 2 60 quiet ironfall > pace-out/ironfall_map2.txt 2>&1 &
+          ./godot --headless --path . -s tests/tools/gate_state.gd -- 1 2 > pace-out/gate_state.txt 2>&1 &
+          wait
+          tail -n 40 pace-out/*.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pace-out
+          path: pace-out
+      - name: Publish logs to the playtest-shots-pace branch
+        if: always()
+        run: |
+          dir="$RUNNER_TEMP/shots"
+          mkdir -p "$dir/run-${{ github.run_number }}"
+          cp pace-out/* "$dir/run-${{ github.run_number }}/" || true
+          cd "$dir"
+          git init -q
+          git checkout -q -b playtest-shots-pace
+          git config user.name "playtest"
+          git config user.email "playtest@users.noreply.github.com"
+          git add -A
+          git commit -qm "Pace run ${{ github.run_number }} (${{ github.sha }})"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" playtest-shots-pace
