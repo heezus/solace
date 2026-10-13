@@ -14,26 +14,36 @@ on:
       - "docs/**"
       - "**/*.md"
 
+# A newer push to the same branch or pull request cancels the run it replaces.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Jon's Mac, registered as a self-hosted runner (docs/RUNNER.md), so no paid minutes are used.
+    runs-on: [self-hosted, solace-mac]
+    timeout-minutes: 60
     env:
       GODOT_VERSION: 4.7.2
     steps:
       - uses: actions/checkout@v4
 
+      - name: Tool path
+        run: echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
+
       - name: Lint GDScript
         run: |
-          pip install "gdtoolkit==4.*"
-          gdlint scripts tests
-          gdformat -l 120 --check scripts tests
+          venv="$HOME/.cache/solace/venv"
+          if [ ! -x "$venv/bin/gdlint" ]; then
+            python3 -m venv "$venv"
+            "$venv/bin/pip" install -q "gdtoolkit==4.*"
+          fi
+          "$venv/bin/gdlint" scripts tests
+          "$venv/bin/gdformat" -l 120 --check scripts tests
 
-      - name: Install Godot
-        run: |
-          curl -sSL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
-          unzip -q godot.zip
-          mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
-          ./godot --version
+      - name: Install Godot (once per machine)
+        run: tests/tools/setup_godot.sh
 
       # Every Godot step fails on any ERROR, SCRIPT ERROR, WARNING or Parse Error line, not only on a
       # failed assertion (tests/tools/run_checked.sh).
@@ -56,16 +66,15 @@ jobs:
 
       - name: Play the main scene with input, to Bronze Dawn
         run: |
-          sudo apt-get update -q && sudo apt-get install -yq xvfb
-          tests/tools/run_checked.sh xvfb-run -a -s "-screen 0 1280x800x24" \
+          tests/tools/run_checked.sh tests/tools/with_display.sh \
             ./godot --rendering-driver opengl3 --audio-driver Dummy --path . -s tests/tools/play_pass.gd
 
       - name: Map scale holds steady over a long run (changes only with the window)
         run: |
-          tests/tools/run_checked.sh xvfb-run -a -s "-screen 0 1280x800x24" \
+          tests/tools/run_checked.sh tests/tools/with_display.sh \
             ./godot --rendering-driver opengl3 --audio-driver Dummy --path . -s tests/tools/layout_pass.gd
 
       - name: Title screen, zoom, pause menu, Save and Load work as a player drives them
         run: |
-          tests/tools/run_checked.sh xvfb-run -a -s "-screen 0 1280x800x24" \
+          tests/tools/run_checked.sh tests/tools/with_display.sh \
             ./godot --rendering-driver opengl3 --audio-driver Dummy --path . -s tests/tools/menu_pass.gd
