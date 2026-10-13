@@ -1,6 +1,6 @@
 name: Desktop builds
 
-# Builds a single-file Windows .exe and a universal macOS .app of the game. Pull requests only prove the export works; a push to
+# Builds a single-file Windows .exe and a universal macOS .app of the game, both exported from Jon's Mac (the self-hosted runner). Pull requests only prove the export works; a push to
 # main also publishes it as the rolling "latest" release, so one stable link always has the newest build.
 on:
   push:
@@ -15,34 +15,29 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: windows-build-${{ github.ref }}
+  group: desktop-build-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: write
 
 jobs:
-  windows:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: [self-hosted, solace-mac]
+    timeout-minutes: 60
     env:
       GODOT_VERSION: 4.7.2
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Godot and its export templates
-        run: |
-          base="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
-          curl -sSL -o godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
-          unzip -q godot.zip
-          mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
-          curl -sSL -o templates.tpz "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
-          mkdir -p "$HOME/.local/share/godot/export_templates"
-          unzip -q templates.tpz -d templates
-          mv templates/templates "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
-          ./godot --version
+      - name: Tool path
+        run: echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
+
+      - name: Install Godot and its export templates (once per machine)
+        run: tests/tools/setup_godot.sh templates
 
       - name: Import project
-        run: ./godot --headless --path . --import
+        run: tests/tools/import_project.sh
 
       # The bots that make the later stage starts take minutes, so they run here once and both builds ship the result
       # (stage_starts/ is not in the repo; the game falls back to building a start on demand without it).
@@ -83,6 +78,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          command -v gh >/dev/null || { echo "::error::gh is not installed on the runner (brew install gh)"; exit 1; }
           short="${GITHUB_SHA::7}"
           gh release delete latest --cleanup-tag --yes || true
           gh release create latest build/Solace-windows.zip build/Solace-macos.zip \

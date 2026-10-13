@@ -161,10 +161,29 @@ func _wait_for(cond: Callable, problem: String, ms: int) -> void:
 		if cond.call():
 			return
 		if game_time > until[0]:
-			problems.append(problem)
+			problems.append(problem + " (" + _pointer_state() + ")")
 			return
 		steps.push_front(func(): self_ref.call(self_ref))
 	steps.append(func(): poll.call(poll))
+
+
+## What the pointer and the hold looked like when a wait ran out, for a log read without the machine.
+func _pointer_state() -> String:
+	var vp := main.get_viewport()
+	return (
+		"window %s, canvas xform %s, pointer %s, mouse %s, hover %s, holding %s, over control %s, hands %s, frame %d"
+		% [
+			root.get_window().size,
+			root.get_final_transform(),
+			vp.get_mouse_position(),
+			Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT),
+			main.hover,
+			main.holding,
+			vp.gui_get_hovered_control(),
+			main.state.hand_counts,
+			frame,
+		]
+	)
 
 
 ## Click every build tab three times over in one frame, with the button already down on the map:
