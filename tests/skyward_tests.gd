@@ -260,7 +260,7 @@ func test_the_deeds() -> void:
 	s.livewire.orders[4]["target"] = "kiln"
 	t.check(s.gate.deed("orders_written"), "five are")
 	# the south
-	var c: Vector2i = base.meadow(s, 8)
+	base.meadow(s, 8)
 	var south: Vector2i = s.world.camp_pos + Vector2i(0, Data.SOUTH_ROWS_BELOW_HEARTH + 2)
 	t.check(s.gate.in_south(south) and not s.gate.in_south(s.world.camp_pos + Vector2i(0, 3)), "the south is far down")
 	t.check(not s.gate.deed("south_held"), "nothing held yet")
