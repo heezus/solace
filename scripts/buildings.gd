@@ -20,6 +20,7 @@ signal demolished(type: String, pos: Vector2i)
 const Codec = preload("res://scripts/save_codec.gd")
 const Data = preload("res://scripts/data.gd")
 const Economy = preload("res://scripts/economy.gd")
+const FloorRecipe = preload("res://scripts/floor_recipe.gd")
 const Research = preload("res://scripts/research.gd")
 const Rules = preload("res://scripts/rules.gd")
 const World = preload("res://scripts/world.gd")
@@ -255,7 +256,7 @@ func add_building(type: String, p: Vector2i) -> void:
 		"ore": "",  # what a Mine digs: the item its tile yields, "" for any other building
 		"give": "",  # what a Trading Post gives up (Data.TRADE_GIVE of it), "" for none yet
 		"get": "",  # ...and what it gets for it (Data.TRADE_GET of it)
-		"make": "",  # the tool a Tool Bench is making now (a Data.RECIPES id), "" for any other building
+		"make": "",  # the tool a Tool Bench is making now (a Data.RECIPES id), or the workshop a Factory Floor copies, "" for any other
 		"claimed": false,  # a hauler is on its way to empty it
 		"incoming": {},  # inputs haulers are carrying here
 		"unreachable": 0.0,  # seconds left to show "can't reach"
@@ -277,6 +278,8 @@ func add_building(type: String, p: Vector2i) -> void:
 		b["ore"] = Data.TILES[_world.tile_at(p)]["yields"]
 	if Data.BUILDINGS[type].has("makes"):
 		b["make"] = Data.BUILDINGS[type]["makes"][0]
+	if Data.BUILDINGS[type].has("floor"):
+		b["make"] = FloorRecipe.first_open(self, type)
 	if Data.BUILDINGS[type]["kind"] == "gatherer":
 		for t in gather_tiles(p):
 			b["gather_items"].append(Data.TILES[_world.tile_at(t)]["yields"])
@@ -528,11 +531,13 @@ static func is_staffed(b: Dictionary) -> bool:
 
 
 ## What a cycle at `b` makes: the building's `out`, for a Mine its `dig` of the ore on its tile, for a Trading Post
-## what it is set to get, for a Tool Bench the tool it is making.
+## what it is set to get, for a Tool Bench the tool it is making, for a Factory Floor the output of the workshop it copies.
 static func recipe_out(b: Dictionary) -> Dictionary:
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
 	if def.has("makes"):
 		return Data.RECIPES[b["make"]]["out"]
+	if def.has("floor"):
+		return Data.BUILDINGS[b["make"]]["out"]
 	if def.has("dig"):
 		return {b["ore"]: def["dig"]}
 	if def.get("trade", false):
@@ -541,14 +546,33 @@ static func recipe_out(b: Dictionary) -> Dictionary:
 
 
 ## What a cycle at `b` uses: the building's `in`, for a Trading Post what it is set to give, for a Tool Bench what
-## its tool takes.
+## its tool takes, for a Factory Floor what the workshop it copies takes.
 static func recipe_in(b: Dictionary) -> Dictionary:
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
 	if def.has("makes"):
 		return Data.RECIPES[b["make"]]["in"]
+	if def.has("floor"):
+		return Data.BUILDINGS[b["make"]].get("in", {})
 	if def.get("trade", false):
 		return {b["give"]: def.get("trade_give", Data.TRADE_GIVE)} if is_trading(b) else {}
 	return def.get("in", {})
+
+
+## Step Factory Floor `i` to the next workshop it can copy. What it had loaded of the old recipe goes back to the stockpile.
+## False when it is not a Floor or has nothing else to copy.
+func cycle_floor(i: int) -> bool:
+	if i < 0 or i >= buildings.size():
+		return false
+	var b: Dictionary = buildings[i]
+	var options := FloorRecipe.options(self, b)
+	if options.size() < 2:
+		return false
+	for id in b["inbuf"]:
+		_economy.add(id, b["inbuf"][id])
+	b["inbuf"].clear()
+	b["progress"] = 0.0
+	b["make"] = options[(options.find(b["make"]) + 1) % options.size()]
+	return true
 
 
 ## True for a Trading Post that has been told what to give and what to get.
@@ -694,5 +718,7 @@ static func _building_from_dict(d: Dictionary) -> Dictionary:
 	b["give"] = String(d.get("give", ""))
 	b["get"] = String(d.get("get", ""))
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
-	b["make"] = String(d.get("make", def["makes"][0] if def.has("makes") else ""))
+	b["make"] = String(
+		d.get("make", def["makes"][0] if def.has("makes") else (def["floor"][0] if def.has("floor") else ""))
+	)
 	return b

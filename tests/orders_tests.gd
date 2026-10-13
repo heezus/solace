@@ -496,8 +496,8 @@ func test_the_goals() -> void:
 	s.tide.burnt[Vector2i(1, 1)] = true
 	s.story.update(s)
 	t.check(
-		s.story.current_goal() == Data.GOALS_ERA5.size() and s.story.done_count() == Data.GOALS_ERA5.size(),
-		"and all twelve are done"
+		s.story.current_goal() == 12 and s.story.done_count() == 12 and Data.GOALS_ERA5.size() > 12,
+		"and the first twelve are done, the factories' six still ahead"
 	)
 	var early := town()
 	early.story.record(Data.LIVEWIRE_BEGUN)

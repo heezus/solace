@@ -14,7 +14,10 @@ const Lessons = preload("res://scripts/lessons.gd")
 ## Seconds for one work cycle at this building: its base time, shortened by the Speed group and, for a hut, by the
 ## Speed its patch gives (more tiles of its resource in reach: scripts/patch.gd).
 static func time(s, b: Dictionary) -> float:
-	var t: float = Data.BUILDINGS[b["type"]]["time"] / (Bonuses.speed(s, b) * Patch.speed(s, b))
+	var base: float = Data.BUILDINGS[b["type"]].get("time", 0.0)
+	if Data.BUILDINGS[b["type"]].has("floor"):
+		base = Data.BUILDINGS[b["make"]]["time"] / Data.FLOOR_SPEED  # a Factory Floor: its recipe's workshop, three times as fast
+	var t: float = base / (Bonuses.speed(s, b) * Patch.speed(s, b))
 	if (
 		Data.BUILDINGS[b["type"]].has("dig")
 		and s.tech_tree.researched.has("powered_mines")

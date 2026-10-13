@@ -188,6 +188,7 @@ const SHARD_DYNAMO := {
 	"slot": 0,
 	"unlock": "Shard Dynamo",
 	"icon": "kiln",
+	"lesson": "heat_plate",
 	"requires": ["generator", "shard_boiler"],
 	"cost": {"steel": 60, "wire": 50, "iron": 80},
 	"desc": "A Generator on Shards: 1 Shard for 160 seconds and no coal, once the Heat plate is learned.",
@@ -237,6 +238,7 @@ const SKYWARD := {
 	"unlock": "The era ends",
 	"icon": "wanderer",
 	"requires": ["factory_floor", "scorcher", "chain_orders", "shard_dynamo"],
+	"deeds": ["orders_written", "south_held"],
 	"cost": {"steel": 120, "iron": 100, "wire": 120, "brick": 100},
 	"desc": "A mast over the town with a lamp that never goes out. The hum carries up the wire, and something answers.",
 }

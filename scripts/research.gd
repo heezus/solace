@@ -21,6 +21,7 @@ var queue: Array = []  # the next techs on the way there, researched as soon as 
 var story_has: Callable = func(_id): return false  # (String) -> bool: has that story moment happened? Set by the owner
 var gift_has: Callable = func(_id): return true  # (String) -> bool: is that Lumen gift (a glyph set) read? Set by the owner
 var lesson_has: Callable = func(_id): return true  # (String) -> bool: is that Lesson learned? Set by the owner
+var deed_has: Callable = func(_id): return true  # (String) -> bool: is that gate deed done (scripts/gate.gd)? Set by the owner
 var _economy: Economy
 var _hidden_shown: Callable  # () -> bool: true once hidden techs are on show (the Strange Stone was clicked)
 var _extra_discount: Callable  # () -> float: a share (0 to 1) off every tech, from what stands in the town; may be unset
@@ -93,8 +94,9 @@ func _discovered(tech: String, shown: bool) -> bool:
 	return any.is_empty() or any.any(func(r): return _vis.has(r))
 
 
-## The gift a tech needs read and the Lessons it needs learned (`gift`, `lessons`) that are not yet, as the names to show
-## ("the Shardlight gift", "the Spore sample Lesson"). They come from the Lumen and the Bench, not from other techs.
+## The gift a tech needs read, the Lessons it needs learned and the deeds it needs done (`gift`, `lessons`, `deeds`) that are not
+## yet, as the names to show ("the Shardlight gift", "the Spore sample Lesson", "five standing orders written"). They come from
+## the Lumen, the Bench and the town, not from other techs.
 func open_needs(tech: String) -> Array:
 	var def: Dictionary = Data.TECHS[tech]
 	var out: Array = []
@@ -103,6 +105,9 @@ func open_needs(tech: String) -> Array:
 	for id in def.get("lessons", []):
 		if not lesson_has.call(id):
 			out.append("the %s Lesson" % Data.LESSONS[id]["name"])
+	for id in def.get("deeds", []):
+		if not deed_has.call(id):
+			out.append(Data.DEED_NAMES[id])
 	return out
 
 

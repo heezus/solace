@@ -53,7 +53,7 @@ const ERA_TIER_NAMES := {
 const BUILT_STAGE := 3
 ## How far an era past Ironfall is built, by era: Livewire (5) is built in three stages (design-system/23-livewire.md), and a tech
 ## of it is researchable once its `stage` is no more than this (Rules.tech_enabled). Eras before it are built to BUILT_STAGE.
-const ERA_BUILT_STAGE := {5: 2}
+const ERA_BUILT_STAGE := {5: 3}
 ## A route set aside by a fork costs this many times its price once the fork's goal is learned.
 const FORK_LATER_COST := 1.5
 ## Tally Sticks makes every tech this share of its cost.

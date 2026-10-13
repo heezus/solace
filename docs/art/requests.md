@@ -157,6 +157,14 @@ Livewire stage 2 (the Bloom's tide, Arc Lamps, the Scorcher, Firebreaks, Tide Wa
 - [ ] **Research card icons.** Tide Watch, Arc Lamps, Foremen, Powered Mines, the Scorcher, Firebreaks and Living Ground borrow existing icons (see `icon` in `scripts/data/livewire/techs.gd`); paint their own.
 - Noted, not changed: no sound, and the tide arrives with only a feed line; a "the Bloom is coming" cue (a low drone, a vignette) is welcome once the art arrives.
 
+## 2026-10-13: Livewire stage 3 art slots, factories and the gate (Claude)
+Livewire stage 3 (the Factory Floor, the Shard Dynamo, Chain Orders, the Skyward gate) ships on **placeholder art**: nothing was added to `art/` and no `.import` file was made. Footprints are 1x1 for now (page 23 draws the Floor bigger; ask before changing it).
+- [ ] **Factory Floor (`factory_floor`, Metal tab).** A long low hall with a sawtooth roof, a chimney, a belt running out of a wide door and a pair of lit windows; it should read as "many hands, one product". Now: a borrowed workshop region, tinted grey-blue. It copies five workshops, so a small mark of what it makes on the roof (rope, brick, iron, steel, wire) is welcome but not needed.
+- [ ] **Shard Dynamo (`shard_dynamo`, Workshops tab).** A Generator body with a glowing cyan shard held in a cradle at its heart and a cooler light than the Generator's orange. Now: a borrowed power region, tinted pale blue.
+- [ ] **Skyward mast (the end of the age, code-free).** Nothing is drawn on the map for it yet. A tall lit mast over the Hearth, built from the wire town's own parts, with a lamp that never goes out, is the whole idea; the end card ([`Data.SKYWARD_*`], `scripts/era_card.gd`) is the Falling Star's card with its own words, so a still behind it (the hum climbing the wire, something answering far above the south) would carry it, with the same rules as the cutscene stills in [cutscene-art-brief.md](cutscene-art-brief.md).
+- [ ] **Research card icons.** Factory Floor, Shard Dynamo, Chain Orders and Skyward borrow existing icons (see `icon` in `scripts/data/livewire/techs.gd`); paint their own.
+- Noted, not changed: the Floor's Recipe button and the Order Board's While button are plain text buttons; an icon for what the Floor makes would be welcome.
+
 ### Ironfall Phase B delivery — PR #93
 All five exact-name paintings and generated imports are supplied under `art/rendered/cutscenes/`: ironfall_1, ironfall_2, ironfall_3, bloom_sign_1, bloom_sign_2. Original size is the accepted 1586×992. The current player loads these automatically by filename. Prompts, provenance and real player captures are in `docs/art/ironfall/phase-b/`; Sela and the existing #73 Bloom design are reused as references. Review current-head CI before merge. Full stage 1 visual batch: tiles #90, buildings #91, items #92, stills #93. Map/item hooks are in their measured-region specs; renderer/gameplay code stays Claude's.
 

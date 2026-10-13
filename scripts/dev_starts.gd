@@ -139,6 +139,7 @@ static func _table() -> Array:
 		["ironfall_steam", "Stage: Ironfall, steam: a Boiler, a Forge and Rail to lay", _ironfall_steam],
 		["livewire", "Stage: Livewire, the wires hum", _livewire],
 		["livewire_tide", "Stage: Livewire, the tide: seven minutes in, every tool learned", _livewire_tide],
+		["livewire_gate", "Stage: Livewire, the factories: the gate is all that is left", _livewire_gate],
 	]
 
 
@@ -323,6 +324,21 @@ static func _livewire_tide_on(s: Sim) -> Sim:
 	for id in ["wire", "coal", "steel", "copper", "brick"]:
 		s.economy.add(id, 200)
 	_wait(s, TIDE_START_SECONDS)
+	return s
+
+
+## Livewire's last stage: on the tide start, the Factory Floor, Shard Dynamo and Chain Orders are learned and the stores hold what
+## the Skyward gate costs, so the player has only the two deeds (five orders written, the south held) and the last tech left.
+static func _livewire_gate() -> Sim:
+	return _livewire_gate_on(_livewire_tide())
+
+
+static func _livewire_gate_on(s: Sim) -> Sim:
+	for tech in ["factory_floor", "shard_dynamo", "chain_orders"]:
+		s.tech_tree.researched[tech] = true
+	for id in ["steel", "iron", "wire", "brick"]:
+		s.economy.add(id, 200)
+	_wait(s, 2.0)
 	return s
 
 

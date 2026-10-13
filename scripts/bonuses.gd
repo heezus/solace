@@ -125,7 +125,10 @@ static func text(s, b: Dictionary) -> String:
 	if not def.has("time"):
 		return ""
 	var parts := active(s, b, "")
-	var base: float = 60.0 / def["time"]
+	var time: float = def["time"]
+	if def.has("floor"):
+		time = Data.BUILDINGS[b["make"]]["time"] / Data.FLOOR_SPEED  # a Factory Floor: its recipe's workshop, faster
+	var base: float = 60.0 / time
 	var unit := "jobs/min"
 	if def["kind"] == "processor" and not Buildings.recipe_out(b).is_empty():
 		var out := Buildings.recipe_out(b)
