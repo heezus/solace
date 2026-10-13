@@ -37,7 +37,7 @@ jobs:
         run: tests/tools/setup_godot.sh templates
 
       - name: Import project
-        run: ./godot --headless --path . --import
+        run: tests/tools/import_project.sh
 
       # The bots that make the later stage starts take minutes, so they run here once and both builds ship the result
       # (stage_starts/ is not in the repo; the game falls back to building a start on demand without it).

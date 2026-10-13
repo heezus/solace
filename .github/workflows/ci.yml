@@ -48,7 +48,7 @@ jobs:
       # Every Godot step fails on any ERROR, SCRIPT ERROR, WARNING or Parse Error line, not only on a
       # failed assertion (tests/tools/run_checked.sh).
       - name: Import project
-        run: tests/tools/run_checked.sh ./godot --headless --path . --import
+        run: tests/tools/import_project.sh
 
       - name: No new .uid or .import files after import
         run: |
