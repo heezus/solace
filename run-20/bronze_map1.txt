@@ -1,0 +1,4 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+map 1: Bronze Dawn at 18.2 min, first Bronze 14.4 min later, The Falling Star 26.8 min after that
+era 2: first Bronze 14.4 min on average (14.4 to 14.4), the star 26.8 min after it (26.8 to 26.8)

@@ -1,0 +1,11 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+map 1: WON at 18.2 min
+map 2: WON at 15.6 min
+map 3: WON at 15.4 min
+map 4: WON at 21.3 min
+map 5: WON at 18.8 min
+map 6: WON at 18.2 min
+map 7: WON at 15.6 min
+map 8: WON at 15.8 min
+average 17.4 min, from 15.4 to 21.3

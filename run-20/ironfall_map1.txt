@@ -1,0 +1,5 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+map 1 from ironfall: no gate by 60.0 min
+   marks (min): find_coal 0.0, find_iron 0.0, first_steel 0.0, ironstone 0.0, iron_mine 0.1, teardown 0.9
+   inv { "wood": 190, "stone": 654, "flint": 155, "fiber": 168, "clay": 150, "berries": 3037, "grain": 150, "rope": 176, "charcoal": 102, "brick": 6146, "flour": 13, "flint_tools": 28, "fish": 20, "copper_ore": 1252, "tin": 2211, "copper": 34, "bronze": 106, "bronze_tools": 0, "wire": 0, "coal": 0, "iron_ore": 9133, "iron": 0, "steel": 0, "iron_tools": 0, "steel_tools": 0, "shard": 0 }
