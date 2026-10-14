@@ -35,6 +35,7 @@ const TRACED := [
 	"forge", "bloomery", "boiler", "coal_mine", "mine", "kiln", "charcoal_pit", "smelter", "crucible", "twine_post"
 ]
 
+var gate := GATE  # the tech the bot plays toward (the Livewire bot plays on to Skyward)
 var marks := {}  # milestone -> clock
 var gate_at := -1.0
 var _room_since := {}  # building type -> the clock when it was first affordable and unplaced
@@ -46,7 +47,7 @@ var _tile_size := -1
 
 ## Play `game` (an Ironfall start) from here to the Livewire gate, or until `max_seconds` pass.
 func play_from(game: Sim, max_seconds: float) -> Dictionary:
-	goal_tech = GATE
+	goal_tech = gate
 	attach(game)
 	for tech in s.tech_tree.researched:
 		known[tech] = true
@@ -82,7 +83,7 @@ func _drop_stranded_posts() -> void:
 ## metal works before any other tech (the Bloomeries and Forges take the brick and iron that the techs would), then the gate.
 func _aim() -> void:
 	var done: Dictionary = s.tech_tree.researched
-	var want := GATE
+	var want := gate
 	var ground := GROUND_TECHS.filter(func(id): return not done.has(id))
 	if not ground.is_empty():
 		want = ground[0]  # the metal's ground first: the way to Bloom Sampling does not pass through the Coal Seams
@@ -152,7 +153,7 @@ func _note_goals() -> void:
 				marks["steam_cart"] = clock
 				lines.append("%5.0f s  == a Steam Cart rolls ==" % clock)
 				break
-	if gate_at < 0.0 and s.tech_tree.researched.has(GATE):
+	if gate_at < 0.0 and s.tech_tree.researched.has(gate):
 		gate_at = clock
 		marks["gate"] = clock
 
@@ -219,14 +220,22 @@ func _goal_wants(want: Dictionary) -> void:
 
 ## Steel the gate still lacks.
 func _steel_left() -> int:
-	if s.tech_tree.researched.has(GATE):
+	if s.tech_tree.researched.has(gate):
 		return 0
 	return maxi(_steel_cost() - _inv("steel"), 0)
 
 
-## What the gate costs in Steel now (the Tally Sticks discount applies).
+## What the gate and the techs on the way to it still cost in Steel (the Tally Sticks discount applies).
 func _steel_cost() -> int:
-	return s.tech_tree.cost_of(GATE).get("steel", 0)
+	return _route_cost("steel")
+
+
+## The `id` the unresearched techs on the way to the gate cost, the gate's own included.
+func _route_cost(id: String) -> int:
+	var need := 0
+	for tech in Rules.route_to(gate, s.tech_tree.researched, Rules.visible_techs(s.shard_seen)):
+		need += s.tech_tree.cost_of(tech).get(id, 0)
+	return need
 
 
 ## The buildings to pay for next (one of each type that is below its target).
@@ -241,9 +250,7 @@ func _building_wants() -> Array:
 ## What the gate still asks for, by good: the cost of every tech on the way to it that is not researched yet, and the Steel's
 ## iron and coal (the Boiler's coal and the Bloomery's are left out: the spare covers them).
 func _gate_need(id: String) -> int:
-	var need := 0
-	for tech in Rules.route_to(GATE, s.tech_tree.researched, Rules.visible_techs(s.shard_seen)):
-		need += s.tech_tree.cost_of(tech).get(id, 0)
+	var need := _route_cost(id)
 	var steel := _steel_left()
 	if id == "iron":
 		need += steel * 2

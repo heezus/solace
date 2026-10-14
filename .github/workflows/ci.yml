@@ -66,15 +66,12 @@ jobs:
 
       - name: Play the main scene with input, to Bronze Dawn
         run: |
-          tests/tools/run_checked.sh tests/tools/with_display.sh \
-            ./godot --rendering-driver opengl3 --audio-driver Dummy --path . -s tests/tools/play_pass.gd
+          tests/tools/run_checked.sh ./godot --headless --path . -s tests/tools/play_pass.gd
 
       - name: Map scale holds steady over a long run (changes only with the window)
         run: |
-          tests/tools/run_checked.sh tests/tools/with_display.sh \
-            ./godot --rendering-driver opengl3 --audio-driver Dummy --path . -s tests/tools/layout_pass.gd
+          tests/tools/run_checked.sh ./godot --headless --path . -s tests/tools/layout_pass.gd
 
       - name: Title screen, zoom, pause menu, Save and Load work as a player drives them
         run: |
-          tests/tools/run_checked.sh tests/tools/with_display.sh \
-            ./godot --rendering-driver opengl3 --audio-driver Dummy --path . -s tests/tools/menu_pass.gd
+          tests/tools/run_checked.sh ./godot --headless --path . -s tests/tools/menu_pass.gd

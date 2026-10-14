@@ -2,6 +2,8 @@ extends RefCounted
 ## The layout pass's checks of the message log and of the folding side panel (scripts/hud_fold.gd), kept apart so layout_pass.gd stays
 ## under the line limit. `layout` is the pass script (its problems, main, _labels).
 
+const Data = preload("res://scripts/data.gd")
+
 
 ## The message log opened, has lines, stays inside the window and shows the newest message.
 static func log_opens(layout) -> void:
@@ -37,6 +39,11 @@ static func fold(layout) -> void:
 	var chip_rect := Rect2(chip.position, chip.size)
 	if not chip.visible or not main.view.encloses(chip_rect) or not chip.text.begins_with("Goal: "):
 		layout.problems.append("the goal chip is missing, off the map or empty ('%s' at %s)" % [chip.text, chip_rect])
+	for list in [Data.GOALS, Data.GOALS_ERA2, Data.GOALS_ERA3, Data.GOALS_ERA4, Data.GOALS_ERA5]:
+		for g in list:
+			main.hud.refresh("> " + g["text"])
+			if not main.hud._fits(chip.text):
+				layout.problems.append("the goal chip needs more than two lines for '%s'" % chip.text)
 	main.hud.folded = false
 	main.cam = cam
 	main._layout()
