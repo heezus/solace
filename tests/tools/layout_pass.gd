@@ -217,8 +217,7 @@ func _check_era_board() -> void:
 		problems.append("the second board has %d techs for the next update, not none" % locked)
 
 
-## Resize the window; a headless one is held at this size each frame.
-func _resize(to: Vector2i) -> void:
+func _resize(to: Vector2i) -> void:  # a headless window is held at this size each frame
 	window = to
 	root.size = to
 

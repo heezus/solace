@@ -50,6 +50,7 @@ var _pathing: Pathing
 var _economy: Economy
 var _research: Research
 var _town: Buildings
+var _tool_quiet := {}  # tool id -> seconds before another "wore out" may be told (a late town wears one out every minute)
 
 
 func _init(world: World, pathing: Pathing, economy: Economy, research: Research, town: Buildings) -> void:
@@ -119,6 +120,10 @@ func food_ready_for_birth() -> bool:
 ## and eats Data.BIRTH_FOOD; unfed, the timer for the next departure runs, and the last one who isn't
 ## working leaves. The last person never leaves.
 func grow(delta: float, fed: bool) -> void:
+	for id in _tool_quiet.keys():
+		_tool_quiet[id] -= delta
+		if _tool_quiet[id] <= 0.0:
+			_tool_quiet.erase(id)
 	if not fed:
 		starve_timer += delta
 		grow_timer = 0.0
@@ -363,7 +368,9 @@ func wear(b: Dictionary) -> void:
 			k["tool"] -= 1
 		if k["tool"] == 0:
 			k["tool_id"] = ""
-			announce.emit(Data.TOOL_WORE_OUT % Data.ITEMS[id]["one"])
+			if not _tool_quiet.has(id):  # told once, then quiet for a while: they are replaced on the spot
+				announce.emit(Data.TOOL_WORE_OUT % Data.ITEMS[id]["one"])
+				_tool_quiet[id] = Data.TOOL_TOLD_QUIET
 	equip(k)
 
 

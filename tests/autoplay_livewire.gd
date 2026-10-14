@@ -38,6 +38,9 @@ const ORDER_PLAN := [
 const LIVEWIRE_TRACED := ["generator", "wire_mill", "arc_lamp", "scorcher", "order_board"]
 
 var coal_gift := 0  # coal handed over when Livewire begins: a what-if for measuring the rest of the era without the coal limit
+var watch := {}  # checkpoint id -> the mark whose arrival sets it off (a stage start worth keeping)
+var on_checkpoint: Callable = func(_id: String, _bot): pass  # (id, this bot) when a watched mark arrives
+var stop_when_watched := false  # stop playing once every watched checkpoint has been reached
 var skyward_at := -1.0
 var _stuck_poles := 0
 var _livewire_goals := {}
@@ -52,7 +55,7 @@ func play_livewire(game: Sim, max_seconds: float) -> Dictionary:
 	_note_goals()
 	_drop_stranded_posts()
 	var ironfall_at := -1.0
-	while clock < max_seconds and skyward_at < 0.0:
+	while clock < max_seconds and skyward_at < 0.0 and not (stop_when_watched and watch.is_empty()):
 		if gate_at >= 0.0 and gate == GATE:  # the Wires Hum card is put away: Livewire begins
 			ironfall_at = gate_at
 			gate = SKYWARD
@@ -63,6 +66,14 @@ func play_livewire(game: Sim, max_seconds: float) -> Dictionary:
 			lines.append("%5.0f s  == Livewire begins ==" % clock)
 		step(true)
 	return {"won": skyward_at >= 0.0, "seconds": skyward_at, "gate_seconds": ironfall_at, "marks": marks, "log": lines}
+
+
+## Hand each watched checkpoint whose mark has arrived to `on_checkpoint`, once.
+func _checkpoints() -> void:
+	for id in watch.keys():
+		if marks.has(watch[id]):
+			watch.erase(id)
+			on_checkpoint.call(id, self)
 
 
 func _livewire_open() -> bool:

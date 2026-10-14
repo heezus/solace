@@ -533,6 +533,7 @@ func test_lowering_the_cap_cancels_a_scaffold_that_waits() -> void:
 func test_the_cap_control_steps_and_saves() -> void:
 	var g := _two_homes()
 	var s: Sim = g["s"]
+	s.town.set_home_cap(2, Data.HOME_CAP_OPEN)  # the fixture holds Longhouses back; a fresh town has no limit
 	var strip := HomesStrip.new()
 	strip.setup(s)
 	t.check(strip.values.size() == 2, "a control for Homesteads and one for Longhouses")

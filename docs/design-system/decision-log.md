@@ -864,3 +864,10 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - The Floor copies one of five existing workshops at three times the speed instead of owning recipes, so the existing recipes stay the single source of truth and the Tool Bench's `make` field is reused.
 - The gate asks for two deeds on top of its price and techs, five written standing orders and the south held, so the era's end rewards its mechanic and its pressure, not only a stockpile (the page's default).
 - Chain Orders is a "While order N holds" button on each order; the end of the era plays the Falling Star's card with Skyward's words and the game keeps running.
+
+## 2026-10-14: Scorecard batch of 2026-10-13 (PR #107)
+- Claude fixed the Ironfall bot (it never learned the techs the metal works stand on, then found no room for the Bench), built the Livewire pacing bot, and put the bot's findings on page 23: the coal runs out before Skyward, which is a balance decision and is left out of this PR.
+- The Homes tab's limit controls now read "Homesteads: 2 so far" over "Limit: none", explain themselves in a tooltip and stay hidden until a home has reached the tier; the goal chip wraps to two lines instead of cutting a word; the first-run tutorial toast shows only on a new game; "A Flint Tool wore out" is told once per five minutes per kind; the "No room" note points at the Homes tab once homes can grow.
+- The Livewire tide and gate starts lay the net, order and lamps of the stages before them so their goals match; stage starts are test tools and never back a balance grade.
+- Three earned checkpoints (the Steam Cart, Livewire begun, the south held) are saved from the bots' own play for playtesters to start from, on page 21; scarcity, cost retuning and the other mechanic changes wait for the balance work.
+- The play, layout and menu passes run headless on the Mac runner so no game window opens on the owner's screen (the passes hold the window at 1280x800 and 60 frames a second themselves).

@@ -44,6 +44,7 @@ const IDLE_WORD := "idle"
 const HAUL_WORD := "hauling"
 const NOTE_STARVING := "Starving: no food"
 const NOTE_NO_ROOM := "No room: build a Dwelling"
+const NOTE_NO_ROOM_GROW := "No room: build a Dwelling, or let a home grow (Homes tab)"
 # --- How close steady food is to the next birth (scripts/growth_note.gd), the Food readout's second line ---
 const GROW_NEXT := "Next %s in about %s"  # one, a time ("12 s")
 const GROW_STEADY := "Steady food %d of %d s, then a %s in about %s"  # seconds held, seconds wanted, one, a time
@@ -220,6 +221,7 @@ const WORKER_CREW := "It takes %d %s to work: %d here."  # how many, many, how m
 const LOG_COUNT := "%s  x%d"  # a message, how many times in a row (Tally Sticks)
 
 const TOOL_WORE_OUT := "A %s wore out"  # a tool's name in the singular: "Flint Tool", "Bronze Tool"
+const TOOL_TOLD_QUIET := 300.0  # seconds after a tool breaking is told before the next of that kind is
 
 # --- Stage 2 of era 2: the Trading Post, the Wanderer, the era's end ---
 const TRADE_UNSET := "Choose what it gives and what it gets: click the lines below."

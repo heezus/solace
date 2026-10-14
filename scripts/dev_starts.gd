@@ -12,6 +12,7 @@ const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
 const RunSave = preload("res://scripts/run_save.gd")
 const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
+const AutoplayLivewire = preload("res://tests/autoplay_livewire.gd")
 
 const MAP_SEED := 1  # every start is on this map
 const BOT_LIMIT := 70.0 * 60.0  # the most game seconds a bot may play to reach a boundary
@@ -25,6 +26,16 @@ const REV := 1  # bump when a bot's play changes without a change to Data: it th
 const CACHE_DIR := "user://stage_starts/"
 const BAKED_DIR := "res://stage_starts/"  # starts baked at release time (tests/tools/bake_starts.gd); not in the repo
 const EXT := ".run"  # not .json: an export takes such a file only through the include filter, never as a resource
+
+## The checkpoints the Livewire bot's own play passes, and the mark of its that sets each off. They are saves of a town earned
+## from a fresh game (the pacing bots play the stone age, Bronze and the Falling Star, the Starfall beats are scripted on that
+## town, then the Ironfall and Livewire bots play on), with nothing handed over: what playtesters start mid-game from.
+## There is none for the Livewire gate: the bot runs out of coal before it (page 23), so no honest town exists there yet.
+const EARNED := {
+	"earned_ironfall_steam": "steam_cart",
+	"earned_livewire": "tide_begins",
+	"earned_livewire_tide": "south_held",
+}
 
 ## Where the slow starts (the ones a bot plays to) are kept between sessions; "" keeps none. A kept start is used only when
 ## its fingerprint (every Data constant, REV and the save version) is the same, so a balance change builds it afresh.
@@ -140,6 +151,17 @@ static func _table() -> Array:
 		["livewire", "Stage: Livewire, the wires hum", _livewire],
 		["livewire_tide", "Stage: Livewire, the tide: seven minutes in, every tool learned", _livewire_tide],
 		["livewire_gate", "Stage: Livewire, the factories: the gate is all that is left", _livewire_gate],
+		[
+			"earned_ironfall_steam",
+			"Checkpoint: Ironfall, the Steam Cart rolls (earned)",
+			_earned.bind("earned_ironfall_steam")
+		],
+		["earned_livewire", "Checkpoint: Livewire begins (earned)", _earned.bind("earned_livewire")],
+		[
+			"earned_livewire_tide",
+			"Checkpoint: Livewire, the south is held (earned)",
+			_earned.bind("earned_livewire_tide")
+		],
 	]
 
 
@@ -175,6 +197,20 @@ static func _play_era(id: String) -> String:
 	bot.on_bronze = func(b): _keep("bronze_first", RunSave.to_json(RunSave.dump(b.s)))
 	bot.play_to_star(MAP_SEED, BOT_LIMIT)
 	_keep("falling_star", RunSave.to_json(RunSave.dump(bot.s)))
+	return _memo[id]
+
+
+## A checkpoint of the earned run, kept as the other bot stages are; one run makes them all.
+static func _earned(id: String) -> Sim:
+	return _kept(id, _play_earned.bind(id))
+
+
+static func _play_earned(id: String) -> String:
+	var bot := AutoplayLivewire.new()
+	bot.watch = EARNED.duplicate()
+	bot.stop_when_watched = true
+	bot.on_checkpoint = func(name: String, b): _keep(name, RunSave.to_json(RunSave.dump(b.s)))
+	bot.play_livewire(_ironfall(), BOT_LIMIT * 2.0)
 	return _memo[id]
 
 
@@ -323,8 +359,27 @@ static func _livewire_tide_on(s: Sim) -> Sim:
 		s.tech_tree.researched[tech] = true
 	for id in ["wire", "coal", "steel", "copper", "brick"]:
 		s.economy.add(id, 200)
+	_lay_net(s)
 	_wait(s, TIDE_START_SECONDS)
 	return s
+
+
+## What the first two stages' goals ask, done, so the Goals panel at a later start is not stuck on "Lay two Power Poles": a
+## Generator with two Poles beside it and a Wire Mill on the net, the Order Board with one order written, and a few seconds for
+## the order to fire.
+static func _lay_net(s: Sim) -> void:
+	_build(s, "generator", 2)
+	var gen := _where(s, "generator")
+	_build_near(s, "power_pole", gen, Data.POLE_REACH)
+	var pole := _where(s, "power_pole")
+	_build_near(s, "power_pole", pole, Data.POLE_LINK)
+	_build_near(s, "wire_mill", pole, Data.POLE_REACH)
+	_build(s, "order_board", 1)
+	if s.livewire.add(s):
+		s.livewire.orders[0].merge(
+			{"item": "coal", "compare": "above", "number": 5, "verb": "pause", "target": "forge"}, true
+		)
+	_wait(s, 10.0)
 
 
 ## Livewire's last stage: on the tide start, the Factory Floor, Shard Dynamo and Chain Orders are learned and the stores hold what
@@ -338,6 +393,12 @@ static func _livewire_gate_on(s: Sim) -> Sim:
 		s.tech_tree.researched[tech] = true
 	for id in ["steel", "iron", "wire", "brick"]:
 		s.economy.add(id, 200)
+	var pole := _where(s, "power_pole")
+	for type in ["arc_lamp", "scorcher", "factory_floor", "shard_dynamo"]:
+		_build_near(s, type, pole, Data.POLE_REACH)
+	for p in s.tide.grown:  # one tile of the Bloom burnt clear: the goal for it is met
+		s.tide.clear(s, p)
+		break
 	_wait(s, 2.0)
 	return s
 
@@ -440,7 +501,11 @@ static func _where(s: Sim, type: String) -> Vector2i:
 
 ## Put `type` down on the nearest free tile to `at` that is within the Boiler's reach of it (5 tiles), paid for like _build.
 static func _build_beside(s: Sim, type: String, at: Vector2i) -> bool:
-	var reach: float = Data.BUILDINGS["boiler"]["radius"]
+	return _build_near(s, type, at, Data.BUILDINGS["boiler"]["radius"])
+
+
+## Put `type` down on the nearest free tile to `at` that is no more than `reach` tiles from it (and not on it), paid for like _build.
+static func _build_near(s: Sim, type: String, at: Vector2i, reach: float) -> bool:
 	for r in range(1, int(reach) + 1):
 		for dy in range(-r, r + 1):
 			for dx in range(-r, r + 1):

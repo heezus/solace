@@ -584,6 +584,15 @@ func test_tool_wears_out_and_is_replaced() -> void:
 	k.kith[0]["tool"] = 1
 	k.wear(b)
 	t.check(k.kith[0]["tool"] == 0, "with none left they go without")
+	t.check(_events.size() == 1, "a second break soon after is not told again: %s" % [_events])
+	k.grow(Data.TOOL_TOLD_QUIET + 1.0, true)
+	_eco.inv["flint_tools"] = 1
+	k.assign_jobs()
+	k.kith[0]["tool"] = 1
+	k.wear(b)
+	t.check(_events.size() == 2, "and told again once the quiet is over: %s" % [_events])
+	k.kith[0]["tool"] = 0
+	_eco.inv["flint_tools"] = 0
 	k.equip(k.kith[0])
 	t.check(k.kith[0]["tool"] == 0, "equip with an empty stockpile does nothing")
 	_eco.inv["flint_tools"] = 1
