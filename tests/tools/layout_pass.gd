@@ -58,8 +58,11 @@ var last_side_open := true
 var frozen := false  # the bot's ticking is paused while a check sets the state by hand
 var picker := PickerChecks.new()  # the hut picker's checks (tests/tools/picker_checks.gd)
 
+var window := Vector2i(1280, 800)  # the window size the pass wants now
+
 
 func _init() -> void:
+	Engine.max_fps = 60  # headless has no vsync: frames this fast would give the frame-counted waits no game time
 	CutscenePlayer.suppress = true  # the scripted pass plays the game, not its cutscenes
 	seed(7)
 	var scene: PackedScene = load("res://scenes/main.tscn")
@@ -69,6 +72,8 @@ func _init() -> void:
 
 
 func _process(_delta: float) -> bool:
+	if DisplayServer.get_name() == "headless":
+		root.size = window  # a headless window falls back to 64 px each frame: hold the size the pass asked for
 	frame += 1
 	if frame == 3:
 		main.paused = true
@@ -84,7 +89,7 @@ func _process(_delta: float) -> bool:
 			bot.step(false)
 		main.ui_refresh = 0.0  # refresh the bars every frame, so any wobble shows
 	if frame == RESIZE_AT:
-		root.size = Vector2i(1600, 800)  # wider: the map must refit (re-centre; the bars keep their heights)
+		_resize(Vector2i(1600, 800))  # wider: the map must refit (re-centre; the bars keep their heights)
 	if frame in [8, RESIZE_AT + 8, SHRINK_AT + 8]:
 		main.bottom_bar._show_tab("Gathering")  # the drawer opens for the Gathering tab check
 	if frame == RESIZE_AT + 10:
@@ -94,7 +99,7 @@ func _process(_delta: float) -> bool:
 		_report(HudChecks.gathering_tab(main, "at 1100x700"))
 		main.bottom_bar.close_drawer()
 	if frame == SHRINK_AT:
-		root.size = Vector2i(1100, 700)  # then a window of another shape: everything must still fit
+		_resize(Vector2i(1100, 700))  # then a window of another shape: everything must still fit
 	if frame > 5:
 		_check()
 	_hud_checks()
@@ -172,7 +177,7 @@ func _era_two_checks() -> void:
 		92:
 			_report(HudChecks.end_card(main, "at the shrunk window"))
 		93:
-			root.size = Vector2i(1280, 800)
+			_resize(Vector2i(1280, 800))
 		97:
 			_report(HudChecks.end_card(main, "at 1280x800"))
 			_shot("end_card")
@@ -210,6 +215,11 @@ func _check_era_board() -> void:
 			locked += 1
 	if locked != 0:
 		problems.append("the second board has %d techs for the next update, not none" % locked)
+
+
+func _resize(to: Vector2i) -> void:  # a headless window is held at this size each frame
+	window = to
+	root.size = to
 
 
 func _check() -> void:

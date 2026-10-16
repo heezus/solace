@@ -4,7 +4,7 @@ extends SceneTree
 ## and the research board; keys T, Space, 1, 2, 3, X and Esc; placing, clicking and demolishing
 ## buildings; then the pacing bot (tests/autoplay_bronze.gd) plays on to Bronze Dawn while the UI draws, and on into the
 ## era it opens: the land grows east, the research board gets its second tab, and the bot makes its first Bronze.
-## Run under a display: xvfb-run godot --path . -s tests/tools/play_pass.gd
+## Run: godot --headless --path . -s tests/tools/play_pass.gd   (no window opens; with a display it also works)
 ## CI fails the step if the output has any ERROR, SCRIPT ERROR, WARNING or Parse Error line.
 
 const Data = preload("res://scripts/data.gd")
@@ -32,6 +32,7 @@ var won_at := -1  # the frame Bronze Dawn was researched
 
 
 func _init() -> void:
+	Engine.max_fps = 60  # headless has no vsync: frames this fast would give the frame-counted waits no game time
 	seed(7)  # the same map every run
 	CutscenePlayer.suppress = true  # the game scene plays none of its own: _cutscene_checks drives one by hand
 	var scene: PackedScene = load("res://scenes/main.tscn")
@@ -40,6 +41,8 @@ func _init() -> void:
 
 
 func _process(delta: float) -> bool:
+	if DisplayServer.get_name() == "headless":
+		root.size = Vector2i(1280, 800)  # a headless window falls back to 64 px each frame: hold the design size
 	frame += 1
 	game_time += delta
 	if frame == 3:

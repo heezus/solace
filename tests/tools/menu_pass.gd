@@ -4,7 +4,7 @@ extends SceneTree
 ## keys), Esc for the pause menu, Save into a slot, Load from it (which starts the scene again from the save), and a stage start
 ## from the pause menu's Load screen (a new run on the fixed map, built while the screen says so). It fails the run on any
 ## wrong step. The player's own saves are moved aside while it runs and put back at the end.
-## Run in CI under xvfb: godot --rendering-driver opengl3 --path . -s tests/tools/menu_pass.gd
+## Run: godot --headless --path . -s tests/tools/menu_pass.gd   (no window opens; with a display it also works)
 
 const Data = preload("res://scripts/data.gd")
 const RunSave = preload("res://scripts/run_save.gd")
@@ -24,6 +24,7 @@ var stage_wait := -1  # the frame the stage start was asked for, -1 before
 
 
 func _init() -> void:
+	Engine.max_fps = 60  # headless has no vsync: frames this fast would give the frame-counted waits no game time
 	CutscenePlayer.suppress = true  # the scripted pass plays the game, not its cutscenes
 	_move_saves(true)  # a clean slate
 	title = load("res://scenes/title.tscn").instantiate()
@@ -89,6 +90,8 @@ func _key(code: Key) -> void:
 
 
 func _process(_delta: float) -> bool:
+	if DisplayServer.get_name() == "headless":
+		root.size = Vector2i(1280, 800)  # a headless window falls back to 64 px each frame: hold the design size
 	frame += 1
 	match frame:
 		5:
