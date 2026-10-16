@@ -108,6 +108,7 @@ func _note_goals() -> void:
 		marks["tide_begins"] = clock
 	if s.tide.lost > 0 and not marks.has("first_loss"):
 		marks["first_loss"] = clock
+	_checkpoints()
 
 
 ## Wire, and the coal the engines burn, on top of the metal works' wants.
