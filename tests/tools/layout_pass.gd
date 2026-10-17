@@ -7,7 +7,7 @@ extends SceneTree
 ## the top bar never runs past the window and none of its text is cut short (also with the food warning and
 ## starvation showing), toasts stack without overlapping each other or a chip, every chip has a tooltip that names it
 ## and a sprite, a Hearth's blurb shows once, every build card's text fits it, and the message log opens.
-## Run: godot --headless --path . -s tests/tools/layout_pass.gd   (exits 1 on a problem)
+## Run: godot --headless --fixed-fps 60 --path . -s tests/tools/layout_pass.gd   (exits 1 on a problem)
 
 const Data = preload("res://scripts/data.gd")
 const World = preload("res://scripts/world.gd")
@@ -62,7 +62,7 @@ var window := Vector2i(1280, 800)  # the window size the pass wants now
 
 
 func _init() -> void:
-	Engine.max_fps = 60  # headless has no vsync: frames this fast would give the frame-counted waits no game time
+	Engine.max_fps = 60  # a headless run has no vsync (CI passes --fixed-fps 60, which fixes each frame at 1/60 s however fast they run)
 	CutscenePlayer.suppress = true  # the scripted pass plays the game, not its cutscenes
 	seed(7)
 	var scene: PackedScene = load("res://scenes/main.tscn")
