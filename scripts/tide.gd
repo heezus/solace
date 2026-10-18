@@ -46,7 +46,7 @@ func tick(s, delta: float) -> void:
 		if not s.story.has_event(Data.LIVEWIRE_BEGUN):
 			return
 		begin(s)
-	time += delta
+	time += delta * s.seasons.tide_pace()
 	refresh_lights(s)
 	var due: Array = []
 	for p in front:
@@ -205,7 +205,7 @@ func _overgrown(s, delta: float) -> void:
 		elif not grown.has(p):
 			hit.erase(p)
 			s.town.road_rev += 1
-		elif not is_held_at(s, p):
+		elif not is_held_at(s, p) and not s.seasons.keeps_buildings():
 			hit[p] += delta
 			if hit[p] >= Data.OVERGROWN_LOST_SECONDS:
 				_lose(s, p)

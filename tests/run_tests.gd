@@ -63,6 +63,7 @@ const TitleTests = preload("res://tests/title_tests.gd")
 const DevTests = preload("res://tests/dev_tests.gd")
 const HomesTests = preload("res://tests/homes_tests.gd")
 const BalanceTests = preload("res://tests/balance_tests.gd")
+const SeasonsTests = preload("res://tests/seasons_tests.gd")
 const World = preload("res://scripts/world.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const Buildings = preload("res://scripts/buildings.gd")
@@ -133,6 +134,7 @@ func _init() -> void:
 		return
 	if "balance" in OS.get_cmdline_user_args():  # `-- balance` runs only the balance plan's tests while iterating
 		BalanceTests.new().run(self)
+		SeasonsTests.new().run(self)
 		print("FAILED: %d" % failures if failures > 0 else "BALANCE TESTS PASSED")
 		quit(1 if failures > 0 else 0)
 		return
@@ -220,6 +222,7 @@ func _init() -> void:
 	DevTests.new().run(self)
 	HomesTests.new().run(self)
 	BalanceTests.new().run(self)
+	SeasonsTests.new().run(self)
 	IronfallTests.new().run(self)
 	TeardownTests.new().run(self)
 	SteamTests.new().run(self)

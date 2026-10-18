@@ -113,7 +113,11 @@ func grow_time() -> float:
 ## True when there is food enough for one more mouth: the stockpile covers the birth (and a small reserve
 ## for everyone) and the food coming in over the last Data.RATE_WINDOW seconds covers what they eat.
 func food_ready_for_birth() -> bool:
-	return _economy.food_total() >= kith.size() * Data.BIRTH_RESERVE + Data.BIRTH_FOOD and _economy.food_is_steady()
+	return (
+		not _economy.births_paused
+		and _economy.food_total() >= kith.size() * Data.BIRTH_RESERVE + Data.BIRTH_FOOD
+		and _economy.food_is_steady()
+	)
 
 
 ## One tick of the population. Fed, with room and steady food, a birth comes every grow_time() seconds

@@ -85,7 +85,7 @@ static func _step(s, k: Dictionary, delta: float) -> void:
 			k["timer"] += delta
 			if k["timer"] < Data.FORAGE_TIME:
 				return
-			k["carry"] = {Data.FORAGE_ITEM: Data.FORAGE_YIELD}
+			k["carry"] = {Data.FORAGE_ITEM: Data.FORAGE_YIELD * s.economy.forage_mult}
 			if (
 				Hands.item_at(s, k["task"]["tile"]) != Data.FORAGE_ITEM
 				or not s.people.walk_to(k, s.people.nearest_depot(k["task"]["tile"]))

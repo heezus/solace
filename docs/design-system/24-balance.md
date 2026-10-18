@@ -32,15 +32,19 @@ Built in the order below, in four PRs, each green on the Mac runner before the n
 - **A Kith lesson on the biggest prices:** each tech and building at the top of an era asks for one named lesson in the town ("one Taught Hand II mason"), so the pillar shows in the price. First pass: the three biggest techs of each era, picked from the audit.
 - Copper, tin and coal for Livewire are set so the era's gate fits what the earned checkpoint leaves (about 700 coal) with one new coal vein guaranteed by pick 6.
 
-### Pick 1: Seasons of Strain (PR C)
-- A season is a pressure of about 90 seconds that arrives every **4.5 minutes** of an era, never in the first 6 minutes and never twice running. The schedule comes from the run's map seed and the clock, so every bot and playtest sees the same seasons.
-- Four kinds, unlocked as the story brings them: **Lean** (food yields 0.6x), **Cold snap** (coal and charcoal burn twice as fast), **Bloom surge** (Livewire on: the tide moves 1.5x toward one side), **Lumen asking** (Starfall on: shards for a lesson).
-- Each opens a one-card choice with **no right answer**, two options, each hurting something else (Lean: "Ration" eats 25% less but pauses births, or "Forage" sends idle people out and slows the Hearth's work). The answer lasts the season. An Order can prepare for a season; nothing can make the choice for the player.
-- A card never opens in the first two minutes after another card, and never while the game is paused on a famine card.
+### Pick 1: Seasons of Strain (PR C, built)
+- A season is a pressure of 90 seconds. The first comes at **6 minutes** of a run, then one every **4.5 minutes** (plus or minus 30 seconds), never twice running. The schedule comes from the map seed and how many seasons have passed, so every bot and playtest sees the same seasons. A card nobody answers answers itself with its first option after 20 seconds of game time, so a bot never stalls on one.
+- Three kinds, each unlocked by the story: **Lean** (always), **Cold snap** (after Bronze Dawn) and **Bloom surge** (once the tide has begun). The **Lumen asking** season is left for later, with the "Work first" verb and the default Order.
+- Each opens a one-card choice with **no right answer**, two options, each hurting something else, and the answer lasts the season:
+  - **Lean:** *Ration* (people eat a quarter less, no births, food huts work at 0.6x) or *Forage* (idle hands go out and bring back twice as much, famine mode is on at once).
+  - **Cold snap:** *Burn fuel* (one charcoal, else coal, every 6 seconds, and the workshops keep their pace) or *Huddle* (nothing burns, workshops work at 0.8x).
+  - **Bloom surge:** *Let it come* (the tide moves 1.5x as fast, and overgrowth costs nothing this season) or *Hold it back* (pay 20 coal; the tide keeps its pace).
+- The code is `scripts/seasons.gd` (state, saved with the run) and `data/seasons.gd` (numbers and words). Everything it changes is a switch on Economy, Tide or the speed of a building, so a season never needs special cases elsewhere.
+- Not built: a card never opens while another card is up (the notice card queues it instead).
 
 ### Pick 6: pacing guarantees near the Hearth (PR C)
-- `map_gen.gd` guarantees, for each era's key resource (clay and flax for Bronze Dawn, iron for Ironfall, copper, coal and shards for Livewire), at least **12 tiles within 24 tiles of the Hearth**, checked by a test over 20 map seeds.
-- Era gates are tied to lesson time: a gate's techs and lessons set the clock, not a pile, so the 10-minute map spread closes. The Livewire bot (the pace tool's `livewire` mode) must finish within 4 minutes of the median on every seed.
+- The stone-age map already guarantees its basics near the Hearth (`MapGen.faults_of`), and the Bronze Dawn strip already guarantees copper near its way in (`MapEast`, tested over many seeds in `tests/era_fair_tests.gd`). So this pick is a check, not new map code: the pacing tool (`tests/tools/pace.gd`) runs the bots across maps and the spread is read off its table.
+- Era gates are tied to lesson time: a gate's techs and lessons set the clock, not a pile, so the map spread shrinks as the raw piles stop mattering (pick 2).
 
 ### Pick 7: scorecards measure decisions, idle time and a diary (PR D)
 - The bots log **decisions per minute** (a build, a research, an order, a seasons answer, an expedition), **idle time** (seconds with nothing affordable or nothing to do) and the **stock to cost ratio** of the last gate. They go in `scorecard-history.json` beside the grades.
@@ -49,7 +53,7 @@ Built in the order below, in four PRs, each green on the Mac runner before the n
 ## Order of work and checks
 1. **PR A**: pick 4 (pick 5 needs no code). Tests: the chip's tones and clock face at 300 and 120 seconds, the famine card opens once and not in the opening, the flag survives a save, the layout pass finds no cut-off number.
 2. **PR B**: picks 3 and 2 with the cost audit. Tests: the cap spills, spoilage leaves 40, the audit finds no raw over 60, every earned checkpoint still reaches its next gate.
-3. **PR C**: picks 1 and 6. Tests: the schedule is the same on a seed twice; each season's two answers change different numbers; the guarantee holds on 20 seeds.
+3. **PR C**: picks 1 and 6. Tests: the schedule is the same on a seed twice and never repeats a kind; each answer changes its own numbers; a season survives a save.
 4. **PR D**: pick 7, in the playtest tools and the rubric files only.
 
 ## Open

@@ -32,6 +32,12 @@ var flows := Flows.new()  # what made and used each item lately
 ## Economy. A good over its cap is never taken down: a stage start or a test may put more in than a delivery could.
 var caps: Dictionary = {}
 var spilled := 0  # goods lost over the cap this run, for the scorecards; not saved
+## Seasons of Strain switches (scripts/seasons.gd sets them every tick, so they are not saved): how much of the usual the people eat,
+## whether births wait, whether idle hands forage even without a famine, and how many times as much a foraging trip brings.
+var eat_factor := 1.0
+var births_paused := false
+var forage_call := false
+var forage_mult := 1
 var _caps_key := -1  # refresh_caps's last count of Storehouses and techs
 var _rot: Dictionary = {}  # good -> the part of an item that has spoiled but not yet been taken; not saved
 var _techs: Dictionary  # researched tech ids (a view of the Research block's set, never written here)
@@ -150,7 +156,7 @@ func food_total() -> float:
 ## Feed `mouths` for `delta` seconds: sets food_use (Preservation cuts it) and the starving flag.
 ## Returns true when everyone ate.
 func feed(mouths: int, delta: float) -> bool:
-	food_use = mouths * Data.FOOD_PER_KITH_PER_SEC * (0.75 if _techs.has("preservation") else 1.0)
+	food_use = mouths * Data.FOOD_PER_KITH_PER_SEC * (0.75 if _techs.has("preservation") else 1.0) * eat_factor
 	var fed := eat(food_use * delta)
 	spoil(delta)
 	starving = not fed
@@ -232,7 +238,7 @@ func _runway(drain: float) -> float:
 ## True once per run, when a famine is on past the player's own opening (Data.FORAGE_OPENING_SECONDS): the owner puts the
 ## famine card up and the game waits behind it. Later famines are left to the Food readout and the chips.
 func take_famine_card() -> bool:
-	if famine_card_shown or not famine or flows.clock < Data.FORAGE_OPENING_SECONDS:
+	if famine_card_shown or not famine or forage_call or flows.clock < Data.FORAGE_OPENING_SECONDS:
 		return false
 	famine_card_shown = true
 	return true
@@ -247,7 +253,9 @@ func _watch_food() -> void:
 		food_low.emit()
 	elif low and (gross >= Data.FOOD_CLEAR_SECONDS or seconds_of_food() >= Data.FOOD_CLEAR_SECONDS):
 		low = false
-	if famine and (gross >= Data.FOOD_FORAGE_END_SECONDS or seconds_of_food() >= Data.FOOD_FORAGE_END_SECONDS):
+	if forage_call:
+		famine = true  # a lean season answered with foraging: idle hands go out at once
+	elif famine and (gross >= Data.FOOD_FORAGE_END_SECONDS or seconds_of_food() >= Data.FOOD_FORAGE_END_SECONDS):
 		famine = false
 		forage_told = false
 	elif (
