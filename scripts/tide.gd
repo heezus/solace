@@ -26,8 +26,10 @@ var burnt: Dictionary = {}  # tile -> true: ground burnt clear, which the tide n
 var front: Dictionary = {}  # tile -> the tide time it joins the Bloom
 var hit: Dictionary = {}  # the tile of an overgrown building -> seconds it has been overgrown
 var lost := 0  # buildings the Bloom has taken
+var eaten := 0  # goods it has eaten from the stores
 var rev := 0  # changes whenever the Bloom's ground does
 var eta: Dictionary = {}  # the tile of a building the tide has not reached -> the tide time it will (Tide Watch)
+var _eat_clock := 0.0  # seconds since the Bloom last ate, counted while a building stands overgrown
 var _told: Dictionary = {}  # building tile -> true once Tide Watch has warned of it
 var _eta_clock := 0.0
 var _eta_rev := -1
@@ -61,6 +63,7 @@ func tick(s, delta: float) -> void:
 			1:
 				front[p] = time + Data.TIDE_RETRY_SECONDS
 	_overgrown(s, delta)
+	_eat_stock(s, delta)
 	if s.tech_tree.researched.has("tide_watch"):
 		_watch(s, delta)
 
@@ -206,6 +209,28 @@ func _overgrown(s, delta: float) -> void:
 			hit[p] += delta
 			if hit[p] >= Data.OVERGROWN_LOST_SECONDS:
 				_lose(s, p)
+
+
+## While a building stands overgrown the Bloom eats the stores: Data.BLOOM_EAT_SHARE of one good a minute. Which good comes
+## from the clock and the map's seed, never from the game's random numbers, so every run of a map loses the same goods.
+func _eat_stock(s, delta: float) -> void:
+	if hit.is_empty():
+		_eat_clock = 0.0
+		return
+	_eat_clock += delta
+	if _eat_clock < Data.BLOOM_EAT_SECONDS:
+		return
+	_eat_clock -= Data.BLOOM_EAT_SECONDS
+	var goods: Array = Data.ITEM_ORDER.filter(func(id): return s.economy.inv.get(id, 0) >= Data.BLOOM_EAT_MIN)
+	if goods.is_empty():
+		return
+	var turn := floori(time / Data.BLOOM_EAT_SECONDS)
+	var id: String = goods[absi(turn * 7919 + s.world.map_seed) % goods.size()]
+	var n := maxi(1, floori(s.economy.inv[id] * Data.BLOOM_EAT_SHARE))
+	s.economy.inv[id] -= n
+	s.economy.note(id, -float(n), "bloom")
+	eaten += n
+	said.emit(Data.BLOOM_EAT_LINE % [n, Data.ITEMS[id]["name"]])
 
 
 ## True when an Arc Lamp's light or a burning Scorcher's reach covers tile p, so an overgrown building there is not lost.
@@ -459,6 +484,8 @@ func to_dict() -> Dictionary:
 		"front": f,
 		"hit": h,
 		"lost": lost,
+		"eaten": eaten,
+		"eat_clock": _eat_clock,
 		"told": Codec.vec_keys(_told),
 	}
 
@@ -475,6 +502,8 @@ func from_dict(d: Dictionary) -> void:
 	for e in d.get("hit", []):
 		hit[Vector2i(int(e[0]), int(e[1]))] = float(e[2])
 	lost = int(d.get("lost", 0))
+	eaten = int(d.get("eaten", 0))
+	_eat_clock = float(d.get("eat_clock", 0.0))
 	_told = Codec.to_vec_set(d.get("told", []))
 	eta = {}
 	_eta_rev = -1

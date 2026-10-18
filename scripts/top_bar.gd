@@ -500,6 +500,10 @@ func _user_name(source: String, id: String) -> String:
 			return Data.EATEN_BY % Data.PEOPLE["many"]
 		"craft":
 			return "Crafting by hand"
+		"spoil":
+			return "Spoiled in the stores"
+		"bloom":
+			return "Eaten by the Bloom"
 	var def: Dictionary = Data.BUILDINGS.get(source, {})
 	if def.has("in") and def["in"].has(id):
 		return "%s: %d %s into %s" % [def["name"], def["in"][id], Data.ITEMS[id]["name"], Ui.cost_text(def["out"])]

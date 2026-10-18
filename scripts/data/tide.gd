@@ -33,6 +33,12 @@ const TIDE_KEEPS := [
 ## A building on Bloom ground is overgrown at once: it stops, and is lost after this long unless it is held (an Arc Lamp's light
 ## or a burning Scorcher's reach stops the count).
 const OVERGROWN_LOST_SECONDS := 180.0
+## While any building stands overgrown, the Bloom eats the stores (design-system/24-balance.md, pick 3): once in BLOOM_EAT_SECONDS it
+## takes BLOOM_EAT_SHARE of one good that has at least BLOOM_EAT_MIN in the stores, picked by the clock and the map's seed.
+const BLOOM_EAT_SECONDS := 60.0
+const BLOOM_EAT_SHARE := 0.05
+const BLOOM_EAT_MIN := 40
+const BLOOM_EAT_LINE := "The Bloom has eaten %d %s from the stores."  # how many, the good
 ## With Tide Watch the Kith say so once, when the front is about this far from a building.
 const TIDE_WARN_SECONDS := 180.0
 ## Arrival times are worked out this often (game seconds), and not past this horizon.
