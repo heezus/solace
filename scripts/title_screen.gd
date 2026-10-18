@@ -10,6 +10,7 @@ const Data = preload("res://scripts/data.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Art = preload("res://scripts/art.gd")
 const MenuFonts = preload("res://scripts/menu_fonts.gd")
+const BuildInfo = preload("res://scripts/build_info.gd")
 const Launch = preload("res://scripts/launch.gd")
 const SaveSlots = preload("res://scripts/save_slots.gd")
 const SlotScreen = preload("res://scripts/slot_screen.gd")
@@ -99,6 +100,11 @@ func _build_menu() -> void:
 	slots.setup()
 	slots.slot_picked.connect(start)
 	slots.start_picked.connect(start_stage)
+	var build := BuildInfo.label(Ui.MIN_TEXT)
+	add_child(build)
+	build.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	build.offset_left = 14.0
+	build.offset_top = -30.0
 
 
 func _button(text: String, primary: bool) -> Button:
