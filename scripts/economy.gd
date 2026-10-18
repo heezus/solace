@@ -23,6 +23,7 @@ var low := false
 ## It comes down once the food would last Data.FOOD_FORAGE_END_SECONDS. Not saved, like `low`.
 var famine := false
 var forage_told := false  # the player has been told about this famine's foraging; not saved
+var famine_card_shown := false  # the run's one famine card has been put up (saved: a loaded run does not see it twice)
 var steady_held := 0.0  # seconds the buildings' food has covered what everyone eats, without a break
 var food_use := 0.0  # food eaten per second right now
 var flows := Flows.new()  # what made and used each item lately
@@ -170,6 +171,15 @@ func _runway(drain: float) -> float:
 	return (food_total() + food_credit) / drain if drain > 0.0 else INF
 
 
+## True once per run, when a famine is on past the player's own opening (Data.FORAGE_OPENING_SECONDS): the owner puts the
+## famine card up and the game waits behind it. Later famines are left to the Food readout and the chips.
+func take_famine_card() -> bool:
+	if famine_card_shown or not famine or flows.clock < Data.FORAGE_OPENING_SECONDS:
+		return false
+	famine_card_shown = true
+	return true
+
+
 ## Raise the early warning when the food is about to run out; lower it once it would last longer again.
 ## (The buildings' income is only worked out when the food is short: it walks the flow window.)
 func _watch_food() -> void:
@@ -261,6 +271,7 @@ func to_dict() -> Dictionary:
 		"starving": starving,
 		"food_use": food_use,
 		"steady_held": steady_held,
+		"famine_card_shown": famine_card_shown,
 		"flows": flows.to_dict(),
 	}
 
@@ -279,5 +290,6 @@ func from_dict(d: Dictionary) -> void:
 	starving = bool(d.get("starving", false))
 	food_use = float(d.get("food_use", 0.0))
 	steady_held = float(d.get("steady_held", 0.0))
+	famine_card_shown = bool(d.get("famine_card_shown", false))
 	_steady_second = -1
 	flows.from_dict(d.get("flows", {}))

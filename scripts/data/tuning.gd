@@ -48,6 +48,10 @@ const FOOD_CLEAR_SECONDS := 180.0
 ## scripts/forage.gd), until it would last FOOD_FORAGE_END_SECONDS. It starts with the warning, or from FORAGE_OPENING_SECONDS
 ## into the game: the opening is the player's own, hand-gathering the starting berries.
 const FOOD_FAMINE_SECONDS := 200.0
+## A good's chip in the top bar shows how long it lasts at its current rate once that is under RUNWAY_AMBER_SECONDS (amber),
+## and in red under RUNWAY_RED_SECONDS (design-system/24-balance.md, pick 4). Food has its own readout and is left out.
+const RUNWAY_AMBER_SECONDS := 300.0
+const RUNWAY_RED_SECONDS := 120.0
 const FORAGE_OPENING_SECONDS := 120.0
 ## ...and they stop once it would last this long (well past FOOD_CLEAR_SECONDS, so the famine does not flicker on and off).
 const FOOD_FORAGE_END_SECONDS := 300.0

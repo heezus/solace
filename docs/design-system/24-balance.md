@@ -1,0 +1,57 @@
+# Balance: the seven picks
+
+Status: **design only** (2026-10-18). Mechanics page, so Claude owns it. It turns the project owner's approval of 2026-10-14 ("the game plays itself", "1200 wood is dumb") into rules. The research behind the picks is the "Making the middle game matter" page (artifact 3c4kgKaiwvRpkXnnHKowBb); this page only holds what was decided. Every number is a first guess, tuned with the pacing bots on [21](21-stage-starts.md)'s earned checkpoints, never by hand-stuffed starts. It follows [12](12-knowledge-is-progress.md): the price of a thing should say what the Kith know, not how long a pile took to grow.
+
+## What goes wrong today
+- Once roads, haulers and Orders are up nothing asks for a decision; the player watches numbers climb.
+- Costs of 100 to 500 raw wood or grain say nothing about the world, and the stockpile grows to thousands, so the cost never bites.
+- An idle town starves with no runway shown. Livewire's coal runs out before Skyward (about 700 left, about 1100 needed after the Ironfall gate, found by the pacing bot in PR #108).
+- The goal strip can show stage-start script text, and map luck moves an era by ten minutes.
+
+## The seven picks
+Built in the order below, in four PRs, each green on the Mac runner before the next starts. Pick 4 comes first because it costs the least and the layout pass checks it.
+
+### Pick 5: one live headline goal (already how it works)
+- The goal strip already shows exactly one line, the first goal not yet met, and `Story.update` marks every goal that is true each tick, so a goal that is already true is never shown. The chip wraps to two lines (PR #108) and a click opens the full list. The "Lay two Power Poles" line the scorecard saw came from a stuffed stage start that did not set the goals, which the earned checkpoints replaced.
+- Nothing to build for this pick; it stays here so the plan reads whole. The era's last goal (the gate) is a price plus deeds, and the strip names the first unmet part, so it needs no change either.
+
+### Pick 4: time left and a pausing card (PR A, built)
+- Each good in the top bar shows time left at the current net rate beside its count ("4:10"): **amber under 5 minutes, red under 2**. Only goods with a net loss show one, and the goods Food is made of (berries, fish, flour) do not, because the Food readout already says how long the food lasts. The count and the sprite shrink a little while the time shows, so the chip never grows. The logic is `scripts/runway.gd`; the thresholds are `Data.RUNWAY_AMBER_SECONDS` and `RUNWAY_RED_SECONDS`.
+- The **first real famine of a run** (`Economy.famine` turning on) opens one card (`scripts/notice_card.gd`) and pauses the game: how long the food lasts, what idle people will do, and a button that centres the camera on the Hearth. It never opens twice in a run (the flag is saved), and not in the first two minutes (the opening is the player's).
+- **Left out, and why:** a default Order "Keep food above 100". The Order Board only exists from Livewire, and its two verbs (Pause, Bring first) act on workshops, so a rule cannot say "make food". A real safety net needs a third verb, **Work first** (huts of that good are worked ahead of the rest, the visible form of `Data.FOOD_SHORT_STOCK`); it goes with the seasons in PR C, where the Lean season needs it.
+
+### Pick 3: tech-scaled storage, slow spoilage, the Bloom eats stock (PR B)
+- **Cap per good:** 150 at the Hearth. Each **Storehouse** adds 100 (up to 6) and the techs Storehouse, Granary and Warehousing each add 150. A full good spills: the surplus is lost and the chip shows "full". Haulers do not pick up what has nowhere to go.
+- **Food spoils slowly:** berries, grain, fish and flour lose 2% of the stock above 40 per minute (rounded down; the 40 below is safe, so a small buffer is never taxed). Preservation halves it, Smoking and Baking make the same loss worth more. Stone, ore, metal and charcoal do not spoil.
+- **The Bloom eats stock late (Livewire and after):** while it holds at least one overgrown building, once a minute it takes 5% of one good, picked by the minute and the map seed (not gameplay RNG). It is the late sink the research asked for, and a reason to hold the south.
+- Upkeep is left for Skyreach.
+
+### Pick 2: raw costs under about 60, bigger prices in made goods plus a lesson (PR B)
+- **Rule:** no building or tech asks for more than **60 of any raw good** (wood, stone, flint, clay, grain, fiber, coal, ore, copper, tin, berries). Anything that cost more is paid in made goods in single or double digits: Rope, Brick, Charcoal, Bronze, Iron, Steel, Wire, Flour, Planks.
+- **Conversion:** 1 Brick stands for 4 stone and 1 clay's worth of work, 1 Rope for 3 fiber, 1 Charcoal for 2 wood, 1 Plank for 2 wood. A raw price over 60 becomes the raw part up to 60 and the rest at that exchange rate, rounded up; the table lives in `tests/cost_tests.gd` as the audit that fails CI on any raw over 60.
+- **A Kith lesson on the biggest prices:** each tech and building at the top of an era asks for one named lesson in the town ("one Taught Hand II mason"), so the pillar shows in the price. First pass: the three biggest techs of each era, picked from the audit.
+- Copper, tin and coal for Livewire are set so the era's gate fits what the earned checkpoint leaves (about 700 coal) with one new coal vein guaranteed by pick 6.
+
+### Pick 1: Seasons of Strain (PR C)
+- A season is a pressure of about 90 seconds that arrives every **4.5 minutes** of an era, never in the first 6 minutes and never twice running. The schedule comes from the run's map seed and the clock, so every bot and playtest sees the same seasons.
+- Four kinds, unlocked as the story brings them: **Lean** (food yields 0.6x), **Cold snap** (coal and charcoal burn twice as fast), **Bloom surge** (Livewire on: the tide moves 1.5x toward one side), **Lumen asking** (Starfall on: shards for a lesson).
+- Each opens a one-card choice with **no right answer**, two options, each hurting something else (Lean: "Ration" eats 25% less but pauses births, or "Forage" sends idle people out and slows the Hearth's work). The answer lasts the season. An Order can prepare for a season; nothing can make the choice for the player.
+- A card never opens in the first two minutes after another card, and never while the game is paused on a famine card.
+
+### Pick 6: pacing guarantees near the Hearth (PR C)
+- `map_gen.gd` guarantees, for each era's key resource (clay and flax for Bronze Dawn, iron for Ironfall, copper, coal and shards for Livewire), at least **12 tiles within 24 tiles of the Hearth**, checked by a test over 20 map seeds.
+- Era gates are tied to lesson time: a gate's techs and lessons set the clock, not a pile, so the 10-minute map spread closes. The Livewire bot (the pace tool's `livewire` mode) must finish within 4 minutes of the median on every seed.
+
+### Pick 7: scorecards measure decisions, idle time and a diary (PR D)
+- The bots log **decisions per minute** (a build, a research, an order, a seasons answer, an expedition), **idle time** (seconds with nothing affordable or nothing to do) and the **stock to cost ratio** of the last gate. They go in `scorecard-history.json` beside the grades.
+- Each scorecard persona writes a **diary** of five fixed questions, every answer citing a log line (When did you last choose? When did you stop needing the screen? What did you ignore? Which cost felt silly? Where were you lost?). The diary points at lines; it is never proof of fun. Jon's own hour beats it.
+
+## Order of work and checks
+1. **PR A**: pick 4 (pick 5 needs no code). Tests: the chip's tones and clock face at 300 and 120 seconds, the famine card opens once and not in the opening, the flag survives a save, the layout pass finds no cut-off number.
+2. **PR B**: picks 3 and 2 with the cost audit. Tests: the cap spills, spoilage leaves 40, the audit finds no raw over 60, every earned checkpoint still reaches its next gate.
+3. **PR C**: picks 1 and 6. Tests: the schedule is the same on a seed twice; each season's two answers change different numbers; the guarantee holds on 20 seeds.
+4. **PR D**: pick 7, in the playtest tools and the rubric files only.
+
+## Open
+- Does Lean ration or forage read as a real choice? Tune after the first earned-checkpoint run.
+- Should the cap show on the chip as "80/150" or only when near full? *Default*: only at 80% and above, to keep the bar quiet.
