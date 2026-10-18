@@ -136,6 +136,26 @@ func _star(maps: Array, minutes: float, quiet: bool) -> void:
 	quit(0)
 
 
+## What the bot's log says about how much the era asked of a player: "N decisions (D a minute), W minutes waiting". A decision is
+## a building placed, a tech learned or an order written; a minute is waiting when the bot's trace line says what held it up
+## ("next ... missing"). A reading of the bot, never of a human: scorecards cite it beside a human or captured play.
+static func measured(log: Array, clock: float) -> String:
+	var rx := RegEx.new()
+	rx.compile("^\\s*\\d+ s\\s+(\\+ |== order written|[A-Z][^=.(]*\\(Kith)")
+	var decisions := 0
+	var waits := 0
+	for line in log:
+		var text := String(line)
+		if rx.search(text) != null:
+			decisions += 1
+		elif ".. next " in text:
+			waits += 1
+	var minutes := maxf(clock / 60.0, 0.1)
+	return (
+		"measured: %d decisions (%.1f a minute), %d minutes waiting on a want" % [decisions, decisions / minutes, waits]
+	)
+
+
 func _mean(xs: Array) -> float:
 	var total := 0.0
 	for x in xs:
@@ -172,6 +192,7 @@ func _livewire(maps: Array, minutes: float, quiet: bool, cache: String) -> void:
 			)
 		)
 		print("   marks (min): ", ", ".join(shown))
+		print("   ", measured(r["log"], bot.clock))
 		if not quiet:
 			for line in r["log"]:
 				print("   ", line)
@@ -199,6 +220,7 @@ func _ironfall(maps: Array, minutes: float, quiet: bool, from: String, cache: St
 			)
 		)
 		print("   marks (min): ", ", ".join(shown))
+		print("   ", measured(r["log"], bot.clock))
 		if not quiet:
 			for line in r["log"]:
 				print("   ", line)

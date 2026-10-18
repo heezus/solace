@@ -887,3 +887,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Claude added a season every 4.5 minutes from minute 6 (Lean, Cold snap, Bloom surge), each a two-option card with no right answer; the schedule comes from the map seed, a card nobody answers answers itself after 20 seconds, and a season waits while the town is short of food.
 - The Lumen asking season, the "Work first" verb and a default Order are left for later (page 24).
 
+## 2026-10-18: Scorecards measure decisions, waiting and a diary (PR D)
+- Claude made the pacing tool print decisions per minute and minutes waiting on a want for each bot run, and added a measured block and a five-question diary to the scorecard rubric and template, so a flat era shows up as a number beside the grade.
+- The numbers read a bot and say so; Jon's own hour of play beats them. The history file gets an optional `measured` object and keeps schema 1.
+

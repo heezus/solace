@@ -46,8 +46,9 @@ Built in the order below, in four PRs, each green on the Mac runner before the n
 - The stone-age map already guarantees its basics near the Hearth (`MapGen.faults_of`), and the Bronze Dawn strip already guarantees copper near its way in (`MapEast`, tested over many seeds in `tests/era_fair_tests.gd`). So this pick is a check, not new map code: the pacing tool (`tests/tools/pace.gd`) runs the bots across maps and the spread is read off its table.
 - Era gates are tied to lesson time: a gate's techs and lessons set the clock, not a pile, so the map spread shrinks as the raw piles stop mattering (pick 2).
 
-### Pick 7: scorecards measure decisions, idle time and a diary (PR D)
+### Pick 7: scorecards measure decisions, idle time and a diary (PR D, built)
 - The bots log **decisions per minute** (a build, a research, an order, a seasons answer, an expedition), **idle time** (seconds with nothing affordable or nothing to do) and the **stock to cost ratio** of the last gate. They go in `scorecard-history.json` beside the grades.
+- Built as: the pacing tool prints a `measured:` line per bot run (`tests/tools/pace.gd`); the rubric, template and how-to-run files in the shared playtests folder carry the measured block, the diary questions and an optional `measured` object in the history rows (schema stays 1). The stock to cost reading comes from the last `short` line of the trace, by hand for now.
 - Each scorecard persona writes a **diary** of five fixed questions, every answer citing a log line (When did you last choose? When did you stop needing the screen? What did you ignore? Which cost felt silly? Where were you lost?). The diary points at lines; it is never proof of fun. Jon's own hour beats it.
 
 ## Order of work and checks
