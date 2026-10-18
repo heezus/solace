@@ -9,16 +9,16 @@ Status: **design only** (2026-10-18). Mechanics page, so Claude owns it. It turn
 - The goal strip can show stage-start script text, and map luck moves an era by ten minutes.
 
 ## The seven picks
-Built in the order below, in four PRs, each green on the Mac runner before the next starts. Pick 5 and pick 4 come first because they cost the least and the bots can check them.
+Built in the order below, in four PRs, each green on the Mac runner before the next starts. Pick 4 comes first because it costs the least and the layout pass checks it.
 
-### Pick 5: one live headline goal (PR A)
-- The strip shows exactly one line: the first unmet item of the current gate or tutorial goal, written from live state, never stage-start script text. It wraps to two lines (the chip from PR #108) and a click opens the full list.
-- A goal that is already true is never shown (the "Lay two Power Poles" line while poles stand).
+### Pick 5: one live headline goal (already how it works)
+- The goal strip already shows exactly one line, the first goal not yet met, and `Story.update` marks every goal that is true each tick, so a goal that is already true is never shown. The chip wraps to two lines (PR #108) and a click opens the full list. The "Lay two Power Poles" line the scorecard saw came from a stuffed stage start that did not set the goals, which the earned checkpoints replaced.
+- Nothing to build for this pick; it stays here so the plan reads whole. The era's last goal (the gate) is a price plus deeds, and the strip names the first unmet part, so it needs no change either.
 
-### Pick 4: time left, a pausing card, a safety Order (PR A)
-- Each good in the top bar shows time left at the current net rate under its count ("4:10"): **amber under 5 minutes, red under 2**. Only goods with a negative net rate show one. Food uses the Economy's existing runway; coal and charcoal use the flow window.
-- The **first real famine of a run** (`Economy.famine` turning on) opens one card and pauses the game: what is short, how long it lasts, and a button that points the camera at the Hearth. It never opens twice in a run, and not in the first two minutes (the opening is the player's).
-- A new game starts with one written Order, "Keep food above 100" (a Bring first on the nearest food huts), in the first free slot as soon as the Order Board is built. The player can delete it; it is a net, not a rule.
+### Pick 4: time left and a pausing card (PR A, built)
+- Each good in the top bar shows time left at the current net rate beside its count ("4:10"): **amber under 5 minutes, red under 2**. Only goods with a net loss show one, and the goods Food is made of (berries, fish, flour) do not, because the Food readout already says how long the food lasts. The count and the sprite shrink a little while the time shows, so the chip never grows. The logic is `scripts/runway.gd`; the thresholds are `Data.RUNWAY_AMBER_SECONDS` and `RUNWAY_RED_SECONDS`.
+- The **first real famine of a run** (`Economy.famine` turning on) opens one card (`scripts/notice_card.gd`) and pauses the game: how long the food lasts, what idle people will do, and a button that centres the camera on the Hearth. It never opens twice in a run (the flag is saved), and not in the first two minutes (the opening is the player's).
+- **Left out, and why:** a default Order "Keep food above 100". The Order Board only exists from Livewire, and its two verbs (Pause, Bring first) act on workshops, so a rule cannot say "make food". A real safety net needs a third verb, **Work first** (huts of that good are worked ahead of the rest, the visible form of `Data.FOOD_SHORT_STOCK`); it goes with the seasons in PR C, where the Lean season needs it.
 
 ### Pick 3: tech-scaled storage, slow spoilage, the Bloom eats stock (PR B)
 - **Cap per good:** 150 at the Hearth. Each **Storehouse** adds 100 (up to 6) and the techs Storehouse, Granary and Warehousing each add 150. A full good spills: the surplus is lost and the chip shows "full". Haulers do not pick up what has nowhere to go.
@@ -47,7 +47,7 @@ Built in the order below, in four PRs, each green on the Mac runner before the n
 - Each scorecard persona writes a **diary** of five fixed questions, every answer citing a log line (When did you last choose? When did you stop needing the screen? What did you ignore? Which cost felt silly? Where were you lost?). The diary points at lines; it is never proof of fun. Jon's own hour beats it.
 
 ## Order of work and checks
-1. **PR A**: picks 5 and 4, plus the pacing bot's runway log. Tests: the strip never shows a true goal; the chip colours at 300 and 120 seconds; the famine card opens once; the default Order exists and can be deleted.
+1. **PR A**: pick 4 (pick 5 needs no code). Tests: the chip's tones and clock face at 300 and 120 seconds, the famine card opens once and not in the opening, the flag survives a save, the layout pass finds no cut-off number.
 2. **PR B**: picks 3 and 2 with the cost audit. Tests: the cap spills, spoilage leaves 40, the audit finds no raw over 60, every earned checkpoint still reaches its next gate.
 3. **PR C**: picks 1 and 6. Tests: the schedule is the same on a seed twice; each season's two answers change different numbers; the guarantee holds on 20 seeds.
 4. **PR D**: pick 7, in the playtest tools and the rubric files only.
