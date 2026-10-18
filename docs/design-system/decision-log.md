@@ -871,3 +871,8 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - The Livewire tide and gate starts lay the net, order and lamps of the stages before them so their goals match; stage starts are test tools and never back a balance grade.
 - Three earned checkpoints (the Steam Cart, Livewire begun, the south held) are saved from the bots' own play for playtesters to start from, on page 21; scarcity, cost retuning and the other mechanic changes wait for the balance work.
 - The play, layout and menu passes run headless on the Mac runner so no game window opens on the owner's screen (the passes hold the window at 1280x800 and 60 frames a second themselves).
+
+## 2026-10-18: The balance plan, written down (PR #109)
+- Claude turned the owner's seven approved picks into page 24: one live headline goal, time-left chips with a famine card and a default "keep food above 100" Order, storage caps with slow food spoilage and the Bloom eating stock late, no raw price over 60 with made goods and a lesson carrying the big prices, Seasons of Strain, pacing guarantees near the Hearth, and decisions per minute with a diary on the scorecards.
+- It is built in four PRs (goal and chips, storage and costs, seasons and map guarantees, scorecard metrics), each green on the Mac runner first, so a mistake in one never hides in a bundle.
+- The numbers (caps of 150 plus 100 a Storehouse, 2% a minute spoilage above 40, a season every 4.5 minutes, 12 tiles within 24 of the Hearth) are first guesses to tune with the pacing bots on earned checkpoints.
