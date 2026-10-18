@@ -174,7 +174,7 @@ const FIREBREAKS := {
 	"icon": "field",
 	"side": true,
 	"requires": ["tide_watch", "iron_plough"],
-	"cost": {"iron": 50, "steel": 20, "wood": 60, "charcoal": 90},
+	"cost": {"iron": 50, "steel": 20, "wood": 60, "charcoal": 45},
 	"desc": "Cleared strips of ground that burn and never grow. The tide goes round them or waits.",
 }
 const SHARD_DYNAMO := {

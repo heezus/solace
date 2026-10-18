@@ -335,7 +335,7 @@ func test_rank_costs_and_effects() -> void:
 ## Tech costs grow by tier (14-hands-to-haulers.md), and each tier pays in goods earlier tiers teach.
 func test_tier_costs_scale() -> void:
 	# Tier III starts at 60: Paths & Haulers is cheaper since 2026-10-03, so the roads come sooner.
-	var bands := [[10, 20], [25, 60], [60, 150], [200, 400], [200, 400], [500, 700]]
+	var bands := [[10, 20], [25, 60], [60, 150], [170, 400], [170, 400], [500, 700]]
 	var made_by := {"rope": "cordage", "charcoal": "fire", "brick": "pottery", "flour": "grindstone"}
 	var avg: Array = []
 	for tier in bands.size():

@@ -377,7 +377,7 @@ const BUILDINGS := {
 		"job": "Miner",
 		"tech": "coal_seams",
 		"story": true,
-		"cost": {"wood": 60, "stone": 40, "brick": 40, "charcoal": 50},
+		"cost": {"wood": 60, "stone": 40, "brick": 40, "charcoal": 30},
 		"in": {},
 		"out": {},
 		"dig": 2,
