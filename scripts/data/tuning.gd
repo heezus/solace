@@ -57,8 +57,8 @@ const RUNWAY_RED_SECONDS := 120.0
 ## each Storehouse standing (up to STORAGE_STOREHOUSE_MAX of them) and the bonus of each tech in STORAGE_TECHS that is learned.
 ## What comes in over the cap is lost. A good's cap is never under the biggest single price asked of it, so a price can always
 ## be saved for.
-const STORAGE_BASE := 150
-const STORAGE_PER_STOREHOUSE := 100
+const STORAGE_BASE := 300
+const STORAGE_PER_STOREHOUSE := 150
 const STORAGE_STOREHOUSE_MAX := 6
 const STORAGE_TECHS := {"granaries": 100, "rails": 100, "factory_floor": 100}
 ## A chip says "full" once its good is this share of the cap.

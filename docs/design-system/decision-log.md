@@ -877,3 +877,13 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - It is built in four PRs (chips and the famine card, storage and costs, seasons and map guarantees, scorecard metrics), each green on the Mac runner first, so a mistake in one never hides in a bundle.
 - The numbers (caps of 150 plus 100 a Storehouse, 2% a minute spoilage above 40, a season every 4.5 minutes, 12 tiles within 24 of the Hearth) are first guesses to tune with the pacing bots on earned checkpoints.
 - Time-left chips and the famine card are the first of them: a good that is falling shows its time beside the count (amber under 5 minutes, red under 2, never for the goods Food is made of), and the first real famine of a run stops the game once with a card. The goal strip already shows one live goal, so pick 5 needs no code; a default "keep food above 100" Order waits for a "Work first" verb, because Pause and Bring first cannot make food.
+
+## 2026-10-18: Storage caps, made-goods prices and spoilage (PR B)
+- Claude gave every good a cap (300 at the Hearth, 150 more per Storehouse up to six, 100 more for each of Granaries, Rails and Factory Floor) and let food spoil 2% a minute above 40, so a pile of thousands no longer hides a price. A cap never falls below the biggest price of a good.
+- All raw prices are 60 or less; the rest of an old price is paid in made goods at the exchange rate (page 24), and the Bloom eats 5% of one good a minute while a building stands overgrown. The first pass priced made goods above the rate and the bots ran short of charcoal and bricks, so it was cut back.
+- The earned "south held" checkpoint is dropped for now (page 21): the tighter economy leaves the Livewire bot without the coal to hold the south, and the coal rule is the next question for the project owner.
+
+## 2026-10-18: Seasons of Strain (PR C)
+- Claude added a season every 4.5 minutes from minute 6 (Lean, Cold snap, Bloom surge), each a two-option card with no right answer; the schedule comes from the map seed, a card nobody answers answers itself after 20 seconds, and a season waits while the town is short of food.
+- The Lumen asking season, the "Work first" verb and a default Order are left for later (page 24).
+

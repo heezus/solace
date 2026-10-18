@@ -498,7 +498,7 @@ const TECHS := {
 		"icon": "@calendar",
 		"requires": ["farming"],
 		"requires_any": ["megaliths", "storytelling"],
-		"cost": {"grain": 60, "stone": 40, "wood": 30, "brick": 30, "flour": 20},
+		"cost": {"grain": 60, "stone": 40, "wood": 30, "brick": 30, "rope": 20},
 		"effect": "calendar",
 		"desc": "Count the moons and sow on time. Fields yield 25% more.",
 	},
