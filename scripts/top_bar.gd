@@ -326,6 +326,9 @@ func refresh(paused: bool, speed: int) -> void:
 func _refresh_eta(c: Dictionary, id: String, n: int, r: float) -> void:
 	var left := INF if Data.FOOD_VALUE.has(id) else Runway.seconds(n, r)
 	var words := Runway.text(left)
+	var full := state.economy.is_full(id)
+	if words == "" and full:
+		words = "full"
 	c["eta"].visible = words != ""
 	c["eta"].text = words
 	c["count"].add_theme_font_size_override("font_size", COUNT_SIZE_RUNNING_OUT if words != "" else COUNT_SIZE)
@@ -333,6 +336,8 @@ func _refresh_eta(c: Dictionary, id: String, n: int, r: float) -> void:
 	c["icon"].custom_minimum_size = Vector2(side, side)
 	if words != "":
 		c["eta"].add_theme_color_override("font_color", Ui.BAD if Runway.tone(left) == Runway.Tone.RED else ALARM_TEXT)
+		if full and Runway.text(left) == "":
+			c["eta"].add_theme_color_override("font_color", FLAT)
 
 
 ## The Food readout: the count, then what is happening to it. While it is about to run out (Data.FOOD_WARN_SECONDS)

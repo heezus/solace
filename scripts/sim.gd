@@ -268,9 +268,9 @@ func _remove_building(i: int) -> void:
 	var b: Dictionary = town.buildings[i]
 	people.release_worker(b)
 	for id in b["out"]:
-		economy.add(id, b["out"][id])
+		economy.give_back(id, b["out"][id])
 	for id in b["inbuf"]:
-		economy.add(id, b["inbuf"][id])
+		economy.give_back(id, b["inbuf"][id])
 	people.drop_tasks_at(i)
 	town.remove_at(i)
 	people.shift_buildings_after(i)
@@ -299,6 +299,7 @@ func set_paused(i: int, on: bool) -> void:
 func tick(delta: float) -> void:
 	Hands.age_stash(self, delta)
 	Land.grow_if_due(self)
+	economy.refresh_caps(town.buildings)
 	economy.advance(delta)
 	for tech in tech_tree.tick():
 		_tech_done(tech)

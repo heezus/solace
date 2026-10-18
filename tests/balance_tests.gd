@@ -7,6 +7,26 @@ const Economy = preload("res://scripts/economy.gd")
 const Runway = preload("res://scripts/runway.gd")
 const Sim = preload("res://scripts/sim.gd")
 const RunSave = preload("res://scripts/run_save.gd")
+const Storage = preload("res://scripts/storage.gd")
+
+## The goods the land gives. A price over RAW_PRICE_CAP of one of these says nothing about the world: ask for made goods.
+const RAW_GOODS := [
+	"wood",
+	"stone",
+	"flint",
+	"fiber",
+	"clay",
+	"berries",
+	"grain",
+	"fish",
+	"copper_ore",
+	"tin",
+	"coal",
+	"iron_ore",
+	"shard",
+	"copper"
+]
+const RAW_PRICE_CAP := 60
 
 var t  # the runner, tests/run_tests.gd
 
@@ -17,6 +37,11 @@ func run(runner) -> void:
 	test_the_runway_has_two_tones_and_a_clock_face()
 	test_the_famine_card_comes_once_and_not_in_the_opening()
 	test_the_famine_card_is_remembered_by_a_save()
+	test_no_price_asks_for_a_pile_of_a_raw_good()
+	test_the_stockpile_has_a_cap_that_grows()
+	test_a_full_stockpile_spills_and_a_refund_does_not()
+	test_food_spoils_above_the_floor_and_preservation_halves_it()
+	test_a_price_can_always_be_saved_for()
 
 
 func test_the_runway_of_a_falling_good() -> void:
@@ -72,3 +97,85 @@ func test_the_famine_card_is_remembered_by_a_save() -> void:
 	var plain := Economy.new()
 	plain.from_dict(old)
 	t.check(not plain.famine_card_shown, "a save from before the card has not had one")
+
+
+func test_no_price_asks_for_a_pile_of_a_raw_good() -> void:
+	var over: Array = []
+	for source in [Data.TECHS, Data.BUILDINGS]:
+		for id in source:
+			var cost: Dictionary = source[id].get("cost", {})
+			for item in cost:
+				if item in RAW_GOODS and cost[item] > RAW_PRICE_CAP:
+					over.append("%s asks %d %s" % [id, cost[item], item])
+	t.check(over.is_empty(), "no tech or building asks over %d of a raw good: %s" % [RAW_PRICE_CAP, ", ".join(over)])
+
+
+func test_the_stockpile_has_a_cap_that_grows() -> void:
+	var researched := {}
+	t.check(
+		Storage.capacity("tin", 0, researched) == Data.STORAGE_BASE,
+		"the Hearth holds the base of a good with a small price"
+	)
+	t.check(
+		Storage.capacity("tin", 2, researched) == Data.STORAGE_BASE + 2 * Data.STORAGE_PER_STOREHOUSE,
+		"each Storehouse adds its share"
+	)
+	var many := Storage.capacity("tin", 20, researched)
+	t.check(many == Data.STORAGE_BASE + Data.STORAGE_STOREHOUSE_MAX * Data.STORAGE_PER_STOREHOUSE, "up to six count")
+	researched["granaries"] = true
+	t.check(
+		Storage.capacity("tin", 20, researched) == many + Data.STORAGE_TECHS["granaries"], "and a tech adds its own"
+	)
+	var s: Sim = t.fresh()
+	s.tick(0.1)
+	t.check(s.economy.caps["tin"] == Data.STORAGE_BASE, "a new game's stockpile is capped from its first tick")
+	var storehouse: Vector2i = s.world.camp_pos + Vector2i(3, 0)
+	t.give(s, 500)
+	t.place_free(s, "storehouse", storehouse)
+	s.tick(0.1)
+	t.check(
+		s.economy.caps["tin"] == Data.STORAGE_BASE + Data.STORAGE_PER_STOREHOUSE, "a built Storehouse raises the cap"
+	)
+
+
+func test_a_full_stockpile_spills_and_a_refund_does_not() -> void:
+	var e := Economy.new()
+	e.caps = {"wood": 100}
+	e.add("wood", 80)
+	e.add("wood", 50)
+	t.check(e.inv["wood"] == 100 and e.spilled == 30, "what comes in over the cap is lost and counted")
+	t.check(e.is_full("wood"), "the chip says full at the cap")
+	e.give_back("wood", 40)
+	t.check(e.inv["wood"] == 140, "a refund is the player's own and never spills")
+	e.add("wood", 10)
+	t.check(e.inv["wood"] == 140, "a stock over the cap is never taken down, and gains nothing")
+	t.check(Economy.new().caps.is_empty(), "a bare Economy has no limit")
+
+
+func test_food_spoils_above_the_floor_and_preservation_halves_it() -> void:
+	var e := Economy.new()
+	e.inv["berries"] = Data.SPOIL_FLOOR
+	e.spoil(600.0)
+	t.check(e.inv["berries"] == Data.SPOIL_FLOOR, "the small stock the people live on is never taxed")
+	e.inv["berries"] = Data.SPOIL_FLOOR + 1000
+	e.spoil(60.0)
+	t.check(e.inv["berries"] == Data.SPOIL_FLOOR + 1000 - 20, "2% of the stock above the floor goes in a minute")
+	t.check(e.flows.now.get("berries|spoil", 0.0) == -20.0, "and shows in the flows as spoilage")
+	var kept := Economy.new({"preservation": true})
+	kept.inv["berries"] = Data.SPOIL_FLOOR + 1000
+	kept.spoil(60.0)
+	t.check(kept.inv["berries"] == Data.SPOIL_FLOOR + 1000 - 10, "Preservation halves it")
+	var other := Economy.new()
+	other.inv["stone"] = 1000
+	other.spoil(600.0)
+	t.check(other.inv["stone"] == 1000, "stone does not spoil")
+
+
+func test_a_price_can_always_be_saved_for() -> void:
+	var s: Sim = t.fresh()
+	s.tick(0.1)
+	for source in [Data.TECHS, Data.BUILDINGS]:
+		for id in source:
+			var cost: Dictionary = source[id].get("cost", {})
+			for item in cost:
+				t.check(s.economy.caps[item] >= cost[item], "%s: the cap on %s fits its price" % [id, item])

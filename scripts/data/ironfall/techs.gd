@@ -42,7 +42,7 @@ const IRONSTONE := {
 	"icon": "item_copper_ore",
 	"after": "ironfall_begun",
 	"requires": [],
-	"cost": {"bronze": 10, "copper": 20, "wood": 150},
+	"cost": {"bronze": 10, "copper": 20, "wood": 60, "charcoal": 90},
 	"desc":
 	(
 		"Heavy red stone that rings when struck. Iron Hills are named and a hold on one digs ore by hand. The land opens south of"
@@ -110,7 +110,7 @@ const BEAST_PEN := {
 	"icon": "dwelling",
 	"side": true,
 	"requires": ["teardown", "plough"],
-	"cost": {"wood": 200, "grain": 120, "rope": 60},
+	"cost": {"wood": 60, "grain": 60, "rope": 60, "charcoal": 140, "flour": 60},
 	"desc": "The starstuff touched the beasts. A Beast Pen tames one, and a beast cart pulls 30 on roads without coal.",
 }
 const IRON_TOOLS := {
@@ -124,7 +124,7 @@ const IRON_TOOLS := {
 	"unlock": "Iron Tools, faster than bronze",
 	"icon": "item_bronze_tools",
 	"requires": ["bloomery", "ironstone"],
-	"cost": {"iron": 25, "coal": 40, "wood": 100},
+	"cost": {"iron": 25, "coal": 40, "wood": 60, "charcoal": 40},
 	"desc":
 	(
 		"Iron replaces bronze. A worker with an Iron Tool works 75 points faster than with bronze, and it lasts 300 jobs."
@@ -143,7 +143,7 @@ const RAILS := {
 	"unlock": "Rail, Steam Shed (the Steam Cart)",
 	"icon": "tile_road",
 	"requires": ["boiler", "bloomery"],
-	"cost": {"iron": 60, "coal": 60, "wood": 200},
+	"cost": {"iron": 60, "coal": 60, "wood": 60, "charcoal": 90, "brick": 50},
 	"desc":
 	"A road of iron strips. Rail carries 8 times open ground, and the Steam Cart runs only on rails and carries 40.",
 }
@@ -192,7 +192,7 @@ const BLAST_FURNACE := {
 	"unlock": "Forge, Iron x2 per firing",
 	"icon": "crucible",
 	"requires": ["bloomery", "boiler"],
-	"cost": {"iron": 80, "brick": 140, "coal": 80},
+	"cost": {"iron": 80, "brick": 140, "coal": 60, "charcoal": 20},
 	"desc":
 	"A taller stack and a steady blast. A Forge turns Iron and Coal into Steel, and every firing gives twice the Iron.",
 }
@@ -209,7 +209,7 @@ const IRON_PLOUGH := {
 	"icon": "field",
 	"side": true,
 	"requires": ["iron_tools", "plough"],
-	"cost": {"iron": 40, "wood": 120, "coal": 30},
+	"cost": {"iron": 40, "wood": 60, "coal": 30, "charcoal": 60},
 	"desc": "An iron share cuts the heavy ground. Fields yield another 50%.",
 }
 const SHARD_BOILER := {

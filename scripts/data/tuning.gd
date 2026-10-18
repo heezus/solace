@@ -52,6 +52,21 @@ const FOOD_FAMINE_SECONDS := 200.0
 ## and in red under RUNWAY_RED_SECONDS (design-system/24-balance.md, pick 4). Food has its own readout and is left out.
 const RUNWAY_AMBER_SECONDS := 300.0
 const RUNWAY_RED_SECONDS := 120.0
+
+## Storage (design-system/24-balance.md, pick 3): the stockpile holds STORAGE_BASE of each good, STORAGE_PER_STOREHOUSE more for
+## each Storehouse standing (up to STORAGE_STOREHOUSE_MAX of them) and the bonus of each tech in STORAGE_TECHS that is learned.
+## What comes in over the cap is lost. A good's cap is never under the biggest single price asked of it, so a price can always
+## be saved for.
+const STORAGE_BASE := 150
+const STORAGE_PER_STOREHOUSE := 100
+const STORAGE_STOREHOUSE_MAX := 6
+const STORAGE_TECHS := {"granaries": 100, "rails": 100, "factory_floor": 100}
+## A chip says "full" once its good is this share of the cap.
+const STORAGE_FULL_SHARE := 0.95
+## Food spoils: each of SPOIL_GOODS loses SPOIL_PER_MINUTE of the stock above SPOIL_FLOOR every minute (Preservation halves it).
+const SPOIL_GOODS := ["berries", "fish", "flour", "grain"]
+const SPOIL_PER_MINUTE := 0.02
+const SPOIL_FLOOR := 40
 const FORAGE_OPENING_SECONDS := 120.0
 ## ...and they stop once it would last this long (well past FOOD_CLEAR_SECONDS, so the famine does not flicker on and off).
 const FOOD_FORAGE_END_SECONDS := 300.0
