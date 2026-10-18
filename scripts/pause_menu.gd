@@ -13,6 +13,7 @@ signal quit_pressed
 const Data = preload("res://scripts/data.gd")
 const Ui = preload("res://scripts/ui.gd")
 const MenuFonts = preload("res://scripts/menu_fonts.gd")
+const BuildInfo = preload("res://scripts/build_info.gd")
 const DebugKeys = preload("res://scripts/debug_keys.gd")
 const CutsceneSettings = preload("res://scripts/cutscene_settings.gd")
 
@@ -67,6 +68,9 @@ func setup() -> void:
 	MenuFonts.style_caption(hint)
 	hint.add_theme_color_override("font_color", Ui.TEXT_DIM)
 	v.add_child(hint)
+	var build := BuildInfo.label(Ui.MIN_TEXT)
+	build.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(build)
 
 
 ## An on/off switch under the buttons, in the caption face; `on_toggle` is told the new state.

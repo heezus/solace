@@ -41,6 +41,13 @@ jobs:
 
       # The bots that make the later stage starts take minutes, so they run here once and both builds ship the result
       # (stage_starts/ is not in the repo; the game falls back to building a start on demand without it).
+      # The build says which one it is on the title screen and the pause menu (scripts/build_info.gd keeps "dev" in the repo).
+      - name: Stamp the build
+        run: |
+          sed -i.bak -e "s/^const DATE := .*/const DATE := \"$(date -u +%Y-%m-%d)\"/" -e "s/^const COMMIT := .*/const COMMIT := \"$(git rev-parse --short=7 HEAD)\"/" scripts/build_info.gd
+          rm scripts/build_info.gd.bak
+          grep "^const " scripts/build_info.gd
+
       - name: Bake the stage starts
         run: |
           ./godot --headless --path . -s tests/tools/bake_starts.gd
