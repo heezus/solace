@@ -39,7 +39,7 @@ var births_paused := false
 var forage_call := false
 var forage_mult := 1
 var _caps_key := -1  # refresh_caps's last count of Storehouses and techs
-var _rot: Dictionary = {}  # good -> the part of an item that has spoiled but not yet been taken; not saved
+var _rot: Dictionary = {}  # good -> the part of an item that has spoiled but not yet been taken
 var _techs: Dictionary  # researched tech ids (a view of the Research block's set, never written here)
 var _steady_second := -1  # the flow-window second `_steady_ok` was worked out in
 var _steady_ok := false  # the window is full and its food covers what everyone eats (worked out once a second)
@@ -125,10 +125,11 @@ func spoil(delta: float) -> void:
 		if over <= 0:
 			_rot[id] = 0.0
 			continue
-		_rot[id] = _rot.get(id, 0.0) + over * share * delta
+		# Kept to millionths, so a saved game reads back the very same number.
+		_rot[id] = snappedf(_rot.get(id, 0.0) + over * share * delta, 0.000001)
 		var gone := mini(int(_rot[id]), over)
 		if gone > 0:
-			_rot[id] -= gone
+			_rot[id] = snappedf(_rot[id] - gone, 0.000001)
 			inv[id] -= gone
 			flows.add(id, -float(gone), "spoil")
 

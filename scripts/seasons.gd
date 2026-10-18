@@ -34,7 +34,7 @@ func tick(s, delta: float) -> void:
 			_burn_fuel(s, delta)
 			if left <= 0.0:
 				_end(s)
-	_set_economy(s)
+	push_to_economy(s)
 
 
 ## The kinds that could come now: Lean always; the Cold snap from Bronze Dawn on; the Surge once the tide has begun.
@@ -68,6 +68,7 @@ func choose(s, index: int) -> void:
 		return
 	answer = clampi(index, 0, 1)
 	phase = "active"
+	_waited = 0.0  # a spent wait is not kept: stray float digits do not survive a save
 	left = Data.SEASON_LENGTH
 	_burn = 0.0
 	if kind == "surge" and answer == 1:
@@ -80,6 +81,7 @@ func choose(s, index: int) -> void:
 func _end(s) -> void:
 	s.events.append(Data.SEASONS[kind]["over"])
 	last = kind
+	left = 0.0
 	phase = "idle"
 	kind = ""
 	answer = -1
@@ -100,8 +102,8 @@ func _burn_fuel(s, delta: float) -> void:
 			return
 
 
-## Push the Economy's season switches: they are derived from this block every tick, so they are not saved with it.
-func _set_economy(s) -> void:
+## Push the Economy's season switches: they are derived from this block every tick (and once after a load), so they are not saved with it.
+func push_to_economy(s) -> void:
 	var on := phase == "active"
 	s.economy.eat_factor = Data.RATION_EAT if on and kind == "lean" and answer == 0 else 1.0
 	s.economy.births_paused = on and kind == "lean" and answer == 0

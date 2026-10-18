@@ -158,3 +158,4 @@ static func _game_from_dict(s, d: Dictionary) -> void:
 	s.livewire.from_dict(d.get("livewire", {}))
 	s.tide.from_dict(d.get("tide", {}))
 	s.seasons.from_dict(d.get("seasons", {}))
+	s.seasons.push_to_economy(s)  # the Economy eats by the season before the first tick
