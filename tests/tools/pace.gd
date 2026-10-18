@@ -7,11 +7,15 @@ extends SceneTree
 ## each goal: `ironfall` alone starts where the era does, `steam` or `teardown` after it starts at that stage start. Maps other
 ## than the starts' own (1) are played to the Falling Star first (minutes of real time); `cache` keeps that in user://pace_starts/
 ## (clear the folder when an earlier era's numbers change).
-## Run: godot --headless --path . -s tests/tools/pace.gd -- [map|all] [minutes] [quiet] [bronze|star|ironfall [steam|teardown] [cache]]
+## With `livewire` it plays on from the Ironfall start through the Livewire gate (the Wires Hum) to the Skyward tech and prints the
+## clock at each Livewire goal (tests/autoplay_livewire.gd).
+## Run: godot --headless --path . -s tests/tools/pace.gd --
+##   [map|all] [minutes] [quiet] [bronze|star|ironfall [steam|teardown]|livewire] [cache]
 
 const Autoplay = preload("res://tests/autoplay.gd")
 const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
 const AutoplayIronfall = preload("res://tests/autoplay_ironfall.gd")
+const AutoplayLivewire = preload("res://tests/autoplay_livewire.gd")
 const DevStarts = preload("res://scripts/dev_starts.gd")
 
 
@@ -27,6 +31,9 @@ func _init() -> void:
 		return
 	if "star" in args:
 		_star(maps, minutes, quiet)
+		return
+	if "livewire" in args:
+		_livewire(maps, minutes, quiet, "user://pace_starts/" if "cache" in args else "")
 		return
 	if "ironfall" in args:
 		var from := "ironfall_steam" if "steam" in args else ("ironfall_teardown" if "teardown" in args else "ironfall")
@@ -137,6 +144,41 @@ func _mean(xs: Array) -> float:
 
 
 ## Ironfall: the clock at each goal from the start `from` to the Livewire gate, per map.
+## The era-5 report: minutes from the Ironfall start to its gate and from there to Skyward, per map.
+func _livewire(maps: Array, minutes: float, quiet: bool, cache: String) -> void:
+	for m in maps:
+		var bot := AutoplayLivewire.new()
+		bot.trace = not quiet
+		for a in OS.get_cmdline_user_args():
+			if a.begins_with("coal+"):  # `coal+1000`: a what-if, the coal the seams do not hold
+				bot.coal_gift = int(a.substr(5))
+		var game := DevStarts.ironfall_on_map(m, "ironfall", cache)
+		var r: Dictionary = bot.play_livewire(game, minutes * 60.0)
+		var shown: Array = []
+		for key in r["marks"]:
+			shown.append("%s %.1f" % [key, r["marks"][key] / 60.0])
+		print(
+			(
+				"map %d livewire: %s; Ironfall gate %s"
+				% [
+					m,
+					(
+						"Skyward at %.1f min" % (r["seconds"] / 60.0)
+						if r["won"]
+						else "no Skyward by %.1f min" % (bot.clock / 60.0)
+					),
+					"%.1f min" % (r["gate_seconds"] / 60.0) if r["gate_seconds"] >= 0.0 else "never"
+				]
+			)
+		)
+		print("   marks (min): ", ", ".join(shown))
+		if not quiet:
+			for line in r["log"]:
+				print("   ", line)
+		print("   inv ", bot.s.economy.inv)
+	quit(0)
+
+
 func _ironfall(maps: Array, minutes: float, quiet: bool, from: String, cache: String) -> void:
 	var gates: Array = []
 	for m in maps:

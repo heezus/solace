@@ -28,11 +28,14 @@ const COAL_SPARE := 150  # coal the stockpile keeps beyond the gate's needs befo
 const WAIT_FOR_ROOM := 90.0  # seconds a building may stay affordable and unplaced before the plan goes on without it
 const WORKSHOPS_BIG := 8  # the most of one kind of workshop the bot builds in the era (the stone age's cap is 4)
 const POSTS := 2  # Expedition Posts: a second sends the second party for the Bloom samples
+## The techs the metal works stand on, taken before any other: the road to Bloom Sampling passes through none of them.
+const GROUND_TECHS := ["coal_seams", "ironstone", "bloomery", "boiler"]
 ## The buildings the minute's trace reports on.
 const TRACED := [
 	"forge", "bloomery", "boiler", "coal_mine", "mine", "kiln", "charcoal_pit", "smelter", "crucible", "twine_post"
 ]
 
+var gate := GATE  # the tech the bot plays toward (the Livewire bot plays on to Skyward)
 var marks := {}  # milestone -> clock
 var gate_at := -1.0
 var _room_since := {}  # building type -> the clock when it was first affordable and unplaced
@@ -44,7 +47,7 @@ var _tile_size := -1
 
 ## Play `game` (an Ironfall start) from here to the Livewire gate, or until `max_seconds` pass.
 func play_from(game: Sim, max_seconds: float) -> Dictionary:
-	goal_tech = GATE
+	goal_tech = gate
 	attach(game)
 	for tech in s.tech_tree.researched:
 		known[tech] = true
@@ -75,13 +78,16 @@ func _drop_stranded_posts() -> void:
 		lines.append("%5d s    - stranded Storehouse at %s torn down" % [int(clock), at])
 
 
-## The research goal, in the order a player would take it: Bloom Sampling first (three trips to the far south and three
-## Lessons are the long pole and cost little), then the rest of the metal works before any other tech (the Bloomeries and
-## Forges take the brick and iron that the techs would), then the gate.
+## The research goal, in the order a player would take it: the techs of the metal works (Coal Seams, Ironstone, Bloomery, Boiler), then
+## Bloom Sampling (three trips to the far south and three Lessons are the long pole and cost little), then the rest of the
+## metal works before any other tech (the Bloomeries and Forges take the brick and iron that the techs would), then the gate.
 func _aim() -> void:
 	var done: Dictionary = s.tech_tree.researched
-	var want := GATE
-	if not done.has("bloom_sampling"):
+	var want := gate
+	var ground := GROUND_TECHS.filter(func(id): return not done.has(id))
+	if not ground.is_empty():
+		want = ground[0]  # the metal's ground first: the way to Bloom Sampling does not pass through the Coal Seams
+	elif not done.has("bloom_sampling"):
 		want = "bloom_sampling"
 	elif _works_due():
 		want = ""
@@ -147,7 +153,7 @@ func _note_goals() -> void:
 				marks["steam_cart"] = clock
 				lines.append("%5.0f s  == a Steam Cart rolls ==" % clock)
 				break
-	if gate_at < 0.0 and s.tech_tree.researched.has(GATE):
+	if gate_at < 0.0 and s.tech_tree.researched.has(gate):
 		gate_at = clock
 		marks["gate"] = clock
 
@@ -214,14 +220,22 @@ func _goal_wants(want: Dictionary) -> void:
 
 ## Steel the gate still lacks.
 func _steel_left() -> int:
-	if s.tech_tree.researched.has(GATE):
+	if s.tech_tree.researched.has(gate):
 		return 0
 	return maxi(_steel_cost() - _inv("steel"), 0)
 
 
-## What the gate costs in Steel now (the Tally Sticks discount applies).
+## What the gate and the techs on the way to it still cost in Steel (the Tally Sticks discount applies).
 func _steel_cost() -> int:
-	return s.tech_tree.cost_of(GATE).get("steel", 0)
+	return _route_cost("steel")
+
+
+## The `id` the unresearched techs on the way to the gate cost, the gate's own included.
+func _route_cost(id: String) -> int:
+	var need := 0
+	for tech in Rules.route_to(gate, s.tech_tree.researched, Rules.visible_techs(s.shard_seen)):
+		need += s.tech_tree.cost_of(tech).get(id, 0)
+	return need
 
 
 ## The buildings to pay for next (one of each type that is below its target).
@@ -236,9 +250,7 @@ func _building_wants() -> Array:
 ## What the gate still asks for, by good: the cost of every tech on the way to it that is not researched yet, and the Steel's
 ## iron and coal (the Boiler's coal and the Bloomery's are left out: the spare covers them).
 func _gate_need(id: String) -> int:
-	var need := 0
-	for tech in Rules.route_to(GATE, s.tech_tree.researched, Rules.visible_techs(s.shard_seen)):
-		need += s.tech_tree.cost_of(tech).get(id, 0)
+	var need := _route_cost(id)
 	var steel := _steel_left()
 	if id == "iron":
 		need += steel * 2
@@ -585,7 +597,30 @@ func _place_forge() -> bool:
 func _place_bench() -> bool:
 	if not s.town.unlocked("teardown_bench") or _count("teardown_bench") >= 1:
 		return false
-	return _place_best("teardown_bench", func(p): return -Vector2(p).distance_to(Vector2(s.world.camp_pos)))
+	if _place_best("teardown_bench", func(p): return -Vector2(p).distance_to(Vector2(s.world.camp_pos))):
+		return true
+	return _make_room_for("teardown_bench")
+
+
+## A bench that can be paid for but has no ground within the Hearth's reach (the town has filled it): a player tears down the
+## nearest Gatherer's Hut to make room, and so does the bot. True when it did (the next decision places the bench).
+func _make_room_for(type: String) -> bool:
+	if not s.economy.can_afford(s.town.price(type)):
+		return false
+	var best := Vector2i(-1, -1)
+	var best_d := INF
+	for b in s.town.buildings:
+		if b["type"] != "gatherers_hut":
+			continue
+		var d := Vector2(b["pos"]).distance_to(Vector2(s.world.camp_pos))
+		if d <= Data.HEARTH_RADIUS and d < best_d:
+			best = b["pos"]
+			best_d = d
+	if best.x < 0:
+		return false
+	s.demolish(best)
+	lines.append("%5.0f s    - Gatherer's Hut at %s torn down to make room for the %s" % [clock, best, type])
+	return true
 
 
 ## A second Expedition Post, so two parties can walk to the Bloom at once.

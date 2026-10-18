@@ -149,8 +149,17 @@ Stage 3 is in the game (placeholder art; the slots are in [requests](../art/requ
 - **Floor and Dynamo are 1x1**, as the Generator is: a 2x2 footprint still touches placement, roads and the overlays, and no stage has taken that on.
 - **The Floor's recipe list** is the five workshops above, not "Bricks, Rope, Iron, Steel, Tools, Wire" by good: copying a workshop keeps the existing recipes as the one source of truth. Tools stay with the Tool Bench.
 - **Allies make the Dynamo cheaper** is not built (the page's trust lean): no lean changes any Livewire number yet.
-- **No Livewire pacing bot yet.** Every cost in the era is a first guess; the bot is the next piece of work.
+- **No Livewire pacing bot yet.** Every cost in the era is a first guess; the bot is the next piece of work. (It has since been built: see "The pacing bot and what it found" below.)
 
 **Saves.** `make` on a Floor, `after` on an order; VERSION is still 1 and an old save loads with the defaults.
 
 **Tests.** `tests/skyward_tests.gd`, run with `-- livewire`; `dev_tests.gd` builds `livewire_gate`; the layout pass walks the Floor's card and the While button.
+
+## The pacing bot and what it found
+`tests/autoplay_livewire.gd` plays on from the Ironfall gate to the Skyward tech through the public `Sim` calls only (it extends the Ironfall bot, so the town it starts with is one it earned from the Falling Star on). It takes the techs in the order Power Poles, Generator, Order Board, Tide Watch, Arc Lamps, Scorcher, Foremen, Factory Floor, Chain Orders, Shard Dynamo and Skyward; builds a Generator with two Poles beside it, Wire Mills on the net (up to three, by the Wire still short), the Order Board (a Gatherer's Hut is torn down for it when the Hearth's ring is full), a chain of Poles south to the coal mines, and two Arc Lamps and a Scorcher there; and writes five orders from a fixed plan. Run it with `godot --headless --path . -s tests/tools/pace.gd -- 1 90 livewire` (`quiet` for the numbers only, `coal+1500` for the what-if below).
+
+**What it found (map 1, first run, 2026-10-14).**
+- The bot reaches the Ironfall gate 26.6 min after the Falling Star (28.3 on map 2), then lays the net, the lamps and the Scorcher and holds the south 10.5 min into the era (`south_held`, `orders_written` and `burnt_clear` all by minute 37.6).
+- **The coal runs out before Skyward.** The three seams hold 1500 coal in all; the Ironfall gate and its techs use about 800 of it, and the Livewire route needs about 1100 more (Steel is 1 Coal in the Forge and 2 Iron, and each Iron is half a Coal in the Bloomery) on top of what the Generators and the Scorcher burn. With the seams spent the Forges stop at 8 of the 20 Steel Foremen needs, and the Bloom, meanwhile, takes the buildings the lamps do not cover (120 lost by minute 90). With 1500 extra coal handed over when Livewire begins, the bot finishes: Skyward 46.1 min after the Falling Star, 19.5 min into the era. So the era as built can stall for good on the coal, though the tide cannot end it ("the era cannot be lost", above). Fixing that is a balance decision (more coal, cheaper Steel or a second source), left to the balance work and not retuned here.
+
+**Ironfall's bot, fixed on the way.** From the era start it never reached the gate on maps 1 and 2 (0 coal, 9 to 14 thousand Iron Ore): the route to Bloom Sampling passes through none of Coal Seams, Ironstone, Bloomery or Boiler, so the bot never researched them, and then its overbuilt town left no room within 6 tiles of the Hearth for the Teardown Bench. It now takes those four techs first and tears a Gatherer's Hut down for the Bench, as a player would. It reaches the gate at 26.6 (map 1) and 28.3 (map 2) minutes.

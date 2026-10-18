@@ -6,6 +6,7 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 const Roads = preload("res://scripts/roads.gd")
+const Homes = preload("res://scripts/homes.gd")
 
 
 ## The note beside the count, or "" when nothing blocks growth (and nothing to say about food).
@@ -13,10 +14,24 @@ static func note(s) -> String:
 	if s.economy.starving:
 		return Data.NOTE_STARVING
 	if s.people.kith.size() >= s.town.housing():
-		return Data.NOTE_NO_ROOM
+		return Data.NOTE_NO_ROOM_GROW if _a_home_could_grow(s) else Data.NOTE_NO_ROOM
 	if not s.people.food_ready_for_birth():
 		return Data.GROW_NOTE_FOOD + ": " + fix(s)
 	return ""
+
+
+## True when homes are in play (one has already grown a tier) and some home can still grow another under the player's caps: a
+## bigger home also holds more Kith.
+static func _a_home_could_grow(s) -> bool:
+	var grown := false
+	var room := false
+	for b in s.town.buildings:
+		if not Homes.is_home(b):
+			continue
+		var tier := Homes.tier_of(b)
+		grown = grown or tier >= 1
+		room = room or (tier < Data.HOME_TIERS.size() - 1 and Homes.cap_allows(s, tier + 1))
+	return grown and room
 
 
 ## The note for the top bar: the same, but the food note waits until it can matter, that is until a hut and a Dwelling

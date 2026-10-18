@@ -130,7 +130,8 @@ func _ready() -> void:
 	banner_shown = state.won
 	state.tech_tree.tech_researched.connect(_on_tech_researched)
 	state.story.recorded.connect(_on_story)
-	_toast(Data.CAMP_TOAST % Data.PEOPLE["many"] + "\n" + Data.CAMERA_HINT, 9.0)  # one toast, low on the map
+	if not state.people.knows("wood"):  # a new game only: a loaded run or a stage start has long since held on a tree
+		_toast(Data.CAMP_TOAST % Data.PEOPLE["many"] + "\n" + Data.CAMERA_HINT, 9.0)  # one toast, low on the map
 
 
 func _process(delta: float) -> void:

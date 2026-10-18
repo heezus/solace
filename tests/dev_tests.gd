@@ -96,7 +96,10 @@ func test_the_list_is_well_formed() -> void:
 	var list := DevStarts.list()
 	var seen := {}
 	for row in list:
-		t.check(row["id"] != "" and row["label"].begins_with("Stage: "), "%s has an id and a label" % row["id"])
+		t.check(
+			row["id"] != "" and (row["label"].begins_with("Stage: ") or row["label"].begins_with("Checkpoint: ")),
+			"%s has an id and a label" % row["id"]
+		)
 		t.check(not seen.has(row["id"]), "the id %s is used once" % row["id"])
 		seen[row["id"]] = true
 	t.check(list.map(func(r): return r["id"]) == DevStarts.ids(), "ids() is the list's ids in order")
@@ -114,7 +117,10 @@ func test_the_list_is_well_formed() -> void:
 		"ironfall_steam",
 		"livewire",
 		"livewire_tide",
-		"livewire_gate"
+		"livewire_gate",
+		"earned_ironfall_steam",
+		"earned_livewire",
+		"earned_livewire_tide"
 	]:
 		t.check(seen.has(id), "the start %s is there" % id)
 	t.check(DevStarts.build("no_such_start") == null, "an unknown start builds nothing")
@@ -577,6 +583,23 @@ func _expect_stage(id: String, s: Sim) -> void:
 				),
 				"and the tools learned"
 			)
+		"earned_ironfall_steam":
+			t.check(
+				s.tech_tree.researched.has("rails") and s.town.buildings.any(func(b): return b["type"] == "steam_shed"),
+				"earned_ironfall_steam: Rails are learned and a Steam Shed stands, built by the bot"
+			)
+			t.check(s.economy.inv.get("steel", 0) < 100, "with no stock handed over")
+		"earned_livewire":
+			t.check(
+				s.tech_tree.researched.has("livewire") and s.story.has_event(Data.LIVEWIRE_BEGUN) and s.tide.begun,
+				"earned_livewire: the gate is researched, Livewire has begun and the tide has started"
+			)
+			t.check(s.livewire.orders.is_empty(), "with no order written yet")
+		"earned_livewire_tide":
+			t.check(
+				s.gate.south_held(), "earned_livewire_tide: a Scorcher burns and two Arc Lamps are lit in the south"
+			)
+			t.check(not s.livewire.orders.is_empty() and s.tide.time > 0.0, "with orders written and the tide creeping")
 		"livewire_gate":
 			t.check(
 				["factory_floor", "shard_dynamo", "chain_orders"].all(

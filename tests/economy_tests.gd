@@ -29,6 +29,7 @@ func run(runner) -> void:
 	test_feed_sets_use_and_starving()
 	test_preservation_cuts_food_use()
 	test_the_food_warning_comes_before_the_food_is_gone()
+	test_a_big_idle_town_is_warned_with_time_to_spare()
 	test_flows_and_rates()
 	test_eating_shows_up_as_a_flow()
 	test_flow_window_forgets()
@@ -257,6 +258,26 @@ func test_feed_sets_use_and_starving() -> void:
 	e.inv["berries"] = 5
 	t.check(e.feed(3, 1.0), "food comes back")
 	t.check(not e.starving, "and the flag goes down")
+
+
+## The scorecard's idle town: 97 Kith, 523 food and nothing coming in. The warning goes up with minutes still to spare, and the
+## time left it shows is the real one.
+func test_a_big_idle_town_is_warned_with_time_to_spare() -> void:
+	var e := _empty()
+	var fired := [0]
+	e.food_low.connect(func(): fired[0] += 1)
+	e.inv["berries"] = 523
+	e.food_credit = 0.0
+	var seconds := 0.0
+	while not e.low and not e.starving and seconds < 1000.0:
+		e.feed(97, 1.0)
+		seconds += 1.0
+	t.check(e.low and fired[0] == 1 and not e.starving, "the warning goes up before anyone goes hungry")
+	t.check(
+		e.food_total() >= 97 * Data.FOOD_PER_KITH_PER_SEC * 60.0, "with at least a minute of food still in the stores"
+	)
+	var left := e.seconds_of_food()
+	t.check(left > 60.0 and left <= Data.FOOD_WARN_SECONDS + 1.0, "and the bar's time left reads it: %.0f s" % left)
 
 
 ## The early warning: food_low fires once when the stockpile would run out within Data.FOOD_WARN_SECONDS,

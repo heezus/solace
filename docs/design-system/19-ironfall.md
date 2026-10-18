@@ -152,3 +152,5 @@ Three stages, each its own PR with placeholder art and the art slots logged in `
 - **Do beasts ship in this era.** *Decided (the project owner, 2026-10-07):* yes, as one optional branch (built in stage 3).
 - Stage 3's costs are tuned with the pacing bot (see *Stage 3 pacing*). Wear and the Lesson numbers are placeholders still, and all of it wants a human playthrough.
 - The Bloom patches here are signs. Anything that changes the Bloom's nature or what the resets mean goes to [open-questions](open-questions.md) first.
+
+**Bot fix (2026-10-14).** From the era start the bot never reached the gate: the research goal (Bloom Sampling first) passes through none of Coal Seams, Ironstone, Bloomery and Boiler, so it never learned them, and the Bench found no room within 6 tiles of the Hearth in its overbuilt town. It now learns those four first (`GROUND_TECHS`) and tears a Gatherer's Hut down for the Bench. Gate at 26.6 min (map 1) and 28.3 min (map 2) from the Falling Star.
