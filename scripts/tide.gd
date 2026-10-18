@@ -221,7 +221,7 @@ func _eat_stock(s, delta: float) -> void:
 	if _eat_clock < Data.BLOOM_EAT_SECONDS:
 		return
 	_eat_clock -= Data.BLOOM_EAT_SECONDS
-	var goods: Array = Data.ITEM_ORDER.filter(func(id): return s.economy.inv.get(id, 0) >= Data.BLOOM_EAT_MIN)
+	var goods: Array = Data.ITEM_ORDER.filter(func(g): return s.economy.inv.get(g, 0) >= Data.BLOOM_EAT_MIN)
 	if goods.is_empty():
 		return
 	var turn := floori(time / Data.BLOOM_EAT_SECONDS)
