@@ -139,7 +139,13 @@ static func enough(s, b: Dictionary) -> bool:
 ## True while Livewire runs and Forge `b` would start a batch with more steel than iron in the stockpile: steel waits behind
 ## iron, so the techs that need iron are not starved by a forge that turns every bar into steel.
 static func steel_waits(s, b: Dictionary) -> bool:
-	if Data.LIVEWIRE_BEGUN not in s.story.events or not Buildings.recipe_out(b).has("steel"):
+	if Data.LIVEWIRE_BEGUN not in s.story.events:
+		return false
+	var def: Dictionary = Data.BUILDINGS[b["type"]]
+	var out: Dictionary = def.get("out", {})
+	if def.has("floor"):  # a Factory Floor copies the workshop it is set to
+		out = Data.BUILDINGS.get(b.get("make", ""), {}).get("out", {})
+	if not out.has("steel"):
 		return false
 	return s.economy.inv.get("steel", 0) > s.economy.inv.get("iron", 0)
 

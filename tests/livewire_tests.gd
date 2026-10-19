@@ -232,6 +232,14 @@ func test_the_coal_fix() -> void:
 	var bloomery: Dictionary = {"type": "bloomery"}
 	tall.economy.inv["iron"] = 0
 	t.check(not Work.steel_waits(tall, bloomery), "a bloomery never waits")
+	tall.economy.inv["steel"] = 10
+	var waiting: Array = []
+	for type in Data.BUILDINGS:  # no building type breaks the check, and only the steel makers wait
+		if Work.steel_waits(tall, {"type": type, "make": ""}):
+			waiting.append(type)
+	t.check(waiting == ["forge"], "only a forge waits, got %s" % [waiting])
+	var floor_copy: Dictionary = {"type": "factory_floor", "make": "forge"}
+	t.check(Work.steel_waits(tall, floor_copy), "and a Floor copying a forge waits like one")
 
 
 func _coal_in_ground(s: Sim) -> int:
