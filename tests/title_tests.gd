@@ -9,6 +9,7 @@ const RunSave = preload("res://scripts/run_save.gd")
 const Launch = preload("res://scripts/launch.gd")
 const TitleScreen = preload("res://scripts/title_screen.gd")
 const PauseMenu = preload("res://scripts/pause_menu.gd")
+const BuildInfo = preload("res://scripts/build_info.gd")
 const GameMenu = preload("res://scripts/game_menu.gd")
 const SaveSlots = preload("res://scripts/save_slots.gd")
 
@@ -24,6 +25,7 @@ func run(runner) -> void:
 	test_the_title_offers_continue_only_with_a_save()
 	test_the_title_picks_a_painting()
 	test_the_pause_menu_has_its_buttons()
+	test_the_build_is_named()
 	test_saving_and_loading_a_run()
 	test_the_game_menu_saves_and_pauses()
 	_remove_dir()
@@ -119,7 +121,7 @@ func test_the_pause_menu_has_its_buttons() -> void:
 	menu.load_pressed.connect(func(): got.append("load"))
 	menu.quit_pressed.connect(func(): got.append("quit"))
 	var buttons := _buttons(menu)
-	t.check(buttons.size() == 6, "Resume, Save, Load, Quit and the Cutscenes and debug keys switches")
+	t.check(buttons.size() == 7, "Resume, Save, Load, Quit and the Cutscenes, Play log and debug keys switches")
 	t.check(menu.cutscene_toggle.text == Data.CUTSCENES_LABEL, "the Cutscenes switch is named")
 	for b in buttons:
 		if b != menu.debug_toggle and b != menu.cutscene_toggle:
@@ -131,6 +133,24 @@ func test_the_pause_menu_has_its_buttons() -> void:
 	t.check(menu.status.text == "Game saved.", "the menu can say what happened")
 	menu.free()
 	_clean()
+
+
+func test_the_build_is_named() -> void:
+	t.check(BuildInfo.line().begins_with(BuildInfo.VERSION), "the line starts with the version: %s" % BuildInfo.line())
+	t.check(
+		BuildInfo.line().ends_with("dev build"),
+		"run from the project it says so (the release build stamps the real day and commit)"
+	)
+	var menu := PauseMenu.new()
+	menu.setup()
+	var found := menu.find_children("*", "Label", true, false).filter(func(l): return l.text == BuildInfo.line())
+	t.check(found.size() == 1, "the pause menu shows it once")
+	menu.free()
+	var title: Control = load("res://scenes/title.tscn").instantiate()
+	title._ready()
+	found = title.find_children("*", "Label", true, false).filter(func(l): return l.text == BuildInfo.line())
+	t.check(found.size() == 1, "and so does the title screen")
+	title.free()
 
 
 func test_saving_and_loading_a_run() -> void:

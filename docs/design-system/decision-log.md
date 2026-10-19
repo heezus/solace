@@ -864,3 +864,42 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - The Floor copies one of five existing workshops at three times the speed instead of owning recipes, so the existing recipes stay the single source of truth and the Tool Bench's `make` field is reused.
 - The gate asks for two deeds on top of its price and techs, five written standing orders and the south held, so the era's end rewards its mechanic and its pressure, not only a stockpile (the page's default).
 - Chain Orders is a "While order N holds" button on each order; the end of the era plays the Falling Star's card with Skyward's words and the game keeps running.
+
+## 2026-10-14: Scorecard batch of 2026-10-13 (PR #108)
+- Claude fixed the Ironfall bot (it never learned the techs the metal works stand on, then found no room for the Bench), built the Livewire pacing bot, and put the bot's findings on page 23: the coal runs out before Skyward, which is a balance decision and is left out of this PR.
+- The Homes tab's limit controls now read "Homesteads: 2 so far" over "Limit: none", explain themselves in a tooltip and stay hidden until a home has reached the tier; the goal chip wraps to two lines instead of cutting a word; the first-run tutorial toast shows only on a new game; "A Flint Tool wore out" is told once per five minutes per kind; the "No room" note points at the Homes tab once homes can grow.
+- The Livewire tide and gate starts lay the net, order and lamps of the stages before them so their goals match; stage starts are test tools and never back a balance grade.
+- Three earned checkpoints (the Steam Cart, Livewire begun, the south held) are saved from the bots' own play for playtesters to start from, on page 21; scarcity, cost retuning and the other mechanic changes wait for the balance work.
+- The play, layout and menu passes run headless on the Mac runner so no game window opens on the owner's screen (the passes hold the window at 1280x800 and 60 frames a second themselves).
+
+## 2026-10-18: The balance plan, written down (PR #109)
+- Claude turned the owner's seven approved picks into page 24: one live headline goal, time-left chips with a famine card and a default "keep food above 100" Order, storage caps with slow food spoilage and the Bloom eating stock late, no raw price over 60 with made goods and a lesson carrying the big prices, Seasons of Strain, pacing guarantees near the Hearth, and decisions per minute with a diary on the scorecards.
+- It is built in four PRs (chips and the famine card, storage and costs, seasons and map guarantees, scorecard metrics), each green on the Mac runner first, so a mistake in one never hides in a bundle.
+- The numbers (caps of 150 plus 100 a Storehouse, 2% a minute spoilage above 40, a season every 4.5 minutes, 12 tiles within 24 of the Hearth) are first guesses to tune with the pacing bots on earned checkpoints.
+- Time-left chips and the famine card are the first of them: a good that is falling shows its time beside the count (amber under 5 minutes, red under 2, never for the goods Food is made of), and the first real famine of a run stops the game once with a card. The goal strip already shows one live goal, so pick 5 needs no code; a default "keep food above 100" Order waits for a "Work first" verb, because Pause and Bring first cannot make food.
+
+## 2026-10-18: Storage caps, made-goods prices and spoilage (PR B)
+- Claude gave every good a cap (300 at the Hearth, 150 more per Storehouse up to six, 100 more for each of Granaries, Rails and Factory Floor) and let food spoil 2% a minute above 40, so a pile of thousands no longer hides a price. A cap never falls below the biggest price of a good.
+- All raw prices are 60 or less; the rest of an old price is paid in made goods at the exchange rate (page 24), and the Bloom eats 5% of one good a minute while a building stands overgrown. The first pass priced made goods above the rate and the bots ran short of charcoal and bricks, so it was cut back.
+- The earned "south held" checkpoint is dropped for now (page 21): the tighter economy leaves the Livewire bot without the coal to hold the south, and the coal rule is the next question for the project owner.
+
+## 2026-10-18: Seasons of Strain (PR C)
+- Claude added a season every 4.5 minutes from minute 6 (Lean, Cold snap, Bloom surge), each a two-option card with no right answer; the schedule comes from the map seed, a card nobody answers answers itself after 20 seconds, and a season waits while the town is short of food.
+- The Lumen asking season, the "Work first" verb and a default Order are left for later (page 24).
+
+## 2026-10-18: Scorecards measure decisions, waiting and a diary (PR D)
+- Claude made the pacing tool print decisions per minute and minutes waiting on a want for each bot run, and added a measured block and a five-question diary to the scorecard rubric and template, so a flat era shows up as a number beside the grade.
+- The numbers read a bot and say so; Jon's own hour of play beats them. The history file gets an optional `measured` object and keeps schema 1.
+
+## 2026-10-19: A play recorder and an AI player fill the playtest hole (PR E)
+- Claude, at Jon's ask ("a major hole"), decided to add both a passive recorder of real sessions and an AI player that plays through text snapshots and keeps a diary, since bots and screenshot personas never make real choices or get bored.
+- The recorder only observes (diffs the town, counts input), writes local JSON lines, and cannot change a run; it is on by default with a pause-menu switch, and asks three tap questions after each era card.
+- The AI player drives the real Sim through the same commands a person has, on the Mac, only when asked; its diary matters more than its result.
+- Page 24 pick 7 (decisions a minute, idle time, a diary) folds into this page and shares the log format.
+
+
+## 2026-10-19: Livewire's coal fix, cheaper era plus 600 coal (PR F)
+- Claude, at Jon's pick "Both, then retest", cut Livewire's iron and steel costs to 60% and gave the era +600 coal in the seams that remain, because the AI player counted about 1858 coal needed against about 660 in the ground.
+- Steel now waits behind iron in a Forge during Livewire (no batch starts while steel stock exceeds iron stock), so techs that need iron get it.
+- A full building far from its depot says so and points to a Storehouse, instead of the misleading "waiting for a hauler".
+- The earned Livewire checkpoint is rebuilt under the new economy; the AI player replays the era to check it can finish.

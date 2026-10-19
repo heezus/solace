@@ -533,16 +533,20 @@ func test_lowering_the_cap_cancels_a_scaffold_that_waits() -> void:
 func test_the_cap_control_steps_and_saves() -> void:
 	var g := _two_homes()
 	var s: Sim = g["s"]
+	s.town.set_home_cap(2, Data.HOME_CAP_OPEN)  # the fixture holds Longhouses back; a fresh town has no limit
 	var strip := HomesStrip.new()
 	strip.setup(s)
 	t.check(strip.values.size() == 2, "a control for Homesteads and one for Longhouses")
-	t.check(strip.values[1].text == "0 of any", "it reads 0 of any: none yet, no cap")
+	t.check(strip.heads[1].text == "Homesteads: 0 so far", "the heading says how many have reached it")
+	t.check(strip.values[1].text == "Limit: none", "it reads no limit")
+	t.check(not strip.boxes[1].visible and not strip.boxes[2].visible, "no Homestead yet, so no control yet")
 	strip._step(1, 1)
 	t.check(s.town.home_cap(1) == Data.HOME_CAP_OPEN and strip.plus[1].disabled, "plus at no limit does nothing")
 	g["a"]["tier"] = 1
 	strip._step(1, -1)
 	t.check(s.town.home_cap(1) == 1, "the first step down settles on what has already reached it")
-	t.check(strip.values[1].text == "1 of 1", "and reads 1 of 1")
+	t.check(strip.values[1].text == "Limit: 1" and strip.heads[1].text == "Homesteads: 1 so far", "and reads Limit: 1")
+	t.check(strip.boxes[1].visible and strip.boxes[2].visible, "a Homestead shows its control and the Longhouse's")
 	strip._step(1, -1)
 	t.check(s.town.home_cap(1) == 0 and strip.minus[1].disabled, "down to nothing, then the button is off")
 	strip._step(1, 1)

@@ -50,6 +50,7 @@ var _pathing: Pathing
 var _economy: Economy
 var _research: Research
 var _town: Buildings
+var _tool_quiet := {}  # tool id -> seconds before another "wore out" may be told (a late town wears one out every minute)
 
 
 func _init(world: World, pathing: Pathing, economy: Economy, research: Research, town: Buildings) -> void:
@@ -112,13 +113,21 @@ func grow_time() -> float:
 ## True when there is food enough for one more mouth: the stockpile covers the birth (and a small reserve
 ## for everyone) and the food coming in over the last Data.RATE_WINDOW seconds covers what they eat.
 func food_ready_for_birth() -> bool:
-	return _economy.food_total() >= kith.size() * Data.BIRTH_RESERVE + Data.BIRTH_FOOD and _economy.food_is_steady()
+	return (
+		not _economy.births_paused
+		and _economy.food_total() >= kith.size() * Data.BIRTH_RESERVE + Data.BIRTH_FOOD
+		and _economy.food_is_steady()
+	)
 
 
 ## One tick of the population. Fed, with room and steady food, a birth comes every grow_time() seconds
 ## and eats Data.BIRTH_FOOD; unfed, the timer for the next departure runs, and the last one who isn't
 ## working leaves. The last person never leaves.
 func grow(delta: float, fed: bool) -> void:
+	for id in _tool_quiet.keys():
+		_tool_quiet[id] -= delta
+		if _tool_quiet[id] <= 0.0:
+			_tool_quiet.erase(id)
 	if not fed:
 		starve_timer += delta
 		grow_timer = 0.0
@@ -363,7 +372,9 @@ func wear(b: Dictionary) -> void:
 			k["tool"] -= 1
 		if k["tool"] == 0:
 			k["tool_id"] = ""
-			announce.emit(Data.TOOL_WORE_OUT % Data.ITEMS[id]["one"])
+			if not _tool_quiet.has(id):  # told once, then quiet for a while: they are replaced on the spot
+				announce.emit(Data.TOOL_WORE_OUT % Data.ITEMS[id]["one"])
+				_tool_quiet[id] = Data.TOOL_TOLD_QUIET
 	equip(k)
 
 

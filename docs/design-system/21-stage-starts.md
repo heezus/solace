@@ -27,8 +27,8 @@ A stage start begins a **new run** at a chosen stage, on a fixed map (seed 1) wi
 | `ironfall_teardown` | Teardown and Coal Seams are learned, the south is open, a Teardown Bench stands beside the Hearth and the Wreck's three parts are in the pack, ready to be opened. |
 | `ironfall_steam` | On `ironfall_teardown`: Ironstone, Bloomery, Iron Tools, Boiler, Rails and the Blast Furnace are learned, a Boiler, a Forge (within the Boiler's 5 tiles, so it has power) and a Steam Shed stand near the Hearth, and the stores hold coal, iron, wood, brick and stone to lay Rail and feed them. |
 | `livewire` | On `ironfall_steam`: the gate's techs and the three Bloom Lessons are learned, the Wires Hum card is put away and Livewire has begun (its tab and goals are up). Power Poles, the Order Board and the Generator are not learned yet; the stores hold Steel, Rope, Copper, Coal, Iron, Wood, Brick and Stone, and a Grindstone and a Smelter stand out of every engine's reach, ready to be put on a net. |
-| `livewire_tide` | On `livewire`, seven minutes (420 s) into the tide: Power Poles, the Order Board, the Generator, Tide Watch, Arc Lamps, the Scorcher, Firebreaks and Living Ground are learned, the stores hold Wire, Coal, Steel, Copper and Brick, and the Bloom has crept some tiles out of the south patches, so its front is on the map. |
-| `livewire_gate` | On `livewire_tide`: the Factory Floor, Shard Dynamo and Chain Orders are learned and the stores hold 200 more Steel, Iron, Wire and Brick, so what is left of Livewire is the two deeds (five orders written, the south held) and the Skyward gate. |
+| `livewire_tide` | On `livewire` with a net laid (a Generator with two Poles beside it, a Wire Mill on the net, the Order Board and one order written and fired), seven minutes (420 s) into the tide: Power Poles, the Order Board, the Generator, Tide Watch, Arc Lamps, the Scorcher, Firebreaks and Living Ground are learned, the stores hold Wire, Coal, Steel, Copper and Brick, and the Bloom has crept some tiles out of the south patches, so its front is on the map. |
+| `livewire_gate` | On `livewire_tide`: the Factory Floor, Shard Dynamo and Chain Orders are learned and built, an Arc Lamp and a Scorcher stand on the net, one tile of the Bloom is burnt clear and the stores hold 200 more Steel, Iron, Wire and Brick, so the Goals panel shows only what is left of Livewire, the two deeds (five orders written, the south held) and the Skyward gate. |
 
 Nothing is committed as a save. `scripts/dev_starts.gd` builds a start on demand: the pacing bots (`tests/autoplay.gd`, `tests/autoplay_bronze.gd`) play the fixed map to the boundary, and the Starfall starts are a short scripted setup on top of the Falling Star using the normal `Sim`, `Starfall` and `Story` calls. So a start is deterministic, and it follows the balance by itself: change a price or a delay and the next build is the new stage.
 
@@ -62,3 +62,18 @@ The title is a large Cinzel Decorative name over the painting, a dark band down 
 ## Tests
 
 `tests/dev_tests.gd`: the slots (round trip, summaries, newest, migration of `run.json`), a stage start loading as a new run and Save leaving the starts unchanged, the Load screen, the debug keys (off by default, each key), the export filters, and for every start a build, a round trip, a Hearth and buildings, and a minute of ticking. The bot-made starts are built only outside `-- fast` (or alone with `-- starts`). `tests/tools/menu_pass.gd` drives the title's Load screen, Save into a slot, Load from it and a stage start as a player would.
+
+### Starts are test tools, not earned towns
+
+A stage start inherits the pacing bot's Falling Star town (97 Kith, thousands of berries, 7 Kilns) and adds scripted stock on top, so it is **never** the basis for a balance grade; the scorecards grade balance from the bots playing a fresh game through each era (`tests/tools/pace.gd`, including `livewire`). The Livewire starts lay the net, order and lamps of the stages before them, so the Goals panel asks for the next thing and not for something already behind (the scorecard of 2026-10-13 caught it still asking for two Power Poles).
+
+### Earned checkpoints
+
+Two starts are not scripted but **earned**: a bot plays the era and the town it has at a mark is saved. Playtesters start mid-game from these, and the scorecards grade what follows from them, since how one era ends decides how the next begins (economy and learned techs together).
+
+| Id | Saved when | Reached by |
+|---|---|---|
+| `earned_ironfall_steam` | the Steam Cart first rolls | the Ironfall bot from the Ironfall start |
+| `earned_livewire` | the Bloom tide begins | the same run, played on by the Livewire bot |
+
+One run makes both and keeps them like the other bot starts. The bots start from the Ironfall stage start (the Starfall beats before it are scripted on the pacing bot's Falling Star town), so these checkpoints are earned from there on, not from a fresh stone age. There is no checkpoint for the south held or for the Livewire gate: with the balance plan's tighter economy ([24](24-balance.md)) the bot runs out of coal before the Scorcher burns (page 23), so no honest town exists there yet; the Livewire coal margin is the open item, and the checkpoint comes back with it.

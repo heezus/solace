@@ -68,6 +68,14 @@ const FORAGE_EVENT := "Food is short: idle %s are out foraging for berries. It k
 const FORAGE_STATUS := "Out foraging for berries while it waits for a click"
 const FORAGE_MAKER := "Foraged by idle %s"  # many
 const STARVING_TEXT := "Food: none! The %s have stopped working"  # many
+## The card that stops the game once, at a run's first real famine (design-system/24-balance.md, pick 4).
+const FAMINE_TITLE := "The food is running short"
+const FAMINE_TEXT := (
+	"At this rate the food lasts about %s. Idle %s will forage berries by themselves, slowly. Huts and your own hands bring"
+	+ " food faster, and a new hut near the berries is the quickest fix."
+)  # the time left, many
+const FAMINE_LOOK := "Show me the Hearth"
+const FAMINE_CARRY_ON := "Carry on"
 const TOOLS_LABEL := "Tools %d/%d %s"  # held, people, many
 const TOOLS_TIP := (
 	"%s holding a Flint Tool work 50%% faster, a Bronze Tool 100%%, an Iron Tool 175%% and a Steel Tool 225%%. "

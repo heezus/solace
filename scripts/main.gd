@@ -36,6 +36,7 @@ const EraCard = preload("res://scripts/era_card.gd")
 const HudFold = preload("res://scripts/hud_fold.gd")
 const HoldRings = preload("res://scripts/hold_rings.gd")
 const MomentCard = preload("res://scripts/moment_card.gd")
+const NoticeCard = preload("res://scripts/notice_card.gd")
 const GameMenu = preload("res://scripts/game_menu.gd")
 const Launch = preload("res://scripts/launch.gd")
 const DebugKeys = preload("res://scripts/debug_keys.gd")
@@ -49,6 +50,7 @@ const Homes = preload("res://scripts/homes.gd")
 const HomeView = preload("res://scripts/home_view.gd")
 const GrowthArt = preload("res://scripts/growth_art.gd")
 const CutscenePlayer = preload("res://scripts/cutscene_player.gd")
+const PlayRecorder = preload("res://scripts/play_recorder.gd")
 
 const TILE: float = Overlays.TILE
 const MAP_ORIGIN := Vector2.ZERO  # the node's transform pans and zooms the map
@@ -105,6 +107,7 @@ var info_label: Label  # the side panel's hover text
 var tech_panel: TechPanel
 var era_card: EraCard  # the Falling Star's card, put up once
 var game_menu: GameMenu  # Esc: Resume, Save, Load, Quit to title
+var notice_card: NoticeCard  # the first famine of a run (Economy.take_famine_card)
 var moment_card: MomentCard  # a Starfall moment or the ending, put up when the strangers ask (Starfall.pending)
 var building_panel: BuildingPanel  # the selected building's card, docked in the side panel
 var banner_shown := false  # the Bronze Dawn banner has been shown
@@ -130,7 +133,8 @@ func _ready() -> void:
 	banner_shown = state.won
 	state.tech_tree.tech_researched.connect(_on_tech_researched)
 	state.story.recorded.connect(_on_story)
-	_toast(Data.CAMP_TOAST % Data.PEOPLE["many"] + "\n" + Data.CAMERA_HINT, 9.0)  # one toast, low on the map
+	if not state.people.knows("wood"):  # a new game only: a loaded run or a stage start has long since held on a tree
+		_toast(Data.CAMP_TOAST % Data.PEOPLE["many"] + "\n" + Data.CAMERA_HINT, 9.0)  # one toast, low on the map
 
 
 func _process(delta: float) -> void:
@@ -139,6 +143,7 @@ func _process(delta: float) -> void:
 	if not paused:
 		for i in speed:
 			state.tick(delta)
+	paused = notice_card.poll(state, _modal_up()) or paused  # the first famine or a season asks something: the game waits
 	if state.starfall.pending != "" and not moment_card.visible:
 		paused = true  # the strangers are asking something: the game waits behind the card
 		moment_card.open(state.starfall)
@@ -216,6 +221,7 @@ func _layout() -> void:
 	msg_log.position = Vector2(16, vp.y - bottom - msg_log.size.y - 16)
 	era_card.place(view)
 	moment_card.place(view)
+	notice_card.place(view)
 	game_menu.place(view)
 	side_panel.position = Vector2(view.end.x, top)
 	side_panel.size = Vector2(SIDE_W, view.size.y)
@@ -366,7 +372,7 @@ func _unhandled_input(event: InputEvent) -> void:
 					and building_panel.selected().is_empty()
 					and not bottom_bar.drawer_open
 				):
-					if not era_card.visible and not moment_card.visible:
+					if not _modal_up():
 						game_menu.open()  # nothing to cancel: Esc is the menu
 				placing = ""
 				tech_panel.visible = false
@@ -375,7 +381,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _modal_up() -> bool:
-	return era_card.visible or moment_card.visible or game_menu.is_open()
+	return era_card.visible or moment_card.visible or notice_card.visible or game_menu.is_open()
 
 
 ## G: close an open building card and fold, else flip the player's choice (a card holds the panel open).
@@ -393,7 +399,7 @@ func _fold_side_panel() -> void:
 
 ## 0 toggles pause; 1, 2 or 3 sets the speed and unpauses. The game waits while the end card is up.
 func _set_speed(v: int) -> void:
-	if era_card.visible or moment_card.visible or game_menu.is_open():
+	if _modal_up():
 		return
 	if v == 0:
 		paused = not paused
@@ -645,10 +651,15 @@ func _build_ui() -> void:
 	layer.add_child(moment_card)
 	moment_card.setup()
 	moment_card.chose.connect(_on_moment_chosen)
+	notice_card = NoticeCard.new()
+	layer.add_child(notice_card)
+	notice_card.setup()
+	notice_card.closed.connect(_on_notice_closed)
 	game_menu = GameMenu.new()
 	layer.add_child(game_menu)
 	game_menu.setup(state)
 	game_menu.paused_changed.connect(func(on: bool): paused = on)
+	PlayRecorder.attach(layer, self)  # the play log and its era-end questions (scripts/play_recorder.gd)
 	CutscenePlayer.attach(layer, state, self)  # last, so a sequence plays over every card
 
 
@@ -710,6 +721,13 @@ func _on_moment_chosen(index: int) -> void:
 	paused = false
 	if ending and not Profile.note_run(state):
 		_toast(Data.PROFILE_UNSAVED, 6.0)
+
+
+## The famine or season card was answered: the game goes on, with the camera at the Hearth when the player asked to see it.
+func _on_notice_closed(look: bool) -> void:
+	paused = false
+	if look:
+		center_on(state.world.camp_pos)
 
 
 ## A discovery that unlocks buildings: their cards and tab glow, and a toast says where to find them.

@@ -376,7 +376,7 @@ func demolish(p: Vector2i) -> Dictionary:
 		return {}
 	var refund := Rules.refund_of(type)
 	for id in refund:
-		_economy.add(id, refund[id])
+		_economy.give_back(id, refund[id])
 	road_rev += 1
 	var index := -1
 	if _world.roads.has(p):
@@ -568,7 +568,7 @@ func cycle_floor(i: int) -> bool:
 	if options.size() < 2:
 		return false
 	for id in b["inbuf"]:
-		_economy.add(id, b["inbuf"][id])
+		_economy.give_back(id, b["inbuf"][id])
 	b["inbuf"].clear()
 	b["progress"] = 0.0
 	b["make"] = options[(options.find(b["make"]) + 1) % options.size()]
@@ -590,7 +590,7 @@ func set_trade(i: int, gives: String, gets: String) -> bool:
 		if id != "" and not Data.ITEMS.has(id):
 			return false
 	for id in b["inbuf"]:
-		_economy.add(id, b["inbuf"][id])
+		_economy.give_back(id, b["inbuf"][id])
 	b["inbuf"].clear()
 	b["give"] = gives
 	b["get"] = gets

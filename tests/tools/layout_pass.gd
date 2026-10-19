@@ -7,7 +7,7 @@ extends SceneTree
 ## the top bar never runs past the window and none of its text is cut short (also with the food warning and
 ## starvation showing), toasts stack without overlapping each other or a chip, every chip has a tooltip that names it
 ## and a sprite, a Hearth's blurb shows once, every build card's text fits it, and the message log opens.
-## Run: godot --headless --path . -s tests/tools/layout_pass.gd   (exits 1 on a problem)
+## Run: godot --headless --fixed-fps 60 --path . -s tests/tools/layout_pass.gd   (exits 1 on a problem)
 
 const Data = preload("res://scripts/data.gd")
 const World = preload("res://scripts/world.gd")
@@ -58,8 +58,11 @@ var last_side_open := true
 var frozen := false  # the bot's ticking is paused while a check sets the state by hand
 var picker := PickerChecks.new()  # the hut picker's checks (tests/tools/picker_checks.gd)
 
+var window := Vector2i(1280, 800)  # the window size the pass wants now
+
 
 func _init() -> void:
+	Engine.max_fps = 60  # a headless run has no vsync (CI passes --fixed-fps 60, which fixes each frame at 1/60 s however fast they run)
 	CutscenePlayer.suppress = true  # the scripted pass plays the game, not its cutscenes
 	seed(7)
 	var scene: PackedScene = load("res://scenes/main.tscn")
@@ -69,6 +72,8 @@ func _init() -> void:
 
 
 func _process(_delta: float) -> bool:
+	if DisplayServer.get_name() == "headless":
+		root.size = window  # a headless window falls back to 64 px each frame: hold the size the pass asked for
 	frame += 1
 	if frame == 3:
 		main.paused = true
@@ -84,7 +89,7 @@ func _process(_delta: float) -> bool:
 			bot.step(false)
 		main.ui_refresh = 0.0  # refresh the bars every frame, so any wobble shows
 	if frame == RESIZE_AT:
-		root.size = Vector2i(1600, 800)  # wider: the map must refit (re-centre; the bars keep their heights)
+		_resize(Vector2i(1600, 800))  # wider: the map must refit (re-centre; the bars keep their heights)
 	if frame in [8, RESIZE_AT + 8, SHRINK_AT + 8]:
 		main.bottom_bar._show_tab("Gathering")  # the drawer opens for the Gathering tab check
 	if frame == RESIZE_AT + 10:
@@ -94,7 +99,7 @@ func _process(_delta: float) -> bool:
 		_report(HudChecks.gathering_tab(main, "at 1100x700"))
 		main.bottom_bar.close_drawer()
 	if frame == SHRINK_AT:
-		root.size = Vector2i(1100, 700)  # then a window of another shape: everything must still fit
+		_resize(Vector2i(1100, 700))  # then a window of another shape: everything must still fit
 	if frame > 5:
 		_check()
 	_hud_checks()
@@ -113,7 +118,7 @@ func _process(_delta: float) -> bool:
 func _dawn() -> void:
 	dawn_frame = frame
 	bot.begin_era_two()
-	before_growth = {"pos": main.position, "scale": main.scale, "view": main.view, "bars": last_bars}
+	before_growth = {"pos": main.position, "scale": main.scale, "view": main.view, "bars": last_bars, "vp": last_vp}
 
 
 ## What the first part of the next era must keep: the banner, the camera and the bars through the growth of the land
@@ -125,7 +130,7 @@ func _era_two_checks() -> void:
 		hud_checks += 1
 		if world.width != world.stone_width * 2:
 			problems.append("the land grew to %d columns, not twice %d" % [world.width, world.stone_width])
-	if grown_frame > 0 and frame in [grown_frame + 2, grown_frame + 40]:
+	if grown_frame > 0 and frame in [grown_frame + 2, grown_frame + 40] and last_vp == before_growth["vp"]:
 		hud_checks += 1
 		var now := {"pos": main.position, "scale": main.scale, "view": main.view}
 		for key in ["pos", "scale", "view"]:
@@ -172,7 +177,7 @@ func _era_two_checks() -> void:
 		92:
 			_report(HudChecks.end_card(main, "at the shrunk window"))
 		93:
-			root.size = Vector2i(1280, 800)
+			_resize(Vector2i(1280, 800))
 		97:
 			_report(HudChecks.end_card(main, "at 1280x800"))
 			_shot("end_card")
@@ -183,7 +188,7 @@ func _era_two_checks() -> void:
 			_report(HudChecks.third_row(main, "at 1280x800"))
 			_shot("third_row")
 			frozen = false
-	if frame > dawn_frame + 6 and frame % 25 == 0:
+	if frame > dawn_frame + 6 and frame % 25 == 0 and frame != dawn_frame + 93:  # (93: the window is resized)
 		_check_top_bar_text("in the second era, frame %d" % frame)
 		_check_fit("in the second era, frame %d" % frame)
 
@@ -210,6 +215,11 @@ func _check_era_board() -> void:
 			locked += 1
 	if locked != 0:
 		problems.append("the second board has %d techs for the next update, not none" % locked)
+
+
+func _resize(to: Vector2i) -> void:  # a headless window is held at this size each frame
+	window = to
+	root.size = to
 
 
 func _check() -> void:
