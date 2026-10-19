@@ -4,7 +4,7 @@ Owner brief: 2026-10-19. Branch: `codex/era-ground`. Parent contract: [terrain k
 
 ## Delivery state
 
-Art phase: eight sheet candidates and a 32-cell decal atlas are painted and packed. Starfall studies use the kit worker's current meadow/woodland layouts; recheck their recorded input hashes after merge. These assets are not loaded by production. Integration waits for `codex/terrain-kit` to merge, as requested by the owner. Wide/close acceptance and per-era seeds 3, 11, 42 remain pending; an asset inspection is not a gameplay screenshot.
+Art phase: eight sheet candidates and a 32-cell decal atlas are painted and packed. Starfall studies use the kit worker's current meadow/woodland layouts; recheck their recorded input hashes after merge. These assets are not loaded by production. Integration waits for [terrain-kit PR #114](https://github.com/heezus/solace/pull/114) to merge, as requested by the owner. Wide/close acceptance and per-era seeds 3, 11, 42 remain pending; an asset inspection is not a gameplay screenshot.
 
 ## Material contract
 
@@ -58,3 +58,9 @@ Decals: 1–4 cyan motes; 5–8 glass shard chips; 9–12 copper stain flakes; 1
 After the parent kit merges: recheck Starfall input hashes against merged base sheets, preserve the base layout through palette selection, wire era materials through the same shader, paint mask transitions without changing tiles, replace only the ground decoration portion of `BloomLook` where the painted sheet is cleaner, retain animated sample identity, and update `terrain_preview.gd` to select each era and cover the actual east/south/Bloom/firebreak areas. Run all 3 seeds × 4 eras and inspect wide and close pairs. Water remains the parent kit's material. No request for a gameplay/schema change is needed.
 
 [Asset scale proof](asset-scale-review.jpg): literal 80 px/tile crops beside the existing 2x2 Hearth, plus 24 px/tile wide strips. This is a labeled composite, not an engine capture or final visual approval.
+
+## Local validation, 2026-10-19
+
+Godot 4.7.2 import completed without errors/warnings and generated all nine PNG `.import` files. Strict editor-warning loading passed for 227 scripts. The complete `tests/run_tests.gd` suite ended `ALL TESTS PASSED`; the checked scripted input play-through ended at frame 4961 / 18.3 simulated minutes without errors/warnings. No engine code is changed by this art stage. Final CI status is tracked on PR #115.
+
+The published PR #114 inputs at `9809aae` match the recorded Starfall input hashes. `starfall-layout-check.json` records high-frequency luminance correlation after common-size resampling (meadow 0.8236, woodland 0.7849). Visual arrangement matches, but generative recoloring is not pixel-identical; use the base-sheet palette switch if exact texel alignment is needed for the remaining meadow/woodland variants. Recheck after the parent merges.
