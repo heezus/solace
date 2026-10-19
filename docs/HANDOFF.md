@@ -4,6 +4,14 @@ Owner: the project owner (heezus). Two AI teams, one repo, coordinated by respon
 
 ## Active work
 
+### Codex — era ground families
+- **Task:** owner-requested Starfall, Bronze Dawn, Ironfall and Livewire terrain plus Skyreach concept, branch `codex/era-ground`.
+- **Reserved files:** new `art/rendered/era-ground/` assets/imports and `docs/art/terrain-kit/era-ground/`; focused era-ground notes in shared documentation. No kit renderer edits until `codex/terrain-kit` merges.
+- **Acceptance criteria:** 96 source px/tile, seamless non-mirrored sheets, upper-left lighting, compact related palettes, preserved tile IDs/gameplay; seeds 3/11/42 in each implemented era with wide/close before-after evidence after integration.
+- **Status:** painting independent later-era assets first. Base meadow layout awaits the terrain-kit worker; wiring and final preview validation depend on that branch merging.
+- **Next action:** paint/import/document later-era families; integrate through the merged kit shader afterward.
+
+
 ### Codex — Phase B character consistency review
 - **Task:** compare #93 character stills against the approved #94 sheet on `codex/ironfall-cutscenes`.
 - **Reserved files:** `docs/art/ironfall/phase-b/` and character corrections to `art/rendered/cutscenes/ironfall_1.png` / `ironfall_2.png`; no production renderer files.

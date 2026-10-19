@@ -1,0 +1,14 @@
+{
+  "meadow-a": {
+    "branch": "codex/terrain-kit",
+    "path": "art/rendered/meadow-a.png",
+    "sha256": "53c36062e34b894e6fdc3f45707b3c483472eadec00a5f67d939ef39cd671470",
+    "status": "uncommitted candidate; recheck against final merged kit before wiring"
+  },
+  "woodland-a": {
+    "branch": "codex/terrain-kit",
+    "path": "art/rendered/woodland-a.png",
+    "sha256": "288fcb74717c4f9b68b2fcb643dec6275582b9ecb63051178ae60ec0d64e3642",
+    "status": "uncommitted candidate; recheck against final merged kit before wiring"
+  }
+}
