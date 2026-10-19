@@ -1,0 +1,24 @@
+name: Play logs
+
+# Manual. Zips the play logs the game wrote on the Mac while Jon played, and attaches them to the run, so nothing more
+# is asked of him than playing (design-system/25-playtesting.md). Nothing in a log names a person.
+on:
+  workflow_dispatch:
+
+jobs:
+  collect:
+    runs-on: [self-hosted, solace-mac]
+    steps:
+      - name: Zip the logs
+        run: |
+          dir="$HOME/Library/Application Support/Godot/app_userdata/Solace/playlogs"
+          rm -rf logs; mkdir -p logs
+          if [ -d "$dir" ]; then cp "$dir"/*.jsonl logs/ 2>/dev/null || true; fi
+          ls -l logs
+          test -n "$(ls -A logs)" || echo "No logs yet: play a run with the pause menu's Play log switch on."
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: playlogs
+          path: logs
+          if-no-files-found: warn

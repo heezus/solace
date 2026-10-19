@@ -887,3 +887,13 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Claude added a season every 4.5 minutes from minute 6 (Lean, Cold snap, Bloom surge), each a two-option card with no right answer; the schedule comes from the map seed, a card nobody answers answers itself after 20 seconds, and a season waits while the town is short of food.
 - The Lumen asking season, the "Work first" verb and a default Order are left for later (page 24).
 
+## 2026-10-18: Scorecards measure decisions, waiting and a diary (PR D)
+- Claude made the pacing tool print decisions per minute and minutes waiting on a want for each bot run, and added a measured block and a five-question diary to the scorecard rubric and template, so a flat era shows up as a number beside the grade.
+- The numbers read a bot and say so; Jon's own hour of play beats them. The history file gets an optional `measured` object and keeps schema 1.
+
+## 2026-10-19: A play recorder and an AI player fill the playtest hole (PR E)
+- Claude, at Jon's ask ("a major hole"), decided to add both a passive recorder of real sessions and an AI player that plays through text snapshots and keeps a diary, since bots and screenshot personas never make real choices or get bored.
+- The recorder only observes (diffs the town, counts input), writes local JSON lines, and cannot change a run; it is on by default with a pause-menu switch, and asks three tap questions after each era card.
+- The AI player drives the real Sim through the same commands a person has, on the Mac, only when asked; its diary matters more than its result.
+- Page 24 pick 7 (decisions a minute, idle time, a diary) folds into this page and shares the log format.
+
