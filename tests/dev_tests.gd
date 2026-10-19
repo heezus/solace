@@ -119,8 +119,7 @@ func test_the_list_is_well_formed() -> void:
 		"livewire_tide",
 		"livewire_gate",
 		"earned_ironfall_steam",
-		"earned_livewire",
-		"earned_livewire_tide"
+		"earned_livewire"
 	]:
 		t.check(seen.has(id), "the start %s is there" % id)
 	t.check(DevStarts.build("no_such_start") == null, "an unknown start builds nothing")
@@ -595,11 +594,6 @@ func _expect_stage(id: String, s: Sim) -> void:
 				"earned_livewire: the gate is researched, Livewire has begun and the tide has started"
 			)
 			t.check(s.livewire.orders.is_empty(), "with no order written yet")
-		"earned_livewire_tide":
-			t.check(
-				s.gate.south_held(), "earned_livewire_tide: a Scorcher burns and two Arc Lamps are lit in the south"
-			)
-			t.check(not s.livewire.orders.is_empty() and s.tide.time > 0.0, "with orders written and the tide creeping")
 		"livewire_gate":
 			t.check(
 				["factory_floor", "shard_dynamo", "chain_orders"].all(

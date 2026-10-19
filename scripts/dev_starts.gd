@@ -34,7 +34,6 @@ const EXT := ".run"  # not .json: an export takes such a file only through the i
 const EARNED := {
 	"earned_ironfall_steam": "steam_cart",
 	"earned_livewire": "tide_begins",
-	"earned_livewire_tide": "south_held",
 }
 
 ## Where the slow starts (the ones a bot plays to) are kept between sessions; "" keeps none. A kept start is used only when
@@ -157,11 +156,6 @@ static func _table() -> Array:
 			_earned.bind("earned_ironfall_steam")
 		],
 		["earned_livewire", "Checkpoint: Livewire begins (earned)", _earned.bind("earned_livewire")],
-		[
-			"earned_livewire_tide",
-			"Checkpoint: Livewire, the south is held (earned)",
-			_earned.bind("earned_livewire_tide")
-		],
 	]
 
 

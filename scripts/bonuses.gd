@@ -99,7 +99,7 @@ static func total(parts: Array, group: String) -> float:
 
 
 static func speed(s, b: Dictionary) -> float:
-	return total(active(s, b, ""), "speed")
+	return total(active(s, b, ""), "speed") * s.seasons.speed_factor(s, b)
 
 
 ## How much one harvest of `item` yields: the base 1 times the Yield group.

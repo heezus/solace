@@ -118,7 +118,7 @@ func _process(_delta: float) -> bool:
 func _dawn() -> void:
 	dawn_frame = frame
 	bot.begin_era_two()
-	before_growth = {"pos": main.position, "scale": main.scale, "view": main.view, "bars": last_bars}
+	before_growth = {"pos": main.position, "scale": main.scale, "view": main.view, "bars": last_bars, "vp": last_vp}
 
 
 ## What the first part of the next era must keep: the banner, the camera and the bars through the growth of the land
@@ -130,7 +130,7 @@ func _era_two_checks() -> void:
 		hud_checks += 1
 		if world.width != world.stone_width * 2:
 			problems.append("the land grew to %d columns, not twice %d" % [world.width, world.stone_width])
-	if grown_frame > 0 and frame in [grown_frame + 2, grown_frame + 40]:
+	if grown_frame > 0 and frame in [grown_frame + 2, grown_frame + 40] and last_vp == before_growth["vp"]:
 		hud_checks += 1
 		var now := {"pos": main.position, "scale": main.scale, "view": main.view}
 		for key in ["pos", "scale", "view"]:
@@ -188,7 +188,7 @@ func _era_two_checks() -> void:
 			_report(HudChecks.third_row(main, "at 1280x800"))
 			_shot("third_row")
 			frozen = false
-	if frame > dawn_frame + 6 and frame % 25 == 0:
+	if frame > dawn_frame + 6 and frame % 25 == 0 and frame != dawn_frame + 93:  # (93: the window is resized)
 		_check_top_bar_text("in the second era, frame %d" % frame)
 		_check_fit("in the second era, frame %d" % frame)
 

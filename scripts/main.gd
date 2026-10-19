@@ -142,9 +142,7 @@ func _process(delta: float) -> void:
 	if not paused:
 		for i in speed:
 			state.tick(delta)
-	if not _modal_up() and state.economy.take_famine_card():
-		paused = true  # the food is running short: the game waits behind the card
-		notice_card.open_famine(state.economy)
+	paused = notice_card.poll(state, _modal_up()) or paused  # the first famine or a season asks something: the game waits
 	if state.starfall.pending != "" and not moment_card.visible:
 		paused = true  # the strangers are asking something: the game waits behind the card
 		moment_card.open(state.starfall)
@@ -655,7 +653,7 @@ func _build_ui() -> void:
 	notice_card = NoticeCard.new()
 	layer.add_child(notice_card)
 	notice_card.setup()
-	notice_card.chose.connect(_on_notice_chosen)
+	notice_card.closed.connect(_on_notice_closed)
 	game_menu = GameMenu.new()
 	layer.add_child(game_menu)
 	game_menu.setup(state)
@@ -723,10 +721,10 @@ func _on_moment_chosen(index: int) -> void:
 		_toast(Data.PROFILE_UNSAVED, 6.0)
 
 
-## The famine card was answered: the game goes on, with the camera at the Hearth when the player asked to see it.
-func _on_notice_chosen(index: int) -> void:
+## The famine or season card was answered: the game goes on, with the camera at the Hearth when the player asked to see it.
+func _on_notice_closed(look: bool) -> void:
 	paused = false
-	if index == 0:
+	if look:
 		center_on(state.world.camp_pos)
 
 

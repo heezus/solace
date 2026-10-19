@@ -69,12 +69,11 @@ A stage start inherits the pacing bot's Falling Star town (97 Kith, thousands of
 
 ### Earned checkpoints
 
-Three starts are not scripted but **earned**: a bot plays the era and the town it has at a mark is saved. Playtesters start mid-game from these, and the scorecards grade what follows from them, since how one era ends decides how the next begins (economy and learned techs together).
+Two starts are not scripted but **earned**: a bot plays the era and the town it has at a mark is saved. Playtesters start mid-game from these, and the scorecards grade what follows from them, since how one era ends decides how the next begins (economy and learned techs together).
 
 | Id | Saved when | Reached by |
 |---|---|---|
 | `earned_ironfall_steam` | the Steam Cart first rolls | the Ironfall bot from the Ironfall start |
 | `earned_livewire` | the Bloom tide begins | the same run, played on by the Livewire bot |
-| `earned_livewire_tide` | the south is held | the same run |
 
-One run makes all three and keeps them like the other bot starts. The bots start from the Ironfall stage start (the Starfall beats before it are scripted on the pacing bot's Falling Star town), so these checkpoints are earned from there on, not from a fresh stone age. There is no checkpoint for the Livewire gate: the bot runs out of coal before it (page 23), so no honest town exists there yet; the balance work decides that first.
+One run makes both and keeps them like the other bot starts. The bots start from the Ironfall stage start (the Starfall beats before it are scripted on the pacing bot's Falling Star town), so these checkpoints are earned from there on, not from a fresh stone age. There is no checkpoint for the south held or for the Livewire gate: with the balance plan's tighter economy ([24](24-balance.md)) the bot runs out of coal before the Scorcher burns (page 23), so no honest town exists there yet; the Livewire coal margin is the open item, and the checkpoint comes back with it.

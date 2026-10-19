@@ -11,6 +11,7 @@ const Data = preload("res://scripts/data.gd")
 const Codec = preload("res://scripts/save_codec.gd")
 const Flows = preload("res://scripts/flows.gd")
 const Rules = preload("res://scripts/rules.gd")
+const Storage = preload("res://scripts/storage.gd")
 
 var inv: Dictionary = {}  # item id -> count
 var seen: Dictionary = {}  # items ever held, so the top bar keeps showing them
@@ -27,6 +28,18 @@ var famine_card_shown := false  # the run's one famine card has been put up (sav
 var steady_held := 0.0  # seconds the buildings' food has covered what everyone eats, without a break
 var food_use := 0.0  # food eaten per second right now
 var flows := Flows.new()  # what made and used each item lately
+## The most of each good the stockpile holds (scripts/storage.gd; Sim sets it every tick). Empty means no limit, as in a bare
+## Economy. A good over its cap is never taken down: a stage start or a test may put more in than a delivery could.
+var caps: Dictionary = {}
+var spilled := 0  # goods lost over the cap this run, for the scorecards; not saved
+## Seasons of Strain switches (scripts/seasons.gd sets them every tick, so they are not saved): how much of the usual the people eat,
+## whether births wait, whether idle hands forage even without a famine, and how many times as much a foraging trip brings.
+var eat_factor := 1.0
+var births_paused := false
+var forage_call := false
+var forage_mult := 1
+var _caps_key := -1  # refresh_caps's last count of Storehouses and techs
+var _rot: Dictionary = {}  # good -> the part of an item that has spoiled but not yet been taken
 var _techs: Dictionary  # researched tech ids (a view of the Research block's set, never written here)
 var _steady_second := -1  # the flow-window second `_steady_ok` was worked out in
 var _steady_ok := false  # the window is full and its food covers what everyone eats (worked out once a second)
@@ -65,9 +78,60 @@ func try_pay(cost: Dictionary) -> bool:
 	return true
 
 
+## Put `amount` of `id` in the stockpile. What would not fit under the cap is lost (`spilled`).
 func add(id: String, amount: int) -> void:
+	var have: int = inv.get(id, 0)
+	var room: int = caps.get(id, 1 << 30) - have
+	if amount > room:
+		spilled += amount - maxi(room, 0)
+		amount = maxi(room, 0)
+	inv[id] = have + amount
+	seen[id] = true
+
+
+## Work the caps out from the Storehouses among `buildings` and the techs learned (scripts/storage.gd). Called every tick; it only
+## does the sums again when the number of Storehouses or of techs has changed.
+func refresh_caps(buildings: Array) -> void:
+	var storehouses := 0
+	for b in buildings:
+		if b["type"] == "storehouse":
+			storehouses += 1
+	var key := storehouses * 1000 + _techs.size()
+	if key == _caps_key:
+		return
+	_caps_key = key
+	caps = {}
+	for id in Data.ITEM_ORDER:
+		caps[id] = Storage.capacity(id, storehouses, _techs)
+
+
+## Give goods back that were the player's own (a refund, a workshop's loaded inputs): nothing spills.
+func give_back(id: String, amount: int) -> void:
 	inv[id] = inv.get(id, 0) + amount
 	seen[id] = true
+
+
+## True when `id` is within Data.STORAGE_FULL_SHARE of its cap, so the chip says "full".
+func is_full(id: String) -> bool:
+	return caps.has(id) and inv.get(id, 0) >= int(caps[id] * Data.STORAGE_FULL_SHARE)
+
+
+## Food spoils slowly (Data.SPOIL_GOODS): a share of the stock above Data.SPOIL_FLOOR goes each minute, half as much with
+## Preservation. The small stock the people live on is never taxed. It shows in the flows as "spoil".
+func spoil(delta: float) -> void:
+	var share := Data.SPOIL_PER_MINUTE / 60.0 * (0.5 if _techs.has("preservation") else 1.0)
+	for id in Data.SPOIL_GOODS:
+		var over: int = inv.get(id, 0) - Data.SPOIL_FLOOR
+		if over <= 0:
+			_rot[id] = 0.0
+			continue
+		# Kept to millionths, so a saved game reads back the very same number.
+		_rot[id] = snappedf(_rot.get(id, 0.0) + over * share * delta, 0.000001)
+		var gone := mini(int(_rot[id]), over)
+		if gone > 0:
+			_rot[id] = snappedf(_rot[id] - gone, 0.000001)
+			inv[id] -= gone
+			flows.add(id, -float(gone), "spoil")
 
 
 # --- Food --------------------------------------------------------------------
@@ -93,8 +157,9 @@ func food_total() -> float:
 ## Feed `mouths` for `delta` seconds: sets food_use (Preservation cuts it) and the starving flag.
 ## Returns true when everyone ate.
 func feed(mouths: int, delta: float) -> bool:
-	food_use = mouths * Data.FOOD_PER_KITH_PER_SEC * (0.75 if _techs.has("preservation") else 1.0)
+	food_use = mouths * Data.FOOD_PER_KITH_PER_SEC * (0.75 if _techs.has("preservation") else 1.0) * eat_factor
 	var fed := eat(food_use * delta)
+	spoil(delta)
 	starving = not fed
 	_watch_steady(delta)
 	_watch_food()
@@ -174,7 +239,7 @@ func _runway(drain: float) -> float:
 ## True once per run, when a famine is on past the player's own opening (Data.FORAGE_OPENING_SECONDS): the owner puts the
 ## famine card up and the game waits behind it. Later famines are left to the Food readout and the chips.
 func take_famine_card() -> bool:
-	if famine_card_shown or not famine or flows.clock < Data.FORAGE_OPENING_SECONDS:
+	if famine_card_shown or not famine or forage_call or flows.clock < Data.FORAGE_OPENING_SECONDS:
 		return false
 	famine_card_shown = true
 	return true
@@ -189,7 +254,9 @@ func _watch_food() -> void:
 		food_low.emit()
 	elif low and (gross >= Data.FOOD_CLEAR_SECONDS or seconds_of_food() >= Data.FOOD_CLEAR_SECONDS):
 		low = false
-	if famine and (gross >= Data.FOOD_FORAGE_END_SECONDS or seconds_of_food() >= Data.FOOD_FORAGE_END_SECONDS):
+	if forage_call:
+		famine = true  # a lean season answered with foraging: idle hands go out at once
+	elif famine and (gross >= Data.FOOD_FORAGE_END_SECONDS or seconds_of_food() >= Data.FOOD_FORAGE_END_SECONDS):
 		famine = false
 		forage_told = false
 	elif (
@@ -270,6 +337,7 @@ func to_dict() -> Dictionary:
 		"food_credit": food_credit,
 		"starving": starving,
 		"food_use": food_use,
+		"rot": _rot,
 		"steady_held": steady_held,
 		"famine_card_shown": famine_card_shown,
 		"flows": flows.to_dict(),
@@ -289,6 +357,7 @@ func from_dict(d: Dictionary) -> void:
 	food_credit = float(d.get("food_credit", 0.0))
 	starving = bool(d.get("starving", false))
 	food_use = float(d.get("food_use", 0.0))
+	_rot = d.get("rot", {}).duplicate()
 	steady_held = float(d.get("steady_held", 0.0))
 	famine_card_shown = bool(d.get("famine_card_shown", false))
 	_steady_second = -1

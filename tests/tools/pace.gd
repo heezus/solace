@@ -176,6 +176,8 @@ func _livewire(maps: Array, minutes: float, quiet: bool, cache: String) -> void:
 			for line in r["log"]:
 				print("   ", line)
 		print("   inv ", bot.s.economy.inv)
+		print("   caps ", bot.s.economy.caps)
+		print("   spilled ", bot.s.economy.spilled)
 	quit(0)
 
 
