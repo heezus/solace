@@ -903,3 +903,10 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Steel now waits behind iron in a Forge during Livewire (no batch starts while steel stock exceeds iron stock), so techs that need iron get it.
 - A full building far from its depot says so and points to a Storehouse, instead of the misleading "waiting for a hauler".
 - The earned Livewire checkpoint is rebuilt under the new economy; the AI player replays the era to check it can finish.
+
+
+## 2026-10-19: Jon's playtest bundle, PR 1 (PR G)
+- Claude, from Jon's playtest notes, decided that era starts arrive working (paused buildings resumed, a third of the Kith left to haul, unused roads taken up), because a start Jon loaded had every gatherer paused and a tangled map.
+- Buildings touching a linked building chain to the same depot (Jon tapped "Chain neighbours"), and the side panel is only ever the player's choice and starts open, so the map never jumps when a building is selected.
+- One key per build tab and P for pause, shown on the tabs and in the pause menu; top-bar chips keep their size and turn red instead of shrinking, with the time in the tooltip.
+- The Wanderer is whole once the star has fallen, the Glyph Wall panel opens with how it works, and every glyph clue was rewritten so it points at its own word. Top-bar Trade and Glyph panels wait for the redesign.

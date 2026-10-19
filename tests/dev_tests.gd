@@ -475,6 +475,11 @@ func test_start(id: String) -> void:
 	if id != "stone_age":
 		t.check(s.town.buildings.size() > 10, "%s has a town (%d buildings)" % [id, s.town.buildings.size()])
 	_expect_stage(id, s)
+	for tech in s.tech_tree.researched:
+		for need in Data.TECHS[tech].get("requires", []):
+			t.check(
+				s.tech_tree.researched.has(need), "%s: %s is learned but %s, which it needs, is not" % [id, tech, need]
+			)
 	# It round-trips through the run save, in memory and as text.
 	var copy := Sim.new()
 	t.check(RunSave.restore(copy, RunSave.dump(s)) and _json(copy) == _json(s), "%s restores to the same run" % id)

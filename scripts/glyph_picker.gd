@@ -38,6 +38,7 @@ func show_for(b: Dictionary) -> void:
 	for c in get_children():
 		c.queue_free()
 		remove_child(c)
+	add_child(_wrapped(Data.WALL_HOW % [int(Data.COPY_SECONDS), int(Data.CHECK_SECONDS)], Ui.TEXT_DIM))
 	for n in Data.GLYPH_SETS:
 		var gset: Dictionary = Data.GLYPH_SETS[n]
 		if gset["source"] == "wreck" and f.progress(gset["id"]).x == 0 and not f.locked.has(gset["id"]):

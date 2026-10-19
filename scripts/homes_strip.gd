@@ -30,7 +30,7 @@ func setup(game: Sim) -> void:
 func _cap_box(tier: int) -> Control:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 2)
-	box.tooltip_text = Data.HOME_CAP_TIP % [Data.HOME_NAMES[tier], Data.HOME_NAMES[tier]]
+	box.tooltip_text = Data.HOME_CAP_TIP % Data.HOME_NAMES[tier]
 	heads[tier] = Ui.heading("")
 	box.add_child(heads[tier])
 	boxes[tier] = box
@@ -40,7 +40,7 @@ func _cap_box(tier: int) -> Control:
 	minus[tier] = _step_button("-", tier, -1)
 	row.add_child(minus[tier])
 	values[tier] = Ui.label("", Ui.LABEL_TEXT)
-	values[tier].custom_minimum_size = Vector2(96, 0)
+	values[tier].custom_minimum_size = Vector2(130, 0)
 	values[tier].horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	row.add_child(values[tier])
 	plus[tier] = _step_button("+", tier, 1)

@@ -42,11 +42,18 @@ func watched() -> bool:
 	return false
 
 
+## True once the Falling Star is worked out: the Wanderer has come down.
+func fallen() -> bool:
+	return _research.unlocked("falling_star")
+
+
 ## 0 to 1: how near the Wanderer is. Each tech of the era the Kith have worked out is a step toward it, and the last
 ## one, The Falling Star, is the whole way. 0 before Sky Watch has named it.
 func approach() -> float:
 	if not named():
 		return 0.0
+	if fallen():
+		return 1.0
 	var techs := Rules.era_techs(2)
 	var done := 0
 	for t in techs:
