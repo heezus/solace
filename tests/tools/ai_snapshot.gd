@@ -10,11 +10,19 @@ const ERAS := ["Stone age", "Bronze Dawn", "Starfall", "Ironfall", "Livewire"]
 const HELP := """MOVES: write moves_<n>.json, a list. Each move is one of
   {"do":"gather","x":3,"y":4}                      hand-gather the tile (a few harvests in a row: add "times":5)
   {"do":"build","type":"gatherers_hut","x":3,"y":4}  add "focus":"wood" for a hut's item; a road or field goes down one tile at a time
+  {"do":"line","type":"road","from":[3,4],"to":[9,4]}   drag a line of roads (or rails, fields...): along x first, then along y
+  {"do":"pause","x":3,"y":4,"on":false}            pause or resume the building standing at that spot (use its listed position)
+  {"do":"focus","x":3,"y":4,"item":"wood"}         point a gatherer's hut at another item in its reach
+  {"do":"trade","x":3,"y":4,"gives":"copper_ore","gets":"coal"}   set what a market (Lumen Market, Trading Post) swaps
   {"do":"demolish","x":3,"y":4}
   {"do":"research","tech":"knapping"}
   {"do":"goal","tech":"bronze_dawn"}               set the research goal; the queue buys the techs on the way
   {"do":"season","choice":0}                       answer a Season card
   {"do":"moment","choice":0}                       answer a story moment card
+  {"do":"order","item":"coal","compare":"below","number":40,"verb":"pause","target":"forge"}
+                                                   write a standing order on the Order Board (needs one built; compare is below or above;
+                                                   verb is pause or bring; number one of 5 10 20 30 40 60 80 100 150 200 300 500)
+  {"do":"clear_order","index":0}                   tear an order up
   {"do":"wait","seconds":30}                       let the game run (the default, 15 seconds, is used when you send no wait)
 Also write diary_<n>.md: two or three lines on what you wanted, and how it felt (bored, pleased, stuck, surprised).
 Play to win the era you are in. You see only this page."""
@@ -74,6 +82,19 @@ static func apply(s, moves: Array) -> Array:
 				ok = str(m.get("type", "")) in Data.BUILDINGS and s.place(str(m["type"]), at, str(m.get("focus", "")))
 			"demolish":
 				ok = not s.demolish(at).is_empty()
+			"line":
+				ok = _drag(s, m)
+			"pause":
+				var i := _index_at(s, at)
+				ok = i >= 0
+				if ok:
+					s.set_paused(i, bool(m.get("on", true)))
+			"trade":
+				var i := _index_at(s, at)
+				ok = i >= 0 and s.town.set_trade(i, str(m.get("gives", "")), str(m.get("gets", "")))
+			"focus":
+				var i := _index_at(s, at)
+				ok = i >= 0 and s.town.set_focus(i, str(m.get("item", "")))
 			"research":
 				ok = str(m.get("tech", "")) in Data.TECHS and s.research(str(m["tech"]))
 			"goal":
@@ -86,6 +107,12 @@ static func apply(s, moves: Array) -> Array:
 					s.seasons.choose(s, int(m.get("choice", 0)))
 			"moment":
 				ok = s.starfall.choose(int(m.get("choice", 0)))
+			"order":
+				ok = _write_order(s, m)
+			"clear_order":
+				ok = int(m.get("index", -1)) >= 0 and int(m.get("index", -1)) < s.livewire.orders.size()
+				if ok:
+					s.livewire.clear(int(m["index"]))
 			"wait":
 				pass
 			_:
@@ -93,6 +120,69 @@ static func apply(s, moves: Array) -> Array:
 		if not ok:
 			refused.append(JSON.stringify(m))
 	return refused
+
+
+## The building standing at `at`, as its index in the town, or -1.
+static func _index_at(s, at: Vector2i) -> int:
+	for i in s.town.buildings.size():
+		if s.town.buildings[i]["pos"] == at:
+			return i
+	return -1
+
+
+## A dragged line: along x from `from`, then along y to `to`, as the build bar's drag does. True when any tile went down.
+static func _drag(s, m: Dictionary) -> bool:
+	var a = m.get("from", [])
+	var b = m.get("to", [])
+	if (
+		str(m.get("type", "")) not in Data.BUILDINGS
+		or typeof(a) != TYPE_ARRAY
+		or typeof(b) != TYPE_ARRAY
+		or a.size() < 2
+		or b.size() < 2
+	):
+		return false
+	var from := Vector2i(int(a[0]), int(a[1]))
+	var to := Vector2i(int(b[0]), int(b[1]))
+	var line: Array = []
+	var x := from.x
+	while x != to.x:
+		line.append(Vector2i(x, from.y))
+		x += signi(to.x - x)
+	var y := from.y
+	while y != to.y:
+		line.append(Vector2i(to.x, y))
+		y += signi(to.y - y)
+	line.append(to)
+	return s.place_line(str(m["type"]), line) > 0
+
+
+## An order, written as the Board's panel would: every part picked from the short lists the panel offers.
+static func _write_order(s, m: Dictionary) -> bool:
+	if not s.livewire.has_board(s) or not s.livewire.add(s):
+		return false
+	var o: Dictionary = s.livewire.orders[-1]
+	var verb := str(m.get("verb", "pause"))
+	var item := str(m.get("item", ""))
+	var compare := str(m.get("compare", ""))
+	var number := int(m.get("number", -1))
+	var target := str(m.get("target", ""))
+	var ok: bool = (
+		item in s.livewire.items_for(s)
+		and compare in ["below", "above"]
+		and number in Data.ORDER_NUMBERS
+		and verb in Data.ORDER_VERB_ORDER
+		and target in s.livewire.targets_for(s, verb)
+	)
+	if not ok:
+		s.livewire.clear(s.livewire.orders.size() - 1)
+		return false
+	o["item"] = item
+	o["compare"] = compare
+	o["number"] = number
+	o["verb"] = verb
+	o["target"] = target
+	return true
 
 
 ## Seconds the moves ask to wait (the longest `wait`), or `fallback` when none does.
@@ -168,17 +258,33 @@ static func _town(s) -> Array:
 				)
 			)
 	out.append("STOCK: " + (", ".join(stock) if not stock.is_empty() else "nothing"))
-	var seen := {}
+	var groups := {}
 	for b in s.town.buildings:
-		var line: String = "%s at (%d,%d)" % [Data.BUILDINGS[b["type"]]["name"], b["pos"].x, b["pos"].y]
+		var key: String = Data.BUILDINGS[b["type"]]["name"]
 		if b.get("focus", "") != "":
-			line += " for " + b["focus"]
-		if b.get("status", "") != "":
-			line += ": " + str(b["status"]).left(60)
-		if b.get("alert", "") != "":
-			line += " [" + b["alert"] + "]"
-		seen[line] = true
-	out.append("BUILDINGS: " + ("; ".join(seen.keys()) if not seen.is_empty() else "none"))
+			key += " for " + b["focus"]
+		var note: String = (
+			b["alert"] if b.get("alert", "") != "" else str(b.get("status", "")).get_slice(".", 0).left(40)
+		)
+		if note != "":
+			key += " [" + note + "]"
+		groups[key] = groups.get(key, []) + ["(%d,%d)" % [b["pos"].x, b["pos"].y]]
+	var rows: Array = []
+	for key in groups:
+		rows.append("%s x%d: %s" % [key, groups[key].size(), " ".join(groups[key])])
+	out.append("BUILDINGS:\n  " + ("\n  ".join(rows) if not rows.is_empty() else "none"))
+	if s.livewire.has_board(s):
+		var rules: Array = []
+		for i in s.livewire.orders.size():
+			rules.append(
+				"%d) %s [%s]" % [i, s.livewire.text(s.livewire.orders[i]), s.livewire.last_firing(s.livewire.orders[i])]
+			)
+		out.append(
+			(
+				"ORDERS (%d of %d slots): %s"
+				% [s.livewire.orders.size(), s.livewire.slots(s), "; ".join(rules) if not rules.is_empty() else "none"]
+			)
+		)
 	var can: Array = []
 	for type in Data.BUILDINGS:
 		if type != "camp" and s.town.unlocked(type):
@@ -194,6 +300,20 @@ static func _town(s) -> Array:
 			cost.append("%d %s" % [s.tech_tree.cost_of(t)[id], id])
 		ready.append("%s = %s (%s)" % [t, Data.TECHS[t]["name"], ", ".join(cost)])
 	out.append("RESEARCHABLE NOW: " + (", ".join(ready) if not ready.is_empty() else "nothing you can pay for"))
+	var later: Array = []
+	for tech in Data.TECH_ORDER:
+		if s.tech_tree.researched.has(tech) or not s.tech_tree.tech_visible(tech) or s.tech_tree.can_research(tech):
+			continue
+		if not s.tech_tree.enabled(tech) or not s.tech_tree.requirements_met(tech):
+			continue
+		var short: Array = []
+		for id in s.tech_tree.cost_of(tech):
+			var want: int = s.tech_tree.cost_of(tech)[id]
+			if s.economy.inv.get(id, 0) < want:
+				short.append("%d %s (have %d)" % [want, id, s.economy.inv.get(id, 0)])
+		later.append("%s = %s, short of %s" % [tech, Data.TECHS[tech]["name"], ", ".join(short)])
+	if not later.is_empty():
+		out.append("OPEN BUT NOT YET AFFORDABLE: " + "; ".join(later))
 	if s.tech_tree.goal != "":
 		out.append("RESEARCH GOAL: %s, queue %s" % [s.tech_tree.goal, str(s.tech_tree.queue)])
 	return out
@@ -215,7 +335,7 @@ static func _map(s) -> String:
 				row += " "
 				continue
 			var key: String = (
-				("B:" + built[p]) if built.has(p) else ("R" if s.world.roads.has(p) else s.world.tile_at(p))
+				("B:" + built[p]) if built.has(p) else ("road" if s.world.roads.has(p) else s.world.tile_at(p))
 			)
 			if key == "grass" or key == "":
 				row += "."
