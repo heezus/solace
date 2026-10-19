@@ -12,6 +12,7 @@ const Power = preload("res://scripts/power.gd")
 const Livewire = preload("res://scripts/livewire.gd")
 const Haulers = preload("res://scripts/haulers.gd")
 const Buildings = preload("res://scripts/buildings.gd")
+const Work = preload("res://scripts/work.gd")
 const TechLayout = preload("res://scripts/tech_layout.gd")
 const TechPanel = preload("res://scripts/tech_panel.gd")
 const OrdersPanel = preload("res://scripts/orders_panel.gd")
@@ -35,6 +36,7 @@ func run(runner) -> void:
 	t = runner
 	test_the_data_is_whole()
 	test_the_age_begins_when_the_card_is_put_away()
+	test_the_coal_fix()
 	test_the_fifth_tab_and_the_tree()
 	test_the_first_techs_can_be_bought()
 	test_poles_join_into_nets()
@@ -191,6 +193,60 @@ func test_the_age_begins_when_the_card_is_put_away() -> void:
 	before.generate(2)
 	before.tick(0.5)
 	t.check(not before.story.has_event(Data.LIVEWIRE_BEGUN), "and not before the gate is passed")
+
+
+func test_the_coal_fix() -> void:
+	var s := Sim.new()
+	s.generate(2)
+	s.world.grow_south()
+	t.check(not s.world.seam_left.is_empty(), "the south has seams")
+	var before := _coal_in_ground(s)
+	s.story.record(Data.IRONFALL_EVENT)
+	s.story.card_up = true
+	s.story.record(Data.LIVEWIRE_EVENT)
+	s.story.card_up = false
+	s.story.update(s)
+	t.check(_coal_in_ground(s) == before + Data.LIVEWIRE_COAL_GIFT, "the era's start adds its coal to the ground")
+	s.story.update(s)
+	t.check(_coal_in_ground(s) == before + Data.LIVEWIRE_COAL_GIFT, "once, however long it runs")
+	var spent: int = s.world.seam_left.keys()[0]
+	s.world.seam_left[spent] = 0
+	var live := _coal_in_ground(s)
+	t.check(s.world.deepen_seams(7), "a seam that holds some takes more")
+	t.check(s.world.seam_left[spent] == 0 and _coal_in_ground(s) == live + 7, "and a spent one stays spent")
+	t.check(
+		Data.TECHS["skyward"]["cost"]["iron"] <= 60 and Data.TECHS["skyward"]["cost"]["steel"] <= 72,
+		"the gate is cheaper"
+	)
+	# Steel waits behind iron while the era runs, and not before it.
+	var forge: Dictionary = {"type": "forge"}
+	var tall := Sim.new()
+	tall.generate(2)
+	tall.economy.inv["steel"] = 10
+	tall.economy.inv["iron"] = 5
+	t.check(not Work.steel_waits(tall, forge), "a forge works as before until Livewire begins")
+	tall.story.record(Data.LIVEWIRE_BEGUN)
+	t.check(Work.steel_waits(tall, forge), "it waits while steel is ahead of iron")
+	tall.economy.inv["iron"] = 10
+	t.check(not Work.steel_waits(tall, forge), "and goes on once iron is level")
+	var bloomery: Dictionary = {"type": "bloomery"}
+	tall.economy.inv["iron"] = 0
+	t.check(not Work.steel_waits(tall, bloomery), "a bloomery never waits")
+	tall.economy.inv["steel"] = 10
+	var waiting: Array = []
+	for type in Data.BUILDINGS:  # no building type breaks the check, and only the steel makers wait
+		if Work.steel_waits(tall, {"type": type, "make": ""}):
+			waiting.append(type)
+	t.check(waiting == ["forge"], "only a forge waits, got %s" % [waiting])
+	var floor_copy: Dictionary = {"type": "factory_floor", "make": "forge"}
+	t.check(Work.steel_waits(tall, floor_copy), "and a Floor copying a forge waits like one")
+
+
+func _coal_in_ground(s: Sim) -> int:
+	var n := 0
+	for id in s.world.seam_left:
+		n += maxi(0, s.world.seam_left[id])
+	return n
 
 
 func test_the_fifth_tab_and_the_tree() -> void:

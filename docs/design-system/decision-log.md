@@ -897,3 +897,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - The AI player drives the real Sim through the same commands a person has, on the Mac, only when asked; its diary matters more than its result.
 - Page 24 pick 7 (decisions a minute, idle time, a diary) folds into this page and shares the log format.
 
+
+## 2026-10-19: Livewire's coal fix, cheaper era plus 600 coal (PR F)
+- Claude, at Jon's pick "Both, then retest", cut Livewire's iron and steel costs to 60% and gave the era +600 coal in the seams that remain, because the AI player counted about 1858 coal needed against about 660 in the ground.
+- Steel now waits behind iron in a Forge during Livewire (no batch starts while steel stock exceeds iron stock), so techs that need iron get it.
+- A full building far from its depot says so and points to a Storehouse, instead of the misleading "waiting for a hauler".
+- The earned Livewire checkpoint is rebuilt under the new economy; the AI player replays the era to check it can finish.

@@ -4,10 +4,11 @@ extends SceneTree
 ## and `diary_<n>.md`. The moves go through the game's own commands (tests/tools/ai_snapshot.gd). Game time stands still while the
 ## player thinks. Stops after --decisions pages, when the era turns over (--stop-at-era), or when no answer comes in --patience s.
 ## Run: godot --headless --path . -s tests/tools/ai_player.gd -- --dir=/some/folder [--seed=3] [--every=15] [--decisions=60]
-##      [--stop-at-era=Bronze Dawn] [--patience=900]
+##      [--stop-at-era=Bronze Dawn] [--patience=900] [--start=earned_livewire]
 ## The playing session reads snapshot_<n>.txt and writes moves_<n>.json and diary_<n>.md in the folder. Then it reads the next one.
 
 const Data = preload("res://scripts/data.gd")
+const DevStarts = preload("res://scripts/dev_starts.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Snapshot = preload("res://tests/tools/ai_snapshot.gd")
 
@@ -21,6 +22,7 @@ var decisions := 60
 var stop_at_era := ""
 var patience := 900.0
 var timed_out := false
+var start := ""  # a stage start or earned checkpoint to begin from (scripts/dev_starts.gd), "" for a fresh map
 
 
 func _init() -> void:
@@ -40,11 +42,16 @@ func _init() -> void:
 				decisions = int(kv[1])
 			"stop-at-era":
 				stop_at_era = kv[1]
+			"start":
+				start = kv[1]
 			"patience":
 				patience = float(kv[1])
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(dir))
-	s = Sim.new()
-	s.generate(map_seed)
+	if start != "":
+		s = DevStarts.build(start)
+	else:
+		s = Sim.new()
+		s.generate(map_seed)
 	print(
 		(
 			"AI player: map %d, a page every %d game seconds, in %s"

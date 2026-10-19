@@ -250,6 +250,9 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 	if Work.enough(s, b):
 		b["status"] = Work.bench_text(s, b)
 		return
+	if Work.steel_waits(s, b) and b["progress"] <= 0.0:
+		s.town.set_status(b, Data.STEEL_WAITS_STATUS, Data.STEEL_WAITS_ALERT)
+		return
 	if not s.town.wants_to_work(b):
 		idle_reason(s, b, def)
 		return
@@ -291,7 +294,9 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 static func idle_reason(s, b: Dictionary, def: Dictionary) -> void:
 	var auto := Roads.automated(s, b)
 	if Buildings.buffered(b["out"]) >= Data.BUFFER_CAP:
-		if auto:
+		if auto and Roads.depot_far(s, b):
+			s.town.set_status(b, Data.FAR_DEPOT_STATUS, Data.FAR_DEPOT_ALERT)
+		elif auto:
 			s.town.set_status(b, "Full: waiting for a hauler", "Full: waiting for a hauler")
 		else:
 			s.town.set_status(b, "Full: click to collect" + road_note(s, b), "Full: click to collect")

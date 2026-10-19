@@ -15,6 +15,7 @@ func run(runner) -> void:
 	test_moves_go_through_the_games_commands()
 	test_a_move_the_game_refuses_comes_back()
 	test_a_season_card_is_on_the_page_and_answered()
+	test_orders_are_written_from_the_boards_lists()
 
 
 func _game() -> Sim:
@@ -84,6 +85,48 @@ func test_a_season_card_is_on_the_page_and_answered() -> void:
 	t.check(page.contains("CARD WAITING (season") and page.contains("Ration"), "a waiting season shows on the page")
 	var refused := Snapshot.apply(game, [{"do": "season", "choice": 1}])
 	t.check(refused.is_empty() and game.seasons.phase == "active" and game.seasons.answer == 1, "and an answer takes")
+
+
+func test_orders_are_written_from_the_boards_lists() -> void:
+	var game := _game()
+	t.check(
+		(
+			(
+				Snapshot
+				. apply(
+					game,
+					[
+						{
+							"do": "order",
+							"item": "wood",
+							"compare": "below",
+							"number": 20,
+							"verb": "pause",
+							"target": "kiln"
+						}
+					]
+				)
+				. size()
+			)
+			== 1
+		),
+		"no order without a Board"
+	)
+	game.town.add_building("order_board", game.world.camp_pos + Vector2i(2, 2))
+	game.economy.seen["wood"] = true
+	var bad := {"do": "order", "item": "wood", "compare": "below", "number": 21, "verb": "pause", "target": "kiln"}
+	t.check(
+		Snapshot.apply(game, [bad]).size() == 1 and game.livewire.orders.is_empty(),
+		"a number off the list is refused and leaves no order"
+	)
+	var good := {"do": "order", "item": "wood", "compare": "above", "number": 80, "verb": "bring", "target": "camp"}
+	t.check(Snapshot.apply(game, [good]).size() <= 1, "an order is taken or refused, never half written")
+	game.livewire.orders.clear()
+	t.check(
+		Snapshot.apply(game, [{"do": "clear_order", "index": 3}]).size() == 1,
+		"clearing an order that is not there is refused"
+	)
+	t.check(Snapshot.text(game, 1, [], []).contains("ORDERS ("), "the page lists the orders once there is a Board")
 
 
 func _tile(game: Sim, kind: String) -> Vector2i:

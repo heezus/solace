@@ -706,6 +706,12 @@ const LIVEWIRE_BUTTON := DataSteam.LIVEWIRE_BUTTON
 # --- Era 5, Livewire, stage 1: wires and orders: data/livewire.gd ---
 const LIVEWIRE_BEGUN := DataLivewire.LIVEWIRE_BEGUN
 const ERA_TAB_LOCKED_LIVEWIRE := DataLivewire.ERA_TAB_LOCKED_LIVEWIRE
+const LIVEWIRE_COAL_GIFT := DataLivewire.LIVEWIRE_COAL_GIFT
+const STEEL_WAITS_STATUS := DataLivewire.STEEL_WAITS_STATUS
+const STEEL_WAITS_ALERT := DataLivewire.STEEL_WAITS_ALERT
+const FAR_DEPOT_TILES := DataLivewire.FAR_DEPOT_TILES
+const FAR_DEPOT_STATUS := DataLivewire.FAR_DEPOT_STATUS
+const FAR_DEPOT_ALERT := DataLivewire.FAR_DEPOT_ALERT
 const POLE_LINK := DataLivewire.POLE_LINK
 const POLE_REACH := DataLivewire.POLE_REACH
 const MACHINE_ASK := DataLivewire.MACHINE_ASK
