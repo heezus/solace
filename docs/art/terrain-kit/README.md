@@ -46,3 +46,14 @@ The first argument is the map seed (try 3, 11, 42), the second the output folder
 `MapTerrain` already makes a `height` field and a `wet` field for every map. When you want them as shader inputs (drier meadow on high ground, damp ground near the river, so the biome follows the land instead of only noise), say so in `docs/art/requests.md` and Claude will expose them as two extra mask channels in a small PR. Nothing changes in tiles, ids, saves or the map generated for a seed. The south land is already identifiable by row (`y >= world.base_height`).
 
 Note that the shader, texture names and `Rendered.sheet` loading are yours to change; new files in `art/rendered/` need Godot's `.import` files, which Codex's Godot generates.
+
+## Implementation (Codex, 2026-10-19)
+
+The production kit is in `art/rendered/`: three meadow sheets, two woodland sheets, calm/flow water, earth/southern earth, the 32-cell transparent decal atlas and painted bank strip. [Prompts and preparation](prompts.md) and [source dimensions/hashes](sources.json) distinguish generated originals from packed runtime assets.
+
+Engine areas touched:
+- `terrain.gdshader`: repeating UVs without mirrored lighting; 20/27-tile macro scales, fine brush subscales and continuously blended hash offsets to suppress repeats; dry/lush meadow variation, noise-broken forest/south transitions, calm/flow water and a painted bank sampled along the mask contour. Signed distance estimated from the gradient controls the bank width. Two tangent projections avoid angle discontinuities at bends.
+- `world_ground.gd`: texture bindings, runtime meadow/earth atlas packing (eight shader samplers for Compatibility), and a ground decal layer below map sprites. `Rendered.variant` places details independently of simulation RNG; conservative footprint checks keep them off roads, foundations, water and fog. Existing mask generation, tile IDs, world data and saves remain unchanged.
+- Preview fixture: extends its reveal mask to include the grown southern rows and moves the mouse off the map for stable comparison captures. This changes only the screenshot fixture.
+
+No generator biome channels are required. Road tiers still use the existing RoadLayer. Bloom ground remains a separately queued visual batch.

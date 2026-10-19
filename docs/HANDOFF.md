@@ -4,6 +4,13 @@ Owner: the project owner (heezus). Two AI teams, one repo, coordinated by respon
 
 ## Active work
 
+### Codex — terrain kit
+- **Task:** implement the agreed page 22 terrain kit on `codex/terrain-kit`.
+- **Reserved files:** `art/rendered/terrain.gdshader`, new terrain-kit PNG/import assets, `scripts/world_ground.gd`, focused terrain tests and `docs/art/terrain-kit/`.
+- **Acceptance criteria:** crisp ground beside miniatures, no repeated patch in wide views, painted contour bank; native before/after previews on seeds 3, 11 and 42; unchanged simulation, tile IDs and saves.
+- **Status:** implementation in progress.
+- **Next action:** paint/import the kit, wire deterministic visual scatter and contour shading, validate and publish PR for Claude.
+
 ### Codex — Phase B character consistency review
 - **Task:** compare #93 character stills against the approved #94 sheet on `codex/ironfall-cutscenes`.
 - **Reserved files:** `docs/art/ironfall/phase-b/` and character corrections to `art/rendered/cutscenes/ironfall_1.png` / `ironfall_2.png`; no production renderer files.

@@ -37,8 +37,10 @@ func _process(_delta: float) -> bool:
 				n.skip()
 		main.paused = true
 	if frame == 2:
+		Input.warp_mouse(Vector2(8, 8))  # keep cursor-dependent hover labels out of comparisons
 		main.toasts.visible = false
 		s.world.grow_south()
+		s.fog.lengthen(s.world.height)  # reveal the added southern rows in this art-only fixture
 		s.fog.reveal_all()
 		spots = _find_spots(s.world)
 	var step := 6

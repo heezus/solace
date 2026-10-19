@@ -12,6 +12,9 @@ const STONE_PATHS := false
 var texture: ImageTexture
 var revision := 0
 var builds := 0
+var _decals: Node2D
+var _state
+var _seen := Rect2i()
 var _surface: Node2D
 var _material: ShaderMaterial
 var _rect := Rect2()
@@ -34,13 +37,29 @@ func draw(ci: CanvasItem, s, seen: Rect2i) -> void:
 		_surface.z_index = -1
 		_material = ShaderMaterial.new()
 		_material.shader = load("res://art/rendered/terrain.gdshader")
-		_material.set_shader_parameter("turf_texture", Rendered.sheet("meadow-ground"))
-		_material.set_shader_parameter("water_texture", Rendered.sheet("calm-river"))
-		_material.set_shader_parameter("earth_texture", Rendered.sheet("woodland-ground"))
-		_material.set_shader_parameter("woodland_texture", Rendered.sheet("woodland-ground"))
+		var sheets := {
+			"woodland_texture": "woodland-a",
+			"woodland_b_texture": "woodland-b",
+			"water_texture": "water-flow",
+			"calm_texture": "water-calm",
+			"bank_texture": "bank",
+		}
+		for slot in sheets:
+			_material.set_shader_parameter(slot, Rendered.sheet(sheets[slot]))
+		# Pack related sheets to stay within the Compatibility renderer's sampler budget.
+		_material.set_shader_parameter("turf_texture", _material_atlas(["meadow-a", "meadow-b", "meadow-c"]))
+		_material.set_shader_parameter("earth_texture", _material_atlas(["earth", "earth-south"]))
 		_surface.material = _material
 		_surface.draw.connect(_draw_surface)
 		ci.add_child(_surface)
+		_decals = Node2D.new()
+		_decals.name = "TerrainDecals"
+		_decals.z_index = -1
+		_decals.draw.connect(_draw_decals)
+		ci.add_child(_decals)
+	_state = s
+	_seen = seen
+	_material.set_shader_parameter("south_start", float(s.world.base_height) * TILE)
 	_material.set_shader_parameter("terrain_mask", texture)
 	_material.set_shader_parameter("world_size", Vector2(s.world.width, s.world.height) * TILE)
 	_material.set_shader_parameter("stone_paths", STONE_PATHS)
@@ -50,6 +69,7 @@ func draw(ci: CanvasItem, s, seen: Rect2i) -> void:
 		_rect = rect
 		_surface.set_meta("builds", builds)
 		_surface.queue_redraw()
+		_decals.queue_redraw()
 
 
 func _draw_surface() -> void:
@@ -173,3 +193,70 @@ func _aprons(s, tile: Vector2i) -> Array[Vector4]:
 				Vector4(q.x + 0.5, q.y + (1.15 if hearth else 0.94), 1.0 if hearth else 0.56, 0.52 if hearth else 0.28)
 			)
 	return result
+
+
+## Cosmetic scatter uses only coordinate hashes and revealed masks; never simulation RNG.
+func _draw_decals() -> void:
+	var atlas := Rendered.sheet("decals")
+	for decal in decal_layout(_state, _seen):
+		var cell := int(decal.z)
+		var source := Rect2(Vector2(cell % 8, floori(cell / 8.0)) * 96.0, Vector2(96, 96))
+		var size := 32.0 if cell >= 24 else 24.0
+		_decals.draw_texture_rect_region(
+			atlas, Rect2(Vector2(decal.x, decal.y) - Vector2.ONE * size * 0.5, Vector2.ONE * size), source
+		)
+
+
+func decal_layout(s, seen: Rect2i) -> Array[Vector3]:
+	var result: Array[Vector3] = []
+	for y in range(maxi(0, seen.position.y), mini(s.world.height, seen.end.y)):
+		for x in range(maxi(0, seen.position.x), mini(s.world.width, seen.end.x)):
+			var tile := Vector2i(x, y)
+			if not s.fog.is_revealed(tile) or s.world.tile_at(tile) == "river":
+				continue
+			var map_seed: int = s.world.map_seed
+			var offset := Vector2(
+				Rendered.variant(tile, 23, 71, map_seed) - 11, Rendered.variant(tile, 23, 73, map_seed) - 11
+			)
+			var center := (Vector2(tile) + Vector2(0.5, 0.5)) * TILE + offset
+			var mask := _image.get_pixelv(Vector2i(center / TILE * SAMPLES))
+			if mask.g > 0.02 or mask.a > 0.04 or mask.r > 0.30:
+				continue
+			var roll := Rendered.variant(tile, 100, 79, map_seed)
+			var cell: int
+			if mask.r > 0.08:
+				cell = 24 + Rendered.variant(tile, 8, 83, map_seed)
+			elif mask.b > 0.30:
+				if roll > 68:
+					continue
+				cell = 18 + Rendered.variant(tile, 6, 89, map_seed)
+			else:
+				if roll > 42:
+					continue
+				cell = Rendered.variant(tile, 18, 97, map_seed)
+			if not _decal_clear(s, center):
+				continue
+			result.append(Vector3(center.x, center.y, cell))
+	return result
+
+
+func _decal_clear(s, center: Vector2) -> bool:
+	for offset in [Vector2.ZERO, Vector2(-20, -20), Vector2(20, -20), Vector2(-20, 20), Vector2(20, 20)]:
+		var p: Vector2 = center + offset
+		var tile := Vector2i((p / TILE).floor())
+		if not s.world.in_bounds(tile) or not s.fog.is_revealed(tile) or s.town.building_at.has(tile):
+			return false
+		var mask := _image.get_pixelv(Vector2i(p / TILE * SAMPLES))
+		if mask.g > 0.02 or mask.a > 0.04 or mask.r > 0.38:
+			return false
+	return true
+
+
+func _material_atlas(names: Array[String]) -> ImageTexture:
+	var atlas := Image.create(1920 * names.size(), 1920, false, Image.FORMAT_RGB8)
+	for index in names.size():
+		var source: Texture2D = load("res://art/rendered/" + names[index] + ".png")
+		var image := source.get_image()
+		image.convert(Image.FORMAT_RGB8)
+		atlas.blit_rect(image, Rect2i(0, 0, 1920, 1920), Vector2i(index * 1920, 0))
+	return ImageTexture.create_from_image(atlas)
