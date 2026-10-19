@@ -19,6 +19,13 @@ const RUBBLE_TIME := 0.9
 const SIDES := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 const CORNERS := [Vector2i(1, 1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(-1, -1)]
 
+## The fog edge's triangles (see fog_edges), kept until the fog changes.
+static var _fog_cells := PackedByteArray()
+static var _fog_size := Vector2i.ZERO
+static var _fog_points := PackedVector2Array()
+static var _fog_colors := PackedColorArray()
+static var _fog_indices := PackedInt32Array()
+
 
 static func rect(p: Vector2i) -> Rect2:
 	return Rect2(Vector2(p) * TILE, Vector2(TILE, TILE))
@@ -175,24 +182,55 @@ static func alert_badges(ci: CanvasItem, s) -> void:
 
 ## The edge of the lit land: each explored tile next to fog fades into the fog color over its own width, so the
 ## border is one soft tile wide with no ragged rim. Nothing of the fogged land shows through.
-static func fog_edges(ci: CanvasItem, s, seen: Rect2i) -> void:
+## The fog's soft edge, drawn as one batch of triangles that is worked out again only when the fog changes (it did the whole
+## visible map's work every frame before, the biggest cost after the terrain).
+
+
+static func fog_edges(ci: CanvasItem, s, _seen: Rect2i) -> void:
+	var size := Vector2i(s.world.width, s.world.height)
+	if size != _fog_size or s.fog.cells != _fog_cells:
+		_fog_size = size
+		_fog_cells = s.fog.cells.duplicate()
+		_build_fog_edges(s)
+	if not _fog_indices.is_empty():
+		RenderingServer.canvas_item_add_triangle_array(ci.get_canvas_item(), _fog_indices, _fog_points, _fog_colors)
+
+
+static func _build_fog_edges(s) -> void:
+	_fog_points = PackedVector2Array()
+	_fog_colors = PackedColorArray()
+	_fog_indices = PackedInt32Array()
 	var fog: Color = Data.FOG
-	for y in range(seen.position.y, seen.end.y):
-		for x in range(seen.position.x, seen.end.x):
+	for y in s.world.height:
+		for x in s.world.width:
 			var p := Vector2i(x, y)
 			if not s.fog.is_revealed(p):
 				continue
 			var r := rect(p)
 			for d in SIDES:
 				if _fogged(s, p + d):
-					_fade_side(ci, r, d, fog)
+					_fade_side(r, d, fog)
 			for d in CORNERS:
 				if _fogged(s, p + d) and not _fogged(s, p + Vector2i(d.x, 0)) and not _fogged(s, p + Vector2i(0, d.y)):
 					var corner := r.get_center() + Vector2(d) * TILE * 0.5
-					var pts := PackedVector2Array(
-						[corner, corner - Vector2(d.x * TILE * 0.6, 0), corner - Vector2(0, d.y * TILE * 0.6)]
+					var clear := Color(fog, 0.0)
+					_add_triangle(
+						[corner, corner - Vector2(d.x * TILE * 0.6, 0), corner - Vector2(0, d.y * TILE * 0.6)],
+						[fog, clear, clear]
 					)
-					ci.draw_polygon(pts, PackedColorArray([fog, Color(fog, 0.0), Color(fog, 0.0)]))
+
+
+static func _add_triangle(points: Array, colors: Array) -> void:
+	var at := _fog_points.size()
+	for i in 3:
+		_fog_points.append(points[i])
+		_fog_colors.append(colors[i])
+	_fog_indices.append_array(PackedInt32Array([at, at + 1, at + 2]))
+
+
+static func _add_quad(points: Array, colors: Array) -> void:
+	_add_triangle([points[0], points[1], points[2]], [colors[0], colors[1], colors[2]])
+	_add_triangle([points[0], points[2], points[3]], [colors[0], colors[2], colors[3]])
 
 
 static func _fogged(s, p: Vector2i) -> bool:
@@ -200,19 +238,19 @@ static func _fogged(s, p: Vector2i) -> bool:
 
 
 ## A strip across tile `r`, clear on the side away from the fog and solid fog color at the edge facing it.
-static func _fade_side(ci: CanvasItem, r: Rect2, toward: Vector2i, fog: Color) -> void:
+static func _fade_side(r: Rect2, toward: Vector2i, fog: Color) -> void:
 	var edge := r.get_center() + Vector2(toward) * TILE * 0.5
 	var across := Vector2(absf(toward.y), absf(toward.x)) * TILE * 0.5
 	var back := Vector2(toward) * TILE
 	var mid := Color(fog, 0.35)
-	var near := PackedVector2Array(
-		[edge - across, edge + across, edge + across - back * 0.5, edge - across - back * 0.5]
+	var clear := Color(fog, 0.0)
+	_add_quad(
+		[edge - across, edge + across, edge + across - back * 0.5, edge - across - back * 0.5], [fog, fog, mid, mid]
 	)
-	ci.draw_polygon(near, PackedColorArray([fog, fog, mid, mid]))
-	var far := PackedVector2Array(
-		[edge - across - back * 0.5, edge + across - back * 0.5, edge + across - back, edge - across - back]
+	_add_quad(
+		[edge - across - back * 0.5, edge + across - back * 0.5, edge + across - back, edge - across - back],
+		[mid, mid, clear, clear]
 	)
-	ci.draw_polygon(far, PackedColorArray([mid, mid, Color(fog, 0.0), Color(fog, 0.0)]))
 
 
 ## The Hearth's reach: a 2 px dashed cream line at 40% opacity, labelled "Build range", drawn only while a Dwelling

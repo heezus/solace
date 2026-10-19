@@ -20,8 +20,9 @@ var _material: ShaderMaterial
 var _rect := Rect2()
 var _noise := FastNoiseLite.new()
 var _image: Image
-var _tile_stamps := {}
+var _raw := PackedInt32Array()  # _raw_cells as of the last rebuild
 var _seed := -1
+var _river_corners := {}  # tile -> its river corners (Vector4), kept for one rebuild
 
 
 func draw(ci: CanvasItem, s, seen: Rect2i) -> void:
@@ -84,20 +85,27 @@ func _rebuild(s) -> void:
 	var size := Vector2i(s.world.width, s.world.height) * SAMPLES
 	if _image == null or _image.get_size() != size or _seed != s.world.map_seed:
 		_image = Image.create(size.x, size.y, false, Image.FORMAT_RGBA8)
-		_tile_stamps.clear()
+		_raw = PackedInt32Array()
 		texture = null
 		_seed = s.world.map_seed
-	var dirty := false
-	for y in s.world.height:
-		for x in s.world.width:
-			var tile := Vector2i(x, y)
-			var stamp := _tile_key(s, tile)
-			if _tile_stamps.get(tile, -1) == stamp:
-				continue
-			_tile_stamps[tile] = stamp
-			dirty = true
-			_paint_tile(s, tile)
-	if dirty:
+	var w: int = s.world.width
+	var h: int = s.world.height
+	var now := _raw_cells(s)
+	var dirty := {}  # tile -> true: every tile whose picture reads a tile that changed (the window _paint_tile looks at)
+	for i in now.size():
+		if _raw.size() == now.size() and _raw[i] == now[i]:
+			continue
+		var at := Vector2i(i % w, floori(float(i) / w))
+		for dy in range(-3, 3):
+			for dx in range(-3, 3):
+				var t := at + Vector2i(dx, dy)
+				if t.x >= 0 and t.y >= 0 and t.x < w and t.y < h:
+					dirty[t] = true
+	_raw = now
+	_river_corners.clear()
+	for tile in dirty:
+		_paint_tile(s, tile)
+	if not dirty.is_empty():
 		if texture == null:
 			texture = ImageTexture.create_from_image(_image)
 		else:
@@ -105,17 +113,24 @@ func _rebuild(s) -> void:
 		builds += 1
 
 
-func _tile_key(s, tile: Vector2i) -> int:
-	var values: Array = []
-	for y in range(-2, 4):
-		for x in range(-2, 4):
-			var q := tile + Vector2i(x, y)
-			values.append(s.fog.is_revealed(q) and s.world.tile_at(q) == "river")
-			values.append(s.fog.is_revealed(q) and s.world.roads.has(q))
-			var occupied: bool = s.fog.is_revealed(q) and s.town.building_at.has(q)
-			values.append(s.town.buildings[s.town.building_at[q]]["type"] if occupied else "")
-			values.append(s.fog.is_revealed(q) and s.world.tile_at(q) == "tree")
-	return hash(values)
+## What each tile contributes to its neighbours' ground, as one number: whether the fog is lifted on it, and what stands, grows or
+## runs there. Worked out in a single pass, so a change is found without walking every tile's whole neighbourhood.
+func _raw_cells(s) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	out.resize(s.world.width * s.world.height)
+	for y in s.world.height:
+		for x in s.world.width:
+			var q := Vector2i(x, y)
+			if not s.fog.is_revealed(q):
+				continue
+			var kind: String = s.world.tile_at(q)
+			var v := (
+				1 | (2 if kind == "river" else 0) | (4 if kind == "tree" else 0) | (8 if s.world.roads.has(q) else 0)
+			)
+			if s.town.building_at.has(q):
+				v |= hash(s.town.buildings[s.town.building_at[q]]["type"]) << 4
+			out[y * s.world.width + x] = v
+	return out
 
 
 func _paint_tile(s, tile: Vector2i) -> void:
@@ -143,13 +158,17 @@ func _river(s, p: Vector2) -> float:
 	var shifted := p - Vector2(0.5, 0.5)
 	var tile := Vector2i(shifted.floor())
 	var frac := shifted - Vector2(tile)
-	var values: Array[float] = []
-	for n in [Vector2i.ZERO, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.ONE]:
-		var q: Vector2i = tile + n
-		q.x = clampi(q.x, 0, s.world.width - 1)
-		q.y = clampi(q.y, 0, s.world.height - 1)
-		values.append(1.0 if s.fog.is_revealed(q) and s.world.tile_at(q) == "river" else 0.0)
-	return lerpf(lerpf(values[0], values[1], frac.x), lerpf(values[2], values[3], frac.x), frac.y)
+	var v: Vector4 = _river_corners.get(tile, Vector4(-1, 0, 0, 0))
+	if v.x < 0.0:  # the four tiles round this corner, looked at once for all the pixels in it
+		var values: Array[float] = []
+		for n in [Vector2i.ZERO, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.ONE]:
+			var q: Vector2i = tile + n
+			q.x = clampi(q.x, 0, s.world.width - 1)
+			q.y = clampi(q.y, 0, s.world.height - 1)
+			values.append(1.0 if s.fog.is_revealed(q) and s.world.tile_at(q) == "river" else 0.0)
+		v = Vector4(values[0], values[1], values[2], values[3])
+		_river_corners[tile] = v
+	return lerpf(lerpf(v.x, v.y, frac.x), lerpf(v.z, v.w, frac.x), frac.y)
 
 
 func _road(s, p: Vector2) -> float:
