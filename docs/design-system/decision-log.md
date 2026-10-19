@@ -909,3 +909,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Starfall keeps the base meadow/woodland composition; Bronze Dawn is warm/dry, Ironfall coal-dark with separate darker resource aprons, and Livewire healthy/Bloom/firebreak surfaces are separate painted materials. Motifs stay in a transparent deterministic decal atlas instead of becoming repeating ground landmarks.
 - Runtime integration explicitly waits for `codex/terrain-kit` to merge. No tile ID, generator, simulation, save, footprint or global scale change is authorized by this art. Skyreach remains one paragraph and one sketch only.
 - Original sheets returned at 1254x1254 and are packed to 1920x1920, so native source resolution and final close-view crispness remain review limitations. Asset wrap/scale proofs and baseline seeds 3/11/42 are evidence only; final per-era before/after visual acceptance is still pending.
+
+## 2026-10-19: Ground must support existing miniature readability (PR #115)
+- Codex reviewed the era-ground candidates beside the current Hearth and inspected existing tree, rock and coal art; the owner agreed that the material direction fits but the candidates need refinement before approval.
+- Starfall vegetation/litter must read smaller beside buildings while retaining base-kit alignment; Ironfall/firebreak gravel contrast and density must leave resource deposits and moving Kith clear.
+- Bloom growth should concentrate at edges with quieter healthy interiors. Bronze Dawn's warm dry material direction is retained.
+- Final approval requires actual game comparisons including resources and Kith at wide/default/close scales, plus water/transition review after the parent terrain kit merges. Hearth-only composites and green tests do not establish visual approval.

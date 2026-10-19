@@ -6,6 +6,17 @@ Owner brief: 2026-10-19. Branch: `codex/era-ground`. Parent contract: [terrain k
 
 Art phase: eight sheet candidates and a 32-cell decal atlas are painted and packed. Starfall studies use the kit worker's current meadow/woodland layouts; recheck their recorded input hashes after merge. These assets are not loaded by production. Integration waits for [terrain-kit PR #114](https://github.com/heezus/solace/pull/114) to merge, as requested by the owner. Wide/close acceptance and per-era seeds 3, 11, 42 remain pending; an asset inspection is not a gameplay screenshot.
 
+## Owner-agreed refinement gate, 2026-10-19
+
+The owner agreed with Codex's visual assessment: the painted miniature direction fits the existing assets, but these candidates are not visually approved. Before final acceptance:
+
+- [ ] Reduce the apparent size of Starfall grass and woodland litter beside existing buildings, while preserving alignment with the final base kit. Resolve shared base sampling with the parent kit rather than silently changing only the era companion's layout.
+- [ ] Quiet Ironfall and firebreak ground: lower the contrast/density of bright gravel and sharp fragments so resource deposits and small moving characters remain clear. Keep crisp local detail; do not solve visual noise by blurring the whole ground.
+- [ ] Concentrate Bloom growth at patch edges and leave quieter healthy interiors, using the existing patch IDs and visual masks.
+- [ ] Extend comparisons beyond the Hearth: include existing trees, ordinary rocks, coal/iron resources and Kith at wide/default/close views. Confirm silhouette separation, grounded contact and consistent material scale in actual game captures.
+
+Bronze Dawn is the strongest immediate material match; preserve its warm dry direction. Water matching remains part of the parent kit and subsequent integrated review. This gate adds no gameplay or save changes and does not lift the parent-merge requirement.
+
 ## Material contract
 
 All seamless ground sheets are 1920×1920, representing 20×20 tiles at 96 source pixels per tile. Upper-left light and lower-right shadows. Repeat in both axes without mirroring. No landmark exceeds six tiles (576 source pixels); material detail stays much smaller. Each family uses a compact palette and its adjacent surfaces share two middle colors. Transparent decal cells are 96×96 with clear gutters and baked lower-right shadows. Decal placement must use the kit's map-seeded visual hash, never gameplay RNG.
