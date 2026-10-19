@@ -40,6 +40,7 @@ The source of truth for our game's universe. If something is written here, it's 
 22. [Terrain kit](22-terrain-kit.md): how the ground and water get painted to match the sprites and read as one surface (layers, template sheets, preview script; art by Codex)
 23. [Livewire](23-livewire.md): era 5 in detail, the Standing orders mechanic (the Order Board), power poles and factories, the Bloom tide as the clock, a 14-tech tree and three build stages (all three stages built: wires and orders, the tide, factories and the gate; Send and the pacing bot to come)
 24. [Balance](24-balance.md): the seven picks that make the middle game matter (one live goal, time-left chips and a famine card, storage caps and spoilage, made-goods prices, Seasons of Strain, pacing guarantees, scorecard metrics); design only, built in four PRs
+25. [Playtesting](25-playtesting.md): the play recorder (logs Jon's own sessions, a three-tap card at each era end) and the AI player (a Claude session plays through text snapshots and keeps a diary), and how they sit beside the bots in the scorecards
 - [Decision Log](decision-log.md)
 
 ### Mockups (visual specs from the visual design thread)

@@ -139,12 +139,12 @@ func _star(maps: Array, minutes: float, quiet: bool) -> void:
 ## What the bot's log says about how much the era asked of a player: "N decisions (D a minute), W minutes waiting". A decision is
 ## a building placed, a tech learned or an order written; a minute is waiting when the bot's trace line says what held it up
 ## ("next ... missing"). A reading of the bot, never of a human: scorecards cite it beside a human or captured play.
-static func measured(log: Array, clock: float) -> String:
+static func measured(entries: Array, clock: float) -> String:
 	var rx := RegEx.new()
 	rx.compile("^\\s*\\d+ s\\s+(\\+ |== order written|[A-Z][^=.(]*\\(Kith)")
 	var decisions := 0
 	var waits := 0
-	for line in log:
+	for line in entries:
 		var text := String(line)
 		if rx.search(text) != null:
 			decisions += 1

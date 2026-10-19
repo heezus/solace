@@ -75,3 +75,7 @@ jobs:
       - name: Title screen, zoom, pause menu, Save and Load work as a player drives them
         run: |
           tests/tools/run_checked.sh ./godot --headless --fixed-fps 60 --path . -s tests/tools/menu_pass.gd
+
+      - name: Play log and its era-end question card
+        run: |
+          tests/tools/run_checked.sh ./godot --headless --fixed-fps 60 --path . -s tests/tools/play_log_pass.gd

@@ -23,6 +23,7 @@ const DataLivewire = preload("res://scripts/data/livewire.gd")
 const DataTide = preload("res://scripts/data/tide.gd")
 const DataSkyward = preload("res://scripts/data/skyward.gd")
 const DataCutscenes = preload("res://scripts/data/cutscenes.gd")
+const DataRecorder = preload("res://scripts/data/recorder.gd")
 
 # --- Items: data/items.gd ---
 const ITEMS := DataItems.ITEMS
@@ -845,3 +846,13 @@ const SKYWARD_TEXT := DataSkyward.SKYWARD_TEXT
 const SKYWARD_NOTE := DataSkyward.SKYWARD_NOTE
 const SKYWARD_BUTTON := DataSkyward.SKYWARD_BUTTON
 const GOALS_FACTORIES := DataSkyward.GOALS_FACTORIES
+
+# The play recorder (scripts/data/recorder.gd)
+const PLAYLOG_DIR := DataRecorder.PLAYLOG_DIR
+const PLAYLOG_SAMPLE_SECONDS := DataRecorder.PLAYLOG_SAMPLE_SECONDS
+const PLAYLOG_LABEL := DataRecorder.PLAYLOG_LABEL
+const PLAYLOG_HELP := DataRecorder.PLAYLOG_HELP
+const ASK_TITLE := DataRecorder.ASK_TITLE
+const ASK_SKIP := DataRecorder.ASK_SKIP
+const ASK_DONE := DataRecorder.ASK_DONE
+const ASK_QUESTIONS := DataRecorder.ASK_QUESTIONS
