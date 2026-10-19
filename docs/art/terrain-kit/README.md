@@ -54,6 +54,8 @@ The production kit is in `art/rendered/`: three meadow sheets, two woodland shee
 Engine areas touched:
 - `terrain.gdshader`: repeating UVs without mirrored lighting; 20/27-tile macro scales, fine brush subscales and continuously blended hash offsets to suppress repeats; dry/lush meadow variation, noise-broken forest/south transitions, calm/flow water and a painted bank sampled along the mask contour. Signed distance estimated from the gradient controls the bank width. Two tangent projections avoid angle discontinuities at bends.
 - `world_ground.gd`: texture bindings, runtime meadow/earth atlas packing (eight shader samplers for Compatibility), and a ground decal layer below map sprites. `Rendered.variant` places details independently of simulation RNG; conservative footprint checks keep them off roads, foundations, water and fog. Existing mask generation, tile IDs, world data and saves remain unchanged.
-- Preview fixture: extends its reveal mask to include the grown southern rows and moves the mouse off the map for stable comparison captures. This changes only the screenshot fixture.
+- Preview fixture: extends its reveal mask to include the grown southern rows and freezes fixture input/hover while applying the real camera layout for stable comparison captures. This changes only the screenshot fixture.
 
 No generator biome channels are required. Road tiers still use the existing RoadLayer. Bloom ground remains a separately queued visual batch.
+
+[Before/after review and validation](review.md) covers all seven views on seeds 3, 11 and 42.

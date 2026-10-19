@@ -36,8 +36,9 @@ func _process(_delta: float) -> bool:
 				n.queue.clear()
 				n.skip()
 		main.paused = true
+		main.set_process(false)
+		main.set_process_unhandled_input(false)
 	if frame == 2:
-		Input.warp_mouse(Vector2(8, 8))  # keep cursor-dependent hover labels out of comparisons
 		main.toasts.visible = false
 		s.world.grow_south()
 		s.fog.lengthen(s.world.height)  # reveal the added southern rows in this art-only fixture
@@ -50,6 +51,10 @@ func _process(_delta: float) -> bool:
 		if (frame - 4) % step == 0:
 			main.zoom_step = 0 if view == "wide" else (6 if view == "close" else 3)
 			main.cam = Vector2(spots[view]) * TILE
+		main.hover = Vector2i(-1, -1)
+		main._layout()
+		main._refresh_ui()
+		main.queue_redraw()
 		if (frame - 4) % step == step - 1:
 			var path := "%sterrain_%d_%s.png" % [out, map_seed, view]
 			root.get_texture().get_image().save_png(path)

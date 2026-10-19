@@ -23,7 +23,9 @@ func _initialize() -> void:
 		fog.reveal_all()
 		world.roads[Vector2i(10, 10)] = true
 		world.set_tile(Vector2i(12, 12), "river")
-		var s := {"world": world, "fog": fog, "town": {"building_at": {}, "buildings": {}}}
+		var s := {
+			"world": world, "fog": fog, "town": {"building_at": {Vector2i(8, 8): 0}, "buildings": [{"type": "camp"}]}
+		}
 		var ground := Ground.new()
 		var before := world.to_dict().duplicate(true)
 		seed(12345)

@@ -1,6 +1,6 @@
 # 22. Terrain kit: ground and water that read as one surface
 
-**Status (2026-10-08):** agreed with the project owner; the kit is written, the art and the shader changes are Codex's.
+**Status (2026-10-19):** implemented by Codex in PR #114; [native before/after review](../art/terrain-kit/review.md), seeds 3, 11 and 42. Claude reviews and merges after green CI. The approach below remains the agreed brief.
 
 ## The ask
 The ground and water should match the sprites' finish, look seamless rather than the same tile repeated side by side, and the map generator should be considered in the plan.
