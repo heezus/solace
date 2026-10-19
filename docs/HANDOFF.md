@@ -8,8 +8,8 @@ Owner: the project owner (heezus). Two AI teams, one repo, coordinated by respon
 - **Task:** owner-requested Starfall, Bronze Dawn, Ironfall and Livewire terrain plus Skyreach concept, branch `codex/era-ground`.
 - **Reserved files:** new `art/rendered/era-ground/` assets/imports and `docs/art/terrain-kit/era-ground/`; focused era-ground notes in shared documentation. No kit renderer edits until `codex/terrain-kit` merges.
 - **Acceptance criteria:** 96 source px/tile, seamless non-mirrored sheets, upper-left lighting, compact related palettes, preserved tile IDs/gameplay; seeds 3/11/42 in each implemented era with wide/close before-after evidence after integration.
-- **Status:** painting independent later-era assets first. Base meadow layout awaits the terrain-kit worker; wiring and final preview validation depend on that branch merging.
-- **Next action:** paint/import/document later-era families; integrate through the merged kit shader afterward.
+- **Status:** art candidates published in draft PR #115: eight packed sheets, 32 decals, Skyreach concept, original provenance and wrap/scale proofs; baseline seeds 3/11/42 captured. Imagegen returned 1254x1254 sources, packed to 1920, so native crispness remains for review. Production wiring and per-era acceptance depend on the terrain-kit merge.
+- **Next action:** wait for terrain-kit merge, recheck Starfall reference hashes, integrate through its shader/visual masks and BloomLook, capture all eras on seeds 3/11/42 and finish CI. Claude merges only after that work and visual review.
 
 
 ### Codex — Phase B character consistency review

@@ -903,3 +903,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Steel now waits behind iron in a Forge during Livewire (no batch starts while steel stock exceeds iron stock), so techs that need iron get it.
 - A full building far from its depot says so and points to a Storehouse, instead of the misleading "waiting for a hauler".
 - The earned Livewire checkpoint is rebuilt under the new economy; the AI player replays the era to check it can finish.
+
+## 2026-10-19: Era-specific ground material candidates (PR #115)
+- Codex painted separate Starfall, Bronze Dawn, Ironfall and Livewire material families under the existing 96-source-texture-pixels-per-tile terrain-kit contract, following the owner's era-ground brief; upper-left light, non-mirrored wrap and small material features remain shared rules.
+- Starfall keeps the base meadow/woodland composition; Bronze Dawn is warm/dry, Ironfall coal-dark with separate darker resource aprons, and Livewire healthy/Bloom/firebreak surfaces are separate painted materials. Motifs stay in a transparent deterministic decal atlas instead of becoming repeating ground landmarks.
+- Runtime integration explicitly waits for `codex/terrain-kit` to merge. No tile ID, generator, simulation, save, footprint or global scale change is authorized by this art. Skyreach remains one paragraph and one sketch only.
+- Original sheets returned at 1254x1254 and are packed to 1920x1920, so native source resolution and final close-view crispness remain review limitations. Asset wrap/scale proofs and baseline seeds 3/11/42 are evidence only; final per-era before/after visual acceptance is still pending.
