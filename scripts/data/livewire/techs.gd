@@ -20,7 +20,7 @@ const POWER_POLES := {
 	"icon": "watchtower",
 	"after": "livewire_begun",
 	"requires": [],
-	"cost": {"iron": 40, "steel": 10, "rope": 40},
+	"cost": {"iron": 24, "steel": 6, "rope": 40},
 	"desc":
 	(
 		"Carry power on a wire. Power Poles within 3 tiles of one another join into a net, and machines and engines within 2 tiles"
@@ -40,7 +40,7 @@ const ORDER_BOARD := {
 	"icon": "glyph_wall",
 	"after": "livewire_begun",
 	"requires": [],
-	"cost": {"iron": 30, "steel": 10, "brick": 60},
+	"cost": {"iron": 18, "steel": 6, "brick": 60},
 	"desc":
 	(
 		"Write down how the town should run. The Board holds three one-line orders: when a good in the stores is below or above a"
@@ -60,7 +60,7 @@ const TIDE_WATCH := {
 	"icon": "wanderer",
 	"after": "livewire_begun",
 	"requires": ["bloom_sampling"],
-	"cost": {"iron": 30, "steel": 10, "brick": 40},
+	"cost": {"iron": 18, "steel": 6, "brick": 40},
 	"desc":
 	"Draw the green tide's front on the map, with a note on the building it is heading for and when it will arrive.",
 }
@@ -76,7 +76,7 @@ const GENERATOR := {
 	"unlock": "Generator",
 	"icon": "kiln",
 	"requires": ["power_poles", "boiler"],
-	"cost": {"iron": 60, "steel": 25, "brick": 80},
+	"cost": {"iron": 36, "steel": 15, "brick": 80},
 	"desc":
 	(
 		"A great flywheel on a coal fire. A Generator gives a whole net 8 units and burns coal only while the net asks for more than"
@@ -95,7 +95,7 @@ const ARC_LAMPS := {
 	"unlock": "Arc Lamp",
 	"icon": "watchtower",
 	"requires": ["power_poles", "shard_lamps"],
-	"cost": {"steel": 20, "wire": 20, "brick": 40},
+	"cost": {"steel": 12, "wire": 20, "brick": 40},
 	"desc": "A lamp that needs power and lights 5 tiles. The tide does not enter its light.",
 }
 const FOREMEN := {
@@ -111,7 +111,7 @@ const FOREMEN := {
 	"icon": "kith",
 	"side": true,
 	"requires": ["order_board", "taught_hands_ii"],
-	"cost": {"steel": 20, "iron": 40, "rope": 60},
+	"cost": {"steel": 12, "iron": 24, "rope": 60},
 	"desc": "Kith who run a floor for the rest. The Order Board holds three more orders.",
 }
 const POWERED_MINES := {
@@ -127,7 +127,7 @@ const POWERED_MINES := {
 	"icon": "mine",
 	"side": true,
 	"requires": ["power_poles", "iron_tools"],
-	"cost": {"steel": 25, "wire": 25, "iron": 40},
+	"cost": {"steel": 15, "wire": 25, "iron": 24},
 	"desc": "A Mine on a net digs twice as fast. Coal is finite, so this is a loan from the future.",
 }
 const FACTORY_FLOOR := {
@@ -142,7 +142,7 @@ const FACTORY_FLOOR := {
 	"unlock": "Factory Floor",
 	"icon": "crucible",
 	"requires": ["generator", "steel"],
-	"cost": {"steel": 50, "wire": 40, "iron": 80},
+	"cost": {"steel": 30, "wire": 40, "iron": 48},
 	"desc":
 	"A floor that runs one chosen recipe at three times a workshop's speed, and eats its inputs three times as fast.",
 }
@@ -158,7 +158,7 @@ const SCORCHER := {
 	"unlock": "Scorcher",
 	"icon": "smelter",
 	"requires": ["generator", "arc_lamps"],
-	"cost": {"steel": 40, "wire": 30, "brick": 80},
+	"cost": {"steel": 24, "wire": 30, "brick": 80},
 	"desc": "A burner that needs power and coal, and clears Bloom ground within 4 tiles, one tile in 30 seconds.",
 }
 const FIREBREAKS := {
@@ -174,7 +174,7 @@ const FIREBREAKS := {
 	"icon": "field",
 	"side": true,
 	"requires": ["tide_watch", "iron_plough"],
-	"cost": {"iron": 50, "steel": 20, "wood": 60, "charcoal": 45},
+	"cost": {"iron": 30, "steel": 12, "wood": 60, "charcoal": 45},
 	"desc": "Cleared strips of ground that burn and never grow. The tide goes round them or waits.",
 }
 const SHARD_DYNAMO := {
@@ -190,7 +190,7 @@ const SHARD_DYNAMO := {
 	"icon": "kiln",
 	"lesson": "heat_plate",
 	"requires": ["generator", "shard_boiler"],
-	"cost": {"steel": 60, "wire": 50, "iron": 80},
+	"cost": {"steel": 36, "wire": 50, "iron": 48},
 	"desc": "A Generator on Shards: 1 Shard for 160 seconds and no coal, once the Heat plate is learned.",
 }
 const CHAIN_ORDERS := {
@@ -206,7 +206,7 @@ const CHAIN_ORDERS := {
 	"icon": "kith",
 	"side": true,
 	"requires": ["foremen", "tide_watch"],
-	"cost": {"steel": 60, "wire": 40, "iron": 60},
+	"cost": {"steel": 36, "wire": 40, "iron": 36},
 	"desc": "Three more orders, an order that names another to run next, and the Send verb for expeditions.",
 }
 const LIVING_GROUND := {
@@ -223,7 +223,7 @@ const LIVING_GROUND := {
 	"side": true,
 	"requires": ["scorcher"],
 	"lessons": ["spore", "root", "sap"],
-	"cost": {"steel": 40, "wire": 40, "brick": 120},
+	"cost": {"steel": 24, "wire": 40, "brick": 120},
 	"desc": "Burnt Bloom ground becomes Ash Ground, and Fields on it yield 50% more. It needs the three Bloom Lessons.",
 }
 const SKYWARD := {
@@ -239,6 +239,6 @@ const SKYWARD := {
 	"icon": "wanderer",
 	"requires": ["factory_floor", "scorcher", "chain_orders", "shard_dynamo"],
 	"deeds": ["orders_written", "south_held"],
-	"cost": {"steel": 120, "iron": 100, "wire": 120, "brick": 100},
+	"cost": {"steel": 72, "iron": 60, "wire": 120, "brick": 100},
 	"desc": "A mast over the town with a lamp that never goes out. The hum carries up the wire, and something answers.",
 }

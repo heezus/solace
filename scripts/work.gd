@@ -136,6 +136,14 @@ static func enough(s, b: Dictionary) -> bool:
 	return Data.BUILDINGS[b["type"]].has("makes") and tools_stocked(s, b) >= tool_goal(s)
 
 
+## True while Livewire runs and Forge `b` would start a batch with more steel than iron in the stockpile: steel waits behind
+## iron, so the techs that need iron are not starved by a forge that turns every bar into steel.
+static func steel_waits(s, b: Dictionary) -> bool:
+	if Data.LIVEWIRE_BEGUN not in s.story.events or not Buildings.recipe_out(b).has("steel"):
+		return false
+	return s.economy.inv.get("steel", 0) > s.economy.inv.get("iron", 0)
+
+
 ## Bronze that the research queue is still waiting for. A Tool Bench leaves it alone, so tools never take the Bronze a
 ## tech needs.
 static func bronze_reserved(s) -> int:

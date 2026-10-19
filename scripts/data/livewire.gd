@@ -9,6 +9,19 @@ extends RefCounted
 const LIVEWIRE_BEGUN := "livewire_begun"
 const ERA_TAB_LOCKED_LIVEWIRE := "Opens when the wires hum"
 
+## Livewire's cheaper bill (design-system/23-livewire.md, "The coal fix"): the Lumen charts show deeper coal under the old seams.
+## When the era begins, this much coal is added to the seams that still hold some (split evenly), so the ground holds enough
+## for the path to Skyward. Iron and steel in the era's costs were cut to 60% in the same step.
+const LIVEWIRE_COAL_GIFT := 600
+## While the era runs, a Forge waits to start a batch when the stockpile holds more steel than iron, so steel never eats the
+## iron the techs are waiting for.
+const STEEL_WAITS_STATUS := "Waiting: there is more steel than iron, so iron goes to the techs first"
+const STEEL_WAITS_ALERT := "Waiting: steel is ahead of iron"
+## A full building whose roads reach a depot farther than this many tiles away says so: its hauler walks a long way for each load.
+const FAR_DEPOT_TILES := 14
+const FAR_DEPOT_STATUS := "Full: the depot is far away, so each load takes long. A Storehouse beside it would help"
+const FAR_DEPOT_ALERT := "Full: depot is far away"
+
 # --- The net ---
 ## Poles within POLE_LINK tiles of one another join into a net. A machine (a building with `needs_power`) or an engine (a "power"
 ## building) within POLE_REACH tiles of a pole is on that pole's net: the machine draws from it, the engine feeds it.

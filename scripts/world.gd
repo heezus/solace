@@ -112,6 +112,21 @@ func grow_south() -> bool:
 	return true
 
 
+## Add `extra` coal to the seams that still hold some, split evenly (the first ones take the odd remainder). Returns false
+## when every seam is spent.
+func deepen_seams(extra: int) -> bool:
+	var live: Array = []
+	for id in seam_left:
+		if seam_left[id] > 0:
+			live.append(id)
+	live.sort()
+	if live.is_empty():
+		return false
+	for i in live.size():
+		seam_left[live[i]] += floori(float(extra) / live.size()) + (1 if i < extra % live.size() else 0)
+	return true
+
+
 ## Take up to `want` from the finite seam under p (a mine or a hand dig) and return what came out: `want` itself where the
 ## ground holds no seam. A seam that comes to nothing turns every tile of it into a Spent Seam.
 func seam_draw(p: Vector2i, want: int) -> int:

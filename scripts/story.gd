@@ -92,8 +92,9 @@ func update(s) -> void:
 	# After the goals, so the era's last one (the Warning read) is ticked while its list is still in force.
 	if s.starfall.ended and s.starfall.pending == "":
 		record(Data.IRONFALL_EVENT)  # the Starfall is over and its card is put away: Ironfall begins
-	if events.has(Data.LIVEWIRE_EVENT) and not card_up:
+	if events.has(Data.LIVEWIRE_EVENT) and not card_up and not events.has(Data.LIVEWIRE_BEGUN):
 		record(Data.LIVEWIRE_BEGUN)  # the Wires Hum card is put away: Livewire begins
+		s.world.deepen_seams(Data.LIVEWIRE_COAL_GIFT)  # the charts show deeper coal under the old seams
 
 
 ## The checklist in force: the stone age's, and the second era's once Bronze Dawn is discovered.

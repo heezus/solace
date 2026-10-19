@@ -49,6 +49,12 @@ static func depot_of(s, b: Dictionary) -> Vector2i:
 	return l[1] if not l.is_empty() else Vector2i(-1, -1)
 
 
+## True when b's roads reach a depot more than Data.FAR_DEPOT_TILES tiles away (a hauler's walk there is long).
+static func depot_far(s, b: Dictionary) -> bool:
+	var d := depot_of(s, b)
+	return d.x >= 0 and absi(d.x - b["pos"].x) + absi(d.y - b["pos"].y) > Data.FAR_DEPOT_TILES
+
+
 ## The depots that road-linked workshops and huts depend on (each building's `depot_of`), in depot order: where
 ## idle haulers should wait, so every depot with work has haulers and not only the Hearth.
 static func posts(s) -> Array:
