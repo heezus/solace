@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Pack generated originals at the terrain contract sizes and remove wrap discontinuities.
-Usage: python prepare_assets.py sources.json
+Usage: python prepare_assets.py source_paths.json
 JSON maps each slot to its original local PNG. Requires Pillow and numpy.
 This only resamples/packs assets; it never synthesizes painted details.
 """

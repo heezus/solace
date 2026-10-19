@@ -62,7 +62,7 @@ The 1920px packed assets were prepared from smaller generated originals; see [so
 
 ## Validation
 
-- Focused `terrain_kit_check.gd`: imported sheet dimensions, exact wrap edges, transparent atlas gutters, runtime atlas contents and sampler budget; deterministic camera-independent scatter on all three seeds; fog, road/apron/water clearance; unchanged world/save data and simulation RNG.
+- Focused `terrain_kit_check.gd`: imported sheet dimensions, exact wrap edges, transparent atlas gutters, runtime atlas contents and sampler budget; deterministic camera-independent scatter on all three seeds; fog and road/apron clearance, with bank details reaching shallows while avoiding deep water; unchanged world/save data and simulation RNG.
 - GDScript lint/format, Godot import metadata and strict editor warnings.
 - All seven before/after views on each seed captured through the real main scene with error-checked Godot runs.
 - Full logic and graphical integration results are recorded on [PR #114](https://github.com/heezus/solace/pull/114); Claude merges after green CI.

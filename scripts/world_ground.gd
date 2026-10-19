@@ -28,7 +28,8 @@ func draw(ci: CanvasItem, s, seen: Rect2i) -> void:
 	var stamp: int = hash(
 		[s.world.tiles, s.world.roads, s.world.width, s.world.map_seed, s.town.building_at, s.fog.cells]
 	)
-	if texture == null or stamp != revision:
+	var revised := texture == null or stamp != revision
+	if revised:
 		_rebuild(s)
 		revision = stamp
 	if _surface == null:
@@ -65,7 +66,8 @@ func draw(ci: CanvasItem, s, seen: Rect2i) -> void:
 	_material.set_shader_parameter("stone_paths", STONE_PATHS)
 	_material.set_shader_parameter("map_seed", float(s.world.map_seed % 10007))
 	var rect := Rect2(Vector2(seen.position) * TILE, Vector2(seen.size) * TILE)
-	if _rect != rect or _surface.get_meta("builds", -1) != builds:
+	# Bare-grass fog reveals change decal visibility even when mask texels stay identical.
+	if _rect != rect or _surface.get_meta("builds", -1) != builds or revised:
 		_rect = rect
 		_surface.set_meta("builds", builds)
 		_surface.queue_redraw()
@@ -234,20 +236,20 @@ func decal_layout(s, seen: Rect2i) -> Array[Vector3]:
 				if roll > 42:
 					continue
 				cell = Rendered.variant(tile, 18, 97, map_seed)
-			if not _decal_clear(s, center):
+			if not _decal_clear(s, center, cell >= 24):
 				continue
 			result.append(Vector3(center.x, center.y, cell))
 	return result
 
 
-func _decal_clear(s, center: Vector2) -> bool:
+func _decal_clear(s, center: Vector2, bank: bool) -> bool:
 	for offset in [Vector2.ZERO, Vector2(-20, -20), Vector2(20, -20), Vector2(-20, 20), Vector2(20, 20)]:
 		var p: Vector2 = center + offset
 		var tile := Vector2i((p / TILE).floor())
 		if not s.world.in_bounds(tile) or not s.fog.is_revealed(tile) or s.town.building_at.has(tile):
 			return false
 		var mask := _image.get_pixelv(Vector2i(p / TILE * SAMPLES))
-		if mask.g > 0.02 or mask.a > 0.04 or mask.r > 0.38:
+		if mask.g > 0.02 or mask.a > 0.04 or mask.r > (0.72 if bank else 0.38):
 			return false
 	return true
 

@@ -22,7 +22,8 @@ func _initialize() -> void:
 		fog.setup(24, 24)
 		fog.reveal_all()
 		world.roads[Vector2i(10, 10)] = true
-		world.set_tile(Vector2i(12, 12), "river")
+		for row in range(12, 17):
+			world.set_tile(Vector2i(12, row), "river")
 		var s := {
 			"world": world, "fog": fog, "town": {"building_at": {Vector2i(8, 8): 0}, "buildings": [{"type": "camp"}]}
 		}
@@ -38,12 +39,18 @@ func _initialize() -> void:
 		var subset := ground.decal_layout(s, Rect2i(4, 4, 8, 8))
 		for decal in subset:
 			check(all.has(decal), "Camera position does not change scatter")
+		var banks := 0
 		for decal in all:
+			banks += 1 if decal.z >= 24 else 0
 			check(decal.z >= 0 and decal.z < 32, "Atlas cell in bounds")
 			var p := Vector2(decal.x, decal.y)
 			for offset in [Vector2.ZERO, Vector2(-20, -20), Vector2(20, -20), Vector2(-20, 20), Vector2(20, 20)]:
 				var mask := ground._image.get_pixelv(Vector2i((p + offset) / 48.0 * Ground.SAMPLES))
-				check(mask.g <= 0.02 and mask.a <= 0.04 and mask.r <= 0.38, "Footprint clears road/apron/water")
+				check(
+					mask.g <= 0.02 and mask.a <= 0.04 and mask.r <= (0.72 if decal.z >= 24 else 0.38),
+					"Footprint clears road/apron/deep water"
+				)
+		check(banks > 0, "Bank details reach the shallows")
 		check(randi() == expected, "Terrain rebuild and scatter preserve simulation RNG")
 		check(world.to_dict() == before, "Terrain leaves world/save data unchanged")
 		fog.setup(24, 24)
