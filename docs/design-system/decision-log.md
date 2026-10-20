@@ -954,6 +954,15 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Bloom patch ground and scattered vine detail are painted. Existing sample color identities and breathing animation remain; TideLook retains building/light/front indicators instead of laying square ground washes over the new material.
 - Native material fixtures and main-scene baseline/current captures cover the scale/readability review. Technical checks do not grant owner visual approval; #115 stays draft for that review, and source-resolution limits remain documented.
 - The kit's fine brush subscale also applies to era sheets: native in-game review caught oversized foliage when it was omitted. Era-only runtime mipmaps reduce minification shimmer at wide zoom, while unchanged sprite/decal imports retain their existing detail.
+
+## 2026-10-19: Separate markets, a hidden Wall theme, a word for trust (PR J)
+- Claude, from Jon's playtest notes and his picks "Split by goods" and "Word meter", made the Trading Post swap Kith goods and the Lumen Market only the strangers' goods (Shard, Coal, Wire, Steel; there is no glyph-lore item), because the two were the same machine.
+- Unread Glyph Wall sets are "Set N of 6" and their theme, icon and gift show only once read; the sets between the Name (first) and the Warning (last) come in an order scrambled by where the ship came down, so a map is reproducible and gameplay randomness is untouched.
+- The Lumen Market's panel shows the Lumen's trust as a word and a bar, and a step of trust floats up as "+6 trust"; the number stays hidden.
+
+## 2026-10-19: Two roads, design only (PR J)
+- Claude, at Jon's pick "Two roads", wrote page 29: each Lumen gift gets a Kith twin earned by refusing it (-4 trust, a cost to run), and the refusals set the era's lean. Nothing is built until Jon confirms.
+
 ## 2026-10-20: Era click pass (PR K)
 - Claude, from Jon's ask for a real-click pass of every era, added `tests/tools/era_pass.gd` and a manual-only workflow, `era-pass.yml`; it plays eight starts from the late stone age to the earned Livewire checkpoint with real mouse and key events.
 - It runs only when Jon starts it from the Actions tab, because the earned checkpoints take minutes to build; it never runs on a push or nightly.

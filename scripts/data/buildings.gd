@@ -12,7 +12,9 @@ extends RefCounted
 ## the difference in cost, and the Stone Bridge does the same over a Wooden Bridge.
 ## A processor with `trade` has no fixed recipe: it swaps Data.TRADE_GIVE of the good it is set to give for
 ## Data.TRADE_GET of the one it is set to get (the building's `give` and `get`); a `trade_give` of its own replaces
-## Data.TRADE_GIVE (the Lumen Market gives 2). `sight` is how far a building sees.
+## Data.TRADE_GIVE (the Lumen Market gives 2). A trading building trades every good the people have held except its `trade_not`
+## list (the Trading Post: Kith goods, never a shard), or only the goods in its `trade_only` list (the Lumen Market: the Lumen's own
+## far-travelled goods). `sight` is how far a building sees.
 ## `lesson` (a Data.LESSONS id) opens a building once that Lesson is learned (scripts/teardown.gd): the card stays off the bar
 ## until then. `unique` allows one only. A `bench` has no worker: haulers carry parts to it (scripts/teardown.gd).
 ## `story` buildings stay off the build bar until their tech is on the board and reachable (nothing to spoil early).
@@ -517,6 +519,7 @@ const BUILDINGS := {
 		"in": {},
 		"out": {},
 		"trade": true,
+		"trade_not": ["shard"],
 		"time": 10.0,
 		"color": Color("f2a65a"),
 		"desc": "Swaps 3 of one good for 1 of another, slowly. Choose what it gives and what it gets.",
@@ -609,11 +612,12 @@ const BUILDINGS := {
 		"out": {},
 		"trade": true,
 		"trade_give": 2,
+		"trade_only": ["shard", "coal", "wire", "steel"],
 		"time": 8.0,
 		"color": Color("9fd8e8"),
 		"desc":
 		(
-			"Swaps 2 of one good for 1 of another with the strangers, a little quicker than the Trading Post. "
+			"Swaps 2 of one good for 1 of another, but only the strangers' own goods: Shards, Coal, Wire and Steel. "
 			+ "Choose what it gives and what it gets."
 		),
 	},

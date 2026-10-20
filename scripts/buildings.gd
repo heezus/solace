@@ -580,6 +580,14 @@ static func is_trading(b: Dictionary) -> bool:
 	return Data.BUILDINGS[b["type"]].get("trade", false) and b["give"] != "" and b["get"] != ""
 
 
+## True when a building of `type` trades `item`: the Trading Post any good but a shard, the Lumen Market only the Lumen's goods.
+static func trade_allows(type: String, item: String) -> bool:
+	var def: Dictionary = Data.BUILDINGS[type]
+	if def.has("trade_only"):
+		return item in def["trade_only"]
+	return not item in def.get("trade_not", [])
+
+
 ## Tell Trading Post `i` to swap `gives` for `gets` ("" for one not chosen yet). False when it isn't a Trading Post, or
 ## the two are one good, or either is not a good. What it had loaded of the old good goes back to the stockpile.
 func set_trade(i: int, gives: String, gets: String) -> bool:
@@ -587,7 +595,7 @@ func set_trade(i: int, gives: String, gets: String) -> bool:
 	if not Data.BUILDINGS[b["type"]].get("trade", false) or (gives == gets and gives != ""):
 		return false
 	for id in [gives, gets]:
-		if id != "" and not Data.ITEMS.has(id):
+		if id != "" and (not Data.ITEMS.has(id) or not trade_allows(b["type"], id)):
 			return false
 	for id in b["inbuf"]:
 		_economy.give_back(id, b["inbuf"][id])
@@ -717,6 +725,12 @@ static func _building_from_dict(d: Dictionary) -> Dictionary:
 	b["ore"] = String(d.get("ore", ""))
 	b["give"] = String(d.get("give", ""))
 	b["get"] = String(d.get("get", ""))
+	if (
+		Data.BUILDINGS[b["type"]].get("trade", false)
+		and not (trade_allows(b["type"], b["give"]) and trade_allows(b["type"], b["get"]))
+	):
+		b["give"] = ""  # a save from before the Markets split: pick the goods again
+		b["get"] = ""
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
 	b["make"] = String(
 		d.get("make", def["makes"][0] if def.has("makes") else (def["floor"][0] if def.has("floor") else ""))
