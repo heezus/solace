@@ -2,6 +2,7 @@ extends Node2D
 ## Draws the map in a flat, bold-outlined vector style and builds the UI in code.
 
 const Data = preload("res://scripts/data.gd")
+const CardText = preload("res://scripts/card_text.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
@@ -422,7 +423,7 @@ func _lay_line() -> void:
 		return
 	var err := state.town.placement_error(placing, line[0])
 	if state.place_line(placing, line) == 0 and err != "":
-		_toast(err, 2.0)
+		_toast(CardText.refusal(state, placing, err), 2.0)
 
 
 func _tile_under() -> Vector2i:
@@ -445,7 +446,7 @@ func _click_tile(p: Vector2i) -> void:
 			if not state.economy.can_afford(state.town.price(placing)):
 				placing = ""
 		else:
-			_toast(err, 2.0)
+			_toast(CardText.refusal(state, placing, err), 2.0)
 		return
 	if state.town.building_at.has(p):
 		var note := Workers.click(state, state.town.building_at[p], true)

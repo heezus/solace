@@ -13,13 +13,20 @@ const ERA_TAB_LOCKED_LIVEWIRE := "Opens when the wires hum"
 ## When the era begins, this much coal is added to the seams that still hold some (split evenly), so the ground holds enough
 ## for the path to Skyward. Iron and steel in the era's costs were cut to 60% in the same step.
 const LIVEWIRE_COAL_GIFT := 600
+## The charts also mark the nearest seam no one has seen: its ground is lifted from the fog and the log says which way it lies.
+const LIVEWIRE_CHART_RADIUS := 3
+## A compass word, then tiles.
+const LIVEWIRE_CHART_LINE := "The Lumen charts mark a deep coal seam %s of the Hearth, about %d tiles off. It is on your map now."
 ## While the era runs, a Forge waits to start a batch when the stockpile holds more steel than iron, so steel never eats the
 ## iron the techs are waiting for.
 const STEEL_WAITS_STATUS := "Waiting: there is more steel than iron, so iron goes to the techs first"
 const STEEL_WAITS_ALERT := "Waiting: steel is ahead of iron"
 ## A full building whose roads reach a depot farther than this many tiles away says so: its hauler walks a long way for each load.
 const FAR_DEPOT_TILES := 14
-const FAR_DEPOT_STATUS := "Full: the depot is far away, so each load takes long. A Storehouse beside it would help"
+const FAR_DEPOT_STATUS := (
+	"Full: the depot is far away, so each load takes long. "
+	+ "A Storehouse beside it would help, and idle Kith are the haulers"
+)
 const FAR_DEPOT_ALERT := "Full: depot is far away"
 
 # --- The net ---

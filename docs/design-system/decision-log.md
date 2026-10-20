@@ -974,3 +974,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Taking a gift gives +6 trust as before; refusing takes 4. Any refusal caps the lean at neighbours, all four make enemies and close the Lumen Market.
 - Techs that wait on a gift wait only on the set being read, so refusing never blocks research; old saves and dev starts count as having taken the gift.
 
+## 2026-10-20: Livewire guidance (PR M)
+- Claude, from the AI player's Livewire reports and Jon's "Fix them", added four plain hints: the charts reveal the nearest unseen coal seam, a refused build names what is short, the far-depot status says idle Kith haul, and the tide's first line points at the Scorcher.
+- It changes no costs, rates or goals; only what the game says and what the fog hides at the start of the era.
+- The wire chain (Wire Mill needs power and copper) is left for a later pass.

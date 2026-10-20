@@ -3,6 +3,7 @@ extends RefCounted
 ## techs (all fourteen built over three stages), Power Poles and the net, the Generator, Wire and the Wire Mill, the Order Board with its
 ## Pause and Bring first verbs, the saves and the panels. Run from tests/run_tests.gd, which owns check() and the helpers.
 
+const CardText = preload("res://scripts/card_text.gd")
 const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Land = preload("res://scripts/land.gd")
@@ -37,6 +38,8 @@ func run(runner) -> void:
 	test_the_data_is_whole()
 	test_the_age_begins_when_the_card_is_put_away()
 	test_the_coal_fix()
+	test_the_charts_show_the_far_seam()
+	test_a_refusal_names_what_is_short()
 	test_the_fifth_tab_and_the_tree()
 	test_the_first_techs_can_be_bought()
 	test_poles_join_into_nets()
@@ -564,3 +567,44 @@ func test_the_wire_mill_draws_wire() -> void:
 		"a Wire Mill with no power makes none"
 	)
 	t.check(cold["status"].begins_with("No power") or cold["alert"] == "No power", "and says so: %s" % cold["status"])
+
+
+# --- Guidance ------------------------------------------------------------------
+
+
+func test_the_charts_show_the_far_seam() -> void:
+	var s := Sim.new()
+	s.generate(2)
+	s.world.grow_south()
+	s.fog.lengthen(s.world.height)
+	var p: Vector2i = s.world.unseen_seam_tile(s.world.camp_pos, s.fog)
+	t.check(p.x >= 0 and not s.fog.is_revealed(p), "a live seam is out of sight at the start")
+	s.story.record(Data.IRONFALL_EVENT)
+	s.story.card_up = true
+	s.story.record(Data.LIVEWIRE_EVENT)
+	s.story.card_up = false
+	s.story.update(s)
+	t.check(s.fog.is_revealed(p), "the era's start lifts the fog off the nearest unseen seam")
+	var said := false
+	for line in s.events:
+		said = said or line.begins_with("The Lumen charts mark a deep coal seam")
+	t.check(said, "and the log says which way it lies")
+	var n: int = s.events.size()
+	s.story.update(s)
+	t.check(s.events.size() == n, "once")
+
+
+func test_a_refusal_names_what_is_short() -> void:
+	var s := town()
+	s.tech_tree.researched["generator"] = true
+	s.economy.inv["stone"] = 3
+	var p: Vector2i = meadow(s)
+	var err: String = s.town.placement_error("generator", p)
+	t.check(err == "Not enough materials", "a Generator is refused for want of materials")
+	var text: String = CardText.refusal(s, "generator", err)
+	t.check(
+		text.begins_with("Not enough materials: ") and text.ends_with(" short"), "the toast says what is short: " + text
+	)
+	t.check(CardText.refusal(s, "generator", "Out of bounds") == "Out of bounds", "other reasons are shown as they are")
+	t.check(Data.FAR_DEPOT_STATUS.contains("idle Kith are the haulers"), "a far depot's status says who hauls")
+	t.check(Data.TIDE_BEGAN_LINE.contains("Scorcher"), "the tide's first line names the answer to it")

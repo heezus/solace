@@ -170,3 +170,10 @@ The AI player (page 25) played Livewire from the earned checkpoint and got 4 of 
 - **+600 coal.** When the Wires Hum card is put away and the era begins, 600 coal is added to the seams that still hold some, split evenly (`World.deepen_seams`, `Data.LIVEWIRE_COAL_GIFT`). The seams read "N of N left" above their old 500. The ground now holds about 1260, so the path fits with a margin, and the Lumen Market swap stays a spare lever.
 - **Steel waits behind iron.** While Livewire runs, a Forge does not start a batch when the stockpile holds more steel than iron (`Work.steel_waits`). Its status says so. Before this the forges turned every iron bar into steel the moment it existed and techs that need iron were never paid for.
 - **The hauler label.** A full building whose roads reach a depot more than 14 tiles away no longer says only "waiting for a hauler": it says the depot is far and a Storehouse beside it would help (`Roads.depot_far`).
+
+## Guidance (PR M)
+The AI player's Livewire runs showed the era hid what it needed. Four small words fix that, with no new numbers:
+- **The far seam.** When the era begins, the Lumen charts lift the fog off the nearest coal seam nobody has seen and the log says which way it lies and how far (`World.unseen_seam_tile`, `Story._chart_seam`).
+- **Refusals say why.** A placement refused for want of materials now says what is short ("Not enough materials: 12 Stone short", `CardText.refusal`).
+- **Who hauls.** The far-depot status adds that idle Kith are the haulers.
+- **The tide's answer.** The tide's first line and the Scorcher goal now say a Scorcher beside the Generator burns the Bloom back before it arrives.
