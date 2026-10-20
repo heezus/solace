@@ -940,3 +940,11 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Decal subjects now fit within 44x44 of their unchanged 96x96 cells, down from 76x76, preserving atlas IDs and alpha. Logical tile scale, sprite sizes and gameplay footprints stay unchanged.
 - A native Godot fixture uses existing production building/resource/Kith drawing helpers in identical before/after scenes at 24/48/80 px per tile. Original material PNGs, prompts and hashes remain archived for review.
 - These asset fixtures demonstrate scale correction; final biome/Bloom edge masking and per-era generated-map validation follow integration with the now-merged terrain kit #114. Native-source resolution remains 1254x1254 packed to 1920x1920 and is stated explicitly.
+
+## 2026-10-19: Wire corrected era ground through the merged terrain kit (PR #115)
+- Codex integrated the owner-requested era materials after #114 merged, selecting them from existing story milestones. Bronze Dawn follows the east growth; Ironfall earth follows the south boundary; Livewire has healthy, edge-focused Bloom and burnt/firebreak surfaces.
+- Packed visual mask channels share the existing terrain-mask sampler; related earth sheets use small grid atlases, keeping Compatibility at eight samplers. Single era turf textures are reused instead of copied into identical atlas columns.
+- Fog and resource-discovery gates precede resource-apron/Bloom/burnt masks; incremental redraws read existing tide/research state. Terrain generation, tile IDs, save state, simulation RNG, building footprints and global scale are unchanged.
+- Bloom patch ground and scattered vine detail are painted. Existing sample color identities and breathing animation remain; TideLook retains building/light/front indicators instead of laying square ground washes over the new material.
+- Native material fixtures and main-scene baseline/current captures cover the scale/readability review. Technical checks do not grant owner visual approval; #115 stays draft for that review, and source-resolution limits remain documented.
+- The kit's fine brush subscale also applies to era sheets: native in-game review caught oversized foliage when it was omitted. Era-only runtime mipmaps reduce minification shimmer at wide zoom, while unchanged sprite/decal imports retain their existing detail.

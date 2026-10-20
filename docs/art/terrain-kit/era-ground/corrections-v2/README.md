@@ -32,6 +32,6 @@ The output is `native/<material>.png`, with old on the left and corrected on the
 
 `material-metrics.json` compares grayscale mean and local detail RMS at 48 px/tile, with a two-pixel Gaussian low-pass used only for measurement. This is diagnostic, not a perceptual pass threshold. No blur is applied to the art by that measurement.
 
-## Still gated on the parent kit
+## Runtime follow-through
 
-Production still does not load these candidates. Wiring waits for terrain-kit PR #114 to merge. Bloom's final concentration at actual patch boundaries needs the existing patch masks in that integration; the new material reduces the oversized/busy motifs but does not implement the runtime edge mask. The final Starfall/base-family alignment and all 3 seeds x 4 eras wide/close game captures remain required. Skyreach is unchanged and concept-only.
+Terrain-kit PR #114 merged during the correction pass. Runtime integration now uses existing revealed patch/tide masks to concentrate Bloom at boundaries, darken known-resource aprons and paint burnt ground. See the parent integration review for real main-scene baseline/current pairs on all three preview seeds in all four eras. Skyreach remains unchanged and concept-only. Owner visual approval is still pending.
