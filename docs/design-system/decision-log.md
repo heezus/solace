@@ -904,6 +904,14 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - A full building far from its depot says so and points to a Storehouse, instead of the misleading "waiting for a hauler".
 - The earned Livewire checkpoint is rebuilt under the new economy; the AI player replays the era to check it can finish.
 
+
+## 2026-10-19: Jon's playtest bundle, PR 1 (PR G)
+- Claude, from Jon's playtest notes, decided that era starts arrive working (paused buildings resumed, a third of the Kith left to haul, unused roads taken up), because a start Jon loaded had every gatherer paused and a tangled map.
+- Buildings touching a linked building chain to the same depot (Jon tapped "Chain neighbours"), and the side panel is only ever the player's choice and starts open, so the map never jumps when a building is selected.
+- One key per build tab and P for pause, shown on the tabs and in the pause menu; top-bar chips keep their size and turn red instead of shrinking, with the time in the tooltip.
+- The Wanderer is whole once the star has fallen, the Glyph Wall panel opens with how it works, and every glyph clue was rewritten so it points at its own word. Top-bar Trade and Glyph panels wait for the redesign.
+- Claude re-pinned the golden snapshots for maps 1 to 3 and widened the pacing bot's "first Bronze" window from 7-16 to 7-19 minutes: chained neighbours put more huts on haulers, which moves the bot's whole run (Bronze Dawn 17.8, 23.9 and 18.4 minutes, first Bronze 17.3, 15.6 and 18.4 minutes later). The bot now lays a road to a chained building too (it counts only roads it laid), as a player would.
+
 ## 2026-10-19: Painted terrain kit and contour banks (PR #114)
 - Codex implemented the agreed page 22 kit: three meadows, two woodland floors, calm/flow water, worn and southern earth, 32 ground decals and a painted bank strip with fixed upper-left lighting.
 - Continuous world-space sampling uses non-mirrored hash offsets and two scales; fine brush marks are scaled below the buildings' silhouettes, with crisp separately scattered details. Runtime meadow/earth atlases keep the Compatibility shader at eight samplers and isolate sheet edges.

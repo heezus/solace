@@ -27,6 +27,12 @@ static func linked(s, b: Dictionary) -> bool:
 	return _cache(s)["link"].has(b["pos"])
 
 
+## True when b's own sides reach a depot by road (or it stands beside one), not just through a linked neighbour (see
+## _chain_neighbours).
+static func on_a_road(s, b: Dictionary) -> bool:
+	return _cache(s)["on_road"].has(b["pos"])
+
+
 ## True when a road tile that was laid touches b and its network reaches a depot. Standing right beside a
 ## depot links a building too (linked), but that is not a road: the "Lay a Road" goal asks for this.
 static func road_linked(s, b: Dictionary) -> bool:
@@ -121,6 +127,44 @@ static func cart_can_reach(s, from: Vector2i, to: Vector2i) -> bool:
 ## True when Kith k, the way it rides now (see ride), can roll from `from` to `to`.
 static func can_reach(s, k: Dictionary, from: Vector2i, to: Vector2i) -> bool:
 	return from == to or not _route(s, from, to, ride(k)).is_empty()
+
+
+## The road tiles the buildings need: for every building a road links to a depot, the way along the roads (and through building
+## courtyards, as the networks do) from a road beside it to a road beside a depot, taken as a breadth-first tree from the depots so
+## the ways share tiles. Every other road tile joins nothing that is used.
+static func needed_tiles(s) -> Dictionary:
+	var parent := {}  # road tile -> the road tile before it on the way to a depot (a depot's doorstep tile is its own)
+	var todo: Array = []
+	for depot in depots(s):
+		for n in SIDES:
+			var q: Vector2i = depot + n
+			if s.world.roads.has(q) and not parent.has(q):
+				parent[q] = q
+				todo.append(q)
+	var head := 0
+	while head < todo.size():  # road tiles and the courtyards of buildings roads run through, as Roads._build joins them
+		var p: Vector2i = todo[head]
+		head += 1
+		for n in SIDES:
+			var q: Vector2i = p + n
+			if not parent.has(q) and (s.world.roads.has(q) or _passage(s, q)):
+				parent[q] = p
+				todo.append(q)
+	var need := {}
+	var link: Dictionary = _cache(s)["link"]
+	var net: Dictionary = _cache(s)["net"]
+	for b in s.town.buildings:
+		if not link.has(b["pos"]):
+			continue
+		for n in SIDES:
+			var q: Vector2i = b["pos"] + n
+			if not (parent.has(q) and net.get(q, -1) == link[b["pos"]][0]):
+				continue
+			while not need.has(q):
+				need[q] = true
+				q = parent[q]
+			break
+	return need
 
 
 ## The road tiles from `from` to `to`, both ends included ([] when the roads don't join them). The two ends may be
@@ -235,6 +279,8 @@ static func _build(s) -> Dictionary:
 						best_d = d
 		if not best.is_empty():
 			link[b["pos"]] = best
+	var on_road := link.duplicate()
+	_chain_neighbours(s, link)
 	var grid := _road_grid(s, "walk")
 	var cart_grid := _road_grid(s, "cart")
 	var waiting_posts: Array = []
@@ -250,6 +296,7 @@ static func _build(s) -> Dictionary:
 		"net": net,
 		"depot_nets": at_depot,
 		"link": link,
+		"on_road": on_road,
 		"grid": grid,
 		"cart_grid": cart_grid,
 	}
@@ -277,6 +324,26 @@ static func _road_grid(s, how: String) -> AStarGrid2D:
 			grid.set_point_solid(p, false)
 			grid.set_point_weight_scale(p, s.pathing.walk_cost(p) * Data.PASSAGE_COST)
 	return grid
+
+
+## A building that touches a linked hut, workshop, house, shed, tower or water wheel is linked the same way: haulers walk through that
+## building's cell to it (the walking grid opens those cells), so a tight block of buildings needs a road to only one of them.
+static func _chain_neighbours(s, link: Dictionary) -> void:
+	var changed := true
+	while changed:
+		changed = false
+		for b in s.town.buildings:
+			if link.has(b["pos"]) or not Buildings.served(b):
+				continue
+			for n in SIDES:
+				var q: Vector2i = b["pos"] + n
+				if not _passage(s, q):
+					continue
+				var a: Dictionary = s.town.buildings[s.town.building_at[q]]
+				if link.has(a["pos"]):
+					link[b["pos"]] = link[a["pos"]]
+					changed = true
+					break
 
 
 ## True for a building's cell a road can run through: a hut, workshop, house, shed, tower or water wheel. A road ends at

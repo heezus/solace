@@ -14,6 +14,7 @@ const Data = preload("res://scripts/data.gd")
 const Ui = preload("res://scripts/ui.gd")
 const MenuFonts = preload("res://scripts/menu_fonts.gd")
 const BuildInfo = preload("res://scripts/build_info.gd")
+const Hotkeys = preload("res://scripts/hotkeys.gd")
 const DebugKeys = preload("res://scripts/debug_keys.gd")
 const CutsceneSettings = preload("res://scripts/cutscene_settings.gd")
 const PlayLogSettings = preload("res://scripts/play_log_settings.gd")
@@ -60,6 +61,12 @@ func setup() -> void:
 	v.add_child(playlog_toggle)
 	debug_toggle = _switch(Data.DEBUG_KEYS_LABEL, Data.DEBUG_HELP, DebugKeys.set_on)
 	v.add_child(debug_toggle)
+	var keys := Ui.label("\n".join(Hotkeys.LIST.map(func(row): return "%s: %s" % row)), Ui.MIN_TEXT)
+	keys.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	keys.visible = false
+	MenuFonts.style_caption(keys)
+	v.add_child(_button("Keys", false, func(): keys.visible = not keys.visible))
+	v.add_child(keys)
 	status = Ui.label("", Ui.MIN_TEXT)
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

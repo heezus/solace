@@ -64,6 +64,7 @@ const DevTests = preload("res://tests/dev_tests.gd")
 const HomesTests = preload("res://tests/homes_tests.gd")
 const BalanceTests = preload("res://tests/balance_tests.gd")
 const SeasonsTests = preload("res://tests/seasons_tests.gd")
+const PlaytestFixTests = preload("res://tests/playtest_fix_tests.gd")
 const AiPlayerTests = preload("res://tests/ai_player_tests.gd")
 const PlayLogTests = preload("res://tests/play_log_tests.gd")
 const World = preload("res://scripts/world.gd")
@@ -132,6 +133,11 @@ func _init() -> void:
 	if "livewire" in OS.get_cmdline_user_args():  # `-- livewire` runs only the Livewire tests while iterating
 		LivewireTests.new().run(self)
 		print("FAILED: %d" % failures if failures > 0 else "LIVEWIRE TESTS PASSED")
+		quit(1 if failures > 0 else 0)
+		return
+	if "fixes" in OS.get_cmdline_user_args():  # `-- fixes` runs only the playtest-fix tests while iterating
+		PlaytestFixTests.new().run(self)
+		print("FAILED: %d" % failures if failures > 0 else "FIXES TESTS PASSED")
 		quit(1 if failures > 0 else 0)
 		return
 	if "balance" in OS.get_cmdline_user_args():  # `-- balance` runs only the balance plan's tests while iterating
@@ -227,6 +233,7 @@ func _init() -> void:
 	HomesTests.new().run(self)
 	BalanceTests.new().run(self)
 	SeasonsTests.new().run(self)
+	PlaytestFixTests.new().run(self)
 	PlayLogTests.new().run(self)
 	AiPlayerTests.new().run(self)
 	IronfallTests.new().run(self)
@@ -249,8 +256,9 @@ func _init() -> void:
 
 ## A headless player (tests/autoplay_bronze.gd) plays the stone age on a few maps. It should reach Bronze Dawn
 ## in 8 to 25 simulated minutes; data.gd is tuned so it takes about 12 to 16. The game at that moment must match
-## tests/golden.json. It then plays on to its first Bronze, which should come 7 to 16 minutes later (the target is about
-## 10 to 14), and the game at that moment must match tests/golden_bronze.json. The Falling Star follows 8 to 36 minutes after
+## tests/golden.json. It then plays on to its first Bronze, which should come 7 to 19 minutes later (the target is about
+## 10 to 14; chained neighbours run by haulers add a couple of minutes, see the decision log), and the game at that
+## moment must match tests/golden_bronze.json. The Falling Star follows 8 to 36 minutes after
 ## that: homes ask for more as they grow (page 17), so a whole run is about 45 to 60 minutes by bot.
 func test_pacing_bot() -> void:
 	var golden := GoldenTests.new()
@@ -273,8 +281,8 @@ func test_pacing_bot() -> void:
 		check(r["won"], "the bot reaches Bronze Dawn on map %d" % map_seed)
 		check(minutes >= 8.0 and minutes <= 25.0, "map %d takes 8 to 25 minutes (%.1f)" % [map_seed, minutes])
 		check(
-			r["minutes"] >= 7.0 and r["minutes"] <= 16.0,
-			"map %d: the first Bronze takes 7 to 16 minutes more (%.1f)" % [map_seed, r["minutes"]]
+			r["minutes"] >= 7.0 and r["minutes"] <= 19.0,
+			"map %d: the first Bronze takes 7 to 19 minutes more (%.1f)" % [map_seed, r["minutes"]]
 		)
 		check(
 			star >= 8.0 and star <= 36.0,

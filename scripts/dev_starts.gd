@@ -10,6 +10,7 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
+const StartTidy = preload("res://scripts/start_tidy.gd")
 const RunSave = preload("res://scripts/run_save.gd")
 const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
 const AutoplayLivewire = preload("res://tests/autoplay_livewire.gd")
@@ -60,7 +61,9 @@ static func ids() -> Array:
 static func build(id: String) -> Sim:
 	for row in _table():
 		if row[0] == id:
-			return row[2].call()
+			var s: Sim = row[2].call()
+			StartTidy.tidy(s)  # the bots' surplus pauses are not a player's start
+			return s
 	return null
 
 
@@ -347,15 +350,34 @@ static func _livewire_tide() -> Sim:
 
 
 static func _livewire_tide_on(s: Sim) -> Sim:
-	for tech in [
-		"power_poles", "order_board", "generator", "tide_watch", "arc_lamps", "scorcher", "firebreaks", "living_ground"
-	]:
-		s.tech_tree.researched[tech] = true
+	_learn(
+		s,
+		[
+			"power_poles",
+			"order_board",
+			"generator",
+			"tide_watch",
+			"arc_lamps",
+			"scorcher",
+			"firebreaks",
+			"living_ground"
+		]
+	)
 	for id in ["wire", "coal", "steel", "copper", "brick"]:
 		s.economy.add(id, 200)
 	_lay_net(s)
 	_wait(s, TIDE_START_SECONDS)
 	return s
+
+
+## Mark these techs learned, and everything each one needs: a start never holds a tech whose requirements are missing, so the tech
+## tree's slots and routes read as they would in a real run.
+static func _learn(s: Sim, techs: Array) -> void:
+	for tech in techs:
+		if s.tech_tree.researched.has(tech):
+			continue
+		s.tech_tree.researched[tech] = true
+		_learn(s, Data.TECHS[tech].get("requires", []))
 
 
 ## What the first two stages' goals ask, done, so the Goals panel at a later start is not stuck on "Lay two Power Poles": a
@@ -383,8 +405,7 @@ static func _livewire_gate() -> Sim:
 
 
 static func _livewire_gate_on(s: Sim) -> Sim:
-	for tech in ["factory_floor", "shard_dynamo", "chain_orders"]:
-		s.tech_tree.researched[tech] = true
+	_learn(s, ["factory_floor", "shard_dynamo", "chain_orders"])
 	for id in ["steel", "iron", "wire", "brick"]:
 		s.economy.add(id, 200)
 	var pole := _where(s, "power_pole")

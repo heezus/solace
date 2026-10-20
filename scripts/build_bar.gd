@@ -17,6 +17,7 @@ const Hands = preload("res://scripts/hands.gd")
 const CardText = preload("res://scripts/card_text.gd")
 const FieldText = preload("res://scripts/field_text.gd")
 const HomesStrip = preload("res://scripts/homes_strip.gd")
+const Hotkeys = preload("res://scripts/hotkeys.gd")
 
 const BUTTON := Vector2(172, 64)
 const TEXT_X := 42.0  # the title and state line start here, beside the 30 px icon
@@ -81,7 +82,7 @@ func setup(game: Sim) -> void:
 	tabs.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	tab_scroll.add_child(tabs)
 	for tab_name in Data.BUILD_TABS.keys() + [CRAFT_TAB]:
-		var b := Ui.button(tab_name)
+		var b := Ui.button("%s · %s" % [tab_name, Hotkeys.key_name(tab_name)])
 		b.toggle_mode = true
 		b.custom_minimum_size = Vector2(100, 30)
 		b.pressed.connect(_tab_pressed.bind(tab_name))
@@ -133,6 +134,12 @@ func _build_drawer(game: Sim) -> void:
 		craft_box.add_child(b)
 		craft_buttons[r] = b
 	row.add_child(craft_box)
+
+
+## A tab's key was pressed: the same as a click on it, unless the tab has nothing to show yet.
+func press_tab(tab_name: String) -> void:
+	if tab_shown(tab_name):
+		_tab_pressed(tab_name)
 
 
 ## A tab was clicked: open the drawer on it, or put the drawer away when it is the tab already showing.
