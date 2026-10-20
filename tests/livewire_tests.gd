@@ -40,6 +40,7 @@ func run(runner) -> void:
 	test_the_coal_fix()
 	test_the_charts_show_the_far_seam()
 	test_a_refusal_names_what_is_short()
+	test_the_wire_mill_says_what_it_needs()
 	test_the_fifth_tab_and_the_tree()
 	test_the_first_techs_can_be_bought()
 	test_poles_join_into_nets()
@@ -608,3 +609,28 @@ func test_a_refusal_names_what_is_short() -> void:
 	t.check(CardText.refusal(s, "generator", "Out of bounds") == "Out of bounds", "other reasons are shown as they are")
 	t.check(Data.FAR_DEPOT_STATUS.contains("idle Kith are the haulers"), "a far depot's status says who hauls")
 	t.check(Data.TIDE_BEGAN_LINE.contains("Scorcher"), "the tide's first line names the answer to it")
+
+
+func test_the_wire_mill_says_what_it_needs() -> void:
+	var s := town()
+	s.tech_tree.researched["power_poles"] = true
+	var c := meadow(s)
+	s.people.found(8)
+	var mill := put(s, "wire_mill", c)
+	tick_for(s, 30.0)
+	t.check(
+		mill["status"] == Data.NET_NO_POWER_STATUS,
+		"a dark mill says to lay a pole and fuel an engine: %s" % mill["status"]
+	)
+	put(s, "power_pole", c + Vector2i(2, 0))
+	put(s, "generator", c + Vector2i(2, 2))["inbuf"] = {"coal": 5}
+	s.economy.inv["copper"] = 0
+	s.town.road_rev += 1
+	mill["inbuf"] = {"copper": 1}
+	tick_for(s, 20.0)  # the engine lights while the mill asks
+	mill["inbuf"] = {}
+	tick_for(s, 1.0)
+	t.check(
+		Data.INPUT_HINTS["wire_mill"] in mill["status"],
+		"a powered mill with no Copper says where it comes from: %s" % mill["status"]
+	)

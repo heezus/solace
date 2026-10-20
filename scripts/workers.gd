@@ -239,6 +239,8 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 		var how: String = (
 			Data.NO_POWER_STATUS if s.tech_tree.researched.has("boiler") else "No power: build a Water Wheel nearby"
 		)
+		if s.tech_tree.researched.has("power_poles"):
+			how = Data.NET_NO_POWER_STATUS
 		s.town.set_status(b, how, "No power")
 		return
 	if not s.people.worker_home(b):
@@ -321,6 +323,8 @@ static func idle_reason(s, b: Dictionary, def: Dictionary) -> void:
 			if b["inbuf"].get(id, 0) + b["incoming"].get(id, 0) < recipe[id] and s.economy.inv.get(id, 0) == 0:
 				how = "stockpile is out"
 	var more := "" if auto else GrowthNote.hint(s)
+	var source: String = Data.INPUT_HINTS.get(b["type"], "")
+	more = source if more == "" else more if source == "" else source + ". " + more
 	s.town.set_status(
 		b,
 		"Needs %s (%s)" % [", ".join(missing), how] + (". " + more if more != "" else ""),
