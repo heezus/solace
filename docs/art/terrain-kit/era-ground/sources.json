@@ -1,0 +1,168 @@
+{
+  "starfall-meadow.png": {
+    "source": "corrections-v2/starfall-meadow-quiet-source.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_sha256": "635e75e3959bb4e4453685ba41da38de1ad32827470b46bad99808772966e4e4",
+    "packed_size": [
+      1920,
+      1920
+    ],
+    "packed_sha256": "78dea631c315e87f5182c63403fe0633c100f877414fb3b2662b2c54afda56f7",
+    "wrap_edge_max_difference": 0,
+    "mean_rgb": [
+      55.8,
+      78.06,
+      52.0
+    ]
+  },
+  "starfall-woodland.png": {
+    "source": "corrections-v2/starfall-woodland-quiet-source.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_sha256": "3c1a5759a4e7a60d13719908f6640d03c323e649b50533ae4be14e480651c33a",
+    "packed_size": [
+      1920,
+      1920
+    ],
+    "packed_sha256": "e942db8e729bc7c92c35205729072f57e6aaa50811093a000418b787b9d078c1",
+    "wrap_edge_max_difference": 0,
+    "mean_rgb": [
+      63.88,
+      66.7,
+      48.43
+    ]
+  },
+  "earth-south.png": {
+    "source": "corrections-v2/earth-south-source.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_sha256": "135aab879630b8e4462cac4d2faddc04e3e0e133a5c444d760d2ad452b3ae7df",
+    "packed_size": [
+      1920,
+      1920
+    ],
+    "packed_sha256": "477393c69d36f09389777c42525cf19d86717ad71401940144f320df2e0600b0",
+    "wrap_edge_max_difference": 0,
+    "mean_rgb": [
+      54.88,
+      50.74,
+      40.65
+    ]
+  },
+  "livewire-firebreak.png": {
+    "source": "corrections-v2/livewire-firebreak-source.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_sha256": "3b1841eae7d294d347e67d77cf8c83fd44c06df4f4093a3c01daabd5c5d2fb00",
+    "packed_size": [
+      1920,
+      1920
+    ],
+    "packed_sha256": "209ffbe1fc79f610fd80b3ffc3525ccfe901f0c632177bb4e9e2858d9c53f20f",
+    "wrap_edge_max_difference": 0,
+    "mean_rgb": [
+      37.18,
+      36.49,
+      30.67
+    ]
+  },
+  "livewire-healthy.png": {
+    "source": "corrections-v2/livewire-healthy-source.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_sha256": "b82095fdd3bec48dedd7cb0f449409a209e896ea2719c439411f58cd4fe7be12",
+    "packed_size": [
+      1920,
+      1920
+    ],
+    "packed_sha256": "d3bd3fa66dbeb5af3fee85f85a0794312fe3b0af325c3cd2268df959ebe5c39d",
+    "wrap_edge_max_difference": 0,
+    "mean_rgb": [
+      81.5,
+      89.34,
+      38.61
+    ]
+  },
+  "bronze-dawn-earth.png": {
+    "source": "corrections-v2/bronze-dawn-earth-source.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_sha256": "26b0335d41de2e9c3b369c5c82a8a4ab21c13b7319c52c03f644cdd6681bc0d2",
+    "packed_size": [
+      1920,
+      1920
+    ],
+    "packed_sha256": "5f57b225cbd5f58d6014e5827d54d0ae069c0f798fd8bb077ec35146cd780be8",
+    "wrap_edge_max_difference": 0,
+    "mean_rgb": [
+      151.6,
+      118.1,
+      62.73
+    ]
+  },
+  "ironfall-apron.png": {
+    "source": "corrections-v2/ironfall-apron-source.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_sha256": "a8755487f3f882238aefec75ae853321d32fa3df27aab163e855aed28ad4e4fb",
+    "packed_size": [
+      1920,
+      1920
+    ],
+    "packed_sha256": "ac64dab307ca18a0fc6cb1b29c2880e4ba94deab664af94c73673527fa308dd0",
+    "wrap_edge_max_difference": 0,
+    "mean_rgb": [
+      30.11,
+      28.02,
+      23.73
+    ]
+  },
+  "livewire-bloom.png": {
+    "source": "corrections-v2/livewire-bloom-source.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_sha256": "4f99b9b357598d5a692e4febd26d99db74e96f192624b6761bc2ebedd9e44a54",
+    "packed_size": [
+      1920,
+      1920
+    ],
+    "packed_sha256": "8c0e2b1678b4a7e132496f3eb38d67efb53eb61e326584c222e979dfafeb3495",
+    "wrap_edge_max_difference": 0,
+    "mean_rgb": [
+      83.49,
+      84.95,
+      39.88
+    ]
+  },
+  "decals.png": {
+    "source": "decals-objects-source.png",
+    "source_size": [
+      1774,
+      887
+    ],
+    "source_sha256": "b7d4f017ab0d3398e634452de01c693d429ac17b58a07dbb4e01195f75ee1990",
+    "packed_size": [
+      768,
+      384
+    ],
+    "packed_sha256": "8b743402159e571f7aa4d524aae40c8f96c91556b3eb9228b1b2499d15c66553",
+    "alpha_preserved": true
+  }
+}

@@ -1,15 +1,10 @@
 extends RefCounted
-## Placeholder look for the tide (design-system/23-livewire.md, stage 2), drawn over the map until Codex paints it (docs/art/requests.md,
-## "The tide"): a wash on Bloom ground that keeps its own tile (ore, water, a road, a building), the ash of burnt ground, a pale glow
-## round a lit Arc Lamp, a flame ring round a burning Scorcher, a tint on overgrown buildings and, with Tide Watch, the front. Bloom
-## ground the tide made is a tile of its own (`bloom_tide`, drawn by scripts/bloom_look.gd). Static: it takes the CanvasItem to draw
-## on (the map) and the Sim, and only draws tiles the fog has lifted from.
+## Tide object/status overlays: lamp glow, Scorcher flame, overgrown buildings and Tide Watch front.
+## WorldGround paints Bloom/burnt ground. All overlays remain gated by the existing tide and fog state.
 
 const Data = preload("res://scripts/data.gd")
 
 const TILE := 48.0  # map px per tile at the default zoom (scripts/overlays.gd)
-const WASH := Color(0.62, 0.22, 0.58, 0.32)
-const ASH := Color(0.16, 0.14, 0.14, 0.42)
 const FRONT := Color(0.85, 0.35, 0.72, 0.55)
 const FRONT_SOON := Color(0.95, 0.5, 0.85, 0.9)
 const ARC := Color(1.0, 0.95, 0.7, 0.1)
@@ -25,16 +20,6 @@ static func draw(ci: CanvasItem, s) -> void:
 	var tide = s.tide
 	if not tide.begun:
 		return
-	var seen := Rect2i(0, 0, s.world.width, s.world.height)  # only the tiles in view: the Bloom may cover most of the map
-	if ci.has_method("_visible_tiles"):
-		seen = ci._visible_tiles()
-	for y in range(seen.position.y, seen.end.y):
-		for x in range(seen.position.x, seen.end.x):
-			var p := Vector2i(x, y)
-			if tide.grown.has(p) and s.fog.is_revealed(p) and s.world.tile_at(p) != Data.TILE_BLOOM_TIDE:
-				ci.draw_rect(_rect(p), WASH)
-			elif tide.burnt.has(p) and s.fog.is_revealed(p):
-				ci.draw_rect(_rect(p).grow(-2.0), ASH)
 	for b in s.town.buildings:
 		var def: Dictionary = Data.BUILDINGS[b["type"]]
 		var at := (Vector2(b["pos"]) + Vector2(0.5, 0.5)) * TILE
