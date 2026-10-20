@@ -165,6 +165,39 @@ const BONUSES := {
 		"gift": "growth",
 		"near_cairn": true
 	},
+	# The Kith's twins of the gifts (Data.TWINS, design-system/29-two-roads.md): the same help, bought by refusing the gift. `twin`
+	# needs that twin paid for (Starfall.twin); they work within Data.SHARDLIGHT_RADIUS tiles of what they name (`near_types`).
+	"cairnfire":
+	{
+		"name": "Cairnfire",
+		"group": "speed",
+		"add": 0.25,
+		"kinds": ["gatherer"],
+		"twin": "light",
+		"near_types": ["shard_cairn"],
+		"radius": 4.0
+	},
+	"orchard":
+	{
+		"name": "Orchard",
+		"group": "yield",
+		"add": 0.5,
+		"item": "berries",
+		"kinds": ["gatherer"],
+		"twin": "growth",
+		"near_types": ["dwelling"],
+		"radius": 4.0
+	},
+	"smiths_rule":
+	{
+		"name": "Smith's Rule",
+		"group": "speed",
+		"add": 0.25,
+		"kinds": ["processor"],
+		"twin": "craft",
+		"near_types": ["smelter"],
+		"radius": 4.0
+	},
 	"shardwork":
 	# Era 4, stage 2: what two Lessons give (scripts/teardown.gd). `lesson` needs it learned; `fed` needs one of that good in the
 	{"name": "Shardwork", "group": "speed", "add": 0.25, "kinds": ["processor"], "gift": "craft", "near_cairn": true},

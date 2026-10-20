@@ -946,3 +946,10 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Claude, from the AI player's Livewire reports and Jon's "Fix them", added four plain hints: the charts reveal the nearest unseen coal seam, a refused build names what is short, the far-depot status says idle Kith haul, and the tide's first line points at the Scorcher.
 - It changes no costs, rates or goals; only what the game says and what the fog hides at the start of the era.
 - The wire chain (Wire Mill needs power and copper) is left for a later pass.
+
+## 2026-10-20: Two roads built (PR L)
+- Claude, on Jon's "yes go ahead", built the "Two roads" design (page 29): each Lumen gift can be refused for the Kith's own twin of it, chosen on a card when its set is read.
+- The twins are standing effects with a price in the stores (Charcoal or Berries a minute, 40 Wood once), not buildings, so there is no new art; Smith's Rule uses a Smelter instead of a Forge because a Forge only arrives in Ironfall.
+- Taking a gift gives +6 trust as before; refusing takes 4. Any refusal caps the lean at neighbours, all four make enemies and close the Lumen Market.
+- Techs that wait on a gift wait only on the set being read, so refusing never blocks research; old saves and dev starts count as having taken the gift.
+
