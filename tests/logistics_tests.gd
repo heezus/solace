@@ -420,6 +420,7 @@ func test_the_bar_and_hover_show_the_current_copy_price() -> void:
 	t.check(price == {"stone": 13, "clay": 13}, "two kilns stand: 30% more")
 	var bar = BuildBar.new()
 	bar.setup(s)
+	bar.press_tab("Workshops")  # only the open drawer's cards are kept up to date
 	bar.refresh("", 0)
 	var pips: HBoxContainer = bar.build_buttons["kiln"]["pips"]
 	t.check(pips.get_child(0).get_child(1).text == "13", "the card's pips say 13, not the listed 10")

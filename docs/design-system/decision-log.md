@@ -918,3 +918,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - The bank uses the existing water-mask gradient and two tangent projections, so painted soil, stones and shallows follow bends without extra edge tiles or map-generation changes.
 - Decals use the map-seeded coordinate hash, respect fog and road/foundation footprints, and sit below sprites. Tile IDs, gameplay, save semantics and the 48 px baseline remain unchanged.
 - Before/after native previews cover seeds 3, 11 and 42. Source dimensions and resampling are recorded; packed 1920 px sheets are not claimed as native 1920 px generated originals.
+
+## 2026-10-19: Lag pass, less work every frame (PR H)
+- Claude, from Jon's "clicks are just laggy in general", cut work done every frame that never changed: the ground mask redraws only the tiles that changed, the fog edge triangles are cached until the fog moves, the lessons overlay loops over what is on screen, and the build bar keeps only the open drawer's cards up to date.
+- Nothing looks or plays differently; a test checks that the incremental ground mask equals a full rebuild.
