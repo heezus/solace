@@ -161,6 +161,10 @@ func _process(delta: float) -> void:
 			var style := Messages.style_of(e)
 			messages.push(e, style["seconds"], style["sticky"], style["key"])
 	state.events.clear()
+	for i in state.seasons.pops.size():  # what a season takes floats up over the Hearth, one line above the last
+		var at := Overlays.center(state.world.camp_pos) - Vector2(0, 12 + 16 * i)
+		popups.append({"pos": at, "text": state.seasons.pops[i], "t": 0.0, "col": Ui.SHORT})
+	state.seasons.pops.clear()
 	if state.won and not banner_shown:
 		banner_shown = true  # the stone age ends with a banner, and the game goes on
 		messages.push(Data.ERA_BANNER_TITLE + "  ·  " + Data.ERA_BANNER_TEXT, BANNER_SECONDS)
