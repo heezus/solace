@@ -30,7 +30,16 @@ func show_for(b: Dictionary) -> void:
 		return
 	var f := state.starfall
 	var now := (
-		"%s|%s|%s|%s|%s" % [f.copied, f.guesses, f.locked, f.guests or f.trust >= Data.CONTEXT_TRUST, f.answered.size()]
+		"%s|%s|%s|%s|%s|%s|%s"
+		% [
+			f.copied,
+			f.guesses,
+			f.locked,
+			f.guests or f.trust >= Data.CONTEXT_TRUST,
+			f.answered.size(),
+			f.roads,
+			f.road_queue
+		]
 	)
 	if now == key:
 		return
@@ -50,8 +59,14 @@ func show_for(b: Dictionary) -> void:
 			add_child(head)
 		if f.locked.has(gset["id"]) and Data.LUMEN_GIFTS.has(gset["id"]):
 			var gift: Dictionary = Data.LUMEN_GIFTS[gset["id"]]
-			var gift_line := _wrapped(Data.GIFT_LINE % [gift["name"], gift["note"]], Ui.GOOD)
-			add_child(IconRow.wrap("gift_" + gset["id"], gift_line, gift["name"]))
+			if f.roads.get(gset["id"], "") == "refuse":
+				var twin: Dictionary = Data.TWINS[gset["id"]]
+				add_child(_wrapped(Data.TWIN_LINE % [twin["name"], twin["note"]], Ui.GOOD))
+			elif f.road_queue.has(gset["id"]):
+				add_child(_wrapped(Data.TWIN_WAITING_LINE, Ui.TEXT_DIM))
+			else:
+				var gift_line := _wrapped(Data.GIFT_LINE % [gift["name"], gift["note"]], Ui.GOOD)
+				add_child(IconRow.wrap("gift_" + gset["id"], gift_line, gift["name"]))
 		for g in f.glyph_order(n):
 			if f.copied.has(g):
 				add_child(_row(g, f.locked.has(gset["id"])))

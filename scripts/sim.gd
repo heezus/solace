@@ -86,7 +86,7 @@ func _init() -> void:
 	town.story_has = story.has_event
 	tech_tree.story_has = story.has_event
 	story.recorded.connect(_on_story)
-	people.gift = starfall.gift
+	people.gift = starfall.boon  # the Healer's leaves, from the gift or the Kith's own twin
 	starfall.said.connect(_announce)
 	starfall.moment.connect(story.record)
 	teardown.said.connect(_announce)
@@ -97,7 +97,7 @@ func _init() -> void:
 	town.overgrown = tide.is_overgrown_at
 	town.on_bloom = tide.bloom_at
 	town.lesson_has = teardown.knows
-	tech_tree.gift_has = starfall.gift  # a tech may wait on a gift read or a Lesson learned (Ironfall)
+	tech_tree.gift_has = starfall.read  # a tech may wait on a gift read or a Lesson learned (Ironfall)
 	tech_tree.lesson_has = teardown.knows
 	tech_tree.deed_has = gate.deed  # the Skyward gate's deeds (Livewire)
 

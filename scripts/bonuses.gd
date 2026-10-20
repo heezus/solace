@@ -22,6 +22,8 @@ static func active(s, b: Dictionary, item: String) -> Array:
 			continue
 		if bonus.has("gift") and not s.starfall.gift(bonus["gift"]):
 			continue
+		if bonus.has("twin") and not s.starfall.twin(bonus["twin"]):
+			continue
 		if bonus.has("lesson") and not s.teardown.knows(bonus["lesson"]):
 			continue
 		if bonus.get("dark", false) and not s.starfall.dark():
