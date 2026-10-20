@@ -8,6 +8,7 @@ signal changed
 const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Ui = preload("res://scripts/ui.gd")
+const Buildings = preload("res://scripts/buildings.gd")
 
 var state: Sim
 var index := -1  # the Trading Post's place in the building list, -1 for none
@@ -50,7 +51,7 @@ func cycle(which: String) -> void:
 		return
 	var b: Dictionary = state.town.buildings[index]
 	var other: String = b["get" if which == "give" else "give"]
-	var next := next_good(state.economy.seen, b[which], other)
+	var next := next_good(state.economy.seen, b[which], other, b["type"])
 	if next == "":
 		return
 	var done := (
@@ -66,9 +67,11 @@ static func label_text(line: String, item: String) -> String:
 
 
 ## The good after `current` among the ones held before (`seen`), in Data.ITEM_ORDER, skipping `other`: "" when there is
-## none to choose.
-static func next_good(seen: Dictionary, current: String, other: String) -> String:
-	var goods: Array = Data.ITEM_ORDER.filter(func(id): return seen.has(id) and id != other)
+## none to choose. Only the goods a building of `type` trades count.
+static func next_good(seen: Dictionary, current: String, other: String, type := "trading_post") -> String:
+	var goods: Array = Data.ITEM_ORDER.filter(
+		func(id): return seen.has(id) and id != other and Buildings.trade_allows(type, id)
+	)
 	if goods.is_empty():
 		return ""
 	return goods[(goods.find(current) + 1) % goods.size()]

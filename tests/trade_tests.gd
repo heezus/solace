@@ -68,13 +68,15 @@ func test_the_lumen_will_trade_once_trust_stands() -> void:
 func test_the_market_swaps_two_for_one() -> void:
 	var s := _open()
 	var i := _build(s, "lumen_market")
-	t.check(s.town.set_trade(i, "wood", "stone"), "the Market is set to give Wood for Stone")
+	t.check(s.town.set_trade(i, "coal", "shard"), "the Market is set to give Coal for a Shard")
 	var b: Dictionary = s.town.buildings[i]
-	t.check(Buildings.recipe_in(b) == {"wood": 2}, "it takes 2")
-	t.check(Buildings.recipe_out(b) == {"stone": Data.TRADE_GET}, "and gives 1")
+	t.check(Buildings.recipe_in(b) == {"coal": 2}, "it takes 2")
+	t.check(Buildings.recipe_out(b) == {"shard": Data.TRADE_GET}, "and gives 1")
+	t.check(not s.town.set_trade(i, "wood", "stone"), "the Market does not deal in Kith goods")
 	var post := _build(s, "trading_post")
 	s.town.set_trade(post, "wood", "stone")
 	t.check(Buildings.recipe_in(s.town.buildings[post]) == {"wood": Data.TRADE_GIVE}, "the Trading Post is dearer")
+	t.check(not s.town.set_trade(post, "wood", "shard"), "and the Trading Post has no shards to give")
 
 
 func test_trade_alone_makes_neighbours() -> void:

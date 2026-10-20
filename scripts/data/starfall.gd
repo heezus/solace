@@ -64,7 +64,7 @@ const GLYPH_WORDS := [
 const NO_GUESS := "?"
 const WALL_NEED_SURVIVORS := "The Wall waits for someone who can show it the marks."
 const WALL_COPYING := "Marks copied: %d of %d"
-const WALL_SET_LINE := "%s: %d of %d marks copied"  # set name, copied, in the set
+const WALL_SET_LINE := "Set %d of %d: %d of %d marks copied"  # which set, of how many, copied, in the set (the theme is hidden)
 const WALL_SET_LOCKED := "%s: read"
 ## How the Wall works, the first thing its panel says: every number is the game's own.
 const WALL_HOW := (
