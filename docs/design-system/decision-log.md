@@ -915,3 +915,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Starfall vegetation/litter must read smaller beside buildings while retaining base-kit alignment; Ironfall/firebreak gravel contrast and density must leave resource deposits and moving Kith clear.
 - Bloom growth should concentrate at edges with quieter healthy interiors. Bronze Dawn's warm dry material direction is retained.
 - Final approval requires actual game comparisons including resources and Kith at wide/default/close scales, plus water/transition review after the parent terrain kit merges. Hearth-only composites and green tests do not establish visual approval.
+
+## 2026-10-19: Correct era-ground motif scale against production sprites (PR #115)
+- Codex repainted all eight ground candidates after the owner's explicit correction request: smaller foliage/litter/gravel, quieter coal aprons and firebreak, and fine Bloom threads/buds. A second Starfall pass reduces pale granular highlights without blurring the ground.
+- Decal subjects now fit within 44x44 of their unchanged 96x96 cells, down from 76x76, preserving atlas IDs and alpha. Logical tile scale, sprite sizes and gameplay footprints stay unchanged.
+- A native Godot fixture uses existing production building/resource/Kith drawing helpers in identical before/after scenes at 24/48/80 px per tile. Original material PNGs, prompts and hashes remain archived for review.
+- These asset fixtures demonstrate scale correction; final biome/Bloom edge masking and per-era generated-map validation follow integration with the now-merged terrain kit #114. Native-source resolution remains 1254x1254 packed to 1920x1920 and is stated explicitly.

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Asset contact sheet at native game scales; explicitly NOT an engine screenshot."""
 from pathlib import Path
-from PIL import Image, ImageDraw, ImageFont
+import json
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont, ImageStat
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[3]
@@ -29,3 +30,14 @@ for i, (name, filename) in enumerate(NAMES):
     board.paste(wide.convert('RGB'), (x, y + 370))
 board.save(HERE / 'asset-scale-review.jpg', quality=95)
 print('Wrote asset-scale-review.jpg')
+
+metrics = {}
+for _, filename in NAMES:
+    values = []
+    for source in [HERE / 'corrections-v2/before' / (filename + '.png'), ART / (filename + '.png')]:
+        img = Image.open(source).convert('L').resize((960, 960), Image.Resampling.LANCZOS)
+        detail = ImageChops.difference(img, img.filter(ImageFilter.GaussianBlur(2)))
+        values.append({'mean_luminance_0_255': round(ImageStat.Stat(img).mean[0], 2),
+                       'local_detail_rms': round(ImageStat.Stat(detail).rms[0], 2)})
+    metrics[filename] = {'before': values[0], 'corrected': values[1]}
+(HERE / 'corrections-v2/material-metrics.json').write_text(json.dumps(metrics, indent=2) + '\n')

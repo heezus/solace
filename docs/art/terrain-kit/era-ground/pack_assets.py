@@ -14,14 +14,14 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[3]
 OUTPUT = ROOT / "art/rendered/era-ground"
 SHEETS = {
-    "starfall-meadow-source.png": "starfall-meadow.png",
-    "starfall-woodland-source.png": "starfall-woodland.png",
-    "bronze-dawn-source.png": "bronze-dawn-earth.png",
-    "ironfall-source.png": "earth-south.png",
-    "ironfall-apron-source.png": "ironfall-apron.png",
-    "livewire-source.png": "livewire-healthy.png",
-    "bloom-source.png": "livewire-bloom.png",
-    "firebreak-source.png": "livewire-firebreak.png",
+    "corrections-v2/starfall-meadow-quiet-source.png": "starfall-meadow.png",
+    "corrections-v2/starfall-woodland-quiet-source.png": "starfall-woodland.png",
+    "corrections-v2/earth-south-source.png": "earth-south.png",
+    "corrections-v2/livewire-firebreak-source.png": "livewire-firebreak.png",
+    "corrections-v2/livewire-healthy-source.png": "livewire-healthy.png",
+    "corrections-v2/bronze-dawn-earth-source.png": "bronze-dawn-earth.png",
+    "corrections-v2/ironfall-apron-source.png": "ironfall-apron.png",
+    "corrections-v2/livewire-bloom-source.png": "livewire-bloom.png",
 }
 
 
@@ -85,7 +85,7 @@ def main():
                 # Trim the empty outer gutter (including generation grid artefacts).
                 margin_x, margin_y = round(cell.width * .10), round(cell.height * .10)
                 cell = cell.crop((margin_x, margin_y, cell.width - margin_x, cell.height - margin_y))
-                cell.thumbnail((76, 76), Image.Resampling.LANCZOS)
+                cell.thumbnail((44, 44), Image.Resampling.LANCZOS)
                 packed.alpha_composite(cell, (col * 96 + (96 - cell.width) // 2,
                                              row * 96 + (96 - cell.height) // 2))
         out = OUTPUT / "decals.png"

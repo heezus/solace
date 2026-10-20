@@ -6,9 +6,9 @@ Owner: the project owner (heezus). Two AI teams, one repo, coordinated by respon
 
 ### Codex — era ground families
 - **Task:** owner-requested Starfall, Bronze Dawn, Ironfall and Livewire terrain plus Skyreach concept, branch `codex/era-ground`.
-- **Reserved files:** new `art/rendered/era-ground/` assets/imports and `docs/art/terrain-kit/era-ground/`; focused era-ground notes in shared documentation. No kit renderer edits until `codex/terrain-kit` merges.
+- **Reserved files:** new `art/rendered/era-ground/` assets/imports, `docs/art/terrain-kit/era-ground/` and `tests/tools/era_ground_scale.gd`; focused era-ground notes in shared documentation. No kit renderer edits until `codex/terrain-kit` merges.
 - **Acceptance criteria:** 96 source px/tile, seamless non-mirrored sheets, upper-left lighting, compact related palettes, preserved tile IDs/gameplay; seeds 3/11/42 in each implemented era with wide/close before-after evidence after integration.
-- **Status:** art candidates published in draft PR #115: eight packed sheets, 32 decals, Skyreach concept, original provenance and wrap/scale proofs; baseline seeds 3/11/42 captured. Imagegen returned 1254x1254 sources, packed to 1920, so native crispness remains for review. Production wiring and per-era acceptance depend on the terrain-kit merge.
+- **Status:** owner requested actual scale/readability corrections on 2026-10-19; repainting materials and extending native-scale resource/Kith comparisons. Original art candidates published in draft PR #115: eight packed sheets, 32 decals, Skyreach concept, original provenance and wrap/scale proofs; baseline seeds 3/11/42 captured. Imagegen returned 1254x1254 sources, packed to 1920, so native crispness remains for review. Production wiring and per-era acceptance depend on the terrain-kit merge.
 - **Next action:** satisfy the owner-agreed refinement gate in the era-ground README (smaller Starfall motifs, quieter Ironfall/firebreak, edge-focused Bloom, resource/Kith comparisons); after terrain-kit merges, recheck Starfall hashes and integrate through its shader/visual masks and BloomLook. Capture all eras on seeds 3/11/42 and finish CI. Current art is not visually approved; Claude merges only after that work and visual review.
 
 
