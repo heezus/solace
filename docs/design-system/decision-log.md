@@ -978,3 +978,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Claude, from the AI player's Livewire reports and Jon's "Fix them", added four plain hints: the charts reveal the nearest unseen coal seam, a refused build names what is short, the far-depot status says idle Kith haul, and the tide's first line points at the Scorcher.
 - It changes no costs, rates or goals; only what the game says and what the fog hides at the start of the era.
 - The wire chain (Wire Mill needs power and copper) is left for a later pass.
+
+## 2026-10-20: Wire Mill hint (PR N)
+- Claude, finishing the last open Livewire guidance gap from the AI player's reports, made a dark machine say how to light it (a Power Pole within 2 tiles, an engine on the net fed Coal) and the Wire Mill say where its Copper comes from.
+- Words only: no costs, rates or goals change.

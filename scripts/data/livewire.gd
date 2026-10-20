@@ -29,6 +29,11 @@ const FAR_DEPOT_STATUS := (
 )
 const FAR_DEPOT_ALERT := "Full: depot is far away"
 
+## What a machine says when it has no power once Power Poles are known (a Water Wheel or a Boiler by itself is not the answer here),
+## and where the Wire Mill's Copper comes from (appended to its "Needs Copper" status).
+const NET_NO_POWER_STATUS := "No power: lay a Power Pole within 2 tiles of it, then fuel a Boiler or Generator on that net with Coal"
+const INPUT_HINTS := {"wire_mill": "Copper comes from the Smelters: keep them running"}
+
 # --- The net ---
 ## Poles within POLE_LINK tiles of one another join into a net. A machine (a building with `needs_power`) or an engine (a "power"
 ## building) within POLE_REACH tiles of a pole is on that pole's net: the machine draws from it, the engine feeds it.

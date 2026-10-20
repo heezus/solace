@@ -177,3 +177,4 @@ The AI player's Livewire runs showed the era hid what it needed. Four small word
 - **Refusals say why.** A placement refused for want of materials now says what is short ("Not enough materials: 12 Stone short", `CardText.refusal`).
 - **Who hauls.** The far-depot status adds that idle Kith are the haulers.
 - **The tide's answer.** The tide's first line and the Scorcher goal now say a Scorcher beside the Generator burns the Bloom back before it arrives.
+- **The wire chain.** A machine with no power now says to lay a Power Pole within 2 tiles and fuel a Boiler or Generator on that net with Coal (once Power Poles are known), and the Wire Mill's "Needs Copper" adds that Copper comes from the Smelters (`Data.NET_NO_POWER_STATUS`, `Data.INPUT_HINTS`).
