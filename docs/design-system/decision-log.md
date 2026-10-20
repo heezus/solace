@@ -903,3 +903,10 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Steel now waits behind iron in a Forge during Livewire (no batch starts while steel stock exceeds iron stock), so techs that need iron get it.
 - A full building far from its depot says so and points to a Storehouse, instead of the misleading "waiting for a hauler".
 - The earned Livewire checkpoint is rebuilt under the new economy; the AI player replays the era to check it can finish.
+
+## 2026-10-19: Painted terrain kit and contour banks (PR #114)
+- Codex implemented the agreed page 22 kit: three meadows, two woodland floors, calm/flow water, worn and southern earth, 32 ground decals and a painted bank strip with fixed upper-left lighting.
+- Continuous world-space sampling uses non-mirrored hash offsets and two scales; fine brush marks are scaled below the buildings' silhouettes, with crisp separately scattered details. Runtime meadow/earth atlases keep the Compatibility shader at eight samplers and isolate sheet edges.
+- The bank uses the existing water-mask gradient and two tangent projections, so painted soil, stones and shallows follow bends without extra edge tiles or map-generation changes.
+- Decals use the map-seeded coordinate hash, respect fog and road/foundation footprints, and sit below sprites. Tile IDs, gameplay, save semantics and the 48 px baseline remain unchanged.
+- Before/after native previews cover seeds 3, 11 and 42. Source dimensions and resampling are recorded; packed 1920 px sheets are not claimed as native 1920 px generated originals.
