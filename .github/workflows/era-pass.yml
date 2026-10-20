@@ -1,0 +1,51 @@
+name: Era click pass
+
+# Manual only, never on a push and never nightly. Plays the start of every era like a person (real mouse and key events, the real
+# UI live) and fails on any ERROR, WARNING or PROBLEM line. The earned starts build their checkpoint from a real run, so the whole
+# pass takes a while. Pick one start to run just that era (tests/tools/era_pass.gd; design-system/25-playtesting.md).
+on:
+  workflow_dispatch:
+    inputs:
+      start:
+        description: "One start id, or all"
+        default: all
+
+concurrency:
+  group: era-pass
+  cancel-in-progress: false
+
+jobs:
+  era-pass:
+    runs-on: [self-hosted, solace-mac]
+    timeout-minutes: 120
+    env:
+      GODOT_VERSION: 4.7.2
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Godot (once per machine)
+        run: tests/tools/setup_godot.sh
+
+      - name: Import project
+        run: tests/tools/import_project.sh
+
+      - name: Play each era
+        run: |
+          starts="stone_late bronze_first starfall_camp starfall_market ironfall_steam earned_ironfall_steam livewire_gate earned_livewire"
+          if [ "${{ inputs.start }}" != "all" ] && [ -n "${{ inputs.start }}" ]; then starts="${{ inputs.start }}"; fi
+          mkdir -p era-logs
+          failed=""
+          for id in $starts; do
+            echo "::group::$id"
+            tests/tools/run_checked.sh ./godot --headless --fixed-fps 60 --path . -s tests/tools/era_pass.gd -- "$id" 2>&1 | tee "era-logs/$id.log"
+            if [ "${PIPESTATUS[0]}" != "0" ] || grep -q "ERA PASS PROBLEM" "era-logs/$id.log"; then failed="$failed $id"; fi
+            echo "::endgroup::"
+          done
+          if [ -n "$failed" ]; then echo "::error::Era pass problems in:$failed"; exit 1; fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: era-logs
+          path: era-logs
+          if-no-files-found: warn
