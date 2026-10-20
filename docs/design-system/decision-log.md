@@ -941,3 +941,10 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Claude, from Jon's ask for a real-click pass of every era, added `tests/tools/era_pass.gd` and a manual-only workflow, `era-pass.yml`; it plays eight starts from the late stone age to the earned Livewire checkpoint with real mouse and key events.
 - It runs only when Jon starts it from the Actions tab, because the earned checkpoints take minutes to build; it never runs on a push or nightly.
 - It changes no game code and no test; every start it was first run on came back clean.
+
+## 2026-10-20: Two roads built (PR L)
+- Claude, on Jon's "yes go ahead", built the "Two roads" design (page 29): each Lumen gift can be refused for the Kith's own twin of it, chosen on a card when its set is read.
+- The twins are standing effects with a price in the stores (Charcoal or Berries a minute, 40 Wood once), not buildings, so there is no new art; Smith's Rule uses a Smelter instead of a Forge because a Forge only arrives in Ironfall.
+- Taking a gift gives +6 trust as before; refusing takes 4. Any refusal caps the lean at neighbours, all four make enemies and close the Lumen Market.
+- Techs that wait on a gift wait only on the set being read, so refusing never blocks research; old saves and dev starts count as having taken the gift.
+

@@ -206,7 +206,7 @@ static func _cards(s) -> Array:
 		var labels: Array = []
 		for i in options.size():
 			labels.append("%d = %s" % [i, options[i]["label"]])
-		var title: String = Data.MOMENTS[s.starfall.pending]["title"] if s.starfall.pending != "ending" else "The end"
+		var title: String = s.starfall.pending_card()["title"] if s.starfall.pending != "ending" else "The end"
 		out.append("CARD WAITING (moment): %s. Answer with a moment move: %s" % [title, ", ".join(labels)])
 	if s.seasons.phase == "pending":
 		var def: Dictionary = Data.SEASONS[s.seasons.kind]
