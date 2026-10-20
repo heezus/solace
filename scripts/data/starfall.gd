@@ -66,6 +66,12 @@ const WALL_NEED_SURVIVORS := "The Wall waits for someone who can show it the mar
 const WALL_COPYING := "Marks copied: %d of %d"
 const WALL_SET_LINE := "%s: %d of %d marks copied"  # set name, copied, in the set
 const WALL_SET_LOCKED := "%s: read"
+## How the Wall works, the first thing its panel says: every number is the game's own.
+const WALL_HOW := (
+	"How this works: a scribe copies a new mark about every %d seconds. Click a mark's word to try the next one in the list."
+	+ " Every %d seconds the Kith check: when all three marks of a set have the right word, the set is read. Marks in other"
+	+ " sets wait their turn. One Wall is enough."
+)  # copy seconds, check seconds
 const WALL_HINT := "Click a mark to try the next word. The Kith say nothing until all three are right."
 const WALL_FOUND := "Found %s"  # filled with the context line
 const WALL_WRECK_HINT := "More marks wait at the crash site. An Expedition Post can send a party for them."
@@ -93,7 +99,7 @@ const GLYPHS := {
 		"strokes": [[[0.5, 0.1], [0.5, 0.9]], [[0.15, 0.4], [0.85, 0.4]], [[0.25, 0.8], [0.5, 0.5], [0.75, 0.8]]],
 		"found":
 		[
-			"on a hull panel above the door",
+			"painted on the hull beside a drawing of something falling out of the sky",
 			"and the survivors point up when they touch it",
 			"and they hold it over their hearts first, then up",
 		],
@@ -104,7 +110,7 @@ const GLYPHS := {
 		"strokes": [[[0.2, 0.2], [0.2, 0.8]], [[0.2, 0.5], [0.8, 0.5]], [[0.6, 0.3], [0.8, 0.5], [0.6, 0.7]]],
 		"found":
 		[
-			"scratched on a shard crate beside an open hand",
+			"scratched on a shard crate beside an open hand held out, palm up",
 			"and a stranger makes it, then waves toward the Hearth",
 			"and they make it when the Kith stand back from the light",
 		],
@@ -115,7 +121,7 @@ const GLYPHS := {
 		"strokes": [[[0.3, 0.15], [0.3, 0.85]], [[0.7, 0.15], [0.7, 0.85]], [[0.3, 0.5], [0.7, 0.5]]],
 		"found":
 		[
-			"on a cloth tied at the neck, on all of them",
+			"on a cloth tied at the neck, the same cloth on all three of them",
 			"and two of them make it, then touch hands",
 			"and they make it for each other, never for the Kith, at first",
 		],
@@ -126,7 +132,7 @@ const GLYPHS := {
 		"strokes": [[[0.5, 0.1], [0.5, 0.45]], [[0.15, 0.65], [0.85, 0.65]], [[0.3, 0.9], [0.7, 0.9]]],
 		"found":
 		[
-			"on a lamp cage in the hold, with a shard still glowing in it",
+			"scratched over a shard lamp, above the steady glow it gives in the dark",
 			"and a survivor lifts the lamp and the mark together",
 			"and they say it softly, the way the Kith say a name",
 		],
@@ -137,7 +143,7 @@ const GLYPHS := {
 		"strokes": [[[0.2, 0.9], [0.5, 0.2], [0.8, 0.9]], [[0.35, 0.75], [0.65, 0.75]]],
 		"found":
 		[
-			"burned black into a bulkhead, the same mark at every door",
+			"burned black into a bulkhead beside a scorch of flames, the same at every door",
 			"and the strangers keep well back from it",
 			"and they touch it, then the Kith's own hearth, and nod",
 		],
@@ -154,7 +160,7 @@ const GLYPHS := {
 		],
 		"found":
 		[
-			"under the lamp mark on every lamp cage, never alone",
+			"painted on the sunward side of the hull, the paint bleached white by the sun",
 			"and a survivor shades their eyes when they make it",
 			"and they make it for a good day, as the Kith say fair",
 		],
@@ -165,7 +171,7 @@ const GLYPHS := {
 		"strokes": [[[0.5, 0.1], [0.5, 0.6]], [[0.4, 0.8], [0.6, 0.8]], [[0.2, 0.3], [0.8, 0.3]]],
 		"found":
 		[
-			"painted in red on a splinted panel in the hold",
+			"painted in red beside a cracked and splintered panel, where something struck hard",
 			"and a stranger holds an arm and makes it",
 			"and they make it when a Kith is hurt, before they are asked",
 		],
@@ -176,7 +182,7 @@ const GLYPHS := {
 		"strokes": [[[0.5, 0.15], [0.5, 0.85]], [[0.15, 0.5], [0.85, 0.5]]],
 		"found":
 		[
-			"on a cloth wrapped round a bundle of leaves, the same cloth at every bunk",
+			"on a bandage wrapped round a poultice of leaves, one at every bunk",
 			"and a survivor presses a leaf into a hand",
 			"and they teach a Kith the leaf, then the mark",
 		],
@@ -187,7 +193,7 @@ const GLYPHS := {
 		"strokes": [[[0.15, 0.7], [0.85, 0.7]], [[0.3, 0.5], [0.7, 0.5]], [[0.45, 0.3], [0.55, 0.3]]],
 		"found":
 		[
-			"cut over the bunks, low and long",
+			"cut low and long above the bunks, where they sleep",
 			"and they lie down when they point to it",
 			"and they make it for the Kith's sleepers, and smile",
 		],
@@ -198,7 +204,7 @@ const GLYPHS := {
 		"strokes": [[[0.5, 0.3], [0.5, 0.9]], [[0.3, 0.3], [0.7, 0.3]], [[0.4, 0.1], [0.6, 0.1]]],
 		"found":
 		[
-			"stamped on small pouches, hundreds of them, most spoiled",
+			"stamped on small pouches of dry grains, hundreds of them, most spoiled",
 			"and a survivor opens one and cups the seeds in both hands",
 			"and they plant one beside the Wreck, then wait to see if the Kith do the same",
 		],
@@ -209,7 +215,7 @@ const GLYPHS := {
 		"strokes": [[[0.2, 0.2], [0.2, 0.6]], [[0.5, 0.3], [0.5, 0.8]], [[0.8, 0.2], [0.8, 0.6]]],
 		"found":
 		[
-			"three lines on a cistern, the tallest at its mouth",
+			"three slanting lines drawn on a cistern lid, falling toward it",
 			"and they hold their palms up and look at the sky",
 			"and they make it when the wind turns wet, a day before it falls",
 		],
@@ -231,7 +237,7 @@ const GLYPHS := {
 		"strokes": [[[0.2, 0.8], [0.5, 0.2], [0.8, 0.8], [0.2, 0.8]]],
 		"found":
 		[
-			"scratched beside a half-made tool in a hold workshop",
+			"scratched beside a half-carved tool, with its outline traced all round it",
 			"and a survivor turns it over and over in their hands",
 			"and they show the Kith a smaller one, to start",
 		],
@@ -242,7 +248,7 @@ const GLYPHS := {
 		"strokes": [[[0.2, 0.3], [0.8, 0.7]], [[0.8, 0.3], [0.2, 0.7]], [[0.5, 0.1], [0.5, 0.9]]],
 		"found":
 		[
-			"knotted into cords on every crate, in a pattern",
+			"drawn as a knot on the cord tied round every crate lid",
 			"and they pull it tight between two fingers",
 			"and they tie a cord round a Kith's wrist, and mean it kindly",
 		],
@@ -271,7 +277,7 @@ const GLYPHS := {
 		"strokes": [[[0.2, 0.2], [0.2, 0.8]], [[0.8, 0.2], [0.8, 0.8]], [[0.2, 0.8], [0.5, 0.55], [0.8, 0.8]]],
 		"found":
 		[
-			"scratched deep into the hull, over and over, in a column",
+			"scratched beside an empty bowl drawn in the dust of the hold",
 			"and a survivor holds an empty bowl and makes it",
 			"and they make it softly, and then look at the sky as if something might hear",
 		],
@@ -283,7 +289,7 @@ const GLYPHS := {
 		[[[0.5, 0.85], [0.5, 0.5]], [[0.5, 0.5], [0.2, 0.2]], [[0.5, 0.5], [0.8, 0.2]], [[0.5, 0.5], [0.5, 0.15]]],
 		"found":
 		[
-			"at the end of a long row of marks, drawn larger than the rest",
+			"drawn as lines branching outward from one point, creeping across the edge of a map",
 			"and they draw it in the dust, then rub it out fast",
 			"and they will not say it aloud, only point east and shake their heads",
 		],
@@ -294,7 +300,7 @@ const GLYPHS := {
 		"strokes": [[[0.5, 0.1], [0.9, 0.85], [0.1, 0.85], [0.5, 0.1]], [[0.5, 0.4], [0.5, 0.6]]],
 		"found":
 		[
-			"last on the hull, circled three times",
+			"painted in warning red on the hull door, circled three times",
 			"and every stranger turns to look when it is read out",
 			"and they put out their fire before they will say what it means",
 		],
@@ -589,7 +595,7 @@ const GOALS_ERA3 := [
 	},
 	{
 		"id": "glyph_wall",
-		"text": "Build a Glyph Wall and copy the strangers' glyphs, then guess what they mean",
+		"text": "Build a Glyph Wall: it copies the strangers' marks, and you guess their words (one Wall is enough)",
 		"building": "glyph_wall"
 	},
 	{"id": "first_set", "text": "Read the first set of glyphs: the strangers will have a name"},

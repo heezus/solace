@@ -1,7 +1,8 @@
 name: Desktop builds
 
 # Builds a single-file Windows .exe and a universal macOS .app of the game, both exported from Jon's Mac (the self-hosted runner). Pull requests only prove the export works; a push to
-# main also publishes it as the rolling "latest" release, so one stable link always has the newest build.
+# main also publishes it as the rolling "latest" release, so one stable link always has the newest build, and installs the new Mac
+# app into ~/Applications on this Mac so it opens without a download or a Gatekeeper warning.
 on:
   push:
     branches: [main]
@@ -92,3 +93,17 @@ jobs:
             --target "$GITHUB_SHA" \
             --title "Solace, newest build ($short)" \
             --notes "Builds of main at $short. Windows: unzip Solace-windows.zip, double-click Solace.exe (if Windows warns, click More info, then Run anyway). Mac: unzip Solace-macos.zip, then right-click Solace.app and choose Open (or run xattr -dr com.apple.quarantine Solace.app in Terminal first)."
+
+      # The runner is Jon's own Mac: put the fresh app where he opens it, with the download quarantine flag off. A failure here
+      # never fails the build (the release above is the real output).
+      - name: Install the Mac app into ~/Applications
+        if: github.ref == 'refs/heads/main'
+        continue-on-error: true
+        run: |
+          rm -rf build/install && mkdir -p build/install ~/Applications
+          ditto -x -k build/Solace-macos.zip build/install
+          test -d build/install/Solace.app
+          xattr -dr com.apple.quarantine build/install/Solace.app || true
+          rm -rf ~/Applications/Solace.app
+          ditto build/install/Solace.app ~/Applications/Solace.app
+          echo "Installed $(ls -d ~/Applications/Solace.app) from ${GITHUB_SHA::7}"

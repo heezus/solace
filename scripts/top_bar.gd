@@ -45,9 +45,6 @@ const RULE_W := 3  # the rule along the bar's bottom edge
 const BAR_H := 135.0  # four rows of chips (4 x ROW_H) between the edge padding and the rule
 const FOOD_W := 190.0
 const COUNT_SIZE := 18  # numbers are 18
-const ETA_SIZE := 11  # the time left beside a count that is running out
-const COUNT_SIZE_RUNNING_OUT := 14  # ...and the count and the good's sprite shrink to make room for it
-const ICON_RUNNING_OUT := 16.0
 const KITH_W := 216.0  # the Kith block, wide enough for "Jobs filled 19 of 19  ·  25 hauling"
 
 var state: Sim
@@ -164,6 +161,7 @@ func setup(game: Sim) -> void:
 
 	flow_panel = PanelContainer.new()
 	flow_panel.top_level = true
+	flow_panel.z_index = 50  # over the goal chip, the toasts and the cards: a hover panel is never clipped by them
 	flow_panel.visible = false
 	flow_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	flow_panel.custom_minimum_size = Vector2(280, 0)
@@ -189,15 +187,12 @@ func _chip(id: String, width: float) -> PanelContainer:
 	var count := Ui.label("", COUNT_SIZE)
 	count.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	h.add_child(count)
-	var eta := Ui.label("", ETA_SIZE)  # the time left, only while the good is running out (scripts/runway.gd)
-	eta.visible = false
-	h.add_child(eta)
 	Ui.ignore_mouse(h)
 	_fix_width(box, [count], width)
 	box.tooltip_text = item_tip(id)
 	box.mouse_entered.connect(_show_flow.bind(id))
 	box.mouse_exited.connect(_hide_flow.bind(id))
-	chips[id] = {"box": box, "count": count, "eta": eta, "icon": icon}
+	chips[id] = {"box": box, "count": count, "icon": icon}
 	return box
 
 
@@ -310,8 +305,8 @@ func refresh(paused: bool, speed: int) -> void:
 		c["count"].text = str(n)
 		c["count"].modulate = Color(1, 1, 1, 0.5 if n == 0 and absf(r) < 0.005 else 1.0)
 		c["count"].add_theme_color_override("font_color", Ui.TEXT if absf(r) < 0.005 else rate_color(r))  # the rate is in the tooltip
-		_refresh_eta(c, id, n, r)
-		c["box"].tooltip_text = "" if flow_item == id else chip_tip(id, n, r)
+		var runway := _refresh_runway(c, id, n, r)
+		c["box"].tooltip_text = "" if flow_item == id else chip_tip(id, n, r) + runway
 		c["box"].add_theme_stylebox_override(
 			"panel", _outline(Ui.HIGHLIGHT if flow_item == id else Color(0, 0, 0, 0), CHIP_VPAD)
 		)
@@ -321,23 +316,17 @@ func refresh(paused: bool, speed: int) -> void:
 		_fill_flow(flow_item)
 
 
-## A good that is running out shows the time left beside its count, amber under five minutes and red under two. Food
-## has its own readout (_refresh_food), so the goods it is made of are left alone.
-func _refresh_eta(c: Dictionary, id: String, n: int, r: float) -> void:
+## A good that is running out turns its number amber under five minutes and red under two, and its tooltip says how long it
+## has. The chip never changes size. Food has its own readout (_refresh_food), so the goods it is made of are left alone.
+## Returns the line to add to the tooltip, "" when there is nothing to say.
+func _refresh_runway(c: Dictionary, id: String, n: int, r: float) -> String:
 	var left := INF if Data.FOOD_VALUE.has(id) else Runway.seconds(n, r)
 	var words := Runway.text(left)
-	var full := state.economy.is_full(id)
-	if words == "" and full:
-		words = "full"
-	c["eta"].visible = words != ""
-	c["eta"].text = words
-	c["count"].add_theme_font_size_override("font_size", COUNT_SIZE_RUNNING_OUT if words != "" else COUNT_SIZE)
-	var side := ICON_RUNNING_OUT if words != "" else ICON
-	c["icon"].custom_minimum_size = Vector2(side, side)
 	if words != "":
-		c["eta"].add_theme_color_override("font_color", Ui.BAD if Runway.tone(left) == Runway.Tone.RED else ALARM_TEXT)
-		if full and Runway.text(left) == "":
-			c["eta"].add_theme_color_override("font_color", FLAT)
+		var red := Runway.tone(left) == Runway.Tone.RED
+		c["count"].add_theme_color_override("font_color", Ui.BAD if red else ALARM_TEXT)
+		return "\nRuns out in %s" % words
+	return "\nFull: it stops being gathered" if state.economy.is_full(id) else ""
 
 
 ## The Food readout: the count, then what is happening to it. While it is about to run out (Data.FOOD_WARN_SECONDS)
@@ -400,6 +389,7 @@ func _hide_flow(id: String) -> void:
 
 ## The hover panel: what makes this good, what uses it, and what happens if it runs out.
 func _fill_flow(id: String) -> void:
+	flow_panel.size = Vector2.ZERO  # shrinks to the new text: a longer panel before must not leave empty space
 	for c in flow_box.get_children():
 		flow_box.remove_child(c)
 		c.queue_free()

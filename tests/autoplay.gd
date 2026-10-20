@@ -843,7 +843,7 @@ func _road_affordable(p: Vector2i) -> bool:
 ## nearest road network that reaches a depot (or to a depot), a few tiles a decision. True if any went down.
 func _link_roads() -> bool:
 	for b in s.town.buildings:
-		if not Buildings.served(b) or b["paused"] or Roads.linked(s, b):
+		if not Buildings.served(b) or b["paused"] or Roads.on_a_road(s, b):
 			continue
 		var path := _road_path(b["pos"])
 		var laid := 0

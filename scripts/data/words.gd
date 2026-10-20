@@ -254,6 +254,8 @@ const WANDERER_NAME := "The Wanderer"
 const WANDERER_STATES := ["a faint light", "a bright light", "a burning light"]  # by mood
 const WANDERER_PATH := "%s  ·  %d%% of the way"  # a state, how much of its path the Wanderer has crossed
 const WANDERER_TIP := "The new light in the sky. Star Charts draws its path, and it is getting closer."
+const WANDERER_FALLEN := "The Wanderer: it has fallen"  # the sky line once the Falling Star is worked out
+const WANDERER_FALLEN_TIP := "The new light came down to the east. The strangers are somewhere out there."
 ## What the Kith say when Sky Watch names the light (a story moment, scripts/main.gd shows it once).
 const WANDERER_NAMED_LINE := "The new light has a name now: the Wanderer. The Kith build a tower to watch it from."
 
@@ -353,13 +355,14 @@ const HOME_MISSING_GOOD := "%d %s"  # how many more, an item's name
 const HOME_MISSING_ROAD := "a road to the Hearth"
 const HOME_MISSING_HAULERS := "Paths & Haulers, to carry goods in"
 const HOME_CAPPED := "Held at your cap on %ss"  # a tier name
-const HOME_CAP_ROW := "%ss: %d so far"  # a tier name, the homes that have reached it or better
-const HOME_CAP_VALUE := "Limit: %s"  # the cap
-const HOME_CAP_NONE := "none"
+const HOME_CAP_ROW := "%ss built: %d"  # a tier name, the homes that have reached it or better
+const HOME_CAP_VALUE := "Allow %s"  # the cap
+const HOME_CAP_NONE := "any number"
 const HOME_CAP_TIP := (
-	"Homes grow into %ss on their own while the settlement keeps them supplied. This is the most %ss you allow (a Longhouse"
-	+ " counts too). Press - to stop growth at a limit, + to lift it. Homes that are already there stay."
-)  # a tier name, twice
+	"Homes upgrade on their own, from Dwelling to Homestead to Longhouse, while the settlement keeps them supplied. This is the"
+	+ " most %ss you allow (Longhouses count too). Once that many stand, no more homes upgrade to it. Press - to stop upgrades"
+	+ " at what you have, + to allow more. Homes already upgraded stay as they are."
+)  # a tier name
 const HOME_BUSY := "Waiting for the builders: %d scaffolds are already up"  # a number
 
 const HOME_NO_STOCK := "Waiting for %s in the stockpile"  # item names, "Bronze, Brick"

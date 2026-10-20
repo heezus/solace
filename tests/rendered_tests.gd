@@ -57,6 +57,11 @@ func run(t) -> void:
 	count = ground.builds
 	ground._rebuild(s)
 	t.check(ground.builds == count + 1, "a placed road refreshes terrain")
+	var whole := Ground.new()
+	whole._rebuild(s)
+	t.check(
+		ground._image.get_data() == whole._image.get_data(), "a refresh of what changed paints what a full one would"
+	)
 	world.set_tile(Vector2i(2, 2), "grass")
 	world.roads.clear()
 	t.check(world.to_dict() == before, "rendering does not mutate world state")

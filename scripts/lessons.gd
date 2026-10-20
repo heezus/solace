@@ -60,8 +60,11 @@ static func draw_overlays(ci: CanvasItem, s) -> void:
 				ci.draw_circle(at, (Data.SPORE_REACH + 0.5) * TILE, Color(0.75, 0.29, 0.62, 0.12))
 				Art.dashed_circle(ci, at, (Data.SPORE_REACH + 0.5) * TILE, Color(0.75, 0.29, 0.62, 0.7), 2.0, 10.0, 7.0)
 	if s.teardown.knows("root"):
-		for y in s.world.height:
-			for x in s.world.width:
+		var seen := Rect2i(Vector2i.ZERO, Vector2i(s.world.width, s.world.height))
+		if ci.has_method("_visible_tiles"):
+			seen = ci._visible_tiles()  # only what the window shows: the whole map was walked every frame
+		for y in range(seen.position.y, seen.end.y):
+			for x in range(seen.position.x, seen.end.x):
 				var p := Vector2i(x, y)
 				if is_slow_ground(s, p) and s.fog.is_revealed(p):
 					ci.draw_rect(

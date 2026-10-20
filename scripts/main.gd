@@ -51,6 +51,7 @@ const HomeView = preload("res://scripts/home_view.gd")
 const GrowthArt = preload("res://scripts/growth_art.gd")
 const CutscenePlayer = preload("res://scripts/cutscene_player.gd")
 const PlayRecorder = preload("res://scripts/play_recorder.gd")
+const Hotkeys = preload("res://scripts/hotkeys.gd")
 
 const TILE: float = Overlays.TILE
 const MAP_ORIGIN := Vector2.ZERO  # the node's transform pans and zooms the map
@@ -341,7 +342,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		match event.keycode:
 			KEY_T:
 				tech_panel.visible = not tech_panel.visible
-			KEY_SPACE:
+			KEY_SPACE, KEY_P:
 				_set_speed(0)
 			KEY_1, KEY_2, KEY_3:
 				_set_speed(event.keycode - KEY_0)
@@ -357,12 +358,6 @@ func _unhandled_input(event: InputEvent) -> void:
 					bottom_bar.toggle_drawer()
 			KEY_TAB, KEY_R:
 				_cycle_hut_focus()
-			KEY_HOME:
-				center_on(state.world.camp_pos)
-			KEY_EQUAL, KEY_PLUS, KEY_KP_ADD:
-				_zoom(1)
-			KEY_MINUS, KEY_KP_SUBTRACT:
-				_zoom(-1)
 			KEY_ESCAPE:
 				if game_menu.is_open():
 					game_menu.close()
@@ -378,6 +373,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				tech_panel.visible = false
 				bottom_bar.close_drawer()
 				building_panel.select(Vector2i(-1, -1))
+			_:
+				Hotkeys.press(self, event.keycode)
 
 
 func _modal_up() -> bool:

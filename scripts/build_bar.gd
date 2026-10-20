@@ -17,6 +17,7 @@ const Hands = preload("res://scripts/hands.gd")
 const CardText = preload("res://scripts/card_text.gd")
 const FieldText = preload("res://scripts/field_text.gd")
 const HomesStrip = preload("res://scripts/homes_strip.gd")
+const Hotkeys = preload("res://scripts/hotkeys.gd")
 
 const BUTTON := Vector2(172, 64)
 const TEXT_X := 42.0  # the title and state line start here, beside the 30 px icon
@@ -48,6 +49,8 @@ var drawer: PanelContainer  # the open tab's cards, over the foot of the map (se
 var drawer_open := false
 var craft_box: GridContainer
 var _view := Rect2()
+var _last_placing := ""  # the arguments of the last refresh, to freshen the cards when the drawer opens
+var _last_ready := 0
 
 
 ## The drawer is parented to the HUD layer by main; one that was never parented (a test's bar) goes with the bar.
@@ -81,7 +84,7 @@ func setup(game: Sim) -> void:
 	tabs.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	tab_scroll.add_child(tabs)
 	for tab_name in Data.BUILD_TABS.keys() + [CRAFT_TAB]:
-		var b := Ui.button(tab_name)
+		var b := Ui.button("%s · %s" % [tab_name, Hotkeys.key_name(tab_name)])
 		b.toggle_mode = true
 		b.custom_minimum_size = Vector2(100, 30)
 		b.pressed.connect(_tab_pressed.bind(tab_name))
@@ -135,6 +138,12 @@ func _build_drawer(game: Sim) -> void:
 	row.add_child(craft_box)
 
 
+## A tab's key was pressed: the same as a click on it, unless the tab has nothing to show yet.
+func press_tab(tab_name: String) -> void:
+	if tab_shown(tab_name):
+		_tab_pressed(tab_name)
+
+
 ## A tab was clicked: open the drawer on it, or put the drawer away when it is the tab already showing.
 func _tab_pressed(tab_name: String) -> void:
 	if drawer_open and tab == tab_name:
@@ -176,6 +185,8 @@ func _show_tab(tab_name: String) -> void:
 	drawer_open = true
 	place_drawer(_view)
 	_apply_visibility()
+	if state != null:
+		refresh(_last_placing, _last_ready)  # the cards were not kept up to date while the drawer was shut
 
 
 ## Show the current tab's cards, hide the cards of story buildings nothing has revealed yet, and hide a tab
@@ -308,12 +319,16 @@ func _demolish_button() -> Button:
 
 ## `placing` is the building type being placed, "demolish" for the Demolish tool, or "".
 func refresh(placing: String, ready_count: int) -> void:
+	_last_placing = placing
+	_last_ready = ready_count
 	tech_button.text = "Tech tree · %d ready · T" % ready_count if ready_count > 0 else "Tech tree · T"
 	_apply_visibility()
 	homes_strip.refresh()
 	for type in build_buttons:
 		var parts: Dictionary = build_buttons[type]
 		var b: Button = parts["button"]
+		if not drawer_open or not b.visible:
+			continue  # only the cards on show are kept up to date: the other fifty cost 15 ms every refresh
 		var unlocked := state.town.unlocked(type)
 		var style := Ui.panel_style(Ui.CARD if unlocked else LOCKED_BG, 4)
 		if placing == type:

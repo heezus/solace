@@ -121,7 +121,7 @@ func test_the_pause_menu_has_its_buttons() -> void:
 	menu.load_pressed.connect(func(): got.append("load"))
 	menu.quit_pressed.connect(func(): got.append("quit"))
 	var buttons := _buttons(menu)
-	t.check(buttons.size() == 7, "Resume, Save, Load, Quit and the Cutscenes, Play log and debug keys switches")
+	t.check(buttons.size() == 8, "Resume, Save, Load, Quit, Keys and the Cutscenes, Play log and debug keys switches")
 	t.check(menu.cutscene_toggle.text == Data.CUTSCENES_LABEL, "the Cutscenes switch is named")
 	for b in buttons:
 		if b != menu.debug_toggle and b != menu.cutscene_toggle:

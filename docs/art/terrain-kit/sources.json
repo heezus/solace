@@ -1,0 +1,134 @@
+{
+  "meadow-a": {
+    "source": "exec-018c295d-7b7f-48a3-a347-62c40aeb63d6.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_sha256": "48b708ecc550db2011845c85d9e46ccc5ca1c5da697c77ec6234b87f2667cbf6",
+    "packed_size": [
+      1920,
+      1920
+    ]
+  },
+  "meadow-b": {
+    "source": "exec-4c9b9b92-9b18-4590-9058-6f61dfeb0312.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_sha256": "5dc4f1cbb7c33e165e47fb704614fa139989dd4ca8fffa64610443fa3ee50824",
+    "packed_size": [
+      1920,
+      1920
+    ]
+  },
+  "meadow-c": {
+    "source": "exec-15e16818-6c6a-498f-a23e-88d8aaf8f268.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_sha256": "424aa5ddeda53bc75faeac2d50bce36b64b9a1b47df6d1c18458ddea90bd3789",
+    "packed_size": [
+      1920,
+      1920
+    ]
+  },
+  "woodland-a": {
+    "source": "exec-8ffc30c6-a350-4376-bb6b-251dce0b9b61.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_sha256": "fdf5a22b982fa30cf87060bbdc7483fd42290618c130a03cbbfdf150e0629d3a",
+    "packed_size": [
+      1920,
+      1920
+    ]
+  },
+  "woodland-b": {
+    "source": "exec-a04b4ef6-3879-4c8e-ab37-ff6d450d1057.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_sha256": "a5bf604f45f8aceb954f1e63b53702b56b6a66b3ff58c4af737e27e09556ba7d",
+    "packed_size": [
+      1920,
+      1920
+    ]
+  },
+  "water-flow": {
+    "source": "exec-3bfeee9a-cd3a-411e-97ef-e494b64a1729.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_sha256": "df9119618d44e50502e30bf2e6146d22ea5a725c7a53568cd7786d293d9d1f5b",
+    "packed_size": [
+      1920,
+      1920
+    ]
+  },
+  "water-calm": {
+    "source": "exec-b57deecb-f8e2-4307-bcd3-02a35a4b22e0.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_sha256": "aa785ef24985cfd76fa978a272f593363ed8940197a02ea601988b85874392b6",
+    "packed_size": [
+      1920,
+      1920
+    ]
+  },
+  "earth": {
+    "source": "exec-4ea44896-f7e1-4422-89c0-471b5b3584e8.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_sha256": "586e4b78d91c4c96d4e379ea4e64e2d35c311cbd2bb52a4d5a3a8b7d0e24dcbe",
+    "packed_size": [
+      1920,
+      1920
+    ]
+  },
+  "earth-south": {
+    "source": "exec-6088af0a-8eee-4bab-9b1c-0a0eb8877921.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_sha256": "f71181aa58544a82babc3983e913caaf6052fa387ea7205223f151258321f8a2",
+    "packed_size": [
+      1920,
+      1920
+    ]
+  },
+  "bank": {
+    "source": "exec-20319fc3-d25e-4d35-a72b-74bbe5c3d43d.png",
+    "source_size": [
+      1983,
+      793
+    ],
+    "source_sha256": "d77afd57bfe507bf89f13219a5004dc8f2bc0aedb50e631b35f84263422ce3ec",
+    "packed_size": [
+      1920,
+      192
+    ]
+  },
+  "decals": {
+    "source": "exec-4bf333b1-bab4-456d-aa8a-034810bac277.png",
+    "source_size": [
+      1774,
+      887
+    ],
+    "source_sha256": "ff1513eb274c3e2730649b830775303461a5116a60ded0ca87912626076dab96",
+    "packed_size": [
+      768,
+      384
+    ]
+  }
+}

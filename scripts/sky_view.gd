@@ -39,7 +39,11 @@ func refresh() -> void:
 	visible = state.sky.named()
 	if not visible:
 		return
-	_line.text = line_text(state.sky.mood(), state.sky.approach(), state.sky.charted())
+	var fallen: bool = state.sky.fallen()
+	_line.text = (
+		Data.WANDERER_FALLEN if fallen else line_text(state.sky.mood(), state.sky.approach(), state.sky.charted())
+	)
+	_sky.tooltip_text = Data.WANDERER_FALLEN_TIP if fallen else Data.WANDERER_TIP
 	_sky.queue_redraw()
 
 

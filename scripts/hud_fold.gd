@@ -1,7 +1,8 @@
 extends RefCounted
 ## The side panel folds away so the map is most of the screen. Folded, a two-line goal chip floats at the map's top right
-## (it says the current goal, wrapped at a word, and opens the panel); the panel opens by itself while a building's card is up,
-## and goes back to the player's choice when the card closes. The choice (key G, the chip, the panel's Fold button) is kept between runs.
+## (it says the current goal, wrapped at a word, and opens the panel). The panel is only ever the player's choice (key G, the chip,
+## the panel's Fold button, kept between runs): selecting or deselecting a building changes what is inside it, never whether it
+## shows, so the map's width never jumps.
 
 const Ui = preload("res://scripts/ui.gd")
 
@@ -11,7 +12,7 @@ const CHIP_H := 50.0  # two lines of text: a long goal wraps at a word, it is ne
 const MARGIN := 10.0
 const TEXT_PAD := 24.0  # the button's padding either side of its text
 
-var folded := true  # the player's choice; folded is how a first run starts
+var folded := false  # the player's choice; open is how a first run starts
 var chip: Button
 var _side: Control
 
@@ -20,7 +21,7 @@ func setup(layer: Node, side_panel: Control) -> void:
 	_side = side_panel
 	var cfg := ConfigFile.new()
 	if cfg.load(FILE) == OK:
-		folded = bool(cfg.get_value("hud", "side_folded", true))
+		folded = bool(cfg.get_value("hud", "side_folded", false))
 	chip = Ui.button("")
 	chip.custom_minimum_size = Vector2(CHIP_W, CHIP_H)
 	chip.size = chip.custom_minimum_size
@@ -32,9 +33,9 @@ func setup(layer: Node, side_panel: Control) -> void:
 	layer.add_child(chip)
 
 
-## True when the side panel is showing: the player's choice, or a building's card is open.
-func is_open(card_open: bool) -> bool:
-	return not folded or card_open
+## True when the side panel is showing: the player's choice alone (a building's card does not open it).
+func is_open(_card_open: bool) -> bool:
+	return not folded
 
 
 func toggle() -> void:
