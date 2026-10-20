@@ -46,6 +46,7 @@ var dark_left := 0.0  # seconds the workshops keep dark (the Warning)
 var ended := false  # the Warning is read: the era is over
 var lean := ""  # "allies", "neighbours" or "enemies" once the era ends (Data.LEANS)
 var bloom := Vector2i(-1, -1)  # where the first Bloom sign stands
+var pops: Array = []  # short texts the map floats over the Hearth ("+6 trust"); main takes them every frame
 var _stock: Economy  # for the one thing a moment can take: food
 var _town: Buildings
 
@@ -75,9 +76,27 @@ func people_word() -> String:
 	return Data.LUMEN_NAME if locked.has(Data.GLYPH_SETS[1]["id"]) else Data.STRANGERS_NAME
 
 
-## Move trust by `amount`, never out of 0 to Data.TRUST_MAX.
+## Move trust by `amount`, never out of 0 to Data.TRUST_MAX. A step of a whole point or more floats over the Hearth ("+6 trust").
 func nudge(amount: float) -> void:
+	var before := trust
 	trust = clampf(trust + amount, 0.0, Data.TRUST_MAX)
+	if absf(trust - before) >= 1.0 and stage == "arrived":
+		pops.append(Data.TRUST_POP % int(roundf(trust - before)))
+		if pops.size() > 12:  # nothing draws them in a headless run: keep the list short
+			pops.pop_front()
+
+
+## True once the Lumen can be named (the first set is read): only then is there anyone to show a word for.
+func trust_known() -> bool:
+	return locked.has(Data.GLYPH_SETS[1]["id"])
+
+
+## The word for how the Lumen stand with the Kith now (Data.TRUST_WORDS): the hidden number, never shown as a number.
+func trust_word() -> String:
+	for step in Data.TRUST_WORDS:
+		if trust < step[0]:
+			return step[1]
+	return Data.TRUST_WORDS.back()[1]
 
 
 func tick(delta: float) -> void:
@@ -245,14 +264,53 @@ func has_building(type: String) -> bool:
 	return false
 
 
+## The sets in the order this run's Wall meets them. The Name always leads and the Warning always comes last (the ending waits
+## on it); the sets between are shuffled by where the ship came down, so a map keeps its order and gameplay random numbers are never
+## touched. Before the star falls (no wreck yet) the order is the one in Data.GLYPH_SETS.
+func set_order() -> Array:
+	var middle: Array = []
+	for n in Data.GLYPH_SETS:
+		if n != 1 and Data.GLYPH_SETS[n]["id"] != Data.ENDING_SET:
+			middle.append(n)
+	if wreck.x >= 0:
+		middle.sort_custom(func(a, b): return _scramble(a * 10) < _scramble(b * 10))
+	var out: Array = [1] + middle
+	for n in Data.GLYPH_SETS:
+		if Data.GLYPH_SETS[n]["id"] == Data.ENDING_SET:
+			out.append(n)
+	return out
+
+
+## The marks of set `n` in the order the Wall gets them (shuffled like the sets).
+func glyph_order(n: int) -> Array:
+	var out: Array = Data.GLYPH_SETS[n]["glyphs"].duplicate()
+	if wreck.x >= 0:
+		out.sort_custom(func(a, b): return _scramble(a.hash() % 997 + n) < _scramble(b.hash() % 997 + n))
+	return out
+
+
+## 1 for the first set the Wall meets, up to the count of sets: the label an unread set wears in place of its name.
+func set_number(set_id: String) -> int:
+	var order := set_order()
+	for i in order.size():
+		if Data.GLYPH_SETS[order[i]]["id"] == set_id:
+			return i + 1
+	return 0
+
+
+## A fixed scramble of `k` with where the ship came down: the same number every time for a map.
+func _scramble(k: int) -> int:
+	return absi(((wreck.x + 7) * 73856093) ^ ((wreck.y + 11) * 19349663) ^ (k * 83492791)) % 1000003
+
+
 ## The first glyph of the first unread set that is not on the Wall yet, "" when every mark is copied. Only the sets the
 ## survivors show are copied by the Wall itself; the rest come home from the Wreck (add_finds).
 func _next_to_copy() -> String:
-	for n in Data.GLYPH_SETS:
+	for n in set_order():
 		var gset: Dictionary = Data.GLYPH_SETS[n]
 		if locked.has(gset["id"]) or gset["source"] != "survivors":
 			continue
-		for g in gset["glyphs"]:
+		for g in glyph_order(n):
 			if not copied.has(g):
 				return g
 	return ""
@@ -321,11 +379,11 @@ func gift(set_id: String) -> bool:
 ## how many were added, 0 once every mark of the sets the Wreck holds is known.
 func add_finds(count: int) -> int:
 	var added := 0
-	for n in Data.GLYPH_SETS:
+	for n in set_order():
 		var gset: Dictionary = Data.GLYPH_SETS[n]
 		if gset["source"] != "wreck" or locked.has(gset["id"]):
 			continue
-		for g in gset["glyphs"]:
+		for g in glyph_order(n):
 			if added < count and not copied.has(g):
 				copied.append(g)
 				added += 1

@@ -26,13 +26,16 @@ const LEAD_NAME := "Sela"
 # Her name twice.
 const LEAD_NAMED_LINE := 'The tall stranger taps her chest. "%s," she says, and waits. Then, delighted: "%s! Say it back!"'
 
-# --- Trust: a hidden number 0 to 100, never shown (the Lumen's behavior shows it) ---
+# --- Trust: a number 0 to 100 that is never shown as a number: a word and a bar on the Lumen Market's panel (TRUST_WORDS) ---
 const TRUST_MAX := 100.0
 const TRUST_START_GUESTS := 20.0  # a Cairn built before the star fell: they arrive as guests
 const TRUST_START_WARY := 0.0
 const TRUST_CAMP := 8.0  # the Lumen Camp goes up
 const TRUST_CAMP_PER_MINUTE := 1.0  # and while it stands
 const TRUST_SET := 6.0  # a set of glyphs is read
+const TRUST_WORDS := [[20.0, "Wary"], [35.0, "Curious"], [70.0, "Friendly"], [101.0, "Close"]]  # below each number, the word
+const TRUST_LINE := "The Lumen are: %s"  # the word, on the Lumen Market's panel
+const TRUST_POP := "%+d trust"  # floats over the Hearth when a step of trust lands
 const CONTEXT_TRUST := 40.0  # from here the survivors say a little more about each mark
 
 # --- The Glyph Wall and the guesses ---
@@ -64,7 +67,7 @@ const GLYPH_WORDS := [
 const NO_GUESS := "?"
 const WALL_NEED_SURVIVORS := "The Wall waits for someone who can show it the marks."
 const WALL_COPYING := "Marks copied: %d of %d"
-const WALL_SET_LINE := "%s: %d of %d marks copied"  # set name, copied, in the set
+const WALL_SET_LINE := "Set %d of %d: %d of %d marks copied"  # which set, of how many, copied, in the set (the theme is hidden)
 const WALL_SET_LOCKED := "%s: read"
 ## How the Wall works, the first thing its panel says: every number is the game's own.
 const WALL_HOW := (
