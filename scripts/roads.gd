@@ -27,6 +27,12 @@ static func linked(s, b: Dictionary) -> bool:
 	return _cache(s)["link"].has(b["pos"])
 
 
+## True when b's own sides reach a depot by road (or it stands beside one), not just through a linked neighbour (see
+## _chain_neighbours).
+static func on_a_road(s, b: Dictionary) -> bool:
+	return _cache(s)["on_road"].has(b["pos"])
+
+
 ## True when a road tile that was laid touches b and its network reaches a depot. Standing right beside a
 ## depot links a building too (linked), but that is not a road: the "Lay a Road" goal asks for this.
 static func road_linked(s, b: Dictionary) -> bool:
@@ -273,6 +279,7 @@ static func _build(s) -> Dictionary:
 						best_d = d
 		if not best.is_empty():
 			link[b["pos"]] = best
+	var on_road := link.duplicate()
 	_chain_neighbours(s, link)
 	var grid := _road_grid(s, "walk")
 	var cart_grid := _road_grid(s, "cart")
@@ -289,6 +296,7 @@ static func _build(s) -> Dictionary:
 		"net": net,
 		"depot_nets": at_depot,
 		"link": link,
+		"on_road": on_road,
 		"grid": grid,
 		"cart_grid": cart_grid,
 	}
