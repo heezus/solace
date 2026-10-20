@@ -941,3 +941,8 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Claude, from Jon's ask for a real-click pass of every era, added `tests/tools/era_pass.gd` and a manual-only workflow, `era-pass.yml`; it plays eight starts from the late stone age to the earned Livewire checkpoint with real mouse and key events.
 - It runs only when Jon starts it from the Actions tab, because the earned checkpoints take minutes to build; it never runs on a push or nightly.
 - It changes no game code and no test; every start it was first run on came back clean.
+
+## 2026-10-20: Livewire guidance (PR M)
+- Claude, from the AI player's Livewire reports and Jon's "Fix them", added four plain hints: the charts reveal the nearest unseen coal seam, a refused build names what is short, the far-depot status says idle Kith haul, and the tide's first line points at the Scorcher.
+- It changes no costs, rates or goals; only what the game says and what the fog hides at the start of the era.
+- The wire chain (Wire Mill needs power and copper) is left for a later pass.

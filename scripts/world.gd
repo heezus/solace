@@ -127,6 +127,18 @@ func deepen_seams(extra: int) -> bool:
 	return true
 
 
+## The tile of a live coal seam, nearest `from`, that `fog` still hides (-1, -1 when every live seam is in view).
+func unseen_seam_tile(from: Vector2i, fog) -> Vector2i:
+	var best := Vector2i(-1, -1)
+	var best_d := INF
+	for p in seam_of:
+		var d := Vector2(p - from).length()
+		if seam_left[seam_of[p]] > 0 and d < best_d and not fog.is_revealed(p):
+			best = p
+			best_d = d
+	return best
+
+
 ## Take up to `want` from the finite seam under p (a mine or a hand dig) and return what came out: `want` itself where the
 ## ground holds no seam. A seam that comes to nothing turns every tile of it into a Spent Seam.
 func seam_draw(p: Vector2i, want: int) -> int:

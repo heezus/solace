@@ -12,6 +12,7 @@ extends RefCounted
 
 signal recorded(id: String)
 
+const CardText = preload("res://scripts/card_text.gd")
 const Codec = preload("res://scripts/save_codec.gd")
 const Data = preload("res://scripts/data.gd")
 const Land = preload("res://scripts/land.gd")
@@ -95,6 +96,17 @@ func update(s) -> void:
 	if events.has(Data.LIVEWIRE_EVENT) and not card_up and not events.has(Data.LIVEWIRE_BEGUN):
 		record(Data.LIVEWIRE_BEGUN)  # the Wires Hum card is put away: Livewire begins
 		s.world.deepen_seams(Data.LIVEWIRE_COAL_GIFT)  # the charts show deeper coal under the old seams
+		_chart_seam(s)
+
+
+## The charts lift the fog off the nearest seam nobody has seen, and the log says which way it lies.
+func _chart_seam(s) -> void:
+	var p: Vector2i = s.world.unseen_seam_tile(s.world.camp_pos, s.fog)
+	if p.x < 0:
+		return
+	s.fog.reveal(p, Data.LIVEWIRE_CHART_RADIUS)
+	var d := Vector2(p - s.world.camp_pos)
+	s.events.append(Data.LIVEWIRE_CHART_LINE % [CardText.compass(d), roundi(d.length())])
 
 
 ## The checklist in force: the stone age's, and the second era's once Bronze Dawn is discovered.

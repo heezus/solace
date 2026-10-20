@@ -53,7 +53,10 @@ const POWERED_MINE_SPEED := 2.0  # a Mine on a net that gives power digs this ma
 
 # --- Words ---
 const TILE_BLOOM_TIDE := "bloom_tide"
-const TIDE_BEGAN_LINE := "The Bloom is on the move: green ground is creeping up from the three patches in the south."
+const TIDE_BEGAN_LINE := (
+	"The Bloom is on the move: green ground is creeping up from the three patches in the south."
+	+ " A Scorcher burns it back: build one beside your Generator before the tide arrives."
+)
 const TIDE_BUILD_ERROR := "The Bloom is here: burn it clear first"
 const TIDE_STAYS := "The Bloom stays · a Scorcher can burn it clear"
 const OVERGROWN_STATUS := "Overgrown by the Bloom: it will be lost in %s unless the ground is burnt clear or held"  # a duration
@@ -83,6 +86,11 @@ const GOALS_TIDE := [
 		"text": "Build an Arc Lamp (Lore tab) on a net: the Bloom does not enter its light",
 		"building": "arc_lamp"
 	},
-	{"id": "scorcher", "text": "Build a Scorcher (Workshops tab) on a net and feed it Coal", "building": "scorcher"},
+	{
+		"id": "scorcher",
+		"text":
+		"Build a Scorcher (Workshops tab) on a net and feed it Coal: do it before the tide reaches the Generator",
+		"building": "scorcher"
+	},
 	{"id": "burnt_clear", "text": "Burn the first Bloom ground clear with a Scorcher"},
 ]
