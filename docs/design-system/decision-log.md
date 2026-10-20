@@ -936,3 +936,8 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 
 ## 2026-10-19: Two roads, design only (PR J)
 - Claude, at Jon's pick "Two roads", wrote page 29: each Lumen gift gets a Kith twin earned by refusing it (-4 trust, a cost to run), and the refusals set the era's lean. Nothing is built until Jon confirms.
+
+## 2026-10-20: Era click pass (PR K)
+- Claude, from Jon's ask for a real-click pass of every era, added `tests/tools/era_pass.gd` and a manual-only workflow, `era-pass.yml`; it plays eight starts from the late stone age to the earned Livewire checkpoint with real mouse and key events.
+- It runs only when Jon starts it from the Actions tab, because the earned checkpoints take minutes to build; it never runs on a push or nightly.
+- It changes no game code and no test; every start it was first run on came back clean.
