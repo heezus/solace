@@ -361,7 +361,7 @@ func _next_to_copy() -> String:
 ## The Kith talk the guesses over: a set is read when all its marks are on the Wall and every guess is right. Never one
 ## mark at a time. True when a set was read just now.
 func check() -> bool:
-	var read := false
+	var got := false
 	for n in Data.GLYPH_SETS:
 		var gset: Dictionary = Data.GLYPH_SETS[n]
 		if locked.has(gset["id"]):
@@ -373,7 +373,7 @@ func check() -> bool:
 			continue
 		if right:
 			locked[gset["id"]] = true
-			read = true
+			got = true
 			if Data.TWINS.has(gset["id"]):
 				road_queue.append(gset["id"])  # the gift's line and the trust it brings wait for the player's road
 			else:
@@ -384,7 +384,7 @@ func check() -> bool:
 			elif gset["id"] == Data.ENDING_SET:
 				_end_era()
 			moment.emit("%s_read" % gset["id"])
-	return read
+	return got
 
 
 ## The Warning cannot be read until the strangers' three questions are answered and none waits on the player.
