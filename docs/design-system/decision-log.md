@@ -933,3 +933,6 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Claude, from Jon's playtest notes and his picks "Split by goods" and "Word meter", made the Trading Post swap Kith goods and the Lumen Market only the strangers' goods (Shard, Coal, Wire, Steel; there is no glyph-lore item), because the two were the same machine.
 - Unread Glyph Wall sets are "Set N of 6" and their theme, icon and gift show only once read; the sets between the Name (first) and the Warning (last) come in an order scrambled by where the ship came down, so a map is reproducible and gameplay randomness is untouched.
 - The Lumen Market's panel shows the Lumen's trust as a word and a bar, and a step of trust floats up as "+6 trust"; the number stays hidden.
+
+## 2026-10-19: Two roads, design only (PR J)
+- Claude, at Jon's pick "Two roads", wrote page 29: each Lumen gift gets a Kith twin earned by refusing it (-4 trust, a cost to run), and the refusals set the era's lean. Nothing is built until Jon confirms.
