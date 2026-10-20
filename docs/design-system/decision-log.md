@@ -919,6 +919,12 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Decals use the map-seeded coordinate hash, respect fog and road/foundation footprints, and sit below sprites. Tile IDs, gameplay, save semantics and the 48 px baseline remain unchanged.
 - Before/after native previews cover seeds 3, 11 and 42. Source dimensions and resampling are recorded; packed 1920 px sheets are not claimed as native 1920 px generated originals.
 
+## 2026-10-19: Crises rebuilt (PR I)
+- Claude, from Jon's "the crises are repetitive and I am not sure the punishments are happening", decided on seven kinds that arrive by era, each coming once before any repeats, with every answer a real price (page 27).
+- The Bloom surge's "Let it come" now lets the Bloom take a fifth of the raw goods, and "Hold it back" asks for Coal or else Wood, so neither is free; Huddle is two thirds pace, a lean season is under half pace, and a cold snap burns 45 fuel.
+- The toast stays for the season and says the cost, each unit floats over the Hearth, and the end says the whole bill.
+- The golden snapshots for maps 1 to 3 were re-pinned (the bot meets the new seasons); Bronze Dawn is at 18.4, 20.5 and 17.9 minutes and the first Bronze 12.6, 13.5 and 14.9 minutes later, all inside the pacing windows.
+
 ## 2026-10-19: Lag pass, less work every frame (PR H)
 - Claude, from Jon's "clicks are just laggy in general", cut work done every frame that never changed: the ground mask redraws only the tiles that changed, the fog edge triangles are cached until the fog moves, the lessons overlay loops over what is on screen, and the build bar keeps only the open drawer's cards up to date.
 - Nothing looks or plays differently; a test checks that the incremental ground mask equals a full rebuild.
