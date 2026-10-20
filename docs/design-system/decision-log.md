@@ -928,3 +928,8 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 ## 2026-10-19: Lag pass, less work every frame (PR H)
 - Claude, from Jon's "clicks are just laggy in general", cut work done every frame that never changed: the ground mask redraws only the tiles that changed, the fog edge triangles are cached until the fog moves, the lessons overlay loops over what is on screen, and the build bar keeps only the open drawer's cards up to date.
 - Nothing looks or plays differently; a test checks that the incremental ground mask equals a full rebuild.
+
+## 2026-10-20: Era click pass (PR K)
+- Claude, from Jon's ask for a real-click pass of every era, added `tests/tools/era_pass.gd` and a manual-only workflow, `era-pass.yml`; it plays eight starts from the late stone age to the earned Livewire checkpoint with real mouse and key events.
+- It runs only when Jon starts it from the Actions tab, because the earned checkpoints take minutes to build; it never runs on a push or nightly.
+- It changes no game code and no test; every start it was first run on came back clean.

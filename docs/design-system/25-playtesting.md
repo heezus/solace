@@ -50,3 +50,5 @@ The scorecard keeps its two reviewers. Under them goes a "Measured play" block w
 ## Not in this page
 
 Sound, accessibility testing and a public build's analytics are out of scope. Nothing here collects names, accounts or anything outside the game's own state.
+
+**The era click pass.** `tests/tools/era_pass.gd` plays the start of one era like a person: the real UI is live and every click and key is a real input event. It opens each build tab and clicks the cards on show, puts a few buildings down with the mouse, clicks a building of every type and what its panel offers, presses every tab key and the research board, opens the menu, saves and loads, and lets the town run at triple speed. A card the game puts up is answered with its first button. It fails on any ERROR, WARNING or PROBLEM line. The manual workflow `era-pass.yml` ("Era click pass", never on a push, never nightly) runs it on eight starts, from the late stone age to the earned Livewire checkpoint; the two earned starts build their checkpoint from a real run, so a full pass takes a while. Give it one start id to run just that era.
