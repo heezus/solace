@@ -4,6 +4,8 @@ Terrain kit #114 is merged. PR #115 now wires the corrected materials into the r
 
 ## What these images show
 
+Captured on `541cc13`; the later synchronization with main `f168f5f` preserves the terrain renderer and paused fixture presentation. Upstream changes add crisis accounting and the manual era click-pass tool.
+
 Actual `scenes/main.tscn` captures from `tests/tools/terrain_preview.gd`, Godot 4.7.2. Each era is rendered on preview seeds 3, 11 and 42 in both `baseline` and `current` modes, with seven views per run. The harness uses its existing seeded main-scene startup; `preview_seed` is the command-line seed, rather than an assertion that Main's internal `randi()`-selected map seed has the same numeric value.
 
 The fixture pauses processing, expands existing east/south land for the chosen era, sets the existing story milestones and relevant resource-discovery techs, and reveals fog. Livewire includes a small manually marked burnt-ground fixture beside a natural Bloom sample so firebreak material appears in the captures. These are deterministic visual fixtures, not earned gameplay checkpoints or pacing evidence. The simulation and map generator are not modified by this PR.

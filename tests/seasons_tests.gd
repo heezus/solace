@@ -18,6 +18,11 @@ func run(runner) -> void:
 	test_a_lean_season_answered_with_foraging()
 	test_a_cold_snap_burns_fuel_or_slows_the_workshops()
 	test_a_bloom_surge_runs_the_tide_or_costs_coal()
+	test_a_fever_costs_food_or_pace()
+	test_a_blight_a_bad_vein_and_a_storm_cost_stores_or_pace()
+	test_every_kind_comes_once_before_any_comes_again()
+	test_each_era_adds_kinds_and_no_kind_comes_before_its_era()
+	test_what_a_season_takes_is_counted_told_and_floated()
 	test_a_season_is_remembered_by_a_save()
 
 
@@ -40,10 +45,11 @@ func test_none_comes_before_the_first_and_the_card_waits_for_an_answer() -> void
 	t.check(s.seasons.phase == "idle", "no season in the first six minutes")
 	_run(s, 10.0)
 	t.check(
-		s.seasons.phase == "pending" and s.seasons.kind == "lean",
-		"the first is a lean season: nothing else could come yet"
+		s.seasons.phase == "pending" and s.seasons.kind in ["lean", "fever"],
+		"the first is a lean season or a fever: nothing else could come yet"
 	)
 	t.check(s.economy.eat_factor == 1.0, "and nothing changes until the player answers")
+	s.seasons.kind = "lean"  # the rest of this test is about a lean season
 	_run(s, Data.SEASON_AUTO + 1.0)
 	t.check(
 		s.seasons.phase == "active" and s.seasons.answer == 0,
@@ -151,12 +157,18 @@ func test_a_cold_snap_burns_fuel_or_slows_the_workshops() -> void:
 
 func test_a_bloom_surge_runs_the_tide_or_costs_coal() -> void:
 	var s: Sim = t.fresh()
+	s.economy.inv["wood"] = 100
+	s.economy.inv["grain"] = 50
 	s.seasons.kind = "surge"
 	s.seasons.phase = "pending"
 	s.seasons.choose(s, 0)
 	t.check(
 		s.seasons.tide_pace() == Data.SURGE_PACE and s.seasons.keeps_buildings(),
 		"let it come: half again as fast, nothing lost"
+	)
+	t.check(
+		s.economy.inv["wood"] == 80 and s.economy.inv["grain"] == 40,
+		"but the Bloom takes a fifth of the raw goods: %s" % [s.seasons.spent]
 	)
 	var s2: Sim = t.fresh()
 	s2.economy.inv["coal"] = 30
@@ -167,10 +179,120 @@ func test_a_bloom_surge_runs_the_tide_or_costs_coal() -> void:
 	t.check(s2.seasons.tide_pace() == 1.0 and not s2.seasons.keeps_buildings(), "and the tide keeps its pace")
 	var s3: Sim = t.fresh()
 	s3.economy.inv["coal"] = 5
+	s3.economy.inv["wood"] = 10
 	s3.seasons.kind = "surge"
 	s3.seasons.phase = "pending"
 	s3.seasons.choose(s3, 1)
-	t.check(s3.economy.inv["coal"] == 0, "with less coal than that, what there is goes and the stores never go under")
+	t.check(
+		s3.economy.inv["coal"] == 5 and s3.economy.inv["wood"] == 0,
+		"with too little coal the wood goes instead, as far as it goes, and the stores never go under"
+	)
+
+
+func _answered(s: Sim, kind: String, index: int) -> void:
+	s.seasons.kind = kind
+	s.seasons.phase = "pending"
+	s.seasons.choose(s, index)
+	s.seasons.tick(s, 1.0)
+
+
+func _building(s: Sim, type: String, at: Vector2i) -> Dictionary:
+	s.town.add_building(type, at)
+	return s.town.buildings[s.town.building_at[at]]
+
+
+func test_a_fever_costs_food_or_pace() -> void:
+	var s: Sim = t.fresh()
+	_answered(s, "fever", 0)
+	t.check(s.economy.eat_factor == Data.TEND_EAT, "tending the sick: everyone eats a quarter more")
+	var hut := _building(s, "gatherers_hut", s.world.camp_pos + Vector2i(3, 0))
+	t.check(s.seasons.speed_factor(s, hut) == 1.0, "and work goes on at its pace")
+	var s2: Sim = t.fresh()
+	_answered(s2, "fever", 1)
+	var hut2 := _building(s2, "gatherers_hut", s2.world.camp_pos + Vector2i(3, 0))
+	t.check(s2.economy.eat_factor == 1.0, "pushing on: no one eats more")
+	t.check(s2.seasons.speed_factor(s2, hut2) == Data.PUSH_PACE, "but every building works at seven tenths")
+
+
+func test_a_blight_a_bad_vein_and_a_storm_cost_stores_or_pace() -> void:
+	var s: Sim = t.fresh()
+	s.economy.inv["wood"] = 100
+	_answered(s, "blight", 1)
+	var field := _building(s, "field", s.world.camp_pos + Vector2i(3, 0))
+	var hut := _building(s, "gatherers_hut", s.world.camp_pos + Vector2i(0, 3))
+	t.check(s.economy.inv["wood"] == 60, "treating the rows costs 40 Wood")
+	t.check(is_equal_approx(s.seasons.speed_factor(s, field), 0.75), "and the fields keep three quarters of their pace")
+	t.check(s.seasons.speed_factor(s, hut) == 1.0, "while a hut is not touched")
+	var s2: Sim = t.fresh()
+	_answered(s2, "blight", 0)
+	var field2 := _building(s2, "field", s2.world.camp_pos + Vector2i(3, 0))
+	t.check(
+		s2.seasons.speed_factor(s2, field2) == Data.BLIGHT_PACE,
+		"waiting it out: the fields at two fifths, nothing spent"
+	)
+	var s3: Sim = t.fresh()
+	_answered(s3, "vein", 1)
+	var mine := _building(s3, "mine", s3.world.camp_pos + Vector2i(3, 0))
+	t.check(s3.seasons.speed_factor(s3, mine) == Data.VEIN_PACE, "digging round it: a mine at half its pace")
+	var s4: Sim = t.fresh()
+	s4.economy.inv["iron"] = 15
+	s4.economy.inv["wood"] = 100
+	_answered(s4, "storm", 1)
+	var hut4 := _building(s4, "gatherers_hut", s4.world.camp_pos + Vector2i(3, 0))
+	t.check(is_equal_approx(s4.seasons.speed_factor(s4, hut4), 0.9), "braving the storm: every building at nine tenths")
+	t.check(
+		s4.economy.inv["wood"] == 40 and s4.economy.inv["iron"] == 15,
+		"(15 Iron is not the 20 asked: the Wood goes instead)"
+	)
+
+
+func test_every_kind_comes_once_before_any_comes_again() -> void:
+	var kinds: Array = _kinds(42, 8).map(func(x): return x.split("@")[0])
+	var first: Array = kinds.slice(0, 4)
+	var second: Array = kinds.slice(4, 8)
+	first.sort()
+	second.sort()
+	t.check(first == ["cold", "fever", "lean", "surge"], "the first four are all four kinds: %s" % [kinds])
+	t.check(second == first, "and the next four are each of them again: %s" % [kinds])
+
+
+func test_each_era_adds_kinds_and_no_kind_comes_before_its_era() -> void:
+	var s: Sim = t.fresh()
+	t.check(
+		s.seasons.pool(s) == ["lean", "fever"], "the stone age meets a lean season or a fever: %s" % [s.seasons.pool(s)]
+	)
+	s.story.record("bronze_dawn")
+	t.check("cold" in s.seasons.pool(s) and not "surge" in s.seasons.pool(s), "Bronze Dawn adds the cold snap")
+	s.tide.begun = true
+	t.check("surge" in s.seasons.pool(s), "and the tide adds the surge")
+	t.check(not "blight" in s.seasons.pool(s), "no blight yet")
+	s.story.record("star_falling")
+	t.check("blight" in s.seasons.pool(s) and not "vein" in s.seasons.pool(s), "the Falling Star adds the blight")
+	s.story.record(Data.IRONFALL_EVENT)
+	t.check("vein" in s.seasons.pool(s) and not "storm" in s.seasons.pool(s), "Ironfall adds the bad vein")
+	s.story.record(Data.LIVEWIRE_BEGUN)
+	t.check(s.seasons.pool(s).size() == Data.SEASONS.size(), "Livewire adds the storm: every kind")
+
+
+func test_what_a_season_takes_is_counted_told_and_floated() -> void:
+	var s: Sim = t.fresh()
+	s.economy.inv["charcoal"] = 100
+	_answered(s, "cold", 0)
+	_run(s, 20.0)
+	t.check(s.seasons.spent.get("charcoal", 0) == 10, "ten Charcoal burnt in twenty seconds: %s" % [s.seasons.spent])
+	t.check(
+		s.seasons.pops.size() == 10 and s.seasons.pops[0] == "-1 Charcoal",
+		"each one floats over the Hearth: %s" % [s.seasons.pops]
+	)
+	t.check(s.seasons.spent_text() == "10 Charcoal", "and the season can say what it cost")
+	s.events.clear()
+	_run(s, Data.SEASON_LENGTH)
+	t.check(
+		s.events.any(
+			func(e): return e.begins_with(Data.SEASONS["cold"]["over"]) and e.contains("It cost 45 Charcoal in all")
+		),
+		"the end says the whole bill: %s" % [s.events]
+	)
 
 
 func test_a_season_is_remembered_by_a_save() -> void:

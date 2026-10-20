@@ -42,6 +42,7 @@ The source of truth for our game's universe. If something is written here, it's 
 24. [Balance](24-balance.md): the seven picks that make the middle game matter (one live goal, time-left chips and a famine card, storage caps and spoilage, made-goods prices, Seasons of Strain, pacing guarantees, scorecard metrics); design only, built in four PRs
 25. [Playtesting](25-playtesting.md): the play recorder (logs Jon's own sessions, a three-tap card at each era end) and the AI player (a Claude session plays through text snapshots and keeps a diary), and how they sit beside the bots in the scorecards
 26. [Playtest fixes](26-playtest-fixes.md): Jon's 2026-10-19 notes and how each was settled (tidy era starts, neighbours that chain, one side-panel rule, shortcut keys, steady top-bar chips, glyph clues)
+27. [Crises](27-crises.md): Seasons of Strain rebuilt (seven kinds by era, each once per round, every answer a real price, costs shown as numbers)
 - [Decision Log](decision-log.md)
 
 ### Mockups (visual specs from the visual design thread)
