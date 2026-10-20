@@ -911,3 +911,10 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - One key per build tab and P for pause, shown on the tabs and in the pause menu; top-bar chips keep their size and turn red instead of shrinking, with the time in the tooltip.
 - The Wanderer is whole once the star has fallen, the Glyph Wall panel opens with how it works, and every glyph clue was rewritten so it points at its own word. Top-bar Trade and Glyph panels wait for the redesign.
 - Claude re-pinned the golden snapshots for maps 1 to 3 and widened the pacing bot's "first Bronze" window from 7-16 to 7-19 minutes: chained neighbours put more huts on haulers, which moves the bot's whole run (Bronze Dawn 17.8, 23.9 and 18.4 minutes, first Bronze 17.3, 15.6 and 18.4 minutes later). The bot now lays a road to a chained building too (it counts only roads it laid), as a player would.
+
+## 2026-10-19: Painted terrain kit and contour banks (PR #114)
+- Codex implemented the agreed page 22 kit: three meadows, two woodland floors, calm/flow water, worn and southern earth, 32 ground decals and a painted bank strip with fixed upper-left lighting.
+- Continuous world-space sampling uses non-mirrored hash offsets and two scales; fine brush marks are scaled below the buildings' silhouettes, with crisp separately scattered details. Runtime meadow/earth atlases keep the Compatibility shader at eight samplers and isolate sheet edges.
+- The bank uses the existing water-mask gradient and two tangent projections, so painted soil, stones and shallows follow bends without extra edge tiles or map-generation changes.
+- Decals use the map-seeded coordinate hash, respect fog and road/foundation footprints, and sit below sprites. Tile IDs, gameplay, save semantics and the 48 px baseline remain unchanged.
+- Before/after native previews cover seeds 3, 11 and 42. Source dimensions and resampling are recorded; packed 1920 px sheets are not claimed as native 1920 px generated originals.
