@@ -519,6 +519,7 @@ const BUILDINGS := {
 		"in": {},
 		"out": {},
 		"trade": true,
+		"trade_not": ["shard"],
 		"time": 10.0,
 		"color": Color("f2a65a"),
 		"desc": "Swaps 3 of one good for 1 of another, slowly. Choose what it gives and what it gets.",
@@ -616,7 +617,7 @@ const BUILDINGS := {
 		"color": Color("9fd8e8"),
 		"desc":
 		(
-			"Swaps 2 of one good for 1 of another with the strangers, a little quicker than the Trading Post. "
+			"Swaps 2 of one good for 1 of another, but only the strangers' own goods: Shards, Coal, Wire and Steel. "
 			+ "Choose what it gives and what it gets."
 		),
 	},

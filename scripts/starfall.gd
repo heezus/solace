@@ -46,6 +46,7 @@ var dark_left := 0.0  # seconds the workshops keep dark (the Warning)
 var ended := false  # the Warning is read: the era is over
 var lean := ""  # "allies", "neighbours" or "enemies" once the era ends (Data.LEANS)
 var bloom := Vector2i(-1, -1)  # where the first Bloom sign stands
+var pops: Array = []  # short texts the map floats over the Hearth ("+6 trust"); main takes them every frame
 var _stock: Economy  # for the one thing a moment can take: food
 var _town: Buildings
 
@@ -75,9 +76,27 @@ func people_word() -> String:
 	return Data.LUMEN_NAME if locked.has(Data.GLYPH_SETS[1]["id"]) else Data.STRANGERS_NAME
 
 
-## Move trust by `amount`, never out of 0 to Data.TRUST_MAX.
+## Move trust by `amount`, never out of 0 to Data.TRUST_MAX. A step of a whole point or more floats over the Hearth ("+6 trust").
 func nudge(amount: float) -> void:
+	var before := trust
 	trust = clampf(trust + amount, 0.0, Data.TRUST_MAX)
+	if absf(trust - before) >= 1.0 and stage == "arrived":
+		pops.append(Data.TRUST_POP % int(roundf(trust - before)))
+		if pops.size() > 12:  # nothing draws them in a headless run: keep the list short
+			pops.pop_front()
+
+
+## True once the Lumen can be named (the first set is read): only then is there anyone to show a word for.
+func trust_known() -> bool:
+	return locked.has(Data.GLYPH_SETS[1]["id"])
+
+
+## The word for how the Lumen stand with the Kith now (Data.TRUST_WORDS): the hidden number, never shown as a number.
+func trust_word() -> String:
+	for step in Data.TRUST_WORDS:
+		if trust < step[0]:
+			return step[1]
+	return Data.TRUST_WORDS.back()[1]
 
 
 func tick(delta: float) -> void:

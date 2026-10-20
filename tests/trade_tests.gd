@@ -8,6 +8,9 @@ const Buildings = preload("res://scripts/buildings.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const RunSave = preload("res://scripts/run_save.gd")
 const StarfallTests = preload("res://tests/starfall_tests.gd")
+const TrustMeter = preload("res://scripts/trust_meter.gd")
+const TradePicker = preload("res://scripts/trade_picker.gd")
+const PopFeed = preload("res://scripts/pop_feed.gd")
 
 var t  # the runner, tests/run_tests.gd
 var _h  # the stage 1 tests, for their town helpers
@@ -20,6 +23,8 @@ func run(runner) -> void:
 	test_the_buildings_are_well_formed()
 	test_the_lumen_will_trade_once_trust_stands()
 	test_the_market_swaps_two_for_one()
+	test_each_market_trades_its_own_goods()
+	test_trust_shows_as_a_word_a_bar_and_a_pop()
 	test_trade_alone_makes_neighbours()
 	test_the_shrine_lifts_trust()
 	test_the_guard_post_wears_trust_down_and_speeds_the_kith()
@@ -77,6 +82,55 @@ func test_the_market_swaps_two_for_one() -> void:
 	s.town.set_trade(post, "wood", "stone")
 	t.check(Buildings.recipe_in(s.town.buildings[post]) == {"wood": Data.TRADE_GIVE}, "the Trading Post is dearer")
 	t.check(not s.town.set_trade(post, "wood", "shard"), "and the Trading Post has no shards to give")
+
+
+func test_each_market_trades_its_own_goods() -> void:
+	var seen := {"wood": true, "stone": true, "coal": true, "shard": true, "wire": true, "steel": true}
+	var kith := TradePicker.next_good(seen, "", "", "trading_post")
+	var lumen := TradePicker.next_good(seen, "", "", "lumen_market")
+	t.check(kith == "wood", "the Trading Post starts with the first Kith good: %s" % kith)
+	t.check(lumen == "wire", "the Lumen Market starts with the first of the strangers' goods: %s" % lumen)
+	t.check(TradePicker.next_good(seen, "wire", "", "lumen_market") == "coal", "and goes on through theirs")
+	t.check(
+		TradePicker.next_good(seen, "steel", "", "trading_post") != "shard", "the Trading Post never offers a shard"
+	)
+	var s := _open()
+	var post := _build(s, "trading_post")
+	var market := _build(s, "lumen_market")
+	s.town.buildings[market]["give"] = "wood"  # what a save from before the split could hold
+	s.town.buildings[market]["get"] = "stone"
+	var copy: Dictionary = Buildings._building_from_dict(Buildings._building_to_dict(s.town.buildings[market]))
+	t.check(copy["give"] == "" and copy["get"] == "", "a Market saved with Kith goods loads with none chosen")
+	t.check(s.town.set_trade(post, "shard", "wood") == false, "and no Trading Post gives a shard")
+
+
+func test_trust_shows_as_a_word_a_bar_and_a_pop() -> void:
+	var s := _open()
+	s.starfall.pops.clear()
+	s.starfall.trust = 0.0
+	t.check(s.starfall.trust_word() == "Wary", "no trust is wary")
+	s.starfall.trust = 25.0
+	t.check(s.starfall.trust_word() == "Curious", "a little is curious")
+	s.starfall.trust = 50.0
+	t.check(s.starfall.trust_word() == "Friendly", "half is friendly")
+	s.starfall.trust = 90.0
+	t.check(s.starfall.trust_word() == "Close", "most is close")
+	s.starfall.trust = 10.0
+	s.starfall.nudge(6.0)
+	t.check(s.starfall.pops == ["+6 trust"], "a step of trust floats up: %s" % [s.starfall.pops])
+	s.starfall.nudge(0.2)
+	t.check(s.starfall.pops.size() == 1, "a trickle does not")
+	var at := Vector2(100, 100)
+	var drained: Array = PopFeed.drain(s, at)
+	t.check(drained.size() == 1 and drained[0]["text"] == "+6 trust" and s.starfall.pops.is_empty(), "the map takes it")
+	var market := _build(s, "lumen_market")
+	var meter := TrustMeter.new()
+	meter.setup(s)
+	meter.show_for(s.town.buildings[market])
+	t.check(meter.visible, "the Lumen Market's panel shows the meter")
+	meter.show_for(s.town.buildings[_build(s, "trading_post")])
+	t.check(not meter.visible, "and the Trading Post's does not")
+	meter.free()
 
 
 func test_trade_alone_makes_neighbours() -> void:

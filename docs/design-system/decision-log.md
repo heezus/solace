@@ -928,3 +928,8 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 ## 2026-10-19: Lag pass, less work every frame (PR H)
 - Claude, from Jon's "clicks are just laggy in general", cut work done every frame that never changed: the ground mask redraws only the tiles that changed, the fog edge triangles are cached until the fog moves, the lessons overlay loops over what is on screen, and the build bar keeps only the open drawer's cards up to date.
 - Nothing looks or plays differently; a test checks that the incremental ground mask equals a full rebuild.
+
+## 2026-10-19: Separate markets, a hidden Wall theme, a word for trust (PR J)
+- Claude, from Jon's playtest notes and his picks "Split by goods" and "Word meter", made the Trading Post swap Kith goods and the Lumen Market only the strangers' goods (Shard, Coal, Wire, Steel; there is no glyph-lore item), because the two were the same machine.
+- Unread Glyph Wall sets are "Set N of 6" and their theme, icon and gift show only once read; the sets between the Name (first) and the Warning (last) come in an order scrambled by where the ship came down, so a map is reproducible and gameplay randomness is untouched.
+- The Lumen Market's panel shows the Lumen's trust as a word and a bar, and a step of trust floats up as "+6 trust"; the number stays hidden.

@@ -676,7 +676,7 @@ const TECHS := {
 		"side": true,
 		"requires": ["the_wheel", "tally_sticks"],
 		"cost": {"wood": 60, "rope": 60, "tin": 10, "charcoal": 20},
-		"desc": "Swap 3 of anything for 1 of anything, slowly.",
+		"desc": "Swap 3 of any Kith good for 1 of another, slowly.",
 	},
 	"sky_watch":
 	{

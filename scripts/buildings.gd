@@ -725,7 +725,10 @@ static func _building_from_dict(d: Dictionary) -> Dictionary:
 	b["ore"] = String(d.get("ore", ""))
 	b["give"] = String(d.get("give", ""))
 	b["get"] = String(d.get("get", ""))
-	if Data.BUILDINGS[b["type"]].get("trade", false) and not (trade_allows(b["type"], b["give"]) and trade_allows(b["type"], b["get"])):
+	if (
+		Data.BUILDINGS[b["type"]].get("trade", false)
+		and not (trade_allows(b["type"], b["give"]) and trade_allows(b["type"], b["get"]))
+	):
 		b["give"] = ""  # a save from before the Markets split: pick the goods again
 		b["get"] = ""
 	var def: Dictionary = Data.BUILDINGS[b["type"]]

@@ -19,6 +19,7 @@ const Buildings = preload("res://scripts/buildings.gd")
 const Work = preload("res://scripts/work.gd")
 const HutFocus = preload("res://scripts/hut_focus.gd")
 const TradePicker = preload("res://scripts/trade_picker.gd")
+const TrustMeter = preload("res://scripts/trust_meter.gd")
 const GlyphPicker = preload("res://scripts/glyph_picker.gd")
 const ExpeditionPicker = preload("res://scripts/expedition_picker.gd")
 const PatchText = preload("res://scripts/patch_text.gd")
@@ -87,6 +88,11 @@ func setup(game: Sim) -> void:
 	v.add_child(trade)
 	v.move_child(trade, parts["recipe"].get_index())
 	parts["trade"] = trade
+	var trust := TrustMeter.new()  # how the Lumen stand with the Kith, on the Lumen Market's panel
+	trust.setup(game)
+	v.add_child(trust)
+	v.move_child(trust, parts["recipe"].get_index())
+	parts["trust"] = trust
 	var glyphs := GlyphPicker.new()  # a Glyph Wall: the marks copied so far and a guess for each (scripts/glyph_picker.gd)
 	glyphs.setup(game)
 	glyphs.changed.connect(refresh)
@@ -234,6 +240,7 @@ func refresh() -> void:
 	parts["desc"].visible = def["kind"] not in ["gatherer", "processor"]  # what it gathers or makes says it better
 	parts["focus"].show_for(b)
 	parts["trade"].show_for(b)
+	parts["trust"].show_for(b)
 	parts["glyphs"].show_for(b)
 	parts["post"].show_for(b)
 	parts["bench"].show_for(b)
