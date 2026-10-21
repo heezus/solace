@@ -178,3 +178,17 @@ func _tide(s) -> void:
 			if b["type"] == "scorcher" and b["burn"] > 0.0:
 				_row["first_scorcher_burn_min"] = snappedf(t / 60.0, 0.1)
 				break
+
+
+## The probe as plain data (and back), so a long run can be kept and picked up: the rows so far and the era in progress.
+func to_dict() -> Dictionary:
+	return {"rows": rows, "era": era, "row": _row, "at": _at}
+
+
+func from_dict(d: Dictionary) -> void:
+	rows = d["rows"]
+	era = d["era"]
+	_row = d["row"]
+	_at = d["at"]
+	_acc = 0.0
+	_streak.clear()

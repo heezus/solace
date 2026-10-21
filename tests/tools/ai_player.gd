@@ -5,6 +5,7 @@ extends SceneTree
 ## player thinks. Stops after --decisions pages, when the era turns over (--stop-at-era), or when no answer comes in --patience s.
 ## Run: godot --headless --path . -s tests/tools/ai_player.gd -- --dir=/some/folder [--seed=3] [--every=15] [--decisions=60]
 ##      [--stop-at-era=Bronze Dawn] [--patience=900] [--start=earned_livewire]
+## With --start an earned checkpoint plays on map --seed (built by the bots, kept in user://ai_starts/); any other start is on map 1.
 ## The playing session reads snapshot_<n>.txt and writes moves_<n>.json and diary_<n>.md in the folder. Then it reads the next one.
 
 const Data = preload("res://scripts/data.gd")
@@ -27,6 +28,7 @@ var start := ""  # a stage start or earned checkpoint to begin from (scripts/dev
 
 func _init() -> void:
 	var map_seed := 3
+	var seed_given := false
 	for arg in OS.get_cmdline_user_args():
 		var kv: PackedStringArray = arg.trim_prefix("--").split("=", true, 1)
 		if kv.size() < 2:
@@ -36,6 +38,7 @@ func _init() -> void:
 				dir = kv[1] if kv[1].ends_with("/") else kv[1] + "/"
 			"seed":
 				map_seed = int(kv[1])
+				seed_given = true
 			"every":
 				every = float(kv[1])
 			"decisions":
@@ -47,15 +50,17 @@ func _init() -> void:
 			"patience":
 				patience = float(kv[1])
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(dir))
-	if start != "":
-		s = DevStarts.build(start)
+	if start in DevStarts.EARNED and seed_given:
+		s = DevStarts.earned_on_map(map_seed, start, "user://ai_starts/")  # an earned checkpoint on that map, played by the bots
+	elif start != "":
+		s = DevStarts.build(start)  # the starts are on map 1 whatever `seed` says
 	else:
 		s = Sim.new()
 		s.generate(map_seed)
 	print(
 		(
 			"AI player: map %d, a page every %d game seconds, in %s"
-			% [map_seed, int(every), ProjectSettings.globalize_path(dir)]
+			% [s.world.map_seed, int(every), ProjectSettings.globalize_path(dir)]
 		)
 	)
 	var refused: Array = []
