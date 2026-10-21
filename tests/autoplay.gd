@@ -69,6 +69,7 @@ var clicked := {}  # what the harvests and clicks went to since the last trace
 var hold_tile := Vector2i(-1, -1)  # the tile the bot is holding on, (-1, -1) for none
 var goal_tech := "bronze_dawn"  # the tech the bot is working toward
 var reach := {}  # tiles the Kith can walk to from the Hearth, refreshed each decision
+var probe: Callable  # called with the Sim after every step: a reading of the run (tests/tools/era_probe.gd), never a change to it
 
 
 func play(map_seed: int, max_seconds: float) -> Dictionary:
@@ -98,6 +99,8 @@ func step(tick: bool) -> void:
 	clicks += DT * (CLICKS_LATE if s.tech_tree.researched.has("haulers") else CLICKS_EARLY)
 	if trace and fmod(clock + DT * 0.5, 60.0) < DT:
 		_trace()
+	if probe.is_valid():
+		probe.call(s)
 	clicks = minf(clicks, 4.0)
 	think -= DT
 	if think <= 0.0:

@@ -1,0 +1,180 @@
+extends RefCounted
+## A reading of one run, era by era, for the baseline (tests/tools/pace.gd `baseline`): what the town looked like when each era
+## began and how its logistics did while it ran. It only looks: nothing here touches a Sim or changes a bot's play.
+## begin(name, s) opens an era and takes the start snapshot; observe(s) is called every step (the bots' `probe` hook) and samples
+## once a game second; finish(s) closes the era and returns its row. Livewire opens by itself when the card that begins it is put
+## away (observe sees Data.LIVEWIRE_BEGUN) and closes the Ironfall row before it.
+
+const Buildings = preload("res://scripts/buildings.gd")
+const Data = preload("res://scripts/data.gd")
+
+const SAMPLE := 1.0  # game seconds between readings
+const STEP := 0.1  # game seconds of one bot step (Autoplay.DT)
+const LOST_BY := 15.0 * 60.0  # Livewire: buildings lost by this many seconds into the era
+
+## The era names in order, and the goal list each one is counted from (the checklist the player sees in it).
+const ERAS := ["stone_age", "bronze_dawn", "starfall", "ironfall", "livewire"]
+
+var rows: Array = []
+var era := ""
+var _row := {}
+var _at := 0.0  # game clock at the era's start
+var _acc := 0.0
+var _streak := {}  # building tile -> seconds in a row it has waited for a hauler
+
+
+## Open era `name` on `s`: the start snapshot (people, places, stock, coal in the ground).
+func begin(name: String, s) -> void:
+	era = name
+	_at = s.seasons.time
+	_acc = 0.0
+	_streak.clear()
+	var idle := 0
+	var haulers := 0
+	for k in s.people.kith:
+		if k["job"] == "":
+			idle += 1
+		elif k["job"] == "haul":
+			haulers += 1
+	var places := 0
+	var staffed := 0
+	var paused := 0
+	for b in s.town.buildings:
+		if Buildings.needs_worker(b):
+			places += Buildings.crew_size(b)
+			for slot in Buildings.crew_slots(b):
+				if b[slot] >= 0:
+					staffed += 1
+			if b["paused"]:
+				paused += 1
+	_row = {
+		"era": name,
+		"start":
+		{
+			"minute": snappedf(_at / 60.0, 0.1),
+			"kith": s.people.kith.size(),
+			"idle_kith": idle,
+			"haulers": haulers,
+			"places": places,
+			"staffed_places": staffed,
+			"paused_buildings": paused,
+			"stock": _stock(s),
+			"coal_in_ground": _coal_in_ground(s),
+		},
+		"hauler_wait_total_s": 0.0,
+		"hauler_wait_longest_s": 0.0,
+		"starved_with_stock_s": 0.0,
+	}
+	if name == "livewire":
+		_row["first_overgrown_min"] = -1.0
+		_row["first_lost_min"] = -1.0
+		_row["lost_by_15"] = -1
+		_row["first_scorcher_burn_min"] = -1.0
+
+
+## One step of a bot: sample the logistics once a game second, and open Livewire when it begins.
+func observe(s) -> void:
+	if era == "":
+		return
+	if era == "ironfall" and s.story.events.has(Data.LIVEWIRE_BEGUN):
+		finish(s)
+		begin("livewire", s)
+	_acc += STEP
+	if _acc < SAMPLE:
+		return
+	_acc -= SAMPLE
+	_sample(s)
+	if era == "livewire":
+		_tide(s)
+
+
+## Close the era: its length and goals done, and the row.
+func finish(s) -> Dictionary:
+	var row := _row.duplicate(true)
+	row["length_min"] = snappedf((s.seasons.time - _at) / 60.0, 0.1)
+	var list := _goals(era)
+	var done := 0
+	for g in list:
+		if s.story.goals_done.has(g["id"]):
+			done += 1
+	row["goals_done"] = done
+	row["goals_total"] = list.size()
+	row["ended"] = true  # the driver sets it false for an era whose bot ran out of time
+	for key in ["hauler_wait_total_s", "hauler_wait_longest_s", "starved_with_stock_s"]:
+		row[key] = snappedf(row[key], 0.1)
+	row["end"] = {"kith": s.people.kith.size(), "stock": _stock(s), "coal_in_ground": _coal_in_ground(s)}
+	rows.append(row)
+	era = ""
+	return row
+
+
+func _goals(name: String) -> Array:
+	match name:
+		"stone_age":
+			return Data.GOALS
+		"bronze_dawn":
+			return Data.GOALS_ERA2
+		"starfall":
+			return Data.GOALS_ERA3
+		"ironfall":
+			return Data.GOALS_ERA4
+	return Data.GOALS_ERA5
+
+
+func _coal_in_ground(s) -> int:
+	var total := 0
+	for id in s.world.seam_left:
+		total += int(s.world.seam_left[id])
+	return total
+
+
+func _stock(s) -> Dictionary:
+	var stock := {}
+	for id in Data.ITEM_ORDER:
+		if s.economy.inv.get(id, 0) > 0:
+			stock[id] = int(s.economy.inv[id])
+	return stock
+
+
+## Who waited on a hauler this second, and which workshops stood starved with the input they lack sitting in the stores.
+func _sample(s) -> void:
+	var waiting := {}
+	for b in s.town.buildings:
+		var status: String = b["status"]
+		if "waiting for a hauler" in status:
+			waiting[b["pos"]] = true
+			_row["hauler_wait_total_s"] += SAMPLE
+		if status.begins_with("Needs ") and Buildings.needs_worker(b) and _lacks_stocked(s, b):
+			_row["starved_with_stock_s"] += SAMPLE
+	for p in waiting:
+		_streak[p] = _streak.get(p, 0.0) + SAMPLE
+		_row["hauler_wait_longest_s"] = maxf(_row["hauler_wait_longest_s"], _streak[p])
+	for p in _streak.keys():
+		if not waiting.has(p):
+			_streak.erase(p)
+
+
+## True when a workshop is short of an input (not in its buffer or on its way) that the stores hold.
+func _lacks_stocked(s, b: Dictionary) -> bool:
+	var recipe := Buildings.recipe_in(b)
+	for id in recipe:
+		if b["inbuf"].get(id, 0) + b["incoming"].get(id, 0) < recipe[id] and s.economy.inv.get(id, 0) > 0:
+			return true
+	return false
+
+
+## Livewire only: when the tide first stands on a building and first takes one, the buildings lost by minute 15 (-1 when the
+## era ended before it), and when a Scorcher first burns (-1 when none did). All minutes are into the era.
+func _tide(s) -> void:
+	var t: float = s.seasons.time - _at
+	if _row["first_overgrown_min"] < 0.0 and not s.tide.hit.is_empty():
+		_row["first_overgrown_min"] = snappedf(t / 60.0, 0.1)
+	if _row["first_lost_min"] < 0.0 and s.tide.lost > 0:
+		_row["first_lost_min"] = snappedf(t / 60.0, 0.1)
+	if _row["lost_by_15"] < 0 and t >= LOST_BY:
+		_row["lost_by_15"] = s.tide.lost
+	if _row["first_scorcher_burn_min"] < 0.0:
+		for b in s.town.buildings:
+			if b["type"] == "scorcher" and b["burn"] > 0.0:
+				_row["first_scorcher_burn_min"] = snappedf(t / 60.0, 0.1)
+				break
