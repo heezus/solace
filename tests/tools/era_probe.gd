@@ -7,10 +7,14 @@ extends RefCounted
 
 const Buildings = preload("res://scripts/buildings.gd")
 const Data = preload("res://scripts/data.gd")
+const Haulers = preload("res://scripts/haulers.gd")
+const Kith = preload("res://scripts/kith.gd")
+const Roads = preload("res://scripts/roads.gd")
 
 const SAMPLE := 1.0  # game seconds between readings
 const STEP := 0.1  # game seconds of one bot step (Autoplay.DT)
 const LOST_BY := 15.0 * 60.0  # Livewire: buildings lost by this many seconds into the era
+const DEPOTS_EVERY := 300.0  # game seconds between readings of the haulers at each depot
 
 ## The era names in order, and the goal list each one is counted from (the checklist the player sees in it).
 const ERAS := ["stone_age", "bronze_dawn", "starfall", "ironfall", "livewire"]
@@ -21,6 +25,9 @@ var _row := {}
 var _at := 0.0  # game clock at the era's start
 var _acc := 0.0
 var _streak := {}  # building tile -> seconds in a row it has waited for a hauler
+var _starve := {}  # workshop tile -> seconds in a row it has stood starved with its input in stock
+var _spill_seen := 0  # Economy.spilled at the last reading (it is not saved, so a resumed run starts it again from 0)
+var _depots_at := 0.0  # era seconds of the last depot reading
 
 
 ## Open era `name` on `s`: the start snapshot (people, places, stock, coal in the ground).
@@ -29,6 +36,9 @@ func begin(name: String, s) -> void:
 	_at = s.seasons.time
 	_acc = 0.0
 	_streak.clear()
+	_starve.clear()
+	_spill_seen = s.economy.spilled
+	_depots_at = 0.0
 	var idle := 0
 	var haulers := 0
 	for k in s.people.kith:
@@ -60,10 +70,15 @@ func begin(name: String, s) -> void:
 			"paused_buildings": paused,
 			"stock": _stock(s),
 			"coal_in_ground": _coal_in_ground(s),
+			"depots": _depots(s),
 		},
 		"hauler_wait_total_s": 0.0,
 		"hauler_wait_longest_s": 0.0,
 		"starved_with_stock_s": 0.0,
+		"starved_longest_s": 0.0,
+		"spilled": 0,
+		"resting_s": 0.0,
+		"depots_every_5_min": [],
 	}
 	if name == "livewire":
 		_row["first_overgrown_min"] = -1.0
@@ -100,7 +115,9 @@ func finish(s) -> Dictionary:
 	row["goals_done"] = done
 	row["goals_total"] = list.size()
 	row["ended"] = true  # the driver sets it false for an era whose bot ran out of time
-	for key in ["hauler_wait_total_s", "hauler_wait_longest_s", "starved_with_stock_s"]:
+	for key in [
+		"hauler_wait_total_s", "hauler_wait_longest_s", "starved_with_stock_s", "starved_longest_s", "resting_s"
+	]:
 		row[key] = snappedf(row[key], 0.1)
 	row["end"] = {"kith": s.people.kith.size(), "stock": _stock(s), "coal_in_ground": _coal_in_ground(s)}
 	rows.append(row)
@@ -136,22 +153,53 @@ func _stock(s) -> Dictionary:
 	return stock
 
 
-## Who waited on a hauler this second, and which workshops stood starved with the input they lack sitting in the stores.
+## Who waited on a hauler this second, which workshops stood starved with the input they lack sitting in the stores, who rested
+## at a full store, what spilled over the caps, and (every five minutes) the haulers at each depot.
 func _sample(s) -> void:
 	var waiting := {}
+	var starved := {}
 	for b in s.town.buildings:
 		var status: String = b["status"]
 		if "waiting for a hauler" in status:
 			waiting[b["pos"]] = true
 			_row["hauler_wait_total_s"] += SAMPLE
+		if status.begins_with("Store full"):
+			_row["resting_s"] += SAMPLE
 		if status.begins_with("Needs ") and Buildings.needs_worker(b) and _lacks_stocked(s, b):
 			_row["starved_with_stock_s"] += SAMPLE
-	for p in waiting:
-		_streak[p] = _streak.get(p, 0.0) + SAMPLE
-		_row["hauler_wait_longest_s"] = maxf(_row["hauler_wait_longest_s"], _streak[p])
-	for p in _streak.keys():
-		if not waiting.has(p):
-			_streak.erase(p)
+			starved[b["pos"]] = true
+	_keep_streaks(_streak, waiting, "hauler_wait_longest_s")
+	_keep_streaks(_starve, starved, "starved_longest_s")
+	var spilled: int = s.economy.spilled
+	_row["spilled"] += spilled - _spill_seen if spilled >= _spill_seen else spilled
+	_spill_seen = spilled
+	var t: float = s.seasons.time - _at
+	if t - _depots_at >= DEPOTS_EVERY:
+		_depots_at = t
+		_row["depots_every_5_min"].append({"minute": snappedf(t / 60.0, 0.1), "depots": _depots(s)})
+
+
+## Add a second to every building in `now`'s streak in `streaks`, drop the ones that stopped, and keep the longest in `_row[key]`.
+func _keep_streaks(streaks: Dictionary, now: Dictionary, key: String) -> void:
+	for p in now:
+		streaks[p] = streaks.get(p, 0.0) + SAMPLE
+		_row[key] = maxf(_row[key], streaks[p])
+	for p in streaks.keys():
+		if not now.has(p):
+			streaks.erase(p)
+
+
+## The haulers each depot has: [{"pos": "x,y", "haulers": n, "wanted": n}] with wanted -1 until the town sizes its depots.
+func _depots(s) -> Array:
+	var count := {}
+	for k in s.people.kith:
+		if k["job"] == "haul":
+			var home := Haulers._home_depot(s, k, Kith.tile_of(k))
+			count[home] = count.get(home, 0) + 1
+	var out := []
+	for depot in Roads.posts(s):
+		out.append({"pos": "%d,%d" % [depot.x, depot.y], "haulers": count.get(depot, 0), "wanted": -1})
+	return out
 
 
 ## True when a workshop is short of an input (not in its buffer or on its way) that the stores hold.
@@ -192,3 +240,6 @@ func from_dict(d: Dictionary) -> void:
 	_at = d["at"]
 	_acc = 0.0
 	_streak.clear()
+	_starve.clear()
+	_spill_seen = 0  # a reloaded run starts Economy.spilled again from 0
+	_depots_at = _row["depots_every_5_min"].size() * DEPOTS_EVERY if _row.has("depots_every_5_min") else 0.0
