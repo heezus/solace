@@ -2,9 +2,9 @@ extends RefCounted
 ## Rest at a full store (Step 2). A road-linked hut or workshop whose every output good is at Data.STORAGE_FULL_SHARE of its cap or
 ## more finishes the cycle it is on, then rests: its worker stays, haulers neither empty it nor bring it inputs, and nothing it
 ## makes spills. It starts again when any output falls under Data.STORAGE_RESUME_SHARE of its cap. Homes, power, the Hearth, the
-## Board, the Tool Bench and the trading posts are not affected. A food producer rests only while the Kith have no room to grow:
-## births need food coming in (Economy.food_is_steady), and a full store of food that stopped the flow would stop them. Static,
-## and works on the Sim passed in.
+## Board, the Tool Bench and the trading posts are not affected. Food producers rest like the rest (berries were nearly all of the
+## stone age's spill); a food store near its cap counts as steady food for births (Economy.food_covers_eating). Static, and works on
+## the Sim passed in.
 
 const Data = preload("res://scripts/data.gd")
 const Buildings = preload("res://scripts/buildings.gd")
@@ -15,9 +15,6 @@ const Roads = preload("res://scripts/roads.gd")
 ## so a cycle that is under way is always finished. The state is kept in `b["resting"]`.
 static func rests(s, b: Dictionary) -> bool:
 	var goods := outputs(b)
-	for id in goods:
-		if Data.FOOD_VALUE.has(id) and s.people.kith.size() < s.town.housing():
-			goods = []  # births need the food that comes in: a food producer rests only when there is no room to grow
 	if goods.is_empty() or not Roads.automated(s, b):
 		b["resting"] = false
 		return false

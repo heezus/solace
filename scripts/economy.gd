@@ -212,7 +212,16 @@ func food_is_steady() -> bool:
 ## True while the buildings' food over the whole window (all of it elapsed) covers what everyone eats right now.
 ## One step of the growth rule (see food_is_steady).
 func food_covers_eating() -> bool:
-	return flows.hist.size() >= Data.RATE_WINDOW and food_supply() - food_use >= 0.0
+	return flows.hist.size() >= Data.RATE_WINDOW and (food_supply() - food_use >= 0.0 or _a_food_store_is_nearly_full())
+
+
+## True when a food good's store is at the share a resting producer starts again at or more: its producers rest
+## (scripts/store_rest.gd), so no food comes in, and none is needed.
+func _a_food_store_is_nearly_full() -> bool:
+	for id in Data.FOOD_VALUE:
+		if caps.has(id) and inv.get(id, 0) >= int(caps[id] * Data.STORAGE_RESUME_SHARE):
+			return true
+	return false
 
 
 ## Keep `steady_held`: the window's food is only weighed once a second, when the flow window closes one.

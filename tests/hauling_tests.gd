@@ -20,7 +20,7 @@ func run(runner) -> void:
 	test_leftover_kith_go_where_the_gap_is_biggest()
 	test_a_waiting_building_names_its_depot()
 	test_a_full_store_rests_the_building()
-	test_food_producers_rest_only_with_no_room_to_grow()
+	test_food_producers_rest_and_births_go_on()
 	test_places_survive_a_save()
 
 
@@ -183,8 +183,8 @@ func test_a_full_store_rests_the_building() -> void:
 	t.check(not tool_bench_rests, "the Tool Bench never rests (it stops at enough)")
 
 
-## Births need food coming in, so a food store at the cap does not stop its producers while the Kith have room to grow.
-func test_food_producers_rest_only_with_no_room_to_grow() -> void:
+## Food producers rest at a full store like any other, and a food store near its cap counts as steady food, so births go on.
+func test_food_producers_rest_and_births_go_on() -> void:
 	var s := _town(3)
 	_run(s, 5.0)
 	var mill: Dictionary = s.town.buildings[s.town.building_at[s.world.camp_pos + Vector2i(1, 0)]].duplicate(true)
@@ -192,13 +192,19 @@ func test_food_producers_rest_only_with_no_room_to_grow() -> void:
 	mill["progress"] = 0.0
 	mill["resting"] = false
 	s.economy.inv["flour"] = s.economy.caps["flour"]
-	t.check(
-		s.people.kith.size() < s.town.housing(),
-		"set up: the Kith have room (%d of %d)" % [s.people.kith.size(), s.town.housing()]
-	)
-	t.check(not StoreRest.rests(s, mill), "a full flour store does not stop the mill while there is room to grow")
-	s.people.found(s.town.housing() + 1)
-	t.check(StoreRest.rests(s, mill), "with no room it rests")
+	t.check(StoreRest.rests(s, mill), "a full flour store rests the mill")
+	s.economy.inv["flour"] = int(s.economy.caps["flour"] * 0.5)
+	t.check(not StoreRest.rests(s, mill), "and half a store does not")
+	s.economy.flows.hist.clear()
+	for i in Data.RATE_WINDOW:
+		s.economy.flows.hist.append({})
+	var empty_of_food: Dictionary = {}
+	for id in Data.FOOD_VALUE:
+		empty_of_food[id] = 0
+	s.economy.inv.merge(empty_of_food, true)
+	t.check(not s.economy.food_covers_eating(), "with no food in and none stored, the food does not cover eating")
+	s.economy.inv["berries"] = int(s.economy.caps["berries"] * 0.95)
+	t.check(s.economy.food_covers_eating(), "a berry store near its cap does, though nothing is coming in")
 
 
 func test_places_survive_a_save() -> void:
