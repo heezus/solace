@@ -998,3 +998,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Claude found the baseline runs take hours and the machine restarts under them, so `pace.gd baseline` now keeps a checkpoint every ten game minutes and resumes from it.
 - The AI player's `--seed` was ignored whenever `--start` was given (every start is on map 1), so the 2026-10-20 "seed 3" Livewire run was really map 1; now an earned checkpoint is built by the bots on the seed asked for.
 - Tests and tools only: no gameplay change.
+
+## 2026-10-21: Hauler places and rest at a full store (PR R)
+- Claude, doing Step 2 of the whole-game review's plan (Jon chose "Places at each depot"), gave the Hearth and every Storehouse hauler places sized from the depot's load, filled before workshops, with - / + / Auto on the depot's card, a top-bar "Haulers N of M" and a waiting building that names its depot and count.
+- A hut or workshop whose store is full finishes its cycle and rests, so haulers stop carrying goods into a full store and workshops stop making goods that spill. Food producers rest only when there is no room for more Kith: births need the food that comes in.
+- The goldens move on purpose (Bronze Dawn on maps 1 to 3: 1105, 1230, 1075 s become 1067, 972, 895 s; the first Bronze 1862, 2039, 1967 s become 1866, 1636, 1610 s).
+- The baseline tool also reads goods spilled, resting seconds, the longest single starve and the haulers at each depot (PR before this one).
