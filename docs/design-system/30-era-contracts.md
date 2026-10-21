@@ -1,6 +1,6 @@
 # 30. Era contracts
 
-Status: **draft** (2026-10-21, director thread). Each era is specified like a block in a chip: what comes in, what must come out, and the rules that must always hold. Entry ranges are filled from the Phase 0 baseline (5 seeds, every era, earned chain from a fresh stone age). A result counts only when it is measured against the contract.
+Status: **draft** (2026-10-21, director thread). Each era is specified like a block in a chip: what comes in, what must come out, and the rules that must always hold. Entry ranges are filled from the Step 1 baseline (5 seeds, every era, earned chain from a fresh stone age). A result counts only when it is measured against the contract.
 
 ## Rules that hold in every era
 1. **Length:** 15 to 25 game minutes on at least 4 of 5 seeds.

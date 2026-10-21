@@ -985,5 +985,5 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 
 ## 2026-10-21: Pillars and era contracts (PR O)
 - Claude, committing the director thread's text after Jon said go on the whole-game review's plan, wrote the five pillars into page 02 and added page 30, era contracts: per era an exit, a 15 to 25 minute length band and six invariants (no dead end, no finite wall, an answer before each threat, visible logistics, one new thing).
-- Entry ranges are left blank on purpose: they are filled from the Phase 0 baseline (every era, five seeds, an earned chain from a fresh stone age).
+- Entry ranges are left blank on purpose: they are filled from the Step 1 baseline (every era, five seeds, an earned chain from a fresh stone age).
 - Docs only: no gameplay, test or save change.

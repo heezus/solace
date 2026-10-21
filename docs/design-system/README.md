@@ -45,7 +45,7 @@ The source of truth for our game's universe. If something is written here, it's 
 27. [Crises](27-crises.md): Seasons of Strain rebuilt (seven kinds by era, each once per round, every answer a real price, costs shown as numbers)
 28. [The Lumen: markets, Wall, trust](28-lumen-trade.md): the Trading Post and the Lumen Market trade different goods, the Glyph Wall hides set themes and comes in a seeded order, trust shows as a word
 29. [Two roads](29-two-roads.md): built. Each Lumen gift has a Kith twin earned by refusing it, so the player picks a road per gift (a card when its set is read); refusals set the era's lean
-30. [Era contracts](30-era-contracts.md): draft. Per era, what must come out (exit), the 15 to 25 minute length band and the invariants that always hold; entry ranges come from the Phase 0 baseline
+30. [Era contracts](30-era-contracts.md): draft. Per era, what must come out (exit), the 15 to 25 minute length band and the invariants that always hold; entry ranges come from the Step 1 baseline
 - [Decision Log](decision-log.md)
 
 ### Mockups (visual specs from the visual design thread)
