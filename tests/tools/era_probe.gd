@@ -160,7 +160,7 @@ func _sample(s) -> void:
 	var starved := {}
 	for b in s.town.buildings:
 		var status: String = b["status"]
-		if "waiting for a hauler" in status:
+		if "waiting for a hauler" in status.to_lower():
 			waiting[b["pos"]] = true
 			_row["hauler_wait_total_s"] += SAMPLE
 		if status.begins_with("Store full"):
@@ -189,16 +189,22 @@ func _keep_streaks(streaks: Dictionary, now: Dictionary, key: String) -> void:
 			streaks.erase(p)
 
 
-## The haulers each depot has: [{"pos": "x,y", "haulers": n, "wanted": n}] with wanted -1 until the town sizes its depots.
+## The haulers each depot has: [{"pos": "x,y", "haulers": n, "wanted": n}]. A town with hauler places (sim.hauling) reads its places
+## and what each depot wants; before them the haulers are counted where `_home_depot` stands them, and wanted is -1.
 func _depots(s) -> Array:
+	var places = s.get("hauling")
 	var count := {}
 	for k in s.people.kith:
-		if k["job"] == "haul":
-			var home := Haulers._home_depot(s, k, Kith.tile_of(k))
-			count[home] = count.get(home, 0) + 1
+		if k["job"] != "haul":
+			continue
+		var home: Vector2i = (
+			k.get("depot", Vector2i(-1, -1)) if places != null else Haulers._home_depot(s, k, Kith.tile_of(k))
+		)
+		count[home] = count.get(home, 0) + 1
 	var out := []
 	for depot in Roads.posts(s):
-		out.append({"pos": "%d,%d" % [depot.x, depot.y], "haulers": count.get(depot, 0), "wanted": -1})
+		var want: int = places.wanted(depot) if places != null else -1
+		out.append({"pos": "%d,%d" % [depot.x, depot.y], "haulers": count.get(depot, 0), "wanted": want})
 	return out
 
 

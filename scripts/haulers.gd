@@ -100,12 +100,14 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 			Roads.walk(s, k, t["depot"])
 
 
-## Where an idle hauler waits. Haulers are born at the Hearth, so left to stand where they are none would ever
-## serve a Storehouse's workshops: they spread over the depots that have road-linked buildings to serve, in turn by
-## the order they were born in (read off their name, so it never changes on them and never depends on chance: a hash
-## of the name once left a post with one hauler of forty-five, and the workshops behind it stood idle). With none,
-## the nearest depot a road touches, or the Hearth when none does.
+## Where an idle hauler waits: the depot whose place it holds (scripts/hauling.gd). A hauler with no place yet spreads over the
+## depots that have road-linked buildings to serve, in turn by the order they were born in (read off their name, so it never
+## changes on them and never depends on chance: a hash of the name once left a post with one hauler of forty-five, and the
+## workshops behind it stood idle). With none, the nearest depot a road touches, or the Hearth when none does.
 static func _home_depot(s, k: Dictionary, here: Vector2i) -> Vector2i:
+	var place: Vector2i = k.get("depot", Vector2i(-1, -1))  # the hauler's place at a depot (Hauling.assign)
+	if s.hauling.auto.has(place) and not Roads.depot_nets(s, place).is_empty():
+		return place
 	var posts := Roads.posts(s)
 	if not posts.is_empty():
 		return posts[birth_order(k["name"]) % posts.size()]
@@ -169,6 +171,8 @@ static func _find_task(s, k: Dictionary, steam := true) -> bool:
 		var cand: Dictionary = s.town.buildings[i]
 		if not Buildings.served(cand) or cand["unreachable"] > 0.0 or not Roads.net_of(s, cand) in nets:
 			continue
+		if cand.get("resting", false):
+			continue  # a full store: nothing to empty, no input to bring (StoreRest)
 		var d := Vector2(here).distance_to(Vector2(cand["pos"]))
 		var fitted: int = cand["inbuf"].get(Data.GEARS_ITEM, 0)  # a gear fitted to the workshop is not an input it works on
 		var starved: bool = not Buildings.recipe_in(cand).is_empty() and Buildings.buffered(cand["inbuf"]) - fitted == 0

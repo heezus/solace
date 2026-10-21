@@ -1,0 +1,278 @@
+extends RefCounted
+## Hauler places (design-system/14-hands-to-haulers.md, Step 2). The Hearth and every Storehouse hold hauler places. A Kith in a place
+## hauls for that depot only. Each depot's wanted count is worked out from its load: for every road-linked building it serves, the
+## trips a minute the building needs (its output and its inputs over a hauler's carry) times the round trip from the depot, summed
+## and rounded up, at least 1 for a depot with work. It is read again every REFRESH game seconds. The player may set a depot above
+## or below that number (`offset`). Workshops are staffed only while the haulers wanted are still there (Kith._staff asks
+## `total_wanted`), and a Kith with no place goes to the depot furthest below its count (`assign`).
+## Sim owns one, reached as `sim.hauling`. Static helpers work on the Sim passed in; this block keeps no reference to a block.
+
+const Data = preload("res://scripts/data.gd")
+const Buildings = preload("res://scripts/buildings.gd")
+const Haulers = preload("res://scripts/haulers.gd")
+const Homes = preload("res://scripts/homes.gd")
+const Roads = preload("res://scripts/roads.gd")
+const Work = preload("res://scripts/work.gd")
+
+const REFRESH := 30.0  # game seconds between readings of each depot's load
+const NONE := Vector2i(-1, -1)  # a hauler with no depot yet
+const USE := 1.0  # the share of a hauler's time the load may fill: 1.0 is exactly keeping up
+const HANDLING := 2.0  # seconds a trip spends loading and unloading
+const GATHER_WALK := 6.0  # seconds a hut's worker walks out and back around one harvest
+const HOME_TRIPS := 0.25  # trips a minute a home or a Teardown Bench takes
+const FED_TRIPS := 0.5  # trips a minute a Boiler, a Lamp or a Pen takes
+
+## Per depot: the haulers its load needs, from the last reading. A depot is a key while roads reach buildings it serves.
+var auto: Dictionary = {}
+## Per depot: how many above (or, below zero, under) the auto count the player has set.
+var offset: Dictionary = {}
+var names: Dictionary = {}  # depot -> "Storehouse by the Smelter", read with the load
+var _have: Dictionary = {}  # depot -> haulers in its places, from the last `assign`
+var _clock := REFRESH
+
+
+## One tick: read the loads when it is time, then give every hauler a place.
+func tick(s, delta: float) -> void:
+	_clock = snappedf(_clock + delta, 0.000001)  # kept to millionths, so a saved game reads back the very same number
+	if _clock >= REFRESH:
+		_clock = 0.0
+		refresh(s)
+	assign(s)
+
+
+# --- What is wanted ------------------------------------------------------------------------------------------------
+
+
+## Haulers `depot` wants: its auto count and the player's offset, never below 0 (0 for a depot nothing is linked to).
+func wanted(depot: Vector2i) -> int:
+	if not auto.has(depot):
+		return 0
+	return maxi(auto[depot] + offset.get(depot, 0), 0)
+
+
+## Haulers wanted by every depot together.
+func total_wanted() -> int:
+	var n := 0
+	for depot in auto:
+		n += wanted(depot)
+	return n
+
+
+## Haulers in `depot`'s places now.
+func have(depot: Vector2i) -> int:
+	return _have.get(depot, 0)
+
+
+## Haulers in a place anywhere.
+func total_have() -> int:
+	var n := 0
+	for depot in _have:
+		n += _have[depot]
+	return n
+
+
+## How many haulers `depot` has beyond what it wants (below 0: it is short).
+func surplus(depot: Vector2i) -> int:
+	return have(depot) - wanted(depot)
+
+
+## True when some depot has under three quarters of the haulers it wants.
+func is_short() -> bool:
+	for depot in auto:
+		var want := wanted(depot)
+		if want > 0 and float(have(depot)) < 0.75 * want:
+			return true
+	return false
+
+
+## "Haulers 18 of 24" for the top bar, "" while no depot has work.
+func bar_text() -> String:
+	var want := total_wanted()
+	return Data.HAULERS_BAR % [total_have(), want] if want > 0 else ""
+
+
+## "Waiting for a hauler: Storehouse by the Smelter, 2 of 6" for a building whose depot has places, "" when it has none.
+func waiting_note(s, b: Dictionary) -> String:
+	var depot: Vector2i = Roads.depot_of(s, b)
+	if not auto.has(depot):
+		return ""
+	return Data.HAULER_WAIT % [names.get(depot, "the depot"), have(depot), wanted(depot)]
+
+
+## The player sets `depot`'s wanted count one above (dir 1) or one below (dir -1) what it is now.
+func nudge(depot: Vector2i, dir: int) -> void:
+	if not auto.has(depot):
+		return
+	if dir < 0 and wanted(depot) <= 0:
+		return
+	offset[depot] = offset.get(depot, 0) + dir
+	if offset[depot] == 0:
+		offset.erase(depot)
+
+
+## Back to the auto count.
+func reset(depot: Vector2i) -> void:
+	offset.erase(depot)
+
+
+# --- Reading the loads ---------------------------------------------------------------------------------------------
+
+
+## Work out every depot's auto count from the buildings roads link to it, and move idle haulers from depots with more than they
+## want to the ones that are short.
+func refresh(s) -> void:
+	var load_of := {}
+	for b in s.town.buildings:
+		if not Roads.automated(s, b):
+			continue
+		var rate := trips_per_minute(s, b)
+		if rate <= 0.0:
+			continue
+		var depot := Roads.depot_of(s, b)
+		load_of[depot] = load_of.get(depot, 0.0) + rate * round_trip(b, depot) / 60.0
+	auto = {}
+	names = {}
+	for depot in Roads.posts(s):
+		auto[depot] = maxi(ceili(load_of.get(depot, 0.0) / USE - 0.0001), 1)
+		names[depot] = _name_of(s, depot)
+	for depot in offset.keys():
+		if not auto.has(depot):
+			offset.erase(depot)  # the depot is gone, or no longer serves anything
+	_rebalance(s)
+
+
+## Trips a minute building `b` asks of the haulers: 0 while it is paused, held, overgrown, resting, or has no worker.
+static func trips_per_minute(s, b: Dictionary) -> float:
+	var def: Dictionary = Data.BUILDINGS[b["type"]]
+	if s.tide.is_overgrown(b):
+		return 0.0
+	if Homes.is_home(b) or def["kind"] == "bench":
+		return HOME_TRIPS
+	if def.get("fed", false):
+		return FED_TRIPS
+	if (
+		not Buildings.needs_worker(b)
+		or b["paused"]
+		or s.livewire.is_held(b)
+		or b["worker"] < 0
+		or b.get("resting", false)
+	):
+		return 0.0
+	var carry := float(Haulers.carry_cap(s))
+	if def["kind"] == "gatherer":
+		var item: String = b["focus"]
+		if item == "" or not s.people.knows(item):
+			return 0.0
+		return 60.0 / (Work.time(s, b) + GATHER_WALK) * Work.bundle_size(s, b, item) / carry
+	var cycle := Work.time(s, b)
+	if cycle <= 0.0:
+		return 0.0
+	var items := 0
+	for amount in Buildings.recipe_in(b).values():
+		items += amount
+	for amount in Buildings.recipe_out(b).values():
+		items += amount
+	return 60.0 / cycle * items / carry
+
+
+## Seconds for a hauler to go from `depot` to `b` and back on the roads, with the time to load and unload.
+static func round_trip(b: Dictionary, depot: Vector2i) -> float:
+	var tiles := absi(depot.x - b["pos"].x) + absi(depot.y - b["pos"].y)
+	var per_tile: float = Data.WALK_COST["road"] / Data.ROAD_SPEEDS[0] / Data.KITH_SPEED
+	return 2.0 * tiles * per_tile + HANDLING
+
+
+## "Storehouse by the Smelter": the depot and the nearest building with a crew, or "Hearth".
+func _name_of(s, depot: Vector2i) -> String:
+	if depot == s.world.camp_pos:
+		return Data.HEARTH_NAME
+	var best := ""
+	var best_d := 1 << 30
+	for b in s.town.buildings:
+		if not Buildings.needs_worker(b):
+			continue
+		var d := absi(depot.x - b["pos"].x) + absi(depot.y - b["pos"].y)
+		if d < best_d:
+			best_d = d
+			best = Data.BUILDINGS[b["type"]]["name"]
+	var base: String = Data.BUILDINGS["storehouse"]["name"]
+	return Data.DEPOT_BY % [base, best] if best != "" else base
+
+
+# --- Giving haulers a place ----------------------------------------------------------------------------------------
+
+
+## Every hauler with no place (new, or its depot has gone) goes to the depot furthest below its count.
+func assign(s) -> void:
+	_have = {}
+	var loose: Array = []
+	for k in s.people.kith:
+		if k["job"] != "haul":
+			continue
+		var depot: Vector2i = k.get("depot", NONE)
+		if auto.has(depot):
+			_have[depot] = _have.get(depot, 0) + 1
+		else:
+			loose.append(k)
+	for k in loose:
+		var pick := _neediest()
+		k["depot"] = pick
+		if pick != NONE:
+			_have[pick] = _have.get(pick, 0) + 1
+
+
+## The depot with the most places open (the least over its count when all are full), NONE when no depot has work.
+func _neediest() -> Vector2i:
+	var best := NONE
+	var best_gap := -(1 << 30)
+	for depot in auto:
+		var gap := wanted(depot) - have(depot)
+		if gap > best_gap:
+			best_gap = gap
+			best = depot
+	return best
+
+
+## Idle haulers at a depot with more than it wants walk over to the depot that is furthest below its count.
+func _rebalance(s) -> void:
+	assign(s)
+	for k in s.people.kith:
+		if k["job"] != "haul" or not k["task"].is_empty():
+			continue
+		var from: Vector2i = k.get("depot", NONE)
+		if not auto.has(from) or surplus(from) <= 0:
+			continue
+		var to := _neediest()
+		if to == NONE or to == from or surplus(to) >= 0:
+			continue
+		_have[from] -= 1
+		_have[to] = have(to) + 1
+		k["depot"] = to
+
+
+# --- Save ----------------------------------------------------------------------------------------------------------
+
+
+## The player's settings, the readings and the clock, as JSON-safe values.
+func to_dict() -> Dictionary:
+	var settings: Array = []
+	for depot in offset:
+		settings.append([depot.x, depot.y, offset[depot]])
+	var read: Array = []
+	for depot in auto:
+		read.append([depot.x, depot.y, auto[depot], names.get(depot, "")])
+	return {"offset": settings, "auto": read, "clock": _clock}
+
+
+func from_dict(d: Dictionary) -> void:
+	offset = {}
+	for e in d.get("offset", []):
+		offset[Vector2i(int(e[0]), int(e[1]))] = int(e[2])
+	auto = {}
+	names = {}
+	for e in d.get("auto", []):
+		var depot := Vector2i(int(e[0]), int(e[1]))
+		auto[depot] = int(e[2])
+		names[depot] = String(e[3])
+	_clock = float(d.get("clock", REFRESH))
+	_have = {}

@@ -29,6 +29,7 @@ const Steam = preload("res://scripts/steam.gd")
 const Power = preload("res://scripts/power.gd")
 const OrdersPanel = preload("res://scripts/orders_panel.gd")
 const FloorPicker = preload("res://scripts/floor_picker.gd")
+const HaulerRow = preload("res://scripts/hauler_row.gd")
 
 const INSET := Ui.BAR
 
@@ -122,6 +123,12 @@ func setup(game: Sim) -> void:
 	v.add_child(floor_pick)
 	v.move_child(floor_pick, parts["recipe"].get_index())
 	parts["floor"] = floor_pick
+	var places := HaulerRow.new()  # a depot's hauler places: how many, and - + Auto (scripts/hauler_row.gd)
+	places.setup(game)
+	places.changed.connect(refresh)
+	v.add_child(places)
+	v.move_child(places, parts["recipe"].get_index())
+	parts["places"] = places
 	var orders := OrdersPanel.new()  # the Order Board: the standing orders, written with buttons (scripts/orders_panel.gd)
 	orders.setup(game)
 	orders.changed.connect(refresh)
@@ -247,6 +254,7 @@ func refresh() -> void:
 	parts["lessons"].show_for(b)
 	parts["orders"].show_for(b)
 	parts["floor"].show_for(b)
+	parts["places"].show_for(b)
 	parts["net"].text = "\n".join([Power.note(state, b), state.tide.note(state, b)].filter(func(l): return l != ""))
 	parts["net"].visible = parts["net"].text != ""
 	parts["recipe"].text = recipe_text(state, b)
