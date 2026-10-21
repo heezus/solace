@@ -16,7 +16,7 @@ The source of truth for our game's universe. If something is written here, it's 
 
 ## Sections
 1. [Pitch](01-pitch.md): what the game is, in one breath
-2. [Pillars](02-pillars.md): the 3 to 5 rules every feature must serve
+2. [Pillars](02-pillars.md): the five rules every feature must serve
 3. [World & Lore](03-world-lore.md): setting, history, factions, rules of the world
 4. [Characters](04-characters.md): who lives here and what they want
 5. [Art Direction](05-art-direction.md): look, palette, audio mood, references
@@ -45,6 +45,7 @@ The source of truth for our game's universe. If something is written here, it's 
 27. [Crises](27-crises.md): Seasons of Strain rebuilt (seven kinds by era, each once per round, every answer a real price, costs shown as numbers)
 28. [The Lumen: markets, Wall, trust](28-lumen-trade.md): the Trading Post and the Lumen Market trade different goods, the Glyph Wall hides set themes and comes in a seeded order, trust shows as a word
 29. [Two roads](29-two-roads.md): built. Each Lumen gift has a Kith twin earned by refusing it, so the player picks a road per gift (a card when its set is read); refusals set the era's lean
+30. [Era contracts](30-era-contracts.md): draft. Per era, what must come out (exit), the 15 to 25 minute length band and the invariants that always hold; entry ranges come from the Step 1 baseline
 - [Decision Log](decision-log.md)
 
 ### Mockups (visual specs from the visual design thread)

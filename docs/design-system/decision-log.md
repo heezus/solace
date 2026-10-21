@@ -982,3 +982,8 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 ## 2026-10-20: Wire Mill hint (PR N)
 - Claude, finishing the last open Livewire guidance gap from the AI player's reports, made a dark machine say how to light it (a Power Pole within 2 tiles, an engine on the net fed Coal) and the Wire Mill say where its Copper comes from.
 - Words only: no costs, rates or goals change.
+
+## 2026-10-21: Pillars and era contracts (PR O)
+- Claude, committing the director thread's text after Jon said go on the whole-game review's plan, wrote the five pillars into page 02 and added page 30, era contracts: per era an exit, a 15 to 25 minute length band and six invariants (no dead end, no finite wall, an answer before each threat, visible logistics, one new thing).
+- Entry ranges are left blank on purpose: they are filled from the Step 1 baseline (every era, five seeds, an earned chain from a fresh stone age).
+- Docs only: no gameplay, test or save change.
