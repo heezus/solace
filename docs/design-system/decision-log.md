@@ -987,3 +987,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Claude, committing the director thread's text after Jon said go on the whole-game review's plan, wrote the five pillars into page 02 and added page 30, era contracts: per era an exit, a 15 to 25 minute length band and six invariants (no dead end, no finite wall, an answer before each threat, visible logistics, one new thing).
 - Entry ranges are left blank on purpose: they are filled from the Step 1 baseline (every era, five seeds, an earned chain from a fresh stone age).
 - Docs only: no gameplay, test or save change.
+
+## 2026-10-21: Starfall bot and the Step 1 baseline tool (PR P)
+- Claude, doing Step 1 of the whole-game review's plan (Jon's go), added a Starfall bot that plays the era through the game's systems only, so the earned checkpoints now come from a fresh stone age with no scripted era in the chain. It finishes Starfall on seeds 1 to 5 in 12 to 14 game minutes.
+- The scripted Starfall, Ironfall and Livewire starts stay for tests and debugging, labelled "scripted, not for balance".
+- `tests/tools/pace.gd baseline` plays one map through all five eras and writes a row per era (length, goals, the town at the era's start, time spent waiting for haulers, workshops starved with their input in stock, and for Livewire the tide's first building, buildings lost by minute 15 and the first Scorcher fire).
+- Tests and tools only: no gameplay, cost or save change.

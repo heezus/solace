@@ -14,6 +14,7 @@ const StartTidy = preload("res://scripts/start_tidy.gd")
 const RunSave = preload("res://scripts/run_save.gd")
 const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
 const AutoplayLivewire = preload("res://tests/autoplay_livewire.gd")
+const AutoplayStarfall = preload("res://tests/autoplay_starfall.gd")
 
 const MAP_SEED := 1  # every start is on this map
 const BOT_LIMIT := 70.0 * 60.0  # the most game seconds a bot may play to reach a boundary
@@ -23,14 +24,14 @@ const TRUST_MARKET := 40.0  # trust at the market start: well past the point whe
 const TIDE_START_SECONDS := 420.0  # how long the tide has crept at the Livewire tide start
 const END_FUSE := 4.0  # seconds before the Kith talk the last guesses over at the ending start
 
-const REV := 1  # bump when a bot's play changes without a change to Data: it throws away every start kept on disk
+const REV := 2  # bump when a bot's play changes without a change to Data: it throws away every start kept on disk
 const CACHE_DIR := "user://stage_starts/"
 const BAKED_DIR := "res://stage_starts/"  # starts baked at release time (tests/tools/bake_starts.gd); not in the repo
 const EXT := ".run"  # not .json: an export takes such a file only through the include filter, never as a resource
 
 ## The checkpoints the Livewire bot's own play passes, and the mark of its that sets each off. They are saves of a town earned
-## from a fresh game (the pacing bots play the stone age, Bronze and the Falling Star, the Starfall beats are scripted on that
-## town, then the Ironfall and Livewire bots play on), with nothing handed over: what playtesters start mid-game from.
+## from a fresh game (the pacing bots play the stone age, Bronze and the Falling Star, the Starfall bot plays that era through the
+## game's own systems, then the Ironfall and Livewire bots play on), with nothing handed over: what playtesters start mid-game from.
 ## There is none for the Livewire gate: the bot runs out of coal before it (page 23), so no honest town exists there yet.
 const EARNED := {
 	"earned_ironfall_steam": "steam_cart",
@@ -143,16 +144,32 @@ static func _table() -> Array:
 		["stone_late", "Stage: Stone Age, Bronze Dawn found", _stone_late],
 		["bronze_first", "Stage: Bronze Dawn, first Bronze", _bronze_first],
 		["falling_star", "Stage: Bronze Dawn, the Falling Star", _falling_star],
-		["starfall_landing", "Stage: Starfall, the landing", _starfall_landing],
-		["starfall_camp", "Stage: Starfall, camp and first glyphs", _starfall_camp],
-		["starfall_market", "Stage: Starfall, the market", _starfall_market],
-		["starfall_end", "Stage: Starfall, before the ending", _starfall_end],
-		["ironfall", "Stage: Ironfall, the Starfall is over", _ironfall],
-		["ironfall_teardown", "Stage: Ironfall, Teardown and the Wreck's parts", _ironfall_teardown],
-		["ironfall_steam", "Stage: Ironfall, steam: a Boiler, a Forge and Rail to lay", _ironfall_steam],
-		["livewire", "Stage: Livewire, the wires hum", _livewire],
-		["livewire_tide", "Stage: Livewire, the tide: seven minutes in, every tool learned", _livewire_tide],
-		["livewire_gate", "Stage: Livewire, the factories: the gate is all that is left", _livewire_gate],
+		["starfall_landing", "Stage: Starfall, the landing (scripted, not for balance)", _starfall_landing],
+		["starfall_camp", "Stage: Starfall, camp and first glyphs (scripted, not for balance)", _starfall_camp],
+		["starfall_market", "Stage: Starfall, the market (scripted, not for balance)", _starfall_market],
+		["starfall_end", "Stage: Starfall, before the ending (scripted, not for balance)", _starfall_end],
+		["ironfall", "Stage: Ironfall, the Starfall is over (scripted, not for balance)", _ironfall],
+		[
+			"ironfall_teardown",
+			"Stage: Ironfall, Teardown and the Wreck's parts (scripted, not for balance)",
+			_ironfall_teardown
+		],
+		[
+			"ironfall_steam",
+			"Stage: Ironfall, steam: a Boiler, a Forge and Rail to lay (scripted, not for balance)",
+			_ironfall_steam
+		],
+		["livewire", "Stage: Livewire, the wires hum (scripted, not for balance)", _livewire],
+		[
+			"livewire_tide",
+			"Stage: Livewire, the tide: seven minutes in, every tool learned (scripted, not for balance)",
+			_livewire_tide
+		],
+		[
+			"livewire_gate",
+			"Stage: Livewire, the factories: the gate is all that is left (scripted, not for balance)",
+			_livewire_gate
+		],
 		[
 			"earned_ironfall_steam",
 			"Checkpoint: Ironfall, the Steam Cart rolls (earned)",
@@ -207,8 +224,18 @@ static func _play_earned(id: String) -> String:
 	bot.watch = EARNED.duplicate()
 	bot.stop_when_watched = true
 	bot.on_checkpoint = func(name: String, b): _keep(name, RunSave.to_json(RunSave.dump(b.s)))
-	bot.play_livewire(_ironfall(), BOT_LIMIT * 2.0)
+	bot.play_livewire(_earned_ironfall(), BOT_LIMIT * 2.0)
 	return _memo[id]
+
+
+## The Starfall era played by its bot on the earned Falling Star, through the game's systems only (no gifts, no edits of trust or
+## answers), to the moment Ironfall begins. Unlike _ironfall(), nothing here is for the UI tests: it is the real chain.
+static func _earned_ironfall() -> Sim:
+	var game := _falling_star()
+	var bot := AutoplayStarfall.new()
+	bot.play_starfall(game, game.seasons.time, BOT_LIMIT)
+	_wait(game, 2.0)
+	return game
 
 
 # --- The Starfall stages: scripted on top of the Falling Star ----------------
@@ -465,6 +492,11 @@ static func ironfall_on_map(seed_value: int, id: String, dir := "") -> Sim:
 		return s
 	s = _steam_on(s)
 	return s if id == "ironfall_steam" else _livewire_on(s)
+
+
+## The Falling Star on map `seed_value`, played by the bots (the stone age, Bronze Dawn, the first Bronze), kept in `dir` if given.
+static func star_on_map(seed_value: int, dir := "") -> Sim:
+	return _falling_star() if seed_value == MAP_SEED else _star_on_map(seed_value, dir)
 
 
 ## The Falling Star on map `seed_value`: played by the bots, or read from `dir`.
