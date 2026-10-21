@@ -23,7 +23,10 @@ const AutoplayLivewire = preload("res://tests/autoplay_livewire.gd")
 const AutoplayStarfall = preload("res://tests/autoplay_starfall.gd")
 const DevStarts = preload("res://scripts/dev_starts.gd")
 const EraProbe = preload("res://tests/tools/era_probe.gd")
+const RunSave = preload("res://scripts/run_save.gd")
 const Sim = preload("res://scripts/sim.gd")
+
+const BASELINE_SAVE_EVERY := 600.0  # game seconds between a baseline run's checkpoints
 
 
 func _init() -> void:
@@ -181,37 +184,60 @@ func _mean(xs: Array) -> float:
 
 
 ## The baseline: map `m` played through every era by the bots, one probe row per era (era_probe.gd), written to `out`/seed_<m>.json.
-## An era a bot does not finish in time is closed with "ended": false and the run stops there.
+## An era a bot does not finish in time is closed with "ended": false and the run stops there. A run takes hours of real time, so
+## it keeps a checkpoint (the game and the probe) in user://baseline_work/ every ten game minutes and picks up from it when run
+## again; delete that folder to start a map afresh.
 func _baseline(m: int, minutes: float, out: String) -> void:
+	var work := "user://baseline_work/seed_%d.json" % m
+	DirAccess.make_dir_recursive_absolute("user://baseline_work")
 	var probe := EraProbe.new()
-	var limit := 70.0 * 60.0
 	var game := Sim.new()
-	game.generate(m)
+	var limit := 70.0 * 60.0
+	var stage := _baseline_resume(work, probe, game)
+	if stage == "":
+		game.generate(m)
+		stage = "stone_age"
+		probe.begin("stone_age", game)
+	var at := [stage, game.seasons.time]  # the stage, and the game clock of the last checkpoint
+	var hook := func(s):
+		probe.observe(s)
+		if s.seasons.time - at[1] >= BASELINE_SAVE_EVERY:
+			at[1] = s.seasons.time
+			_baseline_save(work, at[0], probe, s, m, out)
 	var bronze := AutoplayBronze.new()
-	bronze.attach(game)
-	bronze.probe = probe.observe
-	probe.begin("stone_age", game)
-	while bronze.clock < limit and not game.won:
-		bronze.step(true)
-	var ended := _close(probe, game, game.won)
-	if ended:
-		probe.begin("bronze_dawn", game)
-		bronze._after_dawn(limit)
-		while bronze.clock < limit and not bronze.fell():
+	bronze.probe = hook
+	if at[0] == "stone_age":
+		bronze.attach(game)
+		while bronze.clock < limit and not game.won:
 			bronze.step(true)
-		ended = _close(probe, game, bronze.fell())
-	if ended:
+		at[0] = "bronze_dawn" if _close(probe, game, game.won) else "done"
+		if at[0] == "bronze_dawn":
+			probe.begin("bronze_dawn", game)
+		_baseline_save(work, at[0], probe, game, m, out)
+	if at[0] == "bronze_dawn":
+		var from := game.seasons.time
+		bronze.play_from_dawn(game, from, from + limit)
+		while bronze.clock < from + limit and not bronze.fell():
+			bronze.step(true)
+		at[0] = "starfall" if _close(probe, game, bronze.fell()) else "done"
+		if at[0] == "starfall":
+			probe.begin("starfall", game)
+		_baseline_save(work, at[0], probe, game, m, out)
+	if at[0] == "starfall":
 		var starfall := AutoplayStarfall.new()
-		starfall.probe = probe.observe
-		probe.begin("starfall", game)
+		starfall.probe = hook
 		var r: Dictionary = starfall.play_starfall(game, game.seasons.time, 40.0 * 60.0)
-		ended = _close(probe, game, r["won"])
-	if ended:
+		at[0] = "ironfall" if _close(probe, game, r["won"]) else "done"
+		if at[0] == "ironfall":
+			probe.begin("ironfall", game)
+		_baseline_save(work, at[0], probe, game, m, out)
+	if at[0] == "ironfall":
 		var wire := AutoplayLivewire.new()
-		wire.probe = probe.observe
-		probe.begin("ironfall", game)
+		wire.probe = hook
 		var r: Dictionary = wire.play_livewire(game, minutes * 60.0)
 		_close(probe, game, r["won"])
+		at[0] = "done"
+		_baseline_save(work, at[0], probe, game, m, out)
 	for row in probe.rows:
 		print(
 			(
@@ -219,12 +245,35 @@ func _baseline(m: int, minutes: float, out: String) -> void:
 				% [m, row["era"], row["length_min"], row["goals_done"], row["goals_total"], row["ended"]]
 			)
 		)
+	quit(0)
+
+
+## Keep the run so far: the game, the probe and the stage in `work`, and the rows so far in `out`/seed_<m>.json.
+func _baseline_save(work: String, stage: String, probe: RefCounted, game: Sim, m: int, out: String) -> void:
+	var state := {"stage": stage, "probe": probe.to_dict(), "run": RunSave.to_json(RunSave.dump(game))}
+	_write_file(work + ".tmp", JSON.stringify(state))
+	DirAccess.rename_absolute(ProjectSettings.globalize_path(work + ".tmp"), ProjectSettings.globalize_path(work))
 	if out != "":
 		DirAccess.make_dir_recursive_absolute(out)
-		var file := FileAccess.open("%s/seed_%d.json" % [out, m], FileAccess.WRITE)
-		file.store_string(JSON.stringify({"seed": m, "eras": probe.rows}, "\t"))
-		file.close()
-	quit(0)
+		var rows := {"seed": m, "complete": stage == "done", "eras": probe.rows}
+		_write_file("%s/seed_%d.json" % [out, m], JSON.stringify(rows, "\t"))
+
+
+func _write_file(path: String, text: String) -> void:
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	file.store_string(text)
+	file.close()
+
+
+## Restore a kept baseline run into `game` and `probe`: the stage it was in, or "" when there is none.
+func _baseline_resume(work: String, probe: RefCounted, game: Sim) -> String:
+	if not FileAccess.file_exists(work):
+		return ""
+	var kept: Variant = JSON.parse_string(FileAccess.get_file_as_string(work))
+	if typeof(kept) != TYPE_DICTIONARY or not RunSave.restore(game, RunSave.from_json(kept["run"])):
+		return ""
+	probe.from_dict(kept["probe"])
+	return kept["stage"]
 
 
 ## Close the open era with whether it reached its end (an era is "ended" when its bot passed the boundary, not when time ran out).

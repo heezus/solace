@@ -494,6 +494,43 @@ static func ironfall_on_map(seed_value: int, id: String, dir := "") -> Sim:
 	return s if id == "ironfall_steam" else _livewire_on(s)
 
 
+## The earned checkpoint `id` ("earned_ironfall_steam" or "earned_livewire") on map `seed_value`: the pacing bots play the stone age and
+## Bronze Dawn, the Starfall bot plays Starfall, then the Ironfall and Livewire bots play on to the mark. Map MAP_SEED uses the kept
+## start. A run takes minutes of real time, so `dir` keeps the checkpoint of a map between runs ("" keeps none); the files in it are
+## not fingerprinted, so clear it when an earlier era's numbers change.
+static func earned_on_map(seed_value: int, id: String, dir := "") -> Sim:
+	if seed_value == MAP_SEED:
+		return build(id)
+	var file := dir + "%s_map%d.run" % [id, seed_value]
+	var text := ""
+	if dir != "" and FileAccess.file_exists(file):
+		text = FileAccess.get_file_as_string(file)
+	if text == "":
+		var game := star_on_map(seed_value, dir)
+		var star := AutoplayStarfall.new()
+		star.play_starfall(game, game.seasons.time, BOT_LIMIT)
+		_wait(game, 2.0)
+		var kept := []
+		var bot := AutoplayLivewire.new()
+		bot.watch = {id: EARNED[id]}
+		bot.stop_when_watched = true
+		bot.on_checkpoint = func(_name: String, b): kept.append(RunSave.to_json(RunSave.dump(b.s)))
+		bot.play_livewire(game, BOT_LIMIT * 2.0)
+		text = kept[0] if not kept.is_empty() else ""
+		if text != "" and dir != "":
+			DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(dir))
+			var out := FileAccess.open(file, FileAccess.WRITE)
+			if out != null:
+				out.store_string(text)
+				out.close()
+	if text == "":
+		return null
+	var s := Sim.new()
+	RunSave.restore(s, RunSave.from_json(text))
+	StartTidy.tidy(s)
+	return s
+
+
 ## The Falling Star on map `seed_value`, played by the bots (the stone age, Bronze Dawn, the first Bronze), kept in `dir` if given.
 static func star_on_map(seed_value: int, dir := "") -> Sim:
 	return _falling_star() if seed_value == MAP_SEED else _star_on_map(seed_value, dir)

@@ -993,3 +993,8 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - The scripted Starfall, Ironfall and Livewire starts stay for tests and debugging, labelled "scripted, not for balance".
 - `tests/tools/pace.gd baseline` plays one map through all five eras and writes a row per era (length, goals, the town at the era's start, time spent waiting for haulers, workshops starved with their input in stock, and for Livewire the tide's first building, buildings lost by minute 15 and the first Scorcher fire).
 - Tests and tools only: no gameplay, cost or save change.
+
+## 2026-10-21: Baseline keeps its place; the AI player plays any map (PR Q)
+- Claude found the baseline runs take hours and the machine restarts under them, so `pace.gd baseline` now keeps a checkpoint every ten game minutes and resumes from it.
+- The AI player's `--seed` was ignored whenever `--start` was given (every start is on map 1), so the 2026-10-20 "seed 3" Livewire run was really map 1; now an earned checkpoint is built by the bots on the seed asked for.
+- Tests and tools only: no gameplay change.
