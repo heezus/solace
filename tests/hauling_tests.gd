@@ -6,6 +6,7 @@ const Data = preload("res://scripts/data.gd")
 const Hauling = preload("res://scripts/hauling.gd")
 const RunSave = preload("res://scripts/run_save.gd")
 const Sim = preload("res://scripts/sim.gd")
+const StoreRest = preload("res://scripts/store_rest.gd")
 
 var t  # the runner, tests/run_tests.gd
 
@@ -19,6 +20,7 @@ func run(runner) -> void:
 	test_leftover_kith_go_where_the_gap_is_biggest()
 	test_a_waiting_building_names_its_depot()
 	test_a_full_store_rests_the_building()
+	test_food_producers_rest_only_with_no_room_to_grow()
 	test_places_survive_a_save()
 
 
@@ -179,6 +181,24 @@ func test_a_full_store_rests_the_building() -> void:
 		if Data.BUILDINGS[b["type"]].has("makes") and b.get("resting", false):
 			tool_bench_rests = true
 	t.check(not tool_bench_rests, "the Tool Bench never rests (it stops at enough)")
+
+
+## Births need food coming in, so a food store at the cap does not stop its producers while the Kith have room to grow.
+func test_food_producers_rest_only_with_no_room_to_grow() -> void:
+	var s := _town(3)
+	_run(s, 5.0)
+	var mill: Dictionary = s.town.buildings[s.town.building_at[s.world.camp_pos + Vector2i(1, 0)]].duplicate(true)
+	mill["type"] = "grindstone"  # a stand-in that makes flour, a food, beside the Hearth
+	mill["progress"] = 0.0
+	mill["resting"] = false
+	s.economy.inv["flour"] = s.economy.caps["flour"]
+	t.check(
+		s.people.kith.size() < s.town.housing(),
+		"set up: the Kith have room (%d of %d)" % [s.people.kith.size(), s.town.housing()]
+	)
+	t.check(not StoreRest.rests(s, mill), "a full flour store does not stop the mill while there is room to grow")
+	s.people.found(s.town.housing() + 1)
+	t.check(StoreRest.rests(s, mill), "with no room it rests")
 
 
 func test_places_survive_a_save() -> void:
