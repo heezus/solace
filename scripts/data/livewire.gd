@@ -9,10 +9,8 @@ extends RefCounted
 const LIVEWIRE_BEGUN := "livewire_begun"
 const ERA_TAB_LOCKED_LIVEWIRE := "Opens when the wires hum"
 
-## Livewire's cheaper bill (design-system/23-livewire.md, "The coal fix"): the Lumen charts show deeper coal under the old seams.
-## When the era begins, this much coal is added to the seams that still hold some (split evenly), so the ground holds enough
-## for the path to Skyward. Iron and steel in the era's costs were cut to 60% in the same step.
-const LIVEWIRE_COAL_GIFT := 600
+## Livewire's cheaper bill (design-system/23-livewire.md, "The coal fix"): iron and steel in the era's costs were cut to 60%. The
+## ground gets no extra coal when the era begins: a Bloomery or Forge that runs short of it burns Charcoal instead (scripts/fuel.gd).
 ## The charts also mark the nearest seam no one has seen: its ground is lifted from the fog and the log says which way it lies.
 const LIVEWIRE_CHART_RADIUS := 3
 ## A compass word, then tiles.
@@ -151,3 +149,21 @@ const GOALS_ERA5 := (
 	+ preload("res://scripts/data/tide.gd").GOALS_TIDE
 	+ preload("res://scripts/data/skyward.gd").GOALS_FACTORIES
 )
+
+# --- Fuel for the metal works (scripts/fuel.gd) ---
+## A Bloomery or Forge burns one Coal or one Charcoal a batch. On Charcoal a batch takes this many times as long.
+const CHARCOAL_SLOW := 2.0
+## Auto fuel burns Coal while the stockpile holds more than this much, so Boilers, Generators and Scorchers keep a little.
+const FUEL_RESERVE := 40
+## The fuel button's choices, in order, and what each says on the button.
+const FUEL_MODES := ["auto", "coal", "charcoal"]
+const FUEL_BUTTON := "Fuel: %s"
+const FUEL_NAMES := {"auto": "Auto", "coal": "Coal", "charcoal": "Charcoal"}
+const FUEL_TIP := "Click to change what this burns: Auto (Coal while the stores hold plenty, else Charcoal), Coal or Charcoal."
+const FUEL_LINE_AUTO := "Burns %s now. Auto keeps the last %d Coal for the Boilers."
+const FUEL_LINE_SET := "Burns %s, as set."
+## "Smelting on Charcoal: half speed (Coal is low)": the job word, then why when Auto chose it.
+const FUEL_STATUS_AUTO := "%s on Charcoal: half speed (Coal is low)"
+const FUEL_STATUS_SET := "%s on Charcoal: half speed"
+const FUEL_VERB := {"bloomery": "Smelting", "forge": "Forging"}
+const FUEL_VERB_DEFAULT := "Running"

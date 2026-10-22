@@ -34,6 +34,7 @@ func run(runner) -> void:
 	test_a_cart_hauler_is_not_sent_where_no_road_goes()
 	test_a_fed_building_off_the_roads_says_needs_road()
 	test_the_ai_page_says_why_a_build_was_refused()
+	test_the_ai_player_sets_hauler_places()
 
 
 ## A town with haulers known, a Storehouse far from the Hearth, and a charcoal pit beside each.
@@ -439,3 +440,19 @@ func test_the_ai_page_says_why_a_build_was_refused() -> void:
 	t.check(refused.size() == 1 and "short" in refused[0], "it names what is short: %s" % str(refused))
 	refused = Snapshot.apply(s, [{"do": "build", "type": "charcoal_pit", "x": camp.x, "y": camp.y}])
 	t.check(refused.size() == 1 and "already" in refused[0], "and what is in the way: %s" % str(refused))
+
+
+## The AI player can raise a depot's places and sees each depot on its page.
+func test_the_ai_player_sets_hauler_places() -> void:
+	var s := _town(10)
+	_run(s, 40.0)
+	var camp := s.world.camp_pos
+	var before: int = s.hauling.wanted(camp)
+	var refused: Array = Snapshot.apply(s, [{"do": "haulers", "x": camp.x, "y": camp.y, "change": 2}])
+	t.check(
+		refused.is_empty() and s.hauling.wanted(camp) == before + 2,
+		"two more places at the Hearth (%d)" % s.hauling.wanted(camp)
+	)
+	refused = Snapshot.apply(s, [{"do": "haulers", "x": 0, "y": 0, "change": 1}])
+	t.check(refused.size() == 1 and "no depot" in refused[0], "no depot, no places: %s" % str(refused))
+	t.check("DEPOTS" in Snapshot.text(s, 1, [], []), "the page lists the depots")

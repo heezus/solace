@@ -210,14 +210,10 @@ func test_the_coal_fix() -> void:
 	s.story.record(Data.LIVEWIRE_EVENT)
 	s.story.card_up = false
 	s.story.update(s)
-	t.check(_coal_in_ground(s) == before + Data.LIVEWIRE_COAL_GIFT, "the era's start adds its coal to the ground")
-	s.story.update(s)
-	t.check(_coal_in_ground(s) == before + Data.LIVEWIRE_COAL_GIFT, "once, however long it runs")
-	var spent: int = s.world.seam_left.keys()[0]
-	s.world.seam_left[spent] = 0
-	var live := _coal_in_ground(s)
-	t.check(s.world.deepen_seams(7), "a seam that holds some takes more")
-	t.check(s.world.seam_left[spent] == 0 and _coal_in_ground(s) == live + 7, "and a spent one stays spent")
+	t.check(
+		_coal_in_ground(s) == before,
+		"the era's start adds no coal to the ground (Charcoal is the way out when it runs low)"
+	)
 	t.check(
 		Data.TECHS["skyward"]["cost"]["iron"] <= 60 and Data.TECHS["skyward"]["cost"]["steel"] <= 72,
 		"the gate is cheaper"

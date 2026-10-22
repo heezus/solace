@@ -7,6 +7,7 @@ extends RefCounted
 
 const Buildings = preload("res://scripts/buildings.gd")
 const Data = preload("res://scripts/data.gd")
+const Fuel = preload("res://scripts/fuel.gd")
 const Haulers = preload("res://scripts/haulers.gd")
 const Kith = preload("res://scripts/kith.gd")
 const Roads = preload("res://scripts/roads.gd")
@@ -25,6 +26,8 @@ var _row := {}
 var _at := 0.0  # game clock at the era's start
 var _acc := 0.0
 var _streak := {}  # building tile -> seconds in a row it has waited for a hauler
+var _fuel := {}  # metal works tile -> seconds in a row it has stood without fuel, the rest of its recipe in hand
+var _made_seen := {}  # Economy.made_on at the last reading
 var _starve := {}  # workshop tile -> seconds in a row it has stood starved with its input in stock
 var _spill_of_seen := {}  # Economy.spilled_of at the last reading, by good
 var _spill_seen := 0  # Economy.spilled at the last reading (it is not saved, so a resumed run starts it again from 0)
@@ -38,6 +41,8 @@ func begin(name: String, s) -> void:
 	_acc = 0.0
 	_streak.clear()
 	_starve.clear()
+	_fuel.clear()
+	_made_seen = s.economy.made_on.duplicate(true)
 	_spill_seen = s.economy.spilled
 	_spill_of_seen = s.economy.spilled_of.duplicate()
 	_depots_at = 0.0
@@ -74,6 +79,7 @@ func begin(name: String, s) -> void:
 			"coal_in_ground": _coal_in_ground(s),
 			"depots": _depots(s),
 			"hauler_ratio": _ratio(s),
+			"charcoal_pits": _count(s, "charcoal_pit"),
 		},
 		"hauler_wait_total_s": 0.0,
 		"hauler_wait_longest_s": 0.0,
@@ -83,6 +89,11 @@ func begin(name: String, s) -> void:
 		"spilled_by_good": {},
 		"hauler_waits": 0,
 		"resting_s": 0.0,
+		"made_on_coal": {},
+		"made_on_charcoal": {},
+		"fuel_starved_s": 0.0,
+		"fuel_starved_longest_s": 0.0,
+		"wood_short_s": 0.0,
 		"depots_every_5_min": [],
 	}
 	if name == "livewire":
@@ -121,10 +132,20 @@ func finish(s) -> Dictionary:
 	row["goals_total"] = list.size()
 	row["ended"] = true  # the driver sets it false for an era whose bot ran out of time
 	for key in [
-		"hauler_wait_total_s", "hauler_wait_longest_s", "starved_with_stock_s", "starved_longest_s", "resting_s"
+		"hauler_wait_total_s",
+		"hauler_wait_longest_s",
+		"starved_with_stock_s",
+		"starved_longest_s",
+		"resting_s",
+		"fuel_starved_s"
 	]:
 		row[key] = snappedf(row[key], 0.1)
-	row["end"] = {"kith": s.people.kith.size(), "stock": _stock(s), "coal_in_ground": _coal_in_ground(s)}
+	row["end"] = {
+		"kith": s.people.kith.size(),
+		"stock": _stock(s),
+		"coal_in_ground": _coal_in_ground(s),
+		"charcoal_pits": _count(s, "charcoal_pit"),
+	}
 	rows.append(row)
 	era = ""
 	return row
@@ -163,6 +184,7 @@ func _stock(s) -> Dictionary:
 func _sample(s) -> void:
 	var waiting := {}
 	var starved := {}
+	var fuelless := {}
 	for b in s.town.buildings:
 		var status: String = b["status"]
 		if "waiting for a hauler" in status.to_lower():
@@ -173,8 +195,15 @@ func _sample(s) -> void:
 		if status.begins_with("Needs ") and Buildings.needs_worker(b) and _lacks_stocked(s, b):
 			_row["starved_with_stock_s"] += SAMPLE
 			starved[b["pos"]] = "%s: %s" % [b["type"], status]
+		if _lacks_only_fuel(b) and s.economy.inv.get("wood", 0) > 0:
+			_row["fuel_starved_s"] += SAMPLE
+			fuelless[b["pos"]] = "%s: %s" % [b["type"], status]
+	if s.economy.inv.get("wood", 0) < 10:
+		_row["wood_short_s"] += SAMPLE
 	_keep_streaks(_streak, waiting, "hauler_wait_longest_s", "hauler_waits")
 	_keep_streaks(_starve, starved, "starved_longest_s")
+	_keep_streaks(_fuel, fuelless, "fuel_starved_longest_s")
+	_count_made_on(s)
 	var spilled: int = s.economy.spilled
 	_row["spilled"] += spilled - _spill_seen if spilled >= _spill_seen else spilled
 	_spill_seen = spilled
@@ -235,6 +264,39 @@ func _ratio(s) -> Dictionary:
 	return {"wanted": wanted, "at_work": at_work, "ratio": snappedf(float(wanted) / maxf(at_work, 1.0), 0.01)}
 
 
+## Add what the metal works made on each fuel since the last reading to `_row["made_on_<fuel>"]`.
+func _count_made_on(s) -> void:
+	for fuel in s.economy.made_on:
+		var key: String = "made_on_" + str(fuel)
+		for id in s.economy.made_on[fuel]:
+			var more: int = s.economy.made_on[fuel][id] - _made_seen.get(fuel, {}).get(id, 0)
+			if more > 0:
+				_row[key][id] = _row[key].get(id, 0) + more
+	_made_seen = s.economy.made_on.duplicate(true)
+
+
+## True when a Bloomery or Forge (or a Floor copying one) holds the rest of its recipe but not the fuel it burns now.
+func _lacks_only_fuel(b: Dictionary) -> bool:
+	if not Fuel.burns(b) or b["paused"] or not Buildings.needs_worker(b):
+		return false
+	var recipe := Buildings.recipe_in(b)
+	var fuel: String = b["fuel_now"]
+	if b["inbuf"].get(fuel, 0) >= recipe.get(fuel, 1):
+		return false
+	for id in recipe:
+		if id != fuel and b["inbuf"].get(id, 0) < recipe[id]:
+			return false
+	return true
+
+
+func _count(s, type: String) -> int:
+	var n := 0
+	for b in s.town.buildings:
+		if b["type"] == type:
+			n += 1
+	return n
+
+
 ## True when a workshop is short of an input (not in its buffer or on its way) that the stores hold.
 func _lacks_stocked(s, b: Dictionary) -> bool:
 	var recipe := Buildings.recipe_in(b)
@@ -274,6 +336,8 @@ func from_dict(d: Dictionary) -> void:
 	_acc = 0.0
 	_streak.clear()
 	_starve.clear()
+	_fuel.clear()
+	_made_seen = {}  # Economy.made_on is not saved either, so a resumed run counts from 0
 	_spill_seen = 0  # a reloaded run starts Economy.spilled again from 0
 	_spill_of_seen = {}
 	_depots_at = _row["depots_every_5_min"].size() * DEPOTS_EVERY if _row.has("depots_every_5_min") else 0.0
