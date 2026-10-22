@@ -933,3 +933,8 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Claude, from Jon's ask for a real-click pass of every era, added `tests/tools/era_pass.gd` and a manual-only workflow, `era-pass.yml`; it plays eight starts from the late stone age to the earned Livewire checkpoint with real mouse and key events.
 - It runs only when Jon starts it from the Actions tab, because the earned checkpoints take minutes to build; it never runs on a push or nightly.
 - It changes no game code and no test; every start it was first run on came back clean.
+
+## 2026-10-22: Ironfall stage 3 miniatures (PR #136)
+- Codex retained Misty Highlands materials, upper-left light, shared camera and 1×1 footprints across steam/shard buildings; Shard Boiler keeps the brief's pale-gold port.
+- Shard Lamp lit/unlit states share one source canvas and sampling region; rail pieces use documented square regions checked as connected 48 px cells.
+- Steam Cart preserves the existing hand-cart Kith; beast cart references the Pen's animal. Native cart comparison uses the current caller size. No gameplay, renderer or test changes.

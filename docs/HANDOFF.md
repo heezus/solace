@@ -8,7 +8,8 @@ Owner: the project owner (heezus). Two AI teams, one repo, coordinated by respon
 - **Task:** art-only boiler, shard_boiler, forge, steam_shed, shard_lamp unlit/lit, beast_pen, rail and the two cart variants on `codex/ironfall-stage3-art`. Livewire buildings delivered separately in draft #135.
 - **Reserved files:** new exact-stem PNG/import assets under `art/rendered/`, `docs/art/ironfall/stage3/`, this entry and focused art decision log. No `.gd`, tests, UI or overlays.
 - **Acceptance criteria:** Misty Highlands materials/camera/light, 1×1 footprints, measured regions, native comparison and generated imports; separate draft PR and green CI for Claude review/wiring.
-- **Next action:** paint in the owner's requested order; carts limited to Steam Cart and beast cart. Skyward/Skyreach remain held.
+- **Status:** fourteen PNG/import assets and inspected native buildings, joined Rail and current-size cart comparisons delivered in draft #136; Godot 4.7.2 import passed. Reservation released on publication.
+- **Next action:** Claude reviews/wires after green CI; Codex continues the three item icons separately. Skyward/Skyreach remain held.
 
 ### Codex — terrain kit
 - **Task:** implement the agreed page 22 terrain kit on `codex/terrain-kit`.
