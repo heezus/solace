@@ -166,13 +166,13 @@ func _sample(s) -> void:
 	for b in s.town.buildings:
 		var status: String = b["status"]
 		if "waiting for a hauler" in status.to_lower():
-			waiting[b["pos"]] = true
+			waiting[b["pos"]] = "%s: %s" % [b["type"], status]
 			_row["hauler_wait_total_s"] += SAMPLE
 		if status.begins_with("Store full"):
 			_row["resting_s"] += SAMPLE
 		if status.begins_with("Needs ") and Buildings.needs_worker(b) and _lacks_stocked(s, b):
 			_row["starved_with_stock_s"] += SAMPLE
-			starved[b["pos"]] = true
+			starved[b["pos"]] = "%s: %s" % [b["type"], status]
 	_keep_streaks(_streak, waiting, "hauler_wait_longest_s", "hauler_waits")
 	_keep_streaks(_starve, starved, "starved_longest_s")
 	var spilled: int = s.economy.spilled
@@ -189,12 +189,15 @@ func _sample(s) -> void:
 		_row["depots_every_5_min"].append({"minute": snappedf(t / 60.0, 0.1), "depots": _depots(s)})
 
 
-## Add a second to every building in `now`'s streak in `streaks`, drop the ones that stopped, and keep the longest in `_row[key]`.
+## Add a second to every building in `now`'s streak in `streaks`, drop the ones that stopped, and keep the longest in `_row[key]`
+## (and in `_row[key + "_what"]`, the building's type and status when that streak set it).
 ## With `count`, each streak that ends adds one to `_row[count]` (waits that ended, for the mean wait per pickup).
 func _keep_streaks(streaks: Dictionary, now: Dictionary, key: String, count := "") -> void:
 	for p in now:
 		streaks[p] = streaks.get(p, 0.0) + SAMPLE
-		_row[key] = maxf(_row[key], streaks[p])
+		if streaks[p] > _row[key]:
+			_row[key] = streaks[p]
+			_row[key + "_what"] = now[p]
 	for p in streaks.keys():
 		if not now.has(p):
 			streaks.erase(p)

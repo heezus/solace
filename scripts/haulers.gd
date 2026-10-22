@@ -13,6 +13,8 @@ const Homes = preload("res://scripts/homes.gd")
 const Teardown = preload("res://scripts/teardown.gd")
 const Steam = preload("res://scripts/steam.gd")
 
+const URGENT := 45.0  # game seconds a building may stand stopped for a hauler before it goes ahead of every nearer one
+
 
 ## Items a hauler carries per trip: Carrying Poles double it, and a cart (`k`, if given) carries more: a hand cart or a beast cart
 ## Data.CART_LOAD times, a Steam Cart with steam up Data.STEAM_LOAD times (a cold one is a plain hauler).
@@ -153,13 +155,9 @@ static func stock_wanted(s, cand: Dictionary) -> Dictionary:
 	return out
 
 
-## True when every good building `b` holds for pickup sits at its store's full mark: carried in, it would spill over the cap, so
-## it waits in the building (the store rests it, StoreRest) until the store has room.
-static func _store_full_for(s, b: Dictionary) -> bool:
-	for id in b["out"]:
-		if b["out"][id] > 0 and not s.economy.is_full(id):
-			return false
-	return true
+## True when building `b` has stopped for a hauler: a workshop short of an input for its next cycle, or a building full up.
+static func stopped(b: Dictionary) -> bool:
+	return _cannot_start(b) or Buildings.buffered(b["out"]) >= Data.BUFFER_CAP
 
 
 ## True when workshop `b` lacks an input for its next cycle (one input short stops it as surely as none).
@@ -174,7 +172,7 @@ static func _cannot_start(b: Dictionary) -> bool:
 ## From the depot the hauler waits at, pick the closest useful trip on a road network that depot
 ## touches: empty a building's output, or bring a processor its inputs. A building that has stopped
 ## (a workshop short of an input for its next cycle, or one full up) counts as a third as far, so busy huts near the
-## stockpile don't starve the far ones.
+## stockpile don't starve the far ones; one stopped for URGENT seconds or more goes ahead of them all, the longest wait first.
 static func _find_task(s, k: Dictionary, steam := true) -> bool:
 	var here: Vector2i = Kith.tile_of(k)
 	var nets := Roads.depot_nets(s, here)
@@ -192,15 +190,15 @@ static func _find_task(s, k: Dictionary, steam := true) -> bool:
 		if cand.get("resting", false):
 			continue  # a full store: nothing to empty, no input to bring (StoreRest)
 		var d := Vector2(here).distance_to(Vector2(cand["pos"]))
-		var starved := _cannot_start(cand)
-		if starved or Buildings.buffered(cand["out"]) >= Data.BUFFER_CAP:
-			d /= 3.0
+		if stopped(cand):
+			var waited: float = s.hauling.stopped_for(cand["pos"])
+			d = -waited if waited >= URGENT else d / 3.0
 		var first: bool = s.livewire.serves_first(cand)
 		if (best_first and not first) or (first == best_first and d >= best_d):
 			continue
 		if k["cart"] and not Roads.can_reach(s, k, here, cand["pos"]):
 			continue
-		if Buildings.buffered(cand["out"]) > 0 and not cand["claimed"] and not _store_full_for(s, cand):
+		if Buildings.buffered(cand["out"]) > 0 and not cand["claimed"]:
 			best = {"kind": "pickup", "building": i}
 			best_d = d
 			best_first = first

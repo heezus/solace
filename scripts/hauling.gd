@@ -35,6 +35,7 @@ var offset: Dictionary = {}
 var need: Dictionary = {}
 var trip_tiles: Dictionary = {}  # depot -> the average one-way trip to the buildings it serves, in tiles, by their load (not saved)
 var names: Dictionary = {}  # depot -> "Storehouse by the Smelter", read with the load
+var stopped_since: Dictionary = {}  # building tile -> `_now` when it stopped for a hauler (_watch_stopped; not saved)
 var _have: Dictionary = {}  # depot -> haulers in its places, from the last `assign`
 var _clock := REFRESH
 var _now := 0.0  # game seconds this block has run (not saved)
@@ -44,11 +45,33 @@ var _stuck: Dictionary = {}  # hauler name -> `_now` until which a hauler with n
 ## One tick: read the loads when it is time, then give every hauler a place.
 func tick(s, delta: float) -> void:
 	_now += delta
+	var was := floorf(_now - delta)
+	if floorf(_now) > was:
+		_watch_stopped(s)
 	_clock = snappedf(_clock + delta, 0.000001)  # kept to millionths, so a saved game reads back the very same number
 	if _clock >= REFRESH:
 		_clock = 0.0
 		refresh(s)
 	assign(s)
+
+
+## Once a game second: note when each building a hauler serves stopped for one (short of an input for its next cycle, or full
+## up), and forget the ones running again. Haulers go to the ones that have waited longest first (Haulers.URGENT).
+func _watch_stopped(s) -> void:
+	var now := {}
+	for b in s.town.buildings:
+		if Buildings.served(b) and Haulers.stopped(b):
+			now[b["pos"]] = true
+			if not stopped_since.has(b["pos"]):
+				stopped_since[b["pos"]] = _now
+	for pos in stopped_since.keys():
+		if not now.has(pos):
+			stopped_since.erase(pos)
+
+
+## Game seconds the building at `pos` has stood stopped for a hauler (0 when it runs).
+func stopped_for(pos: Vector2i) -> float:
+	return _now - stopped_since[pos] if stopped_since.has(pos) else 0.0
 
 
 # --- What is wanted ------------------------------------------------------------------------------------------------

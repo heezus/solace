@@ -364,6 +364,8 @@ func _pick_tile() -> Vector2i:
 		item = "berries"
 	if item == "":
 		item = "stone" if s.economy.inv.get("stone", 0) < s.economy.inv.get("wood", 0) else "wood"
+	if s.economy.is_full(item):
+		return Vector2i(-1, -1)  # a player does not gather into a full store: it would spill
 	return _nearest_tile(RAW_TILE[item], s.world.camp_pos)
 
 
