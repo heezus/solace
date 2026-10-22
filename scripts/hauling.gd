@@ -11,14 +11,16 @@ const Data = preload("res://scripts/data.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Haulers = preload("res://scripts/haulers.gd")
 const Homes = preload("res://scripts/homes.gd")
+const Kith = preload("res://scripts/kith.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Work = preload("res://scripts/work.gd")
 
 const REFRESH := 30.0  # game seconds between readings of each depot's load
 const NONE := Vector2i(-1, -1)  # a hauler with no depot yet
-const USE := 1.0  # the share of a hauler's time the load may fill: 1.0 is exactly keeping up
+const USE := 0.5  # the share of a hauler's time the load may fill: under 1.0 leaves room for the walk back and for waiting on each other
 const HANDLING := 2.0  # seconds a trip spends loading and unloading
 const GATHER_WALK := 6.0  # seconds a hut's worker walks out and back around one harvest
+const STUCK_FOR := 30.0  # game seconds before a hauler no depot can be walked to looks again
 const HOME_TRIPS := 0.25  # trips a minute a home or a Teardown Bench takes
 const FED_TRIPS := 0.5  # trips a minute a Boiler, a Lamp or a Pen takes
 
@@ -29,10 +31,13 @@ var offset: Dictionary = {}
 var names: Dictionary = {}  # depot -> "Storehouse by the Smelter", read with the load
 var _have: Dictionary = {}  # depot -> haulers in its places, from the last `assign`
 var _clock := REFRESH
+var _now := 0.0  # game seconds this block has run (not saved)
+var _stuck: Dictionary = {}  # hauler name -> `_now` until which a hauler with no reachable place is left alone (not saved)
 
 
 ## One tick: read the loads when it is time, then give every hauler a place.
 func tick(s, delta: float) -> void:
+	_now += delta
 	_clock = snappedf(_clock + delta, 0.000001)  # kept to millionths, so a saved game reads back the very same number
 	if _clock >= REFRESH:
 		_clock = 0.0
@@ -215,22 +220,25 @@ func assign(s) -> void:
 		else:
 			loose.append(k)
 	for k in loose:
-		var pick := _neediest()
+		if _stuck.get(k["name"], 0.0) > _now:
+			continue
+		var pick := _neediest(s, k)
 		k["depot"] = pick
 		if pick != NONE:
 			_have[pick] = _have.get(pick, 0) + 1
+		else:
+			_stuck[k["name"]] = _now + STUCK_FOR
 
 
-## The depot with the most places open (the least over its count when all are full), NONE when no depot has work.
-func _neediest() -> Vector2i:
-	var best := NONE
-	var best_gap := -(1 << 30)
-	for depot in auto:
-		var gap := wanted(depot) - have(depot)
-		if gap > best_gap:
-			best_gap = gap
-			best = depot
-	return best
+## The depot with the most places open (the least over its count when all are full) that Kith `k` can walk to, NONE when no depot
+## has work or none can be reached (a mine across the water keeps its own hauler).
+func _neediest(s, k: Dictionary) -> Vector2i:
+	var left: Array = auto.keys()
+	left.sort_custom(func(a, b): return wanted(a) - have(a) > wanted(b) - have(b))
+	for depot in left:
+		if s.people.can_walk(Kith.tile_of(k), depot):
+			return depot
+	return NONE
 
 
 ## Idle haulers at a depot with more than it wants walk over to the depot that is furthest below its count.
@@ -242,7 +250,7 @@ func _rebalance(s) -> void:
 		var from: Vector2i = k.get("depot", NONE)
 		if not auto.has(from) or surplus(from) <= 0:
 			continue
-		var to := _neediest()
+		var to := _neediest(s, k)
 		if to == NONE or to == from or surplus(to) >= 0:
 			continue
 		_have[from] -= 1
