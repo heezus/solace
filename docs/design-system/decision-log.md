@@ -1001,6 +1001,6 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 
 ## 2026-10-21: Hauler places and rest at a full store (PR R)
 - Claude, doing Step 2 of the whole-game review's plan (Jon chose "Places at each depot"), gave the Hearth and every Storehouse hauler places sized from the depot's load, filled before workshops, with - / + / Auto on the depot's card, a top-bar "Haulers N of M" and a waiting building that names its depot and count.
-- A hut or workshop whose store is full finishes its cycle and rests, so haulers stop carrying goods into a full store and workshops stop making goods that spill. Food producers rest only when there is no room for more Kith: births need the food that comes in.
-- The goldens move on purpose (Bronze Dawn on maps 1 to 3: 1105, 1230, 1075 s become 1067, 972, 895 s; the first Bronze 1862, 2039, 1967 s become 1866, 1636, 1610 s).
+- A hut or workshop whose store is full finishes its cycle and rests, so haulers stop carrying goods into a full store and workshops stop making goods that spill. Food producers rest too (berries were 97% of the stone age's spill); a food store at 90% of its cap or more counts as steady food for births. The pacing bot got one fix: a full town sets up to three huts for a raw good its next Dwelling lacks (map 3 had stalled at 40 Kith for lack of fiber).
+- The goldens move on purpose (Bronze Dawn on maps 1 to 3: 1105, 1230, 1075 s become 1074, 1092, 994 s; the first Bronze 1862, 2039, 1967 s become 1752, 1679, 2024 s).
 - The baseline tool also reads goods spilled, resting seconds, the longest single starve and the haulers at each depot (PR before this one).
