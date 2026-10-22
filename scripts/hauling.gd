@@ -3,8 +3,9 @@ extends RefCounted
 ## hauls for that depot only. Each depot's wanted count is worked out from its load: for every road-linked building it serves, the
 ## trips a minute the building needs (its output and its inputs over a hauler's carry) times the round trip from the depot, summed
 ## and rounded up, at least 1 for a depot with work. It is read again every REFRESH game seconds. The player may set a depot above
-## or below that number (`offset`). Workshops are staffed only while the haulers wanted are still there (Kith._staff asks
-## `total_wanted`), and a Kith with no place goes to the depot furthest below its count (`assign`).
+## or below that number (`offset`). Workshops are staffed only while the haulers the load needs at the least are still there
+## (Kith._staff asks `total_needed`; the places fill to the roomier wanted count from the Kith left over), and a Kith with no place
+## goes to the depot furthest below its count (`assign`).
 ## Sim owns one, reached as `sim.hauling`. Static helpers work on the Sim passed in; this block keeps no reference to a block.
 
 const Data = preload("res://scripts/data.gd")
@@ -28,6 +29,9 @@ const FED_TRIPS := 0.5  # trips a minute a Boiler, a Lamp or a Pen takes
 var auto: Dictionary = {}
 ## Per depot: how many above (or, below zero, under) the auto count the player has set.
 var offset: Dictionary = {}
+## Per depot: the haulers its load needs at the very least (every hauler's time filled), from the last reading. Workshops are only
+## held back for these; `auto` is the roomier count the places are filled to.
+var need: Dictionary = {}
 var names: Dictionary = {}  # depot -> "Storehouse by the Smelter", read with the load
 var _have: Dictionary = {}  # depot -> haulers in its places, from the last `assign`
 var _clock := REFRESH
@@ -53,6 +57,14 @@ func wanted(depot: Vector2i) -> int:
 	if not auto.has(depot):
 		return 0
 	return maxi(auto[depot] + offset.get(depot, 0), 0)
+
+
+## Haulers the depots need at the very least, with the player's settings, together: what a new workshop leaves free (Kith._staff).
+func total_needed() -> int:
+	var n := 0
+	for depot in need:
+		n += maxi(need[depot] + offset.get(depot, 0), 0)
+	return n
 
 
 ## Haulers wanted by every depot together.
@@ -136,9 +148,11 @@ func refresh(s) -> void:
 		var depot := Roads.depot_of(s, b)
 		load_of[depot] = load_of.get(depot, 0.0) + rate * round_trip(b, depot) / 60.0
 	auto = {}
+	need = {}
 	names = {}
 	for depot in Roads.posts(s):
 		auto[depot] = maxi(ceili(load_of.get(depot, 0.0) / USE - 0.0001), 1)
+		need[depot] = maxi(ceili(load_of.get(depot, 0.0) - 0.0001), 1)
 		names[depot] = _name_of(s, depot)
 	for depot in offset.keys():
 		if not auto.has(depot):
@@ -268,7 +282,7 @@ func to_dict() -> Dictionary:
 		settings.append([depot.x, depot.y, offset[depot]])
 	var read: Array = []
 	for depot in auto:
-		read.append([depot.x, depot.y, auto[depot], names.get(depot, "")])
+		read.append([depot.x, depot.y, auto[depot], names.get(depot, ""), need.get(depot, auto[depot])])
 	return {"offset": settings, "auto": read, "clock": _clock}
 
 
@@ -277,10 +291,12 @@ func from_dict(d: Dictionary) -> void:
 	for e in d.get("offset", []):
 		offset[Vector2i(int(e[0]), int(e[1]))] = int(e[2])
 	auto = {}
+	need = {}
 	names = {}
 	for e in d.get("auto", []):
 		var depot := Vector2i(int(e[0]), int(e[1]))
 		auto[depot] = int(e[2])
 		names[depot] = String(e[3])
+		need[depot] = int(e[4]) if e.size() > 4 else auto[depot]
 	_clock = float(d.get("clock", REFRESH))
 	_have = {}

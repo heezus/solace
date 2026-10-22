@@ -45,7 +45,7 @@ var births := 0  # people named so far, for the next name
 var grow_timer := 0.0
 var starve_timer := 0.0
 var gift: Callable = func(_set_id: String) -> bool: return false  # (set id) -> true once that glyph set is read (Starfall)
-## () -> the haulers the depots want (Hauling.total_wanted): a workshop is staffed only while that many are left in the pool.
+## () -> the haulers the depots want (Hauling.total_needed): a workshop is staffed only while that many are left in the pool.
 var hauler_reserve: Callable = func() -> int: return 0
 ## (depot) -> haulers it has beyond what it wants (Hauling.surplus): a workshop takes its hand from the depot with the most spare.
 var hauler_surplus: Callable = func(_depot: Vector2i) -> int: return 0
