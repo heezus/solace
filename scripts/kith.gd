@@ -45,6 +45,10 @@ var births := 0  # people named so far, for the next name
 var grow_timer := 0.0
 var starve_timer := 0.0
 var gift: Callable = func(_set_id: String) -> bool: return false  # (set id) -> true once that glyph set is read (Starfall)
+## () -> the haulers the depots want (Hauling.total_needed): a workshop is staffed only while that many are left in the pool.
+var hauler_reserve: Callable = func() -> int: return 0
+## (depot) -> haulers it has beyond what it wants (Hauling.surplus): a workshop takes its hand from the depot with the most spare.
+var hauler_surplus: Callable = func(_depot: Vector2i) -> int: return 0
 var _world: World
 var _pathing: Pathing
 var _economy: Economy
@@ -85,6 +89,7 @@ func add_kith() -> void:
 		"seen": Vector2i(-99, -99),  # the tile they last lifted the fog around
 		"tool": 0,  # jobs left on the tool they hold, 0 for none
 		"tool_id": "",  # which tool it is (Data.TOOL_ITEMS), "" for none
+		"depot": Vector2i(-1, -1),  # the depot a hauler stands at (Hauling.assign), (-1, -1) until it has a place
 		"cart": false,  # a hauler pulling a cart (see Buildings.carts_of): carries 3x (a Steam Cart 4x) but walks roads only
 		"cart_kind": "",  # which cart it is: "hand", "beast" or "steam" (Data.CART_KINDS), "" for none
 		"fire": 0,  # a Steam Cart's trips left on the Coal it has burned
@@ -237,19 +242,35 @@ func assign_jobs() -> void:
 			k["hot"] = false
 
 
+## True when somebody is free to take a place but the haulers the depots need come first (hauler_reserve), so a new workshop waits.
+func held_for_haulers() -> bool:
+	var pool := 0
+	for k in kith:
+		if k["job"] in ["", "haul"]:
+			pool += 1
+	return pool > 0 and pool - 1 < hauler_reserve.call()
+
+
 ## Send the first idle person (else the first hauler) to building `i`, to fill its place `slot`. False when
 ## nobody is free.
 func _staff(i: int, b: Dictionary, slot: String) -> bool:
 	var pick := -1
+	var pool := 0  # the people who could be given the place: idle, or hauling
 	for j in kith.size():
 		if kith[j]["job"] == "":
-			pick = j
-			break
+			pick = j if pick < 0 else pick
+		if kith[j]["job"] in ["", "haul"]:
+			pool += 1
+	if pool - 1 < hauler_reserve.call():
+		return false  # the places at the depots come first: the workshop waits for another pair of hands
 	if pick < 0:
+		var most := -(1 << 30)
 		for j in kith.size():
 			if kith[j]["job"] == "haul":
-				pick = j
-				break
+				var spare: int = hauler_surplus.call(kith[j].get("depot", Vector2i(-1, -1)))
+				if spare > most:
+					most = spare
+					pick = j
 	if pick < 0:
 		return false
 	var k: Dictionary = kith[pick]
@@ -458,6 +479,11 @@ func walk_to(k: Dictionary, to: Vector2i) -> bool:
 	return true
 
 
+## True when a person standing on `from` has a way on foot to `to`.
+func can_walk(from: Vector2i, to: Vector2i) -> bool:
+	return from == to or not _pathing.path(from, to).is_empty()
+
+
 ## Move along the path for `delta` seconds. Returns true once there.
 func step(k: Dictionary, delta: float) -> bool:
 	var budget := delta
@@ -555,6 +581,7 @@ static func _person_to_dict(k: Dictionary) -> Dictionary:
 	out["pos"] = Codec.vec2(k["pos"])
 	out["path"] = Codec.vec_list(k["path"])
 	out["seen"] = Codec.vec(k["seen"])
+	out["depot"] = Codec.vec(k["depot"])
 	out["task"] = Codec.with_points(k["task"], _TASK_POINTS)
 	out["carry"] = Codec.int_dict(k["carry"])
 	return out
@@ -565,6 +592,7 @@ static func _person_from_dict(d: Dictionary) -> Dictionary:
 	k["pos"] = Codec.to_vec2(d["pos"])
 	k["path"] = Codec.to_vec_list(d["path"])
 	k["seen"] = Codec.to_vec(d["seen"])
+	k["depot"] = Codec.to_vec(d["depot"]) if d.has("depot") else Vector2i(-1, -1)  # older saves: no place yet
 	k["task"] = Codec.from_points(d["task"], _TASK_POINTS)
 	k["carry"] = Codec.int_dict(d["carry"])
 	for key in ["building", "tool"]:

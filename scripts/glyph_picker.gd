@@ -30,7 +30,16 @@ func show_for(b: Dictionary) -> void:
 		return
 	var f := state.starfall
 	var now := (
-		"%s|%s|%s|%s|%s" % [f.copied, f.guesses, f.locked, f.guests or f.trust >= Data.CONTEXT_TRUST, f.answered.size()]
+		"%s|%s|%s|%s|%s|%s|%s"
+		% [
+			f.copied,
+			f.guesses,
+			f.locked,
+			f.guests or f.trust >= Data.CONTEXT_TRUST,
+			f.answered.size(),
+			f.roads,
+			f.road_queue
+		]
 	)
 	if now == key:
 		return
@@ -39,16 +48,26 @@ func show_for(b: Dictionary) -> void:
 		c.queue_free()
 		remove_child(c)
 	add_child(_wrapped(Data.WALL_HOW % [int(Data.COPY_SECONDS), int(Data.CHECK_SECONDS)], Ui.TEXT_DIM))
-	for n in Data.GLYPH_SETS:
+	for n in f.set_order():
 		var gset: Dictionary = Data.GLYPH_SETS[n]
 		if gset["source"] == "wreck" and f.progress(gset["id"]).x == 0 and not f.locked.has(gset["id"]):
 			continue  # a set the Wreck holds shows once its first mark is home
-		add_child(IconRow.wrap("set_" + gset["id"], _wrapped(header_text(state, gset), Ui.TEXT), gset["name"]))
+		var head := _wrapped(header_text(state, gset), Ui.TEXT)
+		if f.locked.has(gset["id"]):  # its name, and the icon that goes with it, once it is read
+			add_child(IconRow.wrap("set_" + gset["id"], head, gset["name"]))
+		else:
+			add_child(head)
 		if f.locked.has(gset["id"]) and Data.LUMEN_GIFTS.has(gset["id"]):
 			var gift: Dictionary = Data.LUMEN_GIFTS[gset["id"]]
-			var gift_line := _wrapped(Data.GIFT_LINE % [gift["name"], gift["note"]], Ui.GOOD)
-			add_child(IconRow.wrap("gift_" + gset["id"], gift_line, gift["name"]))
-		for g in gset["glyphs"]:
+			if f.roads.get(gset["id"], "") == "refuse":
+				var twin: Dictionary = Data.TWINS[gset["id"]]
+				add_child(_wrapped(Data.TWIN_LINE % [twin["name"], twin["note"]], Ui.GOOD))
+			elif f.road_queue.has(gset["id"]):
+				add_child(_wrapped(Data.TWIN_WAITING_LINE, Ui.TEXT_DIM))
+			else:
+				var gift_line := _wrapped(Data.GIFT_LINE % [gift["name"], gift["note"]], Ui.GOOD)
+				add_child(IconRow.wrap("gift_" + gset["id"], gift_line, gift["name"]))
+		for g in f.glyph_order(n):
 			if f.copied.has(g):
 				add_child(_row(g, f.locked.has(gset["id"])))
 	var end: Vector2i = f.progress(Data.ENDING_SET)
@@ -59,12 +78,12 @@ func show_for(b: Dictionary) -> void:
 	add_child(_wrapped(Data.WALL_HINT, Ui.TEXT_DIM))
 
 
-## "The Name: 2 of 3 marks copied", or "The Name: read".
+## "Set 2 of 6: 2 of 3 marks copied" (the set's theme stays hidden until it is read), or "Light: read".
 static func header_text(s: Sim, gset: Dictionary) -> String:
 	if s.starfall.locked.has(gset["id"]):
 		return Data.WALL_SET_LOCKED % gset["name"]
 	var have: Vector2i = s.starfall.progress(gset["id"])
-	return Data.WALL_SET_LINE % [gset["name"], have.x, have.y]
+	return Data.WALL_SET_LINE % [s.starfall.set_number(gset["id"]), Data.GLYPH_SETS.size(), have.x, have.y]
 
 
 ## Where the mark was found, in one line.

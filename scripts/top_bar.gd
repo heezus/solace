@@ -261,15 +261,22 @@ func refresh(paused: bool, speed: int) -> void:
 	var idle := Ui.idle_kith(state)
 	var workers := Ui.jobs_filled(state)
 	var jobs := Ui.job_slots(state)
+	var haulers: String = state.hauling.bar_text() if state.tech_tree.researched.has("haulers") else ""
 	kith_label.text = Data.KITH_LABEL % [Data.PEOPLE["many"], state.people.kith.size(), state.town.housing()]
 	var note := GrowthNote.bar_note(state)
 	kith_label.get_parent().tooltip_text = (
 		Data.JOBS_TIP % [state.people.job_counts(), Data.PEOPLE["many"]]
+		+ ("\n\n" + Data.HAULERS_TIP if haulers != "" else "")
 		+ ("\n\n" + GrowthNote.rule() if GrowthNote.food_is_the_blocker(state) else "")
 	)
 	kith_label.add_theme_color_override("font_color", Ui.TEXT if note != "" else Ui.GOOD)
 	var rest: String = Data.HAUL_WORD if state.tech_tree.researched.has("haulers") else Data.IDLE_WORD
 	jobs_label.text = Data.JOBS_LABEL % [workers, jobs, idle, rest]
+	if haulers != "":
+		jobs_label.text = Data.JOBS_LABEL_PLACES % [workers, jobs, haulers]
+	jobs_label.add_theme_color_override(
+		"font_color", ALARM_TEXT if haulers != "" and state.hauling.is_short() else Ui.TEXT
+	)
 	note_label.text = note
 	note_label.visible = note != ""
 	note_label.add_theme_color_override("font_color", Ui.SHORT if state.economy.starving else Ui.TEXT_DIM)

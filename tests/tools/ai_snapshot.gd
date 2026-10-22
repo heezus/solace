@@ -4,7 +4,9 @@ extends RefCounted
 ## it refused. Nothing here reaches past the public commands (place, demolish, research, gather_by_hand, the cards' answers), so
 ## the player cannot do anything a person could not. Read-only on everything else.
 
+const CardText = preload("res://scripts/card_text.gd")
 const Data = preload("res://scripts/data.gd")
+const Fuel = preload("res://scripts/fuel.gd")
 
 const ERAS := ["Stone age", "Bronze Dawn", "Starfall", "Ironfall", "Livewire"]
 const HELP := """MOVES: write moves_<n>.json, a list. Each move is one of
@@ -23,9 +25,24 @@ const HELP := """MOVES: write moves_<n>.json, a list. Each move is one of
                                                    write a standing order on the Order Board (needs one built; compare is below or above;
                                                    verb is pause or bring; number one of 5 10 20 30 40 60 80 100 150 200 300 500)
   {"do":"clear_order","index":0}                   tear an order up
+  {"do":"fuel","x":3,"y":4,"mode":"charcoal"}       a Bloomery's or Forge's Fuel button: auto, coal or charcoal
+  {"do":"haulers","x":3,"y":4,"change":1}           one more (or -1, one fewer) hauler place at the depot standing at that spot (see DEPOTS)
   {"do":"wait","seconds":30}                       let the game run (the default, 15 seconds, is used when you send no wait)
 Also write diary_<n>.md: two or three lines on what you wanted, and how it felt (bored, pleased, stuck, surprised).
 Play to win the era you are in. You see only this page."""
+
+## What a player who reached a later era has already learned in the ones before it. The first page of a run that starts past the
+## first era carries it (the run is of that player, not of someone new to the game).
+const KNOWN := """WHAT YOUR KITH ALREADY KNOW (you have played the eras before this one; none of it is a hint, all of it is in your hands):
+  - Pausing: a paused building stops working and its Kith go to work elsewhere (move "pause"); resume it when you want it back.
+  - Standing orders: the Order Board pauses or brings first on a stock level (move "order"), once one stands.
+  - Bring first: haulers carry a good to the building you name before they carry anything else.
+  - Hauler places: each depot (DEPOTS) wants some haulers; you can raise or lower its count (move "haulers").
+  - Storehouses: a depot nearer a far workshop shortens the haul; build one beside it.
+  - Roads and carts: haulers serve buildings a road reaches; a building with no road says "Needs road".
+  - Trade: a Trading Post or Lumen Market swaps one good for another (move "trade").
+  - Fuel: a Bloomery or Forge burns Coal, or Charcoal at half speed (move "fuel"); Auto burns Coal while the stores have plenty.
+"""
 
 
 ## The era now, as the name a player would see.
@@ -80,6 +97,9 @@ static func apply(s, moves: Array) -> Array:
 					ok = s.gather_by_hand(at) != "" and ok
 			"build":
 				ok = str(m.get("type", "")) in Data.BUILDINGS and s.place(str(m["type"]), at, str(m.get("focus", "")))
+				if ok and str(m.get("focus", "")) != "" and _index_at(s, at) >= 0:
+					if s.town.buildings[_index_at(s, at)]["focus"] != str(m["focus"]):
+						refused.append("%s (built, but it cannot take that focus here)" % JSON.stringify(m))
 			"demolish":
 				ok = not s.demolish(at).is_empty()
 			"line":
@@ -92,6 +112,12 @@ static func apply(s, moves: Array) -> Array:
 			"trade":
 				var i := _index_at(s, at)
 				ok = i >= 0 and s.town.set_trade(i, str(m.get("gives", "")), str(m.get("gets", "")))
+				if not ok and i >= 0:
+					var why: String = s.town.trade_refusal(
+						s.town.buildings[i]["type"], str(m.get("gives", "")), str(m.get("gets", ""))
+					)
+					refused.append("%s (%s)" % [JSON.stringify(m), why])
+					continue
 			"focus":
 				var i := _index_at(s, at)
 				ok = i >= 0 and s.town.set_focus(i, str(m.get("item", "")))
@@ -107,6 +133,16 @@ static func apply(s, moves: Array) -> Array:
 					s.seasons.choose(s, int(m.get("choice", 0)))
 			"moment":
 				ok = s.starfall.choose(int(m.get("choice", 0)))
+			"fuel":
+				var i := _index_at(s, at)
+				ok = i >= 0 and Fuel.burns(s.town.buildings[i]) and str(m.get("mode", "")) in Data.FUEL_MODES
+				if ok:
+					Fuel.set_mode(s.economy, s.town.buildings[i], str(m["mode"]))
+			"haulers":
+				ok = s.hauling.auto.has(at) and int(m.get("change", 0)) != 0
+				if ok:
+					for step in absi(int(m["change"])):
+						s.hauling.nudge(at, signi(int(m["change"])))
 			"order":
 				ok = _write_order(s, m)
 			"clear_order":
@@ -118,8 +154,36 @@ static func apply(s, moves: Array) -> Array:
 			_:
 				ok = false
 		if not ok:
-			refused.append(JSON.stringify(m))
+			var why := _why(s, m, at)
+			refused.append(JSON.stringify(m) + (" (%s)" % why if why != "" else ""))
 	return refused
+
+
+## Why the game refused move `m` at `at`, said as the game says it to a player: a build gives the placement error with what is
+## short ("Not enough materials: 12 Stone short", "Must stand on Rocks", "Bloom ground..."), the rest name what is missing.
+static func _why(s, m: Dictionary, at: Vector2i) -> String:
+	var kind := str(m.get("do", ""))
+	var type := str(m.get("type", ""))
+	match kind:
+		"build":
+			if not type in Data.BUILDINGS:
+				return "no such building"
+			return CardText.refusal(s, type, s.town.placement_error(type, at))
+		"demolish":
+			return "nothing of yours stands there"
+		"gather":
+			return "nothing to gather there, or it is out of reach of your hand"
+		"fuel":
+			if _index_at(s, at) < 0:
+				return "no building there"
+			return "only a Bloomery or a Forge has a fuel button; the mode is auto, coal or charcoal"
+		"haulers":
+			return "no depot stands there (see DEPOTS)"
+		"pause", "focus":
+			if _index_at(s, at) < 0:
+				return "no building there"
+			return "only a gatherer's hut takes a focus, and only on what is in its reach" if kind == "focus" else ""
+	return ""
 
 
 ## The building standing at `at`, as its index in the town, or -1.
@@ -206,7 +270,7 @@ static func _cards(s) -> Array:
 		var labels: Array = []
 		for i in options.size():
 			labels.append("%d = %s" % [i, options[i]["label"]])
-		var title: String = Data.MOMENTS[s.starfall.pending]["title"] if s.starfall.pending != "ending" else "The end"
+		var title: String = s.starfall.pending_card()["title"] if s.starfall.pending != "ending" else "The end"
 		out.append("CARD WAITING (moment): %s. Answer with a moment move: %s" % [title, ", ".join(labels)])
 	if s.seasons.phase == "pending":
 		var def: Dictionary = Data.SEASONS[s.seasons.kind]
@@ -229,13 +293,33 @@ static func _cards(s) -> Array:
 	return out
 
 
+## "(21,9) Hearth 12 of 14": each depot's position and name, the haulers it has and the places it wants.
+static func _depots(s) -> Array:
+	var out: Array = []
+	for depot in s.hauling.auto:
+		out.append(
+			(
+				"(%d,%d) %s %d of %d"
+				% [depot.x, depot.y, s.hauling.names.get(depot, ""), s.hauling.have(depot), s.hauling.wanted(depot)]
+			)
+		)
+	return out
+
+
 ## Food, people, stock, buildings, and what can be done now.
 static func _town(s) -> Array:
 	var out: Array = []
-	var idle := 0
+	var idle := 0  # no place at all: haulers are counted as haulers, workers as at work
+	var hauling := 0
+	var working := 0
 	for k in s.people.kith:
-		if k["task"].is_empty():
-			idle += 1
+		match k["job"]:
+			"":
+				idle += 1
+			"haul":
+				hauling += 1
+			_:
+				working += 1
 	out.append(
 		(
 			"FOOD: %d in store, lasts %s%s"
@@ -246,7 +330,12 @@ static func _town(s) -> Array:
 			]
 		)
 	)
-	out.append("KITH: %d (%d idle), room for %d" % [s.people.kith.size(), idle, s.town.housing()])
+	out.append(
+		(
+			"KITH: %d (%d at work, %d hauling, %d idle), room for %d"
+			% [s.people.kith.size(), working, hauling, idle, s.town.housing()]
+		)
+	)
 	var stock: Array = []
 	for id in s.economy.inv:
 		if s.economy.inv[id] > 0:
@@ -258,6 +347,8 @@ static func _town(s) -> Array:
 				)
 			)
 	out.append("STOCK: " + (", ".join(stock) if not stock.is_empty() else "nothing"))
+	if not s.hauling.auto.is_empty():
+		out.append("DEPOTS (haulers standing at each against what it wants): " + "; ".join(_depots(s)))
 	var groups := {}
 	for b in s.town.buildings:
 		var key: String = Data.BUILDINGS[b["type"]]["name"]

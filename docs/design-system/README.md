@@ -16,7 +16,7 @@ The source of truth for our game's universe. If something is written here, it's 
 
 ## Sections
 1. [Pitch](01-pitch.md): what the game is, in one breath
-2. [Pillars](02-pillars.md): the 3 to 5 rules every feature must serve
+2. [Pillars](02-pillars.md): the five rules every feature must serve
 3. [World & Lore](03-world-lore.md): setting, history, factions, rules of the world
 4. [Characters](04-characters.md): who lives here and what they want
 5. [Art Direction](05-art-direction.md): look, palette, audio mood, references
@@ -43,6 +43,10 @@ The source of truth for our game's universe. If something is written here, it's 
 25. [Playtesting](25-playtesting.md): the play recorder (logs Jon's own sessions, a three-tap card at each era end) and the AI player (a Claude session plays through text snapshots and keeps a diary), and how they sit beside the bots in the scorecards
 26. [Playtest fixes](26-playtest-fixes.md): Jon's 2026-10-19 notes and how each was settled (tidy era starts, neighbours that chain, one side-panel rule, shortcut keys, steady top-bar chips, glyph clues)
 27. [Crises](27-crises.md): Seasons of Strain rebuilt (seven kinds by era, each once per round, every answer a real price, costs shown as numbers)
+28. [The Lumen: markets, Wall, trust](28-lumen-trade.md): the Trading Post and the Lumen Market trade different goods, the Glyph Wall hides set themes and comes in a seeded order, trust shows as a word
+29. [Two roads](29-two-roads.md): built. Each Lumen gift has a Kith twin earned by refusing it, so the player picks a road per gift (a card when its set is read); refusals set the era's lean
+30. [Era contracts](30-era-contracts.md): draft. Per era, what must come out (exit), the 15 to 25 minute length band and the invariants that always hold; entry ranges come from the Step 1 baseline
+31. [Fuel](31-fuel.md): Bloomeries and Forges burn Coal or Charcoal (Charcoal at half speed), the Fuel button, the Livewire coal gift removed (Step 3).
 - [Decision Log](decision-log.md)
 
 ### Mockups (visual specs from the visual design thread)
