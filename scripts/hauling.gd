@@ -35,7 +35,7 @@ var offset: Dictionary = {}
 var need: Dictionary = {}
 var trip_tiles: Dictionary = {}  # depot -> the average one-way trip to the buildings it serves, in tiles, by their load (not saved)
 var names: Dictionary = {}  # depot -> "Storehouse by the Smelter", read with the load
-var stopped_since: Dictionary = {}  # building tile -> `_now` when it stopped for a hauler (_watch_stopped; not saved)
+var stopped_since: Dictionary = {}  # building tile -> the game clock when it stopped for a hauler (_watch_stopped)
 var _have: Dictionary = {}  # depot -> haulers in its places, from the last `assign`
 var _clock := REFRESH
 var _now := 0.0  # game seconds this block has run (not saved)
@@ -45,9 +45,7 @@ var _stuck: Dictionary = {}  # hauler name -> `_now` until which a hauler with n
 ## One tick: read the loads when it is time, then give every hauler a place.
 func tick(s, delta: float) -> void:
 	_now += delta
-	var was := floorf(_now - delta)
-	if floorf(_now) > was:
-		_watch_stopped(s)
+	_watch_stopped(s)
 	_clock = snappedf(_clock + delta, 0.000001)  # kept to millionths, so a saved game reads back the very same number
 	if _clock >= REFRESH:
 		_clock = 0.0
@@ -55,23 +53,23 @@ func tick(s, delta: float) -> void:
 	assign(s)
 
 
-## Once a game second: note when each building a hauler serves stopped for one (short of an input for its next cycle, or full
-## up), and forget the ones running again. Haulers go to the ones that have waited longest first (Haulers.URGENT).
+## Note when each building a hauler serves stopped for one (short of an input for its next cycle, or full up), by the game
+## clock, and forget the ones running again. Haulers go to the ones that have waited longest first (Haulers.URGENT).
 func _watch_stopped(s) -> void:
 	var now := {}
 	for b in s.town.buildings:
 		if Buildings.served(b) and Haulers.stopped(b):
 			now[b["pos"]] = true
 			if not stopped_since.has(b["pos"]):
-				stopped_since[b["pos"]] = _now
+				stopped_since[b["pos"]] = s.seasons.time
 	for pos in stopped_since.keys():
 		if not now.has(pos):
 			stopped_since.erase(pos)
 
 
 ## Game seconds the building at `pos` has stood stopped for a hauler (0 when it runs).
-func stopped_for(pos: Vector2i) -> float:
-	return _now - stopped_since[pos] if stopped_since.has(pos) else 0.0
+func stopped_for(s, pos: Vector2i) -> float:
+	return s.seasons.time - stopped_since[pos] if stopped_since.has(pos) else 0.0
 
 
 # --- What is wanted ------------------------------------------------------------------------------------------------
@@ -283,28 +281,40 @@ func assign(s) -> void:
 			_stuck[k["name"]] = _now + STUCK_FOR
 
 
-## The depot with the most places open (the least over its count when all are full) that Kith `k` can walk to, NONE when no depot
-## has work or none can be reached (a mine across the water keeps its own hauler).
+## The depot with the smallest share of its places filled (the most places open breaks a tie) that Kith `k` can walk to, NONE when
+## no depot has work or none can be reached (a mine across the water keeps its own hauler). By share, so a short town fills every
+## depot a little before the Hearth fills up: a Storehouse with none of its haulers leaves its buildings waiting for good.
 func _neediest(s, k: Dictionary) -> Vector2i:
 	var left: Array = auto.keys()
-	left.sort_custom(func(a, b): return wanted(a) - have(a) > wanted(b) - have(b))
+	left.sort_custom(
+		func(a, b):
+			return _share(a) < _share(b) or (_share(a) == _share(b) and wanted(a) - have(a) > wanted(b) - have(b))
+	)
 	for depot in left:
 		if s.people.can_walk(Kith.tile_of(k), depot):
 			return depot
 	return NONE
 
 
-## Idle haulers at a depot with more than it wants walk over to the depot that is furthest below its count.
+## Share of `depot`'s places filled (1 or more when full; a depot that wants none counts as full).
+func _share(depot: Vector2i) -> float:
+	return float(have(depot)) / wanted(depot) if wanted(depot) > 0 else INF
+
+
+## Idle haulers walk over to the depot with the smallest share of its places filled, when they leave a depot better off than that
+## one would be: from one with more than it wants, or from a well-filled one to one far short (all the town's depots short alike).
 func _rebalance(s) -> void:
 	assign(s)
 	for k in s.people.kith:
 		if k["job"] != "haul" or not k["task"].is_empty():
 			continue
 		var from: Vector2i = k.get("depot", NONE)
-		if not auto.has(from) or surplus(from) <= 0:
+		if not auto.has(from):
 			continue
 		var to := _neediest(s, k)
 		if to == NONE or to == from or surplus(to) >= 0:
+			continue
+		if surplus(from) <= 0 and float(have(to) + 1) / wanted(to) > float(have(from) - 1) / maxi(wanted(from), 1):
 			continue
 		_have[from] -= 1
 		_have[to] = have(to) + 1
@@ -314,7 +324,7 @@ func _rebalance(s) -> void:
 # --- Save ----------------------------------------------------------------------------------------------------------
 
 
-## The player's settings, the readings and the clock, as JSON-safe values.
+## The player's settings, the readings, the clock and when each building stopped, as JSON-safe values.
 func to_dict() -> Dictionary:
 	var settings: Array = []
 	for depot in offset:
@@ -322,7 +332,10 @@ func to_dict() -> Dictionary:
 	var read: Array = []
 	for depot in auto:
 		read.append([depot.x, depot.y, auto[depot], names.get(depot, ""), need.get(depot, auto[depot])])
-	return {"offset": settings, "auto": read, "clock": _clock}
+	var stopped: Array = []
+	for pos in stopped_since:
+		stopped.append([pos.x, pos.y, stopped_since[pos]])
+	return {"offset": settings, "auto": read, "clock": _clock, "stopped": stopped}
 
 
 func from_dict(d: Dictionary) -> void:
@@ -338,4 +351,7 @@ func from_dict(d: Dictionary) -> void:
 		names[depot] = String(e[3])
 		need[depot] = int(e[4]) if e.size() > 4 else auto[depot]
 	_clock = float(d.get("clock", REFRESH))
+	stopped_since = {}
+	for e in d.get("stopped", []):
+		stopped_since[Vector2i(int(e[0]), int(e[1]))] = float(e[2])
 	_have = {}

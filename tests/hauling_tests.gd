@@ -21,6 +21,7 @@ func run(runner) -> void:
 	test_the_player_sets_a_depot_above_or_below_auto()
 	test_places_come_before_workshops()
 	test_leftover_kith_go_where_the_gap_is_biggest()
+	test_a_short_town_fills_every_depot_a_little()
 	test_a_waiting_building_names_its_depot()
 	test_a_full_store_rests_the_building()
 	test_food_producers_rest_and_births_go_on()
@@ -156,6 +157,23 @@ func test_leftover_kith_go_where_the_gap_is_biggest() -> void:
 		s.hauling.have(far) <= s.hauling.wanted(far) + 1,
 		"and no more than it wants (%d of %d)" % [s.hauling.have(far), s.hauling.wanted(far)]
 	)
+
+
+## A town short of haulers spreads them by share: a Storehouse with none gets one before the Hearth, short too, gets more.
+func test_a_short_town_fills_every_depot_a_little() -> void:
+	var s := _town(20)
+	_run(s, 70.0)
+	var camp := s.world.camp_pos
+	var far: Vector2i = camp + Vector2i(8 if camp.x < 14 else -8, 0)
+	s.hauling.nudge(camp, 30)  # the Hearth wants far more than the town has
+	s.hauling.nudge(far, 2)
+	for k in s.people.kith:
+		if k["job"] == "haul":
+			k["depot"] = camp
+			k["task"] = {}
+	s.hauling.refresh(s)
+	t.check(s.hauling.surplus(camp) < 0, "the Hearth is short as well (%d)" % s.hauling.surplus(camp))
+	t.check(s.hauling.have(far) >= 1, "the Storehouse gets a hauler all the same (%d)" % s.hauling.have(far))
 
 
 func test_a_short_depot_names_the_cheapest_lever() -> void:
@@ -359,7 +377,7 @@ func test_the_longest_wait_goes_first() -> void:
 	hauler["pos"] = Vector2(camp)
 	s.hauling.stopped_since[near["pos"]] = s.hauling.stopped_since.get(near["pos"], 0.0) + 1000.0  # only just stopped
 	s.hauling.stopped_since[far["pos"]] = -1000.0  # stopped long ago
-	t.check(s.hauling.stopped_for(far["pos"]) >= Haulers.URGENT, "the far pit has waited past URGENT")
+	t.check(s.hauling.stopped_for(s, far["pos"]) >= Haulers.URGENT, "the far pit has waited past URGENT")
 	t.check(Haulers._find_task(s, hauler), "the hauler finds a trip")
 	t.check(
 		hauler["task"].get("building", -1) == s.town.building_at[far_at],

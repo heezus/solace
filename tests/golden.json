@@ -1,5 +1,5 @@
 {
-  "1": {"win_seconds": 995, "state_hash": "ad261663819f9c63cfb89262befd350618a2eb81fa579cb3cebdeed7d2dbceae"},
-  "2": {"win_seconds": 1079, "state_hash": "a636a7e7ea82fbec93746b6ceed53c63da01a8920298c6ed897fdcb3123cb538"},
-  "3": {"win_seconds": 997, "state_hash": "0af9c213d6bdf2038fe608b6169283f974cdb7a20dbf7c254f87523fd0d0bb6d"}
+  "1": {"win_seconds": 964, "state_hash": "59e064f1719b08153afbc04a03f3ba1b2fa7e290f9500c49a2dc9610e130955b"},
+  "2": {"win_seconds": 1069, "state_hash": "33a60ea722e3f3455cdb94c617eb84c7b076b7622060e244de59fbd14027ddbb"},
+  "3": {"win_seconds": 891, "state_hash": "42055eab316f3c818c3ad400558bc154ef989bf2417e9e2ddeeb527f58e7f13b"}
 }

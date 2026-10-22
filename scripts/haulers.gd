@@ -191,7 +191,7 @@ static func _find_task(s, k: Dictionary, steam := true) -> bool:
 			continue  # a full store: nothing to empty, no input to bring (StoreRest)
 		var d := Vector2(here).distance_to(Vector2(cand["pos"]))
 		if stopped(cand):
-			var waited: float = s.hauling.stopped_for(cand["pos"])
+			var waited: float = s.hauling.stopped_for(s, cand["pos"]) * (2.0 if _cannot_start(cand) else 1.0)
 			d = -waited if waited >= URGENT else d / 3.0
 		var first: bool = s.livewire.serves_first(cand)
 		if (best_first and not first) or (first == best_first and d >= best_d):
