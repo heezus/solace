@@ -933,3 +933,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Claude, from Jon's ask for a real-click pass of every era, added `tests/tools/era_pass.gd` and a manual-only workflow, `era-pass.yml`; it plays eight starts from the late stone age to the earned Livewire checkpoint with real mouse and key events.
 - It runs only when Jon starts it from the Actions tab, because the earned checkpoints take minutes to build; it never runs on a push or nightly.
 - It changes no game code and no test; every start it was first run on came back clean.
+
+## 2026-10-22: Young Bloom tide ground (PR #138)
+- Codex retained the approved magenta/sickly-green Bloom family in thin open creeping ground art, with grass, former-Field and former-wood variants.
+- Transparent gaps expose the existing terrain; native 48 px comparisons check sparse botanical detail and irregular edges. Mature patch placeholders, overlays, tile rules and simulation remain unchanged.

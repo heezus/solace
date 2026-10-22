@@ -8,7 +8,8 @@ Owner: the project owner (heezus). Two AI teams, one repo, coordinated by respon
 - **Task:** bloom_tide ground plus former-Field/wood looks on `codex/bloom-tide-ground`; previous groups delivered in drafts #135–#137.
 - **Reserved files:** exact-stem tide PNG/imports, `docs/art/livewire/bloom-tide/`, focused coordination/design notes. No `.gd`, tests, UI, tide_look or code-drawn overlays.
 - **Acceptance criteria:** younger/thinner member of existing magenta/sickly-green Bloom family, transparent creeping edges, 1×1 ground cells, measured regions/native comparison and generated imports; separate draft PR for Claude wiring after green CI.
-- **Next action:** paint and review the ground-only variants, then research icons. Skyward mast/Skyreach remain held.
+- **Status:** three PNG/imports, provenance/regions and inspected 48 px comparison delivered in draft #138; Godot 4.7.2 import passed. Reservation released on publication.
+- **Next action:** Claude reviews/wires after green CI; Codex continues research icons. Skyward mast/Skyreach remain held.
 
 ### Codex — terrain kit
 - **Task:** implement the agreed page 22 terrain kit on `codex/terrain-kit`.
