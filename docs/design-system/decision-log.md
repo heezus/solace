@@ -933,3 +933,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Claude, from Jon's ask for a real-click pass of every era, added `tests/tools/era_pass.gd` and a manual-only workflow, `era-pass.yml`; it plays eight starts from the late stone age to the earned Livewire checkpoint with real mouse and key events.
 - It runs only when Jon starts it from the Actions tab, because the earned checkpoints take minutes to build; it never runs on a push or nightly.
 - It changes no game code and no test; every start it was first run on came back clean.
+
+## 2026-10-22: Wire, Steel Tools and Shard icons (PR #137)
+- Codex kept the approved miniature material/light treatment in three exact-stem transparent item icons: copper spool, cooler sharper axe/pick, and one pale-cyan shard.
+- Native 20 px checks on charcoal green and ivory, beside existing Iron Tools, guide readability; callers, top-bar layout and all gameplay remain unchanged.
