@@ -4,6 +4,12 @@ Owner: the project owner (heezus). Two AI teams, one repo, coordinated by respon
 
 ## Active work
 
+### Codex — Ironfall/Livewire research icons (2026-10-22 batch)
+- **Task:** cover all 30 era-4/5 tech icon slots on `codex/ironfall-livewire-research`: reuse the newly painted relevant map/item assets under the existing shared-art design, plus dedicated symbols for abstract techs.
+- **Reserved files:** new exact-tech-stem PNG/imports in `art/rendered/research/`, `docs/art/research-ironfall-livewire/`, focused coordination/design notes. No `.gd`, tests or UI changes.
+- **Acceptance criteria:** exact per-tech source/region handoff, approved miniature palette/material/light, native research-card comparisons, genuine alpha/generated imports, separate draft PR and green CI. Depends on asset groups #135–#138.
+- **Next action:** paint missing abstract symbols, inspect all 30 slots together, publish the focused handoff for Claude. Skyward research icon uses a small wire/star emblem only; mast/Skyreach remain held.
+
 ### Codex — terrain kit
 - **Task:** implement the agreed page 22 terrain kit on `codex/terrain-kit`.
 - **Reserved files:** `art/rendered/terrain.gdshader`, new terrain-kit PNG/import assets, `scripts/world_ground.gd`, focused terrain tests and `docs/art/terrain-kit/`.
