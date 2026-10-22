@@ -1,0 +1,168 @@
+{
+  "starfall-meadow.png": {
+    "source": "starfall-meadow-source.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_sha256": "c733e3aab6378a25185e6b6ed6c6d641291f7c03b4c325cdef07ee73059a0b13",
+    "packed_size": [
+      1920,
+      1920
+    ],
+    "packed_sha256": "8ea82ee6c5062af57f2f18ff8fc5de23f06d91868dda8dc3519f3b75178183ef",
+    "wrap_edge_max_difference": 0,
+    "mean_rgb": [
+      71.73,
+      99.64,
+      78.43
+    ]
+  },
+  "starfall-woodland.png": {
+    "source": "starfall-woodland-source.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_sha256": "fe384d976d26fdefc5ce873783d01cf7733dca3c0c2f37751671870555ba3d95",
+    "packed_size": [
+      1920,
+      1920
+    ],
+    "packed_sha256": "fd1cb0bc26dedc6d6e5394ea034994bf7023150ccafdbd7eca52d318aaf7e97a",
+    "wrap_edge_max_difference": 0,
+    "mean_rgb": [
+      65.75,
+      74.02,
+      61.94
+    ]
+  },
+  "bronze-dawn-earth.png": {
+    "source": "bronze-dawn-source.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_sha256": "dafbb7cb48ab59d1341b1563005c81c2b6e4e9e03439c29788cb6f7fee23a62c",
+    "packed_size": [
+      1920,
+      1920
+    ],
+    "packed_sha256": "9eb925bc8e2f6e673a342fd8e0deed64e1ee1342eaee03d47dc05a8bbac01870",
+    "wrap_edge_max_difference": 0,
+    "mean_rgb": [
+      142.99,
+      116.99,
+      69.47
+    ]
+  },
+  "earth-south.png": {
+    "source": "ironfall-source.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_sha256": "464712b17dd7f26ea5867bb610026f81d4053f7091dee021098ab963d0e94ea5",
+    "packed_size": [
+      1920,
+      1920
+    ],
+    "packed_sha256": "77d43c13aa8ba74e677a2fe2b7791d856359062cc85ef8f61edbb74f97656810",
+    "wrap_edge_max_difference": 0,
+    "mean_rgb": [
+      67.56,
+      61.52,
+      49.73
+    ]
+  },
+  "ironfall-apron.png": {
+    "source": "ironfall-apron-source.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_sha256": "8bf9489c3c1f8036b13ccb4dc8a7350eb406b5644ee3bc19702524f5c0659000",
+    "packed_size": [
+      1920,
+      1920
+    ],
+    "packed_sha256": "247087b0f00f1b64b2c9d0f015ffee85f44432d2fe1b8c2266a860a51e2f4909",
+    "wrap_edge_max_difference": 0,
+    "mean_rgb": [
+      47.63,
+      44.66,
+      39.73
+    ]
+  },
+  "livewire-healthy.png": {
+    "source": "livewire-source.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_sha256": "e839b24ae8a42a6c8d3b3ddec1ed74f28ebde94ee63c77a9f79728d6f43ec40c",
+    "packed_size": [
+      1920,
+      1920
+    ],
+    "packed_sha256": "c56f8177982a1a15656700a21c62fc576f85d9ecfec3a6e4fd824ab2930ca6f2",
+    "wrap_edge_max_difference": 0,
+    "mean_rgb": [
+      79.43,
+      92.5,
+      40.28
+    ]
+  },
+  "livewire-bloom.png": {
+    "source": "bloom-source.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_sha256": "fe1a33bf6f9d081a12e68b65b98ac556ca0e689bd1bf8bdbb4e9195194d3eeed",
+    "packed_size": [
+      1920,
+      1920
+    ],
+    "packed_sha256": "31f76c77c5a8112ef18b0fc742d45cb469f42277294682bd3c4c0699782d5ee8",
+    "wrap_edge_max_difference": 0,
+    "mean_rgb": [
+      89.08,
+      88.09,
+      51.46
+    ]
+  },
+  "livewire-firebreak.png": {
+    "source": "firebreak-source.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_sha256": "0758fa9ea158b16369b96aaec6e7bc142b4380df81d078f6bf5a70b37a558a09",
+    "packed_size": [
+      1920,
+      1920
+    ],
+    "packed_sha256": "de810168f098697b745f937561cd8a8e90a5c5197b5f396df2116c2fd34a70f9",
+    "wrap_edge_max_difference": 0,
+    "mean_rgb": [
+      49.58,
+      47.51,
+      41.17
+    ]
+  },
+  "decals.png": {
+    "source": "decals-objects-source.png",
+    "source_size": [
+      1774,
+      887
+    ],
+    "source_sha256": "b7d4f017ab0d3398e634452de01c693d429ac17b58a07dbb4e01195f75ee1990",
+    "packed_size": [
+      768,
+      384
+    ],
+    "packed_sha256": "9740625d9a9163e4bd2fc93964c4b0a8fc1fdd9318478997a48d1ddc4bb2b02c",
+    "alpha_preserved": true
+  }
+}

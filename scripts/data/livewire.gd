@@ -9,18 +9,28 @@ extends RefCounted
 const LIVEWIRE_BEGUN := "livewire_begun"
 const ERA_TAB_LOCKED_LIVEWIRE := "Opens when the wires hum"
 
-## Livewire's cheaper bill (design-system/23-livewire.md, "The coal fix"): the Lumen charts show deeper coal under the old seams.
-## When the era begins, this much coal is added to the seams that still hold some (split evenly), so the ground holds enough
-## for the path to Skyward. Iron and steel in the era's costs were cut to 60% in the same step.
-const LIVEWIRE_COAL_GIFT := 600
+## Livewire's cheaper bill (design-system/23-livewire.md, "The coal fix"): iron and steel in the era's costs were cut to 60%. The
+## ground gets no extra coal when the era begins: a Bloomery or Forge that runs short of it burns Charcoal instead (scripts/fuel.gd).
+## The charts also mark the nearest seam no one has seen: its ground is lifted from the fog and the log says which way it lies.
+const LIVEWIRE_CHART_RADIUS := 3
+## A compass word, then tiles.
+const LIVEWIRE_CHART_LINE := "The Lumen charts mark a deep coal seam %s of the Hearth, about %d tiles off. It is on your map now."
 ## While the era runs, a Forge waits to start a batch when the stockpile holds more steel than iron, so steel never eats the
 ## iron the techs are waiting for.
 const STEEL_WAITS_STATUS := "Waiting: there is more steel than iron, so iron goes to the techs first"
 const STEEL_WAITS_ALERT := "Waiting: steel is ahead of iron"
 ## A full building whose roads reach a depot farther than this many tiles away says so: its hauler walks a long way for each load.
 const FAR_DEPOT_TILES := 14
-const FAR_DEPOT_STATUS := "Full: the depot is far away, so each load takes long. A Storehouse beside it would help"
+const FAR_DEPOT_STATUS := (
+	"Full: the depot is far away, so each load takes long. "
+	+ "A Storehouse beside it would help, and idle Kith are the haulers"
+)
 const FAR_DEPOT_ALERT := "Full: depot is far away"
+
+## What a machine says when it has no power once Power Poles are known (a Water Wheel or a Boiler by itself is not the answer here),
+## and where the Wire Mill's Copper comes from (appended to its "Needs Copper" status).
+const NET_NO_POWER_STATUS := "No power: lay a Power Pole within 2 tiles of it, then fuel a Boiler or Generator on that net with Coal"
+const INPUT_HINTS := {"wire_mill": "Copper comes from the Smelters: keep them running"}
 
 # --- The net ---
 ## Poles within POLE_LINK tiles of one another join into a net. A machine (a building with `needs_power`) or an engine (a "power"
@@ -139,3 +149,21 @@ const GOALS_ERA5 := (
 	+ preload("res://scripts/data/tide.gd").GOALS_TIDE
 	+ preload("res://scripts/data/skyward.gd").GOALS_FACTORIES
 )
+
+# --- Fuel for the metal works (scripts/fuel.gd) ---
+## A Bloomery or Forge burns one Coal or one Charcoal a batch. On Charcoal a batch takes this many times as long.
+const CHARCOAL_SLOW := 2.0
+## Auto fuel burns Coal while the stockpile holds more than this much, so Boilers, Generators and Scorchers keep a little.
+const FUEL_RESERVE := 40
+## The fuel button's choices, in order, and what each says on the button.
+const FUEL_MODES := ["auto", "coal", "charcoal"]
+const FUEL_BUTTON := "Fuel: %s"
+const FUEL_NAMES := {"auto": "Auto", "coal": "Coal", "charcoal": "Charcoal"}
+const FUEL_TIP := "Click to change what this burns: Auto (Coal while the stores hold plenty, else Charcoal), Coal or Charcoal."
+const FUEL_LINE_AUTO := "Burns %s now. Auto keeps the last %d Coal for the Boilers."
+const FUEL_LINE_SET := "Burns %s, as set."
+## "Smelting on Charcoal: half speed (Coal is low)": the job word, then why when Auto chose it.
+const FUEL_STATUS_AUTO := "%s on Charcoal: half speed (Coal is low)"
+const FUEL_STATUS_SET := "%s on Charcoal: half speed"
+const FUEL_VERB := {"bloomery": "Smelting", "forge": "Forging"}
+const FUEL_VERB_DEFAULT := "Running"

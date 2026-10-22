@@ -167,6 +167,14 @@ Stage 3 is in the game (placeholder art; the slots are in [requests](../art/requ
 ## The coal fix (2026-10-19, from the AI player's first run)
 The AI player (page 25) played Livewire from the earned checkpoint and got 4 of 18 goals in 13 minutes. Counted from the game's own tables, the path to Skyward needed 625 iron and 411 steel, which is about 1858 coal (an iron eats 2 ore and 1 coal, a steel eats 2 iron and 1 coal), while the ground held about 660. Jon chose both fixes:
 - **Cheaper era.** Every iron and steel line in Livewire's tech costs and in the era's buildings (Wire Mill, Generator, Factory Floor, Scorcher, Arc Lamp, Dynamo, Order Board) is cut to 60%. The path to Skyward now needs about 375 iron and 247 steel, which is about 1120 coal.
-- **+600 coal.** When the Wires Hum card is put away and the era begins, 600 coal is added to the seams that still hold some, split evenly (`World.deepen_seams`, `Data.LIVEWIRE_COAL_GIFT`). The seams read "N of N left" above their old 500. The ground now holds about 1260, so the path fits with a margin, and the Lumen Market swap stays a spare lever.
+- **+600 coal (removed in Step 3, see [31](31-fuel.md); Charcoal is the cushion now).** When the Wires Hum card is put away and the era begins, 600 coal is added to the seams that still hold some, split evenly (`World.deepen_seams`, `Data.LIVEWIRE_COAL_GIFT`). The seams read "N of N left" above their old 500. The ground now holds about 1260, so the path fits with a margin, and the Lumen Market swap stays a spare lever.
 - **Steel waits behind iron.** While Livewire runs, a Forge does not start a batch when the stockpile holds more steel than iron (`Work.steel_waits`). Its status says so. Before this the forges turned every iron bar into steel the moment it existed and techs that need iron were never paid for.
 - **The hauler label.** A full building whose roads reach a depot more than 14 tiles away no longer says only "waiting for a hauler": it says the depot is far and a Storehouse beside it would help (`Roads.depot_far`).
+
+## Guidance (PR M)
+The AI player's Livewire runs showed the era hid what it needed. Four small words fix that, with no new numbers:
+- **The far seam.** When the era begins, the Lumen charts lift the fog off the nearest coal seam nobody has seen and the log says which way it lies and how far (`World.unseen_seam_tile`, `Story._chart_seam`).
+- **Refusals say why.** A placement refused for want of materials now says what is short ("Not enough materials: 12 Stone short", `CardText.refusal`).
+- **Who hauls.** The far-depot status adds that idle Kith are the haulers.
+- **The tide's answer.** The tide's first line and the Scorcher goal now say a Scorcher beside the Generator burns the Bloom back before it arrives.
+- **The wire chain.** A machine with no power now says to lay a Power Pole within 2 tiles and fuel a Boiler or Generator on that net with Coal (once Power Poles are known), and the Wire Mill's "Needs Copper" adds that Copper comes from the Smelters (`Data.NET_NO_POWER_STATUS`, `Data.INPUT_HINTS`).
