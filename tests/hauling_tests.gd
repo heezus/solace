@@ -31,6 +31,7 @@ func run(runner) -> void:
 	test_a_machine_short_of_an_input_does_not_blame_power()
 	test_a_refused_swap_names_its_reason()
 	test_the_longest_wait_goes_first()
+	test_a_cart_hauler_is_not_sent_where_no_road_goes()
 	test_a_fed_building_off_the_roads_says_needs_road()
 	test_the_ai_page_says_why_a_build_was_refused()
 
@@ -386,6 +387,28 @@ func test_the_longest_wait_goes_first() -> void:
 		hauler["task"].get("building", -1) == s.town.building_at[far_at],
 		"it goes to the pit that has waited longest (%s)" % hauler["task"]
 	)
+
+
+## A hauler with a cart goes only where the roads go: one sent to a depot on another road net sat there for an hour (map 2, Ironfall).
+func test_a_cart_hauler_is_not_sent_where_no_road_goes() -> void:
+	var s := _town(10)
+	_run(s, 40.0)
+	var camp := s.world.camp_pos
+	var far: Vector2i = camp + Vector2i(8 if camp.x < 14 else -8, 0)
+	var hauler := {}
+	for k in s.people.kith:
+		if k["job"] == "haul" and hauler.is_empty():
+			hauler = k
+	t.check(not hauler.is_empty(), "there is a hauler")
+	hauler["cart"] = true
+	hauler["cart_kind"] = "hand"
+	hauler["task"] = {}
+	hauler["path"] = []
+	hauler["pos"] = Vector2(camp)
+	t.check(s.hauling._neediest(s, hauler) != far, "the Storehouse no road joins to the Hearth is not its place")
+	hauler["depot"] = far
+	Haulers.tick(s, hauler, 0.1)
+	t.check(hauler["depot"] != far, "and a cart already sent there is given another place")
 
 
 ## A Boiler (or Scorcher, Lamp, Pen) no road touches can be brought nothing: it says so, as a workshop does.

@@ -281,7 +281,7 @@ func assign(s) -> void:
 			_stuck[k["name"]] = _now + STUCK_FOR
 
 
-## The depot with the smallest share of its places filled (the most places open breaks a tie) that Kith `k` can walk to, NONE when
+## The depot with the smallest share of its places filled (the most places open breaks a tie) that Kith `k` can get to, NONE when
 ## no depot has work or none can be reached (a mine across the water keeps its own hauler). By share, so a short town fills every
 ## depot a little before the Hearth fills up: a Storehouse with none of its haulers leaves its buildings waiting for good.
 func _neediest(s, k: Dictionary) -> Vector2i:
@@ -291,9 +291,18 @@ func _neediest(s, k: Dictionary) -> Vector2i:
 			return _share(a) < _share(b) or (_share(a) == _share(b) and wanted(a) - have(a) > wanted(b) - have(b))
 	)
 	for depot in left:
-		if s.people.can_walk(Kith.tile_of(k), depot):
+		if _can_go(s, k, depot):
 			return depot
 	return NONE
+
+
+## True when Kith `k` can get to `depot`: a hauler with a cart only by road (it waits where it stands when the roads do not join),
+## one on foot across country.
+func _can_go(s, k: Dictionary, depot: Vector2i) -> bool:
+	var here := Kith.tile_of(k)
+	if k["cart"]:
+		return Roads.can_reach(s, k, here, depot)
+	return s.people.can_walk(here, depot)
 
 
 ## Share of `depot`'s places filled (1 or more when full; a depot that wants none counts as full).

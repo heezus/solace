@@ -39,7 +39,8 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 				return
 			if here != home:
 				if k["cart"]:
-					Roads.walk(s, k, home)  # a cart goes back by road, or waits where it stands
+					if not Roads.walk(s, k, home):  # a cart goes back by road
+						k["depot"] = s.hauling.NONE  # and the roads do not join: a place it can reach next time
 				elif not s.people.walk_to(k, home):  # off duty: back to a depot on the roads, across country
 					k["depot"] = s.hauling.NONE  # no way on foot: a place it can reach next time (Hauling.assign)
 		s.people.step(k, delta)
