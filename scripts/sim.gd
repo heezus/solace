@@ -83,7 +83,7 @@ func _init() -> void:
 	shard_found.connect(story.on_shard_found)
 	tech_tree.tech_researched.connect(sky.on_tech_researched)
 	people.announce.connect(_announce)
-	people.hauler_reserve = hauling.total_wanted
+	people.hauler_reserve = hauling.total_needed
 	people.hauler_surplus = hauling.surplus
 	sky.sighted.connect(_announce)
 	economy.food_low.connect(_on_food_low)

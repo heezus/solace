@@ -101,7 +101,7 @@ func test_the_player_sets_a_depot_above_or_below_auto() -> void:
 func test_places_come_before_workshops() -> void:
 	var s := _town(3)
 	_run(s, 40.0)
-	var wanted: int = s.hauling.total_wanted()
+	var wanted: int = s.hauling.total_needed()
 	t.check(wanted >= 2, "two depots want at least two haulers (%d)" % wanted)
 	var crew := 0
 	for b in s.town.buildings:
@@ -119,6 +119,18 @@ func test_places_come_before_workshops() -> void:
 		s.people.add_kith()
 	_run(s, 5.0)
 	t.check(new_pit["worker"] >= 0 or s.people.kith.size() == 6, "it is staffed once Kith beyond the places are born")
+
+
+## The places fill to the roomy count, but a workshop is only held back for the haulers the load needs: Kith beyond that staff it.
+func test_roomy_places_do_not_starve_a_new_workshop() -> void:
+	var s := _town(30)
+	_run(s, 40.0)
+	t.check(s.hauling.total_needed() <= s.hauling.total_wanted(), "the staffing reserve is not above the places")
+	var spot := s.world.camp_pos + Vector2i(1, 2)
+	s.place("charcoal_pit", spot)
+	_run(s, 5.0)
+	var pit: Dictionary = s.town.buildings[s.town.building_at[spot]]
+	t.check(pit["worker"] >= 0, "a new pit is staffed while idle Kith stand at the depots")
 
 
 func test_leftover_kith_go_where_the_gap_is_biggest() -> void:
