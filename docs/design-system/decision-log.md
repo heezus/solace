@@ -933,3 +933,8 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Claude, from Jon's ask for a real-click pass of every era, added `tests/tools/era_pass.gd` and a manual-only workflow, `era-pass.yml`; it plays eight starts from the late stone age to the earned Livewire checkpoint with real mouse and key events.
 - It runs only when Jon starts it from the Actions tab, because the earned checkpoints take minutes to build; it never runs on a push or nightly.
 - It changes no game code and no test; every start it was first run on came back clean.
+
+## 2026-10-22: Ironfall and Livewire research illustrations (PR #139)
+- Codex followed the existing shared map/item/research art design: eighteen relevant painted sources plus twelve dedicated concept symbols cover all 30 techs, avoiding parallel depictions of the same buildings.
+- Native 24/34 px review led to head crops for pole/lamp icons, a short rail detail crop and a dedicated bold Living Ground cutting; full per-tech regions and 24/34/48/96 px comparisons document the result.
+- Each tech receives a proposed independent resolver key for Claude's wiring, preserving existing shared callers. Skyward uses only a wire/star research emblem; the mast, Skyreach, UI and gameplay remain held.
