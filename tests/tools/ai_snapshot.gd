@@ -4,6 +4,7 @@ extends RefCounted
 ## it refused. Nothing here reaches past the public commands (place, demolish, research, gather_by_hand, the cards' answers), so
 ## the player cannot do anything a person could not. Read-only on everything else.
 
+const CardText = preload("res://scripts/card_text.gd")
 const Data = preload("res://scripts/data.gd")
 
 const ERAS := ["Stone age", "Bronze Dawn", "Starfall", "Ironfall", "Livewire"]
@@ -80,6 +81,9 @@ static func apply(s, moves: Array) -> Array:
 					ok = s.gather_by_hand(at) != "" and ok
 			"build":
 				ok = str(m.get("type", "")) in Data.BUILDINGS and s.place(str(m["type"]), at, str(m.get("focus", "")))
+				if ok and str(m.get("focus", "")) != "" and _index_at(s, at) >= 0:
+					if s.town.buildings[_index_at(s, at)]["focus"] != str(m["focus"]):
+						refused.append("%s (built, but it cannot take that focus here)" % JSON.stringify(m))
 			"demolish":
 				ok = not s.demolish(at).is_empty()
 			"line":
@@ -124,8 +128,30 @@ static func apply(s, moves: Array) -> Array:
 			_:
 				ok = false
 		if not ok:
-			refused.append(JSON.stringify(m))
+			var why := _why(s, m, at)
+			refused.append(JSON.stringify(m) + (" (%s)" % why if why != "" else ""))
 	return refused
+
+
+## Why the game refused move `m` at `at`, said as the game says it to a player: a build gives the placement error with what is
+## short ("Not enough materials: 12 Stone short", "Must stand on Rocks", "Bloom ground..."), the rest name what is missing.
+static func _why(s, m: Dictionary, at: Vector2i) -> String:
+	var kind := str(m.get("do", ""))
+	var type := str(m.get("type", ""))
+	match kind:
+		"build":
+			if not type in Data.BUILDINGS:
+				return "no such building"
+			return CardText.refusal(s, type, s.town.placement_error(type, at))
+		"demolish":
+			return "nothing of yours stands there"
+		"gather":
+			return "nothing to gather there, or it is out of reach of your hand"
+		"pause", "focus":
+			if _index_at(s, at) < 0:
+				return "no building there"
+			return "only a gatherer's hut takes a focus, and only on what is in its reach" if kind == "focus" else ""
+	return ""
 
 
 ## The building standing at `at`, as its index in the town, or -1.

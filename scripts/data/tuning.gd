@@ -98,7 +98,7 @@ const STARVE_TIME := 20.0
 ## Tiles per second on open ground. Roads double it; forest and rocks halve it.
 const KITH_SPEED := 2.0
 ## Items a hauler carries per trip.
-const CARRY := 10
+const CARRY := 20
 
 ## Dwellings must stand within this many tiles of the Hearth (the Camp), where the Kith are born.
 const HEARTH_RADIUS := 6.0
