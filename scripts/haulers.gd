@@ -38,8 +38,8 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 			if here != home:
 				if k["cart"]:
 					Roads.walk(s, k, home)  # a cart goes back by road, or waits where it stands
-				else:
-					s.people.walk_to(k, home)  # off duty: back to a depot on the roads, across country
+				elif not s.people.walk_to(k, home):  # off duty: back to a depot on the roads, across country
+					k["depot"] = s.hauling.NONE  # no way on foot: a place it can reach next time (Hauling.assign)
 		s.people.step(k, delta)
 		return
 	if not s.people.step(k, delta):
@@ -153,9 +153,18 @@ static func stock_wanted(s, cand: Dictionary) -> Dictionary:
 	return out
 
 
+## True when workshop `b` lacks an input for its next cycle (one input short stops it as surely as none).
+static func _cannot_start(b: Dictionary) -> bool:
+	var recipe := Buildings.recipe_in(b)
+	for id in recipe:
+		if b["inbuf"].get(id, 0) < recipe[id]:
+			return true
+	return false
+
+
 ## From the depot the hauler waits at, pick the closest useful trip on a road network that depot
 ## touches: empty a building's output, or bring a processor its inputs. A building that has stopped
-## (a workshop with nothing to work, or one full up) counts as a third as far, so busy huts near the
+## (a workshop short of an input for its next cycle, or one full up) counts as a third as far, so busy huts near the
 ## stockpile don't starve the far ones.
 static func _find_task(s, k: Dictionary, steam := true) -> bool:
 	var here: Vector2i = Kith.tile_of(k)
@@ -174,8 +183,7 @@ static func _find_task(s, k: Dictionary, steam := true) -> bool:
 		if cand.get("resting", false):
 			continue  # a full store: nothing to empty, no input to bring (StoreRest)
 		var d := Vector2(here).distance_to(Vector2(cand["pos"]))
-		var fitted: int = cand["inbuf"].get(Data.GEARS_ITEM, 0)  # a gear fitted to the workshop is not an input it works on
-		var starved: bool = not Buildings.recipe_in(cand).is_empty() and Buildings.buffered(cand["inbuf"]) - fitted == 0
+		var starved := _cannot_start(cand)
 		if starved or Buildings.buffered(cand["out"]) >= Data.BUFFER_CAP:
 			d /= 3.0
 		var first: bool = s.livewire.serves_first(cand)

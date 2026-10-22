@@ -470,6 +470,11 @@ func walk_to(k: Dictionary, to: Vector2i) -> bool:
 	return true
 
 
+## True when a person standing on `from` has a way on foot to `to`.
+func can_walk(from: Vector2i, to: Vector2i) -> bool:
+	return from == to or not _pathing.path(from, to).is_empty()
+
+
 ## Move along the path for `delta` seconds. Returns true once there.
 func step(k: Dictionary, delta: float) -> bool:
 	var budget := delta
