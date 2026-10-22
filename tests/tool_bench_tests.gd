@@ -113,7 +113,10 @@ func test_bench_stops_at_its_target_and_resumes() -> void:
 	s.economy.inv["flint_tools"] = 0
 	b["out"].clear()
 	_run(s, 120.0)
-	t.check(s.economy.inv["flint"] < flint, "stock taken away, it starts again")
+	t.check(
+		s.economy.inv.get("flint_tools", 0) > 0 or Buildings.buffered(b["out"]) > 0,
+		"stock taken away, it starts again (it works from the load it holds)"
+	)
 	t.check(Work.tools_stocked(s, b) >= goal - 1, "and fills back up")
 
 

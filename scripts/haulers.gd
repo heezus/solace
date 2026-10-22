@@ -165,6 +165,15 @@ static func stopped(b: Dictionary) -> bool:
 	return _cannot_start(b) or Buildings.buffered(b["out"]) >= Data.BUFFER_CAP
 
 
+## True for a workshop that is stocked in lots (stock_wanted): not a home, and not a fed building with a small store of its own.
+static func _loaded_in_lots(b: Dictionary) -> bool:
+	return (
+		not Homes.is_home(b)
+		and Data.BUILDINGS[b["type"]].get("stock", 0) == 0
+		and not Buildings.recipe_in(b).is_empty()
+	)
+
+
 ## True when workshop `b` lacks an input for its next cycle (one input short stops it as surely as none).
 static func _cannot_start(b: Dictionary) -> bool:
 	var recipe := Buildings.recipe_in(b)
@@ -221,7 +230,7 @@ static func _find_task(s, k: Dictionary, steam := true) -> bool:
 			if s.livewire.kept_back(cand, id):
 				continue  # a Bring first is short of this good and names other buildings
 			var want: int = inputs[id] - cand["inbuf"].get(id, 0) - cand["incoming"].get(id, 0)
-			if want * 2 < inputs[id] and not _cannot_start(cand):
+			if want * 2 < inputs[id] and _loaded_in_lots(cand) and not _cannot_start(cand):
 				continue  # a load, not a drip: it is brought more when it has used half of what it was given
 			var n := mini(mini(want, s.economy.inv.get(id, 0)), carry_cap(s, k))
 			if n > 0:
