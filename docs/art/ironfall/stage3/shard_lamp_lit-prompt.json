@@ -1,0 +1,6 @@
+{
+  "prompt": "Use case: lighting-weather. Edit target: the supplied unlit Solace shard_lamp miniature. Create its LIT state. Change ONLY the light: the cyan shard now emits pale cyan-white light inside the glass, a restrained small halo just outside the lantern glass, subtle cool reflected light on the cage and upper post. Preserve exactly the canvas size, camera, silhouette, post position, foot, lantern shape, shard geometry, source-pixel alignment and transparent background. Do not move, scale, redraw or decorate the lamp; no ground light disc, no new background. This must be a registered two-state sprite pair.",
+  "source": "/Users/jhowell/.codex/generated_images/01a16543-0e79-78f3-b449-05c7917a41af/exec-08827b21-2f71-434f-8121-27a16736cbd0.png",
+  "mode": "built-in imagegen",
+  "reference": "art/rendered/shard_lamp.png (edit target)"
+}

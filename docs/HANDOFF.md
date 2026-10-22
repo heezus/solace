@@ -4,6 +4,12 @@ Owner: the project owner (heezus). Two AI teams, one repo, coordinated by respon
 
 ## Active work
 
+### Codex — Ironfall stage 3 art (2026-10-22 batch)
+- **Task:** art-only boiler, shard_boiler, forge, steam_shed, shard_lamp unlit/lit, beast_pen, rail and the two cart variants on `codex/ironfall-stage3-art`. Livewire buildings delivered separately in draft #135.
+- **Reserved files:** new exact-stem PNG/import assets under `art/rendered/`, `docs/art/ironfall/stage3/`, this entry and focused art decision log. No `.gd`, tests, UI or overlays.
+- **Acceptance criteria:** Misty Highlands materials/camera/light, 1×1 footprints, measured regions, native comparison and generated imports; separate draft PR and green CI for Claude review/wiring.
+- **Next action:** paint in the owner's requested order; carts limited to Steam Cart and beast cart. Skyward/Skyreach remain held.
+
 ### Codex — terrain kit
 - **Task:** implement the agreed page 22 terrain kit on `codex/terrain-kit`.
 - **Reserved files:** `art/rendered/terrain.gdshader`, new terrain-kit PNG/import assets, `scripts/world_ground.gd`, focused terrain tests and `docs/art/terrain-kit/`.

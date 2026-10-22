@@ -1,0 +1,6 @@
+{
+  "prompt": "Use case: precise-object-edit. Edit target/reference: Solace growth-hand-cart.png. Create the Steam Cart variant. Preserve exactly the Kith worker identity, sculpted compact anatomy, face, orange/cream/moss clothing and pulling/guiding pose, same three-quarter overhead view and upper-left light. Replace ONLY the cart with a small steam-assisted wooden-and-dark-iron two-wheel cart: a compact riveted boiler and narrow chimney by the front corner, tiny restrained steam puff above chimney, warm honey timber bed behind it kept EMPTY for cargo overlay, same two chunky spoked wheels and shafts. Compact engine, no large train, no rail track or ground plate. Keep entire worker/cart visible on genuinely transparent alpha with margins. Match existing hand-cart scale, wood/rope material, canvas framing and native small-game silhouette. Do not add any second person or new costume.",
+  "source": "/Users/jhowell/.codex/generated_images/01a16543-0e79-78f3-b449-05c7917a41af/exec-13220ae5-e94a-4b0c-8b6b-b0f668f21ce1.png",
+  "mode": "built-in imagegen",
+  "reference": "art/rendered/growth-hand-cart.png (edit target; preserve Kith)"
+}
