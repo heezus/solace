@@ -21,6 +21,7 @@ const Codec = preload("res://scripts/save_codec.gd")
 const Data = preload("res://scripts/data.gd")
 const Economy = preload("res://scripts/economy.gd")
 const FloorRecipe = preload("res://scripts/floor_recipe.gd")
+const Fuel = preload("res://scripts/fuel.gd")
 const Research = preload("res://scripts/research.gd")
 const Rules = preload("res://scripts/rules.gd")
 const World = preload("res://scripts/world.gd")
@@ -280,6 +281,8 @@ func add_building(type: String, p: Vector2i) -> void:
 		b["make"] = Data.BUILDINGS[type]["makes"][0]
 	if Data.BUILDINGS[type].has("floor"):
 		b["make"] = FloorRecipe.first_open(self, type)
+	if Data.BUILDINGS[type].get("fuel", false) or Data.BUILDINGS[type].has("floor"):
+		Fuel.fresh(b)  # a Bloomery, a Forge or a Floor: what it burns (scripts/fuel.gd)
 	if Data.BUILDINGS[type]["kind"] == "gatherer":
 		for t in gather_tiles(p):
 			b["gather_items"].append(Data.TILES[_world.tile_at(t)]["yields"])
@@ -552,10 +555,14 @@ static func recipe_in(b: Dictionary) -> Dictionary:
 	if def.has("makes"):
 		return Data.RECIPES[b["make"]]["in"]
 	if def.has("floor"):
-		return Data.BUILDINGS[b["make"]].get("in", {})
+		return (
+			Fuel.swap(b, Data.BUILDINGS[b["make"]].get("in", {}))
+			if Fuel.burns(b)
+			else Data.BUILDINGS[b["make"]].get("in", {})
+		)
 	if def.get("trade", false):
 		return {b["give"]: def.get("trade_give", Data.TRADE_GIVE)} if is_trading(b) else {}
-	return def.get("in", {})
+	return Fuel.swap(b, def.get("in", {})) if def.get("fuel", false) else def.get("in", {})
 
 
 ## Step Factory Floor `i` to the next workshop it can copy. What it had loaded of the old recipe goes back to the stockpile.
@@ -580,15 +587,42 @@ static func is_trading(b: Dictionary) -> bool:
 	return Data.BUILDINGS[b["type"]].get("trade", false) and b["give"] != "" and b["get"] != ""
 
 
+## True when a building of `type` trades `item`: the Trading Post any good but a shard, the Lumen Market only the Lumen's goods.
+static func trade_allows(type: String, item: String) -> bool:
+	var def: Dictionary = Data.BUILDINGS[type]
+	if def.has("trade_only"):
+		return item in def["trade_only"]
+	return not item in def.get("trade_not", [])
+
+
+## Why a building of `type` will not swap `gives` for `gets` ("" when it will): the words a refused swap shows.
+static func trade_refusal(type: String, gives: String, gets: String) -> String:
+	var def: Dictionary = Data.BUILDINGS[type]
+	if not def.get("trade", false):
+		return Data.TRADE_NOT_HERE % def["name"]
+	if gives == gets and gives != "":
+		return Data.TRADE_SAME
+	for id in [gives, gets]:
+		if id == "":
+			continue
+		if not Data.ITEMS.has(id):
+			return Data.TRADE_NO_GOOD % id
+		if not trade_allows(type, id):
+			if def.has("trade_only"):
+				var names: Array = []
+				for only in def["trade_only"]:
+					names.append(Data.ITEMS[only]["name"])
+				return Data.TRADE_ONLY % [def["name"], Data.ITEMS[id]["name"], ", ".join(names)]
+			return Data.TRADE_NOT_TRADED % [def["name"], Data.ITEMS[id]["name"]]
+	return ""
+
+
 ## Tell Trading Post `i` to swap `gives` for `gets` ("" for one not chosen yet). False when it isn't a Trading Post, or
 ## the two are one good, or either is not a good. What it had loaded of the old good goes back to the stockpile.
 func set_trade(i: int, gives: String, gets: String) -> bool:
 	var b: Dictionary = buildings[i]
-	if not Data.BUILDINGS[b["type"]].get("trade", false) or (gives == gets and gives != ""):
+	if trade_refusal(b["type"], gives, gets) != "":
 		return false
-	for id in [gives, gets]:
-		if id != "" and not Data.ITEMS.has(id):
-			return false
 	for id in b["inbuf"]:
 		_economy.give_back(id, b["inbuf"][id])
 	b["inbuf"].clear()
@@ -717,8 +751,17 @@ static func _building_from_dict(d: Dictionary) -> Dictionary:
 	b["ore"] = String(d.get("ore", ""))
 	b["give"] = String(d.get("give", ""))
 	b["get"] = String(d.get("get", ""))
+	if (
+		Data.BUILDINGS[b["type"]].get("trade", false)
+		and not (trade_allows(b["type"], b["give"]) and trade_allows(b["type"], b["get"]))
+	):
+		b["give"] = ""  # a save from before the Markets split: pick the goods again
+		b["get"] = ""
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
 	b["make"] = String(
 		d.get("make", def["makes"][0] if def.has("makes") else (def["floor"][0] if def.has("floor") else ""))
 	)
+	if def.get("fuel", false) or def.has("floor"):
+		b["fuel"] = String(d.get("fuel", "auto"))  # a save from before Charcoal fuel burns what Auto picks
+		b["fuel_now"] = String(d.get("fuel_now", "coal"))
 	return b

@@ -1,0 +1,82 @@
+{
+  "starfall-meadow": {
+    "before": {
+      "mean_luminance_0_255": 88.88,
+      "local_detail_rms": 32.18
+    },
+    "corrected": {
+      "mean_luminance_0_255": 68.44,
+      "local_detail_rms": 28.37
+    }
+  },
+  "starfall-woodland": {
+    "before": {
+      "mean_luminance_0_255": 70.17,
+      "local_detail_rms": 21.99
+    },
+    "corrected": {
+      "mean_luminance_0_255": 63.77,
+      "local_detail_rms": 22.77
+    }
+  },
+  "bronze-dawn-earth": {
+    "before": {
+      "mean_luminance_0_255": 119.35,
+      "local_detail_rms": 23.3
+    },
+    "corrected": {
+      "mean_luminance_0_255": 121.8,
+      "local_detail_rms": 20.15
+    }
+  },
+  "earth-south": {
+    "before": {
+      "mean_luminance_0_255": 61.99,
+      "local_detail_rms": 27.69
+    },
+    "corrected": {
+      "mean_luminance_0_255": 50.84,
+      "local_detail_rms": 26.96
+    }
+  },
+  "ironfall-apron": {
+    "before": {
+      "mean_luminance_0_255": 45.0,
+      "local_detail_rms": 23.01
+    },
+    "corrected": {
+      "mean_luminance_0_255": 28.16,
+      "local_detail_rms": 13.55
+    }
+  },
+  "livewire-healthy": {
+    "before": {
+      "mean_luminance_0_255": 82.64,
+      "local_detail_rms": 33.25
+    },
+    "corrected": {
+      "mean_luminance_0_255": 81.22,
+      "local_detail_rms": 28.22
+    }
+  },
+  "livewire-bloom": {
+    "before": {
+      "mean_luminance_0_255": 84.21,
+      "local_detail_rms": 29.85
+    },
+    "corrected": {
+      "mean_luminance_0_255": 79.38,
+      "local_detail_rms": 31.35
+    }
+  },
+  "livewire-firebreak": {
+    "before": {
+      "mean_luminance_0_255": 47.49,
+      "local_detail_rms": 30.89
+    },
+    "corrected": {
+      "mean_luminance_0_255": 36.12,
+      "local_detail_rms": 26.53
+    }
+  }
+}

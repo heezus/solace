@@ -63,6 +63,8 @@ const STORAGE_STOREHOUSE_MAX := 6
 const STORAGE_TECHS := {"granaries": 100, "rails": 100, "factory_floor": 100}
 ## A chip says "full" once its good is this share of the cap.
 const STORAGE_FULL_SHARE := 0.95
+## A hut or workshop resting at a full store starts again when any good it makes falls under this share of the cap.
+const STORAGE_RESUME_SHARE := 0.9
 ## Food spoils: each of SPOIL_GOODS loses SPOIL_PER_MINUTE of the stock above SPOIL_FLOOR every minute (Preservation halves it).
 const SPOIL_GOODS := ["berries", "fish", "flour", "grain"]
 const SPOIL_PER_MINUTE := 0.02
@@ -96,7 +98,7 @@ const STARVE_TIME := 20.0
 ## Tiles per second on open ground. Roads double it; forest and rocks halve it.
 const KITH_SPEED := 2.0
 ## Items a hauler carries per trip.
-const CARRY := 10
+const CARRY := 20
 
 ## Dwellings must stand within this many tiles of the Hearth (the Camp), where the Kith are born.
 const HEARTH_RADIUS := 6.0
@@ -164,6 +166,39 @@ const BONUSES := {
 		"kinds": ["gatherer"],
 		"gift": "growth",
 		"near_cairn": true
+	},
+	# The Kith's twins of the gifts (Data.TWINS, design-system/29-two-roads.md): the same help, bought by refusing the gift. `twin`
+	# needs that twin paid for (Starfall.twin); they work within Data.SHARDLIGHT_RADIUS tiles of what they name (`near_types`).
+	"cairnfire":
+	{
+		"name": "Cairnfire",
+		"group": "speed",
+		"add": 0.25,
+		"kinds": ["gatherer"],
+		"twin": "light",
+		"near_types": ["shard_cairn"],
+		"radius": 4.0
+	},
+	"orchard":
+	{
+		"name": "Orchard",
+		"group": "yield",
+		"add": 0.5,
+		"item": "berries",
+		"kinds": ["gatherer"],
+		"twin": "growth",
+		"near_types": ["dwelling"],
+		"radius": 4.0
+	},
+	"smiths_rule":
+	{
+		"name": "Smith's Rule",
+		"group": "speed",
+		"add": 0.25,
+		"kinds": ["processor"],
+		"twin": "craft",
+		"near_types": ["smelter"],
+		"radius": 4.0
 	},
 	"shardwork":
 	# Era 4, stage 2: what two Lessons give (scripts/teardown.gd). `lesson` needs it learned; `fed` needs one of that good in the

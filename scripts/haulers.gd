@@ -13,6 +13,8 @@ const Homes = preload("res://scripts/homes.gd")
 const Teardown = preload("res://scripts/teardown.gd")
 const Steam = preload("res://scripts/steam.gd")
 
+const URGENT := 45.0  # game seconds a building may stand stopped for a hauler before it goes ahead of every nearer one
+
 
 ## Items a hauler carries per trip: Carrying Poles double it, and a cart (`k`, if given) carries more: a hand cart or a beast cart
 ## Data.CART_LOAD times, a Steam Cart with steam up Data.STEAM_LOAD times (a cold one is a plain hauler).
@@ -37,9 +39,10 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 				return
 			if here != home:
 				if k["cart"]:
-					Roads.walk(s, k, home)  # a cart goes back by road, or waits where it stands
-				else:
-					s.people.walk_to(k, home)  # off duty: back to a depot on the roads, across country
+					if not Roads.walk(s, k, home):  # a cart goes back by road
+						k["depot"] = s.hauling.NONE  # and the roads do not join: a place it can reach next time
+				elif not s.people.walk_to(k, home):  # off duty: back to a depot on the roads, across country
+					k["depot"] = s.hauling.NONE  # no way on foot: a place it can reach next time (Hauling.assign)
 		s.people.step(k, delta)
 		return
 	if not s.people.step(k, delta):
@@ -100,12 +103,14 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 			Roads.walk(s, k, t["depot"])
 
 
-## Where an idle hauler waits. Haulers are born at the Hearth, so left to stand where they are none would ever
-## serve a Storehouse's workshops: they spread over the depots that have road-linked buildings to serve, in turn by
-## the order they were born in (read off their name, so it never changes on them and never depends on chance: a hash
-## of the name once left a post with one hauler of forty-five, and the workshops behind it stood idle). With none,
-## the nearest depot a road touches, or the Hearth when none does.
+## Where an idle hauler waits: the depot whose place it holds (scripts/hauling.gd). A hauler with no place yet spreads over the
+## depots that have road-linked buildings to serve, in turn by the order they were born in (read off their name, so it never
+## changes on them and never depends on chance: a hash of the name once left a post with one hauler of forty-five, and the
+## workshops behind it stood idle). With none, the nearest depot a road touches, or the Hearth when none does.
 static func _home_depot(s, k: Dictionary, here: Vector2i) -> Vector2i:
+	var place: Vector2i = k.get("depot", Vector2i(-1, -1))  # the hauler's place at a depot (Hauling.assign)
+	if s.hauling.auto.has(place) and not Roads.depot_nets(s, place).is_empty():
+		return place
 	var posts := Roads.posts(s)
 	if not posts.is_empty():
 		return posts[birth_order(k["name"]) % posts.size()]
@@ -151,10 +156,24 @@ static func stock_wanted(s, cand: Dictionary) -> Dictionary:
 	return out
 
 
+## True when building `b` has stopped for a hauler: a workshop short of an input for its next cycle, or a building full up.
+static func stopped(b: Dictionary) -> bool:
+	return _cannot_start(b) or Buildings.buffered(b["out"]) >= Data.BUFFER_CAP
+
+
+## True when workshop `b` lacks an input for its next cycle (one input short stops it as surely as none).
+static func _cannot_start(b: Dictionary) -> bool:
+	var recipe := Buildings.recipe_in(b)
+	for id in recipe:
+		if b["inbuf"].get(id, 0) < recipe[id]:
+			return true
+	return false
+
+
 ## From the depot the hauler waits at, pick the closest useful trip on a road network that depot
 ## touches: empty a building's output, or bring a processor its inputs. A building that has stopped
-## (a workshop with nothing to work, or one full up) counts as a third as far, so busy huts near the
-## stockpile don't starve the far ones.
+## (a workshop short of an input for its next cycle, or one full up) counts as a third as far, so busy huts near the
+## stockpile don't starve the far ones; one stopped for URGENT seconds or more goes ahead of them all, the longest wait first.
 static func _find_task(s, k: Dictionary, steam := true) -> bool:
 	var here: Vector2i = Kith.tile_of(k)
 	var nets := Roads.depot_nets(s, here)
@@ -169,11 +188,12 @@ static func _find_task(s, k: Dictionary, steam := true) -> bool:
 		var cand: Dictionary = s.town.buildings[i]
 		if not Buildings.served(cand) or cand["unreachable"] > 0.0 or not Roads.net_of(s, cand) in nets:
 			continue
+		if cand.get("resting", false):
+			continue  # a full store: nothing to empty, no input to bring (StoreRest)
 		var d := Vector2(here).distance_to(Vector2(cand["pos"]))
-		var fitted: int = cand["inbuf"].get(Data.GEARS_ITEM, 0)  # a gear fitted to the workshop is not an input it works on
-		var starved: bool = not Buildings.recipe_in(cand).is_empty() and Buildings.buffered(cand["inbuf"]) - fitted == 0
-		if starved or Buildings.buffered(cand["out"]) >= Data.BUFFER_CAP:
-			d /= 3.0
+		if stopped(cand):
+			var waited: float = s.hauling.stopped_for(s, cand["pos"]) * (2.0 if _cannot_start(cand) else 1.0)
+			d = -waited if waited >= URGENT else d / 3.0
 		var first: bool = s.livewire.serves_first(cand)
 		if (best_first and not first) or (first == best_first and d >= best_d):
 			continue

@@ -1,7 +1,8 @@
 extends SceneTree
 ## Takes screenshots of the real ground and water on a generated map, so terrain art can be judged in the game's own renderer
 ## (see docs/art/terrain-kit/README.md). It needs a window: do not pass --headless.
-## Run: godot --path . -s tests/tools/terrain_preview.gd -- [map_seed] [output_dir]
+## Run: godot --path . -s tests/tools/terrain_preview.gd -- [map_seed] [output_dir] [era] [baseline|current]
+## Eras: stone (legacy default), bronze, starfall, ironfall, livewire. Baseline selects the merged base-kit materials.
 ## Writes <output_dir>/terrain_<seed>_<view>.png for: the town, a wide view (24 px tiles), a close view (80 px tiles, the most
 ## the game zooms), the river bank, a stretch of open meadow, a forest edge, and the new land south (after Ironfall grows it).
 
@@ -13,6 +14,8 @@ var frame := 0
 var map_seed := 1
 var out := "user://terrain_preview/"
 var spots: Dictionary = {}
+var era_name := "stone"
+var baseline := false
 
 
 func _init() -> void:
@@ -21,6 +24,16 @@ func _init() -> void:
 		map_seed = int(args[0])
 	if args.size() > 1:
 		out = args[1].path_join("")
+	if args.size() > 2:
+		era_name = args[2]
+	if args.size() > 3:
+		baseline = args[3] == "baseline"
+	assert(era_name in ["stone", "starfall", "bronze", "ironfall", "livewire"], "Unknown preview era")
+	root.mode = Window.MODE_WINDOWED
+	root.size = Vector2i(1280, 800)
+	root.content_scale_size = root.size
+	root.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
+	root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
 	DirAccess.make_dir_recursive_absolute(out)
 	seed(map_seed)  # the game picks its map with randi(), so this makes the map the same every run
 	main = (load("res://scenes/main.tscn") as PackedScene).instantiate()
@@ -39,11 +52,35 @@ func _process(_delta: float) -> bool:
 		main.set_process(false)
 		main.set_process_unhandled_input(false)
 	if frame == 2:
+		root.mode = Window.MODE_WINDOWED
+		root.size = Vector2i(1280, 800)
+		root.content_scale_size = Vector2i(1280, 800)
+		root.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
+		root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
 		main.toasts.visible = false
-		s.world.grow_south()
+		_prepare_era(s)
+		if era_name in ["stone", "ironfall", "livewire"]:
+			s.world.grow_south()
 		s.fog.lengthen(s.world.height)  # reveal the added southern rows in this art-only fixture
 		s.fog.reveal_all()
 		spots = _find_spots(s.world)
+		if baseline:
+			main.ground.preview_family = 0
+		if era_name == "bronze":
+			spots["wide"] = Vector2i(s.world.stone_width + 10, s.world.base_height / 2)
+			spots["close"] = _first(s.world, func(p): return s.world.tile_at(p) == "copper_hills", spots["wide"])
+		elif era_name in ["ironfall", "livewire"]:
+			spots["wide"] = spots["south"]
+			spots["close"] = _southern(s.world, "bloom_spore" if era_name == "livewire" else "coal_seam")
+			if era_name == "livewire":
+				var burn := Vector2i(spots["close"]) + Vector2i(5, 0)
+				for y in range(-2, 3):
+					for x in range(-2, 3):
+						var tile := burn + Vector2i(x, y)
+						if s.world.in_bounds(tile) and s.world.tile_at(tile) != "river":
+							s.tide.burnt[tile] = true
+				s.tide.rev += 1
+				spots["meadow"] = burn
 	var step := 6
 	var k := floori(float(frame - 4) / step)
 	if frame >= 4 and k < VIEWS.size():
@@ -103,3 +140,31 @@ func _all_around(w, c: Vector2i, r: int, tile: String) -> bool:
 			if not w.in_bounds(p) or w.tile_at(p) != tile:
 				return false
 	return true
+
+
+## Display-only fixture setup: select existing milestones without running the economy or saving a run.
+func _prepare_era(s) -> void:
+	if era_name == "stone":
+		return
+	s.world.grow_east()
+	s.fog.widen(s.world.width)
+	s.story.events.append("bronze_dawn")
+	s.tech_tree.researched["prospecting"] = true
+	if era_name != "bronze":
+		s.story.events.append("star_falling")
+	if era_name in ["ironfall", "livewire"]:
+		s.story.events.append("ironfall_begun")
+		s.tech_tree.researched["coal_seams"] = true
+		s.tech_tree.researched["ironstone"] = true
+	if era_name == "livewire":
+		s.story.events.append("livewire_begun")
+		s.tide.begun = true
+
+
+func _southern(w, kind: String) -> Vector2i:
+	for y in range(w.base_height, w.height):
+		for x in w.width:
+			var p := Vector2i(x, y)
+			if w.tile_at(p) == kind:
+				return p
+	return Vector2i(w.width / 2, w.base_height + 10)

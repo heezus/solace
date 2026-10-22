@@ -23,7 +23,8 @@ func run(runner) -> void:
 	_h.t = runner
 	test_sets_two_to_five_are_well_formed()
 	test_the_post_opens_with_the_name_and_the_wall_copies_only_survivor_marks()
-	test_finds_come_in_set_order()
+	test_finds_come_in_this_runs_set_order()
+	test_the_wall_shows_a_set_number_until_the_set_is_read()
 	test_guesses_skip_words_already_read()
 	test_a_party_goes_to_the_wreck_and_brings_marks_home()
 	test_a_late_party_brings_less()
@@ -118,21 +119,48 @@ func test_the_post_opens_with_the_name_and_the_wall_copies_only_survivor_marks()
 	t.check(s.starfall.copied.size() == 3, "the Wall copies nothing of the Wreck's sets itself")
 
 
-func test_finds_come_in_set_order() -> void:
+func test_finds_come_in_this_runs_set_order() -> void:
 	var s: Sim = _h._arrived()
 	t.check(s.starfall.wreck_has_more(), "the Wreck holds marks")
+	var order: Array = s.starfall.set_order()
+	var first_set: Array = s.starfall.glyph_order(order[1])
 	t.check(
-		s.starfall.add_finds(2) == 2 and s.starfall.copied == ["g_light", "g_fire"],
-		"two finds are the first two of set 2"
+		s.starfall.add_finds(2) == 2 and s.starfall.copied == first_set.slice(0, 2),
+		"two finds are the first two marks of the first Wreck set in this run's order"
 	)
-	t.check(
-		s.starfall.add_finds(2) == 2 and s.starfall.copied.has("g_bright") and s.starfall.copied.has("g_hurt"),
-		"then on"
-	)
+	t.check(s.starfall.add_finds(2) == 2 and s.starfall.copied.has(first_set[2]), "then on into the next set")
+	t.check(s.starfall.copied.size() == 4, "four marks in all")
 	s.starfall.copied = []
 	for n in [2, 3, 4, 5, 6]:
 		s.starfall.locked[Data.GLYPH_SETS[n]["id"]] = true
 	t.check(not s.starfall.wreck_has_more() and s.starfall.add_finds(3) == 0, "nothing left once every set is read")
+
+
+func test_the_wall_shows_a_set_number_until_the_set_is_read() -> void:
+	var s: Sim = _h._arrived()
+	var order: Array = s.starfall.set_order()
+	t.check(order[0] == 1 and order[order.size() - 1] == 6, "the Name leads and the Warning comes last: %s" % [order])
+	var sorted: Array = order.duplicate()
+	sorted.sort()
+	t.check(sorted == [1, 2, 3, 4, 5, 6], "every set once")
+	var middle: Array = order.slice(1, 5)
+	var gset: Dictionary = Data.GLYPH_SETS[middle[0]]
+	var line := GlyphPicker.header_text(s, gset)
+	t.check(
+		line.begins_with("Set 2 of 6") and not line.contains(gset["name"]),
+		"an unread set shows its number, not its theme: %s" % line
+	)
+	s.starfall.locked[gset["id"]] = true
+	t.check(GlyphPicker.header_text(s, gset) == "%s: read" % gset["name"], "and its theme once it is read")
+	var other: Sim = _h._arrived()
+	other.starfall.wreck = other.starfall.wreck + Vector2i(9, 4)
+	var again: Array = other.starfall.set_order()
+	t.check(other.starfall.set_order() == again, "a map keeps its order")
+	var orders := {}
+	for dx in 8:
+		other.starfall.wreck = Vector2i(10 + dx * 3, 7 + dx)
+		orders[str(other.starfall.set_order())] = true
+	t.check(orders.size() > 1, "and other maps meet other orders: %d" % orders.size())
 
 
 func test_guesses_skip_words_already_read() -> void:

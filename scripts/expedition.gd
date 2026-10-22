@@ -9,6 +9,7 @@ extends RefCounted
 ## Ironfall adds parts (design-system/19-ironfall.md, scripts/teardown_finds.gd): the Wreck also gives up to its three parts, one
 ## a trip (the heavy pack two), and a third target, the nearest Bloom patch in the far south, brings home its sample.
 
+const CardText = preload("res://scripts/card_text.gd")
 const Data = preload("res://scripts/data.gd")
 const Kith = preload("res://scripts/kith.gd")
 const Scouting = preload("res://scripts/scouting.gd")
@@ -206,14 +207,7 @@ static func _finish(s, k: Dictionary, task: Dictionary) -> void:
 		if Finds.take_sample(s, task["tile"]) == "":
 			s.events.append(Data.BLOOM_NONE_LEFT)
 	else:
-		s.events.append(Data.FOG_BACK_LINE % _compass(Vector2(task["tile"]) - Vector2(s.world.camp_pos)))
-
-
-## "north", "south-east", ... for a step from the Hearth.
-static func _compass(d: Vector2) -> String:
-	var ns := "" if absf(d.y) < absf(d.x) * 0.4 else ("south" if d.y > 0.0 else "north")
-	var ew := "" if absf(d.x) < absf(d.y) * 0.4 else ("east" if d.x > 0.0 else "west")
-	return ns + ("-" if ns != "" and ew != "" else "") + ew
+		s.events.append(Data.FOG_BACK_LINE % CardText.compass(Vector2(task["tile"]) - Vector2(s.world.camp_pos)))
 
 
 static func _end(k: Dictionary) -> void:

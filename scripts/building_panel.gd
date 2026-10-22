@@ -19,6 +19,7 @@ const Buildings = preload("res://scripts/buildings.gd")
 const Work = preload("res://scripts/work.gd")
 const HutFocus = preload("res://scripts/hut_focus.gd")
 const TradePicker = preload("res://scripts/trade_picker.gd")
+const TrustMeter = preload("res://scripts/trust_meter.gd")
 const GlyphPicker = preload("res://scripts/glyph_picker.gd")
 const ExpeditionPicker = preload("res://scripts/expedition_picker.gd")
 const PatchText = preload("res://scripts/patch_text.gd")
@@ -28,6 +29,8 @@ const Steam = preload("res://scripts/steam.gd")
 const Power = preload("res://scripts/power.gd")
 const OrdersPanel = preload("res://scripts/orders_panel.gd")
 const FloorPicker = preload("res://scripts/floor_picker.gd")
+const FuelPicker = preload("res://scripts/fuel_picker.gd")
+const HaulerRow = preload("res://scripts/hauler_row.gd")
 
 const INSET := Ui.BAR
 
@@ -87,6 +90,11 @@ func setup(game: Sim) -> void:
 	v.add_child(trade)
 	v.move_child(trade, parts["recipe"].get_index())
 	parts["trade"] = trade
+	var trust := TrustMeter.new()  # how the Lumen stand with the Kith, on the Lumen Market's panel
+	trust.setup(game)
+	v.add_child(trust)
+	v.move_child(trust, parts["recipe"].get_index())
+	parts["trust"] = trust
 	var glyphs := GlyphPicker.new()  # a Glyph Wall: the marks copied so far and a guess for each (scripts/glyph_picker.gd)
 	glyphs.setup(game)
 	glyphs.changed.connect(refresh)
@@ -116,6 +124,18 @@ func setup(game: Sim) -> void:
 	v.add_child(floor_pick)
 	v.move_child(floor_pick, parts["recipe"].get_index())
 	parts["floor"] = floor_pick
+	var fuel_pick := FuelPicker.new()  # a Bloomery, Forge or Floor: Auto, Coal or Charcoal (scripts/fuel_picker.gd)
+	fuel_pick.setup(game)
+	fuel_pick.changed.connect(refresh)
+	v.add_child(fuel_pick)
+	v.move_child(fuel_pick, parts["recipe"].get_index())
+	parts["fuel"] = fuel_pick
+	var places := HaulerRow.new()  # a depot's hauler places: how many, and - + Auto (scripts/hauler_row.gd)
+	places.setup(game)
+	places.changed.connect(refresh)
+	v.add_child(places)
+	v.move_child(places, parts["recipe"].get_index())
+	parts["places"] = places
 	var orders := OrdersPanel.new()  # the Order Board: the standing orders, written with buttons (scripts/orders_panel.gd)
 	orders.setup(game)
 	orders.changed.connect(refresh)
@@ -234,12 +254,15 @@ func refresh() -> void:
 	parts["desc"].visible = def["kind"] not in ["gatherer", "processor"]  # what it gathers or makes says it better
 	parts["focus"].show_for(b)
 	parts["trade"].show_for(b)
+	parts["trust"].show_for(b)
 	parts["glyphs"].show_for(b)
 	parts["post"].show_for(b)
 	parts["bench"].show_for(b)
 	parts["lessons"].show_for(b)
 	parts["orders"].show_for(b)
 	parts["floor"].show_for(b)
+	parts["fuel"].show_for(b)
+	parts["places"].show_for(b)
 	parts["net"].text = "\n".join([Power.note(state, b), state.tide.note(state, b)].filter(func(l): return l != ""))
 	parts["net"].visible = parts["net"].text != ""
 	parts["recipe"].text = recipe_text(state, b)

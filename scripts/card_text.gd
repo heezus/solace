@@ -33,6 +33,21 @@ static func shortfall(inv: Dictionary, cost: Dictionary) -> Array:
 	return out
 
 
+## The line for a refused placement: the reason `err`, and for a short stockpile what is missing ("Not enough materials: 12 Stone short").
+static func refusal(s, type: String, err: String) -> String:
+	if err != "Not enough materials":
+		return err
+	var short := shortfall(s.economy.inv, s.town.price(type))
+	return err if short.is_empty() else "%s: %s short" % [err, ", ".join(short)]
+
+
+## "north", "south-east", ... for a step from the Hearth.
+static func compass(d: Vector2) -> String:
+	var ns := "" if absf(d.y) < absf(d.x) * 0.4 else ("south" if d.y > 0.0 else "north")
+	var ew := "" if absf(d.x) < absf(d.y) * 0.4 else ("east" if d.x > 0.0 else "west")
+	return ns + ("-" if ns != "" and ew != "" else "") + ew
+
+
 ## The names of the items of `cost` the stockpile `inv` is short of, in cost order.
 static func short_names(inv: Dictionary, cost: Dictionary) -> Array:
 	var out: Array = []

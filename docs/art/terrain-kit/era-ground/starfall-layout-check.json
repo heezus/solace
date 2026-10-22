@@ -1,0 +1,10 @@
+{
+  "meadow": {
+    "input_sha256": "53c36062e34b894e6fdc3f45707b3c483472eadec00a5f67d939ef39cd671470",
+    "high_frequency_luminance_correlation": 0.8236
+  },
+  "woodland": {
+    "input_sha256": "288fcb74717c4f9b68b2fcb643dec6275582b9ecb63051178ae60ec0d64e3642",
+    "high_frequency_luminance_correlation": 0.7849
+  }
+}
