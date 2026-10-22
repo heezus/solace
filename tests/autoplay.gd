@@ -40,6 +40,7 @@ const HUT_SURPLUS := 150
 const HUT_WAIT := 60.0  # seconds a food hut may stand unstaffed, with every Kith in a workshop, before one lets go
 ## Road tiles laid toward an unlinked building per decision.
 const LANE_ARM := 10  # how far the kept-open arms run out from the Hearth
+const HOUSE_HUTS := 3.0  # huts a full town sets up for a good its next Dwelling lacks
 const HAULER_PER := 3.0  # buildings per hauler the bot keeps free
 const ROADS_PER_DECISION := 4
 ## One more workshop of a kind for every WORKSHOP_PER of its good still wanted, up to WORKSHOPS_MAX.
@@ -400,6 +401,17 @@ func _house_wanted() -> bool:
 
 
 ## Once Paths & Haulers is in, keep a few Kith free to carry: one for every HAULER_PER buildings.
+## The raw good a wanted Dwelling lacks and a hut can gather ("" when none): the town is full of Kith and cannot grow without it.
+func _house_lacks() -> String:
+	if not _house_wanted():
+		return ""
+	var cost: Dictionary = Data.BUILDINGS["dwelling"]["cost"]
+	for id in cost:
+		if RAW_TILE.has(id) and s.economy.inv.get(id, 0) < cost[id]:
+			return id
+	return ""
+
+
 func _haulers_wanted() -> int:
 	return 1 + int(_workers() / HAULER_PER) if s.tech_tree.researched.has("haulers") else 0
 
@@ -491,6 +503,9 @@ func _decide() -> void:
 		if (not fed or room_for_hut or _no_food_hut()) and _place_hut("berries"):
 			return  # food comes first: more Kith are born only while there's food to spare
 	if _workers() + _haulers_wanted() >= s.people.kith.size() + 1:
+		var lacks := _house_lacks()
+		if lacks != "" and _huts_for(lacks) < HOUSE_HUTS:
+			_place_hut(lacks, _huts_for(lacks))  # no room, and too few huts for what the next Dwelling needs: one more, hand free or not
 		return
 	if s.town.unlocked("gatherers_hut"):
 		for item in ["wood", "stone", "fiber", "flint", "clay", "grain"]:

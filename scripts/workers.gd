@@ -13,6 +13,7 @@ const Work = preload("res://scripts/work.gd")
 const Hands = preload("res://scripts/hands.gd")
 const GrowthNote = preload("res://scripts/growth_note.gd")
 const Steam = preload("res://scripts/steam.gd")
+const StoreRest = preload("res://scripts/store_rest.gd")
 
 
 ## One step of a worker's day at their building.
@@ -29,7 +30,7 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 			if s.people.step(k, delta):
 				k["phase"] = "home"
 		"home":
-			if def["kind"] != "gatherer" or Buildings.buffered(b["out"]) >= Data.BUFFER_CAP:
+			if def["kind"] != "gatherer" or Buildings.buffered(b["out"]) >= Data.BUFFER_CAP or b.get("resting", false):
 				return
 			if not Roads.automated(s, b) and b["trips"] <= 0:
 				return  # waits for a click
@@ -255,6 +256,9 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 	if Work.steel_waits(s, b) and b["progress"] <= 0.0:
 		s.town.set_status(b, Data.STEEL_WAITS_STATUS, Data.STEEL_WAITS_ALERT)
 		return
+	if StoreRest.rests(s, b):
+		b["status"] = Data.STORE_FULL_STATUS  # nothing it makes would fit: it rests until the store has room
+		return
 	if not s.town.wants_to_work(b):
 		idle_reason(s, b, def)
 		return
@@ -299,7 +303,8 @@ static func idle_reason(s, b: Dictionary, def: Dictionary) -> void:
 		if auto and Roads.depot_far(s, b):
 			s.town.set_status(b, Data.FAR_DEPOT_STATUS, Data.FAR_DEPOT_ALERT)
 		elif auto:
-			s.town.set_status(b, "Full: waiting for a hauler", "Full: waiting for a hauler")
+			var wait: String = s.hauling.waiting_note(s, b)
+			s.town.set_status(b, wait if wait != "" else "Full: waiting for a hauler", "Full: waiting for a hauler")
 		else:
 			s.town.set_status(b, "Full: click to collect" + road_note(s, b), "Full: click to collect")
 		return
@@ -318,6 +323,10 @@ static func idle_reason(s, b: Dictionary, def: Dictionary) -> void:
 		b["status"] = "Idle"
 		return
 	var how := "waiting for a hauler" if auto else "click to load" + road_note(s, b)
+	if auto:
+		var wait: String = s.hauling.waiting_note(s, b)
+		if wait != "":
+			how = wait.substr(0, 1).to_lower() + wait.substr(1)
 	if auto:
 		for id in recipe:
 			if b["inbuf"].get(id, 0) + b["incoming"].get(id, 0) < recipe[id] and s.economy.inv.get(id, 0) == 0:

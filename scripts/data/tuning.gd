@@ -63,6 +63,8 @@ const STORAGE_STOREHOUSE_MAX := 6
 const STORAGE_TECHS := {"granaries": 100, "rails": 100, "factory_floor": 100}
 ## A chip says "full" once its good is this share of the cap.
 const STORAGE_FULL_SHARE := 0.95
+## A hut or workshop resting at a full store starts again when any good it makes falls under this share of the cap.
+const STORAGE_RESUME_SHARE := 0.9
 ## Food spoils: each of SPOIL_GOODS loses SPOIL_PER_MINUTE of the stock above SPOIL_FLOOR every minute (Preservation halves it).
 const SPOIL_GOODS := ["berries", "fish", "flour", "grain"]
 const SPOIL_PER_MINUTE := 0.02
