@@ -4,7 +4,9 @@ extends RefCounted
 
 const Buildings = preload("res://scripts/buildings.gd")
 const Data = preload("res://scripts/data.gd")
+const Haulers = preload("res://scripts/haulers.gd")
 const Hauling = preload("res://scripts/hauling.gd")
+const Roads = preload("res://scripts/roads.gd")
 const RunSave = preload("res://scripts/run_save.gd")
 const Sim = preload("res://scripts/sim.gd")
 const StoreRest = preload("res://scripts/store_rest.gd")
@@ -19,6 +21,7 @@ func run(runner) -> void:
 	test_the_player_sets_a_depot_above_or_below_auto()
 	test_places_come_before_workshops()
 	test_leftover_kith_go_where_the_gap_is_biggest()
+	test_a_short_town_fills_every_depot_a_little()
 	test_a_waiting_building_names_its_depot()
 	test_a_full_store_rests_the_building()
 	test_food_producers_rest_and_births_go_on()
@@ -26,6 +29,7 @@ func run(runner) -> void:
 	test_a_held_back_workshop_says_why()
 	test_a_machine_short_of_an_input_does_not_blame_power()
 	test_a_refused_swap_names_its_reason()
+	test_the_longest_wait_goes_first()
 
 
 ## A town with haulers known, a Storehouse far from the Hearth, and a charcoal pit beside each.
@@ -153,6 +157,23 @@ func test_leftover_kith_go_where_the_gap_is_biggest() -> void:
 		s.hauling.have(far) <= s.hauling.wanted(far) + 1,
 		"and no more than it wants (%d of %d)" % [s.hauling.have(far), s.hauling.wanted(far)]
 	)
+
+
+## A town short of haulers spreads them by share: a Storehouse with none gets one before the Hearth, short too, gets more.
+func test_a_short_town_fills_every_depot_a_little() -> void:
+	var s := _town(20)
+	_run(s, 70.0)
+	var camp := s.world.camp_pos
+	var far: Vector2i = camp + Vector2i(8 if camp.x < 14 else -8, 0)
+	s.hauling.nudge(camp, 30)  # the Hearth wants far more than the town has
+	s.hauling.nudge(far, 2)
+	for k in s.people.kith:
+		if k["job"] == "haul":
+			k["depot"] = camp
+			k["task"] = {}
+	s.hauling.refresh(s)
+	t.check(s.hauling.surplus(camp) < 0, "the Hearth is short as well (%d)" % s.hauling.surplus(camp))
+	t.check(s.hauling.have(far) >= 1, "the Storehouse gets a hauler all the same (%d)" % s.hauling.have(far))
 
 
 func test_a_short_depot_names_the_cheapest_lever() -> void:
@@ -322,4 +343,43 @@ func test_a_refused_swap_names_its_reason() -> void:
 	t.check(
 		Buildings.trade_refusal("charcoal_pit", "coal", "wood").ends_with("does not trade"),
 		"a building that does not trade"
+	)
+
+
+## A building stopped for a hauler past Haulers.URGENT goes ahead of a nearer one that has only just stopped.
+func test_the_longest_wait_goes_first() -> void:
+	var s := _town(10)
+	_run(s, 40.0)
+	var camp := s.world.camp_pos
+	var near: Dictionary = s.town.buildings[s.town.building_at[camp + Vector2i(1, 0)]]
+	var far_at := Vector2i(-1, -1)
+	var side := 1 if camp.y < 10 else -1  # a road straight off the Hearth, and a pit at its end
+	for i in range(1, 6):
+		s.world.set_tile(camp + Vector2i(0, side * i), "grass")
+	s.pathing.build()
+	for i in range(1, 4):
+		s.place("road", camp + Vector2i(0, side * i))
+	if s.place("charcoal_pit", camp + Vector2i(0, side * 4)):
+		far_at = camp + Vector2i(0, side * 4)
+	t.check(far_at.x >= 0, "a second pit stands farther off, served from the Hearth")
+	_run(s, 2.0)
+	var far: Dictionary = s.town.buildings[s.town.building_at[far_at]]
+	var hauler := {}
+	for k in s.people.kith:
+		if k["job"] == "haul" and hauler.is_empty():
+			hauler = k
+	t.check(not hauler.is_empty(), "there is a hauler")
+	for k in s.people.kith:
+		k["task"] = {}
+	for b in [near, far]:
+		b["out"] = {"charcoal": Data.BUFFER_CAP}
+		b["claimed"] = false
+	hauler["pos"] = Vector2(camp)
+	s.hauling.stopped_since[near["pos"]] = s.hauling.stopped_since.get(near["pos"], 0.0) + 1000.0  # only just stopped
+	s.hauling.stopped_since[far["pos"]] = -1000.0  # stopped long ago
+	t.check(s.hauling.stopped_for(s, far["pos"]) >= Haulers.URGENT, "the far pit has waited past URGENT")
+	t.check(Haulers._find_task(s, hauler), "the hauler finds a trip")
+	t.check(
+		hauler["task"].get("building", -1) == s.town.building_at[far_at],
+		"it goes to the pit that has waited longest (%s)" % hauler["task"]
 	)
