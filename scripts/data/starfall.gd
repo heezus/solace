@@ -26,13 +26,16 @@ const LEAD_NAME := "Sela"
 # Her name twice.
 const LEAD_NAMED_LINE := 'The tall stranger taps her chest. "%s," she says, and waits. Then, delighted: "%s! Say it back!"'
 
-# --- Trust: a hidden number 0 to 100, never shown (the Lumen's behavior shows it) ---
+# --- Trust: a number 0 to 100 that is never shown as a number: a word and a bar on the Lumen Market's panel (TRUST_WORDS) ---
 const TRUST_MAX := 100.0
 const TRUST_START_GUESTS := 20.0  # a Cairn built before the star fell: they arrive as guests
 const TRUST_START_WARY := 0.0
 const TRUST_CAMP := 8.0  # the Lumen Camp goes up
 const TRUST_CAMP_PER_MINUTE := 1.0  # and while it stands
 const TRUST_SET := 6.0  # a set of glyphs is read
+const TRUST_WORDS := [[20.0, "Wary"], [35.0, "Curious"], [70.0, "Friendly"], [101.0, "Close"]]  # below each number, the word
+const TRUST_LINE := "The Lumen are: %s"  # the word, on the Lumen Market's panel
+const TRUST_POP := "%+d trust"  # floats over the Hearth when a step of trust lands
 const CONTEXT_TRUST := 40.0  # from here the survivors say a little more about each mark
 
 # --- The Glyph Wall and the guesses ---
@@ -64,7 +67,7 @@ const GLYPH_WORDS := [
 const NO_GUESS := "?"
 const WALL_NEED_SURVIVORS := "The Wall waits for someone who can show it the marks."
 const WALL_COPYING := "Marks copied: %d of %d"
-const WALL_SET_LINE := "%s: %d of %d marks copied"  # set name, copied, in the set
+const WALL_SET_LINE := "Set %d of %d: %d of %d marks copied"  # which set, of how many, copied, in the set (the theme is hidden)
 const WALL_SET_LOCKED := "%s: read"
 ## How the Wall works, the first thing its panel says: every number is the game's own.
 const WALL_HOW := (
@@ -362,6 +365,78 @@ const SHARDLIGHT_RADIUS := 4.0  # tiles from a Shard Cairn
 const HEALER_WEAR := 0.7  # a job wears a tool this much: 1 / 0.7 = 40% longer
 const HEALER_GROW := 0.8  # a birth takes this share of the usual time
 const GIFT_LINE := "Lumen lore: %s. %s"  # gift name, what it does (the Glyph Wall's panel)
+
+# --- Two roads (design-system/29-two-roads.md): each gift can be refused for the Kith's own twin of it ---
+## The gifts that ask, in the order their sets are usually read. When one of these sets is read a card asks: take the gift (trust
+## rises, as before) or keep to the Kith way, which costs trust and a standing price. A set read before this existed, or in a
+## start built by the dev tools, counts as taken.
+const ROAD_ORDER := ["light", "body", "growth", "craft"]
+const TRUST_REFUSE := -4.0  # refusing a gift, in place of the +TRUST_SET reading it would have given
+const TWIN_EVERY := 60.0  # a twin's upkeep is paid at the start of each of these seconds
+## `ask`: what the card says. `says`: the lead stranger's reply. `line`: said when the Kith refuse. `note`: what the twin does.
+## `cost`: its price in words. A twin with `feed` burns `n` of `good` a minute for each building of type `per` ("" for one in all);
+## a twin with `once` is paid in full a single time. A twin works only while its price is paid (Starfall.twin); its effect is a
+## Data.BONUSES entry with the same `twin` id, or (the Bonesetter) a slower tool wear and quicker birth through Kith.
+const TWINS := {
+	"light":
+	{
+		"name": "Cairnfire",
+		"ask": "The Lumen offer the Cairn's shardlight. The Kith could also feed a fire of their own beside it.",
+		"says": '"Take it, it is free," says ' + LEAD_NAME + '. "Or keep your fire. I\'d like to see how yours burns."',
+		"line":
+		"The Kith turn the offer down and bank a fire at the Cairn instead. The strangers watch, and say nothing.",
+		"note": "Gatherers near a Shard Cairn work 25% faster, for 1 Charcoal a minute per Cairn.",
+		"feed": {"good": "charcoal", "n": 1, "per": "shard_cairn"},
+	},
+	"body":
+	{
+		"name": "Bonesetter's rule",
+		"ask": "The Lumen offer their leaves and cloths. The Kith could also learn to tend their own.",
+		"says":
+		(
+			'"We know a little about hurts," says '
+			+ LEAD_NAME
+			+ '. "We would show you. Or you can learn it the hard way."'
+		),
+		"line": "The Kith decline and set a bonesetter's rule of their own. The strangers keep their leaves.",
+		"note": "Tools last 40% longer and births come 20% sooner, for 1 Berry a minute.",
+		"feed": {"good": "berries", "n": 1, "per": ""},
+	},
+	"growth":
+	{
+		"name": "Orchard",
+		"ask": "The Lumen offer their seeds. The Kith could also plant the Dwellings' gardens as orchards.",
+		"says":
+		'"They grow fat on shardlight," says ' + LEAD_NAME + '. "Yours will grow slow and honest. Your choice."',
+		"line": "The Kith decline the seeds and plant their own trees. The strangers look away.",
+		"note": "Berries picked near a Dwelling yield 50% more, for 40 Wood once.",
+		"once": {"wood": 40},
+		"cost": "40 Wood",
+	},
+	"craft":
+	{
+		"name": "Smith's Rule",
+		"ask":
+		"The Lumen offer to teach binding and shaping with shard. The Kith could also keep a Smelter lit for it.",
+		"says": '"It is easier with shard," says ' + LEAD_NAME + '. "But I hear you like hard work."',
+		"line": "The Kith decline and keep the Smelter burning. The strangers go quiet.",
+		"note": "Workshops beside a Smelter work 25% faster, for 1 Charcoal a minute per Smelter.",
+		"feed": {"good": "charcoal", "n": 1, "per": "smelter"},
+	},
+}
+const ROAD_TITLE := "A gift, or the Kith's own way"
+const ROAD_TAKE := "Take the gift: %s"  # the gift's name
+const ROAD_TAKE_NOTE := "%s Trust rises, and the Lumen smile."  # the gift's note
+const ROAD_KEEP := "Keep to the Kith way: %s"  # the twin's name
+const ROAD_KEEP_NOTE := "%s Trust falls a little, and the strangers keep their distance."  # the twin's note
+const ROAD_ASKED_LINE := "The Lumen offer a gift: %s."
+const TWIN_LINE := "Kith way: %s. %s"  # twin name, what it does (the Glyph Wall's panel)
+const TWIN_WAITING_LINE := "Waiting on your answer: take the gift, or keep to the Kith way."
+const TWIN_OUT_LINE := "%s has gone out: the stores could not pay for it."
+const TWIN_OWED_LINE := "%s waits on its price: %s."  # twin name, the cost
+const TWIN_PLANTED_LINE := "%s is in: the price is paid."
+const ROAD_ENDING_LINE := "The Kith kept their own road on %d of the %d gifts."
+const ROAD_WARNING_LINE := "The strangers know now which gifts the Kith would not take."
 
 # --- The Expedition Post and the Wreck (scripts/expedition.gd) ---
 ## A party is two Kith who walk to a target, look around, and walk home before dusk. They carry a pack, taken from the

@@ -16,6 +16,7 @@ const GATE := "livewire"
 const RAW_NEW := {"coal": "coal_seam", "iron_ore": "iron_hills"}
 const COAL_MINES := 3  # the most Coal Mines (a seam holds about 500, so three seams are three mines at most)
 const IRON_MINES := 5
+const FUEL_CHARCOAL_CAP := 200  # the most Charcoal the bot asks for in place of the Coal it lacks
 const BLOOMERIES := 4
 const FORGES := 4
 const ORE_PER_MINE := 300.0  # one more Iron Mine for every this much Iron Ore still short
@@ -214,6 +215,8 @@ func _goal_wants(want: Dictionary) -> void:
 		want["steel"] = want.get("steel", 0) + _steel_cost()
 		want["iron"] = want.get("iron", 0) + steel_left * 2
 		want["coal"] = want.get("coal", 0) + steel_left
+		if _inv("coal") < Data.FUEL_RESERVE * 2:  # Coal short: the works burn Charcoal at half speed, so the bot makes some, as a player would
+			want["charcoal"] = want.get("charcoal", 0) + mini(steel_left * 2, FUEL_CHARCOAL_CAP)
 	for type in _building_wants():
 		_want(want, s.town.price(type), 1)
 
@@ -326,6 +329,8 @@ func _count(type: String) -> int:
 ## dealt to the depots by the order they were born in, and a Storehouse out there can end with none, leaving the mine behind it
 ## full and unserved. The mines there are joined by road to the Hearth's own network, which has haulers.
 func _place_storehouse() -> bool:
+	if _place_for_far_depot():
+		return true
 	for b in s.town.buildings:
 		if not Buildings.needs_worker(b) or b["pos"].y >= s.world.base_height:
 			continue
@@ -337,6 +342,31 @@ func _place_storehouse() -> bool:
 				return -d if d <= 4.0 else -INF
 			if _place_best("storehouse", near):
 				return true
+	return false
+
+
+## What a player does when a depot's card says "A Storehouse near the far workshops would cut the trips" (Hauling.lever_note): a
+## Storehouse by the workshop that stands farthest from that depot, as the stone age's bot places one.
+func _place_for_far_depot() -> bool:
+	for depot in s.hauling.auto:
+		if s.hauling.lever_note(depot) != Data.HAULER_LEVER_FAR:
+			continue
+		var far := Vector2i(-1, -1)
+		var far_d := 0.0
+		for b in s.town.buildings:
+			if not Buildings.needs_worker(b) or b["pos"].y >= s.world.base_height or Roads.depot_of(s, b) != depot:
+				continue
+			var d := Vector2(depot).distance_to(Vector2(b["pos"]))
+			if d > far_d and d > s.hauling.FAR_TRIP * 0.5:
+				far = b["pos"]
+				far_d = d
+		if far.x < 0:
+			continue
+		var near := func(p):
+			var d := Vector2(p).distance_to(Vector2(far))
+			return -d if d <= 4.0 else -INF
+		if _place_best("storehouse", near):
+			return true
 	return false
 
 
@@ -364,6 +394,8 @@ func _pick_tile() -> Vector2i:
 		item = "berries"
 	if item == "":
 		item = "stone" if s.economy.inv.get("stone", 0) < s.economy.inv.get("wood", 0) else "wood"
+	if s.economy.is_full(item):
+		return Vector2i(-1, -1)  # a player does not gather into a full store: it would spill
 	var tile: String = RAW_NEW[item] if RAW_NEW.has(item) else RAW_TILE[item]
 	return _nearest_tile(tile, s.world.camp_pos)
 

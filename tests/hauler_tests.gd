@@ -4,6 +4,7 @@ extends RefCounted
 const Roads = preload("res://scripts/roads.gd")
 const Haulers = preload("res://scripts/haulers.gd")
 const Sim = preload("res://scripts/sim.gd")
+const HaulingTests = preload("res://tests/hauling_tests.gd")
 
 var t  # the runner, tests/run_tests.gd
 
@@ -12,6 +13,7 @@ func run(runner) -> void:
 	t = runner
 	test_haulers_wait_at_every_depot_with_work()
 	test_the_posts_share_the_haulers_evenly()
+	HaulingTests.new().run(t)  # hauler places and resting at a full store
 
 
 ## Haulers are born at the Hearth: a Storehouse's workshops would never be served if they only waited there.
@@ -48,13 +50,10 @@ func test_haulers_wait_at_every_depot_with_work() -> void:
 	t.check(Roads.posts(s) == [camp, far], "now the Hearth is a post too, in depot order")
 	for i in 600:
 		s.tick(0.1)
-	var at_hearth := 0
-	var at_store := 0
-	for k in s.people.kith:
-		if k["job"] == "haul" and k["task"].is_empty():
-			at_hearth += 1 if Vector2(k["pos"]).distance_to(Vector2(camp)) < 3.0 else 0
-			at_store += 1 if Vector2(k["pos"]).distance_to(Vector2(far)) < 3.0 else 0
-	t.check(at_hearth >= 1 and at_store >= 1, "haulers wait at both (%d and %d)" % [at_hearth, at_store])
+	t.check(
+		s.hauling.have(camp) >= 1 and s.hauling.have(far) >= 1,
+		"haulers hold places at both (%d and %d)" % [s.hauling.have(camp), s.hauling.have(far)]
+	)
 
 
 ## Found by the pacing bot after the project owner's playtest changes shifted its timeline: on one map 1 of 45 haulers was hashed onto the

@@ -1,8 +1,7 @@
 extends Control
-## A moment of the Starfall era (Data.MOMENTS) or its ending: a card over a dimmed map, with one button per choice. It reads
-## what to say from the Starfall block (`pending`, `pending_options`) and gives the player's pick back as `chose(index)`. The
-## owner pauses while it is up and resumes on `chose`. Same look as the era card (scripts/era_card.gd).
-## Signal: chose(index) fires once when a button is pressed.
+## A moment of the Starfall era (Data.MOMENTS), a gift's road (Data.TWINS) or the ending: a card over a dimmed map, with one
+## button per choice. It reads what to say from the Starfall block (`pending_card`, `pending_options`) and gives the player's pick
+## back as `chose(index)`. The owner pauses while it is up and resumes on `chose`. Same look as the era card (scripts/era_card.gd).
 
 signal chose(index: int)
 
@@ -46,17 +45,16 @@ func open(f) -> void:
 	for c in _box.get_children():
 		_box.remove_child(c)
 		c.queue_free()
-	var ending: bool = f.pending == "ending"
-	var title := Ui.label(Data.ENDING_TITLE if ending else Data.MOMENTS[f.pending]["title"], 28)
+	var card: Dictionary = f.pending_card()
+	var title := Ui.label(card["title"], 28)
 	title.add_theme_color_override("font_color", Ui.HIGHLIGHT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_box.add_child(title)
-	_box.add_child(_wrapped(Data.ENDING_TEXT if ending else Data.MOMENTS[f.pending]["text"], 18, Ui.TEXT))
-	var says: String = Data.ENDING_SAYS if ending else Data.MOMENTS[f.pending].get("says", "")
-	if says != "":
-		_box.add_child(_wrapped(says, 18, Ui.HIGHLIGHT))  # the lead stranger's voice
-	if ending:
-		_box.add_child(_wrapped(Data.ENDING_NOTE, Ui.MIN_TEXT, Ui.TEXT_DIM))
+	_box.add_child(_wrapped(card["text"], 18, Ui.TEXT))
+	if card["says"] != "":
+		_box.add_child(_wrapped(card["says"], 18, Ui.HIGHLIGHT))  # the lead stranger's voice
+	if card["note"] != "":
+		_box.add_child(_wrapped(card["note"], Ui.MIN_TEXT, Ui.TEXT_DIM))
 	var options: Array = f.pending_options()
 	for i in options.size():
 		_box.add_child(_option(i, options[i]))

@@ -34,6 +34,7 @@ const FLAVOR_STOCK := "A good stock of berries. Nobody goes to sleep hungry toni
 # --- The top-left readout (scripts/top_bar.gd, scripts/ui.gd) ---
 const KITH_LABEL := "%s %d  ·  homes for %d"  # people (many), how many, housing
 const JOBS_LABEL := "Jobs filled %d of %d  ·  %d %s"  # working, jobs, the rest, IDLE_WORD or HAUL_WORD
+const JOBS_LABEL_PLACES := "Jobs %d of %d  ·  %s"  # working, jobs, "Haulers 18 of 24" (HAULERS_BAR)
 const JOBS_TIP := (
 	"%s\n%s work buildings and haul goods. Each building is one job and needs one. "
 	+ "They grow when there is room and steady food."
@@ -42,6 +43,29 @@ const JOBS_TIP := (
 const COPY_COST_NOTE := "%d standing: this one costs %d%% more."
 const IDLE_WORD := "idle"
 const HAUL_WORD := "hauling"
+# --- Hauler places (scripts/hauling.gd): the top bar, a depot's card and what a waiting building says ---
+const HAULERS_BAR := "Haulers %d of %d"  # in a place, wanted
+const HAULERS_TIP := (
+	"Haulers in a place at a depot, and how many the depots want. A depot wants the haulers its road-linked buildings keep busy. "
+	+ "Amber: a depot has under three quarters of what it wants. Click the Hearth or a Storehouse to set its number."
+)
+const HEARTH_NAME := "Hearth"
+const DEPOT_BY := "%s by the %s"  # Storehouse, the nearest workshop
+const HAULER_WAIT := "Waiting for a hauler: %s, %d of %d"  # the depot, haulers there, haulers it wants
+const HAULER_ROW := "Haulers %d of %d wanted"
+const HAULER_ROW_SET := "Haulers %d of %d wanted (auto %d)"
+const HAULER_LEVER_FAR := "A Storehouse near the far workshops would cut the trips"
+const HAULER_LEVER_KITH := "More Kith: build homes"
+const HAULER_ROW_TIP := "- and + set this depot's number above or below the auto number. Auto returns to it."
+const TRADE_NOT_HERE := "%s does not trade"  # the building
+const TRADE_SAME := "It cannot swap a good for itself"
+const TRADE_NO_GOOD := "There is no good called %s"
+const TRADE_ONLY := "%s does not take %s; it deals only in %s"  # the building, the good, the goods it deals in
+const TRADE_NOT_TRADED := "%s does not trade %s"  # the building, the good
+const HOLD_BACK_STATUS := "Waiting for hands: haulers come first (Haulers %d of %d)"  # haulers in places, haulers wanted
+const HOLD_BACK_ALERT := "Waiting for hands"
+const STORE_FULL_STATUS := "Store full: resting"
+const STORE_FULL_ALERT := "Store full"
 const NOTE_STARVING := "Starving: no food"
 const NOTE_NO_ROOM := "No room: build a Dwelling"
 const NOTE_NO_ROOM_GROW := "No room: build a Dwelling, or let a home grow (Homes tab)"

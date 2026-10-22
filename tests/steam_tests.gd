@@ -310,7 +310,7 @@ func test_a_cold_boiler_leaves_the_forge_without_power() -> void:
 		both[1]["alert"] == "No power" and both[1]["status"].begins_with("No power"),
 		"the Forge says: %s" % both[1]["status"]
 	)
-	t.check(both[0]["alert"] == "Needs Coal", "and the Boiler asks for Coal")
+	t.check(both[0]["alert"] in ["Needs Coal", "Needs road"], "and the Boiler asks for Coal (or a road to bring it)")
 	t.check(both[0]["status"].begins_with("Cold"), "(%s)" % both[0]["status"])
 	var dry := town()
 	var at := spot(dry, "forge", dry.world.camp_pos)
@@ -353,7 +353,11 @@ func test_the_shard_boiler_and_the_shard_lamp() -> void:
 	var lamp: Dictionary = s.town.buildings[s.town.building_at[lamp_at]]
 	feed(s, 2.0)
 	t.check(
-		lamp["burn"] == 0.0 and lamp["status"].begins_with(Data.LAMP_DARK) and lamp["alert"] == "Needs Shard",
+		(
+			lamp["burn"] == 0.0
+			and lamp["status"].begins_with(Data.LAMP_DARK)
+			and lamp["alert"] in ["Needs Shard", "Needs road"]
+		),
 		"a lamp with no Shard is dark"
 	)
 	t.check(not Steam.lamp_lit(s) and not Steam.lit_at(s, lamp_at), "and lights nothing")
@@ -477,7 +481,7 @@ func test_a_beast_pen_tames_a_beast() -> void:
 	t.check(not Buildings.is_tamed(pen) and s.town.carts_of("beast") == 0, "no beast yet, so no cart")
 	feed(s, 3.0)
 	t.check(
-		pen["alert"] == "Needs Grain" and pen["status"].begins_with("Taming the beast"),
+		pen["alert"] in ["Needs Grain", "Needs road"] and pen["status"].begins_with("Taming the beast"),
 		"an empty Pen asks for Grain: %s" % pen["status"]
 	)
 	t.check(Haulers.stock_wanted(s, pen) == {"grain": 4}, "haulers keep it stocked with Grain")

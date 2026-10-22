@@ -7,16 +7,26 @@ extends SceneTree
 ## each goal: `ironfall` alone starts where the era does, `steam` or `teardown` after it starts at that stage start. Maps other
 ## than the starts' own (1) are played to the Falling Star first (minutes of real time); `cache` keeps that in user://pace_starts/
 ## (clear the folder when an earlier era's numbers change).
+## With `starfall` it plays Starfall (tests/autoplay_starfall.gd) from The Falling Star, played by the bots first, to the ending.
 ## With `livewire` it plays on from the Ironfall start through the Livewire gate (the Wires Hum) to the Skyward tech and prints the
 ## clock at each Livewire goal (tests/autoplay_livewire.gd).
+## With `baseline` it plays one map through all five eras in a row, every era by its bot with nothing handed over (stone age, Bronze
+## Dawn, Starfall, Ironfall, Livewire), reads each era with tests/tools/era_probe.gd and writes one row per era to `out=<folder>`
+## (seed_<map>.json). `minutes` is then the most the Ironfall and Livewire bot may play. `baseline` takes one map.
 ## Run: godot --headless --path . -s tests/tools/pace.gd --
-##   [map|all] [minutes] [quiet] [bronze|star|ironfall [steam|teardown]|livewire] [cache]
+##   [map|all] [minutes] [quiet] [bronze|star|ironfall [steam|teardown]|livewire|baseline [noseams] out=<folder>] [cache]
 
 const Autoplay = preload("res://tests/autoplay.gd")
 const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
 const AutoplayIronfall = preload("res://tests/autoplay_ironfall.gd")
 const AutoplayLivewire = preload("res://tests/autoplay_livewire.gd")
+const AutoplayStarfall = preload("res://tests/autoplay_starfall.gd")
 const DevStarts = preload("res://scripts/dev_starts.gd")
+const EraProbe = preload("res://tests/tools/era_probe.gd")
+const RunSave = preload("res://scripts/run_save.gd")
+const Sim = preload("res://scripts/sim.gd")
+
+const BASELINE_SAVE_EVERY := 600.0  # game seconds between a baseline run's checkpoints
 
 
 func _init() -> void:
@@ -31,6 +41,16 @@ func _init() -> void:
 		return
 	if "star" in args:
 		_star(maps, minutes, quiet)
+		return
+	if "baseline" in args:
+		var out := ""
+		for a in args:
+			if a.begins_with("out="):
+				out = a.substr(4)
+		_baseline(int(args[0]), minutes, out)
+		return
+	if "starfall" in args:
+		_starfall(maps, minutes, quiet, "user://pace_starts/" if "cache" in args else "")
 		return
 	if "livewire" in args:
 		_livewire(maps, minutes, quiet, "user://pace_starts/" if "cache" in args else "")
@@ -161,6 +181,149 @@ func _mean(xs: Array) -> float:
 	for x in xs:
 		total += x
 	return total / xs.size()
+
+
+## The baseline: map `m` played through every era by the bots, one probe row per era (era_probe.gd), written to `out`/seed_<m>.json.
+## An era a bot does not finish in time is closed with "ended": false and the run stops there. A run takes hours of real time, so
+## it keeps a checkpoint (the game and the probe) in user://baseline_work/ every ten game minutes and picks up from it when run
+## again; delete that folder to start a map afresh.
+func _baseline(m: int, minutes: float, out: String) -> void:
+	var work := "user://baseline_work/seed_%d.json" % m
+	DirAccess.make_dir_recursive_absolute("user://baseline_work")
+	var probe := EraProbe.new()
+	var game := Sim.new()
+	var limit := 70.0 * 60.0
+	var stage := _baseline_resume(work, probe, game)
+	if stage == "":
+		game.generate(m)
+		stage = "stone_age"
+		probe.begin("stone_age", game)
+	var at := [stage, game.seasons.time]  # the stage, and the game clock of the last checkpoint
+	var hook := func(s):
+		probe.observe(s)
+		if s.seasons.time - at[1] >= BASELINE_SAVE_EVERY:
+			at[1] = s.seasons.time
+			_baseline_save(work, at[0], probe, s, m, out)
+	var bronze := AutoplayBronze.new()
+	bronze.probe = hook
+	if at[0] == "stone_age":
+		bronze.attach(game)
+		while bronze.clock < limit and not game.won:
+			bronze.step(true)
+		at[0] = "bronze_dawn" if _close(probe, game, game.won) else "done"
+		if at[0] == "bronze_dawn":
+			probe.begin("bronze_dawn", game)
+		_baseline_save(work, at[0], probe, game, m, out)
+	if at[0] == "bronze_dawn":
+		var from := game.seasons.time
+		bronze.play_from_dawn(game, from, from + limit)
+		while bronze.clock < from + limit and not bronze.fell():
+			bronze.step(true)
+		at[0] = "starfall" if _close(probe, game, bronze.fell()) else "done"
+		if at[0] == "starfall":
+			probe.begin("starfall", game)
+		_baseline_save(work, at[0], probe, game, m, out)
+	if at[0] == "starfall":
+		var starfall := AutoplayStarfall.new()
+		starfall.probe = hook
+		var r: Dictionary = starfall.play_starfall(game, game.seasons.time, 40.0 * 60.0)
+		at[0] = "ironfall" if _close(probe, game, r["won"]) else "done"
+		if at[0] == "ironfall":
+			probe.begin("ironfall", game)
+		_baseline_save(work, at[0], probe, game, m, out)
+	if at[0] == "ironfall":
+		if "noseams" in OS.get_cmdline_user_args():
+			_empty_seams(game)
+		var wire := AutoplayLivewire.new()
+		wire.probe = hook
+		var r: Dictionary = wire.play_livewire(game, minutes * 60.0)
+		_close(probe, game, r["won"])
+		at[0] = "done"
+		_baseline_save(work, at[0], probe, game, m, out)
+	for row in probe.rows:
+		print(
+			(
+				"map %d %s: %.1f min, goals %d of %d, ended %s"
+				% [m, row["era"], row["length_min"], row["goals_done"], row["goals_total"], row["ended"]]
+			)
+		)
+	quit(0)
+
+
+## The `noseams` variant (a test, never a balance run): every Coal Seam is spent when Ironfall starts, so only Charcoal is left to burn.
+func _empty_seams(game: Sim) -> void:
+	for id in game.world.seam_left:
+		game.world.seam_left[id] = 0
+	for p in game.world.seam_of:
+		if game.world.tile_at(p) == "coal_seam":
+			game.world.set_tile(p, "spent_seam")
+
+
+## Keep the run so far: the game, the probe and the stage in `work`, and the rows so far in `out`/seed_<m>.json.
+func _baseline_save(work: String, stage: String, probe: RefCounted, game: Sim, m: int, out: String) -> void:
+	var state := {"stage": stage, "probe": probe.to_dict(), "run": RunSave.to_json(RunSave.dump(game))}
+	_write_file(work + ".tmp", JSON.stringify(state))
+	DirAccess.rename_absolute(ProjectSettings.globalize_path(work + ".tmp"), ProjectSettings.globalize_path(work))
+	if out != "":
+		DirAccess.make_dir_recursive_absolute(out)
+		var rows := {"seed": m, "complete": stage == "done", "eras": probe.rows}
+		_write_file("%s/seed_%d.json" % [out, m], JSON.stringify(rows, "\t"))
+
+
+func _write_file(path: String, text: String) -> void:
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	file.store_string(text)
+	file.close()
+
+
+## Restore a kept baseline run into `game` and `probe`: the stage it was in, or "" when there is none.
+func _baseline_resume(work: String, probe: RefCounted, game: Sim) -> String:
+	if not FileAccess.file_exists(work):
+		return ""
+	var kept: Variant = JSON.parse_string(FileAccess.get_file_as_string(work))
+	if typeof(kept) != TYPE_DICTIONARY or not RunSave.restore(game, RunSave.from_json(kept["run"])):
+		return ""
+	probe.from_dict(kept["probe"])
+	return kept["stage"]
+
+
+## Close the open era with whether it reached its end (an era is "ended" when its bot passed the boundary, not when time ran out).
+func _close(probe: RefCounted, game: Sim, reached: bool) -> bool:
+	var row: Dictionary = probe.finish(game)
+	row["ended"] = reached
+	return reached
+
+
+## Starfall: the minutes from The Falling Star to the Warning read and the ending put away, per map, with the era's milestones.
+func _starfall(maps: Array, minutes: float, quiet: bool, cache: String) -> void:
+	for m in maps:
+		var game := DevStarts.star_on_map(m, cache)
+		var bot := AutoplayStarfall.new()
+		bot.trace = not quiet
+		var r: Dictionary = bot.play_starfall(game, game.seasons.time, minutes * 60.0)
+		var shown: Array = []
+		for key in r["marks"]:
+			shown.append("%s %.1f" % [key, r["marks"][key] / 60.0])
+		print(
+			(
+				"map %d starfall: %s"
+				% [
+					m,
+					(
+						"over at %.1f min" % (r["seconds"] / 60.0)
+						if r["won"]
+						else "not over by %.1f min" % (r["seconds"] / 60.0)
+					)
+				]
+			)
+		)
+		print("   marks (min): ", ", ".join(shown))
+		if not quiet:
+			for line in r["log"]:
+				print("   ", line)
+		print("   inv ", bot.s.economy.inv)
+		print("   trust %.0f, locked %s" % [bot.s.starfall.trust, bot.s.starfall.locked.keys()])
+	quit(0)
 
 
 ## Ironfall: the clock at each goal from the start `from` to the Livewire gate, per map.
