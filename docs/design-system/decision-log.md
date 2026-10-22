@@ -933,3 +933,8 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Claude, from Jon's ask for a real-click pass of every era, added `tests/tools/era_pass.gd` and a manual-only workflow, `era-pass.yml`; it plays eight starts from the late stone age to the earned Livewire checkpoint with real mouse and key events.
 - It runs only when Jon starts it from the Actions tab, because the earned checkpoints take minutes to build; it never runs on a push or nightly.
 - It changes no game code and no test; every start it was first run on came back clean.
+
+## 2026-10-22: Livewire miniature asset batch (PR #135)
+- Codex followed the approved Misty Highlands camera, upper-left lighting, warm timber/iron and cool shard accents for eight Livewire buildings; all remain 1×1.
+- Firebreak straight, corner and end are overhead ground modules with documented square regions and a joined 48 px fixture, preserving the road-like presentation without code changes.
+- Native 46/96 px comparisons and alpha/region provenance accompany the original transparent PNGs; Claude owns the reviewed mapping handoff.
