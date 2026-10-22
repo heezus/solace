@@ -4,6 +4,12 @@ Owner: the project owner (heezus). Two AI teams, one repo, coordinated by respon
 
 ## Active work
 
+### Codex — Livewire building art (2026-10-22 batch)
+- **Task:** owner-requested art-only Livewire buildings first, on `codex/livewire-buildings`; Ironfall stage 3, items, Bloom tide and research follow as separate groups.
+- **Reserved files:** new exact-stem Livewire PNG/import assets in `art/rendered/`, `docs/art/livewire/buildings/`, this status entry. No `.gd`, tests, UI or overlay changes.
+- **Acceptance criteria:** transparent Misty Highlands miniatures, 1×1 footprints, native comparison against existing buildings, measured regions, generated Godot imports; focused draft PR and green CI before Claude merges/wires.
+- **Next action:** paint power_pole through firebreak in requested order, inspect native comparison, publish group draft PR. Skyward/Skyreach and system-rework subjects remain held.
+
 ### Codex — terrain kit
 - **Task:** implement the agreed page 22 terrain kit on `codex/terrain-kit`.
 - **Reserved files:** `art/rendered/terrain.gdshader`, new terrain-kit PNG/import assets, `scripts/world_ground.gd`, focused terrain tests and `docs/art/terrain-kit/`.
