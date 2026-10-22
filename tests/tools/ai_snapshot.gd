@@ -6,7 +6,9 @@ extends RefCounted
 
 const CardText = preload("res://scripts/card_text.gd")
 const Data = preload("res://scripts/data.gd")
+const Buildings = preload("res://scripts/buildings.gd")
 const Fuel = preload("res://scripts/fuel.gd")
+const WaitWhy = preload("res://scripts/wait_why.gd")
 
 const ERAS := ["Stone age", "Bronze Dawn", "Starfall", "Ironfall", "Livewire"]
 const HELP := """MOVES: write moves_<n>.json, a list. Each move is one of
@@ -27,7 +29,7 @@ const HELP := """MOVES: write moves_<n>.json, a list. Each move is one of
   {"do":"clear_order","index":0}                   tear an order up
   {"do":"fuel","x":3,"y":4,"mode":"charcoal"}       a Bloomery's or Forge's Fuel button: auto, coal or charcoal
   {"do":"haulers","x":3,"y":4,"change":1}           one more (or -1, one fewer) hauler place at the depot standing at that spot (see DEPOTS)
-  {"do":"wait","seconds":30}                       let the game run (the default, 15 seconds, is used when you send no wait)
+  {"do":"wait","seconds":30}                       let the game run (15 s when you send none); the moves after it wait for it
 Also write diary_<n>.md: two or three lines on what you wanted, and how it felt (bored, pleased, stuck, surprised).
 Play to win the era you are in. You see only this page."""
 
@@ -82,7 +84,7 @@ static func text(s, n: int, told: Array, refused: Array) -> String:
 	return "\n".join(out)
 
 
-## Run each move; returns the refusals (empty when all were taken). A `wait` move is read by the caller, not here.
+## Run each move; returns the refusals (empty when all were taken). A `wait` move is read by `play`, not here.
 static func apply(s, moves: Array) -> Array:
 	var refused: Array = []
 	for m in moves:
@@ -249,6 +251,33 @@ static func _write_order(s, m: Dictionary) -> bool:
 	return true
 
 
+## Play a page's moves in order. A `wait` lets the game run that long (`run` is called with the seconds) before the moves after it are
+## made; waits side by side count as the longest. With no `wait` the moves are made and the game runs `fallback` seconds. Returns the
+## refusals, as `apply` does.
+static func play(s, moves: Array, fallback: float, run: Callable) -> Array:
+	var refused: Array = []
+	var batch: Array = []
+	var pending := 0.0  # a wait read since the last move
+	var waited := false
+	for m in moves:
+		if typeof(m) == TYPE_DICTIONARY and m.get("do", "") == "wait":
+			pending = maxf(pending, clampf(float(m.get("seconds", fallback)), 1.0, 120.0))
+			continue
+		if pending > 0.0:
+			refused.append_array(apply(s, batch))
+			batch = []
+			run.call(pending)
+			pending = 0.0
+			waited = true
+		batch.append(m)
+	refused.append_array(apply(s, batch))
+	if pending > 0.0:
+		run.call(pending)
+	elif not waited:
+		run.call(fallback)
+	return refused
+
+
 ## Seconds the moves ask to wait (the longest `wait`), or `fallback` when none does.
 static func wait_of(moves: Array, fallback: float) -> float:
 	var out := 0.0
@@ -357,6 +386,8 @@ static func _town(s) -> Array:
 		var note: String = (
 			b["alert"] if b.get("alert", "") != "" else str(b.get("status", "")).get_slice(".", 0).left(40)
 		)
+		if note.begins_with("Needs ") and not note.begins_with("Needs road"):
+			note += _wait_note(s, b)  # and why it still waits (scripts/wait_why.gd)
 		if note != "":
 			key += " [" + note + "]"
 		groups[key] = groups.get(key, []) + ["(%d,%d)" % [b["pos"].x, b["pos"].y]]
@@ -454,3 +485,10 @@ static func _map(s) -> String:
 		"MAP (x across, y down; the digits are each column's last digit; blank = unseen, . = open grass):\n%s\n%s\nLEGEND: %s"
 		% [ruler, "\n".join(rows), ", ".join(key_lines)]
 	)
+
+
+## " · hauler on the way": the short reason a workshop short of an input still waits for it, "" when it is not.
+static func _wait_note(s, b: Dictionary) -> String:
+	var recipe := Buildings.recipe_in(b)
+	var item := WaitWhy.missing(s, b, recipe)
+	return "" if item == "" else " · " + WaitWhy.SHORT[WaitWhy.of(s, b, item)["code"]]

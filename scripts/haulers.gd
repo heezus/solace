@@ -14,6 +14,7 @@ const Teardown = preload("res://scripts/teardown.gd")
 const Steam = preload("res://scripts/steam.gd")
 
 const URGENT := 45.0  # game seconds a building may stand stopped for a hauler before it goes ahead of every nearer one
+const STOCK_SECONDS := 40.0  # a workshop is brought what it works through in this long (never over a load, never under two rounds)
 
 
 ## Items a hauler carries per trip: Carrying Poles double it, and a cart (`k`, if given) carries more: a hand cart or a beast cart
@@ -137,8 +138,9 @@ static func birth_order(kith_name: String) -> int:
 
 
 ## What building `cand` wants stocked, item -> the amount its stock should reach (haulers bring the difference): a workshop
-## two rounds of its recipe, unless it is paused (by hand, or by a standing order) or has made enough; a home its goods and
-## upgrade materials.
+## what it works through in STOCK_SECONDS (two rounds of its recipe at the least, one hauler's load at the most, so a trip
+## fills it and a quick workshop does not need a hauler to itself), unless it is paused (by hand, or by a standing order) or
+## has made enough; a home its goods and upgrade materials.
 static func stock_wanted(s, cand: Dictionary) -> Dictionary:
 	if Homes.is_home(cand):
 		return {} if s.tide.is_overgrown(cand) else Homes.wanted(cand)
@@ -149,8 +151,10 @@ static func stock_wanted(s, cand: Dictionary) -> Dictionary:
 	var recipe := Buildings.recipe_in(cand)
 	var out := {}
 	var stock: int = Data.BUILDINGS[cand["type"]].get("stock", 0)  # a fed building keeps a small store of what it burns
+	var cycle := Work.time(s, cand)
+	var rounds := ceili(STOCK_SECONDS / cycle) if cycle > 0.0 else 2
 	for id in recipe:
-		out[id] = stock if stock > 0 else recipe[id] * 2
+		out[id] = stock if stock > 0 else maxi(recipe[id] * 2, mini(recipe[id] * rounds, carry_cap(s)))
 	if s.teardown.knows("hull_gear") and Data.BUILDINGS[cand["type"]]["kind"] == "processor" and not recipe.is_empty():
 		out[Data.GEARS_ITEM] = 1  # one Iron Gear fitted to a workshop speeds it up for good
 	return out
@@ -217,6 +221,8 @@ static func _find_task(s, k: Dictionary, steam := true) -> bool:
 			if s.livewire.kept_back(cand, id):
 				continue  # a Bring first is short of this good and names other buildings
 			var want: int = inputs[id] - cand["inbuf"].get(id, 0) - cand["incoming"].get(id, 0)
+			if want * 2 < inputs[id] and not _cannot_start(cand):
+				continue  # a load, not a drip: it is brought more when it has used half of what it was given
 			var n := mini(mini(want, s.economy.inv.get(id, 0)), carry_cap(s, k))
 			if n > 0:
 				best = {"kind": "deliver", "building": i, "item": id, "amount": n}

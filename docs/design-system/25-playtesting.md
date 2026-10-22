@@ -41,6 +41,8 @@ A Claude session plays the real game through text, with no view of the code.
 `godot --headless --path . -s tests/tools/ai_player.gd -- --dir=<folder> --seed=3 --decisions=60 --stop-at-era="Bronze Dawn"`
 The page also carries the move list and an ASCII map with a coordinate ruler. Moves in version 1: gather by hand, build, demolish, research, set the research goal, answer a Season card, answer a story moment, wait. Standing Orders (Livewire) are not offered yet; that era is played by what the other moves can do, and the diary says if that hurt. The table has `ai_player_tests.gd` for the page and the hands.
 
+**Replay and waits (2026-10-22).** `--replay=<folder>` plays a finished game back from its `moves_<n>.json` (same `--seed` and `--start`): the game is deterministic, so every page comes out as it did, with whatever the page shows now. It is how a change to the hauling or the words is measured on the very towns the player built. A `wait` inside a move list now lets the game run before the moves after it are made (waits side by side count as the longest); at the end of a list it behaves as before. A waiting workshop's line on the page ends with the short reason ("Needs Wood · haulers busy", `scripts/wait_why.gd`).
+
 The AI player is not a human. It does not tire, and it reads every word. Its diary says where a careful reader gets stuck, and the recorder says where Jon does. Both go beside the bots' numbers in the scorecard, and each says which it is.
 
 ## What this changes in the scorecards

@@ -4,7 +4,9 @@ extends SceneTree
 ## and `diary_<n>.md`. The moves go through the game's own commands (tests/tools/ai_snapshot.gd). Game time stands still while the
 ## player thinks. Stops after --decisions pages, when the era turns over (--stop-at-era), or when no answer comes in --patience s.
 ## Run: godot --headless --path . -s tests/tools/ai_player.gd -- --dir=/some/folder [--seed=3] [--every=15] [--decisions=60]
-##      [--stop-at-era=Bronze Dawn] [--patience=900] [--start=earned_livewire]
+##      [--stop-at-era=Bronze Dawn] [--patience=900] [--start=earned_livewire] [--replay=/folder/with/moves]
+## With --replay the moves come from that folder's moves_<n>.json instead of a player (same --seed and --start, the same cached
+## start in user://ai_starts/): the game is deterministic, so every page comes out as it did, with whatever the page shows now.
 ## With --start an earned checkpoint plays on map --seed (built by the bots, kept in user://ai_starts/); any other start is on map 1.
 ## The playing session reads snapshot_<n>.txt and writes moves_<n>.json and diary_<n>.md in the folder. Then it reads the next one.
 
@@ -23,6 +25,7 @@ var decisions := 60
 var stop_at_era := ""
 var patience := 900.0
 var timed_out := false
+var replay := ""  # a folder of moves_<n>.json to play back instead of waiting for a player
 var start := ""  # a stage start or earned checkpoint to begin from (scripts/dev_starts.gd), "" for a fresh map
 
 
@@ -47,6 +50,8 @@ func _init() -> void:
 				stop_at_era = kv[1]
 			"start":
 				start = kv[1]
+			"replay":
+				replay = kv[1] if kv[1].ends_with("/") else kv[1] + "/"
 			"patience":
 				patience = float(kv[1])
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(dir))
@@ -71,13 +76,15 @@ func _init() -> void:
 		if n == 1 and start != "":
 			page = Snapshot.KNOWN + "\n" + page  # the player of a later era has played the earlier ones
 		_write(dir + "snapshot_%d.txt" % n, page)
-		var moves := _await_moves(n)
+		var moves := _await_moves(n) if replay == "" else _replayed(n)
+		if replay != "" and moves.is_empty() and not FileAccess.file_exists(replay + "moves_%d.json" % n):
+			print("AI player: no moves_%d.json to replay, stopping" % n)
+			break
 		if timed_out:
 			print("AI player: no answer in %d s, stopping" % int(patience))
 			break
-		refused = Snapshot.apply(s, moves)
 		told = []
-		_run(Snapshot.wait_of(moves, every), told)
+		refused = Snapshot.play(s, moves, every, func(seconds: float): _run(seconds, told))
 		if stop_at_era != "" and Snapshot.era_name(s) == stop_at_era and era != stop_at_era:
 			print("AI player: reached %s" % stop_at_era)
 			break
@@ -97,6 +104,12 @@ func _run(seconds: float, told: Array) -> void:
 		s.events.clear()
 		if s.seasons.phase == "pending" and not asked:
 			break  # a Season card has come up: the player is told at once
+
+
+## The moves the player wrote for page `n` in the replay folder.
+func _replayed(n: int) -> Array:
+	var parsed = JSON.parse_string(FileAccess.get_file_as_string(replay + "moves_%d.json" % n))
+	return parsed if typeof(parsed) == TYPE_ARRAY else []
 
 
 ## Wait for moves_<n>.json; sets `timed_out` if it does not come in time.

@@ -41,6 +41,7 @@ func run(runner) -> void:
 	test_the_charts_show_the_far_seam()
 	test_a_refusal_names_what_is_short()
 	test_the_wire_mill_says_what_it_needs()
+	test_a_dark_machine_names_why()
 	test_the_fifth_tab_and_the_tree()
 	test_the_first_techs_can_be_bought()
 	test_poles_join_into_nets()
@@ -615,8 +616,8 @@ func test_the_wire_mill_says_what_it_needs() -> void:
 	var mill := put(s, "wire_mill", c)
 	tick_for(s, 30.0)
 	t.check(
-		mill["status"] == Data.NET_NO_POWER_STATUS,
-		"a dark mill says to lay a pole and fuel an engine: %s" % mill["status"]
+		mill["status"] == Data.DARK_NO_POLE and mill["alert"] == Data.DARK_NO_POLE_ALERT,
+		"a dark mill with no pole near says to lay one: %s" % mill["status"]
 	)
 	put(s, "power_pole", c + Vector2i(2, 0))
 	put(s, "generator", c + Vector2i(2, 2))["inbuf"] = {"coal": 5}
@@ -630,3 +631,26 @@ func test_the_wire_mill_says_what_it_needs() -> void:
 		Data.INPUT_HINTS["wire_mill"] in mill["status"],
 		"a powered mill with no Copper says where it comes from: %s" % mill["status"]
 	)
+
+
+## A machine with no power says which of three it is: no pole near, no engine on its net, or an engine with no fuel (named). A Factory
+## Floor reads the same words.
+func test_a_dark_machine_names_why() -> void:
+	var s := town()
+	s.tech_tree.researched["power_poles"] = true
+	var c := meadow(s)
+	s.people.found(8)
+	var mill := put(s, "wire_mill", c)
+	tick_for(s, 30.0)
+	t.check(mill["alert"] == Data.DARK_NO_POLE_ALERT, "no pole near: %s" % mill["alert"])
+	put(s, "power_pole", c + Vector2i(2, 0))
+	s.town.road_rev += 1
+	tick_for(s, 10.0)
+	t.check(mill["alert"] == Data.DARK_NO_ENGINE_ALERT, "a pole and no engine: %s" % mill["alert"])
+	t.check(mill["status"] == Data.DARK_NO_ENGINE, "and the status says how to fix it: %s" % mill["status"])
+	var engine := put(s, "generator", c + Vector2i(2, 2))
+	engine["inbuf"] = {}
+	s.town.road_rev += 1
+	tick_for(s, 10.0)
+	t.check(mill["alert"] == Data.DARK_COLD_ALERT, "a Generator with no Coal: %s" % mill["alert"])
+	t.check("Generator" in mill["status"], "and it is named: %s" % mill["status"])

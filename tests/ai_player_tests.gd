@@ -13,6 +13,7 @@ func run(runner) -> void:
 	t = runner
 	test_the_page_shows_the_town()
 	test_moves_go_through_the_games_commands()
+	test_a_wait_delays_the_moves_after_it()
 	test_a_move_the_game_refuses_comes_back()
 	test_a_season_card_is_on_the_page_and_answered()
 	test_orders_are_written_from_the_boards_lists()
@@ -55,6 +56,28 @@ func test_moves_go_through_the_games_commands() -> void:
 	t.check(
 		Snapshot.wait_of([{"do": "gather", "x": 1, "y": 1}], 15.0) == 15.0, "and the default holds when none is sent"
 	)
+
+
+## A `wait` in the middle of a move list lets the game run before the moves after it are made, and none after it runs on afterwards.
+func test_a_wait_delays_the_moves_after_it() -> void:
+	var game := _game()
+	var tree := _tile(game, "tree")
+	var gather := {"do": "gather", "x": tree.x, "y": tree.y, "times": 3}
+	var ran: Array = []  # what the stockpile held each time the game was run
+	var runner := func(seconds: float): ran.append([seconds, game.economy.inv.get("wood", 0)])
+	var before: int = game.economy.inv.get("wood", 0)
+	Snapshot.play(game, [gather, {"do": "wait", "seconds": 20}, gather], 15.0, runner)
+	t.check(ran.size() == 1 and ran[0][0] == 20.0, "one run of 20 s, the one the wait asked for (%s)" % [ran])
+	t.check(
+		ran[0][1] > before and game.economy.inv.get("wood", 0) > ran[0][1],
+		"the second gather came after the wait, not before it"
+	)
+	ran.clear()
+	Snapshot.play(game, [{"do": "wait", "seconds": 10}, {"do": "wait", "seconds": 30}], 15.0, runner)
+	t.check(ran.size() == 1 and ran[0][0] == 30.0, "waits side by side count as the longest")
+	ran.clear()
+	Snapshot.play(game, [gather], 15.0, runner)
+	t.check(ran.size() == 1 and ran[0][0] == 15.0, "and with no wait the default holds")
 
 
 func test_a_move_the_game_refuses_comes_back() -> void:

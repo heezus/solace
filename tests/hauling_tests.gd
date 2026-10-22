@@ -11,6 +11,7 @@ const RunSave = preload("res://scripts/run_save.gd")
 const Snapshot = preload("res://tests/tools/ai_snapshot.gd")
 const Sim = preload("res://scripts/sim.gd")
 const StoreRest = preload("res://scripts/store_rest.gd")
+const WaitWhy = preload("res://scripts/wait_why.gd")
 
 var t  # the runner, tests/run_tests.gd
 
@@ -35,6 +36,9 @@ func run(runner) -> void:
 	test_a_fed_building_off_the_roads_says_needs_road()
 	test_the_ai_page_says_why_a_build_was_refused()
 	test_the_ai_player_sets_hauler_places()
+	test_a_quick_workshop_is_brought_a_load()
+	test_a_workshop_is_served_whatever_orders_stand()
+	test_a_waiting_workshop_says_why()
 
 
 ## A town with haulers known, a Storehouse far from the Hearth, and a charcoal pit beside each.
@@ -456,3 +460,93 @@ func test_the_ai_player_sets_hauler_places() -> void:
 	refused = Snapshot.apply(s, [{"do": "haulers", "x": 0, "y": 0, "change": 1}])
 	t.check(refused.size() == 1 and "no depot" in refused[0], "no depot, no places: %s" % str(refused))
 	t.check("DEPOTS" in Snapshot.text(s, 1, [], []), "the page lists the depots")
+
+
+## A Charcoal Pit works through 2 Wood in 4 s: it is brought what it works through in 40 s (one hauler's load at the most, two rounds
+## at the least) and not a drip of 4, which kept a hauler for each quick workshop (seeds 11 and 42, Livewire).
+func test_a_quick_workshop_is_brought_a_load() -> void:
+	var s := _town(10)
+	var pit: Dictionary = s.town.buildings[s.town.building_at[s.world.camp_pos + Vector2i(1, 0)]]
+	t.check(
+		Haulers.stock_wanted(s, pit) == {"wood": Data.CARRY},
+		"a pit is to hold a load of Wood: %s" % Haulers.stock_wanted(s, pit)
+	)
+	var most := 0
+	for i in 600:
+		s.tick(0.1)
+		most = maxi(most, pit["inbuf"].get("wood", 0))
+	t.check(most >= Data.CARRY - 2, "a hauler brought it a load in one trip (%d at the most)" % most)
+
+
+## A road-linked workshop beside a depot that holds its input, with free haulers there, gets the input within 30 s whatever standing
+## orders stand: a Bring first for a kind of building that is short of another good, and a Pause on a third.
+func test_a_workshop_is_served_whatever_orders_stand() -> void:
+	var s := _town(10)
+	for id in ["order_board", "kiln", "forge"]:
+		s.tech_tree.researched[id] = true
+	var camp := s.world.camp_pos
+	var spots: Array = []
+	for i in 3:
+		var at: Vector2i = camp + Vector2i(-3, 2 * i - 2)
+		s.world.set_tile(at, "grass")
+		s.town.add_building(["order_board", "forge", "kiln"][i], at)
+		spots.append(at)
+	s.town.road_rev += 1
+	s.economy.inv["coal"] = 5
+	s.economy.inv["wood"] = 500
+	s.economy.seen["coal"] = true
+	s.livewire.add(s)
+	s.livewire.orders[0].merge(
+		{"item": "coal", "compare": "below", "number": 40, "verb": "bring", "target": "forge"}, true
+	)
+	s.livewire.add(s)
+	s.livewire.orders[1].merge(
+		{"item": "wood", "compare": "above", "number": 10, "verb": "pause", "target": "kiln"}, true
+	)
+	_run(s, 40.0)
+	var pit: Dictionary = s.town.buildings[s.town.building_at[camp + Vector2i(1, 0)]]
+	pit["inbuf"] = {}
+	pit["incoming"] = {}
+	pit["progress"] = 0.0
+	var got := 0.0
+	for i in 300:
+		s.tick(0.1)
+		if got == 0.0 and pit["inbuf"].get("wood", 0) > 0:
+			got = i / 10.0
+	t.check(
+		s.livewire.serves_first(s.town.buildings[s.town.building_at[spots[1]]]), "the Bring first holds for the Forge"
+	)
+	t.check(got > 0.0 and got <= 30.0, "the pit had its Wood within 30 s with the orders standing (%.1f s)" % got)
+
+
+## A workshop that waits names the reason: the first one that fits, in plain words (scripts/wait_why.gd).
+func test_a_waiting_workshop_says_why() -> void:
+	var s := _town(10)
+	_run(s, 40.0)
+	var pit: Dictionary = s.town.buildings[s.town.building_at[s.world.camp_pos + Vector2i(1, 0)]]
+	pit["inbuf"] = {}
+	pit["incoming"] = {}
+	s.economy.inv["wood"] = 0
+	t.check(WaitWhy.of(s, pit, "wood")["code"] == "out", "no Wood in the stockpile: out")
+	s.economy.inv["wood"] = 200
+	pit["incoming"] = {"wood": 4}
+	t.check(WaitWhy.of(s, pit, "wood")["code"] == "on_the_way", "a hauler bringing it: on the way")
+	pit["incoming"] = {}
+	s.hauling._census_at = -1.0
+	var free := 0
+	for k in s.people.kith:
+		if k["job"] == "haul":
+			k["task"] = {"kind": "pickup", "building": 0, "depot": s.world.camp_pos}
+	var why: Dictionary = WaitWhy.of(s, pit, "wood")
+	t.check(
+		why["code"] == "busy" and "on other trips" in why["text"], "every hauler on a trip: busy (%s)" % why["text"]
+	)
+	for k in s.people.kith:
+		if k["job"] == "haul":
+			k["task"] = {}
+			k["pos"] = Vector2(k["depot"])
+			free += 1
+	s.hauling._census_at = -1.0
+	t.check(WaitWhy.of(s, pit, "wood")["code"] == "free_hauler", "free haulers at the depot: free hauler (%d)" % free)
+	pit["unreachable"] = 2.0
+	t.check(WaitWhy.of(s, pit, "wood")["code"] == "cut", "a cut road: cut")

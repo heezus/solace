@@ -197,6 +197,18 @@ static func note(s, b: Dictionary) -> String:
 	return ". ".join(lines.filter(func(l): return l != ""))
 
 
+## Why a machine with no power has none, once Power Poles are known: {text, alert}. It stands on no net (no pole within reach), its
+## net has no engine, or the engines on it are out of fuel (the first is named).
+static func dark(s, b: Dictionary) -> Dictionary:
+	var n: Dictionary = s.livewire.net_at(b["pos"])
+	if n.is_empty():
+		return {"text": Data.DARK_NO_POLE, "alert": Data.DARK_NO_POLE_ALERT}
+	if n["engines"].is_empty():
+		return {"text": Data.DARK_NO_ENGINE, "alert": Data.DARK_NO_ENGINE_ALERT}
+	var engine: Dictionary = s.town.buildings[s.town.building_at[n["engines"][0]]]
+	return {"text": Data.DARK_COLD % Data.BUILDINGS[engine["type"]]["name"], "alert": Data.DARK_COLD_ALERT}
+
+
 static func _short_note(n: Dictionary) -> String:
 	if n["asks"] <= n["given"]:
 		return ""
