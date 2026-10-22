@@ -92,6 +92,12 @@ static func apply(s, moves: Array) -> Array:
 			"trade":
 				var i := _index_at(s, at)
 				ok = i >= 0 and s.town.set_trade(i, str(m.get("gives", "")), str(m.get("gets", "")))
+				if not ok and i >= 0:
+					var why: String = s.town.trade_refusal(
+						s.town.buildings[i]["type"], str(m.get("gives", "")), str(m.get("gets", ""))
+					)
+					refused.append("%s (%s)" % [JSON.stringify(m), why])
+					continue
 			"focus":
 				var i := _index_at(s, at)
 				ok = i >= 0 and s.town.set_focus(i, str(m.get("item", "")))
@@ -232,10 +238,17 @@ static func _cards(s) -> Array:
 ## Food, people, stock, buildings, and what can be done now.
 static func _town(s) -> Array:
 	var out: Array = []
-	var idle := 0
+	var idle := 0  # no place at all: haulers are counted as haulers, workers as at work
+	var hauling := 0
+	var working := 0
 	for k in s.people.kith:
-		if k["task"].is_empty():
-			idle += 1
+		match k["job"]:
+			"":
+				idle += 1
+			"haul":
+				hauling += 1
+			_:
+				working += 1
 	out.append(
 		(
 			"FOOD: %d in store, lasts %s%s"
@@ -246,7 +259,12 @@ static func _town(s) -> Array:
 			]
 		)
 	)
-	out.append("KITH: %d (%d idle), room for %d" % [s.people.kith.size(), idle, s.town.housing()])
+	out.append(
+		(
+			"KITH: %d (%d at work, %d hauling, %d idle), room for %d"
+			% [s.people.kith.size(), working, hauling, idle, s.town.housing()]
+		)
+	)
 	var stock: Array = []
 	for id in s.economy.inv:
 		if s.economy.inv[id] > 0:

@@ -226,6 +226,10 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 		s.town.set_status(b, "Paused: its %s is free for other jobs" % s.people.building_job(b), "Paused")
 		return
 	if not Buildings.is_staffed(b):
+		if s.people.held_for_haulers():
+			var held: String = Data.HOLD_BACK_STATUS % [s.hauling.total_have(), s.hauling.total_wanted()]
+			s.town.set_status(b, held, Data.HOLD_BACK_ALERT)
+			return
 		s.town.set_status(
 			b, GrowthNote.waiting_for_kith(s, s.people.building_job(b)), "Idle: no free %s" % Data.PEOPLE["one"]
 		)
@@ -236,7 +240,9 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 	if b["unreachable"] > 0.0:
 		s.town.set_status(b, "Cut off by water: build a Wooden Bridge (Paths & Haulers)", "Cut off: needs a bridge")
 		return
-	if def.get("needs_power", false) and not s.town.is_powered(b["pos"]):
+	# "No power" only when power is all it lacks: a Boiler lights for a machine that would work, so a Forge short of an input says
+	# which one instead of blaming a banked Boiler beside it.
+	if def.get("needs_power", false) and not s.town.is_powered(b["pos"]) and s.town.wants_power(b):
 		var how: String = (
 			Data.NO_POWER_STATUS if s.tech_tree.researched.has("boiler") else "No power: build a Water Wheel nearby"
 		)

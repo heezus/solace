@@ -22,6 +22,7 @@ const USE := 0.5  # the share of a hauler's time the load may fill: under 1.0 le
 const HANDLING := 2.0  # seconds a trip spends loading and unloading
 const GATHER_WALK := 6.0  # seconds a hut's worker walks out and back around one harvest
 const STUCK_FOR := 30.0  # game seconds before a hauler no depot can be walked to looks again
+const FAR_TRIP := 14.0  # tiles: a depot whose average one-way trip is longer wants a Storehouse nearer its workshops
 const HOME_TRIPS := 0.25  # trips a minute a home or a Teardown Bench takes
 const FED_TRIPS := 0.5  # trips a minute a Boiler, a Lamp or a Pen takes
 
@@ -32,6 +33,7 @@ var offset: Dictionary = {}
 ## Per depot: the haulers its load needs at the very least (every hauler's time filled), from the last reading. Workshops are only
 ## held back for these; `auto` is the roomier count the places are filled to.
 var need: Dictionary = {}
+var trip_tiles: Dictionary = {}  # depot -> the average one-way trip to the buildings it serves, in tiles, by their load (not saved)
 var names: Dictionary = {}  # depot -> "Storehouse by the Smelter", read with the load
 var _have: Dictionary = {}  # depot -> haulers in its places, from the last `assign`
 var _clock := REFRESH
@@ -116,6 +118,14 @@ func waiting_note(s, b: Dictionary) -> String:
 	return Data.HAULER_WAIT % [names.get(depot, "the depot"), have(depot), wanted(depot)]
 
 
+## The one line a short depot's card adds: the cheapest lever, "" while the depot has 75% of its haulers or more.
+func lever_note(depot: Vector2i) -> String:
+	var want := wanted(depot)
+	if want <= 0 or float(have(depot)) >= 0.75 * want:
+		return ""
+	return Data.HAULER_LEVER_FAR if trip_tiles.get(depot, 0.0) > FAR_TRIP else Data.HAULER_LEVER_KITH
+
+
 ## The player sets `depot`'s wanted count one above (dir 1) or one below (dir -1) what it is now.
 func nudge(depot: Vector2i, dir: int) -> void:
 	if not auto.has(depot):
@@ -139,6 +149,8 @@ func reset(depot: Vector2i) -> void:
 ## want to the ones that are short.
 func refresh(s) -> void:
 	var load_of := {}
+	var tiles_of := {}  # depot -> trips a minute times the tiles of each building, to average
+	var rate_of := {}  # depot -> trips a minute in all
 	for b in s.town.buildings:
 		if not Roads.automated(s, b):
 			continue
@@ -147,10 +159,14 @@ func refresh(s) -> void:
 			continue
 		var depot := Roads.depot_of(s, b)
 		load_of[depot] = load_of.get(depot, 0.0) + rate * round_trip(b, depot) / 60.0
+		rate_of[depot] = rate_of.get(depot, 0.0) + rate
+		tiles_of[depot] = tiles_of.get(depot, 0.0) + rate * (absi(depot.x - b["pos"].x) + absi(depot.y - b["pos"].y))
 	auto = {}
 	need = {}
 	names = {}
+	trip_tiles = {}
 	for depot in Roads.posts(s):
+		trip_tiles[depot] = tiles_of.get(depot, 0.0) / rate_of[depot] if rate_of.get(depot, 0.0) > 0.0 else 0.0
 		auto[depot] = maxi(ceili(load_of.get(depot, 0.0) / USE - 0.0001), 1)
 		need[depot] = maxi(ceili(load_of.get(depot, 0.0) - 0.0001), 1)
 		names[depot] = _name_of(s, depot)
