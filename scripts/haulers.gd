@@ -153,6 +153,15 @@ static func stock_wanted(s, cand: Dictionary) -> Dictionary:
 	return out
 
 
+## True when every good building `b` holds for pickup sits at its store's full mark: carried in, it would spill over the cap, so
+## it waits in the building (the store rests it, StoreRest) until the store has room.
+static func _store_full_for(s, b: Dictionary) -> bool:
+	for id in b["out"]:
+		if b["out"][id] > 0 and not s.economy.is_full(id):
+			return false
+	return true
+
+
 ## True when workshop `b` lacks an input for its next cycle (one input short stops it as surely as none).
 static func _cannot_start(b: Dictionary) -> bool:
 	var recipe := Buildings.recipe_in(b)
@@ -191,7 +200,7 @@ static func _find_task(s, k: Dictionary, steam := true) -> bool:
 			continue
 		if k["cart"] and not Roads.can_reach(s, k, here, cand["pos"]):
 			continue
-		if Buildings.buffered(cand["out"]) > 0 and not cand["claimed"]:
+		if Buildings.buffered(cand["out"]) > 0 and not cand["claimed"] and not _store_full_for(s, cand):
 			best = {"kind": "pickup", "building": i}
 			best_d = d
 			best_first = first

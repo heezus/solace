@@ -80,6 +80,8 @@ func begin(name: String, s) -> void:
 		"starved_with_stock_s": 0.0,
 		"starved_longest_s": 0.0,
 		"spilled": 0,
+		"spilled_by_good": {},
+		"hauler_waits": 0,
 		"resting_s": 0.0,
 		"depots_every_5_min": [],
 	}
@@ -171,7 +173,7 @@ func _sample(s) -> void:
 		if status.begins_with("Needs ") and Buildings.needs_worker(b) and _lacks_stocked(s, b):
 			_row["starved_with_stock_s"] += SAMPLE
 			starved[b["pos"]] = true
-	_keep_streaks(_streak, waiting, "hauler_wait_longest_s")
+	_keep_streaks(_streak, waiting, "hauler_wait_longest_s", "hauler_waits")
 	_keep_streaks(_starve, starved, "starved_longest_s")
 	var spilled: int = s.economy.spilled
 	_row["spilled"] += spilled - _spill_seen if spilled >= _spill_seen else spilled
@@ -188,13 +190,16 @@ func _sample(s) -> void:
 
 
 ## Add a second to every building in `now`'s streak in `streaks`, drop the ones that stopped, and keep the longest in `_row[key]`.
-func _keep_streaks(streaks: Dictionary, now: Dictionary, key: String) -> void:
+## With `count`, each streak that ends adds one to `_row[count]` (waits that ended, for the mean wait per pickup).
+func _keep_streaks(streaks: Dictionary, now: Dictionary, key: String, count := "") -> void:
 	for p in now:
 		streaks[p] = streaks.get(p, 0.0) + SAMPLE
 		_row[key] = maxf(_row[key], streaks[p])
 	for p in streaks.keys():
 		if not now.has(p):
 			streaks.erase(p)
+			if count != "":
+				_row[count] = _row.get(count, 0) + 1
 
 
 ## The haulers each depot has: [{"pos": "x,y", "haulers": n, "wanted": n}]. A town with hauler places (sim.hauling) reads its places
