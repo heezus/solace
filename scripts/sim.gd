@@ -348,7 +348,7 @@ func tick(delta: float) -> void:
 		Workers.tick_building(self, b, delta, fed)
 		if (
 			tech_tree.researched.has("haulers")
-			and Buildings.needs_worker(b)
+			and (Buildings.needs_worker(b) or Data.BUILDINGS[b["type"]].get("fed", false))
 			and not b["paused"]
 			and not Roads.linked(self, b)
 		):

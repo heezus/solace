@@ -8,6 +8,7 @@ const Haulers = preload("res://scripts/haulers.gd")
 const Hauling = preload("res://scripts/hauling.gd")
 const Roads = preload("res://scripts/roads.gd")
 const RunSave = preload("res://scripts/run_save.gd")
+const Snapshot = preload("res://tests/tools/ai_snapshot.gd")
 const Sim = preload("res://scripts/sim.gd")
 const StoreRest = preload("res://scripts/store_rest.gd")
 
@@ -30,6 +31,8 @@ func run(runner) -> void:
 	test_a_machine_short_of_an_input_does_not_blame_power()
 	test_a_refused_swap_names_its_reason()
 	test_the_longest_wait_goes_first()
+	test_a_fed_building_off_the_roads_says_needs_road()
+	test_the_ai_page_says_why_a_build_was_refused()
 
 
 ## A town with haulers known, a Storehouse far from the Hearth, and a charcoal pit beside each.
@@ -383,3 +386,33 @@ func test_the_longest_wait_goes_first() -> void:
 		hauler["task"].get("building", -1) == s.town.building_at[far_at],
 		"it goes to the pit that has waited longest (%s)" % hauler["task"]
 	)
+
+
+## A Boiler (or Scorcher, Lamp, Pen) no road touches can be brought nothing: it says so, as a workshop does.
+func test_a_fed_building_off_the_roads_says_needs_road() -> void:
+	var s := _town(10)
+	s.tech_tree.researched["boiler"] = true
+	var camp := s.world.camp_pos
+	var spot := Vector2i(-1, -1)
+	for dy in range(-6, 7):
+		for dx in range(-6, 7):
+			var at: Vector2i = camp + Vector2i(dx, dy)
+			if spot.x < 0 and absi(dx) + absi(dy) > 4 and s.place("boiler", at):
+				spot = at
+	t.check(spot.x >= 0, "a Boiler stands")
+	_run(s, 3.0)
+	var boiler: Dictionary = s.town.buildings[s.town.building_at[spot]]
+	t.check(not Roads.linked(s, boiler), "no road touches it")
+	t.check(boiler["alert"] == "Needs road", "it says Needs road (%s)" % boiler["alert"])
+
+
+## A refused build on the AI player's page names why, with what is short.
+func test_the_ai_page_says_why_a_build_was_refused() -> void:
+	var s := _town(3)
+	s.economy.inv["wood"] = 0
+	s.economy.inv["stone"] = 0
+	var camp := s.world.camp_pos
+	var refused: Array = Snapshot.apply(s, [{"do": "build", "type": "charcoal_pit", "x": camp.x + 2, "y": camp.y + 2}])
+	t.check(refused.size() == 1 and "short" in refused[0], "it names what is short: %s" % str(refused))
+	refused = Snapshot.apply(s, [{"do": "build", "type": "charcoal_pit", "x": camp.x, "y": camp.y}])
+	t.check(refused.size() == 1 and "already" in refused[0], "and what is in the way: %s" % str(refused))

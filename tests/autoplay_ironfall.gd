@@ -326,6 +326,8 @@ func _count(type: String) -> int:
 ## dealt to the depots by the order they were born in, and a Storehouse out there can end with none, leaving the mine behind it
 ## full and unserved. The mines there are joined by road to the Hearth's own network, which has haulers.
 func _place_storehouse() -> bool:
+	if _place_for_far_depot():
+		return true
 	for b in s.town.buildings:
 		if not Buildings.needs_worker(b) or b["pos"].y >= s.world.base_height:
 			continue
@@ -337,6 +339,31 @@ func _place_storehouse() -> bool:
 				return -d if d <= 4.0 else -INF
 			if _place_best("storehouse", near):
 				return true
+	return false
+
+
+## What a player does when a depot's card says "A Storehouse near the far workshops would cut the trips" (Hauling.lever_note): a
+## Storehouse by the workshop that stands farthest from that depot, as the stone age's bot places one.
+func _place_for_far_depot() -> bool:
+	for depot in s.hauling.auto:
+		if s.hauling.lever_note(depot) != Data.HAULER_LEVER_FAR:
+			continue
+		var far := Vector2i(-1, -1)
+		var far_d := 0.0
+		for b in s.town.buildings:
+			if not Buildings.needs_worker(b) or b["pos"].y >= s.world.base_height or Roads.depot_of(s, b) != depot:
+				continue
+			var d := Vector2(depot).distance_to(Vector2(b["pos"]))
+			if d > far_d and d > s.hauling.FAR_TRIP * 0.5:
+				far = b["pos"]
+				far_d = d
+		if far.x < 0:
+			continue
+		var near := func(p):
+			var d := Vector2(p).distance_to(Vector2(far))
+			return -d if d <= 4.0 else -INF
+		if _place_best("storehouse", near):
+			return true
 	return false
 
 
