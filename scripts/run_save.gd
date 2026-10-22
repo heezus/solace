@@ -135,6 +135,7 @@ static func _game_to_dict(s) -> Dictionary:
 		"sky": s.sky.to_dict(),
 		"starfall": s.starfall.to_dict(),
 		"teardown": s.teardown.to_dict(),
+		"hauling": s.hauling.to_dict(),
 		"livewire": s.livewire.to_dict(),
 		"tide": s.tide.to_dict(),
 		"seasons": s.seasons.to_dict(),
@@ -155,6 +156,7 @@ static func _game_from_dict(s, d: Dictionary) -> void:
 	s.sky.from_dict(d.get("sky", {}))
 	s.starfall.from_dict(d.get("starfall", {}))
 	s.teardown.from_dict(d.get("teardown", {}))
+	s.hauling.from_dict(d.get("hauling", {}))
 	s.livewire.from_dict(d.get("livewire", {}))
 	s.tide.from_dict(d.get("tide", {}))
 	s.seasons.from_dict(d.get("seasons", {}))

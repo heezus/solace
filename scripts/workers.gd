@@ -10,9 +10,11 @@ const Kith = preload("res://scripts/kith.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Work = preload("res://scripts/work.gd")
+const Fuel = preload("res://scripts/fuel.gd")
 const Hands = preload("res://scripts/hands.gd")
 const GrowthNote = preload("res://scripts/growth_note.gd")
 const Steam = preload("res://scripts/steam.gd")
+const StoreRest = preload("res://scripts/store_rest.gd")
 
 
 ## One step of a worker's day at their building.
@@ -29,7 +31,7 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 			if s.people.step(k, delta):
 				k["phase"] = "home"
 		"home":
-			if def["kind"] != "gatherer" or Buildings.buffered(b["out"]) >= Data.BUFFER_CAP:
+			if def["kind"] != "gatherer" or Buildings.buffered(b["out"]) >= Data.BUFFER_CAP or b.get("resting", false):
 				return
 			if not Roads.automated(s, b) and b["trips"] <= 0:
 				return  # waits for a click
@@ -209,6 +211,8 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 		b["alert"] = Data.OVERGROWN_ALERT
 		b["burn"] = 0.0
 		return
+	if Fuel.burns(b):
+		Fuel.update(s, b)  # which fuel it burns now: haulers bring that one (scripts/fuel.gd)
 	if not Buildings.needs_worker(b):
 		if def.get("fed", false):
 			Steam.tick_fed(s, b, delta)  # a Boiler, a Lamp or a Pen has no worker: it burns what haulers bring it
@@ -225,6 +229,10 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 		s.town.set_status(b, "Paused: its %s is free for other jobs" % s.people.building_job(b), "Paused")
 		return
 	if not Buildings.is_staffed(b):
+		if s.people.held_for_haulers():
+			var held: String = Data.HOLD_BACK_STATUS % [s.hauling.total_have(), s.hauling.total_wanted()]
+			s.town.set_status(b, held, Data.HOLD_BACK_ALERT)
+			return
 		s.town.set_status(
 			b, GrowthNote.waiting_for_kith(s, s.people.building_job(b)), "Idle: no free %s" % Data.PEOPLE["one"]
 		)
@@ -235,10 +243,14 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 	if b["unreachable"] > 0.0:
 		s.town.set_status(b, "Cut off by water: build a Wooden Bridge (Paths & Haulers)", "Cut off: needs a bridge")
 		return
-	if def.get("needs_power", false) and not s.town.is_powered(b["pos"]):
+	# A machine within a Boiler's reach is not dark for want of power: the Boiler lights once the machine would work, so a Forge
+	# short of an input says which one instead of blaming the banked Boiler beside it.
+	if def.get("needs_power", false) and not s.town.is_powered(b["pos"]) and not _boiler_on_call(s, b):
 		var how: String = (
 			Data.NO_POWER_STATUS if s.tech_tree.researched.has("boiler") else "No power: build a Water Wheel nearby"
 		)
+		if s.tech_tree.researched.has("power_poles"):
+			how = Data.NET_NO_POWER_STATUS
 		s.town.set_status(b, how, "No power")
 		return
 	if not s.people.worker_home(b):
@@ -252,6 +264,9 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 		return
 	if Work.steel_waits(s, b) and b["progress"] <= 0.0:
 		s.town.set_status(b, Data.STEEL_WAITS_STATUS, Data.STEEL_WAITS_ALERT)
+		return
+	if StoreRest.rests(s, b):
+		b["status"] = Data.STORE_FULL_STATUS  # nothing it makes would fit: it rests until the store has room
 		return
 	if not s.town.wants_to_work(b):
 		idle_reason(s, b, def)
@@ -281,6 +296,8 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 		return
 	var speed: float = s.livewire.speed_of(b)  # 1.0 unless it is on a Power Pole net that is short
 	b["status"] = "Working" if speed >= 1.0 else Data.NET_SLOW % roundi(speed * 100.0)
+	if Fuel.slow(b) > 1.0 and speed >= 1.0:
+		b["status"] = Fuel.status(b)
 	b["progress"] += delta * speed
 	if b["progress"] < Work.time(s, b):
 		return
@@ -290,6 +307,20 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 # --- Status ----------------------------------------------------------------------
 
 
+## True when a machine that needs power has inputs missing while a Boiler stands within reach of it, cold or banked: the Boiler
+## would light as soon as the machine could work (Steam.machines_want), so power is not what it lacks.
+static func _boiler_on_call(s, b: Dictionary) -> bool:
+	if s.town.wants_power(b):
+		return false
+	for o in s.town.buildings:
+		var def: Dictionary = Data.BUILDINGS[o["type"]]
+		if def["kind"] != "power" or not def.get("fed", false) or def["radius"] <= 0.0 or s.tide.is_overgrown(o):
+			continue
+		if Vector2(o["pos"]).distance_to(Vector2(b["pos"])) <= def["radius"]:
+			return true
+	return false
+
+
 ## Why a staffed building is standing still: full, or short of an input.
 static func idle_reason(s, b: Dictionary, def: Dictionary) -> void:
 	var auto := Roads.automated(s, b)
@@ -297,7 +328,8 @@ static func idle_reason(s, b: Dictionary, def: Dictionary) -> void:
 		if auto and Roads.depot_far(s, b):
 			s.town.set_status(b, Data.FAR_DEPOT_STATUS, Data.FAR_DEPOT_ALERT)
 		elif auto:
-			s.town.set_status(b, "Full: waiting for a hauler", "Full: waiting for a hauler")
+			var wait: String = s.hauling.waiting_note(s, b)
+			s.town.set_status(b, wait if wait != "" else "Full: waiting for a hauler", "Full: waiting for a hauler")
 		else:
 			s.town.set_status(b, "Full: click to collect" + road_note(s, b), "Full: click to collect")
 		return
@@ -317,10 +349,16 @@ static func idle_reason(s, b: Dictionary, def: Dictionary) -> void:
 		return
 	var how := "waiting for a hauler" if auto else "click to load" + road_note(s, b)
 	if auto:
+		var wait: String = s.hauling.waiting_note(s, b)
+		if wait != "":
+			how = wait.substr(0, 1).to_lower() + wait.substr(1)
+	if auto:
 		for id in recipe:
 			if b["inbuf"].get(id, 0) + b["incoming"].get(id, 0) < recipe[id] and s.economy.inv.get(id, 0) == 0:
 				how = "stockpile is out"
 	var more := "" if auto else GrowthNote.hint(s)
+	var source: String = Data.INPUT_HINTS.get(b["type"], "")
+	more = source if more == "" else more if source == "" else source + ". " + more
 	s.town.set_status(
 		b,
 		"Needs %s (%s)" % [", ".join(missing), how] + (". " + more if more != "" else ""),

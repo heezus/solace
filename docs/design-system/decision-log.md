@@ -929,10 +929,86 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Claude, from Jon's "clicks are just laggy in general", cut work done every frame that never changed: the ground mask redraws only the tiles that changed, the fog edge triangles are cached until the fog moves, the lessons overlay loops over what is on screen, and the build bar keeps only the open drawer's cards up to date.
 - Nothing looks or plays differently; a test checks that the incremental ground mask equals a full rebuild.
 
+## 2026-10-19: Era-specific ground material candidates (PR #115)
+- Codex painted separate Starfall, Bronze Dawn, Ironfall and Livewire material families under the existing 96-source-texture-pixels-per-tile terrain-kit contract, following the owner's era-ground brief; upper-left light, non-mirrored wrap and small material features remain shared rules.
+- Starfall keeps the base meadow/woodland composition; Bronze Dawn is warm/dry, Ironfall coal-dark with separate darker resource aprons, and Livewire healthy/Bloom/firebreak surfaces are separate painted materials. Motifs stay in a transparent deterministic decal atlas instead of becoming repeating ground landmarks.
+- Runtime integration explicitly waits for `codex/terrain-kit` to merge. No tile ID, generator, simulation, save, footprint or global scale change is authorized by this art. Skyreach remains one paragraph and one sketch only.
+- Original sheets returned at 1254x1254 and are packed to 1920x1920, so native source resolution and final close-view crispness remain review limitations. Asset wrap/scale proofs and baseline seeds 3/11/42 are evidence only; final per-era before/after visual acceptance is still pending.
+
+## 2026-10-19: Ground must support existing miniature readability (PR #115)
+- Codex reviewed the era-ground candidates beside the current Hearth and inspected existing tree, rock and coal art; the owner agreed that the material direction fits but the candidates need refinement before approval.
+- Starfall vegetation/litter must read smaller beside buildings while retaining base-kit alignment; Ironfall/firebreak gravel contrast and density must leave resource deposits and moving Kith clear.
+- Bloom growth should concentrate at edges with quieter healthy interiors. Bronze Dawn's warm dry material direction is retained.
+- Final approval requires actual game comparisons including resources and Kith at wide/default/close scales, plus water/transition review after the parent terrain kit merges. Hearth-only composites and green tests do not establish visual approval.
+
+## 2026-10-19: Correct era-ground motif scale against production sprites (PR #115)
+- Codex repainted all eight ground candidates after the owner's explicit correction request: smaller foliage/litter/gravel, quieter coal aprons and firebreak, and fine Bloom threads/buds. A second Starfall pass reduces pale granular highlights without blurring the ground.
+- Decal subjects now fit within 44x44 of their unchanged 96x96 cells, down from 76x76, preserving atlas IDs and alpha. Logical tile scale, sprite sizes and gameplay footprints stay unchanged.
+- A native Godot fixture uses existing production building/resource/Kith drawing helpers in identical before/after scenes at 24/48/80 px per tile. Original material PNGs, prompts and hashes remain archived for review.
+- These asset fixtures demonstrate scale correction; final biome/Bloom edge masking and per-era generated-map validation follow integration with the now-merged terrain kit #114. Native-source resolution remains 1254x1254 packed to 1920x1920 and is stated explicitly.
+
+## 2026-10-19: Wire corrected era ground through the merged terrain kit (PR #115)
+- Codex integrated the owner-requested era materials after #114 merged, selecting them from existing story milestones. Bronze Dawn follows the east growth; Ironfall earth follows the south boundary; Livewire has healthy, edge-focused Bloom and burnt/firebreak surfaces.
+- Packed visual mask channels share the existing terrain-mask sampler; related earth sheets use small grid atlases, keeping Compatibility at eight samplers. Single era turf textures are reused instead of copied into identical atlas columns.
+- Fog and resource-discovery gates precede resource-apron/Bloom/burnt masks; incremental redraws read existing tide/research state. Terrain generation, tile IDs, save state, simulation RNG, building footprints and global scale are unchanged.
+- Bloom patch ground and scattered vine detail are painted. Existing sample color identities and breathing animation remain; TideLook retains building/light/front indicators instead of laying square ground washes over the new material.
+- Native material fixtures and main-scene baseline/current captures cover the scale/readability review. Technical checks do not grant owner visual approval; #115 stays draft for that review, and source-resolution limits remain documented.
+- The kit's fine brush subscale also applies to era sheets: native in-game review caught oversized foliage when it was omitted. Era-only runtime mipmaps reduce minification shimmer at wide zoom, while unchanged sprite/decal imports retain their existing detail.
+
+## 2026-10-19: Separate markets, a hidden Wall theme, a word for trust (PR J)
+- Claude, from Jon's playtest notes and his picks "Split by goods" and "Word meter", made the Trading Post swap Kith goods and the Lumen Market only the strangers' goods (Shard, Coal, Wire, Steel; there is no glyph-lore item), because the two were the same machine.
+- Unread Glyph Wall sets are "Set N of 6" and their theme, icon and gift show only once read; the sets between the Name (first) and the Warning (last) come in an order scrambled by where the ship came down, so a map is reproducible and gameplay randomness is untouched.
+- The Lumen Market's panel shows the Lumen's trust as a word and a bar, and a step of trust floats up as "+6 trust"; the number stays hidden.
+
+## 2026-10-19: Two roads, design only (PR J)
+- Claude, at Jon's pick "Two roads", wrote page 29: each Lumen gift gets a Kith twin earned by refusing it (-4 trust, a cost to run), and the refusals set the era's lean. Nothing is built until Jon confirms.
+
 ## 2026-10-20: Era click pass (PR K)
 - Claude, from Jon's ask for a real-click pass of every era, added `tests/tools/era_pass.gd` and a manual-only workflow, `era-pass.yml`; it plays eight starts from the late stone age to the earned Livewire checkpoint with real mouse and key events.
 - It runs only when Jon starts it from the Actions tab, because the earned checkpoints take minutes to build; it never runs on a push or nightly.
 - It changes no game code and no test; every start it was first run on came back clean.
+
+## 2026-10-20: Two roads built (PR L)
+- Claude, on Jon's "yes go ahead", built the "Two roads" design (page 29): each Lumen gift can be refused for the Kith's own twin of it, chosen on a card when its set is read.
+- The twins are standing effects with a price in the stores (Charcoal or Berries a minute, 40 Wood once), not buildings, so there is no new art; Smith's Rule uses a Smelter instead of a Forge because a Forge only arrives in Ironfall.
+- Taking a gift gives +6 trust as before; refusing takes 4. Any refusal caps the lean at neighbours, all four make enemies and close the Lumen Market.
+- Techs that wait on a gift wait only on the set being read, so refusing never blocks research; old saves and dev starts count as having taken the gift.
+
+## 2026-10-20: Livewire guidance (PR M)
+- Claude, from the AI player's Livewire reports and Jon's "Fix them", added four plain hints: the charts reveal the nearest unseen coal seam, a refused build names what is short, the far-depot status says idle Kith haul, and the tide's first line points at the Scorcher.
+- It changes no costs, rates or goals; only what the game says and what the fog hides at the start of the era.
+- The wire chain (Wire Mill needs power and copper) is left for a later pass.
+
+## 2026-10-20: Wire Mill hint (PR N)
+- Claude, finishing the last open Livewire guidance gap from the AI player's reports, made a dark machine say how to light it (a Power Pole within 2 tiles, an engine on the net fed Coal) and the Wire Mill say where its Copper comes from.
+- Words only: no costs, rates or goals change.
+
+## 2026-10-21: Pillars and era contracts (PR O)
+- Claude, committing the director thread's text after Jon said go on the whole-game review's plan, wrote the five pillars into page 02 and added page 30, era contracts: per era an exit, a 15 to 25 minute length band and six invariants (no dead end, no finite wall, an answer before each threat, visible logistics, one new thing).
+- Entry ranges are left blank on purpose: they are filled from the Step 1 baseline (every era, five seeds, an earned chain from a fresh stone age).
+- Docs only: no gameplay, test or save change.
+
+## 2026-10-21: Starfall bot and the Step 1 baseline tool (PR P)
+- Claude, doing Step 1 of the whole-game review's plan (Jon's go), added a Starfall bot that plays the era through the game's systems only, so the earned checkpoints now come from a fresh stone age with no scripted era in the chain. It finishes Starfall on seeds 1 to 5 in 12 to 14 game minutes.
+- The scripted Starfall, Ironfall and Livewire starts stay for tests and debugging, labelled "scripted, not for balance".
+- `tests/tools/pace.gd baseline` plays one map through all five eras and writes a row per era (length, goals, the town at the era's start, time spent waiting for haulers, workshops starved with their input in stock, and for Livewire the tide's first building, buildings lost by minute 15 and the first Scorcher fire).
+- Tests and tools only: no gameplay, cost or save change.
+
+## 2026-10-21: Baseline keeps its place; the AI player plays any map (PR Q)
+- Claude found the baseline runs take hours and the machine restarts under them, so `pace.gd baseline` now keeps a checkpoint every ten game minutes and resumes from it.
+- The AI player's `--seed` was ignored whenever `--start` was given (every start is on map 1), so the 2026-10-20 "seed 3" Livewire run was really map 1; now an earned checkpoint is built by the bots on the seed asked for.
+- Tests and tools only: no gameplay change.
+
+## 2026-10-21: Hauler places and rest at a full store (PR R)
+- Claude, doing Step 2 of the whole-game review's plan (Jon chose "Places at each depot"), gave the Hearth and every Storehouse hauler places sized from the depot's load, filled before workshops, with - / + / Auto on the depot's card, a top-bar "Haulers N of M" and a waiting building that names its depot and count.
+- A hut or workshop whose store is full finishes its cycle and rests, so haulers stop carrying goods into a full store and workshops stop making goods that spill. Food producers rest too (berries were 97% of the stone age's spill); a food store at 90% of its cap or more counts as steady food for births. The pacing bot got one fix: a full town sets up to three huts for a raw good its next Dwelling lacks (map 3 had stalled at 40 Kith for lack of fiber).
+- The goldens move on purpose (Bronze Dawn on maps 1 to 3: 1105, 1230, 1075 s become 1074, 1092, 994 s; the first Bronze 1862, 2039, 1967 s become 1752, 1679, 2024 s).
+- The baseline tool also reads goods spilled, resting seconds, the longest single starve and the haulers at each depot (PR before this one).
+- Follow-up from the first five-seed run (PR S): a workshop short of one input now counts as stopped for the closest-first pick (it had to be fully empty), the wanted count leaves room (USE 1.0 to 0.5), and a hauler whose place it cannot walk to takes another. Longest starve with the input in stock fell from 100-380 s to under 60 s in the stone age and Bronze Dawn runs tried. The AI player then found that holding workshops back for the roomy count left 50 Kith idle and workshops saying "no free Kith": the hold-back is now the bare need, the places still fill to the roomy count (PR T). The goldens moved again (Bronze Dawn on maps 1 to 3: 950, 1079, 995 s; the first Bronze 1628, 1771, 1793 s).
+- The director's follow-up (PR U): honest words for the hold-back and the AI page's idle count, the depot card's lever line, no "No power" beside a banked Boiler, refused swaps say why. Carry stays 10 (15 and 20 measured; neither met the 0.6 ratio in every era). Bar (b) replaced by mean wait per pickup and longest wait. Goldens: Bronze Dawn 995, 1079, 997 s; the first Bronze 1696, 1772, 1986 s.
+- Follow-up to PR U (PR V): a town short of haulers fills its depots by share (a new Storehouse had sat with none while the Hearth filled first, so its buildings waited minutes), and idle haulers move from a well-filled depot to one far short. A building stopped for a hauler 45 s or more goes ahead of nearer ones, the longest wait first (a starved workshop's wait counts double). PR U's pickup gate at a full store is taken out (huts waited, workshops starved). The Ironfall wood spill was the pacing bot gathering by hand into a full store; the bot stops. Goldens: Bronze Dawn 995 to 928, 1079 to 1066, 997 to 907 s; the first Bronze 1696 to 1712, 1772 to 1721, 1986 to 1667 s.
+- Carry 20 (PR X): carry 10 to 20 so haulers keep up (the AI player found workshops "Needs X" with X in stock because 30 to 55 haulers were wanted); the bots build a Storehouse for a far depot; AI page refusals say why; "Needs road" on fed buildings. Goldens move on purpose: stone age 928, 1066, 907 s become 981, 1031, 959 s; the first Bronze 1712, 1721, 1667 s become 1658, 1649, 1584 s. Bar and measured ratios in the PR.
+- Step 3, fuel (PR W): Bloomeries, Forges and Floors copying them burn Coal or Charcoal (Fuel button: Auto, Coal, Charcoal; Auto burns Coal above a reserve of 40), Charcoal takes twice as long, the status says so; the +600 Livewire coal gift is removed; the Ironfall and Livewire bots build Charcoal Pits when Coal runs low. The baseline reads output by fuel, fuel-starved seconds, Pits standing and Wood short, and `baseline noseams` is the test variant. Details in [31](31-fuel.md).
 
 ## 2026-10-22: Ironfall stage 3 miniatures (PR #136)
 - Codex retained Misty Highlands materials, upper-left light, shared camera and 1×1 footprints across steam/shard buildings; Shard Boiler keeps the brief's pale-gold port.

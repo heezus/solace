@@ -18,6 +18,14 @@ Owner: the project owner (heezus). Two AI teams, one repo, coordinated by respon
 - **Status:** implemented in PR #114; all seven native before/after views on seeds 3, 11 and 42 inspected. Runtime meadow/earth atlases keep Compatibility at eight samplers. Focused visual privacy/RNG/wrap checks pass; final CI required.
 - **Next action:** Claude reviews the terrain comparison and touched renderer areas, then merges after current-head CI is green. Reservation releases on publication; any follow-up corrections remain focused on this PR.
 
+### Codex — era ground families
+- **Task:** owner-requested Starfall/Bronze Dawn/Ironfall/Livewire ground, corrected motif scale and Skyreach concept; branch `codex/era-ground`, PR #115.
+- **Reserved files:** `art/rendered/era-ground/`, terrain shader, visual portions of `world_ground.gd`, `bloom_look.gd`, `tide_look.gd`, era preview/check/scale tools and era-ground art docs. Parent #114 is merged and its reservation released.
+- **Acceptance criteria:** smaller ground details beside production buildings/resources/Kith, distinct eras at wide zoom, crisp close detail, eight-sampler Compatibility budget, unchanged tile IDs/save data/RNG and fog/discovery privacy; paired seeds 3/11/42 in each era.
+- **Status:** all eight materials repainted; decals reduced; native sprite-scale before/after fixtures inspected. Wiring now follows existing story milestones in the merged kit shader, with packed visual region masks for resource aprons/Bloom/burnt ground. Sample IDs/colors/pulse remain, with painted vine detail. Focused invariants, fast suite, strict warnings and Compatibility captures pass; all four era pairs on preview seeds 3/11/42 are captured and inspected. Final exact-head CI remains required. Native source resolution remains 1254x1254 packed to 1920.
+- **Next action:** publish the completed era pairs and wait for exact-head CI on #115. Keep draft until owner visual review; Claude merges after green CI and that review. No gameplay/save changes or global tile-scale change.
+
+
 ### Codex — Phase B character consistency review
 - **Task:** compare #93 character stills against the approved #94 sheet on `codex/ironfall-cutscenes`.
 - **Reserved files:** `docs/art/ironfall/phase-b/` and character corrections to `art/rendered/cutscenes/ironfall_1.png` / `ironfall_2.png`; no production renderer files.

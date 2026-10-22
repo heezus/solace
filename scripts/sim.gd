@@ -35,6 +35,7 @@ const StarfallBlock = preload("res://scripts/starfall.gd")
 const TeardownBlock = preload("res://scripts/teardown.gd")
 const TeardownFinds = preload("res://scripts/teardown_finds.gd")
 const LivewireBlock = preload("res://scripts/livewire.gd")
+const HaulingBlock = preload("res://scripts/hauling.gd")
 const TideBlock = preload("res://scripts/tide.gd")
 const Gate = preload("res://scripts/gate.gd")
 const SeasonsBlock = preload("res://scripts/seasons.gd")
@@ -65,6 +66,7 @@ var story := Story.new()  # story moments and the opening checklist
 var sky := SkyBlock.new(tech_tree, town)
 var starfall := StarfallBlock.new(town, economy)  # the era after the Falling Star: the landing, the strangers, the glyphs
 var teardown := TeardownBlock.new(town, economy)  # Ironfall: the parts, the Bench and the Lessons
+var hauling := HaulingBlock.new()  # Hauler places: how many haulers each depot wants, and who stands where
 var livewire := LivewireBlock.new()  # Livewire: the Power Pole nets and the Order Board's standing orders
 var tide := TideBlock.new()  # Livewire stage 2: the Bloom's creep out of the south, and what holds it back
 var gate := Gate.new(livewire, town, world, tide)  # Livewire stage 3: the Skyward gate's two deeds
@@ -81,12 +83,14 @@ func _init() -> void:
 	shard_found.connect(story.on_shard_found)
 	tech_tree.tech_researched.connect(sky.on_tech_researched)
 	people.announce.connect(_announce)
+	people.hauler_reserve = hauling.total_needed
+	people.hauler_surplus = hauling.surplus
 	sky.sighted.connect(_announce)
 	economy.food_low.connect(_on_food_low)
 	town.story_has = story.has_event
 	tech_tree.story_has = story.has_event
 	story.recorded.connect(_on_story)
-	people.gift = starfall.gift
+	people.gift = starfall.boon  # the Healer's leaves, from the gift or the Kith's own twin
 	starfall.said.connect(_announce)
 	starfall.moment.connect(story.record)
 	teardown.said.connect(_announce)
@@ -97,7 +101,7 @@ func _init() -> void:
 	town.overgrown = tide.is_overgrown_at
 	town.on_bloom = tide.bloom_at
 	town.lesson_has = teardown.knows
-	tech_tree.gift_has = starfall.gift  # a tech may wait on a gift read or a Lesson learned (Ironfall)
+	tech_tree.gift_has = starfall.read  # a tech may wait on a gift read or a Lesson learned (Ironfall)
 	tech_tree.lesson_has = teardown.knows
 	tech_tree.deed_has = gate.deed  # the Skyward gate's deeds (Livewire)
 
@@ -306,6 +310,7 @@ func tick(delta: float) -> void:
 	for tech in tech_tree.tick():
 		_tech_done(tech)
 	people.assign_jobs()
+	hauling.tick(self, delta)
 	var fed := economy.feed(people.kith.size(), delta)
 	people.grow(delta, fed)
 	story.update(self)
@@ -343,7 +348,7 @@ func tick(delta: float) -> void:
 		Workers.tick_building(self, b, delta, fed)
 		if (
 			tech_tree.researched.has("haulers")
-			and Buildings.needs_worker(b)
+			and (Buildings.needs_worker(b) or Data.BUILDINGS[b["type"]].get("fed", false))
 			and not b["paused"]
 			and not Roads.linked(self, b)
 		):

@@ -1,0 +1,730 @@
+[
+  {
+    "era": "starfall",
+    "preview_seed": 3,
+    "mode": "baseline",
+    "view": "wide",
+    "image": "starfall-3-before-wide.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "aa72510febc1cc69fef5148a50c77821171a8d15d524e4616cfe3c8bf5f99210",
+    "lossless_pixel_sha256": "ac8fc8eea898f89433d50fc2d99c221abeda7eb3401008217cd04f9c3a3110c7"
+  },
+  {
+    "era": "starfall",
+    "preview_seed": 3,
+    "mode": "baseline",
+    "view": "close",
+    "image": "starfall-3-before-close.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "9e8aae4da7bc223f191b95d922fd96124c5d3dec622206a3c43d5267ae0f182b",
+    "lossless_pixel_sha256": "7ab9da646c870f144e8644f56632d12ef9121c29ed0c469f12e54f8a1bda8abf"
+  },
+  {
+    "era": "starfall",
+    "preview_seed": 3,
+    "mode": "baseline",
+    "view": "town",
+    "image": "starfall-3-before-town.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "224e956fc04b2b6020e4c72064161922df58f968810c614b3482248d0992de3a",
+    "lossless_pixel_sha256": "57d8fbdaee0f92ffa4de590696d921018ae404d4f7f94452e30303cd16e28ec9"
+  },
+  {
+    "era": "starfall",
+    "preview_seed": 3,
+    "mode": "current",
+    "view": "wide",
+    "image": "starfall-3-after-wide.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "5b3a690525a548d727a5ed169b57eeee64f1b38a78e059b263e085aff13f923c",
+    "lossless_pixel_sha256": "c1d61f1ac05beda28c6e043ac178f416fa460f9c156f0e86f7c1e16124c57fd7"
+  },
+  {
+    "era": "starfall",
+    "preview_seed": 3,
+    "mode": "current",
+    "view": "close",
+    "image": "starfall-3-after-close.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "59397d645df20e2d31d2c23e21b02e1c5d0e11ef7ffc6e6d2b6f6876d2e2dbe2",
+    "lossless_pixel_sha256": "bdcc141aca182cc6c967dd5937c9601cfab15ad0c3dc3aa46efff1f9a075f901"
+  },
+  {
+    "era": "starfall",
+    "preview_seed": 3,
+    "mode": "current",
+    "view": "town",
+    "image": "starfall-3-after-town.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "be4565f81b7738323dc16fc12064ba98d731c7097e23184269bcea1b0916cdfd",
+    "lossless_pixel_sha256": "9072d3561d71db4e620924c9576b382a2372a1dae4e96f395bbb9f1c6a287168"
+  },
+  {
+    "era": "starfall",
+    "preview_seed": 11,
+    "mode": "baseline",
+    "view": "wide",
+    "image": "starfall-11-before-wide.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "d24025f98f9677e324e91ae78b3668b6f2e9cf5be968f92021c9ae73cdf16997",
+    "lossless_pixel_sha256": "78332e2d86bf1f0ae06a683a6dec23f3e33c254414eafe833c3328b0087fd242"
+  },
+  {
+    "era": "starfall",
+    "preview_seed": 11,
+    "mode": "baseline",
+    "view": "close",
+    "image": "starfall-11-before-close.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "4d99a8fb6fd6a3196e523446903ebdcccd77391a7340f6e1d98d8d38bb16f50c",
+    "lossless_pixel_sha256": "5ee0560a733cf9bafcbe3ed62b3481d76fe4ac3e6e992d1025cc26df06db1b13"
+  },
+  {
+    "era": "starfall",
+    "preview_seed": 11,
+    "mode": "current",
+    "view": "wide",
+    "image": "starfall-11-after-wide.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "5e2c1366cd7d0ff43a7ee991e47f66f3ded4f56917862b7fd6992d43791af8c6",
+    "lossless_pixel_sha256": "c7c54a5218943540bfc91d79c1038c49b41b62962e2dd26a601b3484c598261a"
+  },
+  {
+    "era": "starfall",
+    "preview_seed": 11,
+    "mode": "current",
+    "view": "close",
+    "image": "starfall-11-after-close.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "f2ed42091ff5e965a3dc0712ad8578c298e2bc796306d6754689ea59f3ec4ec3",
+    "lossless_pixel_sha256": "34056827f9ca791af2412d5c06f86bb417bbb22cac0366411aafc9053663adf8"
+  },
+  {
+    "era": "starfall",
+    "preview_seed": 42,
+    "mode": "baseline",
+    "view": "wide",
+    "image": "starfall-42-before-wide.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "d521ee747049d89de4aa178f757faf2e246bffd93be72df73210d88b696c0226",
+    "lossless_pixel_sha256": "c3c1801c0cdcff98351ce5de0a6d59a5a46a7646573b5effc241c08ae9c53d20"
+  },
+  {
+    "era": "starfall",
+    "preview_seed": 42,
+    "mode": "baseline",
+    "view": "close",
+    "image": "starfall-42-before-close.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "da22e24aced4ccfbc8d93feb1cb7284a45448b9d32f6c260645ff13878b46297",
+    "lossless_pixel_sha256": "57b83579deb8a5d594721eed62c61ce33a15274e7d06989b1bbb1beb05e5ac86"
+  },
+  {
+    "era": "starfall",
+    "preview_seed": 42,
+    "mode": "current",
+    "view": "wide",
+    "image": "starfall-42-after-wide.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "4cc98dd4ca7f286fe564a8d17b3741338a36fe5f527c988805fdca24617e4fab",
+    "lossless_pixel_sha256": "7c81bc2229c405699997f323199e9c12cd646f4978901e4d959ad2259342d12a"
+  },
+  {
+    "era": "starfall",
+    "preview_seed": 42,
+    "mode": "current",
+    "view": "close",
+    "image": "starfall-42-after-close.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "6d40011e62d06ba5b805d812944cc0c44b4622ef8beb4d41ca8eb854db606a47",
+    "lossless_pixel_sha256": "171ab869b88fe5a9ed1c290a65229e4b26d0e84a906e09708933f81851ed5ddd"
+  },
+  {
+    "era": "bronze",
+    "preview_seed": 3,
+    "mode": "baseline",
+    "view": "wide",
+    "image": "bronze-3-before-wide.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "b485648270852967a07eb704d1bf6a16e350674c0f0b31bfbd7302d65cf697e9",
+    "lossless_pixel_sha256": "926f024bd5c355fadff32d09ab964c1a2830cfe929a8227f70b168bad9c63e3f"
+  },
+  {
+    "era": "bronze",
+    "preview_seed": 3,
+    "mode": "baseline",
+    "view": "close",
+    "image": "bronze-3-before-close.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "51ea5c257dcb5b099b470ae2b04e37ed79ce50d4322ba05ada2d65ad09152e69",
+    "lossless_pixel_sha256": "acf7fc2da13f003b470c56c5e176fe000fb59247088c880bcde13a4dfffa41dd"
+  },
+  {
+    "era": "bronze",
+    "preview_seed": 3,
+    "mode": "baseline",
+    "view": "town",
+    "image": "bronze-3-before-town.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "aa4ae21a35b99b262ee69bdf82fb71271bbe092281ce3638a94d4fafce0dcee0",
+    "lossless_pixel_sha256": "8bc7c07a29f37e22413c215c64ed762a4beb236b861f463d5af4b3e5a670379c"
+  },
+  {
+    "era": "bronze",
+    "preview_seed": 3,
+    "mode": "current",
+    "view": "wide",
+    "image": "bronze-3-after-wide.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "616deaccc7705a12f244f7f3644003b835239d70cac6513a231670d8ddce6cb0",
+    "lossless_pixel_sha256": "0bba93bcde8020793207f25e0e0bc5e4fdabd00e8282191851d3e16805e96f7b"
+  },
+  {
+    "era": "bronze",
+    "preview_seed": 3,
+    "mode": "current",
+    "view": "close",
+    "image": "bronze-3-after-close.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "e6d40164d3e7857caead99de35da8326746d46a565a32dd7763ec5cd837b7c25",
+    "lossless_pixel_sha256": "93e5eae16041a7f9c0f4e08f5059bd4059da5d3ff3450c984dad100a11cb9177"
+  },
+  {
+    "era": "bronze",
+    "preview_seed": 3,
+    "mode": "current",
+    "view": "town",
+    "image": "bronze-3-after-town.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "88824c36986366ed2ecf5d6e78aad8b4c42d788795b3bdf63541427ad8b2f105",
+    "lossless_pixel_sha256": "6d34c86099e0570e4935305c6dd8ab19fc82997ce6f73c300a2cb9249da08ed4"
+  },
+  {
+    "era": "bronze",
+    "preview_seed": 11,
+    "mode": "baseline",
+    "view": "wide",
+    "image": "bronze-11-before-wide.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "3eb04f3692c8dcb12211ebf6e81df41ae25eba9173d91e434b8d6673d48ff50c",
+    "lossless_pixel_sha256": "d20e41a3ed4d9f2d4d6a7bae5dcd9ea77c9607c535b7a9ae75f8b2cf6c71010c"
+  },
+  {
+    "era": "bronze",
+    "preview_seed": 11,
+    "mode": "baseline",
+    "view": "close",
+    "image": "bronze-11-before-close.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "471585301f7fd32ec02ede2c9dd23a270f905830459a343e15ee238872f2f397",
+    "lossless_pixel_sha256": "b805d2aa113128d74f67d5a94d4a109e0faf23e2a26c9f43f698666cc4445e95"
+  },
+  {
+    "era": "bronze",
+    "preview_seed": 11,
+    "mode": "current",
+    "view": "wide",
+    "image": "bronze-11-after-wide.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "154752d4c13af601f8cfb2e51bab85a71307fe6ed322cae3418b0c50917d528e",
+    "lossless_pixel_sha256": "3c7fe21a33af1eeeab9c75e044a38b57e2228ffdcd3f6f4a39893b43778a3719"
+  },
+  {
+    "era": "bronze",
+    "preview_seed": 11,
+    "mode": "current",
+    "view": "close",
+    "image": "bronze-11-after-close.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "746d1e52ca6ff00e2345a75a97981c7d74e51b4aec335126f6d4de62ad9a5dbb",
+    "lossless_pixel_sha256": "861944f5e8dac39fd3d4218435e8985024a023c1f6ca98d5213fdb6ccd229199"
+  },
+  {
+    "era": "bronze",
+    "preview_seed": 42,
+    "mode": "baseline",
+    "view": "wide",
+    "image": "bronze-42-before-wide.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "6f98c39104b12ba315d2e5c607e5d7bfbe4bd33d98f94a7911cfaa22cab8098e",
+    "lossless_pixel_sha256": "eb27b7bd5eb201b635658f9a67dfff61d14c34db4832486a3a4b434fc7ef7ec6"
+  },
+  {
+    "era": "bronze",
+    "preview_seed": 42,
+    "mode": "baseline",
+    "view": "close",
+    "image": "bronze-42-before-close.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "5410fbdb579986a9ddb5187c2cc2841fd8c5ff9fda540bdbd6a7b5dcd6f23501",
+    "lossless_pixel_sha256": "717f8b254334d0686b3db0bfd618b2b6b690ceab82292988582886cd008f61d9"
+  },
+  {
+    "era": "bronze",
+    "preview_seed": 42,
+    "mode": "current",
+    "view": "wide",
+    "image": "bronze-42-after-wide.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "9311ce7ff7a73a917ab354f6e122f1970388b66134d060f758027c749416106b",
+    "lossless_pixel_sha256": "86942556a63c75cd6313b845c708f80d2a66549d31504fe522733413c74ae4b9"
+  },
+  {
+    "era": "bronze",
+    "preview_seed": 42,
+    "mode": "current",
+    "view": "close",
+    "image": "bronze-42-after-close.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "71aab530650dab10c1c5bd35bceac56d20559e493248dfae255170b8aa70c28a",
+    "lossless_pixel_sha256": "4d4aa8620d70b02d89c754afadf463bb40b0190064a9a7f5cf2842b36a3b382e"
+  },
+  {
+    "era": "ironfall",
+    "preview_seed": 3,
+    "mode": "baseline",
+    "view": "wide",
+    "image": "ironfall-3-before-wide.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "3b805a72b69f5362f8486987293f14ade01a8f4a32edb221b9acd7cf46aba542",
+    "lossless_pixel_sha256": "0ffe6f64cf6082c6716908be2bff1f0385872f19a4a073e1edeafc6ded3f6368"
+  },
+  {
+    "era": "ironfall",
+    "preview_seed": 3,
+    "mode": "baseline",
+    "view": "close",
+    "image": "ironfall-3-before-close.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "45bcdde8405d973426ee38b462b7e050bad7d3bf1de521fb15e6f3f1d274caec",
+    "lossless_pixel_sha256": "8302ec5412bfdc1dc5faefe05c7c9d3b2f6e54c4079de97606273ec8fdda7a0c"
+  },
+  {
+    "era": "ironfall",
+    "preview_seed": 3,
+    "mode": "baseline",
+    "view": "town",
+    "image": "ironfall-3-before-town.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "fb9b8a7052badfaf5c80943352d0d2b701de93ee4b46c8b2f239a71c04f6b8f8",
+    "lossless_pixel_sha256": "11a7580db9910adb89426f1ac2b983c5d490814df79154e0268a4f2c114f396e"
+  },
+  {
+    "era": "ironfall",
+    "preview_seed": 3,
+    "mode": "current",
+    "view": "wide",
+    "image": "ironfall-3-after-wide.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "b377b9c7085867726dfe2f3d268ac137b0f444e118cc265fc6106f4f2cc03cda",
+    "lossless_pixel_sha256": "e4ae363d292de9b3f9fccdd589c37bfcc0541697ae47890544c17fccd151228c"
+  },
+  {
+    "era": "ironfall",
+    "preview_seed": 3,
+    "mode": "current",
+    "view": "close",
+    "image": "ironfall-3-after-close.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "276fc442ec4ecdef59233ed319e23d96ce9f82e0b7016ff9ef4dba13eee4bd70",
+    "lossless_pixel_sha256": "4bbd22569e98fdaa12719ed5d43851dfa90f2f2fa09248cf879171f3c9b7e39a"
+  },
+  {
+    "era": "ironfall",
+    "preview_seed": 3,
+    "mode": "current",
+    "view": "town",
+    "image": "ironfall-3-after-town.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "50de73c4920a80ed73b68324ddc7e59308699b20852a1c79699f30bbe9c8a1a2",
+    "lossless_pixel_sha256": "c9316a734149d47507958b1e3a850865be0d2c2e52c7d8982cdae7c86bb51b0b"
+  },
+  {
+    "era": "ironfall",
+    "preview_seed": 11,
+    "mode": "baseline",
+    "view": "wide",
+    "image": "ironfall-11-before-wide.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "bc94f7177fcc95b2ef70cedcc3127a4909dab6ef6dd6218a0013434b7a94a977",
+    "lossless_pixel_sha256": "3b1606d40b97bc0c02b668b52f217a82fd9ab9e2f5c997b6e4e15f9d44694c4c"
+  },
+  {
+    "era": "ironfall",
+    "preview_seed": 11,
+    "mode": "baseline",
+    "view": "close",
+    "image": "ironfall-11-before-close.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "7ab377f65b1bcae34b23bce8610b304cd32d0381c1bf78c78406a487559f7420",
+    "lossless_pixel_sha256": "1130a1c43a1606046baa5a60d32c278102f70f2da756364a32cd20bdc5435ab2"
+  },
+  {
+    "era": "ironfall",
+    "preview_seed": 11,
+    "mode": "current",
+    "view": "wide",
+    "image": "ironfall-11-after-wide.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "a86ea3cbd2319e77edb90cf79d33e1788edab5482e9351bbc7803f73e80658e2",
+    "lossless_pixel_sha256": "2ab7768e21ee1deeee1bced19b97491ad8961d5c0695f9af2afdfb437e888f06"
+  },
+  {
+    "era": "ironfall",
+    "preview_seed": 11,
+    "mode": "current",
+    "view": "close",
+    "image": "ironfall-11-after-close.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "4287cb8a835567f9a49472e8001dba644cfe1c7df88ae9166821b632ba87a4e7",
+    "lossless_pixel_sha256": "0a8c34ac73cf7961d3b9a2347d9d1969b2665ef57d5687107e9d9e937281e0a9"
+  },
+  {
+    "era": "ironfall",
+    "preview_seed": 42,
+    "mode": "baseline",
+    "view": "wide",
+    "image": "ironfall-42-before-wide.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "429b8da36f594586ce66f419b19e97f5bd6e69eba8baa47eb21d34728a9a5a39",
+    "lossless_pixel_sha256": "82b76a8c26695910c511608801dc47aa1fe3fd7e80280a743653f36613cf4af3"
+  },
+  {
+    "era": "ironfall",
+    "preview_seed": 42,
+    "mode": "baseline",
+    "view": "close",
+    "image": "ironfall-42-before-close.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "2575aeb449c493688552c5e322dd57334a2cae0385c699000ca19389bf665db9",
+    "lossless_pixel_sha256": "72bd7fa94f1710dac0a971a87cc695f197004239a15ef97b508689e32e69f76c"
+  },
+  {
+    "era": "ironfall",
+    "preview_seed": 42,
+    "mode": "current",
+    "view": "wide",
+    "image": "ironfall-42-after-wide.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "8c155deb744a0ffb4a2a40a6d41e04e5b4891798d00bf5b75d4d900081b717f1",
+    "lossless_pixel_sha256": "c176d4523bb573bfef7e4cd8917612cb6a319fc38e1c85d20d1c2ab159a911ad"
+  },
+  {
+    "era": "ironfall",
+    "preview_seed": 42,
+    "mode": "current",
+    "view": "close",
+    "image": "ironfall-42-after-close.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "0c2de845dcafb7049edf92f0923c79a6186ee584f49b8957edf63203a94f9b7f",
+    "lossless_pixel_sha256": "28597f618a5871b3c6e2ed7f5854b3e065d5a91f8f32238ce5a7b9d773ac6fe4"
+  },
+  {
+    "era": "livewire",
+    "preview_seed": 3,
+    "mode": "baseline",
+    "view": "wide",
+    "image": "livewire-3-before-wide.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "f6e3597c04950345d3cf369623163c25a3446a5527ac46f60abd7569016e221e",
+    "lossless_pixel_sha256": "9754dfeb56ca1b73add9319450b6639d396d26b4c81a959d6f2938b71624b624"
+  },
+  {
+    "era": "livewire",
+    "preview_seed": 3,
+    "mode": "baseline",
+    "view": "close",
+    "image": "livewire-3-before-close.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "68be1204841e8c1f560bf3838252b9cd56192540f4cb6cf856fedaae9226233c",
+    "lossless_pixel_sha256": "5a290e9a6fec89ac433c569bb81b390dc0f4ac08bc6d50e0626c9c147a2effa7"
+  },
+  {
+    "era": "livewire",
+    "preview_seed": 3,
+    "mode": "baseline",
+    "view": "town",
+    "image": "livewire-3-before-town.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "500552bab2818d88678ef03879ae067f3ec6c830a07866c52c5f2bbd0cae3a58",
+    "lossless_pixel_sha256": "dd19d6737d41a6d174f73b6e3c2ff1ffa0c533b0331f4b027bd80469c8a5a00c"
+  },
+  {
+    "era": "livewire",
+    "preview_seed": 3,
+    "mode": "current",
+    "view": "wide",
+    "image": "livewire-3-after-wide.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "7507af3b997ee369698fc1d97996ec87b6ac4736f93068823d02a4e3e6cd7ecb",
+    "lossless_pixel_sha256": "acedc2e3771df5f47f997b75c1ebc2402176cc9ddae414762dfde4798d016b84"
+  },
+  {
+    "era": "livewire",
+    "preview_seed": 3,
+    "mode": "current",
+    "view": "close",
+    "image": "livewire-3-after-close.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "4ca9f86ba5c0239c37e95244c28dee6bd6a5f5e43dd54de0a33e72f5c3830d90",
+    "lossless_pixel_sha256": "48e4d8e5d8ff43053703995fdf54ceb1a1e51449488e5b05adcd30f5b6020eff"
+  },
+  {
+    "era": "livewire",
+    "preview_seed": 3,
+    "mode": "current",
+    "view": "town",
+    "image": "livewire-3-after-town.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "416f96c1a5b052a910bd15018ae2fe59bd443ec064a99427470e7b4afd2d453e",
+    "lossless_pixel_sha256": "cd02c0152625b0b9d60881ad71038bac558f00911ea4c50ccbf5946d20976fb0"
+  },
+  {
+    "era": "livewire",
+    "preview_seed": 11,
+    "mode": "baseline",
+    "view": "wide",
+    "image": "livewire-11-before-wide.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "544c0b461a53ed577defe03db669dadd47d93c8b6445f79671b52bd1724b3c3c",
+    "lossless_pixel_sha256": "a8a6e4d0b84e4b4db12f06ba189f692c95f4edc12a10cb0514f1d0c03ba4b7d0"
+  },
+  {
+    "era": "livewire",
+    "preview_seed": 11,
+    "mode": "baseline",
+    "view": "close",
+    "image": "livewire-11-before-close.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "d2e2d93b254d9171e4089289a8a23796a5ba6fdd2c82b9d1a9a48ef22cb5bc20",
+    "lossless_pixel_sha256": "0abf13f8a05f2e25cd1d252ff05157de537a739460253941841be82368e7121c"
+  },
+  {
+    "era": "livewire",
+    "preview_seed": 11,
+    "mode": "current",
+    "view": "wide",
+    "image": "livewire-11-after-wide.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "7c1a65526c44714b5a18118a59fbb35d98c3e136455099d85b9ffdeb4c1926cf",
+    "lossless_pixel_sha256": "93c241a0ccf9978d26cffc4b16082ba449b0477f3c82a2d5cb136887104d398b"
+  },
+  {
+    "era": "livewire",
+    "preview_seed": 11,
+    "mode": "current",
+    "view": "close",
+    "image": "livewire-11-after-close.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "b6cb46f8a2f00feb3ed2f05fbd08f30a8c5c9866cd0e7ab7fb40e6acf4a4b37d",
+    "lossless_pixel_sha256": "caa4887bf187053d4d9e3b0cf3a173a715f9d00c107c8b2f901f7fa781655522"
+  },
+  {
+    "era": "livewire",
+    "preview_seed": 42,
+    "mode": "baseline",
+    "view": "wide",
+    "image": "livewire-42-before-wide.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "cdc0d72d5d4825ae8a63cf5659a863ff524a96862c57729bcfc8a36c49ccc6ae",
+    "lossless_pixel_sha256": "f60240dab3744322463998a0fedf38450d3409b3c2f0f2193a894e158a3f3277"
+  },
+  {
+    "era": "livewire",
+    "preview_seed": 42,
+    "mode": "baseline",
+    "view": "close",
+    "image": "livewire-42-before-close.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "cda753bf6b9f22dc5f64510abaec6d335722b6bb58e5cacf941043a7144d31d5",
+    "lossless_pixel_sha256": "ad4b99b40680f66fabb4770754d146ddbe576b2adf54943a486f9fba57884102"
+  },
+  {
+    "era": "livewire",
+    "preview_seed": 42,
+    "mode": "current",
+    "view": "wide",
+    "image": "livewire-42-after-wide.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "87a4910b88be933c09a449733aa364dfd8ed98a91236ada219dea6843c1b56f1",
+    "lossless_pixel_sha256": "ec339a3af22bb5aba2b6230f70b5091fa0938b01a5d8fb0f2c3449bbc1f8969a"
+  },
+  {
+    "era": "livewire",
+    "preview_seed": 42,
+    "mode": "current",
+    "view": "close",
+    "image": "livewire-42-after-close.webp",
+    "size": [
+      1280,
+      800
+    ],
+    "source_png_sha256": "fc717a21d828750ba8fccd1a4fe184608efcefcff89e16ce8f0ea97f66c55ae7",
+    "lossless_pixel_sha256": "8e15b9eb1dc4a9635d53853bec1baf02cb827322a9afcb21d49a6c4670792f7d"
+  }
+]

@@ -10,8 +10,13 @@ const MapSouth = preload("res://scripts/map_south.gd")
 const RunSave = preload("res://scripts/run_save.gd")
 const Kith = preload("res://scripts/kith.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
+const Fuel = preload("res://scripts/fuel.gd")
+const Snapshot = preload("res://tests/tools/ai_snapshot.gd")
+const Haulers = preload("res://scripts/haulers.gd")
 const Hands = preload("res://scripts/hands.gd")
+const Work = preload("res://scripts/work.gd")
 const Rules = preload("res://scripts/rules.gd")
+const Buildings = preload("res://scripts/buildings.gd")
 const Art = preload("res://scripts/art.gd")
 const TechPanel = preload("res://scripts/tech_panel.gd")
 
@@ -31,6 +36,10 @@ func run(runner) -> void:
 	test_digging_by_hand()
 	test_iron_hills_need_ironstone()
 	test_the_bloomery_makes_iron()
+	test_auto_fuel_burns_coal_while_it_is_plenty()
+	test_a_bloomery_burns_charcoal_at_half_speed()
+	test_the_fuel_button_and_a_save()
+	test_the_ai_player_sets_the_fuel()
 	test_iron_tools()
 	test_the_fourth_tab()
 	test_the_goals()
@@ -305,6 +314,148 @@ func test_the_bloomery_makes_iron() -> void:
 		s.tick(0.1)
 	t.check(b["out"].get("iron", 0) == 1, "it makes one Iron (%d)" % b["out"].get("iron", 0))
 	t.check(b["inbuf"].get("iron_ore", 0) == 0 and b["inbuf"].get("coal", 0) == 0, "and uses its ore and coal")
+
+
+## Auto burns Coal while the stores hold more than the reserve, else Charcoal; the fuel a building holds or is brought stays its fuel.
+func test_auto_fuel_burns_coal_while_it_is_plenty() -> void:
+	var s := south(42, "ironstone")
+	s.tech_tree.researched["coal_seams"] = true
+	var at: Vector2i = s.world.camp_pos + Vector2i(-3, 2)
+	t.check(t.place_free(s, "bloomery", at), "a Bloomery goes up")
+	var b: Dictionary = s.town.buildings[s.town.building_at[at]]
+	t.check(b["fuel"] == "auto" and b["fuel_now"] == "coal", "it starts on Auto, burning Coal")
+	s.economy.inv["coal"] = Data.FUEL_RESERVE + 1
+	s.economy.inv["charcoal"] = 10
+	t.check(Fuel.choose(s.economy, b) == "coal", "with more than the reserve it burns Coal")
+	s.economy.inv["coal"] = Data.FUEL_RESERVE
+	t.check(Fuel.choose(s.economy, b) == "charcoal", "at the reserve it burns Charcoal")
+	s.economy.inv["charcoal"] = 0
+	t.check(Fuel.choose(s.economy, b) == "coal", "with no Charcoal either it burns what little Coal there is")
+	s.economy.inv["coal"] = 0
+	t.check(Fuel.choose(s.economy, b) == "charcoal", "with neither it waits on Charcoal, the Pits' fuel")
+	b["inbuf"]["coal"] = 1
+	t.check(Fuel.choose(s.economy, b) == "coal", "a Coal it holds is burnt first")
+	b["inbuf"].clear()
+	b["incoming"]["charcoal"] = 2
+	s.economy.inv["coal"] = 500
+	t.check(Fuel.choose(s.economy, b) == "charcoal", "and so is the Charcoal on its way")
+	b["incoming"].clear()
+	b["fuel"] = "charcoal"
+	t.check(Fuel.choose(s.economy, b) == "charcoal", "set to Charcoal it burns Charcoal with Coal plentiful")
+	b["fuel"] = "coal"
+	s.economy.inv["coal"] = 0
+	t.check(Fuel.choose(s.economy, b) == "coal", "set to Coal it waits for Coal")
+
+
+## On Charcoal a batch takes CHARCOAL_SLOW times as long, the card says so, and haulers bring Charcoal (not Coal).
+func test_a_bloomery_burns_charcoal_at_half_speed() -> void:
+	var s := south(42, "ironstone")
+	s.tech_tree.researched["coal_seams"] = true
+	var at: Vector2i = s.world.camp_pos + Vector2i(-3, 2)
+	t.place_free(s, "bloomery", at)
+	var b: Dictionary = s.town.buildings[s.town.building_at[at]]
+	b["fuel_now"] = "coal"
+	var fast := Work.time(s, b)
+	b["fuel_now"] = "charcoal"
+	t.check(
+		is_equal_approx(Work.time(s, b), fast * Data.CHARCOAL_SLOW), "a batch takes %.0fx as long" % Data.CHARCOAL_SLOW
+	)
+	t.check(
+		Buildings.recipe_in(b) == {"iron_ore": 2, "charcoal": 1},
+		"it uses one Charcoal where Coal went: %s" % Buildings.recipe_in(b)
+	)
+	s.economy.inv["iron_ore"] = 50
+	s.economy.inv["charcoal"] = 20
+	t.check(
+		Haulers.stock_wanted(s, b).has("charcoal") and not Haulers.stock_wanted(s, b).has("coal"),
+		"haulers bring Charcoal"
+	)
+	b["inbuf"]["iron_ore"] = 2
+	b["inbuf"]["charcoal"] = 1
+	var seconds := _batch_seconds(s, b)
+	t.check(b["out"].get("iron", 0) == 1, "it makes the Iron on Charcoal")
+	b["out"].clear()
+	b["fuel"] = "coal"
+	b["fuel_now"] = "coal"
+	s.economy.inv["coal"] = 20
+	b["inbuf"]["iron_ore"] = 2
+	b["inbuf"]["coal"] = 1
+	var on_coal := _batch_seconds(s, b)
+	t.check(
+		absf(seconds / on_coal - Data.CHARCOAL_SLOW) < 0.3,
+		"a batch takes %.1fx as long on Charcoal (%.1f s against %.1f s)" % [seconds / on_coal, seconds, on_coal]
+	)
+	b["fuel"] = "auto"
+	b["fuel_now"] = "charcoal"
+	b["out"].clear()
+	t.check(b["inbuf"].get("charcoal", 0) == 0, "and burns the Charcoal")
+	t.check(s.economy.made_on["charcoal"].get("iron", 0) == 1, "the baseline counts the Iron made on Charcoal")
+	b["inbuf"]["iron_ore"] = 2
+	b["inbuf"]["charcoal"] = 1
+	for i in 20:
+		s.tick(0.1)
+	t.check(b["status"].begins_with("Smelting on Charcoal: half speed"), "the status says so: %s" % b["status"])
+	t.check("Coal is low" in b["status"], "and why, on Auto: %s" % b["status"])
+	# A Factory Floor copying a Bloomery follows the same rule.
+	var floor_b := {
+		"type": "factory_floor", "make": "bloomery", "inbuf": {}, "incoming": {}, "fuel": "auto", "fuel_now": "charcoal"
+	}
+	t.check(Fuel.slow(floor_b) == Data.CHARCOAL_SLOW, "a Floor copying a Bloomery burns Charcoal as slowly")
+	floor_b["make"] = "kiln"
+	t.check(Fuel.slow(floor_b) == 1.0 and not Fuel.burns(floor_b), "and copying a Kiln burns no fuel of this kind")
+
+
+## The AI player's fuel move steps a Bloomery's setting, and refuses a mode there is not or a building with no fuel button.
+func test_the_ai_player_sets_the_fuel() -> void:
+	var s := south(42, "ironstone")
+	s.tech_tree.researched["coal_seams"] = true
+	var at: Vector2i = s.world.camp_pos + Vector2i(-3, 2)
+	t.place_free(s, "bloomery", at)
+	var b: Dictionary = s.town.buildings[s.town.building_at[at]]
+	var refused: Array = Snapshot.apply(s, [{"do": "fuel", "x": at.x, "y": at.y, "mode": "charcoal"}])
+	t.check(refused.is_empty() and b["fuel"] == "charcoal", "the Bloomery is set to Charcoal: %s" % str(refused))
+	refused = Snapshot.apply(s, [{"do": "fuel", "x": at.x, "y": at.y, "mode": "wood"}])
+	t.check(refused.size() == 1 and b["fuel"] == "charcoal", "a mode there is not is refused: %s" % str(refused))
+	refused = Snapshot.apply(s, [{"do": "fuel", "x": s.world.camp_pos.x, "y": s.world.camp_pos.y, "mode": "coal"}])
+	t.check(refused.size() == 1, "and the Hearth has no fuel button: %s" % str(refused))
+	t.check(Snapshot.KNOWN.contains("Fuel"), "the carried-over knowledge names the Fuel button")
+
+
+## Game seconds until `b` (loaded for one batch) has made its Iron.
+func _batch_seconds(s: Sim, b: Dictionary) -> float:
+	b["progress"] = 0.0
+	var seconds := 0.0
+	for i in 2000:
+		s.economy.inv["berries"] = 999
+		s.tick(0.1)
+		seconds += 0.1
+		if b["out"].get("iron", 0) >= 1:
+			break
+	return seconds
+
+
+## The Fuel button steps Auto, Coal, Charcoal, returns what the old fuel held, and the setting survives a save.
+func test_the_fuel_button_and_a_save() -> void:
+	var s := south(42, "ironstone")
+	s.tech_tree.researched["coal_seams"] = true
+	var at: Vector2i = s.world.camp_pos + Vector2i(-3, 2)
+	t.place_free(s, "bloomery", at)
+	var b: Dictionary = s.town.buildings[s.town.building_at[at]]
+	s.economy.inv["coal"] = 0
+	b["inbuf"]["coal"] = 3
+	Fuel.cycle(s.economy, b)
+	t.check(b["fuel"] == "coal", "first press: Coal")
+	Fuel.cycle(s.economy, b)
+	t.check(b["fuel"] == "charcoal", "second press: Charcoal")
+	t.check(b["inbuf"].get("coal", 0) == 0 and s.economy.inv["coal"] == 3, "the Coal it held goes back to the stores")
+	Fuel.cycle(s.economy, b)
+	t.check(b["fuel"] == "auto", "third press: Auto again")
+	b["fuel"] = "charcoal"
+	b["fuel_now"] = "charcoal"
+	var back := Sim.new()
+	t.check(RunSave.restore(back, RunSave.from_json(RunSave.to_json(RunSave.dump(s)))), "the game loads")
+	var again: Dictionary = back.town.buildings[back.town.building_at[at]]
+	t.check(again["fuel"] == "charcoal" and again["fuel_now"] == "charcoal", "the setting comes back from a save")
 
 
 func test_iron_tools() -> void:

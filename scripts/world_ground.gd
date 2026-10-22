@@ -1,6 +1,7 @@
 extends RefCounted
 ## Cached terrain masks with full-resolution world-space material shading.
 
+const Data = preload("res://scripts/data.gd")
 const Rendered = preload("res://scripts/rendered_art.gd")
 const NEIGHBORS := [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]
 const SAMPLES := 16
@@ -12,6 +13,7 @@ const STONE_PATHS := false
 var texture: ImageTexture
 var revision := 0
 var builds := 0
+var preview_family := -1  # visual fixture override; normal play always follows existing story milestones
 var _decals: Node2D
 var _state
 var _seen := Rect2i()
@@ -22,12 +24,23 @@ var _noise := FastNoiseLite.new()
 var _image: Image
 var _raw := PackedInt32Array()  # _raw_cells as of the last rebuild
 var _seed := -1
+var _family := -1
+var _region_cells := {}
 var _river_corners := {}  # tile -> its river corners (Vector4), kept for one rebuild
 
 
 func draw(ci: CanvasItem, s, seen: Rect2i) -> void:
 	var stamp: int = hash(
-		[s.world.tiles, s.world.roads, s.world.width, s.world.map_seed, s.town.building_at, s.fog.cells]
+		[
+			s.world.tiles,
+			s.world.roads,
+			s.world.width,
+			s.world.map_seed,
+			s.town.building_at,
+			s.fog.cells,
+			_tide_revision(s),
+			{} if s is Dictionary else s.tech_tree.researched
+		]
 	)
 	var revised := texture == null or stamp != revision
 	if revised:
@@ -49,8 +62,7 @@ func draw(ci: CanvasItem, s, seen: Rect2i) -> void:
 		for slot in sheets:
 			_material.set_shader_parameter(slot, Rendered.sheet(sheets[slot]))
 		# Pack related sheets to stay within the Compatibility renderer's sampler budget.
-		_material.set_shader_parameter("turf_texture", _material_atlas(["meadow-a", "meadow-b", "meadow-c"]))
-		_material.set_shader_parameter("earth_texture", _material_atlas(["earth", "earth-south"]))
+
 		_surface.material = _material
 		_surface.draw.connect(_draw_surface)
 		ci.add_child(_surface)
@@ -59,9 +71,12 @@ func draw(ci: CanvasItem, s, seen: Rect2i) -> void:
 		_decals.z_index = -1
 		_decals.draw.connect(_draw_decals)
 		ci.add_child(_decals)
+	_set_family(preview_family if preview_family >= 0 else era_family(s))
 	_state = s
 	_seen = seen
-	_material.set_shader_parameter("south_start", float(s.world.base_height) * TILE)
+	_material.set_shader_parameter("east_start", float(s.world.stone_width) * TILE)
+	var south_row: int = s.world.base_height if s.world.height > s.world.base_height else s.world.height + 4
+	_material.set_shader_parameter("south_start", float(south_row) * TILE)
 	_material.set_shader_parameter("terrain_mask", texture)
 	_material.set_shader_parameter("world_size", Vector2(s.world.width, s.world.height) * TILE)
 	_material.set_shader_parameter("stone_paths", STONE_PATHS)
@@ -82,7 +97,7 @@ func _draw_surface() -> void:
 func _rebuild(s) -> void:
 	_noise.seed = s.world.map_seed
 	_noise.frequency = 0.12
-	var size := Vector2i(s.world.width, s.world.height) * SAMPLES
+	var size := Vector2i(s.world.width * 2, s.world.height) * SAMPLES
 	if _image == null or _image.get_size() != size or _seed != s.world.map_seed:
 		_image = Image.create(size.x, size.y, false, Image.FORMAT_RGBA8)
 		_raw = PackedInt32Array()
@@ -90,6 +105,7 @@ func _rebuild(s) -> void:
 		_seed = s.world.map_seed
 	var w: int = s.world.width
 	var h: int = s.world.height
+	_region_cells.clear()
 	var now := _raw_cells(s)
 	var dirty := {}  # tile -> true: every tile whose picture reads a tile that changed (the window _paint_tile looks at)
 	for i in now.size():
@@ -129,7 +145,7 @@ func _raw_cells(s) -> PackedInt32Array:
 			)
 			if s.town.building_at.has(q):
 				v |= hash(s.town.buildings[s.town.building_at[q]]["type"]) << 4
-			out[y * s.world.width + x] = v
+			out[y * s.world.width + x] = hash([v, _region_cell(s, q)])
 	return out
 
 
@@ -138,6 +154,10 @@ func _paint_tile(s, tile: Vector2i) -> void:
 	for corner in [Vector2i.ZERO, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.ONE]:
 		woods.append(_forest_density(s, tile + corner))
 	var aprons := _aprons(s, tile)
+	var corners: Array[Color] = []
+	for cy in range(-1, 2):
+		for cx in range(-1, 2):
+			corners.append(_region_cell(s, tile + Vector2i(cx, cy)))
 	for y in SAMPLES:
 		for x in SAMPLES:
 			var pixel := tile * SAMPLES + Vector2i(x, y)
@@ -152,6 +172,12 @@ func _paint_tile(s, tile: Vector2i) -> void:
 				var d := (p - Vector2(apron.x, apron.y)) / Vector2(apron.z, apron.w)
 				wear = maxf(wear, 1.0 - smoothstep(0.5, 1.0, d.length() + n * 0.12))
 			_image.set_pixelv(pixel, Color(wet, path, forest, wear))
+			var index := (3 if frac.y >= 0.5 else 0) + (1 if frac.x >= 0.5 else 0)
+			var f := Vector2(fposmod(frac.x + 0.5, 1.0), fposmod(frac.y + 0.5, 1.0))
+			var regions := corners[index].lerp(corners[index + 1], f.x).lerp(
+				corners[index + 3].lerp(corners[index + 4], f.x), f.y
+			)
+			_image.set_pixelv(pixel + Vector2i(s.world.width * SAMPLES, 0), regions)
 
 
 func _river(s, p: Vector2) -> float:
@@ -221,11 +247,58 @@ func _draw_decals() -> void:
 	var atlas := Rendered.sheet("decals")
 	for decal in decal_layout(_state, _seen):
 		var cell := int(decal.z)
+		if _family > 0 and cell < 24:
+			continue
 		var source := Rect2(Vector2(cell % 8, floori(cell / 8.0)) * 96.0, Vector2(96, 96))
 		var size := 32.0 if cell >= 24 else 24.0
 		_decals.draw_texture_rect_region(
 			atlas, Rect2(Vector2(decal.x, decal.y) - Vector2.ONE * size * 0.5, Vector2.ONE * size), source
 		)
+
+	if _family > 0:
+		var era_atlas := Rendered.sheet("era-ground/decals")
+		for decal in era_decal_layout(_state, _seen):
+			var cell := int(decal.z)
+			var source := Rect2(Vector2(cell % 8, floori(cell / 8.0)) * 96.0, Vector2(96, 96))
+			var opacity := 0.4 if cell < 4 else 0.78
+			_decals.draw_texture_rect_region(
+				era_atlas,
+				Rect2(Vector2(decal.x, decal.y) - Vector2(24, 24), Vector2(48, 48)),
+				source,
+				Color(1, 1, 1, opacity)
+			)
+
+
+func era_decal_layout(s, seen: Rect2i) -> Array[Vector3]:
+	var result: Array[Vector3] = []
+	var family := era_family(s)
+	for decal in decal_layout(s, seen):
+		if decal.z >= 24:
+			continue
+		var center := Vector2(decal.x, decal.y)
+		var tile := Vector2i((center / TILE).floor())
+		var sample := Vector2i(center / TILE * SAMPLES)
+		var region := _image.get_pixelv(sample + Vector2i(s.world.width * SAMPLES, 0))
+		if region.r > 0.15:
+			continue
+		var roll := Rendered.variant(tile, 100, 131, s.world.map_seed)
+		var index := Rendered.variant(tile, 8, 137, s.world.map_seed)
+		var cell := -1
+		match family:
+			1:
+				cell = index if roll < 18 else -1
+			2:
+				cell = 8 + index if tile.x >= s.world.stone_width and roll < 55 else -1
+			3:
+				cell = 16 + index if tile.y >= s.world.base_height and roll < 50 else -1
+			4:
+				if region.b > 0.25 and roll < 30:
+					cell = 28 + index % 4
+				elif region.g > 0.12 and region.g < 0.95 and roll < 60:
+					cell = 24 + index % 4
+		if cell >= 0:
+			result.append(Vector3(center.x, center.y, cell))
+	return result
 
 
 func decal_layout(s, seen: Rect2i) -> Array[Vector3]:
@@ -273,11 +346,99 @@ func _decal_clear(s, center: Vector2, bank: bool) -> bool:
 	return true
 
 
-func _material_atlas(names: Array[String]) -> ImageTexture:
-	var atlas := Image.create(1920 * names.size(), 1920, false, Image.FORMAT_RGB8)
+func _material_atlas(names: Array[String], columns: int = 0) -> ImageTexture:
+	columns = names.size() if columns == 0 else columns
+	var rows := ceili(float(names.size()) / columns)
+	var atlas := Image.create(1920 * columns, 1920 * rows, false, Image.FORMAT_RGB8)
 	for index in names.size():
 		var source: Texture2D = load("res://art/rendered/" + names[index] + ".png")
 		var image := source.get_image()
 		image.convert(Image.FORMAT_RGB8)
-		atlas.blit_rect(image, Rect2i(0, 0, 1920, 1920), Vector2i(index * 1920, 0))
+		atlas.blit_rect(
+			image, Rect2i(0, 0, 1920, 1920), Vector2i((index % columns) * 1920, floori(float(index) / columns) * 1920)
+		)
+	if _family > 0:
+		atlas.generate_mipmaps()
 	return ImageTexture.create_from_image(atlas)
+
+
+## Existing story milestones select presentation; no era/save state is added.
+static func era_family(s) -> int:
+	if s is Dictionary:
+		return int(s.get("ground_family", 0))
+	if s.story.has_event(Data.LIVEWIRE_BEGUN):
+		return 4
+	if s.story.has_event(Data.IRONFALL_EVENT):
+		return 3
+	if s.story.has_event("star_falling"):
+		return 1
+	return 2 if s.story.has_event("bronze_dawn") else 0
+
+
+static func _tide_revision(s) -> int:
+	return 0 if s is Dictionary else s.tide.rev
+
+
+func _region_cell(s, p: Vector2i) -> Color:
+	if _region_cells.has(p):
+		return _region_cells[p]
+	var value := Color(0, 0, 0, 0)
+	if s.world.in_bounds(p) and s.fog.is_revealed(p):
+		var kind: String = s.world.tile_at(p)
+		var tech := String(Data.TILES[kind].get("tech", ""))
+		var known: bool = s is Dictionary or tech == "" or s.tech_tree.researched.has(tech)
+		value.r = 1.0 if known and kind in ["coal_seam", "iron_hills", "spent_seam"] else 0.0
+		value.g = 1.0 if kind.begins_with("bloom_") else 0.0
+		if not s is Dictionary:
+			value.g = 1.0 if s.tide.grown.has(p) else value.g
+			value.b = 1.0 if s.tide.burnt.has(p) or s.town.built_type(p) == "firebreak" else 0.0
+	_region_cells[p] = value
+	return value
+
+
+func _set_family(family: int) -> void:
+	if _family == family:
+		return
+	_family = family
+	if _decals != null:
+		_decals.queue_redraw()
+	var turf: Array[String] = ["meadow-a", "meadow-b", "meadow-c"]
+	var woodland := "woodland-a"
+	var woodland_b := "woodland-b"
+	var earth: Array[String] = ["earth", "earth-south"]
+	if family > 0:
+		woodland = "era-ground/starfall-woodland"
+		woodland_b = woodland
+		earth = ["earth", "era-ground/earth-south", "era-ground/ironfall-apron", "era-ground/livewire-bloom"]
+		var meadow := "era-ground/starfall-meadow"
+		if family == 2:
+			turf = ["meadow-a", "era-ground/bronze-dawn-earth", "era-ground/bronze-dawn-earth"]
+		else:
+			if family == 4:
+				meadow = "era-ground/livewire-healthy"
+				earth = ["earth", meadow, "era-ground/livewire-bloom", "era-ground/livewire-firebreak"]
+			turf = [meadow, meadow, meadow]
+	if family in [1, 2]:
+		earth = ["earth"]
+	# Reuse single materials directly; do not create three identical GPU copies per era.
+	var single_turf := turf[0] == turf[1] and turf[0] == turf[2]
+	_material.set_shader_parameter("era_family", family)
+	_material.set_shader_parameter("turf_columns", 1.0 if single_turf else 3.0)
+	_material.set_shader_parameter("turf_texture", _ground_sheet(turf[0]) if single_turf else _material_atlas(turf))
+	_material.set_shader_parameter("earth_grid", Vector2(mini(earth.size(), 2), ceili(float(earth.size()) / 2)))
+	_material.set_shader_parameter(
+		"earth_texture", _ground_sheet(earth[0]) if earth.size() == 1 else _material_atlas(earth, 2)
+	)
+	var woods := _ground_sheet(woodland)
+	_material.set_shader_parameter("woodland_texture", woods)
+	_material.set_shader_parameter("woodland_b_texture", woods if woodland_b == woodland else _ground_sheet(woodland_b))
+
+
+## Filtering fine ground marks at wide zoom avoids bright pixel shimmer; sprite/decal imports stay unchanged.
+func _ground_sheet(name: String) -> Texture2D:
+	var source := Rendered.sheet(name)
+	if _family == 0:
+		return source
+	var image := source.get_image()
+	image.generate_mipmaps()
+	return ImageTexture.create_from_image(image)

@@ -2,6 +2,7 @@ extends Node2D
 ## Draws the map in a flat, bold-outlined vector style and builds the UI in code.
 
 const Data = preload("res://scripts/data.gd")
+const CardText = preload("res://scripts/card_text.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
@@ -26,6 +27,7 @@ const PatchView = preload("res://scripts/patch_view.gd")
 const FieldText = preload("res://scripts/field_text.gd")
 const PatchText = preload("res://scripts/patch_text.gd")
 const Messages = preload("res://scripts/messages.gd")
+const PopFeed = preload("res://scripts/pop_feed.gd")
 const ToastStack = preload("res://scripts/toast_stack.gd")
 const Flavor = preload("res://scripts/flavor.gd")
 const EastPointer = preload("res://scripts/east_pointer.gd")
@@ -161,10 +163,7 @@ func _process(delta: float) -> void:
 			var style := Messages.style_of(e)
 			messages.push(e, style["seconds"], style["sticky"], style["key"])
 	state.events.clear()
-	for i in state.seasons.pops.size():  # what a season takes floats up over the Hearth, one line above the last
-		var at := Overlays.center(state.world.camp_pos) - Vector2(0, 12 + 16 * i)
-		popups.append({"pos": at, "text": state.seasons.pops[i], "t": 0.0, "col": Ui.SHORT})
-	state.seasons.pops.clear()
+	popups.append_array(PopFeed.drain(state, Overlays.center(state.world.camp_pos) - Vector2(0, 12)))
 	if state.won and not banner_shown:
 		banner_shown = true  # the stone age ends with a banner, and the game goes on
 		messages.push(Data.ERA_BANNER_TITLE + "  ·  " + Data.ERA_BANNER_TEXT, BANNER_SECONDS)
@@ -424,7 +423,7 @@ func _lay_line() -> void:
 		return
 	var err := state.town.placement_error(placing, line[0])
 	if state.place_line(placing, line) == 0 and err != "":
-		_toast(err, 2.0)
+		_toast(CardText.refusal(state, placing, err), 2.0)
 
 
 func _tile_under() -> Vector2i:
@@ -447,7 +446,7 @@ func _click_tile(p: Vector2i) -> void:
 			if not state.economy.can_afford(state.town.price(placing)):
 				placing = ""
 		else:
-			_toast(err, 2.0)
+			_toast(CardText.refusal(state, placing, err), 2.0)
 		return
 	if state.town.building_at.has(p):
 		var note := Workers.click(state, state.town.building_at[p], true)

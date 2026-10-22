@@ -46,6 +46,12 @@ var dark_left := 0.0  # seconds the workshops keep dark (the Warning)
 var ended := false  # the Warning is read: the era is over
 var lean := ""  # "allies", "neighbours" or "enemies" once the era ends (Data.LEANS)
 var bloom := Vector2i(-1, -1)  # where the first Bloom sign stands
+var roads: Dictionary = {}  # gift set id -> "accept" or "refuse": the road taken (Data.ROAD_ORDER); a set read with no entry was taken
+var road_queue: Array = []  # gift sets read and waiting for the player's road, one card at a time
+var twin_lit: Dictionary = {}  # gift set id -> true while a refused gift's twin has its price paid
+var twin_paid: Dictionary = {}  # gift set id -> true once a twin's one-time price is paid
+var twin_clock := 0.0  # seconds since the twins' upkeep was last paid (Data.TWIN_EVERY)
+var pops: Array = []  # short texts the map floats over the Hearth ("+6 trust"); main takes them every frame
 var _stock: Economy  # for the one thing a moment can take: food
 var _town: Buildings
 
@@ -75,9 +81,27 @@ func people_word() -> String:
 	return Data.LUMEN_NAME if locked.has(Data.GLYPH_SETS[1]["id"]) else Data.STRANGERS_NAME
 
 
-## Move trust by `amount`, never out of 0 to Data.TRUST_MAX.
+## Move trust by `amount`, never out of 0 to Data.TRUST_MAX. A step of a whole point or more floats over the Hearth ("+6 trust").
 func nudge(amount: float) -> void:
+	var before := trust
 	trust = clampf(trust + amount, 0.0, Data.TRUST_MAX)
+	if absf(trust - before) >= 1.0 and stage == "arrived":
+		pops.append(Data.TRUST_POP % int(roundf(trust - before)))
+		if pops.size() > 12:  # nothing draws them in a headless run: keep the list short
+			pops.pop_front()
+
+
+## True once the Lumen can be named (the first set is read): only then is there anyone to show a word for.
+func trust_known() -> bool:
+	return locked.has(Data.GLYPH_SETS[1]["id"])
+
+
+## The word for how the Lumen stand with the Kith now (Data.TRUST_WORDS): the hidden number, never shown as a number.
+func trust_word() -> String:
+	for step in Data.TRUST_WORDS:
+		if trust < step[0]:
+			return step[1]
+	return Data.TRUST_WORDS.back()[1]
 
 
 func tick(delta: float) -> void:
@@ -103,6 +127,7 @@ func tick(delta: float) -> void:
 func _tick_arrived(delta: float) -> void:
 	dim_left = maxf(dim_left - delta, 0.0)
 	dark_left = maxf(dark_left - delta, 0.0)
+	_tick_roads(delta)
 	_tick_moments(delta)
 	if has_building("glyph_wall"):
 		copy_clock += delta
@@ -129,7 +154,12 @@ func _tick_arrived(delta: float) -> void:
 ## Data.MARKET_OPEN_TRUST, which opens the Market card. A standing Market lifts trust only to a ceiling (trade alone
 ## makes neighbours), the shrine lifts it for good and the Guard Post wears it down.
 func _tick_standing(delta: float) -> void:
-	if not seen.has("market_open") and locked.has(Data.GLYPH_SETS[1]["id"]) and trust >= Data.MARKET_OPEN_TRUST:
+	if (
+		not seen.has("market_open")
+		and locked.has(Data.GLYPH_SETS[1]["id"])
+		and trust >= Data.MARKET_OPEN_TRUST
+		and refusals() < Data.ROAD_ORDER.size()
+	):
 		seen["market_open"] = true
 		said.emit(Data.MARKET_OPEN_LINE)
 		moment.emit("market_open")
@@ -179,7 +209,33 @@ func _tick_moments(delta: float) -> void:
 func pending_options() -> Array:
 	if pending == "ending":
 		return [{"label": Data.ENDING_BUTTON, "note": ""}]
+	if pending.begins_with("road_"):
+		var id := pending.trim_prefix("road_")
+		return [
+			{
+				"label": Data.ROAD_TAKE % Data.LUMEN_GIFTS[id]["name"],
+				"note": Data.ROAD_TAKE_NOTE % Data.LUMEN_GIFTS[id]["note"]
+			},
+			{"label": Data.ROAD_KEEP % Data.TWINS[id]["name"], "note": Data.ROAD_KEEP_NOTE % Data.TWINS[id]["note"]},
+		]
 	return Data.MOMENTS[pending]["options"] if pending != "" else []
+
+
+## What the card for the waiting question says: {"title", "text", "says", "note"} (the ending adds a line for the roads taken).
+func pending_card() -> Dictionary:
+	if pending == "ending":
+		var text: String = Data.ENDING_TEXT
+		if refusals() > 0:
+			text += " " + Data.ROAD_ENDING_LINE % [refusals(), Data.ROAD_ORDER.size()]
+		return {"title": Data.ENDING_TITLE, "text": text, "says": Data.ENDING_SAYS, "note": Data.ENDING_NOTE}
+	if pending.begins_with("road_"):
+		var road: Dictionary = Data.TWINS[pending.trim_prefix("road_")]
+		return {"title": Data.ROAD_TITLE, "text": road["ask"], "says": road["says"], "note": ""}
+	var m: Dictionary = Data.MOMENTS[pending]
+	var text2: String = m["text"]
+	if pending == "warning" and refusals() > 0:
+		text2 += " " + Data.ROAD_WARNING_LINE
+	return {"title": m["title"], "text": text2, "says": m.get("says", ""), "note": ""}
 
 
 ## Answer the waiting moment with option `index`. Moves trust, takes what the option costs, says its line and records its
@@ -190,6 +246,8 @@ func choose(index: int) -> bool:
 	if pending == "ending":
 		pending = ""
 		return true
+	if pending.begins_with("road_"):
+		return _choose_road(index)
 	var options: Array = Data.MOMENTS[pending]["options"]
 	if index < 0 or index >= options.size():
 		return false
@@ -232,7 +290,10 @@ func dark() -> bool:
 
 ## The lean at this trust: allies, neighbours or enemies (Data.LEANS), never a number.
 func lean_now() -> String:
-	if trust >= Data.LEAN_ALLIES:
+	var n := refusals()
+	if n >= Data.ROAD_ORDER.size():
+		return "enemies"  # every gift refused: no friendship, whatever the trust
+	if trust >= Data.LEAN_ALLIES and n == 0:
 		return "allies"
 	return "neighbours" if trust >= Data.LEAN_NEIGHBOURS else "enemies"
 
@@ -245,14 +306,53 @@ func has_building(type: String) -> bool:
 	return false
 
 
+## The sets in the order this run's Wall meets them. The Name always leads and the Warning always comes last (the ending waits
+## on it); the sets between are shuffled by where the ship came down, so a map keeps its order and gameplay random numbers are never
+## touched. Before the star falls (no wreck yet) the order is the one in Data.GLYPH_SETS.
+func set_order() -> Array:
+	var middle: Array = []
+	for n in Data.GLYPH_SETS:
+		if n != 1 and Data.GLYPH_SETS[n]["id"] != Data.ENDING_SET:
+			middle.append(n)
+	if wreck.x >= 0:
+		middle.sort_custom(func(a, b): return _scramble(a * 10) < _scramble(b * 10))
+	var out: Array = [1] + middle
+	for n in Data.GLYPH_SETS:
+		if Data.GLYPH_SETS[n]["id"] == Data.ENDING_SET:
+			out.append(n)
+	return out
+
+
+## The marks of set `n` in the order the Wall gets them (shuffled like the sets).
+func glyph_order(n: int) -> Array:
+	var out: Array = Data.GLYPH_SETS[n]["glyphs"].duplicate()
+	if wreck.x >= 0:
+		out.sort_custom(func(a, b): return _scramble(a.hash() % 997 + n) < _scramble(b.hash() % 997 + n))
+	return out
+
+
+## 1 for the first set the Wall meets, up to the count of sets: the label an unread set wears in place of its name.
+func set_number(set_id: String) -> int:
+	var order := set_order()
+	for i in order.size():
+		if Data.GLYPH_SETS[order[i]]["id"] == set_id:
+			return i + 1
+	return 0
+
+
+## A fixed scramble of `k` with where the ship came down: the same number every time for a map.
+func _scramble(k: int) -> int:
+	return absi(((wreck.x + 7) * 73856093) ^ ((wreck.y + 11) * 19349663) ^ (k * 83492791)) % 1000003
+
+
 ## The first glyph of the first unread set that is not on the Wall yet, "" when every mark is copied. Only the sets the
 ## survivors show are copied by the Wall itself; the rest come home from the Wreck (add_finds).
 func _next_to_copy() -> String:
-	for n in Data.GLYPH_SETS:
+	for n in set_order():
 		var gset: Dictionary = Data.GLYPH_SETS[n]
 		if locked.has(gset["id"]) or gset["source"] != "survivors":
 			continue
-		for g in gset["glyphs"]:
+		for g in glyph_order(n):
 			if not copied.has(g):
 				return g
 	return ""
@@ -261,7 +361,7 @@ func _next_to_copy() -> String:
 ## The Kith talk the guesses over: a set is read when all its marks are on the Wall and every guess is right. Never one
 ## mark at a time. True when a set was read just now.
 func check() -> bool:
-	var read := false
+	var got := false
 	for n in Data.GLYPH_SETS:
 		var gset: Dictionary = Data.GLYPH_SETS[n]
 		if locked.has(gset["id"]):
@@ -273,22 +373,23 @@ func check() -> bool:
 			continue
 		if right:
 			locked[gset["id"]] = true
-			nudge(Data.TRUST_SET)
-			read = true
+			got = true
+			if Data.TWINS.has(gset["id"]):
+				road_queue.append(gset["id"])  # the gift's line and the trust it brings wait for the player's road
+			else:
+				nudge(Data.TRUST_SET)
 			if n == 1:
 				said.emit(Data.READ_LINE % Data.LUMEN_NAME)
 				said.emit(Data.LEAD_NAMED_LINE % [Data.LEAD_NAME, Data.LEAD_NAME])
 			elif gset["id"] == Data.ENDING_SET:
 				_end_era()
-			else:
-				said.emit(Data.LUMEN_GIFTS[gset["id"]]["line"])
 			moment.emit("%s_read" % gset["id"])
-	return read
+	return got
 
 
 ## The Warning cannot be read until the strangers' three questions are answered and none waits on the player.
 func may_end() -> bool:
-	return pending == "" and answered.size() == Data.MOMENT_ORDER.size()
+	return pending == "" and road_queue.is_empty() and answered.size() == Data.MOMENT_ORDER.size()
 
 
 ## The Warning is read: the era ends. The lean is the trust now, a Bloom sign stands at the edge of the fog and the ending
@@ -314,18 +415,120 @@ func _bloom_tile() -> Vector2i:
 
 ## True once the set called `set_id` is read: its gift (Data.LUMEN_GIFTS) is in effect.
 func gift(set_id: String) -> bool:
+	return locked.has(set_id) and roads.get(set_id, "") != "refuse" and not road_queue.has(set_id)
+
+
+## True once the set called `set_id` is read, whether the Kith took its gift or not (a tech may wait on it).
+func read(set_id: String) -> bool:
 	return locked.has(set_id)
+
+
+## True while a refused gift's Kith twin has its price paid and is at work.
+func twin(set_id: String) -> bool:
+	return roads.get(set_id, "") == "refuse" and twin_lit.has(set_id)
+
+
+## The gift's help is in effect, from the gift itself or its twin (the Healer's leaves reach the Kith through here).
+func boon(set_id: String) -> bool:
+	return gift(set_id) or twin(set_id)
+
+
+## How many gifts the Kith refused.
+func refusals() -> int:
+	var n := 0
+	for id in roads:
+		n += int(roads[id] == "refuse")
+	return n
+
+
+## Put the first gift waiting for a road up as a card once nothing else is being asked, and pay the twins' upkeep each minute.
+func _tick_roads(delta: float) -> void:
+	if pending == "" and not road_queue.is_empty():
+		pending = "road_" + String(road_queue[0])
+		said.emit(Data.ROAD_ASKED_LINE % Data.LUMEN_GIFTS[road_queue[0]]["name"])
+	twin_clock += delta
+	if twin_clock >= Data.TWIN_EVERY:
+		twin_clock -= Data.TWIN_EVERY
+		for id in Data.ROAD_ORDER:
+			if roads.get(id, "") == "refuse":
+				_feed(id)
+
+
+## The answer to a gift's card: 0 takes the gift (trust rises, its line is said), 1 keeps to the Kith way (trust falls, the twin starts).
+func _choose_road(index: int) -> bool:
+	if index < 0 or index > 1:
+		return false
+	var id := pending.trim_prefix("road_")
+	road_queue.erase(id)
+	pending = ""
+	if index == 0:
+		roads[id] = "accept"
+		nudge(Data.TRUST_SET)
+		said.emit(Data.LUMEN_GIFTS[id]["line"])
+	else:
+		roads[id] = "refuse"
+		nudge(Data.TRUST_REFUSE)
+		said.emit(Data.TWINS[id]["line"])
+		_feed(id)
+	return true
+
+
+## Pay a refused gift's twin: its price once, or its upkeep for the minute to come. A twin the stores cannot pay for goes out
+## (and says so once); one with nothing to burn it for (no Cairn, no Forge) simply waits.
+func _feed(id: String) -> void:
+	var twin_def: Dictionary = Data.TWINS[id]
+	if twin_def.has("once"):
+		if not twin_paid.has(id):
+			if not _pay(twin_def["once"]):
+				if not seen.has("owed_" + id):
+					seen["owed_" + id] = true
+					said.emit(Data.TWIN_OWED_LINE % [twin_def["name"], twin_def["cost"]])
+				return
+			twin_paid[id] = true
+			said.emit(Data.TWIN_PLANTED_LINE % twin_def["name"])
+		twin_lit[id] = true
+		return
+	var feed: Dictionary = twin_def["feed"]
+	var units := 1 if feed["per"] == "" else _count(feed["per"])
+	if units == 0:
+		twin_lit.erase(id)
+		return
+	if _pay({feed["good"]: int(feed["n"]) * units}):
+		twin_lit[id] = true
+	elif twin_lit.has(id):
+		twin_lit.erase(id)
+		said.emit(Data.TWIN_OUT_LINE % twin_def["name"])
+
+
+## Take `cost` (good -> count) from the stores if every part is there; false, and nothing taken, if not.
+func _pay(cost: Dictionary) -> bool:
+	if _stock == null:
+		return false
+	for good in cost:
+		if _stock.inv.get(good, 0) < int(cost[good]):
+			return false
+	for good in cost:
+		_stock.add(good, -int(cost[good]))
+	return true
+
+
+## How many buildings of `type` stand.
+func _count(type: String) -> int:
+	var n := 0
+	for b in _town.buildings:
+		n += int(b["type"] == type)
+	return n
 
 
 ## A party came back from the Wreck: put up to `count` more of its marks on the Wall (the first unread sets first). Returns
 ## how many were added, 0 once every mark of the sets the Wreck holds is known.
 func add_finds(count: int) -> int:
 	var added := 0
-	for n in Data.GLYPH_SETS:
+	for n in set_order():
 		var gset: Dictionary = Data.GLYPH_SETS[n]
 		if gset["source"] != "wreck" or locked.has(gset["id"]):
 			continue
-		for g in gset["glyphs"]:
+		for g in glyph_order(n):
 			if added < count and not copied.has(g):
 				copied.append(g)
 				added += 1
@@ -437,6 +640,11 @@ func to_dict() -> Dictionary:
 		"dark_left": snappedf(dark_left, 0.001),
 		"ended": ended,
 		"lean": lean,
+		"roads": roads.duplicate(),
+		"road_queue": road_queue.duplicate(),
+		"twin_lit": twin_lit.duplicate(),
+		"twin_paid": twin_paid.duplicate(),
+		"twin_clock": snappedf(twin_clock, 0.001),
 		"bloom": [bloom.x, bloom.y],
 	}
 
@@ -476,5 +684,18 @@ func from_dict(d: Dictionary) -> void:
 	dark_left = float(d.get("dark_left", 0.0))
 	ended = bool(d.get("ended", false))
 	lean = String(d.get("lean", ""))
+	roads = {}
+	for k in d.get("roads", {}):
+		roads[String(k)] = String(d["roads"][k])
+	road_queue = []
+	for k in d.get("road_queue", []):
+		road_queue.append(String(k))
+	twin_lit = {}
+	for k in d.get("twin_lit", {}):
+		twin_lit[String(k)] = true
+	twin_paid = {}
+	for k in d.get("twin_paid", {}):
+		twin_paid[String(k)] = true
+	twin_clock = float(d.get("twin_clock", 0.0))
 	var b: Array = d.get("bloom", [-1, -1])
 	bloom = Vector2i(int(b[0]), int(b[1]))
