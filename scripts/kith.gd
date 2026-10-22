@@ -242,6 +242,15 @@ func assign_jobs() -> void:
 			k["hot"] = false
 
 
+## True when somebody is free to take a place but the haulers the depots need come first (hauler_reserve), so a new workshop waits.
+func held_for_haulers() -> bool:
+	var pool := 0
+	for k in kith:
+		if k["job"] in ["", "haul"]:
+			pool += 1
+	return pool > 0 and pool - 1 < hauler_reserve.call()
+
+
 ## Send the first idle person (else the first hauler) to building `i`, to fill its place `slot`. False when
 ## nobody is free.
 func _staff(i: int, b: Dictionary, slot: String) -> bool:

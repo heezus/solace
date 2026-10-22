@@ -2,6 +2,7 @@ extends RefCounted
 ## Hauler places and resting at a full store (scripts/hauling.gd, scripts/store_rest.gd). Run from tests/run_tests.gd, which owns
 ## check() and the helpers.
 
+const Buildings = preload("res://scripts/buildings.gd")
 const Data = preload("res://scripts/data.gd")
 const Hauling = preload("res://scripts/hauling.gd")
 const RunSave = preload("res://scripts/run_save.gd")
@@ -22,6 +23,9 @@ func run(runner) -> void:
 	test_a_full_store_rests_the_building()
 	test_food_producers_rest_and_births_go_on()
 	test_places_survive_a_save()
+	test_a_held_back_workshop_says_why()
+	test_a_machine_short_of_an_input_does_not_blame_power()
+	test_a_refused_swap_names_its_reason()
 
 
 ## A town with haulers known, a Storehouse far from the Hearth, and a charcoal pit beside each.
@@ -151,6 +155,25 @@ func test_leftover_kith_go_where_the_gap_is_biggest() -> void:
 	)
 
 
+func test_a_short_depot_names_the_cheapest_lever() -> void:
+	var s := _town(3)
+	_run(s, 40.0)
+	var camp: Vector2i = s.world.camp_pos
+	t.check(
+		s.hauling.lever_note(camp) in [Data.HAULER_LEVER_KITH, Data.HAULER_LEVER_FAR], "a short depot says what helps"
+	)
+	for k in s.people.kith:
+		k["depot"] = camp
+	s.hauling.nudge(camp, -s.hauling.wanted(camp))
+	t.check(s.hauling.lever_note(camp) == "", "a depot that wants nothing says nothing")
+	s.hauling.reset(camp)
+	s.hauling.trip_tiles[camp] = 20.0
+	s.hauling.nudge(camp, 40)
+	t.check(s.hauling.lever_note(camp) == Data.HAULER_LEVER_FAR, "a long average trip points at a Storehouse")
+	s.hauling.trip_tiles[camp] = 6.0
+	t.check(s.hauling.lever_note(camp) == Data.HAULER_LEVER_KITH, "a short one points at homes")
+
+
 func test_a_waiting_building_names_its_depot() -> void:
 	var s := _town(10)
 	_run(s, 40.0)
@@ -243,3 +266,60 @@ func test_places_survive_a_save() -> void:
 	var c := Sim.new()
 	t.check(RunSave.restore(c, old), "a save from before places still loads")
 	t.check(c.hauling.auto.is_empty(), "and the readings are taken afresh")
+
+
+func test_a_held_back_workshop_says_why() -> void:
+	var s := _town(3)
+	_run(s, 40.0)
+	s.hauling.nudge(s.world.camp_pos, 1)
+	var spot := s.world.camp_pos + Vector2i(1, 2)
+	s.place("charcoal_pit", spot)
+	_run(s, 5.0)
+	var pit: Dictionary = s.town.buildings[s.town.building_at[spot]]
+	t.check(
+		pit["status"].begins_with("Waiting for hands: haulers come first (Haulers "), "it says so: %s" % pit["status"]
+	)
+	t.check(pit["alert"] == Data.HOLD_BACK_ALERT, "and the pill: %s" % pit["alert"])
+
+
+func test_a_machine_short_of_an_input_does_not_blame_power() -> void:
+	var s := _town(10)
+	for id in ["grindstone", "boiler"]:
+		s.tech_tree.researched[id] = true
+	s.economy.inv["grain"] = 0
+	var spot := Vector2i(-1, -1)
+	for dy in range(-5, 6):
+		for dx in range(-5, 6):
+			var at: Vector2i = s.world.camp_pos + Vector2i(dx, dy)
+			if spot.x < 0 and absi(dx) + absi(dy) > 3 and s.place("grindstone", at):
+				spot = at
+	t.check(spot.x >= 0, "the grindstone stands")
+	_run(s, 20.0)
+	var mill: Dictionary = s.town.buildings[s.town.building_at[spot]]
+	t.check(
+		mill["status"].begins_with("No power"), "with no Boiler near, a dark mill says No power (%s)" % mill["status"]
+	)
+	var boiler := Vector2i(-1, -1)
+	for dy in range(-3, 4):
+		for dx in range(-3, 4):
+			if boiler.x < 0 and s.place("boiler", spot + Vector2i(dx, dy)):
+				boiler = spot + Vector2i(dx, dy)
+	t.check(boiler.x >= 0, "a Boiler stands beside it")
+	_run(s, 2.0)
+	t.check(
+		not mill["status"].begins_with("No power"), "beside a banked Boiler it says what it needs (%s)" % mill["status"]
+	)
+
+
+func test_a_refused_swap_names_its_reason() -> void:
+	var lumen := Buildings.trade_refusal("lumen_market", "copper_ore", "coal")
+	t.check("deals only in" in lumen and "Coal" in lumen, "the Lumen Market names its goods: %s" % lumen)
+	t.check(Buildings.trade_refusal("trading_post", "copper_ore", "coal") == "", "the Trading Post takes it")
+	t.check(
+		Buildings.trade_refusal("trading_post", "coal", "coal") == Data.TRADE_SAME,
+		"a good for itself is refused in words"
+	)
+	t.check(
+		Buildings.trade_refusal("charcoal_pit", "coal", "wood").ends_with("does not trade"),
+		"a building that does not trade"
+	)

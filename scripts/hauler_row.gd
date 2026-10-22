@@ -11,6 +11,7 @@ const Ui = preload("res://scripts/ui.gd")
 
 var state: Sim
 var line: Label
+var lever: Label
 var minus: Button
 var plus: Button
 var auto: Button
@@ -29,6 +30,11 @@ func setup(game: Sim) -> void:
 	line.tooltip_text = Data.HAULER_ROW_TIP
 	line.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(line)
+	lever = Ui.label("", Ui.MIN_TEXT)
+	lever.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lever.custom_minimum_size = Vector2(60, 0)
+	lever.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	add_child(lever)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 6)
 	add_child(row)
@@ -60,6 +66,8 @@ func show_for(b: Dictionary) -> void:
 		if off == 0
 		else Data.HAULER_ROW_SET % [h.have(_depot), now, places[_depot]]
 	)
+	lever.text = h.lever_note(_depot)
+	lever.visible = lever.text != ""
 	minus.disabled = now <= 0
 	auto.disabled = off == 0
 

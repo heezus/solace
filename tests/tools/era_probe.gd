@@ -26,6 +26,7 @@ var _at := 0.0  # game clock at the era's start
 var _acc := 0.0
 var _streak := {}  # building tile -> seconds in a row it has waited for a hauler
 var _starve := {}  # workshop tile -> seconds in a row it has stood starved with its input in stock
+var _spill_of_seen := {}  # Economy.spilled_of at the last reading, by good
 var _spill_seen := 0  # Economy.spilled at the last reading (it is not saved, so a resumed run starts it again from 0)
 var _depots_at := 0.0  # era seconds of the last depot reading
 
@@ -38,6 +39,7 @@ func begin(name: String, s) -> void:
 	_streak.clear()
 	_starve.clear()
 	_spill_seen = s.economy.spilled
+	_spill_of_seen = s.economy.spilled_of.duplicate()
 	_depots_at = 0.0
 	var idle := 0
 	var haulers := 0
@@ -71,12 +73,15 @@ func begin(name: String, s) -> void:
 			"stock": _stock(s),
 			"coal_in_ground": _coal_in_ground(s),
 			"depots": _depots(s),
+			"hauler_ratio": _ratio(s),
 		},
 		"hauler_wait_total_s": 0.0,
 		"hauler_wait_longest_s": 0.0,
 		"starved_with_stock_s": 0.0,
 		"starved_longest_s": 0.0,
 		"spilled": 0,
+		"spilled_by_good": {},
+		"hauler_waits": 0,
 		"resting_s": 0.0,
 		"depots_every_5_min": [],
 	}
@@ -168,11 +173,16 @@ func _sample(s) -> void:
 		if status.begins_with("Needs ") and Buildings.needs_worker(b) and _lacks_stocked(s, b):
 			_row["starved_with_stock_s"] += SAMPLE
 			starved[b["pos"]] = true
-	_keep_streaks(_streak, waiting, "hauler_wait_longest_s")
+	_keep_streaks(_streak, waiting, "hauler_wait_longest_s", "hauler_waits")
 	_keep_streaks(_starve, starved, "starved_longest_s")
 	var spilled: int = s.economy.spilled
 	_row["spilled"] += spilled - _spill_seen if spilled >= _spill_seen else spilled
 	_spill_seen = spilled
+	for id in s.economy.spilled_of:
+		var more: int = s.economy.spilled_of[id] - _spill_of_seen.get(id, 0)
+		if more > 0:
+			_row["spilled_by_good"][id] = _row["spilled_by_good"].get(id, 0) + more
+	_spill_of_seen = s.economy.spilled_of.duplicate()
 	var t: float = s.seasons.time - _at
 	if t - _depots_at >= DEPOTS_EVERY:
 		_depots_at = t
@@ -180,13 +190,16 @@ func _sample(s) -> void:
 
 
 ## Add a second to every building in `now`'s streak in `streaks`, drop the ones that stopped, and keep the longest in `_row[key]`.
-func _keep_streaks(streaks: Dictionary, now: Dictionary, key: String) -> void:
+## With `count`, each streak that ends adds one to `_row[count]` (waits that ended, for the mean wait per pickup).
+func _keep_streaks(streaks: Dictionary, now: Dictionary, key: String, count := "") -> void:
 	for p in now:
 		streaks[p] = streaks.get(p, 0.0) + SAMPLE
 		_row[key] = maxf(_row[key], streaks[p])
 	for p in streaks.keys():
 		if not now.has(p):
 			streaks.erase(p)
+			if count != "":
+				_row[count] = _row.get(count, 0) + 1
 
 
 ## The haulers each depot has: [{"pos": "x,y", "haulers": n, "wanted": n}]. A town with hauler places (sim.hauling) reads its places
@@ -206,6 +219,17 @@ func _depots(s) -> Array:
 		var want: int = places.wanted(depot) if places != null else -1
 		out.append({"pos": "%d,%d" % [depot.x, depot.y], "haulers": count.get(depot, 0), "wanted": want})
 	return out
+
+
+## Haulers wanted against Kith at work: {"wanted", "at_work", "ratio"}. Zeros before hauler places exist.
+func _ratio(s) -> Dictionary:
+	var places = s.get("hauling")
+	var wanted: int = places.total_wanted() if places != null else 0
+	var at_work := 0
+	for k in s.people.kith:
+		if k["job"] == "work":
+			at_work += 1
+	return {"wanted": wanted, "at_work": at_work, "ratio": snappedf(float(wanted) / maxf(at_work, 1.0), 0.01)}
 
 
 ## True when a workshop is short of an input (not in its buffer or on its way) that the stores hold.
@@ -248,4 +272,5 @@ func from_dict(d: Dictionary) -> void:
 	_streak.clear()
 	_starve.clear()
 	_spill_seen = 0  # a reloaded run starts Economy.spilled again from 0
+	_spill_of_seen = {}
 	_depots_at = _row["depots_every_5_min"].size() * DEPOTS_EVERY if _row.has("depots_every_5_min") else 0.0

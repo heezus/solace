@@ -588,15 +588,34 @@ static func trade_allows(type: String, item: String) -> bool:
 	return not item in def.get("trade_not", [])
 
 
+## Why a building of `type` will not swap `gives` for `gets` ("" when it will): the words a refused swap shows.
+static func trade_refusal(type: String, gives: String, gets: String) -> String:
+	var def: Dictionary = Data.BUILDINGS[type]
+	if not def.get("trade", false):
+		return Data.TRADE_NOT_HERE % def["name"]
+	if gives == gets and gives != "":
+		return Data.TRADE_SAME
+	for id in [gives, gets]:
+		if id == "":
+			continue
+		if not Data.ITEMS.has(id):
+			return Data.TRADE_NO_GOOD % id
+		if not trade_allows(type, id):
+			if def.has("trade_only"):
+				var names: Array = []
+				for only in def["trade_only"]:
+					names.append(Data.ITEMS[only]["name"])
+				return Data.TRADE_ONLY % [def["name"], Data.ITEMS[id]["name"], ", ".join(names)]
+			return Data.TRADE_NOT_TRADED % [def["name"], Data.ITEMS[id]["name"]]
+	return ""
+
+
 ## Tell Trading Post `i` to swap `gives` for `gets` ("" for one not chosen yet). False when it isn't a Trading Post, or
 ## the two are one good, or either is not a good. What it had loaded of the old good goes back to the stockpile.
 func set_trade(i: int, gives: String, gets: String) -> bool:
 	var b: Dictionary = buildings[i]
-	if not Data.BUILDINGS[b["type"]].get("trade", false) or (gives == gets and gives != ""):
+	if trade_refusal(b["type"], gives, gets) != "":
 		return false
-	for id in [gives, gets]:
-		if id != "" and (not Data.ITEMS.has(id) or not trade_allows(b["type"], id)):
-			return false
 	for id in b["inbuf"]:
 		_economy.give_back(id, b["inbuf"][id])
 	b["inbuf"].clear()

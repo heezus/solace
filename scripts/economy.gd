@@ -32,6 +32,7 @@ var flows := Flows.new()  # what made and used each item lately
 ## Economy. A good over its cap is never taken down: a stage start or a test may put more in than a delivery could.
 var caps: Dictionary = {}
 var spilled := 0  # goods lost over the cap this run, for the scorecards; not saved
+var spilled_of: Dictionary = {}  # the same by good, for the baseline; not saved
 ## Seasons of Strain switches (scripts/seasons.gd sets them every tick, so they are not saved): how much of the usual the people eat,
 ## whether births wait, whether idle hands forage even without a famine, and how many times as much a foraging trip brings.
 var eat_factor := 1.0
@@ -84,6 +85,7 @@ func add(id: String, amount: int) -> void:
 	var room: int = caps.get(id, 1 << 30) - have
 	if amount > room:
 		spilled += amount - maxi(room, 0)
+		spilled_of[id] = spilled_of.get(id, 0) + amount - maxi(room, 0)
 		amount = maxi(room, 0)
 	inv[id] = have + amount
 	seen[id] = true
