@@ -5,6 +5,7 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
+const Fuel = preload("res://scripts/fuel.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Patch = preload("res://scripts/patch.gd")
@@ -17,7 +18,7 @@ static func time(s, b: Dictionary) -> float:
 	var base: float = Data.BUILDINGS[b["type"]].get("time", 0.0)
 	if Data.BUILDINGS[b["type"]].has("floor"):
 		base = Data.BUILDINGS[b["make"]]["time"] / Data.FLOOR_SPEED  # a Factory Floor: its recipe's workshop, three times as fast
-	var t: float = base / (Bonuses.speed(s, b) * Patch.speed(s, b))
+	var t: float = base * Fuel.slow(b) / (Bonuses.speed(s, b) * Patch.speed(s, b))  # Charcoal takes longer than Coal
 	if (
 		Data.BUILDINGS[b["type"]].has("dig")
 		and s.tech_tree.researched.has("powered_mines")
@@ -93,6 +94,9 @@ static func finish_cycle(s, b: Dictionary) -> void:
 		var n := roundi(made[id] * more)
 		b["out"][id] = b["out"].get(id, 0) + n
 		s.economy.note(id, n, b["type"])
+		if Fuel.burns(b):
+			var on: Dictionary = s.economy.made_on[b["fuel_now"]]
+			on[id] = on.get(id, 0) + n
 
 
 ## What a building's card says about its rate: the speed math, then a hut's bundle of its focus once its

@@ -16,6 +16,7 @@ const GATE := "livewire"
 const RAW_NEW := {"coal": "coal_seam", "iron_ore": "iron_hills"}
 const COAL_MINES := 3  # the most Coal Mines (a seam holds about 500, so three seams are three mines at most)
 const IRON_MINES := 5
+const FUEL_CHARCOAL_CAP := 200  # the most Charcoal the bot asks for in place of the Coal it lacks
 const BLOOMERIES := 4
 const FORGES := 4
 const ORE_PER_MINE := 300.0  # one more Iron Mine for every this much Iron Ore still short
@@ -214,6 +215,8 @@ func _goal_wants(want: Dictionary) -> void:
 		want["steel"] = want.get("steel", 0) + _steel_cost()
 		want["iron"] = want.get("iron", 0) + steel_left * 2
 		want["coal"] = want.get("coal", 0) + steel_left
+		if _inv("coal") < Data.FUEL_RESERVE * 2:  # Coal short: the works burn Charcoal at half speed, so the bot makes some, as a player would
+			want["charcoal"] = want.get("charcoal", 0) + mini(steel_left * 2, FUEL_CHARCOAL_CAP)
 	for type in _building_wants():
 		_want(want, s.town.price(type), 1)
 

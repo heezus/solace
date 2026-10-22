@@ -33,6 +33,7 @@ var flows := Flows.new()  # what made and used each item lately
 var caps: Dictionary = {}
 var spilled := 0  # goods lost over the cap this run, for the scorecards; not saved
 var spilled_of: Dictionary = {}  # the same by good, for the baseline; not saved
+var made_on: Dictionary = {"coal": {}, "charcoal": {}}  # what the metal works made on each fuel, by good, for the baseline; not saved
 ## Seasons of Strain switches (scripts/seasons.gd sets them every tick, so they are not saved): how much of the usual the people eat,
 ## whether births wait, whether idle hands forage even without a famine, and how many times as much a foraging trip brings.
 var eat_factor := 1.0

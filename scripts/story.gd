@@ -95,7 +95,6 @@ func update(s) -> void:
 		record(Data.IRONFALL_EVENT)  # the Starfall is over and its card is put away: Ironfall begins
 	if events.has(Data.LIVEWIRE_EVENT) and not card_up and not events.has(Data.LIVEWIRE_BEGUN):
 		record(Data.LIVEWIRE_BEGUN)  # the Wires Hum card is put away: Livewire begins
-		s.world.deepen_seams(Data.LIVEWIRE_COAL_GIFT)  # the charts show deeper coal under the old seams
 		_chart_seam(s)
 
 

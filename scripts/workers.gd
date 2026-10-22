@@ -10,6 +10,7 @@ const Kith = preload("res://scripts/kith.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Work = preload("res://scripts/work.gd")
+const Fuel = preload("res://scripts/fuel.gd")
 const Hands = preload("res://scripts/hands.gd")
 const GrowthNote = preload("res://scripts/growth_note.gd")
 const Steam = preload("res://scripts/steam.gd")
@@ -210,6 +211,8 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 		b["alert"] = Data.OVERGROWN_ALERT
 		b["burn"] = 0.0
 		return
+	if Fuel.burns(b):
+		Fuel.update(s, b)  # which fuel it burns now: haulers bring that one (scripts/fuel.gd)
 	if not Buildings.needs_worker(b):
 		if def.get("fed", false):
 			Steam.tick_fed(s, b, delta)  # a Boiler, a Lamp or a Pen has no worker: it burns what haulers bring it
@@ -293,6 +296,8 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 		return
 	var speed: float = s.livewire.speed_of(b)  # 1.0 unless it is on a Power Pole net that is short
 	b["status"] = "Working" if speed >= 1.0 else Data.NET_SLOW % roundi(speed * 100.0)
+	if Fuel.slow(b) > 1.0 and speed >= 1.0:
+		b["status"] = Fuel.status(b)
 	b["progress"] += delta * speed
 	if b["progress"] < Work.time(s, b):
 		return

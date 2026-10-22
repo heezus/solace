@@ -21,6 +21,7 @@ const Codec = preload("res://scripts/save_codec.gd")
 const Data = preload("res://scripts/data.gd")
 const Economy = preload("res://scripts/economy.gd")
 const FloorRecipe = preload("res://scripts/floor_recipe.gd")
+const Fuel = preload("res://scripts/fuel.gd")
 const Research = preload("res://scripts/research.gd")
 const Rules = preload("res://scripts/rules.gd")
 const World = preload("res://scripts/world.gd")
@@ -280,6 +281,8 @@ func add_building(type: String, p: Vector2i) -> void:
 		b["make"] = Data.BUILDINGS[type]["makes"][0]
 	if Data.BUILDINGS[type].has("floor"):
 		b["make"] = FloorRecipe.first_open(self, type)
+	if Data.BUILDINGS[type].get("fuel", false) or Data.BUILDINGS[type].has("floor"):
+		Fuel.fresh(b)  # a Bloomery, a Forge or a Floor: what it burns (scripts/fuel.gd)
 	if Data.BUILDINGS[type]["kind"] == "gatherer":
 		for t in gather_tiles(p):
 			b["gather_items"].append(Data.TILES[_world.tile_at(t)]["yields"])
@@ -552,10 +555,14 @@ static func recipe_in(b: Dictionary) -> Dictionary:
 	if def.has("makes"):
 		return Data.RECIPES[b["make"]]["in"]
 	if def.has("floor"):
-		return Data.BUILDINGS[b["make"]].get("in", {})
+		return (
+			Fuel.swap(b, Data.BUILDINGS[b["make"]].get("in", {}))
+			if Fuel.burns(b)
+			else Data.BUILDINGS[b["make"]].get("in", {})
+		)
 	if def.get("trade", false):
 		return {b["give"]: def.get("trade_give", Data.TRADE_GIVE)} if is_trading(b) else {}
-	return def.get("in", {})
+	return Fuel.swap(b, def.get("in", {})) if def.get("fuel", false) else def.get("in", {})
 
 
 ## Step Factory Floor `i` to the next workshop it can copy. What it had loaded of the old recipe goes back to the stockpile.
@@ -754,4 +761,7 @@ static func _building_from_dict(d: Dictionary) -> Dictionary:
 	b["make"] = String(
 		d.get("make", def["makes"][0] if def.has("makes") else (def["floor"][0] if def.has("floor") else ""))
 	)
+	if def.get("fuel", false) or def.has("floor"):
+		b["fuel"] = String(d.get("fuel", "auto"))  # a save from before Charcoal fuel burns what Auto picks
+		b["fuel_now"] = String(d.get("fuel_now", "coal"))
 	return b

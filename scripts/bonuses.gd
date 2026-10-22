@@ -6,6 +6,7 @@ extends RefCounted
 ## Static, and works on the Sim passed in.
 
 const Data = preload("res://scripts/data.gd")
+const Fuel = preload("res://scripts/fuel.gd")
 const Ranks = preload("res://scripts/ranks.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Kith = preload("res://scripts/kith.gd")
@@ -130,7 +131,7 @@ static func text(s, b: Dictionary) -> String:
 	var time: float = def["time"]
 	if def.has("floor"):
 		time = Data.BUILDINGS[b["make"]]["time"] / Data.FLOOR_SPEED  # a Factory Floor: its recipe's workshop, faster
-	var base: float = 60.0 / time
+	var base: float = 60.0 / (time * Fuel.slow(b))  # on Charcoal a batch takes longer
 	var unit := "jobs/min"
 	if def["kind"] == "processor" and not Buildings.recipe_out(b).is_empty():
 		var out := Buildings.recipe_out(b)

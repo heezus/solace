@@ -67,7 +67,10 @@ func _init() -> void:
 	var told: Array = []
 	var era := Snapshot.era_name(s)
 	for n in range(1, decisions + 1):
-		_write(dir + "snapshot_%d.txt" % n, Snapshot.text(s, n, told, refused))
+		var page := Snapshot.text(s, n, told, refused)
+		if n == 1 and start != "":
+			page = Snapshot.KNOWN + "\n" + page  # the player of a later era has played the earlier ones
+		_write(dir + "snapshot_%d.txt" % n, page)
 		var moves := _await_moves(n)
 		if timed_out:
 			print("AI player: no answer in %d s, stopping" % int(patience))

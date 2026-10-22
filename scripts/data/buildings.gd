@@ -413,10 +413,12 @@ const BUILDINGS := {
 		"story": true,
 		"cost": {"stone": 40, "brick": 60, "clay": 30},
 		"in": {"iron_ore": 2, "coal": 1},
+		"fuel": true,
 		"out": {"iron": 1},
 		"time": 9.0,
 		"color": Color("a65f45"),
-		"desc": "A clay stack fired with coal. Melts 2 Iron Ore and 1 Coal into Iron, slowly.",
+		"desc":
+		"A clay stack fired with coal. Melts 2 Iron Ore and 1 Coal into Iron, slowly. Burns Charcoal at half speed when Coal runs short.",
 	},
 	"forge":
 	{
@@ -427,11 +429,16 @@ const BUILDINGS := {
 		"story": true,
 		"cost": {"stone": 40, "brick": 60, "iron": 20},
 		"in": {"iron": 2, "coal": 1},
+		"fuel": true,
 		"out": {"steel": 1},
 		"time": 8.0,
 		"needs_power": true,
 		"color": Color("a9bfd1"),
-		"desc": "Needs power. A steady blast turns 2 Iron and 1 Coal into Steel. Stand it within 5 tiles of a Boiler.",
+		"desc":
+		(
+			"Needs power. A steady blast turns 2 Iron and 1 Coal into Steel (Charcoal at half speed when Coal runs short)."
+			+ " Stand it within 5 tiles of a Boiler."
+		),
 	},
 	"wire_mill":
 	{

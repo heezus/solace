@@ -6,6 +6,7 @@ extends RefCounted
 
 const CardText = preload("res://scripts/card_text.gd")
 const Data = preload("res://scripts/data.gd")
+const Fuel = preload("res://scripts/fuel.gd")
 
 const ERAS := ["Stone age", "Bronze Dawn", "Starfall", "Ironfall", "Livewire"]
 const HELP := """MOVES: write moves_<n>.json, a list. Each move is one of
@@ -24,9 +25,24 @@ const HELP := """MOVES: write moves_<n>.json, a list. Each move is one of
                                                    write a standing order on the Order Board (needs one built; compare is below or above;
                                                    verb is pause or bring; number one of 5 10 20 30 40 60 80 100 150 200 300 500)
   {"do":"clear_order","index":0}                   tear an order up
+  {"do":"fuel","x":3,"y":4,"mode":"charcoal"}       a Bloomery's or Forge's Fuel button: auto, coal or charcoal
+  {"do":"haulers","x":3,"y":4,"change":1}           one more (or -1, one fewer) hauler place at the depot standing at that spot (see DEPOTS)
   {"do":"wait","seconds":30}                       let the game run (the default, 15 seconds, is used when you send no wait)
 Also write diary_<n>.md: two or three lines on what you wanted, and how it felt (bored, pleased, stuck, surprised).
 Play to win the era you are in. You see only this page."""
+
+## What a player who reached a later era has already learned in the ones before it. The first page of a run that starts past the
+## first era carries it (the run is of that player, not of someone new to the game).
+const KNOWN := """WHAT YOUR KITH ALREADY KNOW (you have played the eras before this one; none of it is a hint, all of it is in your hands):
+  - Pausing: a paused building stops working and its Kith go to work elsewhere (move "pause"); resume it when you want it back.
+  - Standing orders: the Order Board pauses or brings first on a stock level (move "order"), once one stands.
+  - Bring first: haulers carry a good to the building you name before they carry anything else.
+  - Hauler places: each depot (DEPOTS) wants some haulers; you can raise or lower its count (move "haulers").
+  - Storehouses: a depot nearer a far workshop shortens the haul; build one beside it.
+  - Roads and carts: haulers serve buildings a road reaches; a building with no road says "Needs road".
+  - Trade: a Trading Post or Lumen Market swaps one good for another (move "trade").
+  - Fuel: a Bloomery or Forge burns Coal, or Charcoal at half speed (move "fuel"); Auto burns Coal while the stores have plenty.
+"""
 
 
 ## The era now, as the name a player would see.
@@ -117,6 +133,16 @@ static func apply(s, moves: Array) -> Array:
 					s.seasons.choose(s, int(m.get("choice", 0)))
 			"moment":
 				ok = s.starfall.choose(int(m.get("choice", 0)))
+			"fuel":
+				var i := _index_at(s, at)
+				ok = i >= 0 and Fuel.burns(s.town.buildings[i]) and str(m.get("mode", "")) in Data.FUEL_MODES
+				if ok:
+					Fuel.set_mode(s.economy, s.town.buildings[i], str(m["mode"]))
+			"haulers":
+				ok = s.hauling.auto.has(at) and int(m.get("change", 0)) != 0
+				if ok:
+					for step in absi(int(m["change"])):
+						s.hauling.nudge(at, signi(int(m["change"])))
 			"order":
 				ok = _write_order(s, m)
 			"clear_order":
@@ -147,6 +173,12 @@ static func _why(s, m: Dictionary, at: Vector2i) -> String:
 			return "nothing of yours stands there"
 		"gather":
 			return "nothing to gather there, or it is out of reach of your hand"
+		"fuel":
+			if _index_at(s, at) < 0:
+				return "no building there"
+			return "only a Bloomery or a Forge has a fuel button; the mode is auto, coal or charcoal"
+		"haulers":
+			return "no depot stands there (see DEPOTS)"
 		"pause", "focus":
 			if _index_at(s, at) < 0:
 				return "no building there"
@@ -261,6 +293,19 @@ static func _cards(s) -> Array:
 	return out
 
 
+## "(21,9) Hearth 12 of 14": each depot's position and name, the haulers it has and the places it wants.
+static func _depots(s) -> Array:
+	var out: Array = []
+	for depot in s.hauling.auto:
+		out.append(
+			(
+				"(%d,%d) %s %d of %d"
+				% [depot.x, depot.y, s.hauling.names.get(depot, ""), s.hauling.have(depot), s.hauling.wanted(depot)]
+			)
+		)
+	return out
+
+
 ## Food, people, stock, buildings, and what can be done now.
 static func _town(s) -> Array:
 	var out: Array = []
@@ -302,6 +347,8 @@ static func _town(s) -> Array:
 				)
 			)
 	out.append("STOCK: " + (", ".join(stock) if not stock.is_empty() else "nothing"))
+	if not s.hauling.auto.is_empty():
+		out.append("DEPOTS (haulers standing at each against what it wants): " + "; ".join(_depots(s)))
 	var groups := {}
 	for b in s.town.buildings:
 		var key: String = Data.BUILDINGS[b["type"]]["name"]

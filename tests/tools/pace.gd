@@ -14,7 +14,7 @@ extends SceneTree
 ## Dawn, Starfall, Ironfall, Livewire), reads each era with tests/tools/era_probe.gd and writes one row per era to `out=<folder>`
 ## (seed_<map>.json). `minutes` is then the most the Ironfall and Livewire bot may play. `baseline` takes one map.
 ## Run: godot --headless --path . -s tests/tools/pace.gd --
-##   [map|all] [minutes] [quiet] [bronze|star|ironfall [steam|teardown]|livewire|baseline out=<folder>] [cache]
+##   [map|all] [minutes] [quiet] [bronze|star|ironfall [steam|teardown]|livewire|baseline [noseams] out=<folder>] [cache]
 
 const Autoplay = preload("res://tests/autoplay.gd")
 const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
@@ -232,6 +232,8 @@ func _baseline(m: int, minutes: float, out: String) -> void:
 			probe.begin("ironfall", game)
 		_baseline_save(work, at[0], probe, game, m, out)
 	if at[0] == "ironfall":
+		if "noseams" in OS.get_cmdline_user_args():
+			_empty_seams(game)
 		var wire := AutoplayLivewire.new()
 		wire.probe = hook
 		var r: Dictionary = wire.play_livewire(game, minutes * 60.0)
@@ -246,6 +248,15 @@ func _baseline(m: int, minutes: float, out: String) -> void:
 			)
 		)
 	quit(0)
+
+
+## The `noseams` variant (a test, never a balance run): every Coal Seam is spent when Ironfall starts, so only Charcoal is left to burn.
+func _empty_seams(game: Sim) -> void:
+	for id in game.world.seam_left:
+		game.world.seam_left[id] = 0
+	for p in game.world.seam_of:
+		if game.world.tile_at(p) == "coal_seam":
+			game.world.set_tile(p, "spent_seam")
 
 
 ## Keep the run so far: the game, the probe and the stage in `work`, and the rows so far in `out`/seed_<m>.json.
