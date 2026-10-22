@@ -284,7 +284,8 @@ func test_a_held_back_workshop_says_why() -> void:
 
 func test_a_machine_short_of_an_input_does_not_blame_power() -> void:
 	var s := _town(10)
-	s.tech_tree.researched["grindstone"] = true
+	for id in ["grindstone", "boiler"]:
+		s.tech_tree.researched[id] = true
 	s.economy.inv["grain"] = 0
 	var spot := Vector2i(-1, -1)
 	for dy in range(-5, 6):
@@ -295,10 +296,18 @@ func test_a_machine_short_of_an_input_does_not_blame_power() -> void:
 	t.check(spot.x >= 0, "the grindstone stands")
 	_run(s, 20.0)
 	var mill: Dictionary = s.town.buildings[s.town.building_at[spot]]
-	t.check(mill["worker"] >= 0 and not s.town.is_powered(spot), "it has a worker and no power")
 	t.check(
-		not mill["status"].begins_with("No power"),
-		"no grain: it says what it needs, not No power (%s)" % mill["status"]
+		mill["status"].begins_with("No power"), "with no Boiler near, a dark mill says No power (%s)" % mill["status"]
+	)
+	var boiler := Vector2i(-1, -1)
+	for dy in range(-3, 4):
+		for dx in range(-3, 4):
+			if boiler.x < 0 and s.place("boiler", spot + Vector2i(dx, dy)):
+				boiler = spot + Vector2i(dx, dy)
+	t.check(boiler.x >= 0, "a Boiler stands beside it")
+	_run(s, 2.0)
+	t.check(
+		not mill["status"].begins_with("No power"), "beside a banked Boiler it says what it needs (%s)" % mill["status"]
 	)
 
 
