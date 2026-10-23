@@ -224,7 +224,7 @@ const TECH_BLURBS := {
 	"livewire": "The era ends, and the lamps burn without a flame.",
 	"power_poles": "Poles carry power past a Boiler's reach and open Wire.",
 	"order_board": "A Board of three standing orders: Pause a workshop, Bring a good first.",
-	"tide_watch": "Draws the Bloom's front on the map, says how fast it moves and shows how to lay Firebreaks.",
+	"tide_watch": "Draws the Bloom's front on the map, says how fast it moves and unlocks Firebreaks.",
 	"generator": "A coal-fired Generator gives a whole net 8 units.",
 	"arc_lamps": "A lamp that needs power and keeps the tide out of its light.",
 	"foremen": "The Board holds three more orders.",

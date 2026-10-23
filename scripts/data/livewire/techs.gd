@@ -56,7 +56,7 @@ const TIDE_WATCH := {
 	"lane": "lore",
 	"tier": 0,
 	"slot": 1,
-	"unlock": "The Bloom's front on the map",
+	"unlock": "The Bloom's front on the map, and the Firebreak",
 	"icon": "wanderer",
 	"after": "livewire_begun",
 	"requires": ["bloom_sampling"],
