@@ -43,6 +43,7 @@ const BOILER_LIT := "Burning · %d s of heat left · %d in store"
 const BOILER_BANKED := "Banked: no machine within reach wants power · %d in store"
 const BOILER_COLD := "Cold: no %s. Haulers bring it from the stockpile"  # the fuel's name
 const FUEL_ROW := "Burns 1 %s every %d s while a machine wants power · holds up to %d"  # name, seconds, stock
+const FUEL_ROW_EITHER := "Burns 1 Coal or Charcoal every %d s while a machine wants power (a Charcoal lasts half as long) · holds up to %d"
 const LAMP_ROW := "Burns 1 Shard every %d s and lights %d tiles · holds up to %d"
 const LAMP_LIT := "Lit · %d s of light left · %d in store"
 const LAMP_DARK := "Dark: no Shard. Haulers bring one from the stockpile"

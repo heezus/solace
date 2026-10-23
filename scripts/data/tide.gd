@@ -59,7 +59,7 @@ const TIDE_BUILD_ERROR := "The Bloom is here: burn it clear first"
 const TIDE_STAYS := "The Bloom stays · a Scorcher can burn it clear"
 const OVERGROWN_STATUS := "Overgrown by the Bloom: it will be lost in %s unless the ground is burnt clear or held"  # a duration
 const OVERGROWN_HELD := "Overgrown by the Bloom, but held: it stays dead until the ground is burnt clear"
-const OVERGROWN_ALERT := "Overgrown"
+const OVERGROWN_ALERT := "Overgrown: the Bloom stands on it"
 const OVERGROWN_LOST_LINE := "The Bloom took the %s"  # a building's name
 const TIDE_REACHES_LINE := "The Bloom reaches the %s in about %s"  # a building's name, a duration
 const TIDE_REACHES_NOTE := "Tide Watch: the Bloom reaches this in about %s"  # a duration
@@ -67,10 +67,14 @@ const TIDE_FRONT_NOTE := "Tide Watch: the Bloom's front lies %d tiles from the H
 const TIDE_PACE_NOTE := "The Bloom moves faster while the town draws power: %d units now, a tile every %d s"  # units, seconds
 const TIDE_PACE_IDLE := "The Bloom moves slowly while the town draws no power: a tile every %d s"  # seconds
 const SCORCHER_NO_POWER := "No power: stand it within 2 tiles of a Power Pole whose net gives power"
-const SCORCHER_NOTHING := "Nothing to burn: no Bloom ground within 4 tiles"
-const SCORCHER_BURNING := "Burning Bloom ground clear: %d tiles done, %d Coal in store"  # tiles done, coal stored
-const SCORCHER_COLD := "Out of Coal: haulers bring it more"
-const SCORCHER_ROW := "Burns 1 Coal for every 4 tiles of Bloom ground it clears within %d tiles, one every %d seconds"  # reach, seconds
+const SCORCHER_NOTHING := "Nothing in reach yet: the front is %d tiles away"  # tiles to the nearest Bloom ground
+const SCORCHER_NOTHING_YET := "Nothing in reach yet: no Bloom ground on the map"
+const SCORCHER_BURNING := "Burning Bloom ground clear: %d tiles done, %d %s in store"  # tiles done, stored, the fuel's name
+const SCORCHER_COLD := "Out of %s: haulers bring it more"  # the fuel's name
+const SCORCHER_ROW := (
+	"Burns the Bloom ground within %d tiles, one every %d seconds: 1 Coal clears 4 tiles, 1 Charcoal 2."
+	+ " It waits until the Bloom is in reach, and a Firebreak slows the front."
+)  # reach, seconds
 const ARC_LIT := "Lit: the Bloom does not enter its light, %d tiles round"  # tiles
 const ARC_DARK := "Dark: it needs power from a net, so the Bloom may pass"
 const ARC_ROW := "Lights %d tiles round it while it has power"  # tiles

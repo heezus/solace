@@ -32,6 +32,8 @@ func run(runner, helpers) -> void:
 	test_buildings_are_overgrown_then_lost()
 	test_an_arc_lamp_holds_it_off()
 	test_a_scorcher_burns_it_clear()
+	test_engines_and_scorchers_take_coal_or_charcoal()
+	test_the_scorcher_card_explains_itself()
 	test_tide_watch_says_when()
 	test_living_ground_and_powered_mines()
 	test_the_tide_saves_and_loads()
@@ -417,7 +419,11 @@ func test_a_scorcher_burns_it_clear() -> void:
 	t.check(s.tide.grown.has(far), "the tile out of reach stays")
 	t.check(scorcher["inbuf"]["coal"] == 2, "for 1 Coal")
 	t.check(
-		s.tide.scorch_target(scorcher).x < 0 and scorcher["status"] == Data.SCORCHER_NOTHING, "and then nothing to burn"
+		(
+			s.tide.scorch_target(scorcher).x < 0
+			and scorcher["status"] == Data.SCORCHER_NOTHING % ceili(Vector2(far).distance_to(Vector2(scorcher["pos"])))
+		),
+		"and then nothing in reach, and says how far the front is: %s" % scorcher["status"]
 	)
 	# the tide never takes burnt ground back
 	s.tide.front[q] = s.tide.time
@@ -444,6 +450,83 @@ func test_a_scorcher_burns_it_clear() -> void:
 
 
 # --- Tide Watch ----------------------------------------------------------------
+
+
+## A Generator, Boiler or Scorcher burns Coal or Charcoal, one unit a burn; a Charcoal lasts half as long, haulers bring the fuel the
+## building burns, and a building with neither says "Coal or Charcoal" (director's Step 4 follow-up).
+func test_engines_and_scorchers_take_coal_or_charcoal() -> void:
+	var s := quiet()
+	var c: Vector2i = base.meadow(s)
+	put(s, "power_pole", c)
+	var gen := put(s, "generator", c + Vector2i(0, 2))
+	put(s, "arc_lamp", c + Vector2i(1, 0))
+	s.livewire.tick(s, 0.0)
+	t.check(gen["fuel"] == "auto" and gen["fuel_now"] == "coal", "it starts on Auto, burning Coal")
+	s.economy.inv["coal"] = 0
+	s.economy.inv["charcoal"] = 10
+	gen["inbuf"] = {"charcoal": 2}
+	tick_for(s, 1.0)
+	t.check(gen["fuel_now"] == "charcoal" and gen["burn"] > 0.0, "with no Coal it burns Charcoal")
+	t.check(gen["burn"] <= 12.5 and gen["burn"] > 10.0, "a Charcoal lasts half of 25 s (%.1f s left)" % gen["burn"])
+	t.check(gen["inbuf"].get("charcoal", 0) == 1, "one unit used")
+	t.check(s.economy.burnt_by["generator"].get("charcoal", 0) == 1, "the baseline counts it")
+	t.check("Burning Charcoal: twice the fuel (Coal is low)" in gen["status"], "the status says so: %s" % gen["status"])
+	t.check(Buildings.recipe_in(gen) == {"charcoal": 1}, "haulers bring Charcoal: %s" % Buildings.recipe_in(gen))
+	gen["burn"] = 0.0
+	gen["inbuf"] = {}
+	s.economy.inv["charcoal"] = 0
+	tick_for(s, 1.0)
+	t.check(
+		gen["status"].begins_with("Cold: no Coal or Charcoal"), "with neither it says what it needs: %s" % gen["status"]
+	)
+	gen["fuel"] = "coal"
+	s.economy.inv["charcoal"] = 10
+	tick_for(s, 1.0)
+	t.check(gen["status"].begins_with("Cold: no Coal."), "set to Coal it waits for Coal: %s" % gen["status"])
+	# a Scorcher: 1 Coal clears 4 tiles, 1 Charcoal 2
+	for fuel in ["coal", "charcoal"]:
+		var f := quiet()
+		var fc: Vector2i = base.meadow(f)
+		powered(f, fc)
+		var sc := put(f, "scorcher", fc + Vector2i(1, 0))
+		sc["fuel"] = fuel
+		sc["fuel_now"] = fuel
+		sc["inbuf"] = {fuel: 1}
+		for i in 6:
+			var q := fc + Vector2i(2 + i % 3, 2 + i / 3)
+			f.tide.grown[q] = true
+			f.world.set_tile(q, Data.TILE_BLOOM_TIDE)
+		f.tide.rev += 1
+		tick_for(f, 130.0)
+		var cleared := 6 - f.tide.grown.size()
+		t.check(
+			cleared == (4 if fuel == "coal" else 2),
+			"1 %s clears %d tiles (%d)" % [fuel, 4 if fuel == "coal" else 2, cleared]
+		)
+		t.check(sc["alert"].begins_with("Needs"), "then it asks for more: %s" % sc["alert"])
+
+
+## The Scorcher's card says what it burns and when it waits, and an overgrown building's alert says what it means.
+func test_the_scorcher_card_explains_itself() -> void:
+	var s := quiet()
+	var c: Vector2i = base.meadow(s)
+	powered(s, c)
+	var sc := put(s, "scorcher", c + Vector2i(1, 0))
+	sc["inbuf"] = {"coal": 2}
+	tick_for(s, 1.0)
+	t.check(sc["status"] == Data.SCORCHER_NOTHING_YET, "with no Bloom on the map: %s" % sc["status"])
+	s.tide.grown[c + Vector2i(1, 9)] = true
+	tick_for(s, 1.0)
+	t.check(
+		sc["status"] == "Nothing in reach yet: the front is 9 tiles away",
+		"it says how far the front is: %s" % sc["status"]
+	)
+	var row := BuildingPanel.recipe_text(s, sc)
+	t.check(
+		"1 Coal clears 4 tiles, 1 Charcoal 2" in row and "Firebreak slows the front" in row,
+		"the card says what it burns: %s" % row
+	)
+	t.check("Overgrown" in Data.OVERGROWN_ALERT and "Bloom" in Data.OVERGROWN_ALERT, "'Overgrown' says what it means")
 
 
 func test_tide_watch_says_when() -> void:

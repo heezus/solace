@@ -6,6 +6,7 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 const Buildings = preload("res://scripts/buildings.gd")
+const Fuel = preload("res://scripts/fuel.gd")
 const Power = preload("res://scripts/power.gd")
 
 # --- The fed buildings ---------------------------------------------------------------------------------------------
@@ -30,13 +31,24 @@ static func fuel_of(def: Dictionary) -> String:
 	return def["in"].keys()[0]
 
 
-## Take one of the fuel from the building's store. False when it has none.
+## The item fed building `b` burns now: Coal or Charcoal for a Boiler, Generator or Scorcher (scripts/fuel.gd), else its `in`.
+static func burning(b: Dictionary, def: Dictionary) -> String:
+	return b["fuel_now"] if def.get("fuel", false) else fuel_of(def)
+
+
+## Seconds one unit of what `b` burns lasts: the building's `burn`, halved on Charcoal.
+static func burn_for(b: Dictionary, def: Dictionary) -> float:
+	return Fuel.burn_seconds(b) if def.get("fuel", false) else float(def["burn"])
+
+
+## Take one of the fuel from the building's store, and count it as burnt for the baseline. False when it has none.
 static func _take(s, b: Dictionary, def: Dictionary) -> bool:
-	var id := fuel_of(def)
+	var id := burning(b, def)
 	if b["inbuf"].get(id, 0) < 1:
 		return false
 	b["inbuf"][id] -= 1
 	s.economy.note(id, -1, b["type"])
+	s.economy.burned(b["type"], id)
 	return true
 
 
@@ -44,15 +56,18 @@ static func _take(s, b: Dictionary, def: Dictionary) -> bool:
 ## burns one fuel for def["burn"] seconds; lit, it burns down whether or not the machine is still working. With no fuel it stays
 ## cold and says so. A Generator is the same, and reaches no tiles of its own: it feeds a net.
 static func _tick_boiler(s, b: Dictionary, def: Dictionary, delta: float) -> void:
-	var fuel: String = Data.ITEMS[fuel_of(def)]["name"]
+	var id := burning(b, def)
+	var fuel: String = Fuel.name_lacking(s.economy, b) if def.get("fuel", false) else Data.ITEMS[id]["name"]
 	b["burn"] = maxf(b["burn"] - delta, 0.0)
 	var wanted := machines_want(s, b) or Power.wants(s, b)
 	if b["burn"] <= 0.0 and wanted and _take(s, b, def):
-		b["burn"] = def["burn"]
+		b["burn"] = burn_for(b, def)
 		Power.lit(s, b)
-	var stored: int = b["inbuf"].get(fuel_of(def), 0)
+	var stored: int = b["inbuf"].get(id, 0)
 	if b["burn"] > 0.0:
 		b["status"] = Data.BOILER_LIT % [ceili(b["burn"]), stored]
+		if Fuel.slow(b) > 1.0:
+			b["status"] += " · " + Fuel.status(b)
 	elif wanted:
 		b["status"] = Data.BOILER_COLD % fuel
 		b["alert"] = "Needs " + fuel

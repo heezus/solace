@@ -16,6 +16,7 @@ signal said(message: String)
 
 const Data = preload("res://scripts/data.gd")
 const Codec = preload("res://scripts/save_codec.gd")
+const Fuel = preload("res://scripts/fuel.gd")
 
 const SIDES := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 const PATCH_TILES := ["bloom_ground", "bloom_spore", "bloom_root", "bloom_sap"]
@@ -292,34 +293,47 @@ func scorch_target(b: Dictionary) -> Vector2i:
 
 ## What a Scorcher does this tick: with power, Coal and Bloom ground in reach it burns, and each Data.SCORCH_SECONDS clears a tile.
 ## `b["burn"]` is seconds left on the Coal it was given, `b["progress"]` seconds spent on the tile in hand.
-func tick_scorcher(s, b: Dictionary, def: Dictionary, delta: float) -> void:
-	var fuel: int = b["inbuf"].get("coal", 0)
+func tick_scorcher(s, b: Dictionary, _def: Dictionary, delta: float) -> void:
+	var id: String = b["fuel_now"]
+	var fuel: int = b["inbuf"].get(id, 0)
 	if not s.town.is_powered(b["pos"]):
 		b["status"] = Data.SCORCHER_NO_POWER
 		b["alert"] = "No power"
 		return
 	if scorch_target(b).x < 0:
-		b["status"] = Data.SCORCHER_NOTHING
+		b["status"] = nothing_in_reach(b)
 		b["progress"] = 0.0
 		return
 	var speed: float = s.livewire.speed_of(b)
 	if b["burn"] <= 0.0:
 		if fuel < 1:
-			b["status"] = Data.SCORCHER_COLD
-			b["alert"] = "Needs Coal"
+			var lacking: String = Fuel.name_lacking(s.economy, b)
+			b["status"] = Data.SCORCHER_COLD % lacking
+			b["alert"] = "Needs " + lacking
 			return
-		b["inbuf"]["coal"] = fuel - 1
-		s.economy.note("coal", -1, b["type"])
-		b["burn"] = float(def["burn"])
+		b["inbuf"][id] = fuel - 1
+		s.economy.note(id, -1, b["type"])
+		s.economy.burned(b["type"], id)
+		b["burn"] = Fuel.burn_seconds(b)
 	b["burn"] = maxf(b["burn"] - delta * speed, 0.0)
 	b["progress"] += delta * speed
-	b["status"] = Data.SCORCHER_BURNING % [lost_tiles(b), b["inbuf"].get("coal", 0)]
+	b["status"] = Data.SCORCHER_BURNING % [lost_tiles(b), b["inbuf"].get(id, 0), Data.ITEMS[id]["name"]]
 	if b["progress"] >= Data.SCORCH_SECONDS:
 		b["progress"] = 0.0
 		var p := scorch_target(b)
 		if p.x >= 0:
 			clear(s, p)
 			b["trips"] = b["trips"] + 1  # the tiles it has cleared: shown on its card
+
+
+## "Nothing in reach yet: the front is N tiles away": how far the nearest Bloom ground lies from Scorcher `b`.
+func nothing_in_reach(b: Dictionary) -> String:
+	var best := -1
+	for p in grown:
+		var d := ceili(Vector2(p).distance_to(Vector2(b["pos"])))
+		if best < 0 or d < best:
+			best = d
+	return Data.SCORCHER_NOTHING % best if best >= 0 else Data.SCORCHER_NOTHING_YET
 
 
 func lost_tiles(b: Dictionary) -> int:
@@ -480,7 +494,7 @@ func draws(b: Dictionary) -> bool:
 	if hit.has(b["pos"]):
 		return false
 	if kind == "scorcher":
-		return scorch_target(b).x >= 0 and (b["burn"] > 0.0 or b["inbuf"].get("coal", 0) > 0)
+		return scorch_target(b).x >= 0 and (b["burn"] > 0.0 or b["inbuf"].get(b["fuel_now"], 0) > 0)
 	return true
 
 

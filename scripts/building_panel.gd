@@ -328,6 +328,8 @@ static func _fed_text(def: Dictionary) -> String:
 	if def["kind"] == "lamp":
 		return Data.LAMP_ROW % [int(def["burn"]), def["light"], def["stock"]]
 	if def["kind"] == "power" and def.get("fed", false):
+		if def.get("fuel", false):
+			return Data.FUEL_ROW_EITHER % [int(def["burn"]), def["stock"]]
 		return Data.FUEL_ROW % [Data.ITEMS[Steam.fuel_of(def)]["name"], int(def["burn"]), def["stock"]]
 	if def["kind"] == "shed" and def.get("cart", "hand") == "steam":
 		return Data.SHED_ROW % Data.STEAM_TRIPS

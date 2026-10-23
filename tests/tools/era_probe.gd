@@ -30,6 +30,8 @@ var _acc := 0.0
 var _streak := {}  # building tile -> seconds in a row it has waited for a hauler
 var _fuel := {}  # metal works tile -> seconds in a row it has stood without fuel, the rest of its recipe in hand
 var _made_seen := {}  # Economy.made_on at the last reading
+var _burn_seen := {}  # Economy.burnt_by at the last reading
+var _zero_run := 0.0  # seconds in a row the power has stood at zero with Wood in the stores
 var _starve := {}  # workshop tile -> seconds in a row it has stood starved with its input in stock
 var _spill_of_seen := {}  # Economy.spilled_of at the last reading, by good
 var _spill_seen := 0  # Economy.spilled at the last reading (it is not saved, so a resumed run starts it again from 0)
@@ -45,6 +47,8 @@ func begin(name: String, s) -> void:
 	_starve.clear()
 	_fuel.clear()
 	_made_seen = s.economy.made_on.duplicate(true)
+	_burn_seen = s.economy.burnt_by.duplicate(true)
+	_zero_run = 0.0
 	_spill_seen = s.economy.spilled
 	_spill_of_seen = s.economy.spilled_of.duplicate()
 	_depots_at = 0.0
@@ -108,6 +112,9 @@ func begin(name: String, s) -> void:
 		_row["lost_within_20_of_wake"] = -1
 		_row["firebreak_tiles"] = 0
 		_row["pace_every_min"] = []
+		_row["power_zero_with_wood_s"] = 0.0  # seconds a net asked for power and none was given, with Wood in the stores
+		_row["power_zero_with_wood_longest_s"] = 0.0
+		_row["fuel_burned"] = {}  # building type -> {fuel: units}
 
 
 ## One step of a bot: sample the logistics once a game second, and open Livewire when it begins.
@@ -339,6 +346,7 @@ func _tide(s) -> void:
 				_row["lost_before_first_scorcher"] = s.tide.lost
 				break
 	_row["firebreak_tiles"] = maxi(_row["firebreak_tiles"], _count(s, "firebreak"))
+	_power(s)
 	if s.tide.begun and t >= _row["pace_every_min"].size() * PACE_EVERY:
 		(
 			_row["pace_every_min"]
@@ -350,6 +358,31 @@ func _tide(s) -> void:
 				}
 			)
 		)
+
+
+## Livewire only, once the tide is awake: the seconds a net asks for power and no engine gives any while the stores hold Wood (the
+## fuel can be made), the longest stretch of it, and the fuel the engines and Scorchers have burnt, by building and kind.
+func _power(s) -> void:
+	if not s.tide.begun:
+		return
+	var zero := false
+	for n in s.livewire.nets:
+		if n["asks"] > 0 and n["given"] <= 0:
+			zero = true
+	if zero and s.economy.inv.get("wood", 0) > 0:
+		_row["power_zero_with_wood_s"] += SAMPLE
+		_zero_run += SAMPLE
+		_row["power_zero_with_wood_longest_s"] = maxf(_row["power_zero_with_wood_longest_s"], _zero_run)
+	else:
+		_zero_run = 0.0
+	for type in s.economy.burnt_by:
+		for fuel in s.economy.burnt_by[type]:
+			var more: int = s.economy.burnt_by[type][fuel] - _burn_seen.get(type, {}).get(fuel, 0)
+			if more > 0:
+				var by: Dictionary = _row["fuel_burned"].get(type, {})
+				by[fuel] = by.get(fuel, 0) + more
+				_row["fuel_burned"][type] = by
+	_burn_seen = s.economy.burnt_by.duplicate(true)
 
 
 ## The probe as plain data (and back), so a long run can be kept and picked up: the rows so far and the era in progress.
@@ -367,6 +400,8 @@ func from_dict(d: Dictionary) -> void:
 	_starve.clear()
 	_fuel.clear()
 	_made_seen = {}  # Economy.made_on is not saved either, so a resumed run counts from 0
+	_burn_seen = {}
+	_zero_run = 0.0
 	_spill_seen = 0  # a reloaded run starts Economy.spilled again from 0
 	_spill_of_seen = {}
 	_depots_at = _row["depots_every_5_min"].size() * DEPOTS_EVERY if _row.has("depots_every_5_min") else 0.0

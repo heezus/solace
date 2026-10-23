@@ -27,6 +27,10 @@ const WIRE_MILLS := 3
 const GENERATORS := 2
 const WIRE_PER_MILL := 60.0  # one more Wire Mill for every this much Wire still short
 const COAL_FOR_ENGINES := 200  # coal the Generators and the Scorcher burn, kept in the stores beyond the techs' needs
+const CHARCOAL_FOR_ENGINES := 300  # Charcoal the engines are asked for once Coal runs low (a Charcoal lasts half as long as a Coal)
+const SCORCHER_AHEAD := 3  # tiles ahead of the front's nearest ground the Scorcher stands (its reach is 4)
+const SCORCHER_WAIT := 300.0  # seconds a Scorcher may stand with nothing in reach before the bot moves it
+const SCORCHER_MOVES := 3  # times the bot moves a Scorcher in all
 const FIREBREAK_RING := 3  # tiles from a site (the southern mine, a far Generator) to its ring of Firebreaks
 const FIREBREAK_CAP := 60  # Firebreaks the bot lays in all
 const POLE_STUCK := 12  # decisions without a new pole before the bot gives the southern net up
@@ -46,6 +50,8 @@ var stop_when_watched := false  # stop playing once every watched checkpoint has
 var answer_tide := true  # false: the variant that lights a Generator and never answers the tide (no Lamp, Scorcher or Firebreak)
 var skyward_at := -1.0
 var _stuck_poles := 0
+var _scorcher_idle := {}  # a Scorcher tile -> the clock when it was first seen with nothing in reach
+var _scorcher_moves := 0
 var _livewire_goals := {}
 
 
@@ -128,6 +134,8 @@ func _goal_wants(want: Dictionary) -> void:
 	for type in _livewire_wants():
 		_want(want, s.town.price(type), 1)
 	want["coal"] = want.get("coal", 0) + COAL_FOR_ENGINES
+	if _inv("coal") < Data.FUEL_RESERVE * 2:  # Coal short: engines and Scorchers take Charcoal, so the bot makes some for them
+		want["charcoal"] = want.get("charcoal", 0) + CHARCOAL_FOR_ENGINES
 
 
 func _gate_need(id: String) -> int:
@@ -199,7 +207,7 @@ func _build_livewire() -> bool:
 		return true
 	if not answer_tide:
 		return false
-	return _place_south("arc_lamp") or _place_south("scorcher") or _lay_firebreaks()
+	return _place_south("arc_lamp") or _move_scorcher() or _place_scorcher() or _lay_firebreaks()
 
 
 ## The Order Board beside the Hearth; a full town gives up a Gatherer's Hut for it.
@@ -324,6 +332,46 @@ func _place_south(type: String) -> bool:
 			return -INF
 		return -Vector2(p).distance_to(Vector2(target))
 	return _place_best(type, score)
+
+
+## A Scorcher on the net where the front will come into its reach: SCORCHER_AHEAD tiles from the Bloom's nearest ground, on the
+## side of the Hearth (or of the Generator) the front is coming from. Without any front yet it stands by the southern net as before.
+func _place_scorcher() -> bool:
+	if not s.town.unlocked("scorcher") or _count("scorcher") >= _livewire_target("scorcher"):
+		return false
+	var site := _south_target()
+	var from := _front_near(site)
+	if from.x < 0:
+		return _place_south("scorcher")
+	var score := func(p):
+		if not _on_net(p):
+			return -INF
+		var ahead := Vector2(p).distance_to(Vector2(from))
+		return -absf(ahead - SCORCHER_AHEAD) - 0.05 * Vector2(p).distance_to(Vector2(site))
+	return _place_best("scorcher", score)
+
+
+## Move a Scorcher that has had nothing in reach for SCORCHER_WAIT seconds: take it down (its price comes back in part) so
+## `_place_scorcher` puts it where the front is now. At most SCORCHER_MOVES times, and only once Bloom ground is on the map.
+func _move_scorcher() -> bool:
+	if _scorcher_moves >= SCORCHER_MOVES or s.tide.grown.is_empty():
+		return false
+	for b in s.town.buildings:
+		if b["type"] != "scorcher":
+			continue
+		var at: Vector2i = b["pos"]
+		if s.tide.scorch_target(b).x >= 0 or b["trips"] > 0:
+			_scorcher_idle.erase(at)
+			continue
+		if not _scorcher_idle.has(at):
+			_scorcher_idle[at] = clock
+		if clock - _scorcher_idle[at] >= SCORCHER_WAIT:
+			_scorcher_idle.erase(at)
+			_scorcher_moves += 1
+			s.demolish(at)
+			lines.append("%5.0f s    moved the Scorcher at %s (nothing in reach)" % [clock, at])
+			return true
+	return false
 
 
 ## A ring of Firebreaks round the southern mine and any Generator well out from the Hearth, the side facing the front first, once
