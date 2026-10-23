@@ -1,0 +1,7 @@
+{
+  "prompt": "Use case: precise-object-edit. Edit target the accepted transparent Solace bloom_tide grass-ground decal. Make its former-WOOD ground variant. Preserve the original sharply isolated botanical miniature style, magenta-purple root strands, sickly yellow-green shoots, loose open composition, overhead camera, upper-left light and genuine transparent alpha in ALL gaps. Change only a few ordinary grass/moss clumps into small brown fallen leaves and add ONE thin little dead twig among the roots. Keep plenty of open clear gaps and young sparse growth, no standing tree or stump. Absolutely NO blur, glow, shadow wash, fog, ground sheet or painted background anywhere. Original source transparency is essential, do not fill its gaps. Keep full patch in frame with transparent margins.",
+  "source": "/Users/jhowell/.codex/generated_images/01a16543-0e79-78f3-b449-05c7917a41af/exec-e97035fa-3199-45ce-b743-5ed3b0f430a1.png",
+  "mode": "built-in imagegen",
+  "reference": "art/rendered/bloom_tide.png (accepted transparent edit target)",
+  "rejected_attempts": "Earlier wood-only source and extraction retained blurred halos and were not delivered."
+}

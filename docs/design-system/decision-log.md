@@ -1036,3 +1036,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 ## 2026-10-22: Wire, Steel Tools and Shard icons (PR #137)
 - Codex kept the approved miniature material/light treatment in three exact-stem transparent item icons: copper spool, cooler sharper axe/pick, and one pale-cyan shard.
 - Native 20 px checks on charcoal green and ivory, beside existing Iron Tools, guide readability; callers, top-bar layout and all gameplay remain unchanged.
+
+## 2026-10-22: Young Bloom tide ground (PR #138)
+- Codex retained the approved magenta/sickly-green Bloom family in thin open creeping ground art, with grass, former-Field and former-wood variants.
+- Transparent gaps expose the existing terrain; native 48 px comparisons check sparse botanical detail and irregular edges. Mature patch placeholders, overlays, tile rules and simulation remain unchanged.

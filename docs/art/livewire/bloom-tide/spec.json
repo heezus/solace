@@ -1,0 +1,65 @@
+[
+  {
+    "id": "bloom_tide",
+    "path": "res://art/rendered/bloom_tide.png",
+    "source_size": [
+      1312,
+      1199
+    ],
+    "region": [
+      0,
+      0,
+      1312,
+      1199
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 48,
+    "sha256": "db702dc006a0c22045c04cec3d8d3aabdcd5bf75c71a7221da9ef2557330bd1f",
+    "alpha_over_8_fraction": 0.275
+  },
+  {
+    "id": "bloom_tide_field",
+    "path": "res://art/rendered/bloom_tide_field.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "region": [
+      0,
+      0,
+      1254,
+      1254
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 48,
+    "sha256": "f8abaab684fa8f97479fc9926cee352ed13fcb46bbd3b3c7e43539de5c87adc6",
+    "alpha_over_8_fraction": 0.343
+  },
+  {
+    "id": "bloom_tide_wood",
+    "path": "res://art/rendered/bloom_tide_wood.png",
+    "source_size": [
+      1312,
+      1199
+    ],
+    "region": [
+      0,
+      0,
+      1312,
+      1199
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 48,
+    "sha256": "fddea773ee36bb19e763710734dce441f934990f118676923f576114fced562a",
+    "alpha_over_8_fraction": 0.314
+  }
+]
