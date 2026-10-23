@@ -1040,3 +1040,8 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 ## 2026-10-22: Young Bloom tide ground (PR #138)
 - Codex retained the approved magenta/sickly-green Bloom family in thin open creeping ground art, with grass, former-Field and former-wood variants.
 - Transparent gaps expose the existing terrain; native 48 px comparisons check sparse botanical detail and irregular edges. Mature patch placeholders, overlays, tile rules and simulation remain unchanged.
+
+## 2026-10-22: Ironfall and Livewire research illustrations (PR #139)
+- Codex followed the existing shared map/item/research art design: eighteen relevant painted sources plus twelve dedicated concept symbols cover all 30 techs, avoiding parallel depictions of the same buildings.
+- Native 24/34 px review led to head crops for pole/lamp icons, a short rail detail crop and a dedicated bold Living Ground cutting; full per-tech regions and 24/34/48/96 px comparisons document the result.
+- Each tech receives a proposed independent resolver key for Claude's wiring, preserving existing shared callers. Skyward uses only a wire/star research emblem; the mast, Skyreach, UI and gameplay remain held.
