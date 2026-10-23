@@ -50,8 +50,8 @@ func _init() -> void:
 				out = a.substr(4)
 			if a.begins_with("from="):
 				from = a.substr(5)
-		if "notide" in args:
-			_variant(int(args[0]), minutes, out, from)
+		if from != "":
+			_from_livewire_start(int(args[0]), minutes, out, from, "notide" not in args)
 			return
 		_baseline(int(args[0]), minutes, out)
 		return
@@ -268,9 +268,10 @@ func _keep_livewire_start(out: String, m: int, game: Sim) -> void:
 		_write_file(path, RunSave.to_json(RunSave.dump(game)))
 
 
-## The variant that lights a Generator and never answers the tide (no Arc Lamp, Scorcher or Firebreak): a copy of the game as
-## Livewire began (`from`, kept by a baseline run) played for `minutes`, one row to `out`/variant_seed_<m>.json. Never a balance run.
-func _variant(m: int, minutes: float, out: String, from: String) -> void:
+## Livewire alone, from a copy of the game as it began (`from`, kept by a baseline run), played for `minutes`; one row to
+## `out`/livewire_seed_<m>.json. With `answer` false (`notide`) it is the variant that lights a Generator and never answers the
+## tide (no Arc Lamp, Scorcher or Firebreak), to `out`/variant_seed_<m>.json: a pressure check, never a balance run.
+func _from_livewire_start(m: int, minutes: float, out: String, from: String, answer: bool) -> void:
 	var game := Sim.new()
 	var kept := FileAccess.get_file_as_string(from)
 	if kept == "" or not RunSave.restore(game, RunSave.from_json(kept)):
@@ -281,16 +282,26 @@ func _variant(m: int, minutes: float, out: String, from: String) -> void:
 	probe.begin("livewire", game)
 	var wire := AutoplayLivewire.new()
 	wire.probe = func(s): probe.observe(s)
-	wire.answer_tide = false
+	wire.answer_tide = answer
 	wire.play_livewire(game, minutes * 60.0)
 	var row: Dictionary = probe.finish(game)
+	row["ended"] = game.tech_tree.researched.has("skyward")  # as in a baseline run: the era ended when Skyward was learned
 	if out != "":
 		DirAccess.make_dir_recursive_absolute(out)
-		_write_file("%s/variant_seed_%d.json" % [out, m], JSON.stringify(row, "\t"))
+		_write_file("%s/%s_seed_%d.json" % [out, "livewire" if answer else "variant", m], JSON.stringify(row, "\t"))
 	print(
 		(
-			"map %d variant (no answer to the tide): woke at %.1f min, lost %d, within 15 min of waking %d, %d Firebreaks"
-			% [m, row["tide_woke_min"], row["lost_total"], row["lost_within_15_of_wake"], row["firebreak_tiles"]]
+			"map %d %s: woke at %.1f min, lost %d, within 15 min of waking %d, %d Firebreaks, goals %d of %d"
+			% [
+				m,
+				"Livewire alone" if answer else "variant (no answer to the tide)",
+				row["tide_woke_min"],
+				row["lost_total"],
+				row["lost_within_15_of_wake"],
+				row["firebreak_tiles"],
+				row["goals_done"],
+				row["goals_total"]
+			]
 		)
 	)
 	quit(0)
