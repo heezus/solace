@@ -161,22 +161,6 @@ const SCORCHER := {
 	"cost": {"steel": 24, "wire": 30, "brick": 80},
 	"desc": "A burner that needs power and coal, and clears Bloom ground within 4 tiles, one tile in 30 seconds.",
 }
-const FIREBREAKS := {
-	"abbr": "Fb",
-	"color": Color("90be6d"),
-	"name": "Firebreaks",
-	"era": 5,
-	"stage": 2,
-	"lane": "land",
-	"tier": 1,
-	"slot": 0,
-	"unlock": "Firebreak strips",
-	"icon": "field",
-	"side": true,
-	"requires": ["tide_watch"],
-	"cost": {"iron": 20, "wood": 60, "charcoal": 45},
-	"desc": "Cleared strips of ground that burn and never grow. The tide goes round them or waits.",
-}
 const SHARD_DYNAMO := {
 	"abbr": "Sd",
 	"color": Color("9fe0f0"),

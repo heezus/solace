@@ -378,19 +378,7 @@ static func _livewire_tide() -> Sim:
 
 static func _livewire_tide_on(s: Sim) -> Sim:
 	s.tide.begin(s)  # the hum has been heard: the scripted start wakes the tide at once, whatever the Generator does
-	_learn(
-		s,
-		[
-			"power_poles",
-			"order_board",
-			"generator",
-			"tide_watch",
-			"arc_lamps",
-			"scorcher",
-			"firebreaks",
-			"living_ground"
-		]
-	)
+	_learn(s, ["power_poles", "order_board", "generator", "tide_watch", "arc_lamps", "scorcher", "living_ground"])
 	for id in ["wire", "coal", "steel", "copper", "brick"]:
 		s.economy.add(id, 200)
 	_lay_net(s)

@@ -858,7 +858,6 @@ const GOALS_WIRES := DataLivewire.GOALS_WIRES
 const GOALS_ERA5 := DataLivewire.GOALS_ERA5
 
 # --- Era 5, Livewire, stage 2: the tide: data/tide.gd ---
-const TIDE_WAKERS := DataTide.TIDE_WAKERS
 const TIDE_IDLE_SECONDS := DataTide.TIDE_IDLE_SECONDS
 const TIDE_POWER_SCALE := DataTide.TIDE_POWER_SCALE
 const TIDE_MIN_SECONDS := DataTide.TIDE_MIN_SECONDS

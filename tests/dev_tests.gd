@@ -582,7 +582,7 @@ func _expect_stage(id: String, s: Sim) -> void:
 				not s.tide.grown.is_empty() and not s.tide.front.is_empty(), "with ground taken and a front on the map"
 			)
 			t.check(
-				["power_poles", "tide_watch", "arc_lamps", "scorcher", "firebreaks"].all(
+				["power_poles", "tide_watch", "arc_lamps", "scorcher"].all(
 					func(tech): return s.tech_tree.researched.has(tech)
 				),
 				"and the tools learned"

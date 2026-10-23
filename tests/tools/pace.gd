@@ -291,13 +291,13 @@ func _from_livewire_start(m: int, minutes: float, out: String, from: String, ans
 		_write_file("%s/%s_seed_%d.json" % [out, "livewire" if answer else "variant", m], JSON.stringify(row, "\t"))
 	print(
 		(
-			"map %d %s: woke at %.1f min, lost %d, within 15 min of waking %d, %d Firebreaks, goals %d of %d"
+			"map %d %s: woke at %.1f min, lost %d, within 20 min of waking %d, %d Firebreaks, goals %d of %d"
 			% [
 				m,
 				"Livewire alone" if answer else "variant (no answer to the tide)",
 				row["tide_woke_min"],
 				row["lost_total"],
-				row["lost_within_15_of_wake"],
+				row["lost_within_20_of_wake"],
 				row["firebreak_tiles"],
 				row["goals_done"],
 				row["goals_total"]

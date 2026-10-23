@@ -5,18 +5,16 @@ extends RefCounted
 
 # --- The creep ---
 ## Seconds a front takes to cross one open tile follows the power the town draws: TIDE_IDLE_SECONDS / (1 + units / TIDE_POWER_SCALE),
-## never under TIDE_MIN_SECONDS (0 units 70 s, 16 units 35 s, 32 units about 23 s). A road, rock or river tile takes TIDE_SLOW_ROAD
+## never under TIDE_MIN_SECONDS (0 units 70 s, 4 units 35 s, 8 units about 23 s). A road, rock or river tile takes TIDE_SLOW_ROAD
 ## times as long, a paved road or rail TIDE_SLOW_RAIL times, a Firebreak TIDE_SLOW_FIREBREAK times, and ground in a burning Shard
 ## Lamp's light TIDE_SLOW_LAMP times. The draw is read every TIDE_ETA_SECONDS.
 const TIDE_IDLE_SECONDS := 70.0
-const TIDE_POWER_SCALE := 16.0
+const TIDE_POWER_SCALE := 4.0
 const TIDE_MIN_SECONDS := 20.0
 const TIDE_SLOW_ROAD := 3.0
 const TIDE_SLOW_RAIL := 6.0
 const TIDE_SLOW_FIREBREAK := 10.0
 const TIDE_SLOW_LAMP := 2.0
-## The tide wakes when one of these burns (the hum carries south).
-const TIDE_WAKERS := ["generator", "shard_dynamo"]
 ## The tide never comes within this many tiles of the Hearth.
 const TIDE_HEARTH_RING := 6.0
 ## A tile the tide may not enter yet (an Arc Lamp's light) is looked at again after this long.

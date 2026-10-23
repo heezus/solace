@@ -1,6 +1,6 @@
 extends RefCounted
 ## Livewire stage 1 (design-system/23-livewire.md): wires and orders. The era's opening and its fifth tab and Goals list, the
-## techs (all fourteen built over three stages), Power Poles and the net, the Generator, Wire and the Wire Mill, the Order Board with its
+## techs (all thirteen built over three stages), Power Poles and the net, the Generator, Wire and the Wire Mill, the Order Board with its
 ## Pause and Bring first verbs, the saves and the panels. Run from tests/run_tests.gd, which owns check() and the helpers.
 
 const CardText = preload("res://scripts/card_text.gd")
@@ -27,7 +27,7 @@ const SkywardTests = preload("res://tests/skyward_tests.gd")
 
 ## The three techs of stage 1, the seven of stage 2 (the tide), and the four of stage 3 (the factories and the gate).
 const STAGE_ONE := ["power_poles", "order_board", "generator"]
-const STAGE_TWO := ["tide_watch", "arc_lamps", "foremen", "powered_mines", "scorcher", "firebreaks", "living_ground"]
+const STAGE_TWO := ["tide_watch", "arc_lamps", "foremen", "powered_mines", "scorcher", "living_ground"]
 const STAGE_THREE := ["factory_floor", "shard_dynamo", "chain_orders", "skyward"]
 
 var t  # the runner, tests/run_tests.gd
@@ -117,7 +117,7 @@ func test_the_data_is_whole() -> void:
 	for id in STAGE_ONE + STAGE_TWO + STAGE_THREE:
 		t.check(Data.TECHS.has(id) and Data.TECH_ORDER.has(id), "%s is on the board" % id)
 		t.check(Data.TECHS[id]["era"] == 5, "%s belongs to era 5" % id)
-	t.check(STAGE_ONE.size() + STAGE_TWO.size() + STAGE_THREE.size() == 14, "fourteen techs in all")
+	t.check(STAGE_ONE.size() + STAGE_TWO.size() + STAGE_THREE.size() == 13, "thirteen techs in all")
 	for id in STAGE_ONE:
 		t.check(int(Data.TECHS[id]["stage"]) == 1 and Rules.tech_enabled(id), "%s is built (stage 1)" % id)
 	for id in STAGE_TWO:
@@ -287,7 +287,7 @@ func test_the_fifth_tab_and_the_tree() -> void:
 	var lay := TechLayout.build(5)
 	t.check(int(lay["overflow"]) == 0, "no line of the tree runs off its board")
 	var rects: Dictionary = lay["rects"]
-	t.check(rects.size() == 14, "all fourteen cards are laid out")
+	t.check(rects.size() == 13, "all thirteen cards are laid out")
 	for a in rects:
 		for b in rects:
 			if a < b:

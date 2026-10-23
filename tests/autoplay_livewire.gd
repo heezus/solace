@@ -15,7 +15,6 @@ const TECH_ORDER := [
 	"generator",
 	"order_board",
 	"tide_watch",
-	"firebreaks",
 	"arc_lamps",
 	"scorcher",
 	"foremen",

@@ -17,7 +17,7 @@ const STEP := 0.1  # game seconds of one bot step (Autoplay.DT)
 const LOST_BY := 15.0 * 60.0  # Livewire: buildings lost by this many seconds into the era
 const DEPOTS_EVERY := 300.0  # game seconds between readings of the haulers at each depot
 const PACE_EVERY := 60.0  # Livewire: game seconds between readings of the power drawn and the tide's pace
-const WAKE_WINDOW := 15.0 * 60.0  # Livewire: buildings lost within this many seconds of the tide waking
+const WAKE_WINDOW := 20.0 * 60.0  # Livewire: buildings lost within this many seconds of the tide waking
 
 ## The era names in order, and the goal list each one is counted from (the checklist the player sees in it).
 const ERAS := ["stone_age", "bronze_dawn", "starfall", "ironfall", "livewire"]
@@ -105,7 +105,7 @@ func begin(name: String, s) -> void:
 		_row["first_scorcher_burn_min"] = -1.0
 		_row["tide_woke_min"] = -1.0
 		_row["lost_before_first_scorcher"] = -1
-		_row["lost_within_15_of_wake"] = -1
+		_row["lost_within_20_of_wake"] = -1
 		_row["firebreak_tiles"] = 0
 		_row["pace_every_min"] = []
 
@@ -330,8 +330,8 @@ func _tide(s) -> void:
 		_row["first_lost_min"] = snappedf(t / 60.0, 0.1)
 	if _row["lost_by_15"] < 0 and t >= LOST_BY:
 		_row["lost_by_15"] = s.tide.lost
-	if _row["lost_within_15_of_wake"] < 0 and s.tide.begun and s.seasons.time - s.tide.woke_at >= WAKE_WINDOW:
-		_row["lost_within_15_of_wake"] = s.tide.lost
+	if _row["lost_within_20_of_wake"] < 0 and s.tide.begun and s.seasons.time - s.tide.woke_at >= WAKE_WINDOW:
+		_row["lost_within_20_of_wake"] = s.tide.lost
 	if _row["first_scorcher_burn_min"] < 0.0:
 		for b in s.town.buildings:
 			if b["type"] == "scorcher" and b["burn"] > 0.0:

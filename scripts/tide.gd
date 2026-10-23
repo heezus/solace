@@ -1,8 +1,8 @@
 extends RefCounted
 ## The Tide block (design-system/23-livewire.md, stage 2): the Bloom's creep out of the three south patches. It wakes with the first
-## lit Generator (the hum carries south) and spreads like a flood fill that takes time: a tile joins the Bloom `cost` seconds after
-## a neighbour does (open ground `step_seconds`, which follows the power the town draws; slower over roads, rock, rivers, paved
-## ground, a Firebreak or a burning Shard Lamp's light), never by chance, so a seed always floods the same way.
+## power drawn from any engine (the hum carries south) and spreads like a flood fill that takes time: a tile joins the Bloom `cost`
+## seconds after a neighbour does (open ground `step_seconds`, which follows the power the town draws; slower over roads, rock,
+## rivers, paved ground, a Firebreak or a burning Shard Lamp's light), never by chance, so a seed always floods the same way.
 ## It never enters burnt ground, an Arc Lamp's light or the ring round the Hearth.
 ## Ground it takes becomes Bloom ground (`bloom_tide`, plain ground and trees and fields under it; ore, water and the tiles under a
 ## building or a road keep their own and only wear the Bloom's colour). A building it reaches is overgrown at once and lost after
@@ -43,11 +43,11 @@ var _fires: Array = []  # the burning Scorchers' tiles, this tick
 # --- Each tick -----------------------------------------------------------------------------------------------------
 
 
-## One tick: wake the tide at the first lit Generator, read the power drawn, let tiles join, count overgrown buildings down, keep
+## One tick: wake the tide at the first power drawn, read the power drawn, let tiles join, count overgrown buildings down, keep
 ## Tide Watch's times.
 func tick(s, delta: float) -> void:
 	if not begun:
-		if not s.story.has_event(Data.LIVEWIRE_BEGUN) or not _hum(s):
+		if not s.story.has_event(Data.LIVEWIRE_BEGUN) or units_drawn(s) <= 0:
 			return
 		begin(s)
 	_pace_clock += delta
@@ -88,14 +88,6 @@ func begin(s) -> void:
 			_spread_from(s, Vector2i(i % w, floori(float(i) / w)))
 	rev += 1
 	said.emit(Data.TIDE_BEGAN_LINE)
-
-
-## True when a Generator or Shard Dynamo is burning, standing and not overgrown: the hum that wakes the tide.
-func _hum(s) -> bool:
-	for b in s.town.buildings:
-		if b["type"] in Data.TIDE_WAKERS and b["burn"] > 0.0 and not hit.has(b["pos"]):
-			return true
-	return false
 
 
 ## The power units the machines draw now, summed over every net: what a net gives when it gives less than it is asked.
