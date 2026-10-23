@@ -334,13 +334,16 @@ func _place_south(type: String) -> bool:
 	return _place_best(type, score)
 
 
-## A Scorcher on the net where the front will come into its reach: SCORCHER_AHEAD tiles from the Bloom's nearest ground, on the
-## side of the Hearth (or of the Generator) the front is coming from. Without any front yet it stands by the southern net as before.
+## A Scorcher on the net where the Bloom's ground will come into its reach: SCORCHER_AHEAD tiles from the nearest ground it has made
+## (Arc Lamps hold the front back from their own light, so the open front says too little), else from the nearest front tile. Without
+## either it stands by the southern net as before.
 func _place_scorcher() -> bool:
 	if not s.town.unlocked("scorcher") or _count("scorcher") >= _livewire_target("scorcher"):
 		return false
 	var site := _south_target()
-	var from := _front_near(site)
+	var from := _grown_near(site)
+	if from.x < 0:
+		from = _front_near(site)
 	if from.x < 0:
 		return _place_south("scorcher")
 	var score := func(p):
@@ -410,6 +413,17 @@ func _lay_firebreaks() -> bool:
 
 
 ## The tile of the Bloom's front (or its ground) nearest `site`, (-1, -1) when there is none.
+func _grown_near(site: Vector2i) -> Vector2i:
+	var best := Vector2i(-1, -1)
+	var best_d := INF
+	for p in s.tide.grown:
+		var d := Vector2(p).distance_to(Vector2(site))
+		if d < best_d:
+			best = p
+			best_d = d
+	return best
+
+
 func _front_near(site: Vector2i) -> Vector2i:
 	var best := Vector2i(-1, -1)
 	var best_d := INF
