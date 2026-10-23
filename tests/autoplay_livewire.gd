@@ -50,6 +50,7 @@ var stop_when_watched := false  # stop playing once every watched checkpoint has
 var answer_tide := true  # false: the variant that lights a Generator and never answers the tide (no Lamp, Scorcher or Firebreak)
 var skyward_at := -1.0
 var _stuck_poles := 0
+var _stuck_scorch_poles := 0
 var _scorcher_idle := {}  # a Scorcher tile -> the clock when it was first seen with nothing in reach
 var _scorcher_moves := 0
 var _livewire_goals := {}
@@ -334,24 +335,69 @@ func _place_south(type: String) -> bool:
 	return _place_best(type, score)
 
 
-## A Scorcher on the net where the Bloom's ground will come into its reach: SCORCHER_AHEAD tiles from the nearest ground it has made
-## (Arc Lamps hold the front back from their own light, so the open front says too little), else from the nearest front tile. Without
-## either it stands by the southern net as before.
+## A Scorcher on the net with Bloom ground in its reach now (the most tiles of it, then nearest the southern net). Arc Lamps hold
+## the front 5 tiles from their light, so a crowded net often has no such tile: then a Pole runs toward the nearest ground first. With
+## no ground yet it stands SCORCHER_AHEAD tiles from the front's nearest tile, or by the southern net as before.
 func _place_scorcher() -> bool:
 	if not s.town.unlocked("scorcher") or _count("scorcher") >= _livewire_target("scorcher"):
 		return false
 	var site := _south_target()
 	var from := _grown_near(site)
-	if from.x < 0:
-		from = _front_near(site)
+	if from.x >= 0:
+		var score := func(p):
+			if not _on_net(p):
+				return -INF
+			var n := _grown_in_reach(p)
+			return -INF if n == 0 else n - 0.01 * Vector2(p).distance_to(Vector2(site))
+		if _place_best("scorcher", score):
+			return true
+		return _lay_scorcher_pole(from)
+	from = _front_near(site)
 	if from.x < 0:
 		return _place_south("scorcher")
-	var score := func(p):
+	var ahead_score := func(p):
 		if not _on_net(p):
 			return -INF
 		var ahead := Vector2(p).distance_to(Vector2(from))
 		return -absf(ahead - SCORCHER_AHEAD) - 0.05 * Vector2(p).distance_to(Vector2(site))
-	return _place_best("scorcher", score)
+	return _place_best("scorcher", ahead_score)
+
+
+## Tiles of Bloom ground within a Scorcher's reach of tile p.
+func _grown_in_reach(p: Vector2i) -> int:
+	var n := 0
+	var r := int(Data.SCORCH_REACH)
+	for dy in range(-r, r + 1):
+		for dx in range(-r, r + 1):
+			if Vector2(dx, dy).length() <= Data.SCORCH_REACH and s.tide.grown.has(p + Vector2i(dx, dy)):
+				n += 1
+	return n
+
+
+## The next Pole of a chain toward Bloom ground at `from`: the free tile within POLE_LINK of the standing pole nearest to it that
+## lies nearer to it. Given up after POLE_STUCK decisions that place nothing.
+func _lay_scorcher_pole(from: Vector2i) -> bool:
+	if not s.town.unlocked("power_pole") or _poles().is_empty() or _stuck_scorch_poles >= POLE_STUCK:
+		return false
+	var near := Vector2i(-1, -1)
+	var near_d := INF
+	for q in _poles():
+		var d := Vector2(q).distance_to(Vector2(from))
+		if d < near_d:
+			near = q
+			near_d = d
+	var score := func(p):
+		var d := Vector2(p).distance_to(Vector2(near))
+		if d < 1.5 or d > Data.POLE_LINK:
+			return -INF
+		var left := Vector2(p).distance_to(Vector2(from))
+		return -INF if left >= near_d else -left
+	if _place_best("power_pole", score):
+		_stuck_scorch_poles = 0
+		return true
+	if s.economy.can_afford(s.town.price("power_pole")):
+		_stuck_scorch_poles += 1
+	return false
 
 
 ## Move a Scorcher that has had nothing in reach for SCORCHER_WAIT seconds: take it down (its price comes back in part) so
