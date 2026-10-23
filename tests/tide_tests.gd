@@ -493,7 +493,7 @@ func test_engines_and_scorchers_take_coal_or_charcoal() -> void:
 		sc["fuel_now"] = fuel
 		sc["inbuf"] = {fuel: 1}
 		for i in 6:
-			var q := fc + Vector2i(2 + i % 3, 2 + i / 3)
+			var q := fc + Vector2i(2 + i % 3, 2 + floori(i / 3.0))
 			f.tide.grown[q] = true
 			f.world.set_tile(q, Data.TILE_BLOOM_TIDE)
 		f.tide.rev += 1

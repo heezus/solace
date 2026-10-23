@@ -1018,3 +1018,9 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - The Bloom no longer eats 5% of a good a minute. The south strip is rerolled until every coal seam lies at least 12 tiles from every Bloom tile (attempts 12 to 40).
 - The Livewire bot lays Firebreak rings round its southern mine and far Generators; a variant bot that never answers the tide is the pressure check. The baseline reads the minute the tide wakes, the power drawn and seconds per tile each minute, buildings lost before and after the first Scorcher, and Firebreak tiles laid.
 
+## 2026-10-23: Boilers, Generators and Scorchers take Coal or Charcoal (Step 4 follow-up)
+- The director read the Step 4 baseline: on both unwon bot seeds the coal ran out (minute 16 and 48), the Generators went cold and the Scorchers could not burn, so the Bloom took 110 and 140 buildings. Power and the answer to the Bloom both burned a finite good, which breaks contract rule 3. Step 3 had kept them on Coal; that was the director's call and it was wrong.
+- A Boiler, a Generator or a Scorcher now burns one Coal or one Charcoal a unit, a Charcoal lasting half as long, with the same Fuel button and Auto rule as the metal works.
+- The Scorcher card says what it burns, "Nothing in reach yet: the front is N tiles away", and that a Firebreak slows the front; an overgrown building's alert says "Overgrown: the Bloom stands on it".
+- The Livewire bot makes Charcoal for its engines when Coal runs low and puts its Scorcher where the front will come into reach (moving it after 5 minutes of nothing). The baseline reads power at zero with Wood in the stores and the fuel burnt by kind.
+
