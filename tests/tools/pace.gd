@@ -27,6 +27,7 @@ const RunSave = preload("res://scripts/run_save.gd")
 const Sim = preload("res://scripts/sim.gd")
 
 const BASELINE_SAVE_EVERY := 600.0  # game seconds between a baseline run's checkpoints
+const LIVEWIRE_SAVE_EVERY := 300.0  # the same for a Livewire-alone run
 
 
 func _init() -> void:
@@ -271,24 +272,36 @@ func _keep_livewire_start(out: String, m: int, game: Sim) -> void:
 ## Livewire alone, from a copy of the game as it began (`from`, kept by a baseline run), played for `minutes`; one row to
 ## `out`/livewire_seed_<m>.json. With `answer` false (`notide`) it is the variant that lights a Generator and never answers the
 ## tide (no Arc Lamp, Scorcher or Firebreak), to `out`/variant_seed_<m>.json: a pressure check, never a balance run.
+## It keeps a checkpoint in user://baseline_work/ every five game minutes and picks up from it when run again.
 func _from_livewire_start(m: int, minutes: float, out: String, from: String, answer: bool) -> void:
 	var game := Sim.new()
-	var kept := FileAccess.get_file_as_string(from)
-	if kept == "" or not RunSave.restore(game, RunSave.from_json(kept)):
-		print("variant: no Livewire start at %s" % from)
-		quit(1)
-		return
 	var probe := EraProbe.new()
-	probe.begin("livewire", game)
+	var work := "user://baseline_work/%s_seed_%d.json" % ["livewire" if answer else "variant", m]
+	DirAccess.make_dir_recursive_absolute("user://baseline_work")
+	var played := _keep_resume(work, probe, game)  # game seconds the bot has played so far, -1 with nothing kept
+	if played < 0.0:
+		var kept := FileAccess.get_file_as_string(from)
+		if kept == "" or not RunSave.restore(game, RunSave.from_json(kept)):
+			print("variant: no Livewire start at %s" % from)
+			quit(1)
+			return
+		probe.begin("livewire", game)
+		played = 0.0
 	var wire := AutoplayLivewire.new()
-	wire.probe = func(s): probe.observe(s)
+	var saved := [game.seasons.time]  # the game clock of the last checkpoint
+	wire.probe = func(s):
+		probe.observe(s)
+		if s.seasons.time - saved[0] >= LIVEWIRE_SAVE_EVERY:
+			saved[0] = s.seasons.time
+			_keep_save(work, probe, s, played + wire.clock)
 	wire.answer_tide = answer
-	wire.play_livewire(game, minutes * 60.0)
+	wire.play_livewire(game, minutes * 60.0 - played)
 	var row: Dictionary = probe.finish(game)
 	row["ended"] = game.tech_tree.researched.has("skyward")  # as in a baseline run: the era ended when Skyward was learned
 	if out != "":
 		DirAccess.make_dir_recursive_absolute(out)
 		_write_file("%s/%s_seed_%d.json" % [out, "livewire" if answer else "variant", m], JSON.stringify(row, "\t"))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(work))  # finished: the next run starts afresh
 	print(
 		(
 			"map %d %s: woke at %.1f min, lost %d, within 20 min of waking %d, %d Firebreaks, goals %d of %d"
@@ -325,6 +338,24 @@ func _baseline_save(work: String, stage: String, probe: RefCounted, game: Sim, m
 		DirAccess.make_dir_recursive_absolute(out)
 		var rows := {"seed": m, "complete": stage == "done", "eras": probe.rows}
 		_write_file("%s/seed_%d.json" % [out, m], JSON.stringify(rows, "\t"))
+
+
+## Keep a Livewire-alone run so far (the game, the probe, the seconds the bot has played) in `work`.
+func _keep_save(work: String, probe: RefCounted, game: Sim, played: float) -> void:
+	var state := {"played": played, "probe": probe.to_dict(), "run": RunSave.to_json(RunSave.dump(game))}
+	_write_file(work + ".tmp", JSON.stringify(state))
+	DirAccess.rename_absolute(ProjectSettings.globalize_path(work + ".tmp"), ProjectSettings.globalize_path(work))
+
+
+## Restore a kept Livewire-alone run into `game` and `probe`: the seconds already played, or -1 when there is none.
+func _keep_resume(work: String, probe: RefCounted, game: Sim) -> float:
+	if not FileAccess.file_exists(work):
+		return -1.0
+	var kept: Variant = JSON.parse_string(FileAccess.get_file_as_string(work))
+	if typeof(kept) != TYPE_DICTIONARY or not RunSave.restore(game, RunSave.from_json(kept["run"])):
+		return -1.0
+	probe.from_dict(kept["probe"])
+	return float(kept["played"])
 
 
 func _write_file(path: String, text: String) -> void:

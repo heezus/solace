@@ -1024,3 +1024,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - The Scorcher card says what it burns, "Nothing in reach yet: the front is N tiles away", and that a Firebreak slows the front; an overgrown building's alert says "Overgrown: the Bloom stands on it".
 - The Livewire bot makes Charcoal for its engines when Coal runs low and puts its Scorcher where the front will come into reach (moving it after 5 minutes of nothing). The baseline reads power at zero with Wood in the stores and the fuel burnt by kind.
 
+## 2026-10-23: Long runs keep their place (PR next)
+- Jon had to close his Mac and asked that runs stop being at risk of a restart. The proof runs live in the cloud, not on the Mac, but the cloud machine restarts on its own too (one took five background runs with it that morning).
+- A Livewire-alone or variant run now checkpoints every five game minutes and resumes; an AI player folder that holds moves picks up by replaying them, then goes live (`--fresh=1` to start over); `tests/tools/long_run.sh` registers runs and starts every unfinished one again with `resume`.
+- Tests and tools only: no gameplay change.
