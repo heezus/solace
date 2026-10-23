@@ -1045,3 +1045,12 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Codex followed the existing shared map/item/research art design: eighteen relevant painted sources plus twelve dedicated concept symbols cover all 30 techs, avoiding parallel depictions of the same buildings.
 - Native 24/34 px review led to head crops for pole/lamp icons, a short rail detail crop and a dedicated bold Living Ground cutting; full per-tech regions and 24/34/48/96 px comparisons document the result.
 - Each tech receives a proposed independent resolver key for Claude's wiring, preserving existing shared callers. Skyward uses only a wire/star research emblem; the mast, Skyreach, UI and gameplay remain held.
+
+## 2026-10-23: The Ironfall and Livewire art batch is wired (PRs #135 to #139)
+- Every building the batch painted (Boiler, Shard Boiler, Forge, Steam Shed, Beast Pen, Shard Lamp, Generator, Wire Mill, Power Pole, Order Board, Arc Lamp, Scorcher, Factory Floor, Shard Dynamo) draws its own picture at the old size and footprint; the placeholder tints are gone. A burning Shard Lamp draws the lit post.
+- Rail draws Codex's pieces over the paved bed (straight, corner, T, cross, end, turned for the sides a tile joins; the end of a line is a Steam Shed or the last rail). Firebreaks lay their own strips, joined the same way, with no plate and no ground square beneath. The Firebreak art has no T or cross, so a junction is a straight with an end laid toward the third arm.
+- Steam Cart and beast cart use their paintings, with the cargo fitted into each empty bed; the placeholder chimney and beast marks are gone, so a Steam Cart with steam up looks as it does without (the painting's puff is static).
+- Wire, Steel Tools and the Shard have icons of their own. The Starfall Shard icon stays for the Starfall panels.
+- All 29 research cards in the batch point at `research_<tech>` icons; the Firebreaks card is unused (Tide Watch unlocks the building now).
+- The tide's young growth lies over every Bloom ground tile the tide made (grass sheet only: the sim keeps no former Field or wood).
+- Tools only: `tests/tools/art_shots.gd` shoots a laid showcase in the real map view for a before and after.
