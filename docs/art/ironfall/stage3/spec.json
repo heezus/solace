@@ -1,0 +1,282 @@
+[
+  {
+    "id": "boiler",
+    "path": "res://art/rendered/boiler.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "sha256": "3508dbbb8339891c398150c2fab441c2b279aebd03569e034ff0b51a7ab85366",
+    "region": [
+      288,
+      112,
+      814,
+      1016
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  },
+  {
+    "id": "shard_boiler",
+    "path": "res://art/rendered/shard_boiler.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "sha256": "1db69fe1ed0b1d4c808c116d7a79205c3c9357975dd3300254aebfd7d40a8c06",
+    "region": [
+      213,
+      152,
+      903,
+      937
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  },
+  {
+    "id": "forge",
+    "path": "res://art/rendered/forge.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "sha256": "30d2be9944af798943a97ee552aec57887afa7355acb8f49a7daa7b717cef3c4",
+    "region": [
+      230,
+      48,
+      826,
+      1070
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  },
+  {
+    "id": "steam_shed",
+    "path": "res://art/rendered/steam_shed.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "sha256": "90d6d67ae96e3d33cdc96c8d63e6be1913075af1b08df2969c74dcd2e1a344fc",
+    "region": [
+      97,
+      93,
+      1116,
+      985
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  },
+  {
+    "id": "shard_lamp",
+    "path": "res://art/rendered/shard_lamp.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "sha256": "3dbb030fa61c184d97d71175bd5bbb075c17efa18f57c9280a56f54e96565987",
+    "region": [
+      461,
+      35,
+      333,
+      1178
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  },
+  {
+    "id": "shard_lamp_lit",
+    "path": "res://art/rendered/shard_lamp_lit.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "sha256": "bfa993210fbbcf14ea9cb9722323b6abfa955da2f5e3ca3620835691fed52462",
+    "region": [
+      461,
+      35,
+      333,
+      1178
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  },
+  {
+    "id": "beast_pen",
+    "path": "res://art/rendered/beast_pen.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "sha256": "95b17a7850bc8af06a0dd5e16e677035ec933d3ae18ccd09c6edd002f7bfe5b8",
+    "region": [
+      105,
+      240,
+      1084,
+      829
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  },
+  {
+    "id": "rail",
+    "path": "res://art/rendered/rail.png",
+    "source_size": [
+      1774,
+      887
+    ],
+    "sha256": "0aa07466fa2873d65ef4a7c6b07873692f35ee25af632fd05b8e1d75d9172f5e",
+    "region": [
+      444,
+      0,
+      886,
+      886
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  },
+  {
+    "id": "rail_corner",
+    "path": "res://art/rendered/rail_corner.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "sha256": "3c8f0ec7059454e8cd990ec645fabf826c724077406d80b4ecbac4aa68204b78",
+    "region": [
+      200,
+      80,
+      900,
+      900
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  },
+  {
+    "id": "rail_t",
+    "path": "res://art/rendered/rail_t.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "sha256": "be325b9d455f062f416da5ab25b92ddd075d82e220ca81db24ae7790472c532d",
+    "region": [
+      385,
+      348,
+      485,
+      485
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  },
+  {
+    "id": "rail_cross",
+    "path": "res://art/rendered/rail_cross.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "sha256": "b9d45dd94c0f80acb1eb1a59eb22dd332612c64323c6bc48dfdba9941bf8008e",
+    "region": [
+      301,
+      301,
+      650,
+      650
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  },
+  {
+    "id": "rail_end",
+    "path": "res://art/rendered/rail_end.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "sha256": "fa6e0efde6370dfa74d44396336424254a50d8d43dc5024c3702a8ce71d98469",
+    "region": [
+      0,
+      182,
+      886,
+      886
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  },
+  {
+    "id": "steam_cart",
+    "path": "res://art/rendered/steam_cart.png",
+    "source_size": [
+      1448,
+      1086
+    ],
+    "sha256": "2583373334d10ce77b32b843e8c92e7be2ff6e5cc6efb0e27b88ea8ba74b1e74",
+    "region": [
+      191,
+      98,
+      1192,
+      885
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  },
+  {
+    "id": "beast_cart",
+    "path": "res://art/rendered/beast_cart.png",
+    "source_size": [
+      1448,
+      1086
+    ],
+    "sha256": "b9689bc1743dc45dfc971b96040dacb7aaab57f848ba1a088bf4ffe0e7e90cc2",
+    "region": [
+      186,
+      219,
+      1185,
+      734
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  }
+]

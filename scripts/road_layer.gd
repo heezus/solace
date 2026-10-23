@@ -1,14 +1,13 @@
 extends RefCounted
 ## Gravel and paved roads, drawn with Codex's connected-road material (GrowthArt.road_shader_material). A plain path is
 ## still the terrain's own worn strip (WorldGround); the upper tiers lie over it, one small node a tile so each can
-## carry its own tier and connections. Rail (Ironfall) is the paved road with two iron rails and sleepers drawn over it by
-## code until Codex paints a tier of its own (docs/art/requests.md). The nodes sit with the terrain, beneath everything Main draws.
+## carry its own tier and connections. Rail (Ironfall) is the paved road with Codex's painted rail pieces (straight, corner, T,
+## cross, end: Rendered.module) laid over it. The nodes sit with the terrain, beneath everything Main draws.
 
 const Data = preload("res://scripts/data.gd")
 const GrowthArt = preload("res://scripts/growth_art.gd")
+const Rendered = preload("res://scripts/rendered_art.gd")
 const TILE := 48.0
-const RAIL_COLOR := Color("4b5563")
-const SLEEPER_COLOR := Color("6b4f36")
 const SIDES := [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]
 
 var _holder: Node2D
@@ -60,7 +59,7 @@ func _set_tile(s, p: Vector2i) -> void:
 		var material := node.material as ShaderMaterial
 		material.set_shader_parameter("tier", float(mini(tier, Data.PAVED_TIER)))
 		material.set_shader_parameter("connections", links)
-	_set_rails(_tiles[p], tier == Data.RAIL_TIER, links)
+	_set_rails(_tiles[p], tier == Data.RAIL_TIER, _rail_links(s, p))
 
 
 ## Rail: a child node that draws the iron over the paved tile, added when the tile becomes rail and dropped if it stops being.
@@ -80,19 +79,27 @@ func _set_rails(node: Node2D, rail: bool, links: Vector4) -> void:
 	over.queue_redraw()
 
 
-static func _draw_rails(over: Node2D) -> void:
-	var links: Vector4 = over.get_meta("links")
-	var mid := Vector2(TILE, TILE) / 2.0
-	var arms: Array = []
+## Which sides of tile `p` a line of `type` joins (x LEFT, y RIGHT, z UP, w DOWN): the neighbours built as the same type.
+static func joined(s, p: Vector2i, type: String) -> Vector4:
+	var links := Vector4()
 	for n in SIDES.size():
-		if links[n] > 0.0:
-			arms.append(Vector2(SIDES[n]))
-	if arms.is_empty():
-		arms = [Vector2.LEFT, Vector2.RIGHT]  # a lone piece of rail runs across
-	for dir in arms:
-		var side := Vector2(-dir.y, dir.x)
-		for i in 4:
-			var at: Vector2 = mid + dir * TILE / 2.0 * (float(i) + 0.5) / 4.0
-			over.draw_line(at - side * 10.0, at + side * 10.0, SLEEPER_COLOR, 3.0)
-		over.draw_line(mid + side * 5.0, mid + side * 5.0 + dir * TILE / 2.0, RAIL_COLOR, 2.5)
-		over.draw_line(mid - side * 5.0, mid - side * 5.0 + dir * TILE / 2.0, RAIL_COLOR, 2.5)
+		if s.town.built_type(p + SIDES[n]) == type:
+			links[n] = 1.0
+	return links
+
+
+## The sides a piece of rail joins: another piece of rail, or a Steam Shed (where the rail begins).
+func _rail_links(s, p: Vector2i) -> Vector4:
+	var links := Vector4()
+	for n in SIDES.size():
+		var q: Vector2i = p + SIDES[n]
+		if not s.fog.is_revealed(q):
+			continue
+		var shed: bool = s.town.building_at.has(q) and Data.BUILDINGS[s.town.built_type(q)]["kind"] == "shed"
+		if shed or (s.world.roads.has(q) and s.world.road_tier(q) == Data.RAIL_TIER):
+			links[n] = 1.0
+	return links
+
+
+static func _draw_rails(over: Node2D) -> void:
+	Rendered.module(over, "rail", over.get_meta("links"), Rect2(Vector2.ZERO, Vector2(TILE, TILE)))

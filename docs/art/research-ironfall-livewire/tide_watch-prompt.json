@@ -1,0 +1,6 @@
+{
+  "prompt": "Use case: style-transfer. Reference is the accepted transparent Solace Bloom Sampling research icon: preserve its hand-painted miniature finish, the young magenta-root/sickly-green two-leaf plant and the entirely empty transparent background. Replace jar and cork with a SMALL SHORT brass-and-wood spyglass pointing at the little sprig. Compact square1:1 grouping, spyglass diagonal above sprig, no long landscape layout. Exactly spyglass and sprig only, no flower bulbs or extra foliage. No shadow, glow, backdrop, text or badges; keep all surrounding areas and holes at alpha=0. Readable at24px.",
+  "source": "/Users/jhowell/.codex/generated_images/01a16543-0e79-78f3-b449-05c7917a41af/exec-969b2ecd-03d5-4ba7-b609-4c98ee87f586.png",
+  "mode": "built-in imagegen",
+  "reference": "art/rendered/research/bloom_sampling.png (style, plant identity and clean alpha)"
+}

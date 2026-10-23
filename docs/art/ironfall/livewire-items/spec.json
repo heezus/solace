@@ -1,0 +1,50 @@
+[
+  {
+    "id": "wire",
+    "path": "res://art/rendered/wire.png",
+    "source_size": [
+      1293,
+      1217
+    ],
+    "region": [
+      175,
+      81,
+      1000,
+      983
+    ],
+    "sha256": "f15a598ef7b3f8adbfc03d9e297d2f9592266a1ed965755fe6e395b56ca3b4a3",
+    "native_size": 20
+  },
+  {
+    "id": "steel_tools",
+    "path": "res://art/rendered/steel_tools.png",
+    "source_size": [
+      1312,
+      1199
+    ],
+    "region": [
+      89,
+      86,
+      1168,
+      1032
+    ],
+    "sha256": "b99687995c35c733c4d4a9adcfdd0da60bb9c5a49e7ec4a44266fac1409fdc31",
+    "native_size": 20
+  },
+  {
+    "id": "shard",
+    "path": "res://art/rendered/shard.png",
+    "source_size": [
+      1220,
+      1289
+    ],
+    "region": [
+      344,
+      91,
+      549,
+      1114
+    ],
+    "sha256": "933849a14c51e284ea633e7797f7c069064b0598ded58da8083b944022adee6e",
+    "native_size": 20
+  }
+]

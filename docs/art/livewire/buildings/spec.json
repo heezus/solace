@@ -1,0 +1,222 @@
+[
+  {
+    "id": "power_pole",
+    "path": "res://art/rendered/power_pole.png",
+    "source_size": [
+      1246,
+      1263
+    ],
+    "sha256": "ddf88760b9285fe88ef7f196fbf26b94b642815f6565083ae1505797e6c077b5",
+    "region": [
+      346,
+      44,
+      549,
+      1152
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  },
+  {
+    "id": "generator",
+    "path": "res://art/rendered/generator.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "sha256": "330840919a91518bc3567e498d23c77432acc4089d238f6838600759d4748704",
+    "region": [
+      95,
+      59,
+      1088,
+      1150
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  },
+  {
+    "id": "wire_mill",
+    "path": "res://art/rendered/wire_mill.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "sha256": "553f4c142e16c5defca8f5557089b29ff669c41db1f33b94125c5a62e85072e1",
+    "region": [
+      92,
+      106,
+      1070,
+      1042
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  },
+  {
+    "id": "order_board",
+    "path": "res://art/rendered/order_board.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "sha256": "2abb227b5ac494b0ce5b19d655e819da281e6a5f79bf1c57ce7114707bf0d657",
+    "region": [
+      150,
+      91,
+      971,
+      1082
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  },
+  {
+    "id": "arc_lamp",
+    "path": "res://art/rendered/arc_lamp.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "sha256": "029e09b4eac1c0a711793e60c271ad3bf2863fdeabe4650cb9c4cc501f8bd503",
+    "region": [
+      382,
+      47,
+      485,
+      1131
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  },
+  {
+    "id": "scorcher",
+    "path": "res://art/rendered/scorcher.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "sha256": "2a1493ee65afeb527de5539d8c4597ea25dd498d45ae0d4459de3744bbd14f1c",
+    "region": [
+      173,
+      192,
+      950,
+      878
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  },
+  {
+    "id": "factory_floor",
+    "path": "res://art/rendered/factory_floor.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "sha256": "5e0eab39f8d4536b7a57706e88662c8be055c97341a29b3a2139c72ee334da55",
+    "region": [
+      87,
+      187,
+      1154,
+      889
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  },
+  {
+    "id": "shard_dynamo",
+    "path": "res://art/rendered/shard_dynamo.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "sha256": "cf1715e3697c82db56c8953ff09c98ab1e23fcada20bb8cbd3ec7b4cfbc0dd12",
+    "region": [
+      82,
+      100,
+      1091,
+      1051
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  },
+  {
+    "id": "firebreak",
+    "path": "res://art/rendered/firebreak.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "sha256": "b6fb878027b24d12fb5389e7d0ba925a8520d54eaeeaa6a795fd6eda0208315c",
+    "region": [
+      0,
+      0,
+      1254,
+      1254
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  },
+  {
+    "id": "firebreak_corner",
+    "path": "res://art/rendered/firebreak_corner.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "sha256": "ee7cf6309ceaa3ec25bfe52662a6998e01fc1208e487eb8bc02cc116585b3802",
+    "region": [
+      202,
+      192,
+      856,
+      856
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  },
+  {
+    "id": "firebreak_end",
+    "path": "res://art/rendered/firebreak_end.png",
+    "source_size": [
+      1254,
+      1254
+    ],
+    "sha256": "c842414a49cff85c94c470a2863e263cb382f4243b5297b03373323c7096c171",
+    "region": [
+      0,
+      0,
+      1254,
+      1254
+    ],
+    "footprint": [
+      1,
+      1
+    ],
+    "native_size": 46
+  }
+]

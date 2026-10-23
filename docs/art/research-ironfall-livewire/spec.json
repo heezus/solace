@@ -1,0 +1,632 @@
+[
+  {
+    "tech_id": "coal_seams",
+    "name": "Coal Seams",
+    "era": "ironfall",
+    "previous_icon": "mine",
+    "suggested_icon": "research_coal_seams",
+    "path": "res://art/rendered/coal_seam.png",
+    "region": [
+      22,
+      51,
+      688,
+      621
+    ],
+    "source_size": [
+      2172,
+      724
+    ],
+    "source_ref": null,
+    "sha256": "aa9d04a22a6fe5b6b1c2ad937c8612e646d8bb0c30a7d9f7dedb3f8246d5d57f",
+    "kind": "reused painted asset"
+  },
+  {
+    "tech_id": "ironstone",
+    "name": "Ironstone",
+    "era": "ironfall",
+    "previous_icon": "item_copper_ore",
+    "suggested_icon": "research_ironstone",
+    "path": "res://art/rendered/iron_hills.png",
+    "region": [
+      46,
+      70,
+      676,
+      590
+    ],
+    "source_size": [
+      2172,
+      724
+    ],
+    "source_ref": null,
+    "sha256": "951b5e977f2c3089d9c7b7d9e6fcbee43a8df5bd55e39b3e50fa9096e8bb2ad7",
+    "kind": "reused painted asset"
+  },
+  {
+    "tech_id": "teardown",
+    "name": "Teardown",
+    "era": "ironfall",
+    "previous_icon": "wanderer",
+    "suggested_icon": "research_teardown",
+    "path": "res://art/rendered/research/teardown.png",
+    "region": [
+      67,
+      9,
+      1241,
+      1138
+    ],
+    "source_size": [
+      1362,
+      1155
+    ],
+    "source_ref": null,
+    "sha256": "a48242eaa6d2857b68953702c38427e24d63efb7ebd66a04c7fd9b32244613e9",
+    "kind": "new dedicated symbol"
+  },
+  {
+    "tech_id": "bloomery",
+    "name": "Bloomery",
+    "era": "ironfall",
+    "previous_icon": "smelter",
+    "suggested_icon": "research_bloomery",
+    "path": "res://art/rendered/bloomery.png",
+    "region": [
+      80,
+      49,
+      1167,
+      1073
+    ],
+    "source_size": [
+      1278,
+      1230
+    ],
+    "source_ref": null,
+    "sha256": "6b48b92407038e0e8824a8a73a2a01bb0653c9d6d857a16607c04d2be39f895d",
+    "kind": "reused painted asset"
+  },
+  {
+    "tech_id": "boiler",
+    "name": "Boiler",
+    "era": "ironfall",
+    "previous_icon": "kiln",
+    "suggested_icon": "research_boiler",
+    "path": "res://art/rendered/boiler.png",
+    "region": [
+      288,
+      112,
+      814,
+      1016
+    ],
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_ref": "codex/ironfall-stage3-art",
+    "sha256": "3508dbbb8339891c398150c2fab441c2b279aebd03569e034ff0b51a7ab85366",
+    "kind": "reused painted asset"
+  },
+  {
+    "tech_id": "beast_pen",
+    "name": "Beast Pen",
+    "era": "ironfall",
+    "previous_icon": "dwelling",
+    "suggested_icon": "research_beast_pen",
+    "path": "res://art/rendered/beast_pen.png",
+    "region": [
+      105,
+      240,
+      1084,
+      829
+    ],
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_ref": "codex/ironfall-stage3-art",
+    "sha256": "95b17a7850bc8af06a0dd5e16e677035ec933d3ae18ccd09c6edd002f7bfe5b8",
+    "kind": "reused painted asset"
+  },
+  {
+    "tech_id": "iron_tools",
+    "name": "Iron Tools",
+    "era": "ironfall",
+    "previous_icon": "item_bronze_tools",
+    "suggested_icon": "research_iron_tools",
+    "path": "res://art/rendered/ironfall-items.png",
+    "region": [
+      512,
+      536,
+      512,
+      421
+    ],
+    "source_size": [
+      1536,
+      1024
+    ],
+    "source_ref": null,
+    "sha256": "97bc58caf6f4fa9aa00d95515b6df0511e1cbd1cc9a9cacd554f537426114c25",
+    "kind": "reused painted asset"
+  },
+  {
+    "tech_id": "rails",
+    "name": "Rails",
+    "era": "ironfall",
+    "previous_icon": "tile_road",
+    "suggested_icon": "research_rails",
+    "path": "res://art/rendered/rail.png",
+    "region": [
+      720,
+      274,
+      340,
+      340
+    ],
+    "source_size": [
+      1774,
+      887
+    ],
+    "source_ref": "codex/ironfall-stage3-art",
+    "sha256": "0aa07466fa2873d65ef4a7c6b07873692f35ee25af632fd05b8e1d75d9172f5e",
+    "kind": "reused painted asset"
+  },
+  {
+    "tech_id": "shard_lamps",
+    "name": "Shard Lamps",
+    "era": "ironfall",
+    "previous_icon": "watchtower",
+    "suggested_icon": "research_shard_lamps",
+    "path": "res://art/rendered/shard_lamp_lit.png",
+    "region": [
+      450,
+      28,
+      360,
+      525
+    ],
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_ref": "codex/ironfall-stage3-art",
+    "sha256": "bfa993210fbbcf14ea9cb9722323b6abfa955da2f5e3ca3620835691fed52462",
+    "kind": "reused painted asset"
+  },
+  {
+    "tech_id": "taught_hands_ii",
+    "name": "Taught Hands II",
+    "era": "ironfall",
+    "previous_icon": "kith",
+    "suggested_icon": "research_taught_hands_ii",
+    "path": "res://art/rendered/research/taught_hands_ii.png",
+    "region": [
+      243,
+      5,
+      909,
+      1154
+    ],
+    "source_size": [
+      1330,
+      1183
+    ],
+    "source_ref": null,
+    "sha256": "73560c98392deaacbdafc0a5e829dd0023a2f6348abb03754b3cd6114e40b7a9",
+    "kind": "new dedicated symbol"
+  },
+  {
+    "tech_id": "blast_furnace",
+    "name": "Blast Furnace",
+    "era": "ironfall",
+    "previous_icon": "crucible",
+    "suggested_icon": "research_blast_furnace",
+    "path": "res://art/rendered/forge.png",
+    "region": [
+      230,
+      48,
+      826,
+      1070
+    ],
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_ref": "codex/ironfall-stage3-art",
+    "sha256": "30d2be9944af798943a97ee552aec57887afa7355acb8f49a7daa7b717cef3c4",
+    "kind": "reused painted asset"
+  },
+  {
+    "tech_id": "iron_plough",
+    "name": "Iron Plough",
+    "era": "ironfall",
+    "previous_icon": "field",
+    "suggested_icon": "research_iron_plough",
+    "path": "res://art/rendered/research/iron_plough.png",
+    "region": [
+      41,
+      88,
+      1227,
+      1043
+    ],
+    "source_size": [
+      1312,
+      1199
+    ],
+    "source_ref": null,
+    "sha256": "45cfdb67f6c952838fa5f149a8fd5c8bc9a74051c8b50df0f136c50f993d21de",
+    "kind": "new dedicated symbol"
+  },
+  {
+    "tech_id": "shard_boiler",
+    "name": "Shard Boiler",
+    "era": "ironfall",
+    "previous_icon": "kiln",
+    "suggested_icon": "research_shard_boiler",
+    "path": "res://art/rendered/shard_boiler.png",
+    "region": [
+      213,
+      152,
+      903,
+      937
+    ],
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_ref": "codex/ironfall-stage3-art",
+    "sha256": "1db69fe1ed0b1d4c808c116d7a79205c3c9357975dd3300254aebfd7d40a8c06",
+    "kind": "reused painted asset"
+  },
+  {
+    "tech_id": "steel",
+    "name": "Steel",
+    "era": "ironfall",
+    "previous_icon": "item_bronze_tools",
+    "suggested_icon": "research_steel",
+    "path": "res://art/rendered/ironfall-items.png",
+    "region": [
+      32,
+      585,
+      480,
+      394
+    ],
+    "source_size": [
+      1536,
+      1024
+    ],
+    "source_ref": null,
+    "sha256": "97bc58caf6f4fa9aa00d95515b6df0511e1cbd1cc9a9cacd554f537426114c25",
+    "kind": "reused painted asset"
+  },
+  {
+    "tech_id": "bloom_sampling",
+    "name": "Bloom Sampling",
+    "era": "ironfall",
+    "previous_icon": "wanderer",
+    "suggested_icon": "research_bloom_sampling",
+    "path": "res://art/rendered/research/bloom_sampling.png",
+    "region": [
+      348,
+      94,
+      818,
+      919
+    ],
+    "source_size": [
+      1366,
+      1152
+    ],
+    "source_ref": null,
+    "sha256": "30f6f8b7036fd8ef605c92e94d43a383dfd129e039c03e2883eeb10852acb662",
+    "kind": "new dedicated symbol"
+  },
+  {
+    "tech_id": "livewire",
+    "name": "Livewire",
+    "era": "ironfall",
+    "previous_icon": "wanderer",
+    "suggested_icon": "research_livewire",
+    "path": "res://art/rendered/research/livewire.png",
+    "region": [
+      211,
+      83,
+      914,
+      1039
+    ],
+    "source_size": [
+      1312,
+      1199
+    ],
+    "source_ref": null,
+    "sha256": "3cc5600d4ff5c7c8ed543a354d0401b92416b8fcfdfd35c78014174c5c5c4f37",
+    "kind": "new dedicated symbol"
+  },
+  {
+    "tech_id": "power_poles",
+    "name": "Power Poles",
+    "era": "livewire",
+    "previous_icon": "watchtower",
+    "suggested_icon": "research_power_poles",
+    "path": "res://art/rendered/power_pole.png",
+    "region": [
+      330,
+      38,
+      580,
+      400
+    ],
+    "source_size": [
+      1246,
+      1263
+    ],
+    "source_ref": "codex/livewire-buildings",
+    "sha256": "ddf88760b9285fe88ef7f196fbf26b94b642815f6565083ae1505797e6c077b5",
+    "kind": "reused painted asset"
+  },
+  {
+    "tech_id": "order_board",
+    "name": "Order Board",
+    "era": "livewire",
+    "previous_icon": "glyph_wall",
+    "suggested_icon": "research_order_board",
+    "path": "res://art/rendered/order_board.png",
+    "region": [
+      150,
+      91,
+      971,
+      1082
+    ],
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_ref": "codex/livewire-buildings",
+    "sha256": "2abb227b5ac494b0ce5b19d655e819da281e6a5f79bf1c57ce7114707bf0d657",
+    "kind": "reused painted asset"
+  },
+  {
+    "tech_id": "tide_watch",
+    "name": "Tide Watch",
+    "era": "livewire",
+    "previous_icon": "wanderer",
+    "suggested_icon": "research_tide_watch",
+    "path": "res://art/rendered/research/tide_watch.png",
+    "region": [
+      130,
+      149,
+      1069,
+      1002
+    ],
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_ref": null,
+    "sha256": "f272dfcf110fd864ecd25b54f9c5dec8e18090cc8af4a74791db08841e5a2c91",
+    "kind": "new dedicated symbol"
+  },
+  {
+    "tech_id": "generator",
+    "name": "Generator",
+    "era": "livewire",
+    "previous_icon": "kiln",
+    "suggested_icon": "research_generator",
+    "path": "res://art/rendered/generator.png",
+    "region": [
+      95,
+      59,
+      1088,
+      1150
+    ],
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_ref": "codex/livewire-buildings",
+    "sha256": "330840919a91518bc3567e498d23c77432acc4089d238f6838600759d4748704",
+    "kind": "reused painted asset"
+  },
+  {
+    "tech_id": "arc_lamps",
+    "name": "Arc Lamps",
+    "era": "livewire",
+    "previous_icon": "watchtower",
+    "suggested_icon": "research_arc_lamps",
+    "path": "res://art/rendered/arc_lamp.png",
+    "region": [
+      360,
+      24,
+      540,
+      470
+    ],
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_ref": "codex/livewire-buildings",
+    "sha256": "029e09b4eac1c0a711793e60c271ad3bf2863fdeabe4650cb9c4cc501f8bd503",
+    "kind": "reused painted asset"
+  },
+  {
+    "tech_id": "foremen",
+    "name": "Foremen",
+    "era": "livewire",
+    "previous_icon": "kith",
+    "suggested_icon": "research_foremen",
+    "path": "res://art/rendered/research/foremen.png",
+    "region": [
+      76,
+      188,
+      1127,
+      859
+    ],
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_ref": null,
+    "sha256": "5e1f1791746cd30db3f72d6428619afb835047f8cd991cd52b5846b8acc47882",
+    "kind": "new dedicated symbol"
+  },
+  {
+    "tech_id": "powered_mines",
+    "name": "Powered Mines",
+    "era": "livewire",
+    "previous_icon": "mine",
+    "suggested_icon": "research_powered_mines",
+    "path": "res://art/rendered/research/powered_mines.png",
+    "region": [
+      128,
+      87,
+      1010,
+      977
+    ],
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_ref": null,
+    "sha256": "30d9978a7bb1aef7dd9c5f476e83947bbbffb3649c395eb73c1cc09d25639eaa",
+    "kind": "new dedicated symbol"
+  },
+  {
+    "tech_id": "factory_floor",
+    "name": "Factory Floor",
+    "era": "livewire",
+    "previous_icon": "crucible",
+    "suggested_icon": "research_factory_floor",
+    "path": "res://art/rendered/factory_floor.png",
+    "region": [
+      87,
+      187,
+      1154,
+      889
+    ],
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_ref": "codex/livewire-buildings",
+    "sha256": "5e0eab39f8d4536b7a57706e88662c8be055c97341a29b3a2139c72ee334da55",
+    "kind": "reused painted asset"
+  },
+  {
+    "tech_id": "scorcher",
+    "name": "Scorcher",
+    "era": "livewire",
+    "previous_icon": "smelter",
+    "suggested_icon": "research_scorcher",
+    "path": "res://art/rendered/scorcher.png",
+    "region": [
+      173,
+      192,
+      950,
+      878
+    ],
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_ref": "codex/livewire-buildings",
+    "sha256": "2a1493ee65afeb527de5539d8c4597ea25dd498d45ae0d4459de3744bbd14f1c",
+    "kind": "reused painted asset"
+  },
+  {
+    "tech_id": "firebreaks",
+    "name": "Firebreaks",
+    "era": "livewire",
+    "previous_icon": "field",
+    "suggested_icon": "research_firebreaks",
+    "path": "res://art/rendered/research/firebreaks.png",
+    "region": [
+      54,
+      215,
+      1183,
+      860
+    ],
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_ref": null,
+    "sha256": "d87d0d976aa283ff7bf59a1d9f90122de02a0cf3755e110ea24fee1acaaf5ffa",
+    "kind": "new dedicated symbol"
+  },
+  {
+    "tech_id": "shard_dynamo",
+    "name": "Shard Dynamo",
+    "era": "livewire",
+    "previous_icon": "kiln",
+    "suggested_icon": "research_shard_dynamo",
+    "path": "res://art/rendered/shard_dynamo.png",
+    "region": [
+      82,
+      100,
+      1091,
+      1051
+    ],
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_ref": "codex/livewire-buildings",
+    "sha256": "cf1715e3697c82db56c8953ff09c98ab1e23fcada20bb8cbd3ec7b4cfbc0dd12",
+    "kind": "reused painted asset"
+  },
+  {
+    "tech_id": "chain_orders",
+    "name": "Chain Orders",
+    "era": "livewire",
+    "previous_icon": "kith",
+    "suggested_icon": "research_chain_orders",
+    "path": "res://art/rendered/research/chain_orders.png",
+    "region": [
+      35,
+      322,
+      1185,
+      636
+    ],
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_ref": null,
+    "sha256": "d999813c2bdf0481bf003f7534d6837148052a9e02306dcc31a99bff6007299f",
+    "kind": "new dedicated symbol"
+  },
+  {
+    "tech_id": "living_ground",
+    "name": "Living Ground",
+    "era": "livewire",
+    "previous_icon": "field",
+    "suggested_icon": "research_living_ground",
+    "path": "res://art/rendered/research/living_ground.png",
+    "region": [
+      230,
+      57,
+      834,
+      1144
+    ],
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_ref": null,
+    "sha256": "e6a758b3d80ca86a286ae6affe04322affe203c97eca548cb07ddabf13e6a8b7",
+    "kind": "new dedicated symbol"
+  },
+  {
+    "tech_id": "skyward",
+    "name": "Skyward",
+    "era": "livewire",
+    "previous_icon": "wanderer",
+    "suggested_icon": "research_skyward",
+    "path": "res://art/rendered/research/skyward.png",
+    "region": [
+      358,
+      107,
+      537,
+      1037
+    ],
+    "source_size": [
+      1254,
+      1254
+    ],
+    "source_ref": null,
+    "sha256": "5a7d54528436ee80e342134f2c42e93788d3c16d0ee99edf17c2b88eb89092b0",
+    "kind": "new dedicated symbol"
+  }
+]
