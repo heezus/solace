@@ -263,7 +263,11 @@ func refresh() -> void:
 	parts["floor"].show_for(b)
 	parts["fuel"].show_for(b)
 	parts["places"].show_for(b)
-	parts["net"].text = "\n".join([Power.note(state, b), state.tide.note(state, b)].filter(func(l): return l != ""))
+	parts["net"].text = "\n".join(
+		[Power.note(state, b), state.tide.note(state, b), state.tide.pace_note(state, b)].filter(
+			func(l): return l != ""
+		)
+	)
 	parts["net"].visible = parts["net"].text != ""
 	parts["recipe"].text = recipe_text(state, b)
 	parts["recipe"].visible = parts["recipe"].text != ""

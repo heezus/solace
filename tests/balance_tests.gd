@@ -42,7 +42,7 @@ func run(runner) -> void:
 	test_a_full_stockpile_spills_and_a_refund_does_not()
 	test_food_spoils_above_the_floor_and_preservation_halves_it()
 	test_a_price_can_always_be_saved_for()
-	test_the_bloom_eats_the_stores_while_a_building_is_overgrown()
+	test_the_bloom_leaves_the_stores_alone()
 
 
 func test_the_runway_of_a_falling_good() -> void:
@@ -182,28 +182,20 @@ func test_a_price_can_always_be_saved_for() -> void:
 				t.check(s.economy.caps[item] >= cost[item], "%s: the cap on %s fits its price" % [id, item])
 
 
-func test_the_bloom_eats_the_stores_while_a_building_is_overgrown() -> void:
+func test_the_bloom_leaves_the_stores_alone() -> void:
 	var s: Sim = t.fresh()
 	t.give(s, 100)
 	var at: Vector2i = s.world.camp_pos + Vector2i(3, 0)
 	t.place_free(s, "storehouse", at)
 	s.tide.begun = true
 	s.tide.grown[at] = true
-	for i in 70:
-		s.tide.tick(s, 1.0)
-	t.check(s.tide.eaten == 0, "no building overgrown yet: the stores are left alone")
 	s.tide.hit[at] = 0.0
 	var before := s.economy.inv.duplicate()
-	for i in 61:
+	for i in 121:
 		s.tide.tick(s, 1.0)
-	t.check(
-		s.tide.eaten == 5, "an overgrown building: 5 percent of 100 of one good goes in a minute (%d)" % s.tide.eaten
-	)
-	var short := 0
-	for id in before:
-		short += before[id] - s.economy.inv[id]
-	t.check(short == 5, "and the stores are 5 short in all")
+	t.check(s.tide.hit.has(at), "the building stands overgrown, not yet lost")
+	t.check(s.economy.inv == before, "and the Bloom has taken nothing from the stores")
 	var copy := Sim.new()
 	copy.generate(42)
 	copy.tide.from_dict(s.tide.to_dict())
-	t.check(copy.tide.eaten == 5, "what it has eaten survives a save")
+	t.check(not copy.tide.to_dict().has("eaten"), "and there is no tally of goods eaten to save")

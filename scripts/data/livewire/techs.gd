@@ -56,7 +56,7 @@ const TIDE_WATCH := {
 	"lane": "lore",
 	"tier": 0,
 	"slot": 1,
-	"unlock": "The Bloom's front on the map",
+	"unlock": "The Bloom's front on the map, and the Firebreak",
 	"icon": "wanderer",
 	"after": "livewire_begun",
 	"requires": ["bloom_sampling"],
@@ -160,22 +160,6 @@ const SCORCHER := {
 	"requires": ["generator", "arc_lamps"],
 	"cost": {"steel": 24, "wire": 30, "brick": 80},
 	"desc": "A burner that needs power and coal, and clears Bloom ground within 4 tiles, one tile in 30 seconds.",
-}
-const FIREBREAKS := {
-	"abbr": "Fb",
-	"color": Color("90be6d"),
-	"name": "Firebreaks",
-	"era": 5,
-	"stage": 2,
-	"lane": "land",
-	"tier": 2,
-	"slot": 0,
-	"unlock": "Firebreak strips",
-	"icon": "field",
-	"side": true,
-	"requires": ["tide_watch", "iron_plough"],
-	"cost": {"iron": 30, "steel": 12, "wood": 60, "charcoal": 45},
-	"desc": "Cleared strips of ground that burn and never grow. The tide goes round them or waits.",
 }
 const SHARD_DYNAMO := {
 	"abbr": "Sd",

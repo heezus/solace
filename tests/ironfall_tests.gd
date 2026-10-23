@@ -31,6 +31,7 @@ func run(runner) -> void:
 	test_the_techs_wait_for_the_end_of_the_starfall()
 	test_the_land_grows_south()
 	test_the_south_is_fair()
+	test_the_coal_lies_far_from_the_bloom()
 	test_coal_is_finite()
 	test_a_coal_mine_digs_a_seam_dry()
 	test_digging_by_hand()
@@ -210,6 +211,33 @@ func test_the_south_is_fair() -> void:
 		w.grow_east()
 		w.grow_south()
 	t.check(a.tiles == b.tiles and a.seam_of == b.seam_of, "a seed always grows the same south")
+
+
+func test_the_coal_lies_far_from_the_bloom() -> void:
+	var worst := 999
+	var rerolled := 0
+	for map_seed in range(1, 41):
+		var w := World.new()
+		w.generate(map_seed)
+		w.grow_east()
+		var report := {}
+		var strip := MapSouth.make(w, report)
+		rerolled += 1 if report["attempts"] > 1 else 0
+		var bloom: Array = []
+		for i in strip.size():
+			if strip[i] == Data.BLOOM_GROUND or strip[i] in Data.BLOOM_TILES.values():
+				bloom.append(Vector2i(i % w.width, floori(float(i) / w.width)))
+		var near := 999
+		for seam in MapSouth.seams_in(strip, w.width):
+			for i in seam:
+				for q in bloom:
+					near = mini(near, absi(i % w.width - q.x) + absi(floori(float(i) / w.width) - q.y))
+		worst = mini(worst, near)
+		t.check(
+			near >= MapSouth.COAL_BLOOM_MIN, "map %d: the nearest coal lies %d tiles from the Bloom" % [map_seed, near]
+		)
+	t.check(MapSouth.COAL_BLOOM_MIN == 12, "the rule is 12 tiles")
+	print("Coal to Bloom: 40 seeds, nearest %d tiles, %d needed a reroll" % [worst, rerolled])
 
 
 # --- Coal -----------------------------------------------------------------------

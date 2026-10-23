@@ -779,7 +779,7 @@ const BUILDINGS := {
 	{
 		"name": "Firebreak",
 		"kind": "firebreak",
-		"tech": "firebreaks",
+		"tech": "tide_watch",
 		"story": true,
 		"cost": {"wood": 4, "stone": 1},
 		"color": Color("6e5a45"),

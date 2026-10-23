@@ -104,7 +104,7 @@ static func enter(main: Node) -> void:
 	var s = main.state
 	for tech in ["blast_furnace", "steel", "rails", "shard_boiler", "bloom_sampling", "livewire", "boiler"]:
 		s.tech_tree.researched[tech] = true
-	for tech in ["power_poles", "order_board", "generator", "tide_watch", "arc_lamps", "scorcher", "firebreaks"]:
+	for tech in ["power_poles", "order_board", "generator", "tide_watch", "arc_lamps", "scorcher"]:
 		s.tech_tree.researched[tech] = true
 	for tech in ["factory_floor", "shard_dynamo", "chain_orders"]:
 		s.tech_tree.researched[tech] = true

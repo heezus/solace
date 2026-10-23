@@ -27,6 +27,8 @@ const WIRE_MILLS := 3
 const GENERATORS := 2
 const WIRE_PER_MILL := 60.0  # one more Wire Mill for every this much Wire still short
 const COAL_FOR_ENGINES := 200  # coal the Generators and the Scorcher burn, kept in the stores beyond the techs' needs
+const FIREBREAK_RING := 3  # tiles from a site (the southern mine, a far Generator) to its ring of Firebreaks
+const FIREBREAK_CAP := 60  # Firebreaks the bot lays in all
 const POLE_STUCK := 12  # decisions without a new pole before the bot gives the southern net up
 const ORDER_PLAN := [
 	{"item": "brick", "compare": "above", "number": 500, "verb": "pause", "target": "kiln"},
@@ -41,6 +43,7 @@ var coal_gift := 0  # coal handed over when Livewire begins: a what-if for measu
 var watch := {}  # checkpoint id -> the mark whose arrival sets it off (a stage start worth keeping)
 var on_checkpoint: Callable = func(_id: String, _bot): pass  # (id, this bot) when a watched mark arrives
 var stop_when_watched := false  # stop playing once every watched checkpoint has been reached
+var answer_tide := true  # false: the variant that lights a Generator and never answers the tide (no Lamp, Scorcher or Firebreak)
 var skyward_at := -1.0
 var _stuck_poles := 0
 var _livewire_goals := {}
@@ -104,6 +107,8 @@ func _note_goals() -> void:
 	if skyward_at < 0.0 and s.tech_tree.researched.has(SKYWARD):
 		skyward_at = clock
 		marks["skyward"] = clock
+	if Data.LIVEWIRE_BEGUN in s.story.events and not marks.has("livewire_begins"):
+		marks["livewire_begins"] = clock
 	if s.tide.begun and not marks.has("tide_begins"):
 		marks["tide_begins"] = clock
 	if s.tide.lost > 0 and not marks.has("first_loss"):
@@ -192,7 +197,9 @@ func _build_livewire() -> bool:
 		return true
 	if _lay_south_poles():
 		return true
-	return _place_south("arc_lamp") or _place_south("scorcher")
+	if not answer_tide:
+		return false
+	return _place_south("arc_lamp") or _place_south("scorcher") or _lay_firebreaks()
 
 
 ## The Order Board beside the Hearth; a full town gives up a Gatherer's Hut for it.
@@ -317,6 +324,53 @@ func _place_south(type: String) -> bool:
 			return -INF
 		return -Vector2(p).distance_to(Vector2(target))
 	return _place_best(type, score)
+
+
+## A ring of Firebreaks round the southern mine and any Generator well out from the Hearth, the side facing the front first, once
+## Tide Watch and Firebreaks are learned: the front must cross a Firebreak (10 times as long) or walk round the whole ring. A road
+## leaves a gap in it. One tile a decision, and only from wood and stone the techs and workshops do not need.
+func _lay_firebreaks() -> bool:
+	if not s.tide.begun or not s.town.unlocked("firebreak") or _count("firebreak") >= FIREBREAK_CAP:
+		return false
+	var price: Dictionary = s.town.price("firebreak")
+	for id in price:
+		if _spare(id) < price[id]:
+			return false
+	var sites: Array = []
+	var south := _south_target()
+	if s.gate.in_south(south):
+		sites.append(south)
+	for b in s.town.buildings:
+		if (
+			b["type"] == "generator"
+			and Vector2(b["pos"]).distance_to(Vector2(s.world.camp_pos)) > Data.TIDE_HEARTH_RING + 3.0
+		):
+			sites.append(b["pos"])
+	var rank := {}  # ring tile -> how near it lies to the front: nearer first
+	for site in sites:
+		var from := _front_near(site)
+		if from.x < 0:
+			continue
+		for dy in range(-FIREBREAK_RING, FIREBREAK_RING + 1):
+			for dx in range(-FIREBREAK_RING, FIREBREAK_RING + 1):
+				if maxi(absi(dx), absi(dy)) == FIREBREAK_RING:
+					var p: Vector2i = site + Vector2i(dx, dy)
+					rank[p] = -Vector2(p).distance_to(Vector2(from))
+	if rank.is_empty():
+		return false
+	return _place_best("firebreak", func(p): return rank.get(p, -INF))
+
+
+## The tile of the Bloom's front (or its ground) nearest `site`, (-1, -1) when there is none.
+func _front_near(site: Vector2i) -> Vector2i:
+	var best := Vector2i(-1, -1)
+	var best_d := INF
+	for p in s.tide.front:
+		var d := Vector2(p).distance_to(Vector2(site))
+		if d < best_d:
+			best = p
+			best_d = d
+	return best
 
 
 # --- Orders -------------------------------------------------------------------

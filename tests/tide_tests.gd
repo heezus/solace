@@ -22,7 +22,9 @@ func run(runner, helpers) -> void:
 	t = runner
 	base = helpers
 	test_the_data_is_whole()
-	test_the_tide_begins_with_livewire()
+	test_the_tide_wakes_with_the_first_power_drawn()
+	test_the_pace_follows_the_power_drawn()
+	test_tide_watch_says_the_pace()
 	test_it_spreads_at_the_set_pace()
 	test_what_slows_it()
 	test_the_hearth_is_never_taken()
@@ -40,16 +42,18 @@ func run(runner, helpers) -> void:
 # --- Helpers -------------------------------------------------------------------
 
 
+## A town with Livewire begun and the tide awake at 35 s a tile (the pace pinned, so most tests need no power net).
 func town() -> Sim:
 	var s: Sim = base.town()
 	s.story.record(Data.LIVEWIRE_BEGUN)
+	s.tide.pace_hold = 35.0
+	s.tide.begin(s)
 	return s
 
 
 ## A town with the tide begun and no front yet, on a meadow (so tests place the front where they want it).
 func quiet() -> Sim:
 	var s := town()
-	s.tide.begin(s)
 	s.tide.front.clear()
 	return s
 
@@ -93,10 +97,19 @@ func test_the_data_is_whole() -> void:
 		"5 tiles of light, 4 of fire"
 	)
 	t.check(Data.TILES.has(Data.TILE_BLOOM_TIDE) and not Data.TILES[Data.TILE_BLOOM_TIDE]["buildable"], "tide ground")
-	t.check(Data.TIDE_STEP_SECONDS == 35.0 and Data.OVERGROWN_LOST_SECONDS == 180.0, "35 s a tile, 3 minutes to lose")
-	for id in ["tide_watch", "arc_lamps", "scorcher", "firebreaks", "living_ground", "foremen", "powered_mines"]:
+	t.check(
+		Data.TIDE_IDLE_SECONDS == 70.0 and Data.TIDE_POWER_SCALE == 4.0 and Data.TIDE_MIN_SECONDS == 20.0,
+		"70 s a tile with no power, half that at 4 units, 20 s at the quickest"
+	)
+	t.check(Data.OVERGROWN_LOST_SECONDS == 180.0, "3 minutes to lose")
+	for id in ["tide_watch", "arc_lamps", "scorcher", "living_ground", "foremen", "powered_mines"]:
 		t.check(Data.TECHS[id]["stage"] == 2, "%s is a stage 2 tech" % id)
 	t.check("firebreak" in Data.BUILD_ORDER and "firebreak" in ["road", "firebreak"], "a Firebreak is laid by dragging")
+	t.check(
+		not Data.TECHS.has("firebreaks") and Data.BUILDINGS["firebreak"]["tech"] == "tide_watch",
+		"Firebreaks come with Tide Watch"
+	)
+	t.check(Data.BUILDINGS["firebreak"]["cost"] == {"wood": 4, "stone": 1}, "and a tile still costs 4 Wood and 1 Stone")
 	for id in Data.TIDE_KEEPS:
 		t.check(Data.TILES.has(id), "%s is a tile" % id)
 
@@ -104,27 +117,53 @@ func test_the_data_is_whole() -> void:
 # --- The creep -----------------------------------------------------------------
 
 
-func test_the_tide_begins_with_livewire() -> void:
+func test_the_tide_wakes_with_the_first_power_drawn() -> void:
 	var early := Sim.new()
 	early.generate(2)
 	early.tick(1.0)
 	t.check(not early.tide.begun and early.tide.grown.is_empty(), "before Livewire the tide does nothing")
-	var s := town()
-	t.check(not s.tide.begun, "it waits for a tick")
+	var s: Sim = base.town()
+	s.story.record(Data.LIVEWIRE_BEGUN)
+	var c: Vector2i = base.meadow(s)
 	s.tick(0.5)
-	t.check(s.tide.begun and not s.tide.front.is_empty(), "it begins the tick after Livewire does")
-	t.check(Data.TIDE_BEGAN_LINE in s.events, "and the feed says so")
+	t.check(not s.tide.begun, "Livewire begun, no power drawn: the tide sleeps")
+	put(s, "power_pole", c)
+	var gen := put(s, "generator", c + Vector2i(0, 2))
+	gen["inbuf"] = {"coal": 5}
+	s.tick(0.5)
+	t.check(not s.tide.begun, "a Generator with nothing on its net draws nothing")
+	put(s, "arc_lamp", c + Vector2i(1, 0))
+	s.seasons.time = 123.0
+	s.tick(0.5)
+	s.tick(0.5)
+	t.check(
+		gen["burn"] > 0.0 and s.tide.begun and not s.tide.front.is_empty(),
+		"a lamp asks, the Generator lights, the tide wakes"
+	)
+	t.check(absf(s.tide.woke_at - 123.0) <= 1.0, "and it remembers when (%.1f)" % s.tide.woke_at)
+	t.check(Data.TIDE_BEGAN_LINE in s.events, "the feed says so")
+	t.check(
+		Data.TIDE_BEGAN_LINE.begins_with("The hum carries south. Something in the Bloom has heard it."),
+		"in the set words"
+	)
 	var patches := 0
 	for p in s.tide.front:
 		t.check(s.world.tile_at(p) not in s.tide.PATCH_TILES, "the front is beside a patch, not on it")
 		patches += 1
 	t.check(patches > 0 and s.tide.grown.is_empty(), "nothing is taken yet")
 	t.check(s.tide.front_distance(s) == -1, "so no Bloom is near the Hearth")
-	var late := town()
-	late.tick(0.5)
-	var n: int = late.tide.front.size()
-	late.tide.begin(late)
-	t.check(late.tide.begun and late.tide.front.size() == n, "beginning twice changes nothing")
+	var n: int = s.tide.front.size()
+	s.tide.begin(s)
+	t.check(s.tide.begun and s.tide.front.size() == n, "beginning twice changes nothing")
+	var wheel: Sim = base.town()
+	wheel.story.record(Data.LIVEWIRE_BEGUN)
+	var w: Vector2i = base.meadow(wheel)
+	put(wheel, "power_pole", w)
+	put(wheel, "water_wheel", w + Vector2i(0, 2))
+	put(wheel, "arc_lamp", w + Vector2i(1, 0))
+	wheel.tick(0.5)
+	wheel.tick(0.5)
+	t.check(wheel.tide.begun, "a Water Wheel's power wakes it too: any source will do")
 
 
 func test_it_spreads_at_the_set_pace() -> void:
@@ -175,6 +214,75 @@ func test_what_slows_it() -> void:
 	lamp["burn"] = 0.0
 	s.tide.refresh_lights(s)
 	t.check(is_equal_approx(s.tide.cost(s, c + Vector2i(-5, -4)), 35.0), "a cold one does nothing")
+
+
+func test_the_pace_follows_the_power_drawn() -> void:
+	t.check(is_equal_approx(Tide.step_for(0), 70.0), "no power drawn: 70 s a tile")
+	t.check(is_equal_approx(Tide.step_for(4), 35.0), "4 units: 35 s")
+	t.check(roundi(Tide.step_for(8)) == 23, "8 units: about 23 s (%.1f)" % Tide.step_for(8))
+	t.check(roundi(Tide.step_for(6)) == 28, "6 units: 28 s (%.1f)" % Tide.step_for(6))
+	t.check(is_equal_approx(Tide.step_for(500), 20.0), "never under 20 s")
+	var s: Sim = base.town()
+	s.story.record(Data.LIVEWIRE_BEGUN)
+	var c: Vector2i = base.meadow(s)
+	put(s, "power_pole", c)
+	var gen := put(s, "generator", c + Vector2i(0, 2))
+	gen["burn"] = 9999.0
+	gen["inbuf"] = {"coal": 5}
+	s.livewire.tick(s, 0.0)
+	s.tick(0.5)
+	t.check(
+		not s.tide.begun and s.tide.drawn == 0, "a Generator with nothing on its net draws nothing, so the tide sleeps"
+	)
+	s.tide.begin(s)
+	t.check(is_equal_approx(s.tide.cost(s, c + Vector2i(5, 5)), 70.0), "an open tile takes 70 s")
+	for off in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, -1)]:
+		put(s, "arc_lamp", c + off)
+	s.livewire.tick(s, 0.0)
+	tick_for(s, Data.TIDE_ETA_SECONDS + 0.5)
+	var asked: int = s.livewire.nets[0]["asks"]
+	t.check(
+		asked == 3 * Data.MACHINE_ASK and s.tide.drawn == asked,
+		"three lamps on a net that gives enough: %d units" % s.tide.drawn
+	)
+	t.check(
+		is_equal_approx(s.tide.cost(s, c + Vector2i(5, 5)), Tide.step_for(s.tide.drawn)),
+		"an open tile now takes %.1f s" % s.tide.cost(s, c + Vector2i(5, 5))
+	)
+	var road := c + Vector2i(5, 6)
+	s.world.add_road(road, 0)
+	t.check(
+		is_equal_approx(s.tide.cost(s, road), Tide.step_for(s.tide.drawn) * 3.0), "a road still takes 3 times as long"
+	)
+	# A tile's time is fixed when the front reaches its neighbour, so a later change in the draw leaves it alone.
+	var n := c + Vector2i(8, 8)
+	s.tide.front.clear()
+	s.tide._spread_from(s, n)
+	var queued: Dictionary = s.tide.front.duplicate()
+	s.tide.drawn = 0
+	for p in queued:
+		t.check(is_equal_approx(s.tide.front[p], queued[p]), "a queued tile keeps its time when the draw falls")
+		break
+
+
+func test_tide_watch_says_the_pace() -> void:
+	var s := quiet()
+	s.tide.pace_hold = 0.0
+	s.tide.drawn = 6
+	var gen := put(s, "generator", base.meadow(s) + Vector2i(0, 2))
+	t.check(s.tide.pace_note(s, gen) == "", "without Tide Watch the first line is enough")
+	s.tech_tree.researched["tide_watch"] = true
+	var line: String = s.tide.pace_note(s, gen)
+	t.check(
+		line == "The Bloom moves faster while the town draws power: 6 units now, a tile every 28 s",
+		"with it, a generator's card says so (%s)" % line
+	)
+	s.tide.drawn = 0
+	t.check(s.tide.pace_note(s, gen).contains("a tile every 70 s"), "and with no power drawn, it says the pace is slow")
+	t.check(
+		s.tide.pace_note(s, put(s, "gatherers_hut", base.meadow(s) + Vector2i(4, 0))) == "",
+		"a house has nothing to say"
+	)
 
 
 func test_the_hearth_is_never_taken() -> void:
@@ -427,14 +535,21 @@ func test_the_tide_saves_and_loads() -> void:
 	var again := Sim.new()
 	t.check(RunSave.restore(again, RunSave.from_json(RunSave.to_json(RunSave.dump(loaded)))), "round trip")
 	t.check(RunSave.VERSION == 1, "the save version is unchanged")
-	# an old Livewire save has no tide: it starts when the game is loaded
+	# an old Livewire save has no tide: it wakes with the first lit Generator, as in a new game
 	var d := RunSave.dump(s)
 	d["game"].erase("tide")
 	var old := Sim.new()
 	t.check(RunSave.restore(old, d), "a save from stage 1 loads")
 	t.check(not old.tide.begun, "with no tide in it")
 	old.tick(0.5)
-	t.check(old.tide.begun, "it begins on the first tick, as Livewire has begun")
+	t.check(not old.tide.begun, "and it sleeps while no Generator burns")
+	var oc: Vector2i = base.meadow(old)
+	put(old, "power_pole", oc)
+	put(old, "generator", oc + Vector2i(0, 2))["inbuf"] = {"coal": 5}
+	put(old, "arc_lamp", oc + Vector2i(1, 0))
+	old.tick(0.5)
+	old.tick(0.5)
+	t.check(old.tide.begun, "it wakes with the first power drawn")
 
 
 # --- What the stage 1 review found ---------------------------------------------

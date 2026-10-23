@@ -1,8 +1,9 @@
 extends RefCounted
-## The Tide block (design-system/23-livewire.md, stage 2): the Bloom's creep out of the three south patches. It starts the tick after
-## Livewire begins and spreads like a flood fill that takes time: a tile joins the Bloom `cost` seconds after a neighbour does (open
-## ground Data.TIDE_STEP_SECONDS, slower over roads, rock, rivers, paved ground, a Firebreak or a burning Shard Lamp's light), never
-## by chance, so a seed always floods the same way. It never enters burnt ground, an Arc Lamp's light or the ring round the Hearth.
+## The Tide block (design-system/23-livewire.md, stage 2): the Bloom's creep out of the three south patches. It wakes with the first
+## power drawn from any engine (the hum carries south) and spreads like a flood fill that takes time: a tile joins the Bloom `cost`
+## seconds after a neighbour does (open ground `step_seconds`, which follows the power the town draws; slower over roads, rock,
+## rivers, paved ground, a Firebreak or a burning Shard Lamp's light), never by chance, so a seed always floods the same way.
+## It never enters burnt ground, an Arc Lamp's light or the ring round the Hearth.
 ## Ground it takes becomes Bloom ground (`bloom_tide`, plain ground and trees and fields under it; ore, water and the tiles under a
 ## building or a road keep their own and only wear the Bloom's colour). A building it reaches is overgrown at once and lost after
 ## Data.OVERGROWN_LOST_SECONDS unless the ground is burnt clear or the building is held by light or fire. A Scorcher (fed, on a net)
@@ -26,10 +27,12 @@ var burnt: Dictionary = {}  # tile -> true: ground burnt clear, which the tide n
 var front: Dictionary = {}  # tile -> the tide time it joins the Bloom
 var hit: Dictionary = {}  # the tile of an overgrown building -> seconds it has been overgrown
 var lost := 0  # buildings the Bloom has taken
-var eaten := 0  # goods it has eaten from the stores
+var woke_at := -1.0  # the game clock (Seasons.time) when the tide woke, -1 before
+var drawn := 0  # power units the machines draw now, read every Data.TIDE_ETA_SECONDS
+var pace_hold := 0.0  # above 0: seconds per open tile whatever the town draws (a test or a measurement pins the pace)
 var rev := 0  # changes whenever the Bloom's ground does
 var eta: Dictionary = {}  # the tile of a building the tide has not reached -> the tide time it will (Tide Watch)
-var _eat_clock := 0.0  # seconds since the Bloom last ate, counted while a building stands overgrown
+var _pace_clock := 0.0
 var _told: Dictionary = {}  # building tile -> true once Tide Watch has warned of it
 var _eta_clock := 0.0
 var _eta_rev := -1
@@ -40,12 +43,17 @@ var _fires: Array = []  # the burning Scorchers' tiles, this tick
 # --- Each tick -----------------------------------------------------------------------------------------------------
 
 
-## One tick: start the tide once Livewire has begun, let tiles join, count overgrown buildings down, keep Tide Watch's times.
+## One tick: wake the tide at the first power drawn, read the power drawn, let tiles join, count overgrown buildings down, keep
+## Tide Watch's times.
 func tick(s, delta: float) -> void:
 	if not begun:
-		if not s.story.has_event(Data.LIVEWIRE_BEGUN):
+		if not s.story.has_event(Data.LIVEWIRE_BEGUN) or units_drawn(s) <= 0:
 			return
 		begin(s)
+	_pace_clock += delta
+	if _pace_clock >= Data.TIDE_ETA_SECONDS:
+		_pace_clock = 0.0
+		drawn = units_drawn(s)
 	time += delta * s.seasons.tide_pace()
 	refresh_lights(s)
 	var due: Array = []
@@ -63,7 +71,6 @@ func tick(s, delta: float) -> void:
 			1:
 				front[p] = time + Data.TIDE_RETRY_SECONDS
 	_overgrown(s, delta)
-	_eat_stock(s, delta)
 	if s.tech_tree.researched.has("tide_watch"):
 		_watch(s, delta)
 
@@ -72,12 +79,44 @@ func tick(s, delta: float) -> void:
 func begin(s) -> void:
 	begun = true
 	time = 0.0
+	woke_at = s.seasons.time
+	drawn = units_drawn(s)
+	_pace_clock = 0.0
 	var w: int = s.world.width
 	for i in range(s.world.base_height * w, s.world.tiles.size()):
 		if s.world.tiles[i] in PATCH_TILES:
 			_spread_from(s, Vector2i(i % w, floori(float(i) / w)))
 	rev += 1
 	said.emit(Data.TIDE_BEGAN_LINE)
+
+
+## The power units the machines draw now, summed over every net: what a net gives when it gives less than it is asked.
+func units_drawn(s) -> int:
+	var sum := 0
+	for n in s.livewire.nets:
+		sum += mini(n["asks"], n["given"])
+	return sum
+
+
+## Seconds the front takes to cross an open tile with `units` of power drawn.
+static func step_for(units: int) -> float:
+	return clampf(
+		Data.TIDE_IDLE_SECONDS / (1.0 + float(units) / Data.TIDE_POWER_SCALE),
+		Data.TIDE_MIN_SECONDS,
+		Data.TIDE_IDLE_SECONDS
+	)
+
+
+## Seconds per open tile now.
+func step_seconds() -> float:
+	return pace_hold if pace_hold > 0.0 else step_for(drawn)
+
+
+## What Tide Watch says of the pace: the units drawn and the seconds a tile takes.
+func pace_line() -> String:
+	if drawn <= 0:
+		return Data.TIDE_PACE_IDLE % roundi(step_seconds())
+	return Data.TIDE_PACE_NOTE % [drawn, roundi(step_seconds())]
 
 
 ## True when tile p is Bloom: ground the tide made, or one of the patches it came from.
@@ -157,7 +196,7 @@ func cost(s, p: Vector2i) -> float:
 		slow = maxf(slow, Data.TIDE_SLOW_FIREBREAK)
 	if _burning_lamp_lights(s, p):
 		slow *= Data.TIDE_SLOW_LAMP
-	return Data.TIDE_STEP_SECONDS * slow
+	return step_seconds() * slow
 
 
 func _burning_lamp_lights(_s, p: Vector2i) -> bool:
@@ -209,28 +248,6 @@ func _overgrown(s, delta: float) -> void:
 			hit[p] += delta
 			if hit[p] >= Data.OVERGROWN_LOST_SECONDS:
 				_lose(s, p)
-
-
-## While a building stands overgrown the Bloom eats the stores: Data.BLOOM_EAT_SHARE of one good a minute. Which good comes
-## from the clock and the map's seed, never from the game's random numbers, so every run of a map loses the same goods.
-func _eat_stock(s, delta: float) -> void:
-	if hit.is_empty():
-		_eat_clock = 0.0
-		return
-	_eat_clock += delta
-	if _eat_clock < Data.BLOOM_EAT_SECONDS:
-		return
-	_eat_clock -= Data.BLOOM_EAT_SECONDS
-	var goods: Array = Data.ITEM_ORDER.filter(func(g): return s.economy.inv.get(g, 0) >= Data.BLOOM_EAT_MIN)
-	if goods.is_empty():
-		return
-	var turn := floori(time / Data.BLOOM_EAT_SECONDS)
-	var id: String = goods[absi(turn * 7919 + s.world.map_seed) % goods.size()]
-	var n := maxi(1, floori(s.economy.inv[id] * Data.BLOOM_EAT_SHARE))
-	s.economy.inv[id] -= n
-	s.economy.note(id, -float(n), "bloom")
-	eaten += n
-	said.emit(Data.BLOOM_EAT_LINE % [n, Data.ITEMS[id]["name"]])
 
 
 ## True when an Arc Lamp's light or a burning Scorcher's reach covers tile p, so an overgrown building there is not lost.
@@ -436,6 +453,14 @@ func note(s, b: Dictionary) -> String:
 	return ""
 
 
+## The line Tide Watch adds to an engine's, a Scorcher's or an Arc Lamp's card: how fast the front moves now.
+func pace_note(s, b: Dictionary) -> String:
+	var kind: String = Data.BUILDINGS[b["type"]]["kind"]
+	if begun and s.tech_tree.researched.has("tide_watch") and kind in ["power", "scorcher", "arc_lamp"]:
+		return pace_line()
+	return ""
+
+
 ## The nearest Bloom ground to the Hearth, in tiles, or -1 when there is none yet.
 func front_distance(s) -> int:
 	var best := -1
@@ -484,8 +509,8 @@ func to_dict() -> Dictionary:
 		"front": f,
 		"hit": h,
 		"lost": lost,
-		"eaten": eaten,
-		"eat_clock": _eat_clock,
+		"woke_at": woke_at,
+		"drawn": drawn,
 		"told": Codec.vec_keys(_told),
 	}
 
@@ -502,8 +527,9 @@ func from_dict(d: Dictionary) -> void:
 	for e in d.get("hit", []):
 		hit[Vector2i(int(e[0]), int(e[1]))] = float(e[2])
 	lost = int(d.get("lost", 0))
-	eaten = int(d.get("eaten", 0))
-	_eat_clock = float(d.get("eat_clock", 0.0))
+	woke_at = float(d.get("woke_at", -1.0))
+	drawn = int(d.get("drawn", 0))
+	_pace_clock = 0.0
 	_told = Codec.to_vec_set(d.get("told", []))
 	eta = {}
 	_eta_rev = -1
