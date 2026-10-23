@@ -15,6 +15,8 @@ const Hands = preload("res://scripts/hands.gd")
 const GrowthNote = preload("res://scripts/growth_note.gd")
 const Steam = preload("res://scripts/steam.gd")
 const StoreRest = preload("res://scripts/store_rest.gd")
+const Power = preload("res://scripts/power.gd")
+const WaitWhy = preload("res://scripts/wait_why.gd")
 
 
 ## One step of a worker's day at their building.
@@ -249,9 +251,12 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 		var how: String = (
 			Data.NO_POWER_STATUS if s.tech_tree.researched.has("boiler") else "No power: build a Water Wheel nearby"
 		)
+		var alert := "No power"
 		if s.tech_tree.researched.has("power_poles"):
-			how = Data.NET_NO_POWER_STATUS
-		s.town.set_status(b, how, "No power")
+			var why: Dictionary = Power.dark(s, b)  # and which of the three it is: no pole, no engine on the net, or a cold engine
+			how = why["text"]
+			alert = why["alert"]
+		s.town.set_status(b, how, alert)
 		return
 	if not s.people.worker_home(b):
 		b["status"] = "%s walking here" % s.people.title_of(s.people.kith[b["worker"]])
@@ -349,13 +354,7 @@ static func idle_reason(s, b: Dictionary, def: Dictionary) -> void:
 		return
 	var how := "waiting for a hauler" if auto else "click to load" + road_note(s, b)
 	if auto:
-		var wait: String = s.hauling.waiting_note(s, b)
-		if wait != "":
-			how = wait.substr(0, 1).to_lower() + wait.substr(1)
-	if auto:
-		for id in recipe:
-			if b["inbuf"].get(id, 0) + b["incoming"].get(id, 0) < recipe[id] and s.economy.inv.get(id, 0) == 0:
-				how = "stockpile is out"
+		how = WaitWhy.of(s, b, WaitWhy.missing(s, b, recipe))["text"]
 	var more := "" if auto else GrowthNote.hint(s)
 	var source: String = Data.INPUT_HINTS.get(b["type"], "")
 	more = source if more == "" else more if source == "" else source + ". " + more

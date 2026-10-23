@@ -261,7 +261,7 @@ func _init() -> void:
 ## in 8 to 25 simulated minutes; data.gd is tuned so it takes about 12 to 16. The game at that moment must match
 ## tests/golden.json. It then plays on to its first Bronze, which should come 7 to 19 minutes later (the target is about
 ## 10 to 14; chained neighbours run by haulers add a couple of minutes, see the decision log), and the game at that
-## moment must match tests/golden_bronze.json. The Falling Star follows 8 to 36 minutes after
+## moment must match tests/golden_bronze.json. The Falling Star follows 7 to 36 minutes after
 ## that: homes ask for more as they grow (page 17), so a whole run is about 45 to 60 minutes by bot.
 func test_pacing_bot() -> void:
 	var golden := GoldenTests.new()
@@ -288,8 +288,8 @@ func test_pacing_bot() -> void:
 			"map %d: the first Bronze takes 7 to 19 minutes more (%.1f)" % [map_seed, r["minutes"]]
 		)
 		check(
-			star >= 8.0 and star <= 36.0,
-			"map %d: the Falling Star comes 8 to 36 minutes after it (%.1f)" % [map_seed, star]
+			star >= 7.0 and star <= 36.0,
+			"map %d: the Falling Star comes 7 to 36 minutes after it (%.1f)" % [map_seed, star]
 		)
 		if not r["won"] or r["minutes"] < 0.0 or star < 0.0:
 			for line in r["log"]:

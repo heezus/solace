@@ -251,14 +251,14 @@ func _building_wants() -> Array:
 
 
 ## What the gate still asks for, by good: the cost of every tech on the way to it that is not researched yet, and the Steel's
-## iron and coal (the Boiler's coal and the Bloomery's are left out: the spare covers them).
+## iron and coal, and the Bloomeries' coal (the Boiler's is left out: the spare covers it).
 func _gate_need(id: String) -> int:
 	var need := _route_cost(id)
 	var steel := _steel_left()
 	if id == "iron":
 		need += steel * 2
 	elif id == "coal":
-		need += steel
+		need += steel + _gate_short("iron")  # the Steel's coal, and the Bloomeries' (a batch of iron burns one): Charcoal no longer covers it
 	elif id == "iron_ore":
 		need = _gate_need("iron") * (1 if s.tech_tree.researched.has("blast_furnace") else 2)
 	return need

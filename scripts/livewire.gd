@@ -76,6 +76,26 @@ func kept_back(b: Dictionary, item: String) -> bool:
 	return _kept.has(item) and b["type"] not in _kept[item]
 
 
+## The building names a Bring first keeps `item` for ("" when it keeps it from none), for a status line.
+func kept_for(item: String) -> String:
+	if not _kept.has(item):
+		return ""
+	var names: Array = []
+	for type in _kept[item]:
+		names.append(plural(Data.BUILDINGS[type]["name"]))
+	return " and ".join(names)
+
+
+## The text of the Bring first holding now that serves other buildings than `b`'s type ahead of it, "" when none does.
+func ahead_of(b: Dictionary) -> String:
+	if _first.is_empty() or _first.has(b["type"]):
+		return ""
+	for o in orders:
+		if o["holding"] and o["verb"] == "bring" and _first.has(o["target"]):
+			return text(o)
+	return ""
+
+
 # --- Reading the orders --------------------------------------------------------------------------------------------
 
 

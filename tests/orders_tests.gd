@@ -342,7 +342,7 @@ func test_a_bring_first_that_cannot_be_met_lapses() -> void:
 	t.check(not lw.kept_back(forge, "coal"), "with enough in store nothing is kept")
 	lw.orders[0]["claim"] = 0.0
 	s.economy.inv["coal"] = 1
-	bloomery["inbuf"] = {"coal": 2, "iron_ore": 4}
+	bloomery["inbuf"] = Haulers.stock_wanted(s, bloomery).duplicate()  # stocked to what haulers would bring it
 	lw.tick(s, 3.0)
 	t.check(not lw.kept_back(forge, "coal"), "and nothing when the Bloomery wants no more")
 

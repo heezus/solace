@@ -39,6 +39,8 @@ var stopped_since: Dictionary = {}  # building tile -> the game clock when it st
 var _have: Dictionary = {}  # depot -> haulers in its places, from the last `assign`
 var _clock := REFRESH
 var _now := 0.0  # game seconds this block has run (not saved)
+var _census: Dictionary = {}  # depot -> {free, walking, busy, trips: what the busy ones do -> how many}, read once a second (not saved)
+var _census_at := -1.0
 var _stuck: Dictionary = {}  # hauler name -> `_now` until which a hauler with no reachable place is left alone (not saved)
 
 
@@ -308,6 +310,45 @@ func _can_go(s, k: Dictionary, depot: Vector2i) -> bool:
 ## Share of `depot`'s places filled (1 or more when full; a depot that wants none counts as full).
 func _share(depot: Vector2i) -> float:
 	return float(have(depot)) / wanted(depot) if wanted(depot) > 0 else INF
+
+
+## The haulers in each depot's places now, read at most once a game second: how many stand free at it, how many are walking
+## back to it, how many are on a trip, and what the trips are (for the status line, WaitWhy.of).
+func census(s) -> Dictionary:
+	if _census_at >= 0.0 and _now - _census_at < 1.0:
+		return _census
+	_census_at = _now
+	_census = {}
+	for k in s.people.kith:
+		if k["job"] != "haul":
+			continue
+		var depot: Vector2i = k.get("depot", NONE)
+		if not _census.has(depot):
+			_census[depot] = {"free": 0, "walking": 0, "busy": 0, "trips": {}}
+		var row: Dictionary = _census[depot]
+		if not k["task"].is_empty():
+			row["busy"] += 1
+			var what := _trip_text(s, k["task"])
+			row["trips"][what] = row["trips"].get(what, 0) + 1
+		elif Kith.tile_of(k) == depot:
+			row["free"] += 1
+		else:
+			row["walking"] += 1
+	return _census
+
+
+## What a hauler's task is, in a few words: "bringing Clay to a Kiln", "emptying a Smelter", "carrying goods home".
+func _trip_text(s, task: Dictionary) -> String:
+	var b: Dictionary = s.town.buildings[task["building"]]
+	var name: String = Data.BUILDINGS[b["type"]]["name"]
+	match task["kind"]:
+		"deliver":
+			return "bringing %s to a %s" % [Data.ITEMS[task["item"]]["name"], name]
+		"pickup":
+			return "emptying a %s" % name
+		"part":
+			return "bringing a part to the %s" % name
+	return "carrying goods home"
 
 
 ## Idle haulers walk over to the depot with the smallest share of its places filled, when they leave a depot better off than that
