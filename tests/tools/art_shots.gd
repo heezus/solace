@@ -57,7 +57,7 @@ func _lay(s: Sim) -> void:
 	s.fog.reveal_all()
 	spot = _open_ground(s)
 	for i in SHOW.size():
-		var p := spot + Vector2i((i % 7) * 2, (i / 7) * 2)
+		var p := spot + Vector2i((i % 7) * 2, floori(i / 7.0) * 2)
 		s.world.set_tile(p, "grass")
 		s.world.fields.erase(p)
 		if not s.place(SHOW[i], p):
