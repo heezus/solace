@@ -255,6 +255,7 @@ func _draw_decals() -> void:
 			atlas, Rect2(Vector2(decal.x, decal.y) - Vector2.ONE * size * 0.5, Vector2.ONE * size), source
 		)
 
+	_draw_young_bloom()
 	if _family > 0:
 		var era_atlas := Rendered.sheet("era-ground/decals")
 		for decal in era_decal_layout(_state, _seen):
@@ -267,6 +268,16 @@ func _draw_decals() -> void:
 				source,
 				Color(1, 1, 1, opacity)
 			)
+
+
+## The tide's young growth over the Bloom ground it has made (Rendered.tide_ground). Only the grass sheet is used: the sim does not
+## keep what a tile was before the tide took it, so the former-Field and former-wood sheets wait for that.
+func _draw_young_bloom() -> void:
+	if _state is Dictionary or not _state.tide.begun:
+		return
+	for p in _state.tide.grown:
+		if _seen.has_point(p) and _state.fog.is_revealed(p) and not _state.tide.burnt.has(p):
+			Rendered.tide_ground(_decals, Rect2(Vector2(p) * TILE, Vector2(TILE, TILE)), "", p)
 
 
 func era_decal_layout(s, seen: Rect2i) -> Array[Vector3]:
@@ -391,7 +402,7 @@ func _region_cell(s, p: Vector2i) -> Color:
 		value.g = 1.0 if kind.begins_with("bloom_") else 0.0
 		if not s is Dictionary:
 			value.g = 1.0 if s.tide.grown.has(p) else value.g
-			value.b = 1.0 if s.tide.burnt.has(p) or s.town.built_type(p) == "firebreak" else 0.0
+			value.b = 1.0 if s.tide.burnt.has(p) else 0.0  # a Firebreak lays its own painted strip (Main), on the ground as it was
 	_region_cells[p] = value
 	return value
 

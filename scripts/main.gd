@@ -943,9 +943,10 @@ func _draw_gather_range(p: Vector2i) -> void:
 func _draw_building(b: Dictionary) -> void:
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
 	var p: Vector2i = b["pos"]
-	var k := TILE / Art.DESIGN
 	var r := Overlays.footprint(state, p)  # a tile, or the Hearth's 2x2
-	var working: bool = b["status"] == "Working"
+	var working: bool = b["status"] == "Working" or (b["type"] == "shard_lamp" and b["burn"] > 0.0)  # a lit lamp
+	if b["type"] == "firebreak":  # a bare strip that joins its neighbours, no plate
+		return Rendered.module(self, "firebreak", RoadLayer.joined(state, p, "firebreak"), r)
 	Art.contact_shadow(self, Vector2(r.get_center().x, r.end.y - 2.0), r.size * Vector2(0.38, 0.055))
 	if Homes.is_home(b) and Homes.tier_of(b) > 0:
 		GrowthArt.draw_house(self, Homes.tier_of(b) + 1, r)  # a Homestead or a Longhouse has its own roof
@@ -955,7 +956,7 @@ func _draw_building(b: Dictionary) -> void:
 		HomeView.draw(self, b, r)  # any scaffold, over the house (scripts/home_look.gd)
 	if b["type"] == "shard_cairn":
 		Art.cairn_glow(self, r, state.sky.approach(), time)
-	var tile := _tile_rect(p).grow(-2.0 * k)
+	var tile := _tile_rect(p).grow(-2.0 * TILE / Art.DESIGN)
 	if def["kind"] == "gatherer":
 		HutFocus.draw_marker(self, tile, b["focus"])
 		if HutFocus.wants_click(state, b):
@@ -968,8 +969,7 @@ func _draw_building(b: Dictionary) -> void:
 	var held := Buildings.buffered(b["out"])
 	if held > 0:
 		var badge := tile.position + Vector2(tile.size.x - 3, 3)
-		var radius := 10.0 * Art.ui_k
-		Art.outlined_circle(self, badge, radius, GOAL_COLOR if held < Data.BUFFER_CAP else BAD)
+		Art.outlined_circle(self, badge, 10.0 * Art.ui_k, GOAL_COLOR if held < Data.BUFFER_CAP else BAD)
 		var digits := str(held)
 		var px := roundi(14.0 * Art.ui_k)
 		var wide := ThemeDB.fallback_font.get_string_size(digits, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x

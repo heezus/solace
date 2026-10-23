@@ -1022,3 +1022,35 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Jon had to close his Mac and asked that runs stop being at risk of a restart. The proof runs live in the cloud, not on the Mac, but the cloud machine restarts on its own too (one took five background runs with it that morning).
 - A Livewire-alone or variant run now checkpoints every five game minutes and resumes; an AI player folder that holds moves picks up by replaying them, then goes live (`--fresh=1` to start over); `tests/tools/long_run.sh` registers runs and starts every unfinished one again with `resume`.
 - Tests and tools only: no gameplay change.
+
+## 2026-10-22: Livewire miniature asset batch (PR #135)
+- Codex followed the approved Misty Highlands camera, upper-left lighting, warm timber/iron and cool shard accents for eight Livewire buildings; all remain 1×1.
+- Firebreak straight, corner and end are overhead ground modules with documented square regions and a joined 48 px fixture, preserving the road-like presentation without code changes.
+- Native 46/96 px comparisons and alpha/region provenance accompany the original transparent PNGs; Claude owns the reviewed mapping handoff.
+
+## 2026-10-22: Ironfall stage 3 miniatures (PR #136)
+- Codex retained Misty Highlands materials, upper-left light, shared camera and 1×1 footprints across steam/shard buildings; Shard Boiler keeps the brief's pale-gold port.
+- Shard Lamp lit/unlit states share one source canvas and sampling region; rail pieces use documented square regions checked as connected 48 px cells.
+- Steam Cart preserves the existing hand-cart Kith; beast cart references the Pen's animal. Native cart comparison uses the current caller size. No gameplay, renderer or test changes.
+
+## 2026-10-22: Wire, Steel Tools and Shard icons (PR #137)
+- Codex kept the approved miniature material/light treatment in three exact-stem transparent item icons: copper spool, cooler sharper axe/pick, and one pale-cyan shard.
+- Native 20 px checks on charcoal green and ivory, beside existing Iron Tools, guide readability; callers, top-bar layout and all gameplay remain unchanged.
+
+## 2026-10-22: Young Bloom tide ground (PR #138)
+- Codex retained the approved magenta/sickly-green Bloom family in thin open creeping ground art, with grass, former-Field and former-wood variants.
+- Transparent gaps expose the existing terrain; native 48 px comparisons check sparse botanical detail and irregular edges. Mature patch placeholders, overlays, tile rules and simulation remain unchanged.
+
+## 2026-10-22: Ironfall and Livewire research illustrations (PR #139)
+- Codex followed the existing shared map/item/research art design: eighteen relevant painted sources plus twelve dedicated concept symbols cover all 30 techs, avoiding parallel depictions of the same buildings.
+- Native 24/34 px review led to head crops for pole/lamp icons, a short rail detail crop and a dedicated bold Living Ground cutting; full per-tech regions and 24/34/48/96 px comparisons document the result.
+- Each tech receives a proposed independent resolver key for Claude's wiring, preserving existing shared callers. Skyward uses only a wire/star research emblem; the mast, Skyreach, UI and gameplay remain held.
+
+## 2026-10-23: The Ironfall and Livewire art batch is wired (PRs #135 to #139)
+- Every building the batch painted (Boiler, Shard Boiler, Forge, Steam Shed, Beast Pen, Shard Lamp, Generator, Wire Mill, Power Pole, Order Board, Arc Lamp, Scorcher, Factory Floor, Shard Dynamo) draws its own picture at the old size and footprint; the placeholder tints are gone. A burning Shard Lamp draws the lit post.
+- Rail draws Codex's pieces over the paved bed (straight, corner, T, cross, end, turned for the sides a tile joins; the end of a line is a Steam Shed or the last rail). Firebreaks lay their own strips, joined the same way, with no plate and no ground square beneath. The Firebreak art has no T or cross, so a junction is a straight with an end laid toward the third arm.
+- Steam Cart and beast cart use their paintings, with the cargo fitted into each empty bed; the placeholder chimney and beast marks are gone, so a Steam Cart with steam up looks as it does without (the painting's puff is static).
+- Wire, Steel Tools and the Shard have icons of their own. The Starfall Shard icon stays for the Starfall panels.
+- All 29 research cards in the batch point at `research_<tech>` icons; the Firebreaks card is unused (Tide Watch unlocks the building now).
+- The tide's young growth lies over every Bloom ground tile the tide made (grass sheet only: the sim keeps no former Field or wood).
+- Tools only: `tests/tools/art_shots.gd` shoots a laid showcase in the real map view for a before and after.

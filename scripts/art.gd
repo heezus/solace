@@ -135,6 +135,8 @@ static func dashed_rect(ci: CanvasItem, r: Rect2, col: Color, width: float, on: 
 
 ## Research illustrations share map/item art; their IDs do not change gameplay or map sprites.
 static func research_sprite(icon: String) -> Texture2D:
+	if icon.begins_with("research_"):
+		return Rendered.research(icon.trim_prefix("research_"))  # a card with a picture of its own (Rendered.RESEARCH)
 	match icon:
 		"granary":
 			return Rendered.sprite("research-landmarks", 0)
@@ -324,7 +326,7 @@ static func cairn_glow_alpha(approach: float, time: float) -> float:
 ## A building drawn in `r` (a tile, or the Hearth's 2x2): its SVG sprite at native scale (the sprite brings its own
 ## plate), or a plain plate in the building's color when it has none. `working` adds the charcoal pit's smoke.
 static func map_building(ci: CanvasItem, type: String, r: Rect2, working: bool, time: float) -> void:
-	if Rendered.building(ci, type, r):
+	if Rendered.building(ci, "shard_lamp_lit" if type == "shard_lamp" and working else type, r):  # `working`: a lamp burning
 		if type == "charcoal_pit" and working:
 			var k := r.size.x / DESIGN
 			for i in 3:

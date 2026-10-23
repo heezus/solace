@@ -13,6 +13,7 @@ const IconRow = preload("res://scripts/icon_row.gd")
 
 func run(t) -> void:
 	test_starfall_icons(t)
+	test_painted_pieces(t)
 	test_grounding_masks(t)
 	test_roads_join_across_cells(t)
 	test_dashes_always_advance(t)
@@ -163,6 +164,76 @@ func test_lead_sprite(t) -> void:
 		"Sela's region lies inside her image"
 	)
 	t.check(Rendered.lead_sprite() == tex, "her sprite is cached")
+
+
+## The Ironfall stage 3 and Livewire art: every building, item and tech has its painted picture, and the Rail and Firebreak pieces
+## are chosen and turned for the sides a tile joins.
+func test_painted_pieces(t) -> void:
+	for id in [
+		"boiler",
+		"shard_boiler",
+		"forge",
+		"steam_shed",
+		"beast_pen",
+		"shard_lamp",
+		"shard_lamp_lit",
+		"generator",
+		"wire_mill",
+		"power_pole",
+		"order_board",
+		"arc_lamp",
+		"scorcher",
+		"factory_floor",
+		"shard_dynamo"
+	]:
+		t.check(Rendered.SINGLE_BUILDINGS.has(id) and not Rendered.TINTS.has(id), "%s is painted, not tinted" % id)
+		t.check(Art.sprite(id) is AtlasTexture, "%s draws its own picture" % id)
+	for id in ["wire", "steel_tools", "shard"]:
+		t.check(Art.sprite("item_" + id) is AtlasTexture, "%s has its own icon" % id)
+	t.check(Rendered.icon("shard") != Art.sprite("item_shard"), "the Starfall shard icon stays apart from the item")
+	for id in Rendered.RESEARCH:
+		t.check(Data.TECHS.has(id) or id == "firebreaks", "%s is a tech" % id)
+		t.check(Rendered.research(id) is AtlasTexture, "%s has its research picture" % id)
+	for family in Rendered.MODULES:
+		for stem in Rendered.MODULES[family].values():
+			t.check(
+				Rendered.sprite(stem, 0).get_size().x == Rendered.sprite(stem, 0).get_size().y,
+				"%s is a square sample" % stem
+			)
+	var left := Vector4(1, 0, 0, 0)
+	t.check(Rendered.module_pieces("rail", Vector4(1, 1, 0, 0)) == [["rail", 0]], "rail left and right is straight")
+	t.check(
+		Rendered.module_pieces("rail", Vector4(0, 0, 1, 1)) == [["rail", 1]], "rail up and down is the straight turned"
+	)
+	t.check(Rendered.module_pieces("rail", left) == [["rail_end", 0]], "one arm to the left is the end as drawn")
+	t.check(
+		Rendered.module_pieces("rail", Vector4(0, 0, 1, 0)) == [["rail_end", 1]], "an arm up turns the end a quarter"
+	)
+	t.check(
+		Rendered.module_pieces("rail", Vector4(0, 0, 0, 1)) == [["rail_end", 3]],
+		"an arm down turns the end three quarters"
+	)
+	t.check(
+		Rendered.module_pieces("rail", Vector4(1, 0, 0, 1)) == [["rail_corner", 0]],
+		"left and down is the corner as drawn"
+	)
+	t.check(
+		Rendered.module_pieces("rail", Vector4(0, 1, 1, 0)) == [["rail_corner", 2]],
+		"right and up is the corner turned twice"
+	)
+	t.check(
+		Rendered.module_pieces("rail", Vector4(1, 1, 0, 1)) == [["rail_t", 0]], "left, right and down is the T as drawn"
+	)
+	t.check(
+		Rendered.module_pieces("rail", Vector4(1, 1, 1, 0)) == [["rail_t", 2]], "left, right and up turns the T twice"
+	)
+	t.check(Rendered.module_pieces("rail", Vector4(1, 1, 1, 1)) == [["rail_cross", 0]], "four arms is the cross")
+	t.check(Rendered.module_pieces("rail", Vector4()) == [["rail", 0]], "a lone rail runs across")
+	t.check(
+		Rendered.module_pieces("firebreak", Vector4(1, 1, 0, 1)) == [["firebreak", 0], ["firebreak_end", 3]],
+		"a Firebreak T is a straight with an end toward the third arm"
+	)
+	t.check(Rendered.module_pieces("firebreak", Vector4(1, 1, 1, 1)).size() == 2, "a Firebreak cross is two straights")
 
 
 ## Every pack, gift and glyph-set heading has its picture, and the row helper gives it a hover name.

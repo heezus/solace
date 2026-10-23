@@ -131,6 +131,52 @@ const REGIONS := {
 		[512, 559, 512, 357],
 		[1024, 599, 497, 320]
 	],
+	# Ironfall stage 3, Livewire and research art: one subject per image, index 0 the map region (docs/art/livewire/buildings,
+	# docs/art/ironfall/stage3, docs/art/ironfall/livewire-items, docs/art/livewire/bloom-tide, docs/art/research-ironfall-livewire).
+	# A second region is the research card's tighter crop of the same picture.
+	"power_pole": [[346, 44, 549, 1152], [330, 38, 580, 400]],
+	"generator": [[95, 59, 1088, 1150]],
+	"wire_mill": [[92, 106, 1070, 1042]],
+	"order_board": [[150, 91, 971, 1082]],
+	"arc_lamp": [[382, 47, 485, 1131], [360, 24, 540, 470]],
+	"scorcher": [[173, 192, 950, 878]],
+	"factory_floor": [[87, 187, 1154, 889]],
+	"shard_dynamo": [[82, 100, 1091, 1051]],
+	"firebreak": [[0, 0, 1254, 1254]],
+	"firebreak_corner": [[202, 192, 856, 856]],
+	"firebreak_end": [[0, 0, 1254, 1254]],
+	"boiler": [[288, 112, 814, 1016]],
+	"shard_boiler": [[213, 152, 903, 937]],
+	"forge": [[230, 48, 826, 1070]],
+	"steam_shed": [[97, 93, 1116, 985]],
+	"shard_lamp": [[461, 35, 333, 1178]],
+	"shard_lamp_lit": [[461, 35, 333, 1178], [450, 28, 360, 525]],
+	"beast_pen": [[105, 240, 1084, 829]],
+	"rail": [[444, 0, 886, 886], [720, 274, 340, 340]],
+	"rail_corner": [[200, 80, 900, 900]],
+	"rail_t": [[385, 348, 485, 485]],
+	"rail_cross": [[301, 301, 650, 650]],
+	"rail_end": [[0, 182, 886, 886]],
+	"steam_cart": [[191, 98, 1192, 885]],
+	"beast_cart": [[186, 219, 1185, 734]],
+	"wire": [[175, 81, 1000, 983]],
+	"steel_tools": [[89, 86, 1168, 1032]],
+	"shard": [[344, 91, 549, 1114]],
+	"bloom_tide": [[0, 0, 1312, 1199]],
+	"bloom_tide_field": [[0, 0, 1254, 1254]],
+	"bloom_tide_wood": [[0, 0, 1312, 1199]],
+	"research/teardown": [[67, 9, 1241, 1138]],
+	"research/taught_hands_ii": [[243, 5, 909, 1154]],
+	"research/iron_plough": [[41, 88, 1227, 1043]],
+	"research/bloom_sampling": [[348, 94, 818, 919]],
+	"research/livewire": [[211, 83, 914, 1039]],
+	"research/tide_watch": [[130, 149, 1069, 1002]],
+	"research/foremen": [[76, 188, 1127, 859]],
+	"research/powered_mines": [[128, 87, 1010, 977]],
+	"research/firebreaks": [[54, 215, 1183, 860]],
+	"research/chain_orders": [[35, 322, 1185, 636]],
+	"research/living_ground": [[230, 57, 834, 1144]],
+	"research/skyward": [[358, 107, 537, 1037]],
 	# Starfall: one subject per image (docs/art/starfall-buildings, -travellers, -icons).
 	"starfall-glyph-wall": [[112, 318, 1061, 707]],
 	"starfall-lumen-camp": [[162, 272, 977, 713]],
@@ -211,33 +257,28 @@ const SINGLE_BUILDINGS := {
 	# Ironfall stage 2: the Teardown Bench borrows the Trading Post, the Rain Barrel the Twine Post (tinted, see TINTS).
 	"teardown_bench": ["industry", 4],
 	"rain_barrel": ["workshops", 2],
-	# Ironfall stage 3: stand-ins, each tinted to tell it from the one it borrows (docs/art/requests.md has the slots).
-	"boiler": ["workshops", 3],
-	"shard_boiler": ["workshops", 3],
-	"forge": ["industry", 2],
-	"steam_shed": ["industry", 3],
-	"beast_pen": ["buildings", 3],
-	"shard_lamp": ["industry", 5],
-	# Livewire stage 1: stand-ins, each tinted (docs/art/requests.md has the slots).
-	"generator": ["workshops", 3],
-	"wire_mill": ["industry", 1],
-	"power_pole": ["workshops", 2],
-	"order_board": ["industry", 4],
+	# Ironfall stage 3: Codex's painted buildings (docs/art/ironfall/stage3). The Shard Lamp has a lit picture of its own.
+	"boiler": ["boiler", 0],
+	"shard_boiler": ["shard_boiler", 0],
+	"forge": ["forge", 0],
+	"steam_shed": ["steam_shed", 0],
+	"beast_pen": ["beast_pen", 0],
+	"shard_lamp": ["shard_lamp", 0],
+	"shard_lamp_lit": ["shard_lamp_lit", 0],
+	# Livewire: Codex's painted buildings (docs/art/livewire/buildings).
+	"generator": ["generator", 0],
+	"wire_mill": ["wire_mill", 0],
+	"power_pole": ["power_pole", 0],
+	"order_board": ["order_board", 0],
+	"arc_lamp": ["arc_lamp", 0],
+	"scorcher": ["scorcher", 0],
+	"factory_floor": ["factory_floor", 0],
+	"shard_dynamo": ["shard_dynamo", 0],
 }
 ## The tint of a placeholder that borrows another one's sprite, by feature or building id.
 const TINTS := {
 	"teardown_bench": Color(0.78, 0.7, 1.0),
 	"rain_barrel": Color(0.55, 0.8, 1.0),
-	"boiler": Color(0.78, 0.7, 0.66),
-	"shard_boiler": Color(1.0, 0.92, 0.55),
-	"forge": Color(0.7, 0.8, 1.0),
-	"steam_shed": Color(0.7, 0.75, 0.85),
-	"beast_pen": Color(0.8, 0.9, 1.0),
-	"shard_lamp": Color(0.6, 0.95, 1.0),
-	"generator": Color(1.0, 0.78, 0.35),
-	"wire_mill": Color(1.0, 0.78, 0.6),
-	"power_pole": Color(0.85, 0.7, 0.5),
-	"order_board": Color(1.0, 0.9, 0.55),
 }
 ## The fourteen Starfall icons, in the order of the "starfall-icons" regions: the three packs (Starfall.PACKS keys), the Shard,
 ## the four gifts (LUMEN_GIFTS keys) and the six glyph-set headings (GLYPH_SETS ids).
@@ -278,14 +319,60 @@ const ITEM_IDS := [
 	"bronze_tools"
 ]
 
-## Iron Gears, Steel Tools and Wire have no icon of their own yet: each borrows another's, recolored (docs/art/requests.md has the slots).
+## Iron Gears has no icon of its own yet: it borrows another's, recolored (docs/art/requests.md has the slot).
 const BORROWED_ITEMS := {
 	"iron_gears": ["copper", Color(0.72, 0.76, 0.84)],
-	"steel_tools": ["iron_tools", Color(0.68, 0.84, 1.0)],
-	"wire": ["copper", Color(1.0, 0.86, 0.55)],
+}
+## Wire, Steel Tools and the Shard, each a picture of its own (docs/art/ironfall/livewire-items). The Shard's Starfall icon
+## (STARFALL_ICONS) stays for the Starfall panels; this one is the item.
+const PAINTED_ITEMS := ["wire", "steel_tools", "shard"]
+## Connected ground modules (Rail, Firebreak): the sheet of each shape. Every sheet is a square cell drawn with its connections
+## LEFT (straight: left and right; corner: left and down; T: left, right and down; end: left), turned a quarter turn at a time.
+const MODULES := {
+	"rail": {"straight": "rail", "corner": "rail_corner", "end": "rail_end", "t": "rail_t", "cross": "rail_cross"},
+	"firebreak": {"straight": "firebreak", "corner": "firebreak_corner", "end": "firebreak_end"},
+}
+## Where the empty bed of each painted cart lies, as a share of the fitted picture: x, y, width, height (cargo rides there).
+const CART_BEDS := {
+	"steam_cart": Rect2(0.67, 0.18, 0.22, 0.26),
+	"beast_cart": Rect2(0.68, 0.10, 0.22, 0.24),
 }
 ## The five Ironfall icons, in the order of the "ironfall-items" regions (docs/art/ironfall/items).
 const IRONFALL_ITEM_IDS := ["coal", "iron_ore", "iron", "steel", "iron_tools"]
+## The research cards' pictures by tech id, as [sheet, region index] (docs/art/research-ironfall-livewire/spec.json): the painted
+## buildings and items reuse their own sheets, the rest have a sheet each under art/rendered/research/.
+const RESEARCH := {
+	"coal_seams": ["coal_seam", 0],
+	"ironstone": ["iron_hills", 0],
+	"teardown": ["research/teardown", 0],
+	"bloomery": ["bloomery", 0],
+	"boiler": ["boiler", 0],
+	"beast_pen": ["beast_pen", 0],
+	"iron_tools": ["ironfall-items", 4],
+	"rails": ["rail", 1],
+	"shard_lamps": ["shard_lamp_lit", 1],
+	"taught_hands_ii": ["research/taught_hands_ii", 0],
+	"blast_furnace": ["forge", 0],
+	"iron_plough": ["research/iron_plough", 0],
+	"shard_boiler": ["shard_boiler", 0],
+	"steel": ["ironfall-items", 3],
+	"bloom_sampling": ["research/bloom_sampling", 0],
+	"livewire": ["research/livewire", 0],
+	"power_poles": ["power_pole", 1],
+	"order_board": ["order_board", 0],
+	"tide_watch": ["research/tide_watch", 0],
+	"generator": ["generator", 0],
+	"arc_lamps": ["arc_lamp", 1],
+	"foremen": ["research/foremen", 0],
+	"powered_mines": ["research/powered_mines", 0],
+	"factory_floor": ["factory_floor", 0],
+	"scorcher": ["scorcher", 0],
+	"firebreaks": ["research/firebreaks", 0],
+	"shard_dynamo": ["shard_dynamo", 0],
+	"chain_orders": ["research/chain_orders", 0],
+	"living_ground": ["research/living_ground", 0],
+	"skyward": ["research/skyward", 0],
+}
 const BORROWED_PX := 64  # the recolored copy's size: items are shown at 20 to 48 px
 
 const LEAD_SPRITE_PATH := "res://art/sprites/lumen_lead.png"
@@ -398,6 +485,75 @@ static func wreck(ci: CanvasItem, center: Vector2) -> void:
 	fit(ci, sprite("starfall-wreck", 0), Rect2(center - Vector2(48, 24), Vector2(96, 48)))
 
 
+## The pieces of a `family` module (MODULES) for a tile joined on `links` (x LEFT, y RIGHT, z UP, w DOWN; above zero is joined):
+## each as [sheet, quarter turns clockwise]. A lone piece runs across. A Firebreak has no T or cross, so it is a straight with
+## an end laid toward the third arm, or two straights.
+static func module_pieces(family: String, links: Vector4) -> Array:
+	var shapes: Dictionary = MODULES[family]
+	var l := links.x > 0.0
+	var r := links.y > 0.0
+	var u := links.z > 0.0
+	var d := links.w > 0.0
+	match int(l) + int(r) + int(u) + int(d):
+		1:
+			return [[shapes["end"], 0 if l else (1 if u else (2 if r else 3))]]
+		2:
+			if l and r:
+				return [[shapes["straight"], 0]]
+			if u and d:
+				return [[shapes["straight"], 1]]
+			return [[shapes["corner"], 0 if (l and d) else (1 if (l and u) else (2 if (r and u) else 3))]]
+		3:
+			if shapes.has("t"):
+				return [[shapes["t"], 0 if not u else (1 if not r else (2 if not d else 3))]]
+			var across := 0 if (l and r) else 1
+			var third := (3 if d else 1) if across == 0 else (2 if r else 0)
+			return [[shapes["straight"], across], [shapes["end"], third]]
+		4:
+			if shapes.has("cross"):
+				return [[shapes["cross"], 0]]
+			return [[shapes["straight"], 0], [shapes["straight"], 1]]
+	return [[shapes["straight"], 0]]
+
+
+## A `family` module drawn over `cell`, the whole square sample stretched to it and turned for the sides it joins.
+static func module(ci: CanvasItem, family: String, links: Vector4, cell: Rect2) -> void:
+	for piece in module_pieces(family, links):
+		ci.draw_set_transform(cell.get_center(), float(piece[1]) * PI / 2.0, Vector2.ONE)
+		ci.draw_texture_rect(sprite(piece[0], 0), Rect2(-cell.size * 0.5, cell.size), false)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## A painted cart (a CART_BEDS key) fitted into `box`, with `cargo` in its bed when it has any.
+static func cart(ci: CanvasItem, stem: String, box: Rect2, cargo: Texture2D = null) -> void:
+	var tex := sprite(stem, 0)
+	fit(ci, tex, box)
+	if cargo != null:
+		var factor := minf(box.size.x / tex.get_width(), box.size.y / tex.get_height())
+		var size := tex.get_size() * factor
+		var at := box.position + Vector2((box.size.x - size.x) * 0.5, box.size.y - size.y)
+		var bed: Rect2 = CART_BEDS[stem]
+		fit(ci, cargo, Rect2(at + size * bed.position, size * bed.size))
+
+
+## The Bloom tide's young growth on one ground tile `cell`: the sheet of what the tile was (a Field, a wood, or grass).
+static func tide_ground(ci: CanvasItem, cell: Rect2, former: String, p: Vector2i) -> void:
+	var stem := "bloom_tide" if former == "" else "bloom_tide_" + former
+	var tex := sprite(stem, 0)
+	if variant(p, 2, 43, map_seed) == 1:
+		ci.draw_texture_rect(tex, Rect2(cell.end.x, cell.position.y, -cell.size.x, cell.size.y), false)
+	else:
+		ci.draw_texture_rect(tex, cell, false)
+
+
+## The research card picture of tech `id` (RESEARCH), or null for a tech with none.
+static func research(id: String) -> Texture2D:
+	if not RESEARCH.has(id):
+		return null
+	var spec: Array = RESEARCH[id]
+	return sprite(spec[0], spec[1])
+
+
 ## The borrowed icon of `id` (BORROWED_ITEMS), recolored once and kept; null for a good that is not borrowed.
 static func borrowed_item(id: String) -> Texture2D:
 	if not BORROWED_ITEMS.has(id):
@@ -433,10 +589,10 @@ static func named(name: String) -> Texture2D:
 		var ironfall := IRONFALL_ITEM_IDS.find(name.trim_prefix("item_"))
 		if ironfall >= 0:
 			return sprite("ironfall-items", ironfall)
+		if name.trim_prefix("item_") in PAINTED_ITEMS:
+			return sprite(name.trim_prefix("item_"), 0)
 		if BORROWED_ITEMS.has(name.trim_prefix("item_")):
 			return borrowed_item(name.trim_prefix("item_"))
-		if name == "item_shard":
-			return sprite("starfall-icons", STARFALL_ICONS.find("shard"))  # the Shard of the Starfall, chipped by hand now
 	if SINGLE_BUILDINGS.has(name):
 		var spec: Array = SINGLE_BUILDINGS[name]
 		return sprite(spec[0], spec[1])

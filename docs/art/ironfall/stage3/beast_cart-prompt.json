@@ -1,0 +1,9 @@
+{
+  "prompt": "Use case: compositing. Solace beast_cart sprite variant, genuinely transparent PNG, no scenery or ground plate. Reference image 1: growth-hand-cart.png for the small wooden two-wheel cart, camera, material, upper-left lighting and empty cargo bed. Reference image 2: beast_pen.png for the EXACT bluish shaggy beast identity, face, short ears, four sturdy legs and restrained cyan shard flecks. Draw that same beast in front-left pulling a SMALL EMPTY wooden two-wheel cart behind-right by a simple leather harness and shafts. Remove the human Kith entirely, remove all pen fencing, trough, ground and posts. Exactly one beast and one empty cart only. Keep compact Misty Highlands miniature silhouette readable at about36-46 px, whole subject in frame with clear margins, matching three-quarter overhead camera, warm honey timber, rope lashings, dark iron fittings and cool blue beast. No new species, wings, horns, additional characters, cargo, boiler or text.",
+  "source": "/Users/jhowell/.codex/generated_images/01a16543-0e79-78f3-b449-05c7917a41af/exec-2a1fc7c3-1671-4e56-bb8e-73c2e1625749.png",
+  "mode": "built-in imagegen",
+  "references": [
+    "art/rendered/growth-hand-cart.png (cart)",
+    "art/rendered/beast_pen.png (animal identity)"
+  ]
+}

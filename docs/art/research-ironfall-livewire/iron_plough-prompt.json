@@ -1,0 +1,7 @@
+{
+  "prompt": "Use case: style-transfer. Reference image is the approved Solace Steel Tools inventory icon: copy its sculpted painted wood/iron material treatment, camera, clean edge treatment and completely empty transparent background. Replace the crossed axe and pick with ONE small wooden IRON PLOUGH: short beam, two wooden handles, dark pointed iron share. No hands, animal, scenery or ground. Keep background and all gaps genuinely transparent exactly like the reference. The only nonzero-alpha pixels should belong to wood and metal. No broad shadow or glow anywhere. Compact bold icon readable at24px, full plough in frame.",
+  "source": "/Users/jhowell/.codex/generated_images/01a16543-0e79-78f3-b449-05c7917a41af/exec-f70b3138-83d2-49f7-a90f-801cded56c7f.png",
+  "mode": "built-in imagegen",
+  "reference": "Steel Tools icon from PR #137 (style and clean alpha)",
+  "notes": "Rejected earlier broad-background attempts; this source preserves the approved tool-icon material/cutout treatment."
+}
