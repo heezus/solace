@@ -459,7 +459,7 @@ func _show_tech(tech: String) -> void:
 	strip["cost"].text = (
 		Data.TECH_UNBUILT
 		if unbuilt
-		else "Cost (have/need): " + Ui.progress_text(state.economy.inv, state.tech_tree.cost_of(tech), 99)
+		else "Research (have/need): " + Ui.progress_text(state.economy.inv, state.tech_tree.cost_of(tech), 99)
 	)
 	var researched: bool = state.tech_tree.researched.has(tech)
 	_show_prices({} if unbuilt else (Ranks.next_cost(state, tech) if researched else state.tech_tree.cost_of(tech)))

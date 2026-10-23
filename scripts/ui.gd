@@ -305,16 +305,16 @@ static func shortfall_text(inv: Dictionary, cost: Dictionary) -> String:
 	return "" if parts.is_empty() else "need " + ", ".join(parts)
 
 
-## What the buildings a tech unlocks cost to put up: "Then builds for: 10 Wood, 5 Stone", or with several
-## "Then builds Road for 2 Wood, Wooden Bridge for 10 Wood, 2 Rope". "" for a tech that unlocks no building.
+## What the buildings a tech unlocks cost to put up, apart from the research: "then each Hut costs 10 Wood, 5 Stone", or with
+## several "then Road costs 2 Wood, Wooden Bridge costs 10 Wood, 2 Rope". "" for a tech that unlocks no building.
 static func then_builds_text(tech: String) -> String:
 	var types := Rules.buildings_of(tech)
 	if types.size() == 1:
-		return "Then builds for: " + cost_text(Data.BUILDINGS[types[0]]["cost"])
+		return "then each %s costs %s" % [Data.BUILDINGS[types[0]]["name"], cost_text(Data.BUILDINGS[types[0]]["cost"])]
 	var parts: Array = types.map(
-		func(t): return "%s for %s" % [Data.BUILDINGS[t]["name"], cost_text(Data.BUILDINGS[t]["cost"])]
+		func(t): return "%s costs %s" % [Data.BUILDINGS[t]["name"], cost_text(Data.BUILDINGS[t]["cost"])]
 	)
-	return "" if parts.is_empty() else "Then builds " + ", ".join(parts)
+	return "" if parts.is_empty() else "then " + ", ".join(parts)
 
 
 ## A heads-up when paying for `tech` from the stockpile `inv` would leave too little for its first building

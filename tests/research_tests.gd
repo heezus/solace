@@ -413,17 +413,25 @@ func test_a_tech_says_what_its_building_costs() -> void:
 		t.check(tech == "" or type in Rules.buildings_of(tech), "%s is listed under its tech" % type)
 	var hut_cost: Dictionary = Data.BUILDINGS["gatherers_hut"]["cost"]
 	t.check(
-		Ui.then_builds_text("gatherers_hut") == "Then builds for: " + Ui.cost_text(hut_cost),
-		"the card says the hut builds for %s" % Ui.cost_text(hut_cost)
+		Ui.then_builds_text("gatherers_hut") == "then each Gatherer's Hut costs " + Ui.cost_text(hut_cost),
+		"the card says each hut costs %s" % Ui.cost_text(hut_cost)
 	)
 	t.check(
 		(
-			Ui.then_builds_text("haulers").contains("Road for")
-			and Ui.then_builds_text("haulers").contains("Wooden Bridge for")
+			Ui.then_builds_text("haulers").contains("Road costs")
+			and Ui.then_builds_text("haulers").contains("Wooden Bridge costs")
 		),
 		"two buildings, both named"
 	)
 	t.check(Ui.then_builds_text("foraging") == "", "and nothing for a tech with no building")
+	t.check(
+		Ui.then_builds_text("scorcher") == "then each Scorcher costs 6 Steel, 8 Wire, 20 Brick",
+		"the Scorcher's card says what each one costs, apart from the research (%s)" % Ui.then_builds_text("scorcher")
+	)
+	t.check(
+		Ui.cost_text(Data.TECHS["scorcher"]["cost"]) == "24 Steel, 30 Wire, 80 Brick",
+		"and the research is a price of its own"
+	)
 	var tech_cost: Dictionary = Data.TECHS["gatherers_hut"]["cost"]
 	var inv := tech_cost.duplicate()
 	t.check(

@@ -594,9 +594,16 @@ func _expect_stage(id: String, s: Sim) -> void:
 			)
 			t.check(s.economy.inv.get("steel", 0) < 100, "with no stock handed over")
 		"earned_livewire":
-			t.check(
-				s.tech_tree.researched.has("livewire") and s.story.has_event(Data.LIVEWIRE_BEGUN) and s.tide.begun,
-				"earned_livewire: the gate is researched, Livewire has begun and the tide has started"
+			(
+				t
+				. check(
+					(
+						s.tech_tree.researched.has("livewire")
+						and s.story.has_event(Data.LIVEWIRE_BEGUN)
+						and not s.tide.begun
+					),
+					"earned_livewire: the gate is researched, Livewire has begun and the tide sleeps until a Generator is lit"
+				)
 			)
 			t.check(s.livewire.orders.is_empty(), "with no order written yet")
 		"livewire_gate":

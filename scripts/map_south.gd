@@ -15,7 +15,7 @@ extends RefCounted
 const Data = preload("res://scripts/data.gd")
 const Terrain = preload("res://scripts/map_terrain.gd")
 
-const ATTEMPTS := 12
+const ATTEMPTS := 40
 const COAL_SEAMS := 3
 const COAL_TILES_MIN := 4  # tiles in a seam, at least
 const COAL_TILES_MAX := 7
@@ -30,6 +30,7 @@ const BLOOM_ROWS := 8  # a patch lies in the strip's last rows: the far edge of 
 const BLOOM_GROUND_MIN := 5  # tiles in a patch (its ground and its sample), at least
 const BLOOM_GROUND_MAX := 9
 const BLOOM_APART := 7  # tiles between two patches' middles, at least
+const COAL_BLOOM_MIN := 12  # tiles (rows plus columns) between the Hearth's nearest seam and any Bloom ground, at least
 const FOREST_PERCENT := 13
 const ROCK_PERCENT := 6
 const NEIGHBORS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
@@ -189,6 +190,7 @@ static func faults_of(s, strip: Array) -> Array:
 	if near < IRON_NEAR_MIN:
 		faults.append("too little iron in the near rows (%d)" % near)
 	faults.append_array(_bloom_faults(strip, w, int(float(strip.size()) / float(w))))
+	faults.append_array(coal_bloom_faults(s, strip))
 	var cross := crossings_to_south(s)
 	if cross > MAX_CROSSINGS:
 		faults.append("the new land is %d river tiles away (at most %d)" % [cross, MAX_CROSSINGS])
@@ -222,6 +224,24 @@ static func _bloom_faults(strip: Array, w: int, h: int) -> Array:
 			if maxi(absi(middles[i].x - middles[j].x), absi(middles[i].y - middles[j].y)) < BLOOM_APART:
 				faults.append("two Bloom patches stand side by side")
 	return faults
+
+
+## Every coal seam must lie COAL_BLOOM_MIN tiles from every Bloom tile, or the Bloom would wake beside the coal the Generator burns.
+## [] when it does, else one sentence (the distance is Manhattan: rows plus columns, a floor on the walk).
+static func coal_bloom_faults(s, strip: Array) -> Array:
+	var w: int = s.width
+	var bloom: Array = []
+	for j in strip.size():
+		if strip[j] == Data.BLOOM_GROUND or strip[j] in Data.BLOOM_TILES.values():
+			bloom.append(Vector2i(j % w, floori(float(j) / w)))
+	var near := NONE
+	for seam in seams_in(strip, w):
+		for i in seam:
+			for q in bloom:
+				near = mini(near, absi(i % w - q.x) + absi(floori(float(i) / w) - q.y))
+	if near < COAL_BLOOM_MIN:
+		return ["the nearest coal seam lies %d tiles from the Bloom (at least %d)" % [near, COAL_BLOOM_MIN]]
+	return []
 
 
 ## The coal seams in `strip` (`w` wide) as lists of tile indexes: the connected groups of coal tiles, side by side, in row order.

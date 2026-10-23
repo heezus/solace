@@ -35,7 +35,7 @@ const EXT := ".run"  # not .json: an export takes such a file only through the i
 ## There is none for the Livewire gate: the bot runs out of coal before it (page 23), so no honest town exists there yet.
 const EARNED := {
 	"earned_ironfall_steam": "steam_cart",
-	"earned_livewire": "tide_begins",
+	"earned_livewire": "livewire_begins",
 }
 
 ## Where the slow starts (the ones a bot plays to) are kept between sessions; "" keeps none. A kept start is used only when
@@ -377,6 +377,7 @@ static func _livewire_tide() -> Sim:
 
 
 static func _livewire_tide_on(s: Sim) -> Sim:
+	s.tide.begin(s)  # the hum has been heard: the scripted start wakes the tide at once, whatever the Generator does
 	_learn(
 		s,
 		[

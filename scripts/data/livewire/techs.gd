@@ -168,13 +168,13 @@ const FIREBREAKS := {
 	"era": 5,
 	"stage": 2,
 	"lane": "land",
-	"tier": 2,
+	"tier": 1,
 	"slot": 0,
 	"unlock": "Firebreak strips",
 	"icon": "field",
 	"side": true,
-	"requires": ["tide_watch", "iron_plough"],
-	"cost": {"iron": 30, "steel": 12, "wood": 60, "charcoal": 45},
+	"requires": ["tide_watch"],
+	"cost": {"iron": 20, "wood": 60, "charcoal": 45},
 	"desc": "Cleared strips of ground that burn and never grow. The tide goes round them or waits.",
 }
 const SHARD_DYNAMO := {

@@ -59,7 +59,7 @@ The same five lanes and rules as [09](09-tech-tree.md). It unlocks when the Wire
 | 2 | Powered Mines | Stone | Power Poles, Iron Tools | *side:* Mines on a net dig twice as fast |
 | 3 | Factory Floor | Stone | Generator, Steel | Factory Floor |
 | 3 | Scorcher | Hearth | Generator, Arc Lamps | Scorcher |
-| 3 | Firebreaks | Land | Tide Watch, Iron Plough | *side:* Firebreak strips |
+| 1 | Firebreaks | Land | Tide Watch | *side:* Firebreak strips (Step 4 moved them down from tier 3, Iron Plough no longer needed) |
 | 4 | Shard Dynamo | Fiber | Generator, Shard Boiler | Shard Dynamo, once the Heat plate is learned |
 | 4 | Chain Orders | Lore | Foremen, Tide Watch | *side:* 3 more order slots, an order can run another, and the Send verb |
 | 4 | Living Ground | Land | Scorcher, the Bloom Lessons | *side:* Ash Ground, Fields +50% on it |
@@ -178,3 +178,16 @@ The AI player's Livewire runs showed the era hid what it needed. Four small word
 - **Who hauls.** The far-depot status adds that idle Kith are the haulers.
 - **The tide's answer.** The tide's first line and the Scorcher goal now say a Scorcher beside the Generator burns the Bloom back before it arrives.
 - **The wire chain.** A machine with no power now says to lay a Power Pole within 2 tiles and fuel a Boiler or Generator on that net with Coal (once Power Poles are known), and the Wire Mill's "Needs Copper" adds that Copper comes from the Smelters (`Data.NET_NO_POWER_STATUS`, `Data.INPUT_HINTS`).
+
+## Step 4: the Bloom answers to the player
+
+The tide used to start the tick Livewire did, at one fixed pace. Now the industry is what draws it (pillar 3: every threat has a clock you can read and an answer you can afford).
+- **It wakes with the first lit Generator or Shard Dynamo** (`Tide._hum`), not with the era. The first line is "The hum carries south. Something in the Bloom has heard it." `Tide.woke_at` keeps the game clock of that moment. A Livewire save without a tide waits for a lit Generator too.
+- **Its pace follows the power drawn.** Seconds per open tile = 70 / (1 + P / 16), never under 20, where P is the units the machines draw now: for each net the smaller of what it is asked and what it gives, summed, read every 3 s (`Tide.units_drawn`, `Tide.step_for`). No power drawn: 70 s; 16 units: 35 s; 32 units: about 23 s. Roads (x3), rock and rivers (x3), Rail (x6), Firebreaks (x10) and a burning Shard Lamp's light (x2) multiply that as before, and a tile's time is still fixed when the front reaches its neighbour, so arrival times stay honest at the pace of the moment. A machine asks 1 unit (`Data.MACHINE_ASK`), so 16 units means 16 machines asking.
+- **Tide Watch says the pace.** On the card of an engine, an Arc Lamp or a Scorcher: "The Bloom moves faster while the town draws power: 24 units now, a tile every 28 s" (`Tide.pace_note`).
+- **Firebreaks come with Tide Watch** (tier 1, Land lane) and cost 20 Iron, 60 Wood and 45 Charcoal to learn (no Steel: Steel is the Scorcher's); a tile still costs 4 Wood and 1 Stone.
+- **Prices say what they are.** A research card says "Research (have/need): ..." and its row adds "then each Scorcher costs 6 Steel, 8 Wire, 20 Brick" (`Ui.then_builds_text`), for every tech that unlocks a building.
+- **The global stock tax is gone.** The Bloom no longer eats 5% of a good a minute (page 24, pick 3 is superseded here); an overgrown building still loses its own stock when it is lost.
+- **Map fairness.** Every coal seam of the south strip lies at least 12 tiles (rows plus columns) from every Bloom tile (`MapSouth.coal_bloom_faults`); a strip that fails is rerolled (attempts 12 to 40, so 200 of 200 seeds hold; the first 40 seeds need a reroll about half the time).
+- **The bot** lays a ring of Firebreaks (3 tiles out, the side facing the front first) round the southern mine and any Generator well out from the Hearth once Firebreaks are learned. `pace.gd baseline notide` plays the variant that lights a Generator and never answers the tide.
+- **Measures** in the Livewire row of the baseline: `tide_woke_min`, `pace_every_min` (units and seconds per tile each minute), `lost_before_first_scorcher`, `lost_after_first_scorcher`, `lost_within_15_of_wake`, `firebreak_tiles`.

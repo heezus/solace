@@ -4,13 +4,19 @@ extends RefCounted
 ## (scripts/data.gd). Every number is a first guess to tune with the pacing bot.
 
 # --- The creep ---
-## Seconds a front takes to cross one open tile. A road, rock or river tile takes TIDE_SLOW_ROAD times as long, a paved road or
-## rail TIDE_SLOW_RAIL times, a Firebreak TIDE_SLOW_FIREBREAK times, and ground in a burning Shard Lamp's light TIDE_SLOW_LAMP times.
-const TIDE_STEP_SECONDS := 35.0
+## Seconds a front takes to cross one open tile follows the power the town draws: TIDE_IDLE_SECONDS / (1 + units / TIDE_POWER_SCALE),
+## never under TIDE_MIN_SECONDS (0 units 70 s, 16 units 35 s, 32 units about 23 s). A road, rock or river tile takes TIDE_SLOW_ROAD
+## times as long, a paved road or rail TIDE_SLOW_RAIL times, a Firebreak TIDE_SLOW_FIREBREAK times, and ground in a burning Shard
+## Lamp's light TIDE_SLOW_LAMP times. The draw is read every TIDE_ETA_SECONDS.
+const TIDE_IDLE_SECONDS := 70.0
+const TIDE_POWER_SCALE := 16.0
+const TIDE_MIN_SECONDS := 20.0
 const TIDE_SLOW_ROAD := 3.0
 const TIDE_SLOW_RAIL := 6.0
 const TIDE_SLOW_FIREBREAK := 10.0
 const TIDE_SLOW_LAMP := 2.0
+## The tide wakes when one of these burns (the hum carries south).
+const TIDE_WAKERS := ["generator", "shard_dynamo"]
 ## The tide never comes within this many tiles of the Hearth.
 const TIDE_HEARTH_RING := 6.0
 ## A tile the tide may not enter yet (an Arc Lamp's light) is looked at again after this long.
@@ -33,12 +39,6 @@ const TIDE_KEEPS := [
 ## A building on Bloom ground is overgrown at once: it stops, and is lost after this long unless it is held (an Arc Lamp's light
 ## or a burning Scorcher's reach stops the count).
 const OVERGROWN_LOST_SECONDS := 180.0
-## While any building stands overgrown, the Bloom eats the stores (design-system/24-balance.md, pick 3): once in BLOOM_EAT_SECONDS it
-## takes BLOOM_EAT_SHARE of one good that has at least BLOOM_EAT_MIN in the stores, picked by the clock and the map's seed.
-const BLOOM_EAT_SECONDS := 60.0
-const BLOOM_EAT_SHARE := 0.05
-const BLOOM_EAT_MIN := 40
-const BLOOM_EAT_LINE := "The Bloom has eaten %d %s from the stores."  # how many, the good
 ## With Tide Watch the Kith say so once, when the front is about this far from a building.
 const TIDE_WARN_SECONDS := 180.0
 ## Arrival times are worked out this often (game seconds), and not past this horizon.
@@ -54,8 +54,8 @@ const POWERED_MINE_SPEED := 2.0  # a Mine on a net that gives power digs this ma
 # --- Words ---
 const TILE_BLOOM_TIDE := "bloom_tide"
 const TIDE_BEGAN_LINE := (
-	"The Bloom is on the move: green ground is creeping up from the three patches in the south."
-	+ " A Scorcher burns it back: build one beside your Generator before the tide arrives."
+	"The hum carries south. Something in the Bloom has heard it."
+	+ " Green ground is creeping up from the three patches: a Scorcher burns it back, so build one beside your Generator."
 )
 const TIDE_BUILD_ERROR := "The Bloom is here: burn it clear first"
 const TIDE_STAYS := "The Bloom stays · a Scorcher can burn it clear"
@@ -66,6 +66,8 @@ const OVERGROWN_LOST_LINE := "The Bloom took the %s"  # a building's name
 const TIDE_REACHES_LINE := "The Bloom reaches the %s in about %s"  # a building's name, a duration
 const TIDE_REACHES_NOTE := "Tide Watch: the Bloom reaches this in about %s"  # a duration
 const TIDE_FRONT_NOTE := "Tide Watch: the Bloom's front lies %d tiles from the Hearth"  # tiles
+const TIDE_PACE_NOTE := "The Bloom moves faster while the town draws power: %d units now, a tile every %d s"  # units, seconds
+const TIDE_PACE_IDLE := "The Bloom moves slowly while the town draws no power: a tile every %d s"  # seconds
 const SCORCHER_NO_POWER := "No power: stand it within 2 tiles of a Power Pole whose net gives power"
 const SCORCHER_NOTHING := "Nothing to burn: no Bloom ground within 4 tiles"
 const SCORCHER_BURNING := "Burning Bloom ground clear: %d tiles done, %d Coal in store"  # tiles done, coal stored

@@ -44,9 +44,15 @@ func _init() -> void:
 		return
 	if "baseline" in args:
 		var out := ""
+		var from := ""
 		for a in args:
 			if a.begins_with("out="):
 				out = a.substr(4)
+			if a.begins_with("from="):
+				from = a.substr(5)
+		if "notide" in args:
+			_variant(int(args[0]), minutes, out, from)
+			return
 		_baseline(int(args[0]), minutes, out)
 		return
 	if "starfall" in args:
@@ -236,6 +242,8 @@ func _baseline(m: int, minutes: float, out: String) -> void:
 			_empty_seams(game)
 		var wire := AutoplayLivewire.new()
 		wire.probe = hook
+		wire.watch = {"livewire_start": "livewire_begins"}
+		wire.on_checkpoint = func(_id: String, bot): _keep_livewire_start(out, m, bot.s)
 		var r: Dictionary = wire.play_livewire(game, minutes * 60.0)
 		_close(probe, game, r["won"])
 		at[0] = "done"
@@ -247,6 +255,44 @@ func _baseline(m: int, minutes: float, out: String) -> void:
 				% [m, row["era"], row["length_min"], row["goals_done"], row["goals_total"], row["ended"]]
 			)
 		)
+	quit(0)
+
+
+## Keep the game as Livewire begins (once: a run picked up mid-Livewire does not overwrite it), for the variant bot to start from.
+func _keep_livewire_start(out: String, m: int, game: Sim) -> void:
+	if out == "":
+		return
+	var path := "%s/livewire_start_%d.json" % [out, m]
+	DirAccess.make_dir_recursive_absolute(out)
+	if not FileAccess.file_exists(path):
+		_write_file(path, RunSave.to_json(RunSave.dump(game)))
+
+
+## The variant that lights a Generator and never answers the tide (no Arc Lamp, Scorcher or Firebreak): a copy of the game as
+## Livewire began (`from`, kept by a baseline run) played for `minutes`, one row to `out`/variant_seed_<m>.json. Never a balance run.
+func _variant(m: int, minutes: float, out: String, from: String) -> void:
+	var game := Sim.new()
+	var kept := FileAccess.get_file_as_string(from)
+	if kept == "" or not RunSave.restore(game, RunSave.from_json(kept)):
+		print("variant: no Livewire start at %s" % from)
+		quit(1)
+		return
+	var probe := EraProbe.new()
+	probe.begin("livewire", game)
+	var wire := AutoplayLivewire.new()
+	wire.probe = func(s): probe.observe(s)
+	wire.answer_tide = false
+	wire.play_livewire(game, minutes * 60.0)
+	var row: Dictionary = probe.finish(game)
+	if out != "":
+		DirAccess.make_dir_recursive_absolute(out)
+		_write_file("%s/variant_seed_%d.json" % [out, m], JSON.stringify(row, "\t"))
+	print(
+		(
+			"map %d variant (no answer to the tide): woke at %.1f min, lost %d, within 15 min of waking %d, %d Firebreaks"
+			% [m, row["tide_woke_min"], row["lost_total"], row["lost_within_15_of_wake"], row["firebreak_tiles"]]
+		)
+	)
 	quit(0)
 
 
