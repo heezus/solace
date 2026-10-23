@@ -16,6 +16,12 @@ Owner: the project owner (heezus). Two AI teams, one repo, coordinated by respon
 - **Acceptance criteria:** Misty Highlands materials/camera/light, 1×1 footprints, measured regions, native comparison and generated imports; separate draft PR and green CI for Claude review/wiring.
 - **Status:** fourteen PNG/import assets and inspected native buildings, joined Rail and current-size cart comparisons delivered in draft #136; Godot 4.7.2 import passed. Reservation released on publication.
 - **Next action:** Claude reviews/wires after green CI; Codex continues the three item icons separately. Skyward/Skyreach remain held.
+### Codex — Ironfall/Livewire item icons (2026-10-22 batch)
+- **Task:** exact-stem wire, steel_tools and shard PNG/imports on `codex/ironfall-livewire-items`. Buildings delivered separately in drafts #135/#136.
+- **Reserved files:** the three new assets, `docs/art/ironfall/livewire-items/`, focused coordination/design notes. No `.gd`, test, UI or overlay changes.
+- **Acceptance criteria:** approved miniature materials/light, genuine alpha, readable at 20 px, exact regions/native comparison and generated imports; separate draft PR and green CI for Claude wiring.
+- **Status:** three PNG/imports, measured regions/prompts and inspected 20 px dark/ivory comparison delivered in draft #137; Godot 4.7.2 import passed. Reservation released on publication.
+- **Next action:** Claude reviews/wires after green CI; Codex continues Bloom tide then research separately.
 
 ### Codex — terrain kit
 - **Task:** implement the agreed page 22 terrain kit on `codex/terrain-kit`.
