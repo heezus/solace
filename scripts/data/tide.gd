@@ -44,7 +44,7 @@ const TIDE_ETA_SECONDS := 3.0
 const TIDE_ETA_HORIZON := 1200.0
 
 # --- Holding it ---
-const SCORCH_REACH := 4.0  # tiles round a Scorcher it clears Bloom ground in
+const SCORCH_REACH := 6.0  # tiles round a Scorcher it clears Bloom ground in (past the 5 an Arc Lamp keeps the Bloom off)
 const SCORCH_SECONDS := 30.0  # one tile of Bloom ground burnt clear in this long
 const ASH_FIELD_BONUS := 0.5  # a Field on burnt ground yields this much more once Living Ground is learned
 const POWERED_MINE_SPEED := 2.0  # a Mine on a net that gives power digs this many times as fast (Powered Mines)
@@ -79,7 +79,7 @@ const ARC_LIT := "Lit: the Bloom does not enter its light, %d tiles round"  # ti
 const ARC_DARK := "Dark: it needs power from a net, so the Bloom may pass"
 const ARC_ROW := "Lights %d tiles round it while it has power"  # tiles
 const FIREBREAK_NOTE := "Bare ground: the Bloom takes %d times as long to cross it"  # a multiple
-const TIDE_HERE_BLOOM := "Bloom ground. A Scorcher within 4 tiles can burn it clear."
+const TIDE_HERE_BLOOM := "Bloom ground. A Scorcher within 6 tiles can burn it clear."
 const TIDE_HERE_ASH := "Burnt ground: the Bloom cannot grow here. Fields on it yield more once Living Ground is learned."
 
 # --- Goals (appended to GOALS_ERA5) ---

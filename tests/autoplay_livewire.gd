@@ -33,6 +33,7 @@ const SCORCHER_WAIT := 300.0  # seconds a Scorcher may stand with nothing in rea
 const SCORCHER_MOVES := 3  # times the bot moves a Scorcher in all
 const FIREBREAK_RING := 3  # tiles from a site (the southern mine, a far Generator) to its ring of Firebreaks
 const FIREBREAK_CAP := 60  # Firebreaks the bot lays in all
+const POLES_FREED := 3  # Gatherer's Huts the bot takes down beside a boxed-in Pole, in all
 const POLE_STUCK := 12  # decisions without a new pole before the bot gives the southern net up
 const ORDER_PLAN := [
 	{"item": "brick", "compare": "above", "number": 500, "verb": "pause", "target": "kiln"},
@@ -51,6 +52,7 @@ var answer_tide := true  # false: the variant that lights a Generator and never 
 var skyward_at := -1.0
 var _stuck_poles := 0
 var _stuck_scorch_poles := 0
+var _huts_freed := 0
 var _scorcher_idle := {}  # a Scorcher tile -> the clock when it was first seen with nothing in reach
 var _scorcher_moves := 0
 var _livewire_goals := {}
@@ -208,6 +210,8 @@ func _build_livewire() -> bool:
 		return true
 	if not answer_tide:
 		return false
+	if _lay_ground_poles() or _free_beside_pole():
+		return true
 	return _place_south("arc_lamp") or _move_scorcher() or _place_scorcher() or _lay_firebreaks()
 
 
@@ -372,6 +376,52 @@ func _grown_in_reach(p: Vector2i) -> int:
 			if Vector2(dx, dy).length() <= Data.SCORCH_REACH and s.tide.grown.has(p + Vector2i(dx, dy)):
 				n += 1
 	return n
+
+
+## As soon as Bloom ground exists and no tile on the net has any in a Scorcher's reach, the net starts running toward it.
+func _lay_ground_poles() -> bool:
+	if s.tide.grown.is_empty() or _count("scorcher") >= _livewire_target("scorcher") or not s.town.unlocked("scorcher"):
+		return false
+	for q in _poles():
+		for dy in range(-2, 3):
+			for dx in range(-2, 3):
+				var c: Vector2i = q + Vector2i(dx, dy)
+				if Vector2(q).distance_to(Vector2(c)) <= Data.POLE_REACH and _grown_in_reach(c) > 0:
+					if s.town.placement_error("scorcher", c) in ["", "Not enough materials"]:
+						return false
+	return _lay_scorcher_pole(_grown_near(_south_target()))
+
+
+## A Pole chain with no free tile beside its last Pole (huts and fields hem it in): a player tears down the nearest Gatherer's Hut
+## to make room, and so does the bot, POLES_FREED times at most.
+func _free_beside_pole() -> bool:
+	if _huts_freed >= POLES_FREED or (_stuck_poles < POLE_STUCK and _stuck_scorch_poles < POLE_STUCK):
+		return false
+	var target := _south_target()
+	var from := Vector2i(-1, -1)
+	var from_d := INF
+	for q in _poles():
+		var d := Vector2(q).distance_to(Vector2(target))
+		if d < from_d:
+			from = q
+			from_d = d
+	var best := Vector2i(-1, -1)
+	var best_d := INF
+	for b in s.town.buildings:
+		if b["type"] != "gatherers_hut":
+			continue
+		var d := Vector2(b["pos"]).distance_to(Vector2(from))
+		if d <= Data.POLE_LINK and d < best_d:
+			best = b["pos"]
+			best_d = d
+	if best.x < 0:
+		return false
+	s.demolish(best)
+	_huts_freed += 1
+	_stuck_poles = 0
+	_stuck_scorch_poles = 0
+	lines.append("%5.0f s    - Gatherer's Hut at %s torn down beside the Pole at %s" % [clock, best, from])
+	return true
 
 
 ## The next Pole of a chain toward Bloom ground at `from`: the free tile within POLE_LINK of the standing pole nearest to it that
