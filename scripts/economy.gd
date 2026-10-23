@@ -34,6 +34,7 @@ var caps: Dictionary = {}
 var spilled := 0  # goods lost over the cap this run, for the scorecards; not saved
 var spilled_of: Dictionary = {}  # the same by good, for the baseline; not saved
 var made_on: Dictionary = {"coal": {}, "charcoal": {}}  # what the metal works made on each fuel, by good, for the baseline; not saved
+var burnt_by: Dictionary = {}  # building type -> {fuel: units} burnt by engines and Scorchers (baseline only, not saved)
 ## Seasons of Strain switches (scripts/seasons.gd sets them every tick, so they are not saved): how much of the usual the people eat,
 ## whether births wait, whether idle hands forage even without a famine, and how many times as much a foraging trip brings.
 var eat_factor := 1.0
@@ -321,6 +322,13 @@ func flour_reserve() -> int:
 ## Note `amount` of `item` made (positive) or used up (negative) by `source`.
 func note(item: String, amount: float, source: String) -> void:
 	flows.add(item, amount, source)
+
+
+## Note one unit of `fuel` burnt by a building of `type` (a Boiler, a Generator, a Scorcher).
+func burned(type: String, fuel: String) -> void:
+	var by: Dictionary = burnt_by.get(type, {})
+	by[fuel] = by.get(fuel, 0) + 1
+	burnt_by[type] = by
 
 
 ## Move the flow window on by `delta` seconds.

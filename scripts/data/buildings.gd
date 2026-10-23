@@ -253,6 +253,7 @@ const BUILDINGS := {
 		"radius": 5,
 		"gives": 3,
 		"fed": true,
+		"fuel": true,
 		"in": {"coal": 1},
 		"stock": 6,
 		"burn": 20.0,
@@ -260,7 +261,7 @@ const BUILDINGS := {
 		"desc":
 		(
 			"A closed vessel over a coal fire. Powers machines within 5 tiles, with no river needed, while it burns."
-			+ " It burns 1 Coal for every 20 seconds a machine wants power, and haulers bring the coal."
+			+ " It burns 1 Coal for every 20 seconds a machine wants power (1 Charcoal lasts half as long), and haulers bring it."
 		),
 	},
 	"shard_boiler":
@@ -294,6 +295,7 @@ const BUILDINGS := {
 		"radius": 0,
 		"gives": 8,
 		"fed": true,
+		"fuel": true,
 		"in": {"coal": 1},
 		"stock": 6,
 		"burn": 25.0,
@@ -301,7 +303,7 @@ const BUILDINGS := {
 		"desc":
 		(
 			"A great flywheel on a coal fire. It gives a whole net 8 units, and burns 1 Coal for every 25 seconds the net asks"
-			+ " for more than the others give. Stand it within 2 tiles of a Power Pole; haulers bring the coal."
+			+ " for more than the others give (1 Charcoal lasts half as long). Stand it within 2 tiles of a Power Pole; haulers bring it."
 		),
 	},
 	"shard_dynamo":
@@ -763,6 +765,7 @@ const BUILDINGS := {
 		"needs_power": true,
 		"draws": true,
 		"fed": true,
+		"fuel": true,
 		"in": {"coal": 1},
 		"stock": 6,
 		"burn": 120.0,
@@ -771,8 +774,8 @@ const BUILDINGS := {
 		"desc":
 		(
 			"A jet of flame on a pump. It burns the Bloom ground nearest it clear, a tile every 30 seconds within 4 tiles,"
-			+ " and 1 Coal does 4 tiles. Burnt ground is never taken again. Stand it within 2 tiles of a Power Pole;"
-			+ " haulers bring the coal."
+			+ " and 1 Coal does 4 tiles (1 Charcoal does 2). Burnt ground is never taken again. Stand it within 2 tiles"
+			+ " of a Power Pole; haulers bring the fuel."
 		),
 	},
 	"firebreak":

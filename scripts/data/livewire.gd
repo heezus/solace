@@ -167,9 +167,14 @@ const FUEL_BUTTON := "Fuel: %s"
 const FUEL_NAMES := {"auto": "Auto", "coal": "Coal", "charcoal": "Charcoal"}
 const FUEL_TIP := "Click to change what this burns: Auto (Coal while the stores hold plenty, else Charcoal), Coal or Charcoal."
 const FUEL_LINE_AUTO := "Burns %s now. Auto keeps the last %d Coal for the Boilers."
+const FUEL_LINE_AUTO_FED := "Burns %s now. Auto burns Coal while the stores hold more than %d, else Charcoal."
 const FUEL_LINE_SET := "Burns %s, as set."
 ## "Smelting on Charcoal: half speed (Coal is low)": the job word, then why when Auto chose it.
 const FUEL_STATUS_AUTO := "%s on Charcoal: half speed (Coal is low)"
 const FUEL_STATUS_SET := "%s on Charcoal: half speed"
+## A Boiler, Generator or Scorcher on Charcoal: "Burning Charcoal: twice the fuel (Coal is low)".
+const FUEL_STATUS_FED_AUTO := "Burning Charcoal: twice the fuel (Coal is low)"
+const FUEL_STATUS_FED_SET := "Burning Charcoal: twice the fuel"
+const FUEL_EITHER := "Coal or Charcoal"
 const FUEL_VERB := {"bloomery": "Smelting", "forge": "Forging"}
 const FUEL_VERB_DEFAULT := "Running"

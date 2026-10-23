@@ -1,8 +1,10 @@
 extends RefCounted
-## Fuel for the metal works (design-system/31-fuel.md): a Bloomery or a Forge (or a Factory Floor copying one) burns one Coal or one
-## Charcoal a batch. Coal runs the batch at its normal time; Charcoal takes Data.CHARCOAL_SLOW times as long, so running out of
-## Coal slows the metal and never stops it. Each has a fuel setting, "auto" (the default), "coal" or "charcoal"; `fuel_now` is
-## the fuel it burns at this moment (kept by `update` once a tick, so the hauler's pick and the work cycle agree). Static, like Work.
+## Fuel for the metal works and the engines (design-system/31-fuel.md): a Bloomery or a Forge (or a Factory Floor copying one)
+## burns one Coal or one Charcoal a batch. Coal runs the batch at its normal time; Charcoal takes Data.CHARCOAL_SLOW times as long,
+## so running out of Coal slows the metal and never stops it. A Boiler, a Generator or a Scorcher (a fed building) takes either
+## too: one unit a burn, and a Charcoal burns Data.CHARCOAL_SLOW times as fast, so it lasts half as long. Each has a fuel
+## setting, "auto" (the default), "coal" or "charcoal"; `fuel_now` is the fuel it burns at this moment (kept by `update` once a tick,
+## so the hauler's pick and the work cycle agree). Static, like Work.
 
 const Data = preload("res://scripts/data.gd")
 
@@ -13,6 +15,29 @@ static func burns(b: Dictionary) -> bool:
 	if def.get("fuel", false):
 		return true
 	return def.has("floor") and Data.BUILDINGS.get(b["make"], {}).get("fuel", false)
+
+
+## True for a Boiler, a Generator or a Scorcher: a fed building that takes Coal or Charcoal.
+static func is_fed(b: Dictionary) -> bool:
+	var def: Dictionary = Data.BUILDINGS[b["type"]]
+	return def.get("fuel", false) and def.get("fed", false)
+
+
+## The fuel a fed building `b` burns now, and what it holds of it.
+static func held(b: Dictionary) -> int:
+	return b["inbuf"].get(b.get("fuel_now", "coal"), 0)
+
+
+## Seconds one fuel unit lasts at fed building `b`: the building's `burn`, halved on Charcoal.
+static func burn_seconds(b: Dictionary) -> float:
+	return float(Data.BUILDINGS[b["type"]]["burn"]) / slow(b)
+
+
+## The fuel's name for a card or an alert when `b` has none: "Coal or Charcoal" while Auto has neither in the stores or on its way.
+static func name_lacking(economy, b: Dictionary) -> String:
+	if b.get("fuel", "auto") == "auto" and economy.inv.get("coal", 0) <= 0 and economy.inv.get("charcoal", 0) <= 0:
+		return Data.FUEL_EITHER
+	return Data.ITEMS[b.get("fuel_now", "coal")]["name"]
 
 
 ## The setting a new fuel burner starts with, and the fuel it starts on.
@@ -62,6 +87,8 @@ static func slow(b: Dictionary) -> float:
 static func status(b: Dictionary) -> String:
 	if slow(b) == 1.0:
 		return ""
+	if is_fed(b):
+		return Data.FUEL_STATUS_FED_AUTO if b.get("fuel", "auto") == "auto" else Data.FUEL_STATUS_FED_SET
 	var type: String = b["type"] if not Data.BUILDINGS[b["type"]].has("floor") else b["make"]
 	var verb: String = Data.FUEL_VERB.get(type, Data.FUEL_VERB_DEFAULT)
 	return (Data.FUEL_STATUS_AUTO if b.get("fuel", "auto") == "auto" else Data.FUEL_STATUS_SET) % verb
@@ -71,7 +98,7 @@ static func status(b: Dictionary) -> String:
 static func line(b: Dictionary) -> String:
 	var name: String = Data.ITEMS[b.get("fuel_now", "coal")]["name"]
 	if b.get("fuel", "auto") == "auto":
-		return Data.FUEL_LINE_AUTO % [name, Data.FUEL_RESERVE]
+		return (Data.FUEL_LINE_AUTO_FED if is_fed(b) else Data.FUEL_LINE_AUTO) % [name, Data.FUEL_RESERVE]
 	return Data.FUEL_LINE_SET % name
 
 

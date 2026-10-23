@@ -27,6 +27,10 @@ const WIRE_MILLS := 3
 const GENERATORS := 2
 const WIRE_PER_MILL := 60.0  # one more Wire Mill for every this much Wire still short
 const COAL_FOR_ENGINES := 200  # coal the Generators and the Scorcher burn, kept in the stores beyond the techs' needs
+const CHARCOAL_FOR_ENGINES := 300  # Charcoal the engines are asked for once Coal runs low (a Charcoal lasts half as long as a Coal)
+const SCORCHER_AHEAD := 3  # tiles ahead of the front's nearest ground the Scorcher stands (its reach is 4)
+const SCORCHER_WAIT := 300.0  # seconds a Scorcher may stand with nothing in reach before the bot moves it
+const SCORCHER_MOVES := 3  # times the bot moves a Scorcher in all
 const FIREBREAK_RING := 3  # tiles from a site (the southern mine, a far Generator) to its ring of Firebreaks
 const FIREBREAK_CAP := 60  # Firebreaks the bot lays in all
 const POLE_STUCK := 12  # decisions without a new pole before the bot gives the southern net up
@@ -46,6 +50,9 @@ var stop_when_watched := false  # stop playing once every watched checkpoint has
 var answer_tide := true  # false: the variant that lights a Generator and never answers the tide (no Lamp, Scorcher or Firebreak)
 var skyward_at := -1.0
 var _stuck_poles := 0
+var _stuck_scorch_poles := 0
+var _scorcher_idle := {}  # a Scorcher tile -> the clock when it was first seen with nothing in reach
+var _scorcher_moves := 0
 var _livewire_goals := {}
 
 
@@ -128,6 +135,8 @@ func _goal_wants(want: Dictionary) -> void:
 	for type in _livewire_wants():
 		_want(want, s.town.price(type), 1)
 	want["coal"] = want.get("coal", 0) + COAL_FOR_ENGINES
+	if _inv("coal") < Data.FUEL_RESERVE * 2:  # Coal short: engines and Scorchers take Charcoal, so the bot makes some for them
+		want["charcoal"] = want.get("charcoal", 0) + CHARCOAL_FOR_ENGINES
 
 
 func _gate_need(id: String) -> int:
@@ -199,7 +208,7 @@ func _build_livewire() -> bool:
 		return true
 	if not answer_tide:
 		return false
-	return _place_south("arc_lamp") or _place_south("scorcher") or _lay_firebreaks()
+	return _place_south("arc_lamp") or _move_scorcher() or _place_scorcher() or _lay_firebreaks()
 
 
 ## The Order Board beside the Hearth; a full town gives up a Gatherer's Hut for it.
@@ -326,6 +335,94 @@ func _place_south(type: String) -> bool:
 	return _place_best(type, score)
 
 
+## A Scorcher on the net with Bloom ground in its reach now (the most tiles of it, then nearest the southern net). Arc Lamps hold
+## the front 5 tiles from their light, so a crowded net often has no such tile: then a Pole runs toward the nearest ground first. With
+## no ground yet it stands SCORCHER_AHEAD tiles from the front's nearest tile, or by the southern net as before.
+func _place_scorcher() -> bool:
+	if not s.town.unlocked("scorcher") or _count("scorcher") >= _livewire_target("scorcher"):
+		return false
+	var site := _south_target()
+	var from := _grown_near(site)
+	if from.x >= 0:
+		var score := func(p):
+			if not _on_net(p):
+				return -INF
+			var n := _grown_in_reach(p)
+			return -INF if n == 0 else n - 0.01 * Vector2(p).distance_to(Vector2(site))
+		if _place_best("scorcher", score):
+			return true
+		return _lay_scorcher_pole(from)
+	from = _front_near(site)
+	if from.x < 0:
+		return _place_south("scorcher")
+	var ahead_score := func(p):
+		if not _on_net(p):
+			return -INF
+		var ahead := Vector2(p).distance_to(Vector2(from))
+		return -absf(ahead - SCORCHER_AHEAD) - 0.05 * Vector2(p).distance_to(Vector2(site))
+	return _place_best("scorcher", ahead_score)
+
+
+## Tiles of Bloom ground within a Scorcher's reach of tile p.
+func _grown_in_reach(p: Vector2i) -> int:
+	var n := 0
+	var r := int(Data.SCORCH_REACH)
+	for dy in range(-r, r + 1):
+		for dx in range(-r, r + 1):
+			if Vector2(dx, dy).length() <= Data.SCORCH_REACH and s.tide.grown.has(p + Vector2i(dx, dy)):
+				n += 1
+	return n
+
+
+## The next Pole of a chain toward Bloom ground at `from`: the free tile within POLE_LINK of the standing pole nearest to it that
+## lies nearer to it. Given up after POLE_STUCK decisions that place nothing.
+func _lay_scorcher_pole(from: Vector2i) -> bool:
+	if not s.town.unlocked("power_pole") or _poles().is_empty() or _stuck_scorch_poles >= POLE_STUCK:
+		return false
+	var near := Vector2i(-1, -1)
+	var near_d := INF
+	for q in _poles():
+		var d := Vector2(q).distance_to(Vector2(from))
+		if d < near_d:
+			near = q
+			near_d = d
+	var score := func(p):
+		var d := Vector2(p).distance_to(Vector2(near))
+		if d < 1.5 or d > Data.POLE_LINK:
+			return -INF
+		var left := Vector2(p).distance_to(Vector2(from))
+		return -INF if left >= near_d else -left
+	if _place_best("power_pole", score):
+		_stuck_scorch_poles = 0
+		return true
+	if s.economy.can_afford(s.town.price("power_pole")):
+		_stuck_scorch_poles += 1
+	return false
+
+
+## Move a Scorcher that has had nothing in reach for SCORCHER_WAIT seconds: take it down (its price comes back in part) so
+## `_place_scorcher` puts it where the front is now. At most SCORCHER_MOVES times, and only once Bloom ground is on the map.
+func _move_scorcher() -> bool:
+	if _scorcher_moves >= SCORCHER_MOVES or s.tide.grown.is_empty():
+		return false
+	for b in s.town.buildings:
+		if b["type"] != "scorcher":
+			continue
+		var at: Vector2i = b["pos"]
+		if s.tide.scorch_target(b).x >= 0 or b["trips"] > 0:
+			_scorcher_idle.erase(at)
+			continue
+		if not _scorcher_idle.has(at):
+			_scorcher_idle[at] = clock
+		if clock - _scorcher_idle[at] >= SCORCHER_WAIT:
+			_scorcher_idle.erase(at)
+			_scorcher_moves += 1
+			s.demolish(at)
+			lines.append("%5.0f s    moved the Scorcher at %s (nothing in reach)" % [clock, at])
+			return true
+	return false
+
+
 ## A ring of Firebreaks round the southern mine and any Generator well out from the Hearth, the side facing the front first, once
 ## Tide Watch and Firebreaks are learned: the front must cross a Firebreak (10 times as long) or walk round the whole ring. A road
 ## leaves a gap in it. One tile a decision, and only from wood and stone the techs and workshops do not need.
@@ -362,6 +459,17 @@ func _lay_firebreaks() -> bool:
 
 
 ## The tile of the Bloom's front (or its ground) nearest `site`, (-1, -1) when there is none.
+func _grown_near(site: Vector2i) -> Vector2i:
+	var best := Vector2i(-1, -1)
+	var best_d := INF
+	for p in s.tide.grown:
+		var d := Vector2(p).distance_to(Vector2(site))
+		if d < best_d:
+			best = p
+			best_d = d
+	return best
+
+
 func _front_near(site: Vector2i) -> Vector2i:
 	var best := Vector2i(-1, -1)
 	var best_d := INF
