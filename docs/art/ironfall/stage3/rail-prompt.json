@@ -1,0 +1,5 @@
+{
+  "prompt": "Use case: stylized-concept. Solace RAIL connected road-tier sprite, transparent PNG. Single square tile viewed exactly overhead, no isometric perspective. Two worn iron rails with pale cool highlights, stout weathered timber sleepers, subdued compact grey-brown ballast. Hand-painted Misty Highlands material detail at small scale, fixed upper-left light. Transparent outside the narrow ballast strip. No text, trains, scenery, people or square background plate. Standard rail gauge about 18% of tile width, sleepers/ballast width about 38%, connections centered on cell edges. STRAIGHT horizontal track: both continuous parallel rails run completely from LEFT image edge to RIGHT image edge at y=41% and y=59%. Repeating vertical sleepers bridge rails. Flush open cutoffs at both edges, no buffers or end caps. Entire top and bottom quarters transparent.",
+  "source": "/Users/jhowell/.codex/generated_images/01a16543-0e79-78f3-b449-05c7917a41af/exec-e821b641-0a42-407f-8c46-2fffc58b8f6c.png",
+  "mode": "built-in imagegen"
+}
