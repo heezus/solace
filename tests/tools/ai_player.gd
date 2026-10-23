@@ -5,6 +5,9 @@ extends SceneTree
 ## player thinks. Stops after --decisions pages, when the era turns over (--stop-at-era), or when no answer comes in --patience s.
 ## Run: godot --headless --path . -s tests/tools/ai_player.gd -- --dir=/some/folder [--seed=3] [--every=15] [--decisions=60]
 ##      [--stop-at-era=Bronze Dawn] [--patience=900] [--start=earned_livewire] [--replay=/folder/with/moves]
+## With --then-live=1 the page after the last replayed one is played by a live player (the replay carries on as a game).
+## A folder that already holds moves_<n>.json is picked up that way on its own (a restart or a closed lid costs the replay, minutes);
+## --fresh=1 starts it over instead.
 ## With --replay the moves come from that folder's moves_<n>.json instead of a player (same --seed and --start, the same cached
 ## start in user://ai_starts/): the game is deterministic, so every page comes out as it did, with whatever the page shows now.
 ## With --start an earned checkpoint plays on map --seed (built by the bots, kept in user://ai_starts/); any other start is on map 1.
@@ -26,6 +29,8 @@ var stop_at_era := ""
 var patience := 900.0
 var timed_out := false
 var replay := ""  # a folder of moves_<n>.json to play back instead of waiting for a player
+var then_live := false  # after the last replayed page, carry on with a live player
+var fresh := false  # start over even when the folder already holds moves
 var start := ""  # a stage start or earned checkpoint to begin from (scripts/dev_starts.gd), "" for a fresh map
 
 
@@ -52,9 +57,16 @@ func _init() -> void:
 				start = kv[1]
 			"replay":
 				replay = kv[1] if kv[1].ends_with("/") else kv[1] + "/"
+			"then-live":
+				then_live = true
+			"fresh":
+				fresh = true
 			"patience":
 				patience = float(kv[1])
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(dir))
+	if replay == "" and not fresh and FileAccess.file_exists(dir + "moves_1.json"):
+		replay = dir  # a game stopped part way (a restart, a closed lid): play its saved moves back, then go on live
+		then_live = true
 	if start in DevStarts.EARNED and seed_given:
 		s = DevStarts.earned_on_map(map_seed, start, "user://ai_starts/")  # an earned checkpoint on that map, played by the bots
 	elif start != "":
@@ -76,8 +88,9 @@ func _init() -> void:
 		if n == 1 and start != "":
 			page = Snapshot.KNOWN + "\n" + page  # the player of a later era has played the earlier ones
 		_write(dir + "snapshot_%d.txt" % n, page)
-		var moves := _await_moves(n) if replay == "" else _replayed(n)
-		if replay != "" and moves.is_empty() and not FileAccess.file_exists(replay + "moves_%d.json" % n):
+		var replaying := replay != "" and not (then_live and not FileAccess.file_exists(replay + "moves_%d.json" % n))
+		var moves := _replayed(n) if replaying else _await_moves(n)
+		if replaying and moves.is_empty() and not FileAccess.file_exists(replay + "moves_%d.json" % n):
 			print("AI player: no moves_%d.json to replay, stopping" % n)
 			break
 		if timed_out:
