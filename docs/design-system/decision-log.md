@@ -1018,3 +1018,7 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - The Bloom no longer eats 5% of a good a minute. The south strip is rerolled until every coal seam lies at least 12 tiles from every Bloom tile (attempts 12 to 40).
 - The Livewire bot lays Firebreak rings round its southern mine and far Generators; a variant bot that never answers the tide is the pressure check. The baseline reads the minute the tide wakes, the power drawn and seconds per tile each minute, buildings lost before and after the first Scorcher, and Firebreak tiles laid.
 
+## 2026-10-23: Long runs keep their place (PR next)
+- Jon had to close his Mac and asked that runs stop being at risk of a restart. The proof runs live in the cloud, not on the Mac, but the cloud machine restarts on its own too (one took five background runs with it that morning).
+- A Livewire-alone or variant run now checkpoints every five game minutes and resumes; an AI player folder that holds moves picks up by replaying them, then goes live (`--fresh=1` to start over); `tests/tools/long_run.sh` registers runs and starts every unfinished one again with `resume`.
+- Tests and tools only: no gameplay change.
