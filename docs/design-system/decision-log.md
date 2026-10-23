@@ -1022,3 +1022,8 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Jon had to close his Mac and asked that runs stop being at risk of a restart. The proof runs live in the cloud, not on the Mac, but the cloud machine restarts on its own too (one took five background runs with it that morning).
 - A Livewire-alone or variant run now checkpoints every five game minutes and resumes; an AI player folder that holds moves picks up by replaying them, then goes live (`--fresh=1` to start over); `tests/tools/long_run.sh` registers runs and starts every unfinished one again with `resume`.
 - Tests and tools only: no gameplay change.
+
+## 2026-10-22: Livewire miniature asset batch (PR #135)
+- Codex followed the approved Misty Highlands camera, upper-left lighting, warm timber/iron and cool shard accents for eight Livewire buildings; all remain 1×1.
+- Firebreak straight, corner and end are overhead ground modules with documented square regions and a joined 48 px fixture, preserving the road-like presentation without code changes.
+- Native 46/96 px comparisons and alpha/region provenance accompany the original transparent PNGs; Claude owns the reviewed mapping handoff.

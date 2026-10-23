@@ -1,0 +1,6 @@
+{
+  "prompt": "Use case: stylized-concept. Asset type: Solace power_pole map sprite, single isolated transparent PNG. Paint one tall weathered wooden power pole with a crossbar and exactly two small pale ceramic insulators, no wires or wire stubs. Small mossy stone/earth contact at foot only. Style reference: existing Solace bloomery miniature supplied in context: richly sculpted hand-painted Misty Highlands tabletop miniature, tactile wood grain, dark readable silhouette, warm upper-left highlights, cool ambient shadows. Three-quarter top-down game camera, orthographic, entire pole visible with margin, centered. Must read clearly at 48 px tall and fit a 1x1 tile, narrow silhouette. No text, no labels, no border, no scene background, no cast shadow sheet, genuinely transparent alpha. This is an early industrial highlands settlement, restrained materials and clean silhouette.",
+  "source": "exec-6be0bedb-c19c-48d3-a605-1253e89962ee.png",
+  "mode": "built-in imagegen",
+  "reference": "art/rendered/bloomery.png (inspected style reference)"
+}
