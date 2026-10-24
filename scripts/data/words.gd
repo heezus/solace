@@ -34,7 +34,7 @@ const FLAVOR_STOCK := "A good stock of berries. Nobody goes to sleep hungry toni
 # --- The top-left readout (scripts/top_bar.gd, scripts/ui.gd) ---
 const KITH_LABEL := "%s %d  ·  homes for %d"  # people (many), how many, housing
 const JOBS_LABEL := "Jobs filled %d of %d  ·  %d %s"  # working, jobs, the rest, IDLE_WORD or HAUL_WORD
-const JOBS_LABEL_PLACES := "Jobs %d of %d  ·  %s"  # working, jobs, "Haulers 18 of 24" (HAULERS_BAR)
+const JOBS_LABEL_PLACES := "Jobs %d of %d"  # working, jobs; the haulers have their own line under it (HAULERS_BAR)
 const JOBS_TIP := (
 	"%s\n%s work buildings and haul goods. Each building is one job and needs one. "
 	+ "They grow when there is room and steady food."

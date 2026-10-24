@@ -43,7 +43,7 @@ const RULE_W := 3  # the rule along the bar's bottom edge
 ## The bar is never shorter than its tallest block, the Kith block with its name, jobs line and three lines of note,
 ## plus the panel's margins: it is reserved from the first frame, so a chip, a note or a long line appearing later can
 ## never make it (or the map under it) grow.
-const BAR_H := 135.0  # four rows of chips (4 x ROW_H) between the edge padding and the rule
+const BAR_H := 138.0  # the Kith block: name, jobs, haulers and three lines of note, plus the padding and the rule
 const FOOD_W := 190.0
 const COUNT_SIZE := 18  # numbers are 18
 const KITH_W := 216.0  # the Kith block, wide enough for "Jobs filled 19 of 19  ·  25 hauling"
@@ -51,6 +51,7 @@ const KITH_W := 216.0  # the Kith block, wide enough for "Jobs filled 19 of 19  
 var state: Sim
 var kith_label: Label
 var jobs_label: Label
+var haulers_label: Label  # "Haulers 44, 33 needed": its own line, since it is as wide as the Jobs line
 var note_label: Label  # why the Kith aren't growing: wraps, never cut short
 var food_box: PanelContainer  # rings red and flashes while the food is about to run out
 var food_label: Label
@@ -82,16 +83,18 @@ func setup(game: Sim) -> void:
 	kv.add_theme_constant_override("separation", -2)
 	kith_label = Ui.label("", Ui.LABEL_TEXT)
 	jobs_label = Ui.label("", Ui.MIN_TEXT)
+	haulers_label = Ui.label("", Ui.MIN_TEXT)
 	note_label = Ui.label("", Ui.MIN_TEXT)
 	note_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	note_label.max_lines_visible = 3  # the bar keeps its reserved height (BAR_H): three lines at most
 	kv.add_child(kith_label)
 	kv.add_child(jobs_label)
+	kv.add_child(haulers_label)
 	kv.add_child(note_label)
 	# Backing is painted inside the existing rectangles; it adds no controls or margins.
 	draw.connect(func(): draw_style_box(Ui.panel_style(Ui.PANEL, 0), Rect2(h.position + kv.position, kv.size)))
 	kv.mouse_filter = Control.MOUSE_FILTER_PASS
-	_fix_width(kv, [kith_label, jobs_label], KITH_W)
+	_fix_width(kv, [kith_label, jobs_label, haulers_label], KITH_W)
 	note_label.custom_minimum_size.x = KITH_W
 	kv.tooltip_text = ""  # filled in refresh() with the job counts
 	h.add_child(kv)
@@ -294,11 +297,13 @@ func refresh(paused: bool, speed: int) -> void:
 	kith_label.add_theme_color_override("font_color", Ui.TEXT if note != "" else Ui.GOOD)
 	var rest: String = Data.HAUL_WORD if state.tech_tree.researched.has("haulers") else Data.IDLE_WORD
 	jobs_label.text = Data.JOBS_LABEL % [workers, jobs, idle, rest]
+	haulers_label.visible = haulers != ""
 	if haulers != "":
-		jobs_label.text = Data.JOBS_LABEL_PLACES % [workers, jobs, haulers]
-	jobs_label.add_theme_color_override(
-		"font_color", ALARM_TEXT if haulers != "" and state.hauling.is_short() else Ui.TEXT
-	)
+		jobs_label.text = Data.JOBS_LABEL_PLACES % [workers, jobs]
+		haulers_label.text = haulers
+	var alarm: Color = ALARM_TEXT if haulers != "" and state.hauling.is_short() else Ui.TEXT
+	jobs_label.add_theme_color_override("font_color", alarm)
+	haulers_label.add_theme_color_override("font_color", alarm)
 	note_label.text = note
 	note_label.visible = note != ""
 	note_label.add_theme_color_override("font_color", Ui.SHORT if state.economy.starving else Ui.TEXT_DIM)
