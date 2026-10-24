@@ -11,13 +11,12 @@ const BuildBar = preload("res://scripts/build_bar.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
 const Overlays = preload("res://scripts/overlays.gd")
-const Bonuses = preload("res://scripts/bonuses.gd")
 const Rules = preload("res://scripts/rules.gd")
 const Workers = preload("res://scripts/workers.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Scouting = preload("res://scripts/scouting.gd")
 const Hands = preload("res://scripts/hands.gd")
-const World = preload("res://scripts/world.gd")
+const SightLayer = preload("res://scripts/sight_layer.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Work = preload("res://scripts/work.gd")
 const KithArt = preload("res://scripts/kith_art.gd")
@@ -597,6 +596,7 @@ func _build_ui() -> void:
 	rim.draw_center = false
 	rim.border_color = Ui.LINE
 	rim.set_border_width_all(int(FRAME_W))
+	rim.border_width_top = 0  # the Glass top fade meets the map without a hard rule
 	frame.add_theme_stylebox_override("panel", rim)
 	layer.add_child(frame)
 
@@ -606,6 +606,7 @@ func _build_ui() -> void:
 	top_bar.setup(state)
 	top_bar.speed_picked.connect(_set_speed)
 	top_bar.log_pressed.connect(func(): msg_log.toggle())
+	SightLayer.attach(self, layer, top_bar, state)
 
 	# Bottom bar: tabs of fixed-size build buttons, Demolish and Craft.
 	bottom_bar = BuildBar.new()

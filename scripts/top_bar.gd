@@ -8,6 +8,7 @@ extends PanelContainer
 
 signal speed_picked(value: int)  # 0 toggles pause
 signal log_pressed  # the Messages button
+signal sight_toggled(on: bool)  # the Sight button, latched (holding Alt works without it)
 
 const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
@@ -67,7 +68,7 @@ var speed_buttons := {}
 
 func setup(game: Sim) -> void:
 	state = game
-	var style := Ui.bar_style(Ui.BAR, true)
+	var style := Ui.top_style()
 	style.content_margin_top = EDGE_PAD
 	style.content_margin_bottom = EDGE_PAD + RULE_W
 	add_theme_stylebox_override("panel", style)
@@ -87,6 +88,8 @@ func setup(game: Sim) -> void:
 	kv.add_child(kith_label)
 	kv.add_child(jobs_label)
 	kv.add_child(note_label)
+	# Backing is painted inside the existing rectangles; it adds no controls or margins.
+	draw.connect(func(): draw_style_box(Ui.panel_style(Ui.PANEL, 0), Rect2(h.position + kv.position, kv.size)))
 	kv.mouse_filter = Control.MOUSE_FILTER_PASS
 	_fix_width(kv, [kith_label, jobs_label], KITH_W)
 	note_label.custom_minimum_size.x = KITH_W
@@ -135,6 +138,8 @@ func setup(game: Sim) -> void:
 			_fix_width(tools_label, [tools_label], 120)
 			row.add_child(tools_label)
 		goods.add_child(row)
+		if r == 1:
+			draw.connect(_draw_tools_backing)
 	h.add_child(VSeparator.new())
 
 	# Speed buttons, with the Messages button below them.
@@ -154,10 +159,21 @@ func setup(game: Sim) -> void:
 		speeds.add_child(b)
 		speed_buttons[v] = b
 	log_button = Ui.button(Data.LOG_BUTTON + "  (L)")
+	Ui.key_hint(log_button, "(L)")
 	log_button.custom_minimum_size = Vector2(0, 28)
 	log_button.tooltip_text = Data.LOG_TIP
 	log_button.pressed.connect(func(): log_pressed.emit())
-	right.add_child(log_button)
+	var lower := HBoxContainer.new()
+	lower.add_theme_constant_override("separation", 4)
+	right.add_child(lower)
+	lower.add_child(log_button)
+	var sight_button := Ui.button(Data.SIGHT_BUTTON)
+	Ui.key_hint(sight_button, "(Alt)")
+	sight_button.toggle_mode = true
+	sight_button.custom_minimum_size = Vector2(0, 28)
+	sight_button.tooltip_text = Data.SIGHT_TIP
+	sight_button.toggled.connect(func(on): sight_toggled.emit(on))
+	lower.add_child(sight_button)
 
 	flow_panel = PanelContainer.new()
 	flow_panel.top_level = true
@@ -182,7 +198,12 @@ func _chip(id: String, width: float) -> PanelContainer:
 	var h := HBoxContainer.new()
 	h.add_theme_constant_override("separation", 3)
 	box.add_child(h)
-	var icon := Ui.item_icon(id, ICON)
+	var icon := TextureRect.new()
+	icon.texture = Ui.swatch_texture(Data.ITEMS[id]["color"])
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.custom_minimum_size = Vector2(ICON, ICON)
+	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	h.add_child(icon)
 	var count := Ui.label("", COUNT_SIZE)
 	count.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -199,10 +220,10 @@ func _chip(id: String, width: float) -> PanelContainer:
 ## A panel style that keeps the same margins whether or not its outline shows, so a ring never moves anything.
 static func _outline(color: Color, vpad := 2) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
-	s.draw_center = false
+	s.bg_color = Ui.GLASS_PANEL.blend(Color(color, 0.20)) if color.a > 0.0 else Ui.GLASS_PANEL
 	s.border_color = color
-	s.set_border_width_all(2)
-	s.set_corner_radius_all(4)
+	s.set_border_width_all(0)
+	s.set_corner_radius_all(Ui.GLASS_PILL_RADIUS)
 	s.set_content_margin_all(2)
 	s.content_margin_top = vpad
 	s.content_margin_bottom = vpad
@@ -267,6 +288,7 @@ func refresh(paused: bool, speed: int) -> void:
 	kith_label.get_parent().tooltip_text = (
 		Data.JOBS_TIP % [state.people.job_counts(), Data.PEOPLE["many"]]
 		+ ("\n\n" + Data.HAULERS_TIP if haulers != "" else "")
+		+ ("\n\n" + state.hauling.idle_text() if haulers != "" and state.hauling.idle_text() != "" else "")
 		+ ("\n\n" + GrowthNote.rule() if GrowthNote.food_is_the_blocker(state) else "")
 	)
 	kith_label.add_theme_color_override("font_color", Ui.TEXT if note != "" else Ui.GOOD)
@@ -532,3 +554,11 @@ static func _duration(seconds: float, short := false) -> String:
 		return "%d s" % s
 	var mins := floori(s / 60.0)
 	return "%d min %d s" % [mins, s % 60] if s % 60 != 0 else "%d min" % mins
+
+
+## The tools caption shares the protected backing of the other top-bar readouts.
+func _draw_tools_backing() -> void:
+	if tools_label != null and tools_label.is_visible_in_tree():
+		var r := tools_label.get_global_rect()
+		r.position -= global_position
+		draw_style_box(Ui.panel_style(Ui.PANEL, 0), r)

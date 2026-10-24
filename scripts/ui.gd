@@ -38,12 +38,26 @@ const LANE_COLORS := {
 	"land": Color("a4c199"),
 	"lore": Color("bbc4de"),
 }
-const RADIUS := 4
+# Glass surfaces: 94% protects the existing text contrast even over pure white ground.
+const GLASS_PANEL := Color("0f1c1ff0")
+const GLASS_LABEL := Color("081013fa")  # small BAD text exceeds its former outline contrast over white
+const GLASS_CARD := Color(1, 1, 1, 0.06)
+const GLASS_BUTTON := Color(1, 1, 1, 0.07)
+const GLASS_HOVER := Color(1, 1, 1, 0.15)
+const GLASS_ON := Color(ACTION, 0.20)
+const GLASS_SHADOW := Color(0, 0, 0, 0.22)
+const GLASS_TOP := Color("0f1c1fe0")
+const GLASS_KEY := Color(TEXT, 0.70)
+const GLASS_FLOW := 0.28
+const GLASS_DOT := 0.85
+const GLASS_CARD_RADIUS := 12
+const GLASS_PILL_RADIUS := 1000
+const RADIUS := 16
 const MIN_TEXT := 14  # nothing on screen is smaller
 const LABEL_TEXT := 16  # UI labels; numbers are 18
 
 
-## Shared legible field-journal theme. Selected and hover controls keep ivory text and a brass edge.
+## Shared Glass theme. Every state keeps the same margins and minimum size.
 static func apply_theme() -> void:
 	var t := ThemeDB.get_default_theme()
 	t.set_default_font_size(MIN_TEXT)
@@ -56,17 +70,18 @@ static func apply_theme() -> void:
 		t.set_color("font_disabled_color", type, Color(TEXT_DIM, 0.6))
 	t.set_font_size("font_size", "Label", MIN_TEXT)
 	t.set_font_size("font_size", "Button", MIN_TEXT)
-	var normal := panel_style(CARD, 6)
+	var normal := button_style(GLASS_BUTTON, 6)
 	t.set_stylebox("normal", "Button", normal)
-	var hover := panel_style(HOVER, 6)
+	var hover := button_style(GLASS_HOVER, 6)
 	hover.border_color = HIGHLIGHT
 	t.set_stylebox("hover", "Button", hover)
-	var selected := panel_style(SELECTED, 6)
+	var selected := button_style(GLASS_ON, 6)
 	selected.border_color = HIGHLIGHT
-	selected.border_width_bottom = 2
+	t.set_color("font_pressed_color", "Button", ACTION)
+	t.set_color("font_hover_pressed_color", "Button", ACTION)
 	t.set_stylebox("pressed", "Button", selected)
 	t.set_stylebox("hover_pressed", "Button", selected)
-	t.set_stylebox("disabled", "Button", panel_style(CARD_LOCKED, 6))
+	t.set_stylebox("disabled", "Button", button_style(GLASS_BUTTON, 6))
 	t.set_stylebox("focus", "Button", StyleBoxEmpty.new())
 	for type in ["HScrollBar", "VScrollBar"]:
 		var track_style := StyleBoxFlat.new()
@@ -80,7 +95,7 @@ static func apply_theme() -> void:
 			grabber.border_color = ACTION if state == "grabber_highlight" else EDGE
 			t.set_stylebox(state, type, grabber)
 	var tip := panel_style(PANEL, 8)
-	tip.set_border_width_all(2)
+	tip.set_border_width_all(0)
 	t.set_stylebox("panel", "TooltipPanel", tip)
 	t.set_color("font_color", "TooltipLabel", TEXT)
 	t.set_font_size("font_size", "TooltipLabel", MIN_TEXT)
@@ -122,11 +137,39 @@ static func button(text: String) -> Button:
 	return b
 
 
+## Keep Button.text (and its measured width) intact, painting only its key suffix lighter.
+static func key_hint(b: Button, suffix: String, solid_action: bool = false) -> void:
+	for state in [
+		"font_color",
+		"font_hover_color",
+		"font_pressed_color",
+		"font_hover_pressed_color",
+		"font_disabled_color",
+		"font_focus_color"
+	]:
+		b.add_theme_color_override(state, Color.TRANSPARENT)
+	b.draw.connect(func(): _draw_key_hint(b, suffix, solid_action))
+
+
+static func _draw_key_hint(b: Button, suffix: String, solid_action: bool) -> void:
+	var font := b.get_theme_font("font")
+	var px := b.get_theme_font_size("font_size")
+	var width := font.get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
+	var at := Vector2((b.size.x - width) / 2.0, (b.size.y - font.get_height(px)) / 2.0 + font.get_ascent(px))
+	var prefix := b.text.trim_suffix(suffix)
+	var col := LINE if solid_action else ACTION if b.button_pressed else TEXT
+	if b.disabled:
+		col = Color(TEXT_DIM, 0.6)
+	b.draw_string(font, at, prefix, HORIZONTAL_ALIGNMENT_LEFT, -1, px, col)
+	at.x += font.get_string_size(prefix, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
+	b.draw_string(font, at, suffix, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(col, GLASS_KEY.a))
+
+
 ## The same brass action treatment in research, the build bar and milestone cards.
 static func action_button(b: Button, active: bool = true) -> void:
 	for state in ["normal", "hover", "pressed", "hover_pressed"]:
-		var bg := ACTION if active else CARD
-		var style := panel_style(bg.lightened(0.06) if state == "hover" else bg, 6)
+		var bg := ACTION if active else GLASS_BUTTON
+		var style := button_style(bg.lightened(0.06) if state == "hover" else bg, 6)
 		style.border_color = ACTION if active else EDGE
 		b.add_theme_stylebox_override(state, style)
 	for state in [
@@ -147,39 +190,63 @@ static func _luminance(c: Color) -> float:
 	return 0.2126 * lin.call(c.r) + 0.7152 * lin.call(c.g) + 0.0722 * lin.call(c.b)
 
 
-## A restrained material panel: fine rim, small corners and a soft contact shadow.
+## Glass skin with explicit unchanged content margins; drawing never changes layout.
 static func panel_style(color: Color, margin: int = 8) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
-	s.bg_color = color
-	s.border_color = EDGE
-	s.set_border_width_all(1)
-	s.border_width_bottom = 2
-	s.shadow_color = Color(LINE, 0.3)
-	s.shadow_size = 3
-	s.shadow_offset = Vector2(0, 2)
-	s.set_corner_radius_all(RADIUS)
+	var card := color in [CARD, CARD_DONE, CARD_LOCKED, HOVER, SELECTED]
+	s.bg_color = GLASS_CARD if card else GLASS_PANEL if color in [BAR, PANEL] else color
+	if color == SELECTED:
+		s.bg_color = GLASS_ON
+	elif color == ACTION:
+		s.bg_color = ACTION
+	elif color == BAD:
+		s.bg_color = Color(BAD, 0.20)
+	s.shadow_color = GLASS_SHADOW
+	s.shadow_size = 8 if not card else 0
+	s.shadow_offset = Vector2(0, 3)
+	s.set_corner_radius_all(GLASS_CARD_RADIUS if card else RADIUS)
 	s.set_content_margin_all(margin)
 	return s
 
 
-## A bar that runs edge to edge: one fine rim on the side facing the map, no rounded corners.
-static func bar_style(color: Color, rule_on_bottom: bool) -> StyleBoxFlat:
-	var s := StyleBoxFlat.new()
+static func button_style(color: Color = GLASS_BUTTON, margin: int = 6) -> StyleBoxFlat:
+	var s := panel_style(PANEL, margin)
 	s.bg_color = color
-	s.border_color = EDGE
-	s.border_width_bottom = 1 if rule_on_bottom else 0
-	s.border_width_top = 0 if rule_on_bottom else 1
-	s.set_content_margin_all(6)
+	s.shadow_size = 0
+	s.set_corner_radius_all(GLASS_PILL_RADIUS)
+	return s
+
+
+## Edge bars keep their exact padding; the top has a painted vertical fade.
+static func bar_style(color: Color, _rule_on_bottom: bool) -> StyleBoxFlat:
+	var s := panel_style(color, 6)
 	s.content_margin_top = 4
 	s.content_margin_bottom = 4
 	return s
 
 
-## A small outlined color square, used as a button icon.
+static func top_style() -> StyleBoxTexture:
+	var gradient := Gradient.new()
+	gradient.colors = PackedColorArray([GLASS_TOP, Color(GLASS_TOP, 0.0)])
+	var texture := GradientTexture2D.new()
+	texture.gradient = gradient
+	texture.width = 2
+	texture.height = 256
+	texture.fill_from = Vector2(0, 0)
+	texture.fill_to = Vector2(0, 1)
+	var s := StyleBoxTexture.new()
+	s.texture = texture
+	s.set_content_margin_all(6)
+	return s
+
+
+## A round swatch with no rim, used as a button icon.
 static func swatch_texture(color: Color) -> ImageTexture:
 	var img := Image.create(12, 12, false, Image.FORMAT_RGBA8)
-	img.fill(OUTLINE)
-	img.fill_rect(Rect2i(2, 2, 8, 8), color)
+	img.fill(Color.TRANSPARENT)
+	for y in 12:
+		for x in 12:
+			img.set_pixel(x, y, Color(color, color.a * clampf(6.0 - Vector2(x - 5.5, y - 5.5).length(), 0.0, 1.0)))
 	return ImageTexture.create_from_image(img)
 
 

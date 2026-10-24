@@ -5,6 +5,7 @@ const Roads = preload("res://scripts/roads.gd")
 const Haulers = preload("res://scripts/haulers.gd")
 const Sim = preload("res://scripts/sim.gd")
 const HaulingTests = preload("res://tests/hauling_tests.gd")
+const SightTests = preload("res://tests/sight_tests.gd")
 
 var t  # the runner, tests/run_tests.gd
 
@@ -14,6 +15,7 @@ func run(runner) -> void:
 	test_haulers_wait_at_every_depot_with_work()
 	test_the_posts_share_the_haulers_evenly()
 	HaulingTests.new().run(t)  # hauler places and resting at a full store
+	SightTests.new().run(t)  # Sight (hold Alt): the gaps and flows it draws
 
 
 ## Haulers are born at the Hearth: a Storehouse's workshops would never be served if they only waited there.

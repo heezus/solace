@@ -42,7 +42,7 @@ var parts := {}
 func setup(game: Sim) -> void:
 	state = game
 	visible = false
-	add_theme_stylebox_override("panel", Ui.panel_style(Ui.CARD, 8))
+	add_theme_stylebox_override("panel", Ui.panel_style(Ui.PANEL, 8))
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 4)
 	add_child(v)
@@ -187,9 +187,9 @@ func _wrapped(font_size: int) -> Label:
 	return l
 
 
-static func _x_style(bg: Color) -> StyleBoxFlat:
-	var style := Ui.panel_style(bg, 2)
-	style.set_border_width_all(2)
+static func _x_style(_bg: Color) -> StyleBoxFlat:
+	var style := Ui.button_style(Ui.GLASS_BUTTON, 2)
+	style.set_border_width_all(0)
 	return style
 
 
@@ -197,12 +197,12 @@ func _button(text: String, bg: Color, border: Color) -> Button:
 	var b := Ui.button(text)
 	b.custom_minimum_size = Vector2(0, 28)
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var style := Ui.panel_style(bg, 4)
+	var style := Ui.button_style(Ui.GLASS_ON if bg == Ui.ACTION else Ui.GLASS_BUTTON, 4)
 	style.border_color = border
-	style.set_border_width_all(2)
+	style.set_border_width_all(0)
 	b.add_theme_stylebox_override("normal", style)
 	var hover := style.duplicate()
-	hover.bg_color = bg.lightened(0.06)
+	hover.bg_color = Ui.GLASS_HOVER
 	b.add_theme_stylebox_override("hover", hover)
 	return b
 
