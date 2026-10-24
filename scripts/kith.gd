@@ -306,7 +306,7 @@ func release_worker(b: Dictionary) -> void:
 			continue
 		var k: Dictionary = kith[b[slot]]
 		for id in k["carry"]:
-			_economy.add(id, k["carry"][id])
+			_economy.add(id, k["carry"][id], "released")
 		k["carry"] = {}
 		k["task"] = {}
 		k["job"] = ""

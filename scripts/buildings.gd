@@ -215,7 +215,7 @@ func place(type: String, p: Vector2i, focus := "") -> Dictionary:
 	if placement_error(type, p) != "":
 		return {}
 	var tile := _world.tile_at(p)
-	_economy.pay(cost_here(type, p))
+	_economy.pay(cost_here(type, p), "build")
 	road_rev += 1
 	var kind: String = Data.BUILDINGS[type]["kind"]
 	var cleared := ""
@@ -379,7 +379,7 @@ func demolish(p: Vector2i) -> Dictionary:
 		return {}
 	var refund := Rules.refund_of(type)
 	for id in refund:
-		_economy.give_back(id, refund[id])
+		_economy.give_back(id, refund[id], "refund")
 	road_rev += 1
 	var index := -1
 	if _world.roads.has(p):

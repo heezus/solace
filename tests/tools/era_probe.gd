@@ -10,6 +10,7 @@ const Data = preload("res://scripts/data.gd")
 const Fuel = preload("res://scripts/fuel.gd")
 const Haulers = preload("res://scripts/haulers.gd")
 const Kith = preload("res://scripts/kith.gd")
+const Ledger = preload("res://tests/tools/ledger.gd")
 const Roads = preload("res://scripts/roads.gd")
 
 const SAMPLE := 1.0  # game seconds between readings
@@ -24,6 +25,7 @@ const ERAS := ["stone_age", "bronze_dawn", "starfall", "ironfall", "livewire"]
 
 var rows: Array = []
 var era := ""
+var ledger := Ledger.new()  # the supply and use ledger of the era under way (ledger.gd), in each row as "ledger"
 var _row := {}
 var _at := 0.0  # game clock at the era's start
 var _acc := 0.0
@@ -52,6 +54,7 @@ func begin(name: String, s) -> void:
 	_spill_seen = s.economy.spilled
 	_spill_of_seen = s.economy.spilled_of.duplicate()
 	_depots_at = 0.0
+	ledger.begin(name, s)
 	var idle := 0
 	var haulers := 0
 	for k in s.people.kith:
@@ -129,6 +132,7 @@ func observe(s) -> void:
 		return
 	_acc -= SAMPLE
 	_sample(s)
+	ledger.sample(s)
 	if era == "livewire":
 		_tide(s)
 
@@ -136,6 +140,7 @@ func observe(s) -> void:
 ## Close the era: its length and goals done, and the row.
 func finish(s) -> Dictionary:
 	var row := _row.duplicate(true)
+	row["ledger"] = ledger.finish(s)
 	row["length_min"] = snappedf((s.seasons.time - _at) / 60.0, 0.1)
 	var list := _goals(era)
 	var done := 0
@@ -387,7 +392,7 @@ func _power(s) -> void:
 
 ## The probe as plain data (and back), so a long run can be kept and picked up: the rows so far and the era in progress.
 func to_dict() -> Dictionary:
-	return {"rows": rows, "era": era, "row": _row, "at": _at}
+	return {"rows": rows, "era": era, "row": _row, "at": _at, "ledger": ledger.to_dict()}
 
 
 func from_dict(d: Dictionary) -> void:
@@ -395,6 +400,8 @@ func from_dict(d: Dictionary) -> void:
 	era = d["era"]
 	_row = d["row"]
 	_at = d["at"]
+	if d.has("ledger") and d["ledger"]["era"] != "":
+		ledger.from_dict(d["ledger"])
 	_acc = 0.0
 	_streak.clear()
 	_starve.clear()

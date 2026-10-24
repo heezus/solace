@@ -44,7 +44,7 @@ static func can_buy(s, tech: String) -> bool:
 static func buy(s, tech: String) -> bool:
 	if not can_buy(s, tech):
 		return false
-	s.economy.pay(next_cost(s, tech))
+	s.economy.pay(next_cost(s, tech), "research")
 	s.ranks[tech] = rank(s, tech) + 1
 	s.events.append("%s rank %s" % [Data.TECHS[tech]["name"], Data.RANK_NAMES[s.ranks[tech]]])
 	return true
