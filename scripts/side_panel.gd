@@ -27,7 +27,7 @@ var wrap_width := 260.0
 static func _style() -> StyleBoxFlat:
 	var s := Ui.bar_style(Ui.PANEL, true)
 	s.border_width_bottom = 0
-	s.border_width_left = 1
+	s.border_width_left = 0
 	s.set_content_margin_all(12)
 	return s
 
@@ -56,7 +56,7 @@ func setup(game: Sim, width: float) -> void:
 			var current := PanelContainer.new()
 			var style := Ui.panel_style(Ui.CARD, 6)
 			style.border_color = Ui.HIGHLIGHT
-			style.border_width_left = 3
+			style.border_width_left = 0
 			style.border_width_top = 0
 			style.border_width_right = 0
 			style.border_width_bottom = 0

@@ -112,7 +112,7 @@ func _card(tech: String, is_pick: bool, why: String) -> PanelContainer:
 	card.custom_minimum_size = Vector2(CARD_W, 0)
 	var style := Ui.panel_style(Ui.CARD, 12)
 	style.border_color = GOLD if is_pick else Ui.EDGE
-	style.set_border_width_all(2 if is_pick else 1)
+	style.bg_color = Ui.GLASS_ON if is_pick else Ui.GLASS_CARD
 	card.add_theme_stylebox_override("panel", style)
 	card.set_meta("tech", tech)
 	var v := VBoxContainer.new()

@@ -1,5 +1,10 @@
 # Interface for the rendered miniature world
 
+## Current skin: Glass (2026-10-24)
+
+Jon selected Glass for the existing interface. This supersedes the earlier rim/edge treatments below: borderless dark translucent panels with 16 px corners and soft shadows, 12 px white translucent cards, pill buttons and brass selected/primary actions. The top bar fades into the map; protected readouts preserve contrast over bright ground. Existing layout, measurements, font sizes and semantic status colours remain. Sight uses rounded glass chips and softer delivery lines. See the [native paired review and measured geometry](../../art/glass-look/README.md) for exact tokens, readability rationale and captures.
+
+
 Current visual specification, 2026-10-04, PR #33. The project owner accepted the grounded, atmospheric map direction and requested that the UI/UX follow it. Codex implemented this first interface pass in the actual game.
 
 The interface should feel like a quiet field journal beside a living miniature landscape. Use plain surfaces and readable labels: texture belongs in the world and subject icons, not behind dense resource numbers.

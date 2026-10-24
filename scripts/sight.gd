@@ -39,6 +39,7 @@ var breaks: Array = []
 var idle_note := ""  # "Haulers 97, 8 needed: 89 have no work...", "" while the haulers are not in surplus
 var _view := Rect2()
 var _taken: Array = []  # rects of the labels drawn so far this frame: the gap words keep clear of them
+var _chips: Array = []  # painted after all lines, so flows never cross the words
 var _sizes := {}  # label text -> its width in px at the current UI scale
 
 
@@ -183,11 +184,14 @@ func _nets(s) -> Array:
 func draw(ci: CanvasItem, mouse: Vector2, time: float, view: Rect2) -> void:
 	_view = view.grow(Overlays.TILE * 2.0)
 	_taken = []
+	_chips = []
 	_draw_slowed(ci)
 	_draw_nets(ci)
 	_draw_depots(ci)
 	_draw_flows(ci, mouse, time)
 	_draw_gaps(ci, mouse)
+	for chip in _chips:
+		_paint_chip(ci, chip[0], chip[1], chip[2], chip[3])
 
 
 func _draw_slowed(ci: CanvasItem) -> void:
@@ -245,19 +249,19 @@ func _draw_flows(ci: CanvasItem, mouse: Vector2, time: float) -> void:
 		if not _view.intersects(Rect2(a, b - a).abs()) or a.distance_to(b) < 2.0:
 			continue
 		var width := (2.0 + minf(f["per_min"] / 12.0, 4.0)) * k
-		ci.draw_line(a, b, Color(Ui.ACTION, 0.4), width)
+		ci.draw_line(a, b, Color(Ui.ACTION, Ui.GLASS_FLOW), width, true)
 		var length := a.distance_to(b)
 		var dir := (b - a) / length
 		var at := fposmod(shift, spacing)
 		while at < length:
-			ci.draw_circle(a + dir * at, width * 0.9, Ui.ACTION)
+			ci.draw_circle(a + dir * at, width * 0.9, Color(Ui.ACTION, Ui.GLASS_DOT))
 			at += spacing
 		if _near(mouse, a, b) <= HOVER_PX * k:
 			hovered.append(f)
 	for row in hovered.size():
 		var f: Dictionary = hovered[row]
 		var text: String = Data.SIGHT_FLOW % [Data.ITEMS[f["item"]]["name"], roundi(f["per_min"])]
-		Art.outlined_text(ci, mouse + Vector2(14, 18 + 18 * row) * k, text, 14, Ui.ACTION)
+		_label(ci, mouse + Vector2(14, 18 + 18 * row) * k, text, Ui.ACTION)
 
 
 ## The distance from point p to the segment a-b.
@@ -270,8 +274,11 @@ static func _near(p: Vector2, a: Vector2, b: Vector2) -> float:
 ## Draw `text` with its baseline at `at` and keep the room it takes, so no gap words cover it.
 func _label(ci: CanvasItem, at: Vector2, text: String, col: Color) -> void:
 	var size := _size_of(text)
-	_taken.append(Rect2(at - Vector2(0, size.y), size))
-	Art.outlined_text(ci, at, text, 14, col)
+	var box := Rect2(at - Vector2(0, size.y), size).grow(4.0 * Art.ui_k)
+	if _taken.size() >= LABELS or _taken.any(func(o): return box.intersects(o)):
+		return
+	_taken.append(box)
+	_chip(ci, box, at, text, col)
 
 
 func _size_of(text: String) -> Vector2:
@@ -286,7 +293,10 @@ func _words_box(g: Dictionary) -> Rect2:
 	var k := Art.ui_k
 	var size := _size_of(g["text"])
 	var r := Overlays.rect(g["pos"])
-	return Rect2(Vector2(r.get_center().x - size.x / 2.0, r.position.y - size.y - 2.0 * k), size + Vector2(4, 4) * k)
+	return (
+		Rect2(Vector2(r.get_center().x - size.x / 2.0, r.position.y - size.y - 2.0 * k), size + Vector2(4, 4) * k)
+		. grow(4.0 * k)
+	)
 
 
 ## The gaps in `view` that get words: the LABELS loud ones that have waited longest, each clear of the labels in `_taken` and of
@@ -297,7 +307,7 @@ func labelled(view: Rect2) -> Array:
 	var out: Array = []
 	var used: Array = _taken.duplicate()
 	for g in loud:
-		if out.size() >= LABELS:
+		if out.size() + _taken.size() >= LABELS:
 			break
 		var box := _words_box(g)
 		if used.any(func(o): return box.intersects(o)):
@@ -323,13 +333,33 @@ func _draw_gaps(ci: CanvasItem, mouse: Vector2) -> void:
 			ci.draw_circle(dot, 4.0 * k, Color(Ui.TEXT_DIM, 0.7))
 		if r.grow(2.0 * k).has_point(mouse):
 			over = g
+	if not over.is_empty() and not over in shown:
+		var box := _words_box(over)
+		if _taken.size() < LABELS and not _taken.any(func(o): return box.intersects(o)):
+			shown = shown.filter(func(g): return not box.intersects(_words_box(g)))
+			if shown.size() + _taken.size() >= LABELS:
+				shown.pop_back()
+			shown.append(over)
 	for g in shown:
 		_draw_words(ci, g)
-	if not over.is_empty() and not over in shown:
-		_draw_words(ci, over)
 
 
 func _draw_words(ci: CanvasItem, g: Dictionary) -> void:
 	var box := _words_box(g)
 	var col: Color = Ui.BAD if g["loud"] else Ui.TEXT_DIM
-	Art.outlined_text(ci, box.position + Vector2(2, _size_of(g["text"]).y - 2), g["text"], 14, col)
+	var at := box.position + Vector2(6, 2) * Art.ui_k + Vector2(0, _size_of(g["text"]).y)
+	_chip(ci, box, at, g["text"], col)
+
+
+## Only drawing changes here: the gathered town data and status colours keep their meaning.
+func _chip(_ci: CanvasItem, box: Rect2, at: Vector2, text: String, col: Color) -> void:
+	_chips.append([box, at, text, col])
+
+
+func _paint_chip(ci: CanvasItem, box: Rect2, at: Vector2, text: String, col: Color) -> void:
+	var style := Ui.panel_style(Ui.PANEL, 0)
+	style.bg_color = Ui.GLASS_LABEL
+	style.set_corner_radius_all(maxi(roundi(8.0 * Art.ui_k), 1))
+	style.shadow_size = maxi(roundi(3.0 * Art.ui_k), 1)
+	ci.draw_style_box(style, box)
+	ci.draw_string(ThemeDB.fallback_font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(14.0 * Art.ui_k), col)
