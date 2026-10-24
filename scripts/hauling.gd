@@ -16,6 +16,7 @@ const Kith = preload("res://scripts/kith.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Work = preload("res://scripts/work.gd")
 
+const LOG_WINDOW := 60.0  # game seconds a delivery stays in `trip_log`
 const REFRESH := 30.0  # game seconds between readings of each depot's load
 const NONE := Vector2i(-1, -1)  # a hauler with no depot yet
 const USE := 0.5  # the share of a hauler's time the load may fill: under 1.0 leaves room for the walk back and for waiting on each other
@@ -36,6 +37,7 @@ var need: Dictionary = {}
 var trip_tiles: Dictionary = {}  # depot -> the average one-way trip to the buildings it serves, in tiles, by their load (not saved)
 var names: Dictionary = {}  # depot -> "Storehouse by the Smelter", read with the load
 var stopped_since: Dictionary = {}  # building tile -> the game clock when it stopped for a hauler (_watch_stopped)
+var trip_log: Array = []  # {at, from, to, item, amount}: what haulers delivered in the last LOG_WINDOW seconds, for Sight (not saved)
 var _have: Dictionary = {}  # depot -> haulers in its places, from the last `assign`
 var _clock := REFRESH
 var _now := 0.0  # game seconds this block has run (not saved)
@@ -53,6 +55,14 @@ func tick(s, delta: float) -> void:
 		_clock = 0.0
 		refresh(s)
 	assign(s)
+
+
+## Note one delivery of `amount` of `item` from one tile to another (a depot to a building, or a building to a depot).
+func log_trip(s, from: Vector2i, to: Vector2i, item: String, amount: int) -> void:
+	var now: float = s.seasons.time
+	trip_log.append({"at": now, "from": from, "to": to, "item": item, "amount": amount})
+	while not trip_log.is_empty() and trip_log[0]["at"] < now - LOG_WINDOW:
+		trip_log.pop_front()
 
 
 ## Note when each building a hauler serves stopped for one (short of an input for its next cycle, or full up), by the game
