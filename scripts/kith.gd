@@ -44,6 +44,7 @@ var learned_by: Dictionary = {}  # item -> name of the person who learned to gat
 var births := 0  # people named so far, for the next name
 var grow_timer := 0.0
 var starve_timer := 0.0
+var idle_now := 0  # Kith with no work, as the Sim counted them this tick (Hauling.idle_kith): births wait while they are a fifth
 var gift: Callable = func(_set_id: String) -> bool: return false  # (set id) -> true once that glyph set is read (Starfall)
 ## () -> the haulers the depots want (Hauling.total_needed): a workshop is staffed only while that many are left in the pool.
 var hauler_reserve: Callable = func() -> int: return 0
@@ -115,6 +116,11 @@ func grow_time() -> float:
 	return Data.GROW_TIME * (Data.STORYTELLING_GROW if _research.unlocked("storytelling") else 1.0) * healed
 
 
+## True while births wait for work: a fifth of the town or more has nothing to do.
+func births_wait() -> bool:
+	return idle_now * Data.BIRTHS_WAIT_ONE_IN >= kith.size()
+
+
 ## True when there is food enough for one more mouth: the stockpile covers the birth (and a small reserve
 ## for everyone) and the food coming in over the last Data.RATE_WINDOW seconds covers what they eat.
 func food_ready_for_birth() -> bool:
@@ -141,7 +147,7 @@ func grow(delta: float, fed: bool) -> void:
 			_remove_kith()
 		return
 	starve_timer = 0.0
-	if kith.size() >= _town.housing() or not food_ready_for_birth():
+	if kith.size() >= _town.housing() or not food_ready_for_birth() or births_wait():
 		grow_timer = 0.0
 		return
 	grow_timer += delta

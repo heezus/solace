@@ -312,6 +312,7 @@ func tick(delta: float) -> void:
 	people.assign_jobs()
 	hauling.tick(self, delta)
 	var fed := economy.feed(people.kith.size(), delta)
+	people.idle_now = hauling.idle_kith(self)
 	people.grow(delta, fed)
 	story.update(self)
 	livewire.tick(self, delta)

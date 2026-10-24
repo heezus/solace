@@ -750,6 +750,7 @@ func test_sim_ticks_through_the_block() -> void:
 	s.tech_tree.researched["haulers"] = true
 	s.tick(0.1)
 	t.check(s.people.kith[0]["job"] == "haul", "the first tick hands out jobs")
+	t.employ(s, 4)  # births wait while a fifth of the town has no work
 	for i in int(Data.GROW_TIME) + 1:
 		t.steady_income(s)
 		s.tick(1.0)

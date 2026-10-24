@@ -631,7 +631,7 @@ func _build_ui() -> void:
 	# Toasts stack up from the bottom of the map (placed in _layout, so they never cover the bars); the log opens over the map.
 	toasts = ToastStack.new()
 	layer.add_child(toasts)
-	toasts.setup(messages)
+	toasts.setup(messages, state, self)
 	layer.move_child(bottom_bar.drawer, toasts.get_index())  # the drawer over the toasts, so a toast never eats its clicks
 	east_pointer = EastPointer.new()
 	layer.add_child(east_pointer)

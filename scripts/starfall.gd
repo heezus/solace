@@ -272,7 +272,8 @@ func _take_food(amount: float) -> void:
 	for id in ["berries", "fish", "flour"]:
 		var each: float = Data.FOOD_VALUE[id]
 		var n := mini(_stock.inv.get(id, 0), ceili(left / each))
-		_stock.pay({id: n}, "story")
+		if n > 0:
+			_stock.pay({id: n}, "story")
 		left -= n * each
 		if left <= 0.0:
 			return

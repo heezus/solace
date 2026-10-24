@@ -14,7 +14,7 @@ const LOG_MAX := 60
 const MIN_SECONDS := 3.0
 const MAX_SECONDS := 7.0
 
-var active: Array = []  # {"id", "text", "left" (seconds), "sticky", "key"}, oldest first
+var active: Array = []  # {"id", "text", "left" (seconds), "sticky", "key", "kind"}, oldest first
 var history: Array = []  # {"text", "at" (seconds of play), "sticky"}, oldest first
 var clock := 0.0
 var keep_counts := false  # Tally Sticks: a message repeated back to back is one log line with a count
@@ -22,8 +22,9 @@ var _next_id := 1
 
 
 ## Say something. `seconds` is how long the toast stays (0 = by the length of the text); a sticky message stays until
-## dismissed. A message with the same `key` (or, with no key, the same text) already showing is refreshed, not stacked.
-func push(text: String, seconds := 0.0, sticky := false, key := "") -> int:
+## dismissed. A message with the same `key` (or, with no key, the same text) already showing is refreshed, not stacked. `kind` names a
+## sort of message the toasts draw their own way ("hint": a first-time hint, scripts/hints.gd); most have none.
+func push(text: String, seconds := 0.0, sticky := false, key := "", kind := "") -> int:
 	var secs := seconds if seconds > 0.0 else clampf(2.0 + text.length() * 0.05, MIN_SECONDS, MAX_SECONDS)
 	if keep_counts and not history.is_empty() and history.back()["text"] == text:
 		history.back()["n"] += 1
@@ -39,7 +40,7 @@ func push(text: String, seconds := 0.0, sticky := false, key := "") -> int:
 			shown["sticky"] = sticky
 			changed.emit()
 			return shown["id"]
-	var msg := {"id": _next_id, "text": text, "left": secs, "sticky": sticky, "key": key}
+	var msg := {"id": _next_id, "text": text, "left": secs, "sticky": sticky, "key": key, "kind": kind}
 	_next_id += 1
 	active.append(msg)
 	while active.size() > MAX_SHOWN:

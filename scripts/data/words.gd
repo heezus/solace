@@ -104,6 +104,7 @@ const STORE_FULL_STATUS := "Store full: resting"
 const STORE_FULL_ALERT := "Store full"
 const NOTE_STARVING := "Starving: no food"
 const NOTE_NO_ROOM := "No room: build a Dwelling"
+const NOTE_BIRTHS_WAIT := "Births wait: %d %s have no work. Build workshops to use them."  # idle, the people (many)
 const NOTE_NO_ROOM_GROW := "No room: build a Dwelling, or let a home grow (Homes tab)"
 # --- How close steady food is to the next birth (scripts/growth_note.gd), the Food readout's second line ---
 const GROW_NEXT := "Next %s in about %s"  # one, a time ("12 s")
