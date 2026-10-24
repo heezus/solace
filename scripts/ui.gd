@@ -193,7 +193,7 @@ static func _luminance(c: Color) -> float:
 static func panel_style(color: Color, margin: int = 8) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
 	var card := color in [CARD, CARD_DONE, CARD_LOCKED, HOVER, SELECTED]
-	s.bg_color = GLASS_CARD if card else GLASS_PANEL
+	s.bg_color = GLASS_CARD if card else GLASS_PANEL if color in [BAR, PANEL] else color
 	if color == SELECTED:
 		s.bg_color = GLASS_ON
 	elif color == ACTION:
