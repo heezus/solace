@@ -26,7 +26,7 @@ const EraProbe = preload("res://tests/tools/era_probe.gd")
 const RunSave = preload("res://scripts/run_save.gd")
 const Sim = preload("res://scripts/sim.gd")
 
-const BASELINE_SAVE_EVERY := 600.0  # game seconds between a baseline run's checkpoints
+const BASELINE_SAVE_EVERY := 120.0  # game seconds between checkpoints of a baseline run
 const LIVEWIRE_SAVE_EVERY := 300.0  # the same for a Livewire-alone run
 
 
