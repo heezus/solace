@@ -27,6 +27,7 @@ const RunSave = preload("res://scripts/run_save.gd")
 const Sim = preload("res://scripts/sim.gd")
 
 const BASELINE_SAVE_EVERY := 120.0  # game seconds between checkpoints of a baseline run
+const BASELINE_SAVE_WALL_MS := 60000  # real milliseconds between checkpoints, so a slow stretch still saves
 const LIVEWIRE_SAVE_EVERY := 300.0  # the same for a Livewire-alone run
 
 
@@ -205,11 +206,12 @@ func _baseline(m: int, minutes: float, out: String) -> void:
 		game.generate(m)
 		stage = "stone_age"
 		probe.begin("stone_age", game)
-	var at := [stage, game.seasons.time]  # the stage, and the game clock of the last checkpoint
+	var at := [stage, game.seasons.time, Time.get_ticks_msec()]  # the stage, and the game clock and wall clock of the last checkpoint
 	var hook := func(s):
 		probe.observe(s)
-		if s.seasons.time - at[1] >= BASELINE_SAVE_EVERY:
+		if s.seasons.time - at[1] >= BASELINE_SAVE_EVERY or Time.get_ticks_msec() - at[2] >= BASELINE_SAVE_WALL_MS:
 			at[1] = s.seasons.time
+			at[2] = Time.get_ticks_msec()
 			_baseline_save(work, at[0], probe, s, m, out)
 	var bronze := AutoplayBronze.new()
 	bronze.probe = hook
