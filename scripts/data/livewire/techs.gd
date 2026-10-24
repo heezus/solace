@@ -159,7 +159,7 @@ const SCORCHER := {
 	"icon": "research_scorcher",
 	"requires": ["generator", "arc_lamps"],
 	"cost": {"steel": 24, "wire": 30, "brick": 80},
-	"desc": "A burner that needs power and coal, and clears Bloom ground within 4 tiles, one tile in 30 seconds.",
+	"desc": "A burner that needs power and coal, and clears Bloom ground within 6 tiles, one tile in 30 seconds.",
 }
 const SHARD_DYNAMO := {
 	"abbr": "Sd",

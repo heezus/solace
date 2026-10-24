@@ -32,6 +32,7 @@ func run(runner, helpers) -> void:
 	test_buildings_are_overgrown_then_lost()
 	test_an_arc_lamp_holds_it_off()
 	test_a_scorcher_burns_it_clear()
+	test_a_scorcher_reaches_past_a_lamps_light()
 	test_engines_and_scorchers_take_coal_or_charcoal()
 	test_the_scorcher_card_explains_itself()
 	test_tide_watch_says_when()
@@ -391,6 +392,23 @@ func test_an_arc_lamp_holds_it_off() -> void:
 	hgen["inbuf"] = {}
 	tick_for(held, 15.0)
 	t.check(not held.town.building_at.has(mill["pos"]), "with the light out it is lost")
+
+
+## An Arc Lamp keeps the Bloom 5 tiles off, so a Scorcher beside it must reach past that: 6 tiles.
+func test_a_scorcher_reaches_past_a_lamps_light() -> void:
+	var s := quiet()
+	var c: Vector2i = base.meadow(s)
+	powered(s, c)
+	var scorcher := put(s, "scorcher", c + Vector2i(1, 0))
+	scorcher["inbuf"] = {"coal": 3}
+	var edge: Vector2i = scorcher["pos"] + Vector2i(int(Data.BUILDINGS["arc_lamp"]["light"]) + 1, 0)
+	s.tide.grown[edge] = true
+	s.tide.rev += 1
+	t.check(Data.SCORCH_REACH > Data.BUILDINGS["arc_lamp"]["light"], "a Scorcher reaches further than a lamp's light")
+	t.check(s.tide.scorch_target(scorcher) == edge, "ground one tile past a lamp's light is in reach")
+	s.tide.grown.erase(edge)
+	s.tide.grown[scorcher["pos"] + Vector2i(int(Data.SCORCH_REACH) + 1, 0)] = true
+	t.check(s.tide.scorch_target(scorcher).x < 0, "and ground past the reach is not")
 
 
 func test_a_scorcher_burns_it_clear() -> void:

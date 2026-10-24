@@ -1052,6 +1052,10 @@ Stage 2 of 2: the nine gated techs now do something, the gate is gone, and the e
 - Native 24/34 px review led to head crops for pole/lamp icons, a short rail detail crop and a dedicated bold Living Ground cutting; full per-tech regions and 24/34/48/96 px comparisons document the result.
 - Each tech receives a proposed independent resolver key for Claude's wiring, preserving existing shared callers. Skyward uses only a wire/star research emblem; the mast, Skyreach, UI and gameplay remain held.
 
+## 2026-10-23: A Scorcher reaches 6 tiles, and the bot clears a boxed-in Pole (Step 4b follow-up)
+
+An Arc Lamp keeps the Bloom 5 tiles from its light and a Scorcher reached 4, so a Scorcher built beside the lamps could never burn anything: a player would hit the same trap as the bot did on seed 4. `SCORCH_REACH` is now 6 (cards, tile hint and the Livewire page follow; 1 Coal still clears 4 tiles). The Livewire bot lays its Poles toward Bloom ground as soon as ground exists and takes down a Gatherer's Hut beside a first Pole that houses and fields have boxed in (seed 2's net never left the Generator).
+
 ## 2026-10-23: The Ironfall and Livewire art batch is wired (PRs #135 to #139)
 - Every building the batch painted (Boiler, Shard Boiler, Forge, Steam Shed, Beast Pen, Shard Lamp, Generator, Wire Mill, Power Pole, Order Board, Arc Lamp, Scorcher, Factory Floor, Shard Dynamo) draws its own picture at the old size and footprint; the placeholder tints are gone. A burning Shard Lamp draws the lit post.
 - Rail draws Codex's pieces over the paved bed (straight, corner, T, cross, end, turned for the sides a tile joins; the end of a line is a Steam Shed or the last rail). Firebreaks lay their own strips, joined the same way, with no plate and no ground square beneath. The Firebreak art has no T or cross, so a junction is a straight with an end laid toward the third arm.

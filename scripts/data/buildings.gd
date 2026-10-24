@@ -773,7 +773,7 @@ const BUILDINGS := {
 		"color": Color("e0642b"),
 		"desc":
 		(
-			"A jet of flame on a pump. It burns the Bloom ground nearest it clear, a tile every 30 seconds within 4 tiles,"
+			"A jet of flame on a pump. It burns the Bloom ground nearest it clear, a tile every 30 seconds within 6 tiles,"
 			+ " and 1 Coal does 4 tiles (1 Charcoal does 2). Burnt ground is never taken again. Stand it within 2 tiles"
 			+ " of a Power Pole; haulers bring the fuel."
 		),
