@@ -64,7 +64,7 @@ const WHY_WALKING := "its haulers are walking back to %s"
 const WHY_BUSY := "all %d haulers at %s are on other trips (%s)"  # how many, the depot, what most of them are doing
 # --- Sight (hold Alt: scripts/sight.gd) ---
 const SIGHT_KEY := "Sight: brass = goods moving, red = a gap to fix"
-const SIGHT_BUTTON := "Sight  (Alt)"
+const SIGHT_BUTTON := "Sight (Alt)"
 const SIGHT_TIP := "Hold Alt, or click, to see goods moving and the gaps to fix. Let go and the map is calm again."
 ## A waiting building's label, by the reason WaitWhy gives (scripts/wait_why.gd). A quiet one is a dot, not words on the map.
 const SIGHT_OUT := "Needs %s: none in stock"  # the good
