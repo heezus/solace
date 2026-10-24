@@ -358,6 +358,7 @@ func _chip(_ci: CanvasItem, box: Rect2, at: Vector2, text: String, col: Color) -
 
 func _paint_chip(ci: CanvasItem, box: Rect2, at: Vector2, text: String, col: Color) -> void:
 	var style := Ui.panel_style(Ui.PANEL, 0)
+	style.bg_color = Ui.GLASS_LABEL
 	style.set_corner_radius_all(maxi(roundi(8.0 * Art.ui_k), 1))
 	style.shadow_size = maxi(roundi(3.0 * Art.ui_k), 1)
 	ci.draw_style_box(style, box)

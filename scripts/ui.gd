@@ -40,6 +40,7 @@ const LANE_COLORS := {
 }
 # Glass surfaces: 94% protects the existing text contrast even over pure white ground.
 const GLASS_PANEL := Color("0f1c1ff0")
+const GLASS_LABEL := Color("081013fa")  # small BAD text exceeds its former outline contrast over white
 const GLASS_CARD := Color(1, 1, 1, 0.06)
 const GLASS_BUTTON := Color(1, 1, 1, 0.07)
 const GLASS_HOVER := Color(1, 1, 1, 0.15)
