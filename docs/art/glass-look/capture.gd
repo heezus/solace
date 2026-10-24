@@ -45,6 +45,7 @@ func _process(_delta: float) -> bool:
 		for i in 900:
 			main.state.tick(0.1)
 		main._refresh_ui()
+		main.side_panel.show_info("")  # keep the review independent of the desktop cursor
 		main.paused = true
 		main.set_process(false)
 		main.zoom_step = 3

@@ -38,6 +38,6 @@ Run with a display:
 /Applications/Godot.app/Contents/MacOS/Godot --path . -s docs/art/glass-look/capture.gd -- /absolute/output/directory
 ```
 
-The review fixture reuses `/tmp/solace-glass-fixture.run` if present; remove that file to build the current `livewire_tide` developer start afresh. It advances the loaded town 90 seconds to rebuild transient delivery history, then pauses simulation for the captures while allowing normal layout and drawing. The baseline uses the same fixture copied into a detached checkout of `3322bf0`. The docs directory is excluded from production imports, matching other art-review directories.
+The review fixture reuses `/tmp/solace-glass-fixture.run` if present; remove that file to build the current `livewire_tide` developer start afresh. It advances the loaded town 90 seconds to rebuild transient delivery history, then pauses simulation for the captures while allowing normal layout and drawing. Cursor-dependent hover info is cleared so pointer movement cannot change the paired text wrapping. The baseline uses the same fixture copied into a detached checkout of `3322bf0`. The docs directory is excluded from production imports, matching other art-review directories.
 
 Local validation: Godot import; strict editor warnings; GDScript lint/format; scripted play-through to Bronze Dawn; 20-minute layout pass (1,133 HUD checks, zero problems and zero scale changes); menu/save/load and play-log passes. Full logic suite and exact-head CI are tracked in the PR.
