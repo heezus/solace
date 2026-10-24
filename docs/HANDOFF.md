@@ -6,9 +6,9 @@ Owner: the project owner (heezus). Two AI teams, one repo, coordinated by respon
 
 ### Codex — Glass interface skin
 - **Task:** owner's Glass skin and Sight drawing only, `codex/glass-look`, PR #147.
-- **Reserved files:** visual portions of `ui.gd`, top/build/side/building/tech/trade panels, `art.gd`, map-picker, toast/log and Sight drawing; `docs/art/glass-look/` and design decision log.
+- **Reserved files:** visual portions of `ui.gd`, top/build/side/building/tech/trade panels, the map frame top stroke in `main.gd`, `art.gd`, map-picker, toast/log and Sight drawing; `docs/art/glass-look/` and design decision log.
 - **Acceptance criteria:** unchanged geometry, gameplay/data/saves/tests; native paired building/tech/messages/Livewire Sight captures; strict warnings and full CI green.
-- **Status:** published native paired building/tech/messages/Livewire Sight captures in #147, with all visible Control rectangles unchanged; import, strict warnings, lint/format and scripted play/layout/menu/log passes clean. Final full suite/CI pending. Reservation releases on publication; focused follow-ups stay in #147.
+- **Status:** published native paired building/tech/messages/Livewire Sight captures in #147, with all visible Control rectangles unchanged; import, strict warnings, lint/format and scripted play/layout/menu/log passes clean. Full local suite passed; exact-head CI pending. Reservation releases on publication; focused follow-ups stay in #147.
 - **Next action:** Jon reviews images; Claude reviews and merges after exact-head CI is green.
 
 
