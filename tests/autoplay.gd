@@ -16,7 +16,7 @@ const Roads = preload("res://scripts/roads.gd")
 const World = preload("res://scripts/world.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Homes = preload("res://scripts/homes.gd")
-const BirthsWaitAnswer = preload("res://tests/births_wait_answer.gd")
+const BirthsWaitAnswer = preload("res://tests/autoplay_births.gd")
 
 const DT := 0.1
 const THINK := 1.0  # seconds between decisions
@@ -72,7 +72,7 @@ var hold_tile := Vector2i(-1, -1)  # the tile the bot is holding on, (-1, -1) fo
 var goal_tech := "bronze_dawn"  # the tech the bot is working toward
 var reach := {}  # tiles the Kith can walk to from the Hearth, refreshed each decision
 var probe: Callable  # called with the Sim after every step: a reading of the run (tests/tools/era_probe.gd), never a change to it
-var births := BirthsWaitAnswer.new()  # what the bot does about "Births wait" (tests/births_wait_answer.gd)
+var births := BirthsWaitAnswer.new()  # what the bot does about "Births wait" (tests/autoplay_births.gd)
 
 
 func play(map_seed: int, max_seconds: float) -> Dictionary:
@@ -475,7 +475,7 @@ func _huts_for(item: String) -> float:
 	return n
 
 
-## The next workplace the goals need, for the Kith who have no work (tests/births_wait_answer.gd).
+## The next workplace the goals need, for the Kith who have no work (tests/autoplay_births.gd).
 func _next_workplace(short: Dictionary) -> bool:
 	return births.next_workplace(self, short)
 
