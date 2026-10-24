@@ -69,6 +69,7 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 			k["phase"] = "to_depot"
 		"to_depot":
 			for id in k["carry"]:
+				s.hauling.log_trip(s, b["pos"], Kith.tile_of(k), id, k["carry"][id])
 				s.economy.add(id, k["carry"][id])
 			k["carry"] = {}
 			k["task"] = {}
@@ -87,6 +88,7 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 				return
 			k["phase"] = "to_drop"
 		"to_drop":
+			s.hauling.log_trip(s, t["depot"], b["pos"], t["item"], t["amount"])
 			b["inbuf"][t["item"]] = b["inbuf"].get(t["item"], 0) + t["amount"]
 			b["incoming"][t["item"]] -= t["amount"]
 			k["carry"] = {}

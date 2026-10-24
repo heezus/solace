@@ -62,6 +62,32 @@ const WHY_AHEAD := 'the order "%s" serves other buildings first'
 const WHY_FREE := "a free hauler stands at %s"
 const WHY_WALKING := "its haulers are walking back to %s"
 const WHY_BUSY := "all %d haulers at %s are on other trips (%s)"  # how many, the depot, what most of them are doing
+# --- Sight (hold Alt: scripts/sight.gd) ---
+const SIGHT_KEY := "Sight: brass = goods moving, red = a gap to fix"
+const SIGHT_BUTTON := "Sight (Alt)"
+const SIGHT_TIP := "Hold Alt, or click, to see goods moving and the gaps to fix. Let go and the map is calm again."
+## A waiting building's label, by the reason WaitWhy gives (scripts/wait_why.gd). A quiet one is a dot, not words on the map.
+const SIGHT_OUT := "Needs %s: none in stock"  # the good
+const SIGHT_NO_ROAD := "No road"
+const SIGHT_CUT := "Road cut"
+const SIGHT_ON_THE_WAY := "Hauler on the way"
+const SIGHT_NO_HAULER := "No hauler: %s (%s)"  # the depot, SIGHT_OF or SIGHT_SURPLUS
+const SIGHT_KEPT := "Kept for an order"
+const SIGHT_AHEAD := "Held: an order serves others first"
+const SIGHT_FREE := "A free hauler is about to leave"
+const SIGHT_WALKING := "Haulers walking back"
+const SIGHT_BUSY := "Haulers busy: %s (%s)"  # the depot, SIGHT_OF or SIGHT_SURPLUS
+const SIGHT_OF := "%d of %d"  # haulers in places, wanted
+const SIGHT_SURPLUS := "%d, %d needed"  # the same, when a depot has more than it wants
+const SIGHT_HELD := "Held: haulers come first"
+const SIGHT_FULL := "Full: no hauler to collect"
+const SIGHT_RESTING := "Resting: the store is full"
+const SIGHT_PAUSED := "Paused"
+const SIGHT_FLOW := "%s %d a min"  # the good, the amount a minute
+const SIGHT_NET := "draws %d, gives %d"  # the net's asks and what its engines give
+const SIGHT_DEPOT := "Haulers %d of %d"  # in places, wanted
+const SIGHT_DEPOT_SURPLUS := "Haulers %d, %d needed"  # the same, when a depot has more than it wants
+const HAULERS_IDLE := "Haulers %d, %d needed: %d have no work. Build workshops to use them."  # in places, wanted, the difference
 const HAULER_ROW := "Haulers %d of %d wanted"
 const HAULER_ROW_SET := "Haulers %d of %d wanted (auto %d)"
 const HAULER_LEVER_FAR := "A Storehouse near the far workshops would cut the trips"

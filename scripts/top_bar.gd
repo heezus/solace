@@ -8,6 +8,7 @@ extends PanelContainer
 
 signal speed_picked(value: int)  # 0 toggles pause
 signal log_pressed  # the Messages button
+signal sight_toggled(on: bool)  # the Sight button, latched (holding Alt works without it)
 
 const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
@@ -157,7 +158,16 @@ func setup(game: Sim) -> void:
 	log_button.custom_minimum_size = Vector2(0, 28)
 	log_button.tooltip_text = Data.LOG_TIP
 	log_button.pressed.connect(func(): log_pressed.emit())
-	right.add_child(log_button)
+	var lower := HBoxContainer.new()
+	lower.add_theme_constant_override("separation", 4)
+	right.add_child(lower)
+	lower.add_child(log_button)
+	var sight_button := Ui.button(Data.SIGHT_BUTTON)
+	sight_button.toggle_mode = true
+	sight_button.custom_minimum_size = Vector2(0, 28)
+	sight_button.tooltip_text = Data.SIGHT_TIP
+	sight_button.toggled.connect(func(on): sight_toggled.emit(on))
+	lower.add_child(sight_button)
 
 	flow_panel = PanelContainer.new()
 	flow_panel.top_level = true
@@ -267,6 +277,7 @@ func refresh(paused: bool, speed: int) -> void:
 	kith_label.get_parent().tooltip_text = (
 		Data.JOBS_TIP % [state.people.job_counts(), Data.PEOPLE["many"]]
 		+ ("\n\n" + Data.HAULERS_TIP if haulers != "" else "")
+		+ ("\n\n" + state.hauling.idle_text() if haulers != "" and state.hauling.idle_text() != "" else "")
 		+ ("\n\n" + GrowthNote.rule() if GrowthNote.food_is_the_blocker(state) else "")
 	)
 	kith_label.add_theme_color_override("font_color", Ui.TEXT if note != "" else Ui.GOOD)
