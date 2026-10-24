@@ -4,6 +4,13 @@ Owner: the project owner (heezus). Two AI teams, one repo, coordinated by respon
 
 ## Active work
 
+### Codex — Glass interface skin
+- **Task:** owner's Glass skin and Sight drawing only, `codex/glass-look`, one PR.
+- **Reserved files:** visual portions of `ui.gd`, top/build/side/building/tech panels, `art.gd`, toast/log and Sight drawing; `docs/art/glass-look/` and design decision log.
+- **Acceptance criteria:** unchanged geometry, gameplay/data/saves/tests; native paired building/tech/messages/Livewire Sight captures; strict warnings and full CI green.
+- **Next action:** implement, inspect and publish for Jon's visual review; Claude reviews and merges on green.
+
+
 ### Codex — Livewire building art (2026-10-22 batch)
 - **Task:** owner-requested art-only Livewire buildings first, on `codex/livewire-buildings`; Ironfall stage 3, items, Bloom tide and research follow as separate groups.
 - **Reserved files:** new exact-stem Livewire PNG/import assets in `art/rendered/`, `docs/art/livewire/buildings/`, this status entry. No `.gd`, tests, UI or overlay changes.

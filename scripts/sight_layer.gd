@@ -26,7 +26,7 @@ static func attach(map: Node2D, ui: CanvasLayer, bar: Control, s) -> void:
 	layer.state = s
 	layer.top_bar = bar
 	layer.band = ColorRect.new()
-	layer.band.color = Ui.PANEL
+	layer.band.color = Ui.GLASS_PANEL
 	layer.band.visible = false
 	layer.band.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui.add_child(layer.band)

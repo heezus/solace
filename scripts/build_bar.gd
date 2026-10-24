@@ -85,6 +85,7 @@ func setup(game: Sim) -> void:
 	tab_scroll.add_child(tabs)
 	for tab_name in Data.BUILD_TABS.keys() + [CRAFT_TAB]:
 		var b := Ui.button("%s · %s" % [tab_name, Hotkeys.key_name(tab_name)])
+		Ui.key_hint(b, Hotkeys.key_name(tab_name))
 		b.toggle_mode = true
 		b.custom_minimum_size = Vector2(100, 30)
 		b.pressed.connect(_tab_pressed.bind(tab_name))
@@ -298,6 +299,7 @@ func _tech_button() -> Button:
 	b.custom_minimum_size = Vector2(190, STRIP_H)
 	b.add_theme_font_size_override("font_size", Ui.LABEL_TEXT)
 	Ui.action_button(b)
+	Ui.key_hint(b, "T", true)
 	return b
 
 
@@ -333,10 +335,10 @@ func refresh(placing: String, ready_count: int) -> void:
 		var style := Ui.panel_style(Ui.CARD if unlocked else LOCKED_BG, 4)
 		if placing == type:
 			style.border_color = Ui.HIGHLIGHT  # the card being placed is ringed in gold
-			style.set_border_width_all(2)
+			style.bg_color = Ui.GLASS_ON
 		b.add_theme_stylebox_override("normal", style)
 		var hover := style.duplicate()
-		hover.bg_color = style.bg_color.lightened(0.06)
+		hover.bg_color = Ui.GLASS_HOVER
 		b.add_theme_stylebox_override("hover", hover)
 		b.add_theme_stylebox_override("pressed", style)
 		var text_col: Color = Ui.TEXT if unlocked else LOCKED_TEXT
@@ -354,10 +356,10 @@ func refresh(placing: String, ready_count: int) -> void:
 		Ui.update_pips(parts["pips"], price, state.economy.inv)
 		parts["icon"].modulate = Color(1, 1, 1, 1.0 if unlocked else 0.4)
 		b.tooltip_text = _tooltip(type)
-	var demo := Ui.panel_style(Ui.BAD if placing == "demolish" else Ui.CARD_LOCKED, 4)
+	var demo := Ui.button_style(Color(Ui.BAD, 0.20) if placing == "demolish" else Ui.GLASS_BUTTON, 4)
 	demolish_button.add_theme_stylebox_override("normal", demo)
 	for key in ["font_color", "font_hover_color", "font_pressed_color"]:
-		demolish_button.add_theme_color_override(key, Ui.LINE if placing == "demolish" else Ui.TEXT_DIM)
+		demolish_button.add_theme_color_override(key, Ui.SHORT if placing == "demolish" else Ui.TEXT_DIM)
 	var demo_hover := demo.duplicate()
 	demo_hover.border_color = Ui.HIGHLIGHT
 	demolish_button.add_theme_stylebox_override("hover", demo_hover)
