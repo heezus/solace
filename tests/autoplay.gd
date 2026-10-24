@@ -16,6 +16,7 @@ const Roads = preload("res://scripts/roads.gd")
 const World = preload("res://scripts/world.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Homes = preload("res://scripts/homes.gd")
+const BirthsWaitAnswer = preload("res://tests/births_wait_answer.gd")
 
 const DT := 0.1
 const THINK := 1.0  # seconds between decisions
@@ -71,6 +72,7 @@ var hold_tile := Vector2i(-1, -1)  # the tile the bot is holding on, (-1, -1) fo
 var goal_tech := "bronze_dawn"  # the tech the bot is working toward
 var reach := {}  # tiles the Kith can walk to from the Hearth, refreshed each decision
 var probe: Callable  # called with the Sim after every step: a reading of the run (tests/tools/era_probe.gd), never a change to it
+var births := BirthsWaitAnswer.new()  # what the bot does about "Births wait" (tests/births_wait_answer.gd)
 
 
 func play(map_seed: int, max_seconds: float) -> Dictionary:
@@ -473,12 +475,20 @@ func _huts_for(item: String) -> float:
 	return n
 
 
+## The next workplace the goals need, for the Kith who have no work (tests/births_wait_answer.gd).
+func _next_workplace(short: Dictionary) -> bool:
+	return births.next_workplace(self, short)
+
+
 ## One placement a decision, most urgent first.
 func _decide() -> void:
 	_flood_reach()
 	var short := _short()
 	var later := _route_need()
+	births.watch(self)
 	_pause_surplus(short, later)
+	if births.answer(self, short):
+		return
 	if _buy_rank(short):
 		return
 	if s.tech_tree.researched.has("haulers") and _link_roads():
@@ -646,12 +656,12 @@ func _nearest_hidden(tile: String) -> Vector2i:
 ## the next Dwelling needs; resume them after.
 func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
 	var saving := {}
-	# Raw goods the next tech pays in directly go to it, not into a workshop.
+	# Raw and made goods the next tech pays in directly go to it, not into a workshop (a Crucible eats the Copper a tech needs).
 	var next: String = s.tech_tree.queue[0] if not s.tech_tree.queue.is_empty() else ""
 	if next != "":
 		var cost: Dictionary = Data.TECHS[next]["cost"]
 		for id in cost:
-			if RAW_TILE.has(id) and s.economy.inv.get(id, 0) < cost[id]:
+			if (RAW_TILE.has(id) or MAKER.has(id)) and s.economy.inv.get(id, 0) < cost[id]:
 				saving[id] = true
 	if _house_wanted():
 		var house: Dictionary = Data.BUILDINGS["dwelling"]["cost"]
@@ -666,6 +676,8 @@ func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
 	elif hut_unstaffed_since < 0.0:
 		hut_unstaffed_since = clock
 	var needs_hand := no_hand and clock - hut_unstaffed_since > HUT_WAIT  # a Kith walking to the hut doesn't count
+	var idle_est: int = s.people.idle_now  # idle Kith as the pauses so far this decision leave them
+	var saved := 0  # pauses that save an input, which are few while births would wait
 	for i in s.town.buildings.size():
 		var b: Dictionary = s.town.buildings[i]
 		var def: Dictionary = Data.BUILDINGS[b["type"]]
@@ -675,20 +687,26 @@ func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
 			var idle: bool = s.economy.inv.get(id, 0) >= HUT_SURPLUS and not short.has(id)
 			if Data.FOOD_VALUE.has(id) and s.people.kith.size() < s.town.housing():
 				idle = false  # births need food the huts bring in, so a food hut keeps working while there is room
+			idle = idle and births.room(self, idle_est + (0 if b["paused"] else Buildings.crew_size(b)))
 			if idle != b["paused"]:
 				s.set_paused(i, idle)
+				idle_est = maxi(idle_est + (1 if idle else -1) * Buildings.crew_size(b), 0)
 			continue
 		if def["kind"] != "processor" or def["out"].is_empty():
 			continue  # a Mine makes no stock of its own
 		var made: String = def["out"].keys()[0]
-		var surplus: bool = s.economy.inv.get(made, 0) >= later.get(made, 0) + 10 and not short.has(made)
+		var room: bool = births.room(self, idle_est + (0 if b["paused"] else Buildings.crew_size(b)))
+		var surplus: bool = s.economy.inv.get(made, 0) >= later.get(made, 0) + 10 and not short.has(made) and room
 		for id in def["in"]:
-			surplus = surplus or saving.has(id)
+			if saving.has(id) and (room or saved < BirthsWaitAnswer.SAVING_PAUSES):
+				surplus = true
+				saved += 1
 		if needs_hand and Buildings.is_staffed(b):
 			surplus = true
 			needs_hand = false  # one workshop is enough to free a Kith
 		if surplus != b["paused"]:
 			s.set_paused(i, surplus)
+			idle_est = maxi(idle_est + (1 if surplus else -1) * Buildings.crew_size(b), 0)
 
 
 func _place_near_hearth(type: String) -> bool:

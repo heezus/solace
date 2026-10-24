@@ -154,6 +154,16 @@ func _goal_wants(want: Dictionary) -> void:
 		_want(want, s.town.price("mine"), 1)
 
 
+## The workplaces that answer "Births wait" in this era: a Mine on the Copper Hills if there is none, then a Smelter.
+func _next_workplace(short: Dictionary) -> bool:
+	if _in_era_two():
+		if s.town.unlocked("mine") and _mines_on("copper_hills") == 0 and _place_mine_on("copper_hills"):
+			return true
+		if s.town.unlocked("smelter") and _count("smelter") == 0 and _place_workshop("smelter"):
+			return true
+	return super._next_workplace(short)
+
+
 ## The era's workshops are due once their tech is in and the first Bronze still needs them.
 func _workshops_due() -> Array:
 	var out := super._workshops_due()
