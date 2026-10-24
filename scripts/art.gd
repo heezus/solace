@@ -97,7 +97,7 @@ static func pill(ci: CanvasItem, at: Vector2, text: String, bg: Color, fg: Color
 	var box := StyleBoxFlat.new()
 	box.bg_color = bg
 	box.border_color = OUTLINE
-	box.set_border_width_all(maxi(roundi(2.0 * k), 1))
+	box.set_border_width_all(0)
 	box.set_corner_radius_all(int(h / 2.0))
 	ci.draw_style_box(box, r)
 	ci.draw_string(font, r.position + Vector2(7.0 * k, px + 2.0 * k), text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, fg)

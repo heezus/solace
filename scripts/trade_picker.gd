@@ -21,7 +21,11 @@ func setup(game: Sim) -> void:
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	for which in ["give", "get"]:
 		var b := Button.new()
-		b.flat = true
+		b.flat = false
+		b.add_theme_stylebox_override("normal", Ui.panel_style(Ui.CARD, 6))
+		var hover := Ui.panel_style(Ui.CARD, 6)
+		hover.bg_color = Ui.GLASS_HOVER
+		b.add_theme_stylebox_override("hover", hover)
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.custom_minimum_size = Vector2(60, 0)

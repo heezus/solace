@@ -44,8 +44,8 @@ func _rebuild() -> void:
 func _panel(m: Dictionary) -> PanelContainer:
 	var p := PanelContainer.new()
 	p.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	var style := Ui.panel_style(Color(Ui.BAR, 0.94), 8)
-	style.set_border_width_all(1)
+	var style := Ui.panel_style(Ui.PANEL, 8)
+	style.set_border_width_all(0)
 	p.add_theme_stylebox_override("panel", style)
 	var l := Ui.label("", Ui.LABEL_TEXT)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

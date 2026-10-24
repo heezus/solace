@@ -596,6 +596,7 @@ func _build_ui() -> void:
 	rim.draw_center = false
 	rim.border_color = Ui.LINE
 	rim.set_border_width_all(int(FRAME_W))
+	rim.border_width_top = 0  # the Glass top fade meets the map without a hard rule
 	frame.add_theme_stylebox_override("panel", rim)
 	layer.add_child(frame)
 

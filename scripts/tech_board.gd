@@ -430,10 +430,10 @@ func _draw_or_pills() -> void:
 		var c: Vector2 = lay["pills"][tech]
 		var r := _r(Rect2(c - Vector2(14, 9), Vector2(28, 18)))
 		var box := StyleBoxFlat.new()
-		box.bg_color = Ui.BAR
+		box.bg_color = Ui.GLASS_PANEL
 		box.border_color = GOLD if chain.has(tech) else NEEDED
-		box.set_border_width_all(2)
-		box.set_corner_radius_all(8)
+		box.set_border_width_all(0)
+		box.set_corner_radius_all(Ui.GLASS_CARD_RADIUS)
 		draw_style_box(box, r)
 		var px := _px(NAME_PX - 2.0)
 		_text(Vector2(r.position.x + (r.size.x - px) / 2.0, r.get_center().y + px * 0.35), "or", px, Ui.TEXT)
@@ -454,15 +454,14 @@ func _draw_card(tech: String) -> void:
 	var is_ready := state.tech_tree.can_research(tech)
 	var unbuilt := not Rules.tech_enabled(tech)  # its effect ships in the next update: shown, locked, never bought
 	var open := state.tech_tree.requirements_met(tech) and not unbuilt
-	var bg := Ui.SELECTED if tech == selected else (DONE_BG if done else (READY_BG if open else LOCKED_BG))
 	var box := StyleBoxFlat.new()
-	box.bg_color = Color(bg, a)
-	box.border_color = GOLD if tech == selected else Color(GOLD if is_ready or tech == hovered else Ui.EDGE, a)
-	box.set_border_width_all(2 if is_ready or tech == selected or tech == hovered else 1)
-	box.set_corner_radius_all(Ui.RADIUS)
-	draw_style_box(box, sr)
+	box.bg_color = Color(Ui.GLASS_CARD, Ui.GLASS_CARD.a * a)
 	if tech == selected:
-		draw_rect(Rect2(sr.position + Vector2(1, 1), Vector2(2, sr.size.y - 2)), GOLD)
+		box.bg_color = Color(Ui.ACTION, 0.20 * a)
+	box.border_color = GOLD if tech == selected else Color(GOLD if is_ready or tech == hovered else Ui.EDGE, a)
+	box.set_border_width_all(0)
+	box.set_corner_radius_all(Ui.GLASS_CARD_RADIUS)
+	draw_style_box(box, sr)
 	var pad := 6.0 * clampf(zoom, 0.8, 1.3)
 	var x := sr.position.x + pad
 	if card_icon_fits(tech, sr):
@@ -474,7 +473,6 @@ func _draw_card(tech: String) -> void:
 			draw_rect(icon, Color(Ui.BAR, 0.55))  # locked: washed out
 		if dim:
 			draw_rect(icon, Color(Ui.BAR, 0.75))
-		draw_rect(icon, Color(Ui.EDGE, a), false, 1.0)
 		x += side + pad
 	var ranked := Ranks.has_ranks(tech)
 	var right := sr.end.x - (34.0 if ranked else 24.0) * clampf(zoom, 0.8, 1.3)
@@ -586,10 +584,10 @@ func _draw_gate(tech: String, sr: Rect2, a: float) -> void:
 	var t: Dictionary = Data.TECHS[tech]
 	var is_ready := state.tech_tree.can_research(tech)
 	var box := StyleBoxFlat.new()
-	box.bg_color = Color(GATE_BG, a)
+	box.bg_color = Color(Ui.ACTION, 0.20 * a) if tech == selected else Color(Ui.GLASS_CARD, 0.06 * a)
 	box.border_color = GOLD if tech == selected else Color(GOLD if is_ready or tech == hovered else Ui.EDGE, a)
-	box.set_border_width_all(1)
-	box.set_corner_radius_all(8)
+	box.set_border_width_all(0)
+	box.set_corner_radius_all(Ui.GLASS_CARD_RADIUS)
 	draw_style_box(box, sr)
 	draw_rect(Rect2(sr.position + Vector2(1, 1), Vector2(3, sr.size.y - 2)), Color(GATE, a))
 	var side := clampf(34.0 * zoom, 24.0, 48.0)

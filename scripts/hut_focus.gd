@@ -286,8 +286,8 @@ static func draw_picker(ci: CanvasItem, s: Sim, p: Vector2i, pick: String, bound
 	var font := ThemeDB.fallback_font
 	var panel: Rect2 = rects["panel"]
 	var box := Ui.panel_style(Ui.PANEL, 0)
-	box.set_border_width_all(maxi(roundi(2.0 * k), 1))
-	box.set_corner_radius_all(roundi(8.0 * k))
+	box.set_border_width_all(0)
+	box.set_corner_radius_all(roundi(Ui.RADIUS * k))
 	ci.draw_style_box(box, panel)
 	var x := panel.position.x + PICK_PAD * k
 	var y := panel.position.y + PICK_PAD * k + px
@@ -297,13 +297,13 @@ static func draw_picker(ci: CanvasItem, s: Sim, p: Vector2i, pick: String, bound
 	for item in rects["rows"]:
 		var r: Rect2 = rects["rows"][item]
 		var on: bool = item == chosen
-		var row_box := Ui.panel_style(Ui.HIGHLIGHT if on else Ui.CARD, 0)
-		row_box.set_border_width_all(maxi(roundi(2.0 * k), 1))
-		row_box.set_corner_radius_all(roundi(6.0 * k))
+		var row_box := Ui.button_style(Ui.GLASS_ON if on else Ui.GLASS_BUTTON, 0)
+		row_box.set_border_width_all(0)
+		row_box.set_corner_radius_all(roundi(r.size.y / 2.0))
 		ci.draw_style_box(row_box, r)
 		var icon := Rect2(r.position + Vector2(6.0 * k, (r.size.y - PICK_ICON * k) / 2.0), Vector2.ONE * PICK_ICON * k)
 		Art.item_icon(ci, item, icon, 1.0)
 		var text_at := Vector2(icon.end.x + 8.0 * k, r.position.y + (r.size.y + px) / 2.0 - 3.0 * k)
 		ci.draw_string(
-			font, text_at, Data.ITEMS[item]["name"], HORIZONTAL_ALIGNMENT_LEFT, -1, px, Ui.LINE if on else Ui.TEXT
+			font, text_at, Data.ITEMS[item]["name"], HORIZONTAL_ALIGNMENT_LEFT, -1, px, Ui.ACTION if on else Ui.TEXT
 		)
