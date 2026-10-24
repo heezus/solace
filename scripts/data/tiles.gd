@@ -139,7 +139,7 @@ const TILES := {
 		"yields": "",
 		"color": Color("8a4f9a"),
 		"buildable": false,
-		"hint": "Bloom ground the tide has taken. A Scorcher within 4 tiles can burn it clear.",
+		"hint": "Bloom ground the tide has taken. A Scorcher within 6 tiles can burn it clear.",
 		"stays": "The Bloom stays · a Scorcher can burn it clear",
 	},
 	"spent_seam":
