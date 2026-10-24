@@ -139,8 +139,7 @@ static func send(s) -> String:
 		k["cart"] = false
 		names.append(k["name"])
 	var cost: Dictionary = Data.PACKS[o["pack"]]["cost"]
-	for id in cost:
-		s.economy.inv[id] = int(s.economy.inv.get(id, 0)) - cost[id]
+	s.economy.pay(cost, "expedition")
 	return (
 		Data.POST_SENT
 		% [names[0], names[1], Data.TARGETS[o["target"]].to_lower(), Data.PACKS[o["pack"]]["name"].to_lower()]

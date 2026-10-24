@@ -1,10 +1,12 @@
 extends RefCounted
 ## The profile: what outlives a run (design-system/12-knowledge-is-progress.md, 13-three-perspectives.md).
-## Two things, and nothing else yet:
+## Three things, and nothing else yet:
 ##   `chronicle`: the story event ids (Data.STORY_EVENTS) in the order they first happened, across runs. It is the
 ##     start of the Chronicle, the record of story moments a later run can read.
 ##   `knowledge`: the item ids the people have learned to gather. A future time loop rebuilds the map and
 ##     carries only this over, since knowledge is of kinds of things, never of places.
+##   `hints`: the ids of the first-time hints already shown (scripts/hints.gd), so none comes back in a later run. A profile
+##     written before hints existed has none and still loads.
 ## absorb(state) merges a run (finished or in progress) into the profile: new ids are added at the end, ids
 ## already held keep their place, and absorbing the same run twice changes nothing.
 ## The profile is its own file (PATH), apart from the run save (scripts/run_save.gd): a run save holds no
@@ -18,11 +20,12 @@ const SECTIONS := ["chronicle", "knowledge"]
 
 var chronicle: Array = []  # story ids, in the order they first happened
 var knowledge: Array = []  # item ids, in the order they were first learned
+var hints: Array = []  # first-time hint ids, in the order they were shown
 
 
 ## True while the profile holds nothing.
 func is_empty() -> bool:
-	return chronicle.is_empty() and knowledge.is_empty()
+	return chronicle.is_empty() and knowledge.is_empty() and hints.is_empty()
 
 
 ## Merge the run in `s` (a Sim) into the profile: its story ids and the items its people have learned.
@@ -35,6 +38,19 @@ func absorb(s) -> void:
 func merge(story_ids: Array, item_ids: Array) -> void:
 	_add_all(chronicle, story_ids)
 	_add_all(knowledge, item_ids)
+
+
+## True when the first-time hint `id` has been shown in any run.
+func has_hint(id: String) -> bool:
+	return id in hints
+
+
+## Fold the shown hint `id` into the profile saved at `path` and write it back. False when the file could not be written.
+static func note_hint(id: String, path: String = PATH) -> bool:
+	var profile := new()
+	profile.load_file(path)
+	_add_all(profile.hints, [id])
+	return profile.save(path)
 
 
 func knows(item: String) -> bool:
@@ -56,7 +72,12 @@ static func note_run(s, path: String = PATH) -> bool:
 
 
 func to_dict() -> Dictionary:
-	return {"version": VERSION, "chronicle": chronicle.duplicate(), "knowledge": knowledge.duplicate()}
+	return {
+		"version": VERSION,
+		"chronicle": chronicle.duplicate(),
+		"knowledge": knowledge.duplicate(),
+		"hints": hints.duplicate()
+	}
 
 
 ## Replace the profile with `d`. Anything that isn't a profile of this version gives an empty profile, and
@@ -64,9 +85,12 @@ func to_dict() -> Dictionary:
 func from_dict(d) -> void:
 	chronicle = []
 	knowledge = []
+	hints = []
 	if not is_profile(d):
 		return
 	merge(d["chronicle"], d["knowledge"])
+	if typeof(d.get("hints")) == TYPE_ARRAY:
+		_add_all(hints, d["hints"])
 
 
 ## True when `d` looks like a profile this code can read.

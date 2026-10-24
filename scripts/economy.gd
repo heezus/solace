@@ -34,6 +34,8 @@ var caps: Dictionary = {}
 var spilled := 0  # goods lost over the cap this run, for the scorecards; not saved
 var spilled_of: Dictionary = {}  # the same by good, for the baseline; not saved
 var made_on: Dictionary = {"coal": {}, "charcoal": {}}  # what the metal works made on each fuel, by good, for the baseline; not saved
+var paid: Dictionary = {}  # "build" or "research" -> {good: units} paid for them this run (baseline only, not saved)
+var regained: Dictionary = {}  # "refund" / "released" -> {good: units} back in the stores with no flow (baseline only, not saved)
 var burnt_by: Dictionary = {}  # building type -> {fuel: units} burnt by engines and Scorchers (baseline only, not saved)
 ## Seasons of Strain switches (scripts/seasons.gd sets them every tick, so they are not saved): how much of the usual the people eat,
 ## whether births wait, whether idle hands forage even without a famine, and how many times as much a foraging trip brings.
@@ -68,9 +70,15 @@ func can_afford(cost: Dictionary) -> bool:
 
 
 ## Take `cost` out of the stockpile. Callers check can_afford first: this doesn't (see try_pay).
-func pay(cost: Dictionary) -> void:
+## `why` ("build", "research", "expedition", "twin", "story") counts the cost in `paid` for the baseline's ledger; the other callers
+## load a workshop or are in the flows.
+func pay(cost: Dictionary, why := "") -> void:
 	for id in cost:
 		inv[id] -= cost[id]
+		if why != "":
+			var by: Dictionary = paid.get(why, {})
+			by[id] = by.get(id, 0) + cost[id]
+			paid[why] = by
 
 
 ## Pay only if the whole cost is covered. Returns false, and takes nothing, when it isn't.
@@ -82,7 +90,8 @@ func try_pay(cost: Dictionary) -> bool:
 
 
 ## Put `amount` of `id` in the stockpile. What would not fit under the cap is lost (`spilled`).
-func add(id: String, amount: int) -> void:
+func add(id: String, amount: int, why := "") -> void:
+	_regain(id, amount, why)
 	var have: int = inv.get(id, 0)
 	var room: int = caps.get(id, 1 << 30) - have
 	if amount > room:
@@ -109,10 +118,19 @@ func refresh_caps(buildings: Array) -> void:
 		caps[id] = Storage.capacity(id, storehouses, _techs)
 
 
+## Count goods that reach the stores without a flow (a demolition refund, a released worker's load) for the baseline's ledger.
+func _regain(id: String, amount: int, why: String) -> void:
+	if why != "":
+		var by: Dictionary = regained.get(why, {})
+		by[id] = by.get(id, 0) + amount
+		regained[why] = by
+
+
 ## Give goods back that were the player's own (a refund, a workshop's loaded inputs): nothing spills.
-func give_back(id: String, amount: int) -> void:
+func give_back(id: String, amount: int, why := "") -> void:
 	inv[id] = inv.get(id, 0) + amount
 	seen[id] = true
+	_regain(id, amount, why)
 
 
 ## True when `id` is within Data.STORAGE_FULL_SHARE of its cap, so the chip says "full".

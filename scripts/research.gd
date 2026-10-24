@@ -193,7 +193,7 @@ func can_research(tech: String) -> bool:
 func research(tech: String) -> bool:
 	if not can_research(tech):
 		return false
-	_economy.pay(cost_of(tech))
+	_economy.pay(cost_of(tech), "research")
 	researched[tech] = true
 	tech_researched.emit(tech)
 	return true

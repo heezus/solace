@@ -17,6 +17,7 @@ const BuildInfo = preload("res://scripts/build_info.gd")
 const Hotkeys = preload("res://scripts/hotkeys.gd")
 const DebugKeys = preload("res://scripts/debug_keys.gd")
 const CutsceneSettings = preload("res://scripts/cutscene_settings.gd")
+const HintSettings = preload("res://scripts/hint_settings.gd")
 const PlayLogSettings = preload("res://scripts/play_log_settings.gd")
 
 const WIDTH := 300.0
@@ -24,6 +25,7 @@ const WIDTH := 300.0
 var load_button: Button
 var debug_toggle: CheckButton
 var cutscene_toggle: CheckButton
+var hints_toggle: CheckButton
 var playlog_toggle: CheckButton
 var status: Label
 
@@ -57,6 +59,8 @@ func setup() -> void:
 	v.add_child(_button(Data.PAUSE_QUIT, false, func(): quit_pressed.emit()))
 	cutscene_toggle = _switch(Data.CUTSCENES_LABEL, Data.CUTSCENES_HELP, CutsceneSettings.set_on)
 	v.add_child(cutscene_toggle)
+	hints_toggle = _switch(Data.HINTS_LABEL, Data.HINTS_HELP, HintSettings.set_on)
+	v.add_child(hints_toggle)
 	playlog_toggle = _switch(Data.PLAYLOG_LABEL, Data.PLAYLOG_HELP, PlayLogSettings.set_on)
 	v.add_child(playlog_toggle)
 	debug_toggle = _switch(Data.DEBUG_KEYS_LABEL, Data.DEBUG_HELP, DebugKeys.set_on)
@@ -116,6 +120,7 @@ func open() -> void:
 	status.text = ""
 	debug_toggle.set_pressed_no_signal(DebugKeys.on())
 	cutscene_toggle.set_pressed_no_signal(CutsceneSettings.on())
+	hints_toggle.set_pressed_no_signal(HintSettings.on())
 	playlog_toggle.set_pressed_no_signal(PlayLogSettings.on())
 	visible = true
 

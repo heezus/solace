@@ -15,6 +15,7 @@ var t  # the runner, tests/run_tests.gd
 func run(runner) -> void:
 	t = runner
 	test_food_supply_counts_what_comes_in()
+	test_population_grows_with_food_and_room()
 	test_a_young_window_counts_as_little()
 	test_hand_gathering_is_not_steady_income()
 	test_steady_means_income_covers_eating()
@@ -28,6 +29,7 @@ func run(runner) -> void:
 	test_the_note_and_the_goal_say_steady_food()
 	test_one_trip_is_not_steady_food()
 	test_steady_food_has_to_hold_for_a_while()
+	test_births_wait_for_work()
 
 
 ## A game with `count` people, a Hearth and `stock` berries in a stockpile that holds nothing else.
@@ -213,6 +215,7 @@ func test_a_hut_on_berries_feeds_growth() -> void:
 	s.economy.inv["berries"] = 30
 	t.place_free(s, "gatherers_hut", spot)
 	t.place_free(s, "dwelling", camp + Vector2i(0, 2))
+	t.employ(s, 4)  # births wait while a fifth of the town has no work
 	var i: int = s.town.building_at[spot]
 	t.check(s.town.buildings[i]["focus"] == "berries", "a hut on the bushes")
 	for _n in 900:  # 90 s, a trip always queued
@@ -296,3 +299,52 @@ func test_steady_food_has_to_hold_for_a_while() -> void:
 		born_at >= Data.RATE_WINDOW + int(Data.STEADY_SECONDS), "the first birth waits for the hold: at %d s" % born_at
 	)
 	t.check(born_at < 120, "and comes before the break in the output: at %d s" % born_at)
+
+
+## Births wait while one Kith in five or more has no work (Data.BIRTHS_WAIT_ONE_IN): 30 Kith, 6 idle waits and 5 goes; 120 Kith,
+## 24 idle waits and 23 goes. The top bar says so, with the number, and food keeps stocking as before.
+func test_births_wait_for_work() -> void:
+	var town := _camp(30, 500)
+	town.people.idle_now = 6
+	t.check(town.people.births_wait(), "town 30, 6 idle (20%): births wait")
+	town.people.idle_now = 5
+	t.check(not town.people.births_wait(), "town 30, 5 idle: births go")
+	var big := _camp(120, 500)
+	big.people.idle_now = 24
+	t.check(big.people.births_wait(), "town 120, 24 idle: births wait")
+	big.people.idle_now = 23
+	t.check(not big.people.births_wait(), "town 120, 23 idle: births go")
+	var s := _camp(3, 40)
+	s.people.idle_now = 1
+	_grow(s, int(Data.GROW_TIME) * 3, 0.5)
+	t.check(s.people.kith.size() == 3 and s.people.grow_timer == 0.0, "with a third of the town idle nobody is born")
+	t.check(s.economy.inv["berries"] == 40, "and the food is not spent on a birth")
+	s.people.idle_now = 0
+	_grow(s, int(Data.GROW_TIME), 0.5)
+	t.check(s.people.kith.size() == 4, "once everyone has work the birth comes: %d" % s.people.kith.size())
+	var w := _camp(3, 500)
+	t.steady_income(w)
+	w.people.idle_now = 3
+	t.check(Ui.growth_note(w) == "", "with no workplace built there is no work to point at, so the bar stays quiet")
+	t.place_free(w, "gatherers_hut", w.world.camp_pos + Vector2i(-2, 0))
+	w.people.idle_now = 18
+	var word := "Births wait: 18 %s have no work. Build workshops to use them." % Data.PEOPLE["many"]
+	t.check(Ui.growth_note(w) == word, "the line names the idle Kith: " + Ui.growth_note(w))
+	w.economy.starving = true
+	t.check(Ui.growth_note(w).begins_with("Starving"), "starving still comes first")
+
+
+func test_population_grows_with_food_and_room() -> void:
+	var s: Sim = t.fresh()
+	s.economy.inv["berries"] = 200
+	t.employ(s, 8)
+	for i in int(Data.GROW_TIME * 2 + 2):
+		t.steady_income(s)
+		s.tick(1.0)
+	t.check(s.people.kith.size() == s.town.housing(), "grows until the Camp is full")
+	t.check(Ui.growth_note(s).begins_with("No room"), "says it needs room")
+	t.place_free(s, "dwelling", s.world.camp_pos + Vector2i(0, 2))
+	for i in int(Data.GROW_TIME + 2):
+		t.steady_income(s)
+		s.tick(1.0)
+	t.check(s.people.kith.size() == s.town.housing() - 2, "a Dwelling makes room for more")

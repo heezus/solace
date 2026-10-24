@@ -272,7 +272,8 @@ func _take_food(amount: float) -> void:
 	for id in ["berries", "fish", "flour"]:
 		var each: float = Data.FOOD_VALUE[id]
 		var n := mini(_stock.inv.get(id, 0), ceili(left / each))
-		_stock.add(id, -n)
+		if n > 0:
+			_stock.pay({id: n}, "story")
 		left -= n * each
 		if left <= 0.0:
 			return
@@ -508,7 +509,7 @@ func _pay(cost: Dictionary) -> bool:
 		if _stock.inv.get(good, 0) < int(cost[good]):
 			return false
 	for good in cost:
-		_stock.add(good, -int(cost[good]))
+		_stock.pay({good: int(cost[good])}, "twin")
 	return true
 
 

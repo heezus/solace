@@ -4,6 +4,8 @@ extends VBoxContainer
 ## small "click to dismiss" note and goes when clicked; the others let the mouse through, so they never get in
 ## the way of holding on the map.
 
+const Data = preload("res://scripts/data.gd")
+const Hints = preload("res://scripts/hints.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Messages = preload("res://scripts/messages.gd")
 
@@ -12,10 +14,17 @@ const MAX_W := 640.0
 
 var messages: Messages
 var panels := {}  # message id -> PanelContainer
+var hints  # the first-time hints (scripts/hints.gd) the game scene gets; null in the scripted tools and when no game is given
+var _state  # the Sim the hints watch
+var _host  # the game scene: no hint while it is paused
 
 
-func setup(queue: Messages) -> void:
+func setup(queue: Messages, s = null, owner_node = null) -> void:
 	messages = queue
+	if s != null:
+		hints = Hints.attach(queue)
+		_state = s
+		_host = owner_node
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_theme_constant_override("separation", 6)
 	alignment = BoxContainer.ALIGNMENT_END
@@ -67,7 +76,7 @@ func _fill(p: PanelContainer, m: Dictionary) -> void:
 	p.tooltip_text = "Click to dismiss" if sticky else ""
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var style: StyleBoxFlat = p.get_theme_stylebox("panel")
-	style.border_color = Ui.SHORT if sticky else Ui.EDGE
+	style.border_color = Ui.HIGHLIGHT if m["kind"] == Data.HINT_KIND else (Ui.SHORT if sticky else Ui.EDGE)
 
 
 func _on_click(event: InputEvent, id: int) -> void:
@@ -75,7 +84,9 @@ func _on_click(event: InputEvent, id: int) -> void:
 		messages.dismiss(id)
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	if hints != null and not _host.paused:
+		hints.update(_state, delta)
 	for m in messages.active:
 		var p: PanelContainer = panels.get(m["id"])
 		if p != null:

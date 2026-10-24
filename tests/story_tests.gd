@@ -310,6 +310,7 @@ func test_kith_messages_reach_the_player() -> void:
 	m.watch(s.people, "announce")
 	m.watch(s.people, "born")
 	s.economy.inv["berries"] = 500
+	t.employ(s, 4)  # births wait while a fifth of the town has no work
 	s.events.clear()
 	for i in int(Data.GROW_TIME * 10.0) + 20:
 		t.steady_income(s)

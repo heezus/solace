@@ -86,6 +86,8 @@ const KITH_START := 3
 ## A new Kith is born every GROW_TIME seconds while there is room and steady food. Birth costs BIRTH_FOOD.
 const GROW_TIME := 12.0
 const BIRTH_FOOD := 5.0
+## Births wait while one Kith in this many has no work (30 Kith: 6 idle waits, 5 goes; 120 Kith: 24 waits, 23 goes).
+const BIRTHS_WAIT_ONE_IN := 5
 ## A birth also needs this much food in the stockpile for each person already there, and food coming in
 ## steadily (Economy.food_is_steady): what the buildings bring (not hand-gathering) over the last
 ## RATE_WINDOW seconds must cover what everyone eats.

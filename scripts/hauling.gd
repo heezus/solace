@@ -110,6 +110,18 @@ func total_wanted() -> int:
 	return n
 
 
+## Kith with no work: no job, or a hauler beyond the places the depots want. Births wait while they are a fifth of the town.
+func idle_kith(s) -> int:
+	var jobless := 0
+	var haulers := 0
+	for k in s.people.kith:
+		if k["job"] == "":
+			jobless += 1
+		elif k["job"] == "haul":
+			haulers += 1
+	return jobless + maxi(haulers - total_wanted(), 0)
+
+
 ## Haulers in `depot`'s places now.
 func have(depot: Vector2i) -> int:
 	return _have.get(depot, 0)
@@ -137,10 +149,14 @@ func is_short() -> bool:
 	return false
 
 
-## "Haulers 18 of 24" for the top bar, "" while no depot has work.
+## "Haulers 18 of 24" for the top bar, or "Haulers 44, 33 needed" when there are more than the depots want (as Sight says it); ""
+## while no depot has work.
 func bar_text() -> String:
 	var want := total_wanted()
-	return Data.HAULERS_BAR % [total_have(), want] if want > 0 else ""
+	if want <= 0:
+		return ""
+	var n := total_have()
+	return (Data.SIGHT_DEPOT_SURPLUS if n > want else Data.HAULERS_BAR) % [n, want]
 
 
 ## "Haulers 97, 8 needed: 89 have no work.", "" unless five or more stand in places beyond what the depots want (the Kith with no job

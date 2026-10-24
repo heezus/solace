@@ -10,6 +10,7 @@ const TeardownTests = preload("res://tests/teardown_tests.gd")
 const SteamTests = preload("res://tests/steam_tests.gd")
 const LivewireTests = preload("res://tests/livewire_tests.gd")
 const CutsceneTests = preload("res://tests/cutscene_tests.gd")
+const HintTests = preload("res://tests/hint_tests.gd")
 const TechLayout = preload("res://scripts/tech_layout.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Rules = preload("res://scripts/rules.gd")
@@ -179,7 +180,6 @@ func _init() -> void:
 	test_hut_gather_preview_matches_placement()
 	test_shortfall_text()
 	test_kith_staff_buildings_in_order()
-	test_population_grows_with_food_and_room()
 	test_starving_kith_leave()
 	test_distance_slows_haulers()
 	test_roads_bridge_the_river()
@@ -244,6 +244,7 @@ func _init() -> void:
 	SteamTests.new().run(self)
 	LivewireTests.new().run(self)
 	CutsceneTests.new().run(self)
+	HintTests.new().run(self)
 	NewcomerTests.new().run(self)
 	UiTests.new().run(self)
 	TechBoardTests.new().run(self)
@@ -259,8 +260,9 @@ func _init() -> void:
 
 ## A headless player (tests/autoplay_bronze.gd) plays the stone age on a few maps. It should reach Bronze Dawn
 ## in 8 to 25 simulated minutes; data.gd is tuned so it takes about 12 to 16. The game at that moment must match
-## tests/golden.json. It then plays on to its first Bronze, which should come 7 to 19 minutes later (the target is about
-## 10 to 14; chained neighbours run by haulers add a couple of minutes, see the decision log), and the game at that
+## tests/golden.json. It then plays on to its first Bronze, which should come 7 to 21 minutes later (the target is about
+## 10 to 14; chained neighbours run by haulers add a couple of minutes, see the decision log, and births wait for work, so a
+## bot that builds few workshops grows slowly), and the game at that
 ## moment must match tests/golden_bronze.json. The Falling Star follows 7 to 36 minutes after
 ## that: homes ask for more as they grow (page 17), so a whole run is about 45 to 60 minutes by bot.
 func test_pacing_bot() -> void:
@@ -284,8 +286,8 @@ func test_pacing_bot() -> void:
 		check(r["won"], "the bot reaches Bronze Dawn on map %d" % map_seed)
 		check(minutes >= 8.0 and minutes <= 25.0, "map %d takes 8 to 25 minutes (%.1f)" % [map_seed, minutes])
 		check(
-			r["minutes"] >= 7.0 and r["minutes"] <= 19.0,
-			"map %d: the first Bronze takes 7 to 19 minutes more (%.1f)" % [map_seed, r["minutes"]]
+			r["minutes"] >= 7.0 and r["minutes"] <= 21.0,
+			"map %d: the first Bronze takes 7 to 21 minutes more (%.1f)" % [map_seed, r["minutes"]]
 		)
 		check(
 			star >= 7.0 and star <= 36.0,
@@ -612,6 +614,12 @@ func steady_income(s: Sim) -> void:
 	s.economy.steady_held = Data.STEADY_SECONDS
 
 
+## Work for a growing town: `n` huts by the camp, so births (which wait while a fifth of the town has no work) are not held up.
+func employ(s: Sim, n: int) -> void:
+	for i in n:
+		place_free(s, "gatherers_hut", s.world.camp_pos + Vector2i(-2 - int(i / 5.0), i % 5 - 2))
+
+
 func place_free(s: Sim, type: String, p: Vector2i) -> bool:
 	s.economy.add("wood", 100)
 	s.economy.add("stone", 100)
@@ -639,21 +647,6 @@ func test_kith_staff_buildings_in_order() -> void:
 		last["worker"] == -1 and last["status"].begins_with("No Woodcutter yet"),
 		"the newest building waits for a worker"
 	)
-
-
-func test_population_grows_with_food_and_room() -> void:
-	var s := fresh()
-	s.economy.inv["berries"] = 200
-	for i in int(Data.GROW_TIME * 2 + 2):
-		steady_income(s)
-		s.tick(1.0)
-	check(s.people.kith.size() == s.town.housing(), "grows until the Camp is full")
-	check(Ui.growth_note(s).begins_with("No room"), "says it needs room")
-	place_free(s, "dwelling", s.world.camp_pos + Vector2i(0, 2))
-	for i in int(Data.GROW_TIME + 2):
-		steady_income(s)
-		s.tick(1.0)
-	check(s.people.kith.size() == s.town.housing() - 2, "a Dwelling makes room for more")
 
 
 func test_starving_kith_leave() -> void:

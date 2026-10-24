@@ -28,6 +28,7 @@ func run(runner) -> void:
 	test_a_full_store_rests_the_building()
 	test_food_producers_rest_and_births_go_on()
 	test_places_survive_a_save()
+	test_the_top_bar_reads_like_sight()
 	test_a_held_back_workshop_says_why()
 	test_a_machine_short_of_an_input_does_not_blame_power()
 	test_a_refused_swap_names_its_reason()
@@ -550,3 +551,18 @@ func test_a_waiting_workshop_says_why() -> void:
 	t.check(WaitWhy.of(s, pit, "wood")["code"] == "free_hauler", "free haulers at the depot: free hauler (%d)" % free)
 	pit["unreachable"] = 2.0
 	t.check(WaitWhy.of(s, pit, "wood")["code"] == "cut", "a cut road: cut")
+
+
+## The top bar says "Haulers 18 of 24" while places are short and "Haulers 44, 33 needed" when there are more than the depots want,
+## the way Sight's band does; never "44 of 33".
+func test_the_top_bar_reads_like_sight() -> void:
+	var s: Sim = t.fresh()
+	var depot := Vector2i(3, 3)
+	t.check(s.hauling.bar_text() == "", "no depot has work: no line")
+	s.hauling.auto = {depot: 33}
+	s.hauling._have = {depot: 18}
+	t.check(s.hauling.bar_text() == "Haulers 18 of 33", "short: " + s.hauling.bar_text())
+	s.hauling._have = {depot: 33}
+	t.check(s.hauling.bar_text() == "Haulers 33 of 33", "exactly enough: " + s.hauling.bar_text())
+	s.hauling._have = {depot: 44}
+	t.check(s.hauling.bar_text() == "Haulers 44, 33 needed", "more than wanted: " + s.hauling.bar_text())

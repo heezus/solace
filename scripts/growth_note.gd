@@ -5,6 +5,7 @@ extends RefCounted
 ## say the same thing. The rule itself is Kith.food_ready_for_birth; this only explains it.
 
 const Data = preload("res://scripts/data.gd")
+const Buildings = preload("res://scripts/buildings.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Homes = preload("res://scripts/homes.gd")
 
@@ -15,9 +16,22 @@ static func note(s) -> String:
 		return Data.NOTE_STARVING
 	if s.people.kith.size() >= s.town.housing():
 		return Data.NOTE_NO_ROOM_GROW if _a_home_could_grow(s) else Data.NOTE_NO_ROOM
+	if births_wait_now(s):
+		return Data.NOTE_BIRTHS_WAIT % [s.people.idle_now, Data.PEOPLE["many"]]
 	if not s.people.food_ready_for_birth():
 		return Data.GROW_NOTE_FOOD + ": " + fix(s)
 	return ""
+
+
+## True when idle Kith are what holds the next birth back: with no building that wants a worker yet there is no work to point at,
+## so it stays quiet then.
+static func births_wait_now(s) -> bool:
+	if not s.people.births_wait():
+		return false
+	for b in s.town.buildings:
+		if Buildings.needs_worker(b):
+			return true
+	return false
 
 
 ## True when homes are in play (one has already grown a tier) and some home can still grow another under the player's caps: a

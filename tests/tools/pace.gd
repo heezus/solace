@@ -26,7 +26,8 @@ const EraProbe = preload("res://tests/tools/era_probe.gd")
 const RunSave = preload("res://scripts/run_save.gd")
 const Sim = preload("res://scripts/sim.gd")
 
-const BASELINE_SAVE_EVERY := 600.0  # game seconds between a baseline run's checkpoints
+const BASELINE_SAVE_EVERY := 120.0  # game seconds between checkpoints of a baseline run
+const BASELINE_SAVE_WALL_MS := 60000  # real milliseconds between checkpoints, so a slow stretch still saves
 const LIVEWIRE_SAVE_EVERY := 300.0  # the same for a Livewire-alone run
 
 
@@ -205,11 +206,15 @@ func _baseline(m: int, minutes: float, out: String) -> void:
 		game.generate(m)
 		stage = "stone_age"
 		probe.begin("stone_age", game)
-	var at := [stage, game.seasons.time]  # the stage, and the game clock of the last checkpoint
+	var at := [stage, game.seasons.time, Time.get_ticks_msec()]  # the stage, and the game clock and wall clock of the last checkpoint
+	var wire_of := []  # the Livewire bot, once there is one: the hook closes the era on its limit through its watch list
 	var hook := func(s):
 		probe.observe(s)
-		if s.seasons.time - at[1] >= BASELINE_SAVE_EVERY:
+		if probe.era == "livewire" and not wire_of.is_empty() and s.seasons.time - probe._at >= limit:
+			wire_of[0].watch.clear()
+		if s.seasons.time - at[1] >= BASELINE_SAVE_EVERY or Time.get_ticks_msec() - at[2] >= BASELINE_SAVE_WALL_MS:
 			at[1] = s.seasons.time
+			at[2] = Time.get_ticks_msec()
 			_baseline_save(work, at[0], probe, s, m, out)
 	var bronze := AutoplayBronze.new()
 	bronze.probe = hook
@@ -243,7 +248,9 @@ func _baseline(m: int, minutes: float, out: String) -> void:
 			_empty_seams(game)
 		var wire := AutoplayLivewire.new()
 		wire.probe = hook
-		wire.watch = {"livewire_start": "livewire_begins"}
+		wire.watch = {"livewire_start": "livewire_begins", "era_limit": "never"}
+		wire.stop_when_watched = true  # a resumed run starts its clock afresh, so the era's own limit is enforced by the hook
+		wire_of.append(wire)
 		wire.on_checkpoint = func(_id: String, bot): _keep_livewire_start(out, m, bot.s)
 		var r: Dictionary = wire.play_livewire(game, minutes * 60.0)
 		_close(probe, game, r["won"])
@@ -331,6 +338,7 @@ func _empty_seams(game: Sim) -> void:
 
 ## Keep the run so far: the game, the probe and the stage in `work`, and the rows so far in `out`/seed_<m>.json.
 func _baseline_save(work: String, stage: String, probe: RefCounted, game: Sim, m: int, out: String) -> void:
+	probe.ledger.flush(game)
 	var state := {"stage": stage, "probe": probe.to_dict(), "run": RunSave.to_json(RunSave.dump(game))}
 	_write_file(work + ".tmp", JSON.stringify(state))
 	DirAccess.rename_absolute(ProjectSettings.globalize_path(work + ".tmp"), ProjectSettings.globalize_path(work))
