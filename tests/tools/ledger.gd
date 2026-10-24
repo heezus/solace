@@ -32,7 +32,7 @@ var era := ""
 var _at := 0.0
 var _made := {}
 var _used := {}
-var _paid := {}  # "build" / "research" -> {good: units}
+var _paid := {}  # why ("build", "research", "expedition", "twin", "story") -> {good: units}
 var _held := []  # [start, end]: good -> units in buffers and on haulers' backs
 var _regained := {}  # "refund" / "released" -> {good: units}
 var _spilled := {}
@@ -107,22 +107,32 @@ func _read_flows(s) -> void:
 	var closed := mini(clock - _clock_seen, flows.hist.size())
 	_clock_seen = clock
 	for i in closed:
-		var bucket: Dictionary = flows.hist[flows.hist.size() - 1 - i]
-		for key in bucket:
-			var parts: PackedStringArray = str(key).split("|")
-			var id := parts[0]
-			var source := parts[1]
-			var amount: float = bucket[key]
-			var into: Dictionary = _made if amount > 0.0 else _used
-			var by: Dictionary = into.get(id, {})
-			by[source] = by.get(source, 0.0) + absf(amount)
-			into[id] = by
-			if Data.FOOD_VALUE.has(id):
-				var food: float = absf(amount) * s.economy.food_value(id)
-				if amount > 0.0:
-					_food_made += food
-				elif source == Data.FLOW_EAT_SOURCE:
-					_food_eaten += food
+		_tally(s, flows.hist[flows.hist.size() - 1 - i])
+
+
+## Add one second of the flows (item|source -> amount, negative when used) to the totals.
+func _tally(s, bucket: Dictionary) -> void:
+	for key in bucket:
+		var parts: PackedStringArray = str(key).split("|")
+		var id := parts[0]
+		var source := parts[1]
+		var amount: float = bucket[key]
+		var into: Dictionary = _made if amount > 0.0 else _used
+		var by: Dictionary = into.get(id, {})
+		by[source] = by.get(source, 0.0) + absf(amount)
+		into[id] = by
+		if Data.FOOD_VALUE.has(id):
+			var food: float = absf(amount) * s.economy.food_value(id)
+			if amount > 0.0:
+				_food_made += food
+			elif source == Data.FLOW_EAT_SOURCE:
+				_food_eaten += food
+
+
+## Read what has been paid, spilled and regained since the last sample: before a checkpoint is written (those counts are not
+## saved with the game, so a resumed run counts them from 0) and when the era closes.
+func flush(s) -> void:
+	_read_paid(s)
 
 
 func _read_paid(s) -> void:
@@ -244,14 +254,20 @@ func _take_kith(s, t: float) -> void:
 
 ## Close the era: the table.
 func finish(s) -> Dictionary:
+	_read_flows(s)
+	_tally(s, s.economy.flows.now)  # the second under way: an era ends the moment its last tech is paid for
+	flush(s)
 	_take_stock(s)
 	_held[1] = _held_now(s)
 	var length: float = maxf(s.seasons.time - _at, 1.0)
 	var minutes := length / 60.0
 	var goods := {}
 	var ids := {}
-	for source in [_made, _used, _paid.get("build", {}), _paid.get("research", {}), _cap_s, _zero_s]:
+	for source in [_made, _used, _cap_s, _zero_s]:
 		for id in source:
+			ids[id] = true
+	for why in _paid:
+		for id in _paid[why]:
 			ids[id] = true
 	for id in _stock[0]["stock"]:
 		ids[id] = true
@@ -266,7 +282,11 @@ func finish(s) -> Dictionary:
 		var used := _total(_used.get(id, {}))
 		var built: float = _paid.get("build", {}).get(id, 0)
 		var researched: float = _paid.get("research", {}).get(id, 0)
-		var paid := built + researched
+		var other := 0.0  # the rest: an expedition's pack, a twin's upkeep, the food a moment takes
+		for why in _paid:
+			if why != "build" and why != "research":
+				other += _paid[why].get(id, 0)
+		var paid := built + researched + other
 		var spilled: float = _spilled.get(id, 0)
 		var refunded: float = _regained.get("refund", {}).get(id, 0)
 		var released: float = _regained.get("released", {}).get(id, 0)
@@ -283,6 +303,7 @@ func finish(s) -> Dictionary:
 			"used_per_min": _per_min(_used.get(id, {}), minutes),
 			"paid_build": int(built),
 			"paid_research": int(researched),
+			"paid_other": int(other),
 			"spilled": int(spilled),
 			"refunded": int(refunded),
 			"released": int(released),
@@ -397,6 +418,7 @@ func to_dict() -> Dictionary:
 		"food": [_food_made, _food_eaten, _food_seen[0], _food_seen[1]],
 		"idle": [_idle_run, _idle_longest, _idle_max_share],
 		"next_kith": _next_kith,
+		"clock_seen": _clock_seen,
 		"kith_t": _kith_t,
 	}
 
@@ -422,7 +444,7 @@ func from_dict(d: Dictionary) -> void:
 	_idle_max_share = d["idle"][2]
 	_next_kith = d["next_kith"]
 	_kith_t = d["kith_t"]
-	_clock_seen = -1  # the flow window is read afresh by the first sample
+	_clock_seen = int(d.get("clock_seen", -1))  # the flow window is saved with the game: read on from where it was left
 	_paid_seen = {}  # Economy.paid and spilled_of are not saved: a resumed run counts them from 0
 	_spill_seen = {}
 	_regain_seen = {}

@@ -338,6 +338,7 @@ func _empty_seams(game: Sim) -> void:
 
 ## Keep the run so far: the game, the probe and the stage in `work`, and the rows so far in `out`/seed_<m>.json.
 func _baseline_save(work: String, stage: String, probe: RefCounted, game: Sim, m: int, out: String) -> void:
+	probe.ledger.flush(game)
 	var state := {"stage": stage, "probe": probe.to_dict(), "run": RunSave.to_json(RunSave.dump(game))}
 	_write_file(work + ".tmp", JSON.stringify(state))
 	DirAccess.rename_absolute(ProjectSettings.globalize_path(work + ".tmp"), ProjectSettings.globalize_path(work))

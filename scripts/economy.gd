@@ -70,7 +70,8 @@ func can_afford(cost: Dictionary) -> bool:
 
 
 ## Take `cost` out of the stockpile. Callers check can_afford first: this doesn't (see try_pay).
-## `why` ("build" or "research") counts the cost in `paid` for the baseline's ledger; the other callers load a workshop or are in the flows.
+## `why` ("build", "research", "expedition", "twin", "story") counts the cost in `paid` for the baseline's ledger; the other callers
+## load a workshop or are in the flows.
 func pay(cost: Dictionary, why := "") -> void:
 	for id in cost:
 		inv[id] -= cost[id]

@@ -24,20 +24,21 @@ def top(by, n=TOP):
 
 def goods_table(ledger):
     lines = [
-        "| good | made a min | used a min | cost: build / research (refunded) | released | stock start / mid / end | cap | min at cap | min at 0 waiting | change (stores + buffers) vs flows |",
-        "|---|---|---|---|---|---|---|---|---|",
+        "| good | made a min | used a min | cost: build / research / other (refunded) | released | stock start / mid / end | cap | min at cap | min at 0 waiting | change (stores + buffers) vs flows |",
+        "|---|---|---|---|---|---|---|---|---|---|",
     ]
     goods = ledger["goods"]
     for gid in sorted(goods, key=lambda k: -(sum(goods[k]["made_per_min"].values()) + sum(goods[k]["used_per_min"].values()))):
         g = goods[gid]
         lines.append(
-            "| %s | %s | %s | %d / %d (+%d) | %d | %d / %d / %d | %d | %.1f | %.1f | %+d vs %+.0f |"
+            "| %s | %s | %s | %d / %d / %d (+%d) | %d | %d / %d / %d | %d | %.1f | %.1f | %+d vs %+.0f |"
             % (
                 gid,
                 top(g["made_per_min"]),
                 top(g["used_per_min"]),
                 g["paid_build"],
                 g["paid_research"],
+                g.get("paid_other", 0),
                 g["refunded"],
                 g["released"],
                 g["stock"][0],
