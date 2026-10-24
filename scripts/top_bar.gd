@@ -277,6 +277,7 @@ func refresh(paused: bool, speed: int) -> void:
 	kith_label.get_parent().tooltip_text = (
 		Data.JOBS_TIP % [state.people.job_counts(), Data.PEOPLE["many"]]
 		+ ("\n\n" + Data.HAULERS_TIP if haulers != "" else "")
+		+ ("\n\n" + state.hauling.idle_text() if haulers != "" and state.hauling.idle_text() != "" else "")
 		+ ("\n\n" + GrowthNote.rule() if GrowthNote.food_is_the_blocker(state) else "")
 	)
 	kith_label.add_theme_color_override("font_color", Ui.TEXT if note != "" else Ui.GOOD)

@@ -3,8 +3,9 @@ extends RefCounted
 ## sim once a second into plain lists; `draw` paints them on the map. Nothing here changes the sim, and with Sight off nothing runs
 ## but the key check (scripts/sight_layer.gd).
 ##
-## gaps    {pos, code, text, loud}: every waiting building. `code` is WaitWhy's, or "held", "full", "resting", "paused", "alert".
-##         A loud gap has words on the map; a quiet one (resting, paused, a hauler already on the way) is a dim dot.
+## gaps    {pos, code, text, loud, waited}: every waiting building. `code` is WaitWhy's, or "held", "full", "resting", "paused", "alert".
+##         A loud gap is a red dot and may have words on the map (the LABELS that have waited longest); a quiet one (resting,
+##         paused, a hauler already on the way, or stopped under LOUD_AFTER seconds) is a dim dot. Hover a dot for its words.
 ## flows   {from, to, item, per_min}: what haulers delivered in the last minute, merged per place pair and good.
 ## depots  {pos, have, want, reach}: each Storehouse and the Hearth, its haulers, and its average trip in tiles.
 ## nets    {poles, at, asks, given}: each Power Pole net.
@@ -19,6 +20,9 @@ const Ui = preload("res://scripts/ui.gd")
 const WaitWhy = preload("res://scripts/wait_why.gd")
 
 const QUIET := ["on_the_way", "free_hauler", "walking", "resting", "paused"]  # gap codes drawn as a dim dot
+const LOUD_AFTER := 20.0  # game seconds a building stopped for a hauler may wait before its gap turns red
+const LABELS := 8  # words on the map for at most this many gaps at once
+const UNTIMED := 1.0e9  # the wait of a gap nothing times (no power, no road): counts as the longest
 const FLOW_SPACING := 36.0  # px between the dots that travel along a flow
 const FLOW_SPEED := 40.0  # px a second they travel
 const HOVER_PX := 14.0  # a flow shows its label when the cursor is this close to it
@@ -32,7 +36,9 @@ var depots: Array = []
 var nets: Array = []
 var lamps: Array = []
 var breaks: Array = []
+var idle_note := ""  # "Haulers 97, 8 needed: 89 have no work...", "" while the haulers are not in surplus
 var _view := Rect2()
+var _taken: Array = []  # rects of the labels drawn so far this frame: the gap words keep clear of them
 var _sizes := {}  # label text -> its width in px at the current UI scale
 
 
@@ -42,6 +48,7 @@ func gather(s) -> void:
 	flows = _flows(s)
 	depots = _depots(s)
 	nets = _nets(s)
+	idle_note = s.hauling.idle_text()
 	lamps = []
 	breaks = []
 	for b in s.town.buildings:
@@ -62,9 +69,14 @@ func _gaps(s) -> Array:
 	var out: Array = []
 	for b in s.town.buildings:
 		var g := _gap_of(s, b)
-		if not g.is_empty():
-			g["pos"] = b["pos"]
-			out.append(g)
+		if g.is_empty():
+			continue
+		g["pos"] = b["pos"]
+		var timed: bool = s.hauling.stopped_since.has(b["pos"])
+		g["waited"] = s.hauling.stopped_for(s, b["pos"]) if timed else UNTIMED
+		if timed and g["waited"] < LOUD_AFTER:
+			g["loud"] = false  # a hauler is usually on the way: not a gap yet
+		out.append(g)
 	return out
 
 
@@ -112,7 +124,7 @@ func words(s, b: Dictionary, item: String, code: String) -> Dictionary:
 		"on_the_way":
 			return _gap(code, Data.SIGHT_ON_THE_WAY)
 		"no_hauler":
-			return _gap(code, Data.SIGHT_NO_HAULER % [name, have, want])
+			return _gap(code, Data.SIGHT_NO_HAULER % [name, _of(have, want)])
 		"kept_back":
 			return _gap(code, Data.SIGHT_KEPT)
 		"order_first":
@@ -121,7 +133,12 @@ func words(s, b: Dictionary, item: String, code: String) -> Dictionary:
 			return _gap(code, Data.SIGHT_FREE)
 		"walking":
 			return _gap(code, Data.SIGHT_WALKING)
-	return _gap(code, Data.SIGHT_BUSY % [name, have, want])
+	return _gap(code, Data.SIGHT_BUSY % [name, _of(have, want)])
+
+
+## "2 of 6", or "31, 1 needed" when a depot has more haulers than it wants.
+static func _of(have: int, want: int) -> String:
+	return Data.SIGHT_OF % [have, want] if have <= want else Data.SIGHT_SURPLUS % [have, want]
 
 
 func _gap(code: String, text: String) -> Dictionary:
@@ -165,6 +182,7 @@ func _nets(s) -> Array:
 ## the part of the map on screen: nothing outside it is drawn.
 func draw(ci: CanvasItem, mouse: Vector2, time: float, view: Rect2) -> void:
 	_view = view.grow(Overlays.TILE * 2.0)
+	_taken = []
 	_draw_slowed(ci)
 	_draw_nets(ci)
 	_draw_depots(ci)
@@ -197,9 +215,7 @@ func _draw_nets(ci: CanvasItem) -> void:
 						Overlays.center(poles[i]), Overlays.center(poles[j]), Color(Ui.ACTION, 0.8), 2.0 * k, true
 					)
 		var col: Color = Ui.BAD if n["asks"] > n["given"] else Ui.GOOD
-		Art.outlined_text(
-			ci, Overlays.center(n["at"]) + Vector2(8, -10) * k, Data.SIGHT_NET % [n["asks"], n["given"]], 14, col
-		)
+		_label(ci, Overlays.center(n["at"]) + Vector2(8, -10) * k, Data.SIGHT_NET % [n["asks"], n["given"]], col)
 
 
 func _draw_depots(ci: CanvasItem) -> void:
@@ -211,7 +227,11 @@ func _draw_depots(ci: CanvasItem) -> void:
 		if d["reach"] > 0.0:
 			ci.draw_arc(c, d["reach"] * Overlays.TILE, 0.0, TAU, 72, Color(Ui.ACTION, 0.4), 2.0 * k, true)
 		var col: Color = Ui.GOOD if d["have"] >= d["want"] else Ui.BAD
-		Art.outlined_text(ci, c + Vector2(-34, -30) * k, Data.SIGHT_DEPOT % [d["have"], d["want"]], 14, col)
+		var text: String = Data.SIGHT_DEPOT % [d["have"], d["want"]]
+		if d["have"] > d["want"]:
+			text = Data.SIGHT_DEPOT_SURPLUS % [d["have"], d["want"]]
+			col = Ui.TEXT_DIM  # more haulers than work is not a gap
+		_label(ci, c + Vector2(-34, -30) * k, text, col)
 
 
 func _draw_flows(ci: CanvasItem, mouse: Vector2, time: float) -> void:
@@ -247,34 +267,69 @@ static func _near(p: Vector2, a: Vector2, b: Vector2) -> float:
 	return p.distance_to(a + ab * t)
 
 
-## Loud gaps get words (the nearest to the cursor first, none over another); the rest, and any left out, a dot.
+## Draw `text` with its baseline at `at` and keep the room it takes, so no gap words cover it.
+func _label(ci: CanvasItem, at: Vector2, text: String, col: Color) -> void:
+	var size := _size_of(text)
+	_taken.append(Rect2(at - Vector2(0, size.y), size))
+	Art.outlined_text(ci, at, text, 14, col)
+
+
+func _size_of(text: String) -> Vector2:
+	if not _sizes.has(text):
+		var px := roundi(14.0 * Art.ui_k)
+		_sizes[text] = ThemeDB.fallback_font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, px)
+	return _sizes[text]
+
+
+## Where a gap's words go: centred over its building.
+func _words_box(g: Dictionary) -> Rect2:
+	var k := Art.ui_k
+	var size := _size_of(g["text"])
+	var r := Overlays.rect(g["pos"])
+	return Rect2(Vector2(r.get_center().x - size.x / 2.0, r.position.y - size.y - 2.0 * k), size + Vector2(4, 4) * k)
+
+
+## The gaps in `view` that get words: the LABELS loud ones that have waited longest, each clear of the labels in `_taken` and of
+## each other (one that would overlap is left out: it keeps its dot). Hovering a dot shows its words anyway.
+func labelled(view: Rect2) -> Array:
+	var loud := gaps.filter(func(g): return g["loud"] and view.has_point(Overlays.center(g["pos"])))
+	loud.sort_custom(func(x, y): return x["waited"] > y["waited"])
+	var out: Array = []
+	var used: Array = _taken.duplicate()
+	for g in loud:
+		if out.size() >= LABELS:
+			break
+		var box := _words_box(g)
+		if used.any(func(o): return box.intersects(o)):
+			continue
+		used.append(box)
+		out.append(g)
+	return out
+
+
+## Every waiting building is a dot (red for a gap that has lasted, dim for the rest); the longest waits have words; hover shows any.
 func _draw_gaps(ci: CanvasItem, mouse: Vector2) -> void:
 	var k := Art.ui_k
-	var font := ThemeDB.fallback_font
-	var px := roundi(14.0 * k)
-	var order := gaps.filter(func(g): return _view.has_point(Overlays.center(g["pos"])))
-	order.sort_custom(
-		func(x, y): return Overlays.center(x["pos"]).distance_to(mouse) < Overlays.center(y["pos"]).distance_to(mouse)
-	)
-	var taken: Array = []
-	for g in order:
-		var r := Overlays.rect(g["pos"])
-		var dot := r.position + Vector2(9, 9) * k  # the alert badge already sits at the lower right
-		if not g["loud"]:
-			ci.draw_circle(dot, 4.0 * k, Color(Ui.TEXT_DIM, 0.7))
+	var shown := labelled(_view)
+	var over := {}
+	for g in gaps:
+		if not _view.has_point(Overlays.center(g["pos"])):
 			continue
-		if not _sizes.has(g["text"]):
-			_sizes[g["text"]] = font.get_string_size(g["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, px)
-		var size: Vector2 = _sizes[g["text"]]
-		var box := Rect2(
-			Vector2(r.get_center().x - size.x / 2.0, r.position.y - size.y - 2.0 * k), size + Vector2(4, 4) * k
-		)
-		var clear := true
-		for o in taken:
-			if box.intersects(o):
-				clear = false
-				break
-		ci.draw_circle(dot, 5.0 * k, Ui.BAD)
-		if clear:
-			taken.append(box)
-			Art.outlined_text(ci, box.position + Vector2(2, size.y - 2), g["text"], 14, Ui.BAD)
+		var r := Overlays.rect(g["pos"])
+		var dot := r.position + Vector2(9, 9) * k
+		if g["loud"]:
+			ci.draw_circle(dot, 5.0 * k, Ui.BAD)
+		else:
+			ci.draw_circle(dot, 4.0 * k, Color(Ui.TEXT_DIM, 0.7))
+		if r.grow(2.0 * k).has_point(mouse):
+			over = g
+	for g in shown:
+		_draw_words(ci, g)
+	if not over.is_empty() and not over in shown:
+		_draw_words(ci, over)
+
+
+func _draw_words(ci: CanvasItem, g: Dictionary) -> void:
+	var box := _words_box(g)
+	var col: Color = Ui.BAD if g["loud"] else Ui.TEXT_DIM
+	Art.outlined_text(ci, box.position + Vector2(2, _size_of(g["text"]).y - 2), g["text"], 14, col)

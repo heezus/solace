@@ -14,6 +14,9 @@ func run(runner) -> void:
 	t = runner
 	test_every_wait_reason_has_a_gap_label()
 	test_quiet_states_are_dots_and_a_held_workshop_is_named()
+	test_a_gap_turns_red_after_a_wait()
+	test_eight_gaps_at_most_have_words_and_none_overlap()
+	test_idle_haulers_are_said_plainly()
 	test_flows_match_the_deliveries()
 	test_depots_nets_and_what_slows_the_bloom()
 	test_sight_changes_nothing_in_the_sim()
@@ -142,6 +145,79 @@ func test_quiet_states_are_dots_and_a_held_workshop_is_named() -> void:
 	t.check(g.get("code") == "alert" and g["text"] == "No power: no pole", "a power gap keeps its words: %s" % [g])
 	pit["alert"] = ""
 	t.check(_gap(s, at).is_empty(), "a working building is no gap")
+
+
+## A building stopped for a hauler is a dim dot until it has waited LOUD_AFTER seconds; then it is a red one.
+func test_a_gap_turns_red_after_a_wait() -> void:
+	var s := _town()
+	_run(s, 10.0)
+	var at: Vector2i = s.world.camp_pos + Vector2i(1, 0)
+	var pit: Dictionary = s.town.buildings[s.town.building_at[at]]
+	pit["alert"] = "Full: waiting for a hauler"
+	s.hauling.stopped_since[at] = s.seasons.time - 5.0
+	var g := _gap(s, at)
+	t.check(g.get("code") == "full" and not g["loud"], "stopped 5 s: still a dim dot (%s)" % [g])
+	s.hauling.stopped_since[at] = s.seasons.time - Sight.LOUD_AFTER - 1.0
+	g = _gap(s, at)
+	t.check(g["loud"] and g["waited"] > Sight.LOUD_AFTER, "stopped past LOUD_AFTER: a red dot (%s)" % [g])
+
+
+## Thirty red gaps in view: words on the 8 that have waited longest, none over another or over a depot's count.
+func test_eight_gaps_at_most_have_words_and_none_overlap() -> void:
+	var sight := Sight.new()
+	var view := Rect2(-100.0, -100.0, 60000.0, 600.0)
+	for i in 30:
+		sight.gaps.append(
+			{
+				"pos": Vector2i(i * 10, 0),
+				"code": "out",
+				"text": "Needs Tin: none in stock",
+				"loud": true,
+				"waited": 100.0 + i
+			}
+		)
+		sight.gaps.append(
+			{
+				"pos": Vector2i(i * 10 + 1, 0),
+				"code": "out",
+				"text": "Needs Tin: none in stock",
+				"loud": true,
+				"waited": 1.0
+			}
+		)
+	sight.gaps.append({"pos": Vector2i(5, 5), "code": "paused", "text": "Paused", "loud": false, "waited": 9999.0})
+	var shown := sight.labelled(view)
+	t.check(shown.size() == Sight.LABELS, "at most %d gaps get words (%d)" % [Sight.LABELS, shown.size()])
+	var longest := true
+	for g in shown:
+		longest = longest and g["waited"] >= 100.0 + 30 - Sight.LABELS - 1
+	t.check(longest, "the words go to the longest waits")
+	var clear := true
+	for i in shown.size():
+		for j in range(i + 1, shown.size()):
+			clear = clear and not sight._words_box(shown[i]).intersects(sight._words_box(shown[j]))
+	t.check(clear, "no words over other words")
+	sight._taken = [sight._words_box(shown[0])]
+	t.check(not shown[0] in sight.labelled(view), "a gap whose words would cover a depot's count keeps its dot")
+	t.check(not sight.gaps.back() in sight.labelled(view), "a quiet gap has no words, however long it waited")
+
+
+## "Haulers 97, 8 needed: 89 have no work." when the spare hands are many; "31, 1 needed" never reads "31 of 1".
+func test_idle_haulers_are_said_plainly() -> void:
+	var s := _town()
+	t.check(s.hauling.idle_text() == "", "a town that uses its haulers says nothing")
+	var depot: Vector2i = s.world.camp_pos
+	s.hauling.auto = {depot: 8}
+	s.hauling.offset = {}
+	s.hauling._have = {depot: 97}
+	t.check(s.hauling.idle_text() == Data.HAULERS_IDLE % [97, 8, 89], "idle haulers: %s" % s.hauling.idle_text())
+	var sight := Sight.new()
+	var pit: Dictionary = s.town.buildings[s.town.building_at[s.world.camp_pos + Vector2i(1, 0)]]
+	var g := sight.words(s, pit, "wood", "no_hauler")
+	t.check("97, 8 needed" in g["text"] and not " of " in g["text"], "surplus is not '97 of 8': %s" % g["text"])
+	s.hauling._have = {depot: 2}
+	g = sight.words(s, pit, "wood", "no_hauler")
+	t.check("2 of 8" in g["text"], "a short depot reads 2 of 8: %s" % g["text"])
 
 
 ## What the haulers carried into buildings in 50 s, counted from the buildings' own stocks, against Sight's flows.

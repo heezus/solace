@@ -143,6 +143,13 @@ func bar_text() -> String:
 	return Data.HAULERS_BAR % [total_have(), want] if want > 0 else ""
 
 
+## "Haulers 97, 8 needed: 89 have no work.", "" unless five or more stand in places beyond what the depots want (the Kith with no job
+## are all haulers, so a town with every job filled shows its spare hands here).
+func idle_text() -> String:
+	var spare := total_have() - total_wanted()
+	return Data.HAULERS_IDLE % [total_have(), total_wanted(), spare] if spare >= 5 else ""
+
+
 ## "Waiting for a hauler: Storehouse by the Smelter, 2 of 6" for a building whose depot has places, "" when it has none.
 func waiting_note(s, b: Dictionary) -> String:
 	var depot: Vector2i = Roads.depot_of(s, b)

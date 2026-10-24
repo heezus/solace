@@ -20,6 +20,8 @@ const SIDES := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)
 const CORNERS := [Vector2i(1, 1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(-1, -1)]
 
 ## The fog edge's triangles (see fog_edges), kept until the fog changes.
+## True while Sight is on: it marks every waiting building itself (red for a gap, dim for the rest), so the alert badges stay off.
+static var badges_hidden := false
 static var _fog_cells := PackedByteArray()
 static var _fog_size := Vector2i.ZERO
 static var _fog_points := PackedVector2Array()
@@ -167,6 +169,8 @@ static func alert_badge_at(p: Vector2i) -> Vector2:
 ## text on the map: the words are in the Info panel while the mouse is over the building. (Playtest 5 had pills
 ## stacking over each other and over the next building; a badge inside its own tile cannot.)
 static func alert_badges(ci: CanvasItem, s) -> void:
+	if badges_hidden:
+		return
 	var font := ThemeDB.fallback_font
 	for b in s.town.buildings:
 		if b["alert"] == "":
