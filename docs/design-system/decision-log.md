@@ -1072,7 +1072,7 @@ An Arc Lamp keeps the Bloom 5 tiles from its light and a Scorcher reached 4, so 
 
 ## 2026-10-24: Glass interface skin (PR #147)
 - Codex implemented Jon's selected Glass look across existing panels, bars, buttons, cards, toasts, message log and Sight; shared tokens live in `ui.gd` and semantic status colours are unchanged.
-- Keep every existing layout rectangle and content margin. Four native Livewire comparisons match 238 / 354 / 259 / 240 visible control rectangles with zero geometry changes; keys retain their original measured text.
+- Keep every existing layout rectangle and content margin. Four native Livewire comparisons match 237 / 353 / 258 / 239 visible control rectangles with zero geometry changes; keys retain their original measured text.
 - Use borderless 16 px panels, 12 px cards, pill buttons, brass active fills/text, solid brass primary actions, round goods swatches and a top gradient with protected readouts. Raise panel alpha to 94.1% so bright-ground text remains as readable as before; small red Sight labels use a darker 98% chip to exceed their former outline contrast.
 - Sight chips include padding in collision bounds, share at most eight labels including hover, and paint after flow lines; gathering, status meanings, saves and gameplay remain untouched.
 - Before/after native screenshots, contrast calculations and reproduction are in `docs/art/glass-look/README.md`. Claude reviews and merges on green; Jon reviews the images.

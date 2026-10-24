@@ -23,10 +23,10 @@ The fixture records every visible Control rectangle, including the original text
 
 | View | Visible controls compared | Changed rectangles |
 | --- | ---: | ---: |
-| building | 238 | 0 |
-| tech | 354 | 0 |
-| messages | 259 | 0 |
-| sight | 240 | 0 |
+| building | 237 | 0 |
+| tech | 353 | 0 |
+| messages | 258 | 0 |
+| sight | 239 | 0 |
 
 No gameplay, save, data, tests, font or CI configuration changes. `sight.gd` edits are confined to drawing, chip bounds and visual label selection; gathering and meaning are untouched. Message log inherits the shared panel/button skin. Trade rows keep their existing margins and receive card surfaces.
 
