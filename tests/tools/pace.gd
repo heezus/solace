@@ -207,8 +207,11 @@ func _baseline(m: int, minutes: float, out: String) -> void:
 		stage = "stone_age"
 		probe.begin("stone_age", game)
 	var at := [stage, game.seasons.time, Time.get_ticks_msec()]  # the stage, and the game clock and wall clock of the last checkpoint
+	var wire_of := []  # the Livewire bot, once there is one: the hook closes the era on its limit through its watch list
 	var hook := func(s):
 		probe.observe(s)
+		if probe.era == "livewire" and not wire_of.is_empty() and s.seasons.time - probe._at >= limit:
+			wire_of[0].watch.clear()
 		if s.seasons.time - at[1] >= BASELINE_SAVE_EVERY or Time.get_ticks_msec() - at[2] >= BASELINE_SAVE_WALL_MS:
 			at[1] = s.seasons.time
 			at[2] = Time.get_ticks_msec()
@@ -245,7 +248,9 @@ func _baseline(m: int, minutes: float, out: String) -> void:
 			_empty_seams(game)
 		var wire := AutoplayLivewire.new()
 		wire.probe = hook
-		wire.watch = {"livewire_start": "livewire_begins"}
+		wire.watch = {"livewire_start": "livewire_begins", "era_limit": "never"}
+		wire.stop_when_watched = true  # a resumed run starts its clock afresh, so the era's own limit is enforced by the hook
+		wire_of.append(wire)
 		wire.on_checkpoint = func(_id: String, bot): _keep_livewire_start(out, m, bot.s)
 		var r: Dictionary = wire.play_livewire(game, minutes * 60.0)
 		_close(probe, game, r["won"])
