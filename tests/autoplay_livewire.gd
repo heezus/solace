@@ -71,7 +71,9 @@ func play_livewire(game: Sim, max_seconds: float) -> Dictionary:
 	_note_goals()
 	_drop_stranded_posts()
 	var ironfall_at := -1.0
-	while clock < max_seconds and skyward_at < 0.0 and not (stop_when_watched and watch.is_empty()):
+	while (
+		clock < max_seconds and (skyward_at < 0.0 or stop_when_watched) and not (stop_when_watched and watch.is_empty())
+	):
 		if gate_at >= 0.0 and gate == GATE:  # the Wires Hum card is put away: Livewire begins
 			ironfall_at = gate_at
 			gate = SKYWARD

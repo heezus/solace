@@ -120,9 +120,11 @@ func refresh_caps(buildings: Array) -> void:
 		caps[id] = Storage.capacity(id, storehouses, _techs)
 
 
-## Note goods that left the game with a building the Bloom took, for the baseline's ledger.
-func lose(id: String, amount: int) -> void:
-	vanished[id] = vanished.get(id, 0) + amount
+## Note the goods that left the game with a building the Bloom took, for the baseline's ledger.
+func lose_stock(b: Dictionary) -> void:
+	for buf in [b["out"], b["inbuf"]]:
+		for id in buf:
+			vanished[id] = vanished.get(id, 0) + int(buf[id])
 
 
 ## Count goods that reach the stores without a flow (a demolition refund, a released worker's load) for the baseline's ledger.
