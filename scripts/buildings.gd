@@ -106,11 +106,9 @@ func placement_error(type: String, p: Vector2i) -> String:
 		if tile != "grass":
 			return "Fields go on open grassland"
 		return "" if _economy.can_afford(def["cost"]) else "Not enough materials"
-	if def.has("on_tiles"):
-		if _on_tiles_error(def, tile) != "":
-			return _on_tiles_error(def, tile)
-	elif not Data.TILES[tile]["buildable"]:
-		return "Build on open grassland"
+	var ground := _ground_error(def, tile)
+	if ground != "":
+		return ground
 	if def.get("needs_river", false) and not _world.touches_river(p):
 		return "Must touch the river"
 	if def.get("needs_shard", false) and not _world.touches(p, "shard"):
@@ -131,6 +129,15 @@ func _taken_error(type: String, p: Vector2i) -> String:
 	if Data.BUILDINGS[type].get("unique", false) and copies(type) > 0:
 		return "Only one %s can stand" % Data.BUILDINGS[type]["name"]
 	return ""
+
+
+## Why a building cannot go on `tile` for want of the right ground: "" when the ground suits. A Pole stands on any open land.
+func _ground_error(def: Dictionary, tile: String) -> String:
+	if def["kind"] == "pole":
+		return "" if tile in Data.POLE_TILES else Data.POLE_ONLY_LAND
+	if def.has("on_tiles"):
+		return _on_tiles_error(def, tile)
+	return "" if Data.TILES[tile]["buildable"] else "Build on open grassland"
 
 
 ## Why a building that stands only on certain tiles (a Mine) cannot go on `tile`: "" when it can.
@@ -233,6 +240,8 @@ func place(type: String, p: Vector2i, focus := "") -> Dictionary:
 		else:
 			_world.add_field(p)
 	else:
+		if kind == "pole" and tile != "grass":
+			_world.set_tile(p, "grass")  # the ground under a Pole is cleared, as a road clears forest
 		add_building(type, p)
 		if focus != "":
 			set_focus(building_at[p], focus)  # a hut set to work something in reach as it went down; else the default

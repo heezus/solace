@@ -32,6 +32,7 @@ func run(runner) -> void:
 	test_the_land_grows_south()
 	test_the_south_is_fair()
 	test_the_coal_lies_far_from_the_bloom()
+	test_a_pole_chain_runs_to_the_coal()
 	test_coal_is_finite()
 	test_a_coal_mine_digs_a_seam_dry()
 	test_digging_by_hand()
@@ -238,6 +239,29 @@ func test_the_coal_lies_far_from_the_bloom() -> void:
 		)
 	t.check(MapSouth.COAL_BLOOM_MIN == 12, "the rule is 12 tiles")
 	print("Coal to Bloom: 40 seeds, nearest %d tiles, %d needed a reroll" % [worst, rerolled])
+
+
+func test_a_pole_chain_runs_to_the_coal() -> void:
+	var rerolled := 0
+	for map_seed in range(1, 41):
+		var w := World.new()
+		w.generate(map_seed)
+		w.grow_east()
+		var report := {}
+		var strip := MapSouth.make(w, report)
+		rerolled += 1 if report["attempts"] > 1 else 0
+		var faults := MapSouth.pole_chain_faults(w, strip)
+		t.check(faults.is_empty(), "map %d: %s" % [map_seed, faults])
+	var wide := World.new()
+	wide.generate(3)
+	wide.grow_east()
+	var flat := MapSouth.make(wide)
+	var cut := flat.duplicate()
+	for i in cut.size():
+		if floori(float(i) / wide.width) < 3:
+			cut[i] = "river"  # a river wider than the wire spans (3 tiles), all the way across
+	t.check(not MapSouth.pole_chain_faults(wide, cut).is_empty(), "a wide river across the strip breaks the chain")
+	print("Pole chain: 40 seeds, %d needed a reroll" % rerolled)
 
 
 # --- Coal -----------------------------------------------------------------------

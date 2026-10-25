@@ -118,10 +118,11 @@ def main():
                     ledger["finite"]["coal_in_ground"],
                     ledger["finite"]["seams"],
                 ),
-                "Goods sum: stores and buffers changed by %+d, flows say %+.0f, off by %.1f%% of the change (bar 2%%): %s."
+                "Goods sum: stores and buffers changed by %+d, flows say %+.0f, off by %.1f%% of the flow, %.1f%% of the change (bar 2%% of the flow): %s."
                 % (
                     check["change"],
                     check["flow_change"],
+                    100.0 * check["off_share"],
                     100.0 * check["off_share_of_change"],
                     "met" if check["met"] else "NOT met",
                 ),

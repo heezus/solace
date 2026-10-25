@@ -191,10 +191,62 @@ static func faults_of(s, strip: Array) -> Array:
 		faults.append("too little iron in the near rows (%d)" % near)
 	faults.append_array(_bloom_faults(strip, w, int(float(strip.size()) / float(w))))
 	faults.append_array(coal_bloom_faults(s, strip))
+	faults.append_array(pole_chain_faults(s, strip))
 	var cross := crossings_to_south(s)
 	if cross > MAX_CROSSINGS:
 		faults.append("the new land is %d river tiles away (at most %d)" % [cross, MAX_CROSSINGS])
 	return faults
+
+
+## [] when a chain of Poles can run from open ground in the Hearth's reach to the coal: Poles `POLE_LINK` apart, each on land a Pole may
+## stand on (Data.POLE_TILES), the last within a Pole's reach of a coal seam. The wire spans a river of up to 2 tiles, so the chain needs
+## no bridge. Else one sentence: the nearest it got (rows short of the strip), which the next strip, or a clearer way south, mends.
+static func pole_chain_faults(s, strip: Array) -> Array:
+	var w: int = s.width
+	var old: int = s.height
+	var open := func(p: Vector2i) -> bool:
+		if p.x < 0 or p.x >= w or p.y < 0 or p.y >= old + int(float(strip.size()) / float(w)):
+			return false
+		return (s.tile_at(p) if p.y < old else strip[(p.y - old) * w + p.x]) in Data.POLE_TILES
+	var goal := {}
+	for i in strip.size():
+		if strip[i] == "coal_seam":
+			var c := Vector2i(i % w, old + floori(float(i) / w))
+			for dy in range(-2, 3):
+				for dx in range(-2, 3):
+					if Vector2(dx, dy).length() <= Data.POLE_REACH:
+						goal[c + Vector2i(dx, dy)] = true
+	var hops: Array = []
+	var reach := int(Data.POLE_LINK)
+	for dy in range(-reach, reach + 1):
+		for dx in range(-reach, reach + 1):
+			if (dx != 0 or dy != 0) and Vector2(dx, dy).length() <= Data.POLE_LINK:
+				hops.append(Vector2i(dx, dy))
+	var seen := {}
+	var todo: Array = []
+	var rad := int(Data.HEARTH_RADIUS)
+	for dy in range(-rad, rad + 1):
+		for dx in range(-rad, rad + 1):
+			var p: Vector2i = s.camp_pos + Vector2i(dx, dy)
+			if Vector2(dx, dy).length() <= Data.HEARTH_RADIUS and open.call(p):
+				seen[p] = true
+				todo.append(p)
+	var head := 0
+	var deepest := 0
+	while head < todo.size():
+		var at: Vector2i = todo[head]
+		head += 1
+		deepest = maxi(deepest, at.y)
+		if goal.has(at):
+			return []
+		for h in hops:
+			var q: Vector2i = at + h
+			if not seen.has(q) and open.call(q):
+				seen[q] = true
+				todo.append(q)
+	return [
+		"no Pole chain from the Hearth to the coal: it stops at row %d, the coal lies at %d and below" % [deepest, old]
+	]
 
 
 ## What is wrong with the Bloom patches in `strip` (`w` wide, `h` tall): one sample of each kind, each with enough ground, all

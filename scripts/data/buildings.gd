@@ -716,7 +716,8 @@ const BUILDINGS := {
 		"desc":
 		(
 			"Poles within 3 tiles of one another join into a net. A machine or an engine within 2 tiles of a pole is on its net,"
-			+ " and draws from it or feeds it. A short net runs every machine on it slower."
+			+ " and draws from it or feeds it. A short net runs every machine on it slower. A Pole stands on any open land and"
+			+ " clears it, but not on water, rock or ore."
 		),
 	},
 	"order_board":

@@ -45,6 +45,7 @@ func run(runner) -> void:
 	test_the_fifth_tab_and_the_tree()
 	test_the_first_techs_can_be_bought()
 	test_poles_join_into_nets()
+	test_a_pole_stands_on_any_open_land()
 	test_engines_and_machines_on_a_net()
 	test_a_short_net_runs_everything_slower()
 	test_the_old_reach_is_as_it_was()
@@ -348,6 +349,30 @@ func test_poles_join_into_nets() -> void:
 	t.check(s.economy.inv["wood"] == wood - 2 and s.economy.inv["iron"] == iron - 1, "for 2 wood and 1 iron")
 	tick_for(s, 1.0)
 	t.check(s.town.buildings[s.town.building_at[c + Vector2i(0, 3)]]["worker"] == -1, "and needs no one to tend it")
+
+
+func test_a_pole_stands_on_any_open_land() -> void:
+	var s := town()
+	var c := meadow(s)
+	s.tech_tree.researched["power_poles"] = true
+	var wood: int = s.economy.inv["wood"]
+	for tile in ["tree", "clay", "gravel", "flax", "berry", "grain"]:
+		var p := c + Vector2i(tile.length() - 3, -2)
+		s.world.set_tile(p, tile)
+		t.check(s.town.placement_error("power_pole", p) == "", "a Pole may stand on %s" % tile)
+		t.check(s.place("power_pole", p), "and goes down on %s" % tile)
+		t.check(s.world.tile_at(p) == "grass", "%s under the Pole is cleared" % tile)
+		c += Vector2i(0, 1)
+	t.check(s.economy.inv["wood"] == wood - 12, "each Pole costs 2 wood however it stands")
+	for tile in ["river", "rock", "shard"]:
+		var p := c + Vector2i(5, 0)
+		s.world.set_tile(p, tile)
+		t.check(s.town.placement_error("power_pole", p) == Data.POLE_ONLY_LAND, "no Pole on %s" % tile)
+		t.check(not s.place("power_pole", p), "and it is refused on %s" % tile)
+	var q := c + Vector2i(-5, 0)
+	s.world.set_tile(q, "grass")
+	put(s, "gatherers_hut", q)
+	t.check(s.town.placement_error("power_pole", q) != "", "no Pole on a built tile")
 
 
 func test_engines_and_machines_on_a_net() -> void:
