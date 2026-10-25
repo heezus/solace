@@ -58,7 +58,7 @@ const GOALS_FACTORIES := [
 	},
 	{
 		"id": "skyward",
-		"text": "Discover Skyward, the gate: 120 Steel, 100 Iron, 120 Wire and 100 Brick",
+		"text": "Discover Skyward, the gate: {cost}",
 		"tech": "skyward"
 	},
 ]

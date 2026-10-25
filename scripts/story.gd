@@ -119,6 +119,18 @@ func goal_list() -> Array:
 	return Data.GOALS_ERA2 if "bronze_dawn" in events else Data.GOALS
 
 
+## A goal's words. "{cost}" in them is the goal tech's real cost (Data.TECHS), so a gate's numbers can't drift from the tech's.
+func goal_text(g: Dictionary) -> String:
+	var text: String = g["text"]
+	if g.has("tech") and "{cost}" in text:
+		var parts: Array = []
+		var cost: Dictionary = Data.TECHS[g["tech"]]["cost"]
+		for id in cost:
+			parts.append("%d %s" % [cost[id], Data.ITEMS[id]["name"]])
+		text = text.replace("{cost}", ", ".join(parts))
+	return text
+
+
 ## A goal is met when its `tech` is researched or its `building` stands; the rest are checked by id.
 func goal_met(s, g: Dictionary) -> bool:
 	if g.has("tech"):
@@ -204,7 +216,7 @@ func _ironfall_goal_met(s, id: String) -> bool:
 		"rail_laid":
 			return s.world.road_tiers.values().has(Data.RAIL_TIER)
 		"first_steel":
-			return s.economy.inv.get("steel", 0) > 0 or s.economy.seen.has("steel")
+			return s.economy.made_ever.has("steel")
 	return s.economy.inv.get("iron", 0) > 0
 
 
@@ -216,7 +228,7 @@ func _livewire_goal_met(s, id: String) -> bool:
 		"net_machine":
 			return Power.working_net(s)
 		"wire_made":
-			return s.economy.inv.get("wire", 0) > 0 or s.economy.seen.has("wire")
+			return s.economy.made_ever.has("wire")
 		"first_order":
 			return s.livewire.orders.any(func(o): return o["target"] != "")
 		"order_fired":

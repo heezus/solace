@@ -31,6 +31,8 @@ const WORKSHOPS_BIG := 8  # the most of one kind of workshop the bot builds in t
 const POSTS := 2  # Expedition Posts: a second sends the second party for the Bloom samples
 ## The techs the metal works stand on, taken before any other: the road to Bloom Sampling passes through none of them.
 const GROUND_TECHS := ["coal_seams", "ironstone", "bloomery", "boiler"]
+## The good each works that _manage_works may rest makes.
+const WORKS_MAKE := {"forge": "steel", "coal_mine": "coal", "kiln": "brick"}
 ## The buildings the minute's trace reports on.
 const TRACED := [
 	"forge", "bloomery", "boiler", "coal_mine", "mine", "kiln", "charcoal_pit", "smelter", "crucible", "twine_post"
@@ -44,6 +46,7 @@ var _goals_seen := {}
 var _steam_cart_at := -1.0
 var _tile_memo := {}
 var _tile_size := -1
+var _own := {}  # the goods the blocking goal owns this decision (_path_goods)
 
 
 ## Play `game` (an Ironfall start) from here to the Livewire gate, or until `max_seconds` pass.
@@ -80,8 +83,8 @@ func _drop_stranded_posts() -> void:
 
 
 ## The research goal, in the order a player would take it: the techs of the metal works (Coal Seams, Ironstone, Bloomery, Boiler), then
-## Bloom Sampling (three trips to the far south and three Lessons are the long pole and cost little), then the rest of the
-## metal works before any other tech (the Bloomeries and Forges take the brick and iron that the techs would), then the gate.
+## Bloom Sampling (three trips to the far south and three Lessons are the long pole and cost little), then the gate. Research
+## never waits for a works: the goods the gate needs are owned by it (_path_goods), so no works or Rail takes them first.
 func _aim() -> void:
 	var done: Dictionary = s.tech_tree.researched
 	var want := gate
@@ -90,12 +93,7 @@ func _aim() -> void:
 		want = ground[0]  # the metal's ground first: the way to Bloom Sampling does not pass through the Coal Seams
 	elif not done.has("bloom_sampling"):
 		want = "bloom_sampling"
-	elif _works_due():
-		want = ""
-	if want == "":
-		if s.tech_tree.goal != "":
-			s.tech_tree.clear()
-	elif s.tech_tree.goal != want and not done.has(want):
+	if s.tech_tree.goal != want and not done.has(want):  # the queue is never empty while the gate is still to learn
 		s.tech_tree.set_goal(want)
 
 
@@ -404,6 +402,7 @@ func _pick_tile() -> Vector2i:
 
 
 func _decide() -> void:
+	_own = _path_goods()
 	_aim()
 	_flood_reach()
 	_post_orders()
@@ -438,11 +437,58 @@ func _manage_works() -> void:
 				pause = save_clay or (pause and not due.is_empty() and _inv("clay") < due.get("clay", 0) + 40)
 			_:
 				continue
+		if pause and _owned(WORKS_MAKE[b["type"]]):
+			pause = false  # the gate waits on what it makes, or on what that is made from: it runs
 		if pause != b["paused"]:
 			s.set_paused(i, pause)
 	for p in spent:  # a spent seam: tear the mine down and put its Kith to work elsewhere
 		s.demolish(p)
 		lines.append("%5.0f s    - Coal Mine at %s (the seam is spent)" % [clock, p])
+
+
+## True for a good the gate owns (see _path_goods).
+func _owned(id: String) -> bool:
+	return _own.has(id)
+
+
+## The goods the blocking goal owns: what the road to the gate is still short of (Iron, Steel, Coal and the rest of the techs'
+## costs, the Steel's iron and coal, the Bloomeries' ore and coal), and everything those are made from, down the chain. A works
+## that makes one of them is never paused and a paused one is started; no later goal spends them (_leaves_route_paid).
+func _path_goods() -> Dictionary:
+	var out := {}
+	if s.tech_tree.researched.has(gate):
+		return out
+	var ids := {"iron": true, "coal": true, "iron_ore": true, "steel": true}
+	for tech in Rules.route_to(gate, s.tech_tree.researched, Rules.visible_techs(s.shard_seen)):
+		for id in s.tech_tree.cost_of(tech):
+			ids[id] = true
+	var todo: Array = []
+	for id in ids:
+		if _gate_short(id) > 0:
+			todo.append(id)
+	while not todo.is_empty():
+		var id: String = todo.pop_back()
+		if out.has(id):
+			continue
+		out[id] = true
+		for type in Data.BUILDINGS:
+			var def: Dictionary = Data.BUILDINGS[type]
+			if def.get("kind", "") != "processor" or not def.get("out", {}).has(id):
+				continue
+			todo.append_array(def["in"].keys())
+			if def.get("fuel", false):
+				todo.append_array(["coal", "charcoal"])
+	return out
+
+
+## True when paying `cost` still leaves what the road to the gate needs of each good in it: a later goal (Rail, a Steam Shed)
+## waits until the blocker's goods are covered.
+func _leaves_route_paid(cost: Dictionary) -> bool:
+	for id in cost:
+		var need := _gate_need(id)
+		if need > 0 and _inv(id) - cost[id] < need:
+			return false
+	return true
 
 
 ## What the next metal works that is due costs (the first building below its target, the Bloomeries first).
@@ -668,6 +714,8 @@ func _place_posts() -> bool:
 func _place_steam_shed() -> bool:
 	if not s.town.unlocked("steam_shed") or _count("steam_shed") >= _target("steam_shed"):
 		return false
+	if not _leaves_route_paid(s.town.price("steam_shed")):
+		return false
 	return _place_near_hearth("steam_shed")
 
 
@@ -679,7 +727,8 @@ func _lay_rail() -> bool:
 	for p in _rail_route():
 		if laid >= RAIL_PER_DECISION:
 			break
-		if s.world.tile_at(p) == "river" or not s.economy.can_afford(s.town.cost_here("rail", p)):
+		var price: Dictionary = s.town.cost_here("rail", p)
+		if s.world.tile_at(p) == "river" or not s.economy.can_afford(price) or not _leaves_route_paid(price):
 			break
 		if not s.place("rail", p):
 			break

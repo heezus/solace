@@ -15,6 +15,7 @@ const Storage = preload("res://scripts/storage.gd")
 
 var inv: Dictionary = {}  # item id -> count
 var seen: Dictionary = {}  # items ever held, so the top bar keeps showing them
+var made_ever: Dictionary = {}  # goods a workshop has made, ever: "Make the first Steel" counts the Forge's own, never a trade or a gift
 var food_credit := 5.0  # food already eaten but not yet used up: eating takes whole items
 var starving := false  # the last feed found no food to eat
 ## The early warning is up: food_low has fired and the food hasn't yet recovered to last Data.FOOD_CLEAR_SECONDS.
@@ -372,6 +373,7 @@ func to_dict() -> Dictionary:
 	return {
 		"inv": Codec.int_dict(inv),
 		"seen": Codec.keys(seen),
+		"made_ever": Codec.keys(made_ever),
 		"food_credit": food_credit,
 		"starving": starving,
 		"food_use": food_use,
@@ -392,6 +394,8 @@ func from_dict(d: Dictionary) -> void:
 			inv[id] = 0
 	seen.clear()
 	seen.merge(Codec.to_set(d.get("seen", [])))
+	made_ever.clear()
+	made_ever.merge(Codec.to_set(d.get("made_ever", [])))
 	food_credit = float(d.get("food_credit", 0.0))
 	starving = bool(d.get("starving", false))
 	food_use = float(d.get("food_use", 0.0))
