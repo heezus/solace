@@ -687,7 +687,11 @@ func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
 			var idle: bool = s.economy.inv.get(id, 0) >= HUT_SURPLUS and not short.has(id)
 			if Data.FOOD_VALUE.has(id) and s.people.kith.size() < s.town.housing():
 				idle = false  # births need food the huts bring in, so a food hut keeps working while there is room
-			idle = idle and births.room(self, idle_est + (0 if b["paused"] else Buildings.crew_size(b)))
+			# A town with no free hand and a raw good short lets a surplus hut go, so its Kith can build the hut that good needs.
+			var hand_wanted := births.raw_short(self, short)
+			idle = (
+				idle and (hand_wanted or births.room(self, idle_est + (0 if b["paused"] else Buildings.crew_size(b))))
+			)
 			if idle != b["paused"]:
 				s.set_paused(i, idle)
 				idle_est = maxi(idle_est + (1 if idle else -1) * Buildings.crew_size(b), 0)
@@ -698,7 +702,7 @@ func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
 		var room: bool = births.room(self, idle_est + (0 if b["paused"] else Buildings.crew_size(b)))
 		var surplus: bool = s.economy.inv.get(made, 0) >= later.get(made, 0) + 10 and not short.has(made) and room
 		for id in def["in"]:
-			if saving.has(id) and (room or saved < BirthsWaitAnswer.SAVING_PAUSES):
+			if saving.has(id) and births.may_save(self, room, saved, idle_est):
 				surplus = true
 				saved += 1
 		if needs_hand and Buildings.is_staffed(b):

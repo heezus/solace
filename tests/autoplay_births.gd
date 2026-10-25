@@ -1,10 +1,9 @@
-extends RefCounted
 ## What the pacing bots do about "Births wait: N Kith have no work. Build workshops to use them." (the line the game shows when a
 ## fifth of the town has no job). The game teaches that line, and what the first eras taught the player is what the bots use.
 ## It pauses nothing for surplus (a building at its cap rests by itself and keeps its Kith) that would make births wait, and keeps
-## at most SAVING_PAUSES input-saving pauses once they would. After ANSWER_AFTER seconds of waiting it lets go the paused
-## buildings the goals are short of and, with no open job left for an idle Kith, builds the next workplace the goals need, one
-## every BUILD_GAP seconds.
+## at most SAVING_PAUSES input-saving pauses once they would (one in a town under SMALL_TOWN Kith). Such a town lets a hut in
+## surplus go when a raw good is short. After ANSWER_AFTER seconds of waiting it lets go the paused buildings the goals are
+## short of and, with no open job left for an idle Kith, builds the next workplace the goals need, one every BUILD_GAP seconds.
 
 const Data = preload("res://scripts/data.gd")
 const Ui = preload("res://scripts/ui.gd")
@@ -12,6 +11,7 @@ const Ui = preload("res://scripts/ui.gd")
 const ANSWER_AFTER := 30.0
 const BUILD_GAP := 20.0
 const SAVING_PAUSES := 2
+const SMALL_TOWN := 20  # a smaller town cannot spare a Kith for the wait
 
 var since := -1.0  # the bot's clock when births began to wait for work, -1 while they do not
 var built_at := -1000.0  # the clock of the last workplace built to answer the wait
@@ -26,6 +26,25 @@ func waiting(bot) -> bool:
 ## starts the wait (and a wait is not undone one decision and redone the next).
 func room(bot, idle: int) -> bool:
 	return idle * Data.BIRTHS_WAIT_ONE_IN < bot.s.people.kith.size()
+
+
+## True in a town too small to spare a Kith for the wait, with a raw good short: a hut for it would want a hand, which a hut in
+## surplus can give.
+func raw_short(bot, short: Dictionary) -> bool:
+	if bot.s.people.kith.size() >= SMALL_TOWN:
+		return false
+	for id in short:
+		if bot.RAW_TILE.has(id):
+			return true
+	return false
+
+
+## True when a pause may save an input: births go on anyway, or fewer than SAVING_PAUSES have, and in a town under SMALL_TOWN Kith
+## only while nobody is free yet (one pause gives a small town the hand it needs; two would start the wait).
+func may_save(bot, room: bool, saved: int, idle_est: int) -> bool:
+	if room:
+		return true
+	return saved < SAVING_PAUSES and (bot.s.people.kith.size() >= SMALL_TOWN or idle_est == 0)
 
 
 ## Called once a decision, before the pauses. `bot` is the pacing bot (tests/autoplay.gd).
