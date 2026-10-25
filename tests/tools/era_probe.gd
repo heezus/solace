@@ -14,6 +14,7 @@ const Ledger = preload("res://tests/tools/ledger.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Ui = preload("res://scripts/ui.gd")
 
+const WATCHED := ["power", "arc_lamp", "scorcher", "pole"]  # the buildings whose loss to the tide is traced one by one
 const SAMPLE := 1.0  # game seconds between readings
 const STEP := 0.1  # game seconds of one bot step (Autoplay.DT)
 const LOST_BY := 15.0 * 60.0  # Livewire: buildings lost by this many seconds into the era
@@ -129,6 +130,8 @@ func begin(name: String, s) -> void:
 		_row["engines_min_after_peak"] = 0  # fewest standing after that peak
 		_row["engine_lost_and_back"] = false  # the engines fell below their peak and later stood at it again
 		_row["engines_dipped"] = false
+		_row["engine_losses"] = []  # one entry per engine the Bloom took: what held or failed to hold it (see _watch_engines)
+		_row["engine_watch"] = {}  # engine tile "x,y" -> what the last reading while it was overgrown saw
 		_row["firebreak_tiles"] = 0
 		_row["pace_every_min"] = []
 		_row["power_zero_with_wood_s"] = 0.0  # seconds a net asked for power and none was given, with Wood in the stores
@@ -477,6 +480,7 @@ func _power(s) -> void:
 	if not s.tide.begun:
 		return
 	_engines(s)
+	_watch_engines(s)
 	var zero := false
 	for n in s.livewire.nets:
 		if n["asks"] > 0 and n["given"] <= 0:
@@ -499,6 +503,86 @@ func _power(s) -> void:
 				by[fuel] = by.get(fuel, 0) + more
 				_row["fuel_burned"][type] = by
 	_burn_seen = s.economy.burnt_by.duplicate(true)
+
+
+## Livewire only: for each engine (Boiler, Generator, Wheel), Arc Lamp, Scorcher and Pole the tide stands on, what held it or did
+## not, read every sample while it is overgrown: the nearest Arc Lamp (distance, its light, whether it is powered and overgrown itself) and the nearest Scorcher
+## (distance, burning, powered, overgrown), whether the game counts the tile held, and the first Tide Watch warning (seconds ahead
+## of the front, with the minute it came). When the engine goes, the last reading becomes an `engine_losses` entry.
+func _watch_engines(s) -> void:
+	var t: float = s.seasons.time - _at
+	var watch: Dictionary = _row["engine_watch"]
+	for b in s.town.buildings:
+		if Data.BUILDINGS[b["type"]]["kind"] not in WATCHED:
+			continue
+		var key := "%d,%d" % [b["pos"].x, b["pos"].y]
+		var seen: Dictionary = watch.get(key, {})
+		if not seen.has("first_eta_s") and s.tide.eta.has(b["pos"]):
+			seen["first_eta_s"] = snappedf(s.tide.eta[b["pos"]] - s.tide.time, 1.0)
+			seen["first_eta_at_min"] = snappedf(t / 60.0, 0.1)
+		if s.tide.hit.has(b["pos"]):
+			if not seen.has("overgrown_at_min"):
+				seen["overgrown_at_min"] = snappedf(t / 60.0, 0.1)
+			seen["reading"] = _hold_reading(s, b["pos"])
+			seen["type"] = b["type"]
+			seen["at_min"] = snappedf(t / 60.0, 0.1)
+		if not seen.is_empty():
+			watch[key] = seen
+	for key in watch.keys():
+		var xy: PackedStringArray = key.split(",")
+		var p := Vector2i(int(xy[0]), int(xy[1]))
+		var standing: bool = s.town.building_at.has(p) and Data.BUILDINGS[s.town.built_type(p)]["kind"] in WATCHED
+		if not standing:
+			if watch[key].has("reading"):
+				var entry: Dictionary = watch[key].duplicate(true)
+				entry["pos"] = key
+				entry["lost_at_min"] = snappedf(t / 60.0, 0.1)
+				_row["engine_losses"].append(entry)
+			watch.erase(key)
+
+
+## What covered tile p this sample: the lamp and Scorcher nearest to it and whether the game held the tile.
+func _hold_reading(s, p: Vector2i) -> Dictionary:
+	var lamp := {}
+	var fire := {}
+	var lit := 0
+	var burning := 0
+	for b in s.town.buildings:
+		var kind: String = Data.BUILDINGS[b["type"]]["kind"]
+		var d := Vector2(b["pos"]).distance_to(Vector2(p))
+		if kind == "arc_lamp":
+			var light: float = Data.BUILDINGS[b["type"]]["light"]
+			var here := {
+				"d": snappedf(d, 0.1),
+				"light": light,
+				"powered": s.town.is_powered(b["pos"]),
+				"overgrown": s.tide.hit.has(b["pos"])
+			}
+			if here["powered"] and not here["overgrown"]:
+				lit += 1
+			if lamp.is_empty() or d < lamp["d"]:
+				lamp = here
+		elif kind == "scorcher":
+			var here := {
+				"d": snappedf(d, 0.1),
+				"burning": b["burn"] > 0.0,
+				"powered": s.town.is_powered(b["pos"]),
+				"overgrown": s.tide.hit.has(b["pos"])
+			}
+			if here["burning"]:
+				burning += 1
+			if fire.is_empty() or d < fire["d"]:
+				fire = here
+	return {
+		"held": s.tide.is_held_at(s, p),
+		"lamp": lamp,
+		"scorcher": fire,
+		"scorch_reach": Data.SCORCH_REACH,
+		"lamps_lit": lit,
+		"scorchers_burning": burning,
+		"coal": s.economy.inv.get("coal", 0),
+		"given": s.livewire.nets.map(func(n): return [n["given"], n["asks"]]),
+	}
 
 
 ## Engines standing, and (once a Scorcher stands) how little power the nets gave: the edge each win is won on.
