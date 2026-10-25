@@ -1,8 +1,10 @@
 extends "res://tests/autoplay_starfall.gd"
 ## The Starfall bot with the oracle taken out: the town plays itself as in the pacing runs, but the guesses on the Glyph Wall come
-## from a player who sees only a page (the marks, where each was found, the words left). Game time stands still while the page is
-## answered. Run by tests/tools/starfall_human.gd; the page protocol is the one tests/tools/ai_player.gd uses (snapshot_<n>.txt in,
-## moves_<n>.json out, here {"guesses": {"Mark 4": "Light"}}).
+## from a player who sees only a page: the Wall panel as the game draws it (scripts/glyph_picker.gd), plus the mark names. Game time
+## stands still while the page is answered. Run by tests/tools/starfall_human.gd; the page protocol is the one tests/tools/ai_player.gd
+## uses (snapshot_<n>.txt in, moves_<n>.json out, here {"guesses": {"Mark 4": "Light"}}).
+
+const GlyphPicker = preload("res://scripts/glyph_picker.gd")
 
 const RETRY_AFTER := 25.0  # game seconds: a check (every 20) has had its turn since the guesses went in
 const MAX_PAGES := 100
@@ -81,70 +83,55 @@ func _all_right(f: Starfall, gset: Dictionary) -> bool:
 	return true
 
 
-func _page(f: Starfall, why: String) -> String:
+## The page: the Glyph Wall panel exactly as the game builds it (scripts/glyph_picker.gd, every label and every row), the mark names
+## the player answers with, and the words a click would cycle through. Nothing here the real game does not show.
+func _page(f: Starfall, _why: String) -> String:
 	var out: Array = []
 	out.append("PAGE %d · game time %s · the Lumen are: %s" % [pages, _mmss(clock - _start_at), f.trust_word()])
+	if f.pending != "":
+		out.append("A card waits for the Kith: the strangers ask a question (the town answers it).")
 	out.append("")
-	(
-		out
-		. append(
-			"The Glyph Wall holds the marks below. Each mark stands for one word from the list at the end. A set is read when all"
-		)
-	)
-	(
-		out
-		. append(
-			"its marks have the right word at a Kith check; the Kith say nothing otherwise, and tell you nothing about which is wrong."
-		)
-	)
-	if why == "retry":
-		out.append("")
-		(
-			out
-			. append(
-				"Time has passed since your last answer and at least one complete set below is STILL NOT READ: some guess in it is wrong."
-			)
-		)
-	out.append("")
-	for n in f.set_order():
-		var gset: Dictionary = Data.GLYPH_SETS[n]
-		var have := f.progress(gset["id"])
-		if have.x == 0:
-			continue
-		var head := (
-			"Set %d of %d: %d of %d marks copied" % [f.set_number(gset["id"]), Data.GLYPH_SETS.size(), have.x, have.y]
-		)
-		if f.locked.has(gset["id"]):
-			out.append("%s: READ (settled, nothing to do)" % head)
-			continue
-		out.append(head)
-		for g in f.glyph_order(n):
-			if not f.copied.has(g):
-				continue
-			out.append("  %s · set to: %s" % [_label[g], f.guesses.get(g, Data.NO_GUESS)])
-			for line in f.found_lines(g):
-				out.append("      found: %s" % line)
+	out.append_array(_wall_lines(f))
 	out.append("")
 	var read: Array = f._read_words()
+	out.append("Words a click can still reach: %s" % ", ".join(Data.GLYPH_WORDS.filter(func(w): return w not in read)))
+	out.append("")
 	out.append(
 		(
-			"Words already settled by read sets (cannot be used again): %s"
-			% (", ".join(read) if not read.is_empty() else "none")
-		)
-	)
-	var open: Array = Data.GLYPH_WORDS.filter(func(w): return w not in read)
-	out.append("Word list: %s" % ", ".join(open))
-	out.append("")
-	(
-		out
-		. append(
-			(
-				'Answer with moves_%d.json: {"guesses": {"Mark 1": "Star", ...}}  (any marks you want to set or change; others stay)'
-				% pages
-			)
+			'Answer with moves_%d.json: {"guesses": {"Mark 1": "Star", ...}}  (marks you set or change; others stay)'
+			% pages
 		)
 	)
 	return "\n".join(out)
+
+
+## The text of the Wall panel, built by the game's own GlyphPicker: its labels in order, and each mark's row as "Mark n · Means: x"
+## with the lines about where it was found. Marks are named in the order the Wall got them.
+func _wall_lines(f: Starfall) -> Array:
+	var wall := GlyphPicker.new()
+	wall.setup(s)
+	wall.show_for({"type": "glyph_wall"})
+	var rows: Array = []  # the glyphs the picker draws a row for, in its order
+	for n in f.set_order():
+		for g in f.glyph_order(n):
+			if f.copied.has(g):
+				rows.append(g)
+	var out: Array = []
+	var at := 0
+	for c in wall.get_children():
+		var button: Array = c.find_children("*", "Button", true, false)
+		if not button.is_empty():
+			out.append("  %s · %s" % [_label.get(rows[at], "Mark ?"), button[0].text])
+			at += 1
+			for label in c.find_children("*", "Label", true, false):
+				out.append("      %s" % label.text)
+		elif c is Label:
+			out.append(c.text)
+		else:
+			for label in c.find_children("*", "Label", true, false):
+				out.append(label.text)
+	wall.free()
+	return out
 
 
 ## Set the guesses the way clicks do (cycle_guess) and count the wrong ones.
