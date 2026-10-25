@@ -588,6 +588,33 @@ func test_the_goals() -> void:
 	s.story.update(s)
 	t.check(s.story.goals_done.has("first_iron"), "the first Iron ticks")
 	t.check(s.story.current_goal() < s.story.goal_list().size(), "and the list goes on")
+	s.economy.inv["steel"] = 5  # Steel from a trade or a gift, and a stockpile that has held it, are not the Forge's
+	s.economy.seen["steel"] = true
+	s.story.update(s)
+	t.check(not s.story.goals_done.has("first_steel"), "Steel that no Forge made does not tick the first Steel")
+	s.town.add_building("forge", s.world.camp_pos + Vector2i(-3, 2))
+	var forge: Dictionary = s.town.buildings[s.town.building_at[s.world.camp_pos + Vector2i(-3, 2)]]
+	for id in Buildings.recipe_in(forge):
+		forge["inbuf"][id] = Buildings.recipe_in(forge)[id]
+	Work.finish_cycle(s, forge)
+	s.story.update(s)
+	t.check(s.story.goals_done.has("first_steel"), "the first Steel a Forge makes ticks it")
+	var cost: Dictionary = Data.TECHS["livewire"]["cost"]
+	var gate: Dictionary = Data.GOALS_ERA4.filter(func(g): return g["id"] == "livewire")[0]
+	var skyward: Dictionary = Data.GOALS_ERA5.filter(func(g): return g["id"] == "skyward")[0]
+	var words := s.story.goal_text(gate)
+	for id in cost:
+		t.check(
+			("%d %s" % [cost[id], Data.ITEMS[id]["name"]]) in words,
+			"the gate's goal says its real %s: %s" % [id, words]
+		)
+	cost = Data.TECHS["skyward"]["cost"]
+	words = s.story.goal_text(skyward)
+	for id in cost:
+		t.check(
+			("%d %s" % [cost[id], Data.ITEMS[id]["name"]]) in words, "and Skyward's says its real %s: %s" % [id, words]
+		)
+	t.check(not "{cost}" in words, "with nothing left to fill in")
 
 
 func test_a_grown_south_saves_and_loads() -> void:

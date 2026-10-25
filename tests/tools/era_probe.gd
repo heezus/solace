@@ -105,6 +105,9 @@ func begin(name: String, s) -> void:
 		"wood_short_s": 0.0,
 		"depots_every_5_min": [],
 	}
+	if name == "ironfall" or name == "livewire":
+		_row["queue_empty_s"] = 0.0  # seconds the research queue stood empty with the era's gate still to learn
+		_row["forge_paused_steel_wanted_s"] = 0.0  # seconds a Forge stood paused while a queued tech lacked Steel
 	if name == "livewire":
 		_row["first_overgrown_min"] = -1.0
 		_row["first_lost_min"] = -1.0
@@ -224,6 +227,8 @@ func _sample(s) -> void:
 			fuelless[b["pos"]] = "%s: %s" % [b["type"], status]
 	if s.economy.inv.get("wood", 0) < 10:
 		_row["wood_short_s"] += SAMPLE
+	if era == "ironfall" or era == "livewire":
+		_queue_and_forges(s)
 	_keep_streaks(_streak, waiting, "hauler_wait_longest_s", "hauler_waits")
 	_keep_streaks(_starve, starved, "starved_longest_s")
 	_keep_streaks(_fuel, fuelless, "fuel_starved_longest_s")
@@ -240,6 +245,23 @@ func _sample(s) -> void:
 	if t - _depots_at >= DEPOTS_EVERY:
 		_depots_at = t
 		_row["depots_every_5_min"].append({"minute": snappedf(t / 60.0, 0.1), "depots": _depots(s)})
+
+
+## The research queue empty before the era's gate is learned, and a Forge paused while a queued tech lacks Steel: the two ways the
+## metal's road has stood still for the bot's own doing.
+func _queue_and_forges(s) -> void:
+	var gate := "livewire" if era == "ironfall" else "skyward"
+	if s.tech_tree.queue.is_empty() and not s.tech_tree.researched.has(gate):
+		_row["queue_empty_s"] += SAMPLE
+	var lacks := false
+	for tech in s.tech_tree.queue:
+		if s.tech_tree.cost_of(tech).get("steel", 0) > s.economy.inv.get("steel", 0):
+			lacks = true
+	if lacks:
+		for b in s.town.buildings:
+			if b["type"] == "forge" and b["paused"]:
+				_row["forge_paused_steel_wanted_s"] += SAMPLE
+				break
 
 
 ## Add a second to every building in `now`'s streak in `streaks`, drop the ones that stopped, and keep the longest in `_row[key]`

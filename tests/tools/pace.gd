@@ -13,8 +13,12 @@ extends SceneTree
 ## With `baseline` it plays one map through all five eras in a row, every era by its bot with nothing handed over (stone age, Bronze
 ## Dawn, Starfall, Ironfall, Livewire), reads each era with tests/tools/era_probe.gd and writes one row per era to `out=<folder>`
 ## (seed_<map>.json). `minutes` is then the most the Ironfall and Livewire bot may play. `baseline` takes one map.
+## A baseline run keeps the game as each era begins in `out` (<era>_start_<map>.json), and `until=<era>` stops it there. `era=ironfall`
+## plays Ironfall alone from such a start (`from=<file>`, by default `out`'s own) with the bot a baseline run uses, so one era is one
+## job: a restart repeats only that era, and two jobs from the same start play the same.
 ## Run: godot --headless --path . -s tests/tools/pace.gd --
-##   [map|all] [minutes] [quiet] [bronze|star|ironfall [steam|teardown]|livewire|baseline [noseams] out=<folder>] [cache]
+##   [map|all] [minutes] [quiet] [bronze|star|ironfall [steam|teardown]|livewire|baseline [noseams] [until=<era>] out=<folder>] [cache]
+##   <map> <minutes> quiet baseline era=ironfall [from=<file>] out=<folder>
 
 const Autoplay = preload("res://tests/autoplay.gd")
 const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
@@ -52,6 +56,11 @@ func _init() -> void:
 				out = a.substr(4)
 			if a.begins_with("from="):
 				from = a.substr(5)
+		if "era=ironfall" in args:
+			_ironfall_alone(
+				int(args[0]), minutes, out, from if from != "" else "%s/ironfall_start_%d.json" % [out, int(args[0])]
+			)
+			return
 		if from != "":
 			_from_livewire_start(int(args[0]), minutes, out, from, "notide" not in args)
 			return
@@ -201,6 +210,10 @@ func _baseline(m: int, minutes: float, out: String) -> void:
 	var probe := EraProbe.new()
 	var game := Sim.new()
 	var limit := 70.0 * 60.0
+	var until := ""
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("until="):
+			until = a.substr(6)
 	var stage := _baseline_resume(work, probe, game)
 	if stage == "":
 		game.generate(m)
@@ -226,6 +239,8 @@ func _baseline(m: int, minutes: float, out: String) -> void:
 		if at[0] == "bronze_dawn":
 			probe.begin("bronze_dawn", game)
 		_baseline_save(work, at[0], probe, game, m, out)
+		if _stop_at(until, at[0], out, m, game):
+			return
 	if at[0] == "bronze_dawn":
 		var from := game.seasons.time
 		bronze.play_from_dawn(game, from, from + limit)
@@ -235,6 +250,8 @@ func _baseline(m: int, minutes: float, out: String) -> void:
 		if at[0] == "starfall":
 			probe.begin("starfall", game)
 		_baseline_save(work, at[0], probe, game, m, out)
+		if _stop_at(until, at[0], out, m, game):
+			return
 	if at[0] == "starfall":
 		var starfall := AutoplayStarfall.new()
 		starfall.probe = hook
@@ -243,6 +260,8 @@ func _baseline(m: int, minutes: float, out: String) -> void:
 		if at[0] == "ironfall":
 			probe.begin("ironfall", game)
 		_baseline_save(work, at[0], probe, game, m, out)
+		if _stop_at(until, at[0], out, m, game):
+			return
 	if at[0] == "ironfall":
 		if "noseams" in OS.get_cmdline_user_args():
 			_empty_seams(game)
@@ -263,6 +282,53 @@ func _baseline(m: int, minutes: float, out: String) -> void:
 				% [m, row["era"], row["length_min"], row["goals_done"], row["goals_total"], row["ended"]]
 			)
 		)
+	quit(0)
+
+
+## Keep the game as era `stage` begins (once: a run picked up mid-era does not overwrite it), and stop there when `until` is that era.
+func _stop_at(until: String, stage: String, out: String, m: int, game: Sim) -> bool:
+	if out != "" and stage != "done":
+		var path := "%s/%s_start_%d.json" % [out, stage, m]
+		DirAccess.make_dir_recursive_absolute(out)
+		if not FileAccess.file_exists(path):
+			_write_file(path, RunSave.to_json(RunSave.dump(game)))
+	if until == "" or until != stage:
+		return false
+	print("map %d: %s begins at %.1f game minutes, kept in %s" % [m, stage, game.seasons.time / 60.0, out])
+	quit(0)
+	return true
+
+
+## Ironfall alone, from a copy of the game as the era began (`from`, kept by a baseline run with `until=ironfall`), played to the
+## Livewire gate by the bot a baseline run uses: the era's row to `out`/ironfall_seed_<m>.json and the game as Livewire begins to
+## `out`/livewire_start_<m>.json. It keeps no checkpoint: an interrupted job is run again, and plays what it played before.
+func _ironfall_alone(m: int, minutes: float, out: String, from: String) -> void:
+	var game := Sim.new()
+	var kept := FileAccess.get_file_as_string(from)
+	if kept == "" or not RunSave.restore(game, RunSave.from_json(kept)):
+		print("ironfall: no Ironfall start at %s" % from)
+		quit(1)
+		return
+	var probe := EraProbe.new()
+	probe.begin("ironfall", game)
+	var wire := AutoplayLivewire.new()
+	wire.probe = func(s): probe.observe(s)
+	wire.watch = {"livewire_start": "livewire_begins"}
+	wire.stop_when_watched = true
+	wire.on_checkpoint = func(_id: String, bot):
+		_write_file("%s/livewire_start_%d.json" % [out, m], RunSave.to_json(RunSave.dump(bot.s)))
+	DirAccess.make_dir_recursive_absolute(out)
+	var r: Dictionary = wire.play_livewire(game, minutes * 60.0)
+	if probe.era == "ironfall":
+		_close(probe, game, false)  # the gate was not reached in time
+	var row: Dictionary = probe.rows[0]
+	_write_file("%s/ironfall_seed_%d.json" % [out, m], JSON.stringify(row, "\t"))
+	print(
+		(
+			"map %d ironfall alone: %.1f min, goals %d of %d, ended %s, gate %s"
+			% [m, row["length_min"], row["goals_done"], row["goals_total"], row["ended"], r["won"]]
+		)
+	)
 	quit(0)
 
 

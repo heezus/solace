@@ -113,7 +113,7 @@ func refresh_goals(s: Sim) -> void:
 	var done: Array = []
 	for g in list:
 		if s.story.goals_done.has(g["id"]):
-			done.append("Done: " + g["text"])
+			done.append("Done: " + s.story.goal_text(g))
 	goal_header.tooltip_text = "\n".join(done)
 	for i in goal_labels.size():
 		var gi := cur + i
@@ -121,7 +121,7 @@ func refresh_goals(s: Sim) -> void:
 		l.visible = gi < total
 		if not l.visible:
 			continue
-		l.text = ("> " if i == 0 else "  ") + list[gi]["text"]
+		l.text = ("> " if i == 0 else "  ") + s.story.goal_text(list[gi])
 		l.add_theme_color_override("font_color", GOAL_COLOR if i == 0 else Ui.TEXT_DIM)
 	if cur >= total:
 		goal_labels[0].visible = true

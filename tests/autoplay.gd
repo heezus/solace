@@ -652,6 +652,17 @@ func _nearest_hidden(tile: String) -> Vector2i:
 	return best
 
 
+## True for a good the bot's blocking goal is waiting on, or that such a good is made from: the workshops and huts that make it
+## never rest. An era's bot says which (tests/autoplay_ironfall.gd); the earlier eras' bots own none.
+func _owned(_id: String) -> bool:
+	return false
+
+
+## True for a good the blocking goal is short of itself: a workshop that is not making an owned good does not eat it.
+func _reserved(_id: String) -> bool:
+	return false
+
+
 ## Pause workshops whose goods pile up unneeded (and so stop eating their inputs), or that eat what
 ## the next Dwelling needs; resume them after.
 func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
@@ -692,6 +703,7 @@ func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
 			idle = (
 				idle and (hand_wanted or births.room(self, idle_est + (0 if b["paused"] else Buildings.crew_size(b))))
 			)
+			idle = idle and not _owned(id)
 			if idle != b["paused"]:
 				s.set_paused(i, idle)
 				idle_est = maxi(idle_est + (1 if idle else -1) * Buildings.crew_size(b), 0)
@@ -708,6 +720,10 @@ func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
 		if needs_hand and Buildings.is_staffed(b):
 			surplus = true
 			needs_hand = false  # one workshop is enough to free a Kith
+		if surplus and _owned(made):
+			surplus = false  # what the blocking goal waits on is never rested, whatever else the pause would save
+		elif not _owned(made) and def["in"].keys().any(_reserved):
+			surplus = true  # and a workshop making something else does not eat what the goal is short of (Bronze for its Copper)
 		if surplus != b["paused"]:
 			s.set_paused(i, surplus)
 			idle_est = maxi(idle_est + (1 if surplus else -1) * Buildings.crew_size(b), 0)

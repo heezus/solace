@@ -94,6 +94,7 @@ static func finish_cycle(s, b: Dictionary) -> void:
 		var n := roundi(made[id] * more)
 		b["out"][id] = b["out"].get(id, 0) + n
 		s.economy.note(id, n, b["type"])
+		s.economy.made_ever[id] = true
 		if Fuel.burns(b):
 			var on: Dictionary = s.economy.made_on[b["fuel_now"]]
 			on[id] = on.get(id, 0) + n

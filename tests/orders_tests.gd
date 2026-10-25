@@ -472,6 +472,9 @@ func test_the_goals() -> void:
 	t.check(not s.story.goals_done.has("wire_made"), "no Wire yet")
 	s.economy.inv["wire"] = 1
 	s.story.update(s)
+	t.check(not s.story.goals_done.has("wire_made"), "Wire in the stores that no mill made is not the first Wire")
+	s.economy.made_ever["wire"] = true  # what Work.finish_cycle notes when a Wire Mill makes its first
+	s.story.update(s)
 	t.check(s.story.goals_done.has("wire_made"), "the first Wire")
 	t.check(not s.story.goals_done.has("first_order"), "no order yet")
 	put(s, "order_board", s.world.camp_pos + Vector2i(0, 2))
