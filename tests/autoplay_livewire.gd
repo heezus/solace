@@ -37,6 +37,8 @@ const SCORCHER_WAIT := 300.0  # seconds a Scorcher may stand with nothing in rea
 const SCORCHER_MOVES := 3  # times the bot moves a Scorcher in all
 const FIREBREAK_RING := 3  # tiles from a site (the southern mine, a far Generator) to its ring of Firebreaks
 const FIREBREAK_CAP := 60  # Firebreaks the bot lays in all
+const GUARD_LAMP_RANGE := 15.0  # a guard Scorcher is for what a lit Arc Lamp's net can hold: nothing further out than this
+const ISLAND_ENGINES := 2  # Generators the bot adds to a cut-off net it cannot join to the core, in all
 const POLES_FREED := 3  # Gatherer's Huts the bot takes down beside a boxed-in Pole, in all
 const POLE_STUCK := 12  # decisions without a new pole before the bot gives the southern net up
 const ORDER_PLAN := [
@@ -57,6 +59,7 @@ var skyward_at := -1.0
 var _stuck_poles := 0
 var _stuck_scorch_poles := 0
 var _huts_freed := 0
+var _island_engines := 0
 var _scorcher_idle := {}  # a Scorcher tile -> the clock when it was first seen with nothing in reach
 var _scorcher_moves := 0
 var _livewire_goals := {}
@@ -216,7 +219,7 @@ func _build_livewire() -> bool:
 		return true
 	if _place_core_lamp() or _guard_front():
 		return true
-	if _lay_south_poles():
+	if _lay_south_poles() or _island_engine():
 		return true
 	if not answer_tide:
 		return false
@@ -258,17 +261,56 @@ func _poles() -> Array:
 	return out
 
 
-## True when tile p is within a pole's reach.
+## True when tile p is within a pole's reach and the net that pole is on has an engine: a building there is powered. A net with no
+## engine (the chain cut by the front, or never joined) is an island, and a Scorcher, lamp or machine on it does nothing.
 func _on_net(p: Vector2i) -> bool:
+	return not _net_for(p).get("engines", []).is_empty()
+
+
+## The net a building put at p would join: the one of the nearest Pole within reach, {} when none.
+func _net_for(p: Vector2i) -> Dictionary:
+	var best := {}
+	var best_d := Data.POLE_REACH + 0.001
 	for q in _poles():
-		if Vector2(q).distance_to(Vector2(p)) <= Data.POLE_REACH:
-			return true
-	return false
+		var d := Vector2(q).distance_to(Vector2(p))
+		if d < best_d and s.livewire.net_of.has(q):
+			best_d = d
+			best = s.livewire.nets[s.livewire.net_of[q]]
+	return best
+
+
+## The Poles on a net with an engine, or (live = false) on a net with none.
+func _poles_on(live: bool) -> Array:
+	var out: Array = []
+	for q in _poles():
+		if s.livewire.net_of.has(q) and s.livewire.nets[s.livewire.net_of[q]]["engines"].is_empty() != live:
+			out.append(q)
+	return out
+
+
+## Where the Pole chain runs to: a cut-off stretch of it that lies nearer the target than the live net's end (the chain is mended
+## first, the nearest island Pole to the live net), else the target itself.
+func _chain_goal(target: Vector2i) -> Vector2i:
+	var live := _poles_on(true)
+	var live_d := INF
+	for q in live:
+		live_d = minf(live_d, Vector2(q).distance_to(Vector2(target)))
+	var goal := target
+	var gap := INF
+	for q in _poles_on(false):
+		if Vector2(q).distance_to(Vector2(target)) >= live_d:
+			continue
+		for l in live:
+			var d := Vector2(l).distance_to(Vector2(q))
+			if d < gap:
+				gap = d
+				goal = q
+	return goal
 
 
 ## A first Pole beside the Generator, so the net has a heart.
 func _lay_hub_pole() -> bool:
-	if not s.town.unlocked("power_pole") or _count("generator") == 0 or not _poles().is_empty():
+	if not s.town.unlocked("power_pole") or _count("generator") == 0 or not _poles_on(true).is_empty():
 		return false
 	var gen := Vector2i(-1, -1)
 	for b in s.town.buildings:
@@ -305,7 +347,7 @@ func _guard_front() -> bool:
 	var soonest := FRONT_WARN
 	for b in s.town.buildings:
 		var p: Vector2i = b["pos"]
-		if b["type"] in UNVALUED or _scorcher_covers(p):
+		if b["type"] in UNVALUED or _scorcher_covers(p) or not _near_lit_lamp(p):
 			continue
 		var left: float = 0.0 if s.tide.hit.has(p) else (s.tide.eta[p] - s.tide.time if s.tide.eta.has(p) else INF)
 		if left < soonest or (left == 0.0 and site.x < 0):
@@ -330,6 +372,17 @@ func _guard_front() -> bool:
 		return true
 	var fits := func(p): return score.call(p) > -INF
 	return _tear_down_for("scorcher", fits) or _clear_hut(fits, "a Scorcher") or _lay_scorcher_pole(site)
+
+
+## True when a lit Arc Lamp stands within GUARD_LAMP_RANGE of p, or none is lit yet (the core lamps come first).
+func _near_lit_lamp(p: Vector2i) -> bool:
+	var any := false
+	for b in s.town.buildings:
+		if b["type"] == "arc_lamp" and s.town.is_powered(b["pos"]) and not s.tide.hit.has(b["pos"]):
+			any = true
+			if Vector2(b["pos"]).distance_to(Vector2(p)) <= GUARD_LAMP_RANGE:
+				return true
+	return not any
 
 
 func _scorcher_covers(p: Vector2i) -> bool:
@@ -407,14 +460,14 @@ func _south_target() -> Vector2i:
 
 ## The next Pole of the chain toward the south target: the free tile within POLE_LINK of a standing pole that is nearest to it.
 func _lay_south_poles() -> bool:
-	if not s.town.unlocked("power_pole") or _poles().is_empty() or _stuck_poles >= POLE_STUCK:
+	if not s.town.unlocked("power_pole") or _poles_on(true).is_empty() or _stuck_poles >= POLE_STUCK:
 		return false
 	if _count("arc_lamp") >= _livewire_target("arc_lamp") and _count("scorcher") >= _livewire_target("scorcher"):
 		return false
-	var target := _south_target()
+	var target := _chain_goal(_south_target())
 	var from := Vector2i(-1, -1)
 	var from_d := INF
-	for q in _poles():
+	for q in _poles_on(true):
 		var d := Vector2(q).distance_to(Vector2(target))
 		if d < from_d:
 			from = q
@@ -437,6 +490,36 @@ func _lay_south_poles() -> bool:
 		_stuck_poles = 0
 		return true
 	_stuck_poles += 1
+	return false
+
+
+## A cut-off net with something on it that the bot cannot join to the core (the chain gave up): a Generator beside its Poles, if the
+## stores can pay, ISLAND_ENGINES times in all.
+func _island_engine() -> bool:
+	if _stuck_poles < POLE_STUCK or _island_engines >= ISLAND_ENGINES or not s.town.unlocked("generator"):
+		return false
+	for n in s.livewire.nets:
+		if not n["engines"].is_empty() or (n["machines"].is_empty() and not _has_guard_on(n)):
+			continue
+		var pole: Vector2i = n["poles"][0]
+		var near := func(p):
+			return (
+				-Vector2(p).distance_to(Vector2(pole))
+				if Vector2(p).distance_to(Vector2(pole)) <= Data.POLE_REACH
+				else -INF
+			)
+		if _place_best("generator", near):
+			_island_engines += 1
+			lines.append("%5.0f s    + a Generator beside the cut-off Pole at %s" % [clock, pole])
+			return true
+	return false
+
+
+func _has_guard_on(n: Dictionary) -> bool:
+	for q in n["poles"]:
+		for b in s.town.buildings:
+			if b["type"] in ["scorcher", "arc_lamp"] and Vector2(b["pos"]).distance_to(Vector2(q)) <= Data.POLE_REACH:
+				return true
 	return false
 
 
@@ -540,11 +623,11 @@ func _free_beside_pole() -> bool:
 ## The next Pole of a chain toward Bloom ground at `from`: the free tile within POLE_LINK of the standing pole nearest to it that
 ## lies nearer to it. Given up after POLE_STUCK decisions that place nothing.
 func _lay_scorcher_pole(from: Vector2i) -> bool:
-	if not s.town.unlocked("power_pole") or _poles().is_empty() or _stuck_scorch_poles >= POLE_STUCK:
+	if not s.town.unlocked("power_pole") or _poles_on(true).is_empty() or _stuck_scorch_poles >= POLE_STUCK:
 		return false
 	var near := Vector2i(-1, -1)
 	var near_d := INF
-	for q in _poles():
+	for q in _poles_on(true):
 		var d := Vector2(q).distance_to(Vector2(from))
 		if d < near_d:
 			near = q
