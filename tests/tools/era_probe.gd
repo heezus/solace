@@ -12,6 +12,7 @@ const Haulers = preload("res://scripts/haulers.gd")
 const Kith = preload("res://scripts/kith.gd")
 const Ledger = preload("res://tests/tools/ledger.gd")
 const Roads = preload("res://scripts/roads.gd")
+const Ui = preload("res://scripts/ui.gd")
 
 const SAMPLE := 1.0  # game seconds between readings
 const STEP := 0.1  # game seconds of one bot step (Autoplay.DT)
@@ -38,6 +39,8 @@ var _starve := {}  # workshop tile -> seconds in a row it has stood starved with
 var _spill_of_seen := {}  # Economy.spilled_of at the last reading, by good
 var _spill_seen := 0  # Economy.spilled at the last reading (it is not saved, so a resumed run starts it again from 0)
 var _depots_at := 0.0  # era seconds of the last depot reading
+var _town_at := 0.0  # era seconds of the last reading of the jobs
+var _zero_at := -1000.0  # era seconds of the last note on why the power stood at zero
 
 
 ## Open era `name` on `s`: the start snapshot (people, places, stock, coal in the ground).
@@ -54,6 +57,8 @@ func begin(name: String, s) -> void:
 	_spill_seen = s.economy.spilled
 	_spill_of_seen = s.economy.spilled_of.duplicate()
 	_depots_at = 0.0
+	_town_at = 0.0
+	_zero_at = -1000.0
 	ledger.begin(name, s)
 	var idle := 0
 	var haulers := 0
@@ -104,6 +109,7 @@ func begin(name: String, s) -> void:
 		"fuel_starved_longest_s": 0.0,
 		"wood_short_s": 0.0,
 		"depots_every_5_min": [],
+		"town_every_5_min": [],
 	}
 	if name == "ironfall" or name == "livewire":
 		_row["queue_empty_s"] = 0.0  # seconds the research queue stood empty with the era's gate still to learn
@@ -121,6 +127,7 @@ func begin(name: String, s) -> void:
 		_row["power_zero_with_wood_s"] = 0.0  # seconds a net asked for power and none was given, with Wood in the stores
 		_row["power_zero_with_wood_longest_s"] = 0.0
 		_row["fuel_burned"] = {}  # building type -> {fuel: units}
+		_row["power_zero_notes"] = []  # why the power stood at zero with Wood in the stores: a note a minute while it did
 
 
 ## One step of a bot: sample the logistics once a game second, and open Livewire when it begins.
@@ -245,6 +252,37 @@ func _sample(s) -> void:
 	if t - _depots_at >= DEPOTS_EVERY:
 		_depots_at = t
 		_row["depots_every_5_min"].append({"minute": snappedf(t / 60.0, 0.1), "depots": _depots(s)})
+	if t - _town_at >= DEPOTS_EVERY:
+		_town_at = t
+		_row["town_every_5_min"].append(_town(s, t))
+
+
+## Where the jobs stand: the Kith by what they do, the work places and the ones filled, the buildings that need a worker by type as
+## [standing, paused, with a worker], and the buildings the Bloom has overgrown and taken.
+func _town(s, t: float) -> Dictionary:
+	var kith := {"work": 0, "haul": 0, "none": 0}
+	for k in s.people.kith:
+		var job: String = k["job"] if k["job"] != "" else "none"
+		kith[job] = kith.get(job, 0) + 1
+	var by := {}
+	for b in s.town.buildings:
+		if not Buildings.needs_worker(b):
+			continue
+		var row: Array = by.get(b["type"], [0, 0, 0])
+		row[0] += 1
+		row[1] += 1 if b["paused"] else 0
+		for slot in Buildings.crew_slots(b):
+			row[2] += 1 if b[slot] >= 0 else 0
+		by[b["type"]] = row
+	return {
+		"minute": snappedf(t / 60.0, 0.1),
+		"kith": kith,
+		"places": Ui.job_slots(s),
+		"filled": Ui.jobs_filled(s),
+		"buildings": by,
+		"overgrown": s.tide.hit.size() if era == "livewire" else 0,
+		"lost": s.tide.lost,
+	}
 
 
 ## The research queue empty before the era's gate is learned, and a Forge paused while a queued tech lacks Steel: the two ways the
@@ -387,6 +425,43 @@ func _tide(s) -> void:
 		)
 
 
+## Why a net with machines has no power: its engines (type, tile, status, the fuel they burn and hold, paused, worker), the poles,
+## and the stock of coal, charcoal and wood.
+func _zero_note(s, now: float) -> Dictionary:
+	var nets := []
+	for n in s.livewire.nets:
+		if n["asks"] <= 0 or n["given"] > 0:
+			continue
+		var engines := []
+		for p in n["engines"]:
+			if not s.town.building_at.has(p):
+				continue
+			var b: Dictionary = s.town.buildings[s.town.building_at[p]]
+			(
+				engines
+				. append(
+					{
+						"type": b["type"],
+						"at": "%d,%d" % [p.x, p.y],
+						"status": String(b["status"]).substr(0, 70),
+						"fuel": b.get("fuel", ""),
+						"burning": b.get("fuel_now", ""),
+						"held": b["inbuf"].duplicate(),
+						"burn": snappedf(b.get("burn", 0.0), 0.1),
+						"paused": b["paused"],
+						"overgrown": s.tide.is_overgrown_at(p),
+					}
+				)
+			)
+		nets.append(
+			{"poles": n["poles"].size(), "machines": n["machines"].size(), "asks": n["asks"], "engines": engines}
+		)
+	var stock := {}
+	for id in ["coal", "charcoal", "wood"]:
+		stock[id] = s.economy.inv.get(id, 0)
+	return {"minute": snappedf(now / 60.0, 0.1), "nets": nets, "stock": stock}
+
+
 ## Livewire only, once the tide is awake: the seconds a net asks for power and no engine gives any while the stores hold Wood (the
 ## fuel can be made), the longest stretch of it, and the fuel the engines and Scorchers have burnt, by building and kind.
 func _power(s) -> void:
@@ -397,6 +472,10 @@ func _power(s) -> void:
 		if n["asks"] > 0 and n["given"] <= 0:
 			zero = true
 	if zero and s.economy.inv.get("wood", 0) > 0:
+		var now: float = s.seasons.time - _at
+		if now - _zero_at >= 60.0 and _row["power_zero_notes"].size() < 40:
+			_zero_at = now
+			_row["power_zero_notes"].append(_zero_note(s, now))
 		_row["power_zero_with_wood_s"] += SAMPLE
 		_zero_run += SAMPLE
 		_row["power_zero_with_wood_longest_s"] = maxf(_row["power_zero_with_wood_longest_s"], _zero_run)
@@ -434,3 +513,5 @@ func from_dict(d: Dictionary) -> void:
 	_spill_seen = 0  # a reloaded run starts Economy.spilled again from 0
 	_spill_of_seen = {}
 	_depots_at = _row["depots_every_5_min"].size() * DEPOTS_EVERY if _row.has("depots_every_5_min") else 0.0
+	_town_at = _row["town_every_5_min"].size() * DEPOTS_EVERY if _row.has("town_every_5_min") else 0.0
+	_zero_at = -1000.0

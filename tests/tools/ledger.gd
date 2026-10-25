@@ -35,6 +35,8 @@ var _used := {}
 var _paid := {}  # why ("build", "research", "expedition", "twin", "story") -> {good: units}
 var _held := []  # [start, end]: good -> units in buffers and on haulers' backs
 var _regained := {}  # "refund" / "released" -> {good: units}
+var _vanished := {}  # good -> units lost with the buildings the Bloom took
+var _vanish_seen := {}
 var _spilled := {}
 var _cap_s := {}
 var _zero_s := {}
@@ -62,6 +64,7 @@ func begin(name: String, s) -> void:
 	_paid = {}
 	_spilled = {}
 	_regained = {}
+	_vanished = {}
 	_cap_s = {}
 	_zero_s = {}
 	_stock = []
@@ -76,6 +79,7 @@ func begin(name: String, s) -> void:
 	_paid_seen = s.economy.paid.duplicate(true)
 	_spill_seen = s.economy.spilled_of.duplicate()
 	_regain_seen = s.economy.regained.duplicate(true)
+	_vanish_seen = s.economy.vanished.duplicate()
 	_held = [_held_now(s), {}]
 	_next_kith = 0.0
 	_kith_t = 0.0
@@ -157,6 +161,11 @@ func _read_paid(s) -> void:
 				back_by[id] = back_by.get(id, 0) + back
 		_regained[why] = back_by
 	_regain_seen = s.economy.regained.duplicate(true)
+	for id in s.economy.vanished:
+		var gone: int = s.economy.vanished[id] - _vanish_seen.get(id, 0)
+		if gone > 0:
+			_vanished[id] = _vanished.get(id, 0) + gone
+	_vanish_seen = s.economy.vanished.duplicate()
 
 
 ## Seconds at the cap, and at 0 while a workshop's next cycle is short of that good.
@@ -294,7 +303,8 @@ func finish(s) -> Dictionary:
 		var end := int(_stock[-1]["stock"].get(id, 0))
 		var held_change := int(_held[1].get(id, 0)) - int(_held[0].get(id, 0))
 		var change := float(end - start + held_change)
-		var flow := made + refunded + released - used - paid - spilled
+		var vanished: float = _vanished.get(id, 0)
+		var flow := made + refunded + released - used - paid - spilled - vanished
 		sum_change += change
 		sum_flow += flow
 		sum_through += made + used + paid
@@ -307,6 +317,7 @@ func finish(s) -> Dictionary:
 			"spilled": int(spilled),
 			"refunded": int(refunded),
 			"released": int(released),
+			"vanished": int(vanished),
 			"held": [int(_held[0].get(id, 0)), int(_held[1].get(id, 0))],
 			"stock": [start, int(middle.get(id, 0)), end],
 			"cap": int(s.economy.caps.get(id, 0)),
@@ -411,6 +422,7 @@ func to_dict() -> Dictionary:
 		"held": _held,
 		"spilled": _spilled,
 		"regained": _regained,
+		"vanished": _vanished,
 		"cap_s": _cap_s,
 		"zero_s": _zero_s,
 		"stock": _stock,
@@ -432,6 +444,7 @@ func from_dict(d: Dictionary) -> void:
 	_held = d["held"]
 	_spilled = d["spilled"]
 	_regained = d["regained"]
+	_vanished = d.get("vanished", {})
 	_cap_s = d["cap_s"]
 	_zero_s = d["zero_s"]
 	_stock = d["stock"]
@@ -448,3 +461,4 @@ func from_dict(d: Dictionary) -> void:
 	_paid_seen = {}  # Economy.paid and spilled_of are not saved: a resumed run counts them from 0
 	_spill_seen = {}
 	_regain_seen = {}
+	_vanish_seen = {}
