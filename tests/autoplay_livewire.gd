@@ -25,6 +25,10 @@ const TECH_ORDER := [
 ]
 const WIRE_MILLS := 3
 const GENERATORS := 2
+const FRONT_WARN := 120.0  # seconds: a building the front reaches sooner than this, with no Scorcher in reach, gets one
+const UNVALUED := ["gatherers_hut", "firebreak", "field", "flax_field", "road"]  # buildings the bot lets the Bloom have
+const CORE_RING := 4.0  # tiles from the first Generator within which a core lamp stands
+const CORE_LAMPS := 2  # Arc Lamps beside the engines: the Bloom must not take the power the Scorcher and the lamps run on
 const WIRE_PER_MILL := 60.0  # one more Wire Mill for every this much Wire still short
 const COAL_FOR_ENGINES := 200  # coal the Generators and the Scorcher burn, kept in the stores beyond the techs' needs
 const CHARCOAL_FOR_ENGINES := 300  # Charcoal the engines are asked for once Coal runs low (a Charcoal lasts half as long as a Coal)
@@ -67,7 +71,9 @@ func play_livewire(game: Sim, max_seconds: float) -> Dictionary:
 	_note_goals()
 	_drop_stranded_posts()
 	var ironfall_at := -1.0
-	while clock < max_seconds and skyward_at < 0.0 and not (stop_when_watched and watch.is_empty()):
+	while (
+		clock < max_seconds and (skyward_at < 0.0 or stop_when_watched) and not (stop_when_watched and watch.is_empty())
+	):
 		if gate_at >= 0.0 and gate == GATE:  # the Wires Hum card is put away: Livewire begins
 			ironfall_at = gate_at
 			gate = SKYWARD
@@ -173,7 +179,7 @@ func _livewire_target(type: String) -> int:
 		"wire_mill":
 			return mini(1 + int(_wire_short() / WIRE_PER_MILL), WIRE_MILLS) if _wire_short() > 0 else _count(type)
 		"arc_lamp":
-			return 2
+			return 2 + CORE_LAMPS
 		"scorcher":
 			return 1
 	return 0
@@ -207,6 +213,8 @@ func _build_livewire() -> bool:
 	if _lay_hub_pole():
 		return true
 	if _place_wire_mill():
+		return true
+	if _place_core_lamp() or _guard_front():
 		return true
 	if _lay_south_poles():
 		return true
@@ -267,12 +275,94 @@ func _lay_hub_pole() -> bool:
 		if b["type"] == "generator":
 			gen = b["pos"]
 			break
-	return _place_best(
-		"power_pole",
-		func(p):
-			var d := Vector2(p).distance_to(Vector2(gen))
-			return -d if d >= 1.0 and d <= Data.POLE_REACH else -INF
-	)
+	var beside := func(p):
+		var d := Vector2(p).distance_to(Vector2(gen))
+		return d >= 1.0 and d <= Data.POLE_REACH
+	if _place_best("power_pole", func(p): return -Vector2(p).distance_to(Vector2(gen)) if beside.call(p) else -INF):
+		return true
+	if not s.economy.can_afford(s.town.price("power_pole")):
+		return false
+	return _tear_down_for("power_pole", beside) or _clear_hut(beside, "a Pole")
+
+
+## A Pole with no free ground where it must stand (the town has filled it, a boxed first Pole): a player tears down a Gatherer's
+## Hut that stands on a tile that `suits` it, and so does the bot. True when it did (the next decision lays the Pole).
+func _clear_hut(suits: Callable, what: String) -> bool:
+	for b in s.town.buildings:
+		if b["type"] == "gatherers_hut" and suits.call(b["pos"]):
+			s.demolish(b["pos"])
+			lines.append("%5.0f s    - Gatherer's Hut at %s torn down to make room for %s" % [clock, b["pos"], what])
+			return true
+	return false
+
+
+## The bot plays the tide as a player does: a Scorcher for each building the front reaches in under FRONT_WARN seconds that no
+## Scorcher covers (Tide Watch's times), as many as it takes, if the stores can pay. A building already overgrown counts as at once.
+func _guard_front() -> bool:
+	if not answer_tide or not s.town.unlocked("scorcher") or _poles().is_empty():
+		return false
+	var site := Vector2i(-1, -1)
+	var soonest := FRONT_WARN
+	for b in s.town.buildings:
+		var p: Vector2i = b["pos"]
+		if b["type"] in UNVALUED or _scorcher_covers(p):
+			continue
+		var left: float = 0.0 if s.tide.hit.has(p) else (s.tide.eta[p] - s.tide.time if s.tide.eta.has(p) else INF)
+		if left < soonest or (left == 0.0 and site.x < 0):
+			site = p
+			soonest = left
+	if site.x < 0 or not s.economy.can_afford(s.town.price("scorcher")):
+		return false
+	var from := _front_near(site)
+	var score := func(p):
+		var d := Vector2(p).distance_to(Vector2(site))
+		if not _on_net(p) or d > Data.SCORCH_REACH - 1.0:
+			return -INF
+		return -(Vector2(p).distance_to(Vector2(from)) if from.x >= 0 else d)
+	if _place_best("scorcher", score):
+		marks["scorcher_%d" % _count("scorcher")] = clock
+		lines.append(
+			(
+				"%5.0f s    guard: a Scorcher for the %s at %s (the front: %.0f s)"
+				% [clock, s.town.built_type(site), site, soonest]
+			)
+		)
+		return true
+	var fits := func(p): return score.call(p) > -INF
+	return _tear_down_for("scorcher", fits) or _clear_hut(fits, "a Scorcher") or _lay_scorcher_pole(site)
+
+
+func _scorcher_covers(p: Vector2i) -> bool:
+	for b in s.town.buildings:
+		if b["type"] == "scorcher" and Vector2(b["pos"]).distance_to(Vector2(p)) <= Data.SCORCH_REACH:
+			return true
+	return false
+
+
+## An Arc Lamp on the net beside the first Generator, CORE_LAMPS of them: its light holds the engines, the Poles and the Scorcher's
+## coal, so the town keeps its power when the front reaches it. Before the lamps of the south.
+func _place_core_lamp() -> bool:
+	if not answer_tide or not s.town.unlocked("arc_lamp") or _poles().is_empty() or not s.tide.begun:
+		return false
+	var home := Vector2i(-1, -1)
+	for b in s.town.buildings:
+		if b["type"] == "generator":
+			home = b["pos"]
+			break
+	if home.x < 0:
+		return false
+	var lamps := 0
+	for b in s.town.buildings:
+		if b["type"] == "arc_lamp" and Vector2(b["pos"]).distance_to(Vector2(home)) <= CORE_RING:
+			lamps += 1
+	if lamps >= CORE_LAMPS:
+		return false
+	var beside := func(p): return Vector2(p).distance_to(Vector2(home)) <= CORE_RING and _on_net(p)
+	if _place_best("arc_lamp", func(p): return -Vector2(p).distance_to(Vector2(home)) if beside.call(p) else -INF):
+		return true
+	if not s.economy.can_afford(s.town.price("arc_lamp")):
+		return false
+	return _tear_down_for("arc_lamp", beside) or _clear_hut(beside, "an Arc Lamp")
 
 
 ## Wire Mills on the net, as many as the Wire still short asks for.
@@ -280,8 +370,24 @@ func _place_wire_mill() -> bool:
 	if not s.town.unlocked("wire_mill") or _count("wire_mill") >= _livewire_target("wire_mill") or _poles().is_empty():
 		return false
 	var home := _anchor()
-	var score := func(p): return -Vector2(p).distance_to(Vector2(home)) if _on_net(p) else -INF
+	var target := _south_target()
+	var tip_d := _tip_distance(target)
+	# The ground ahead of the southern chain's last Pole is the chain's: a Wire Mill there boxes the next Pole in.
+	var score := func(p):
+		if not _on_net(p) or Vector2(p).distance_to(Vector2(target)) < tip_d:
+			return -INF
+		return -Vector2(p).distance_to(Vector2(home))
 	return _place_best("wire_mill", score)
+
+
+## How far the southern chain's nearest Pole stands from `target`, or 0 once the chain is given up or has arrived.
+func _tip_distance(target: Vector2i) -> float:
+	if _stuck_poles >= POLE_STUCK:
+		return 0.0
+	var best := INF
+	for q in _poles():
+		best = minf(best, Vector2(q).distance_to(Vector2(target)))
+	return 0.0 if best <= Data.POLE_REACH - 0.5 else best
 
 
 ## The tile the southern net runs to: beside the Coal Mine (or Mine) in the south land nearest the Hearth, or straight south.
@@ -324,8 +430,13 @@ func _lay_south_poles() -> bool:
 	if _place_best("power_pole", score):
 		_stuck_poles = 0
 		return true
-	if s.economy.can_afford(s.town.price("power_pole")):
-		_stuck_poles += 1
+	if not s.economy.can_afford(s.town.price("power_pole")):
+		return false
+	var fits := func(p): return score.call(p) > -INF
+	if _tear_down_for("power_pole", fits) or _clear_hut(fits, "the next Pole south"):
+		_stuck_poles = 0
+		return true
+	_stuck_poles += 1
 	return false
 
 

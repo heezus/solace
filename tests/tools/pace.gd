@@ -371,6 +371,7 @@ func _from_livewire_start(m: int, minutes: float, out: String, from: String, ans
 	wire.play_livewire(game, minutes * 60.0 - played)
 	var row: Dictionary = probe.finish(game)
 	row["ended"] = game.tech_tree.researched.has("skyward")  # as in a baseline run: the era ended when Skyward was learned
+	row["marks"] = wire.marks  # the clock (era seconds) at each goal, lesson, Rail, Steam Cart...
 	if out != "":
 		DirAccess.make_dir_recursive_absolute(out)
 		_write_file("%s/%s_seed_%d.json" % [out, "livewire" if answer else "variant", m], JSON.stringify(row, "\t"))

@@ -35,6 +35,8 @@ var _used := {}
 var _paid := {}  # why ("build", "research", "expedition", "twin", "story") -> {good: units}
 var _held := []  # [start, end]: good -> units in buffers and on haulers' backs
 var _regained := {}  # "refund" / "released" -> {good: units}
+var _vanished := {}  # good -> units lost with the buildings the Bloom took
+var _vanish_seen := {}
 var _spilled := {}
 var _cap_s := {}
 var _zero_s := {}
@@ -46,6 +48,9 @@ var _food_seen := [0.0, 0.0]
 var _idle_run := 0.0
 var _idle_longest := 0.0
 var _idle_max_share := 0.0
+var _adj_run := 0.0
+var _adj_longest := 0.0
+var _adj_max_share := 0.0
 var _clock_seen := -1  # the flow window's whole seconds when it was last read (-1: not yet)
 var _paid_seen := {}
 var _spill_seen := {}
@@ -62,6 +67,7 @@ func begin(name: String, s) -> void:
 	_paid = {}
 	_spilled = {}
 	_regained = {}
+	_vanished = {}
 	_cap_s = {}
 	_zero_s = {}
 	_stock = []
@@ -72,10 +78,14 @@ func begin(name: String, s) -> void:
 	_idle_run = 0.0
 	_idle_longest = 0.0
 	_idle_max_share = 0.0
+	_adj_run = 0.0
+	_adj_longest = 0.0
+	_adj_max_share = 0.0
 	_clock_seen = floori(s.economy.flows.clock)
 	_paid_seen = s.economy.paid.duplicate(true)
 	_spill_seen = s.economy.spilled_of.duplicate()
 	_regain_seen = s.economy.regained.duplicate(true)
+	_vanish_seen = s.economy.vanished.duplicate()
 	_held = [_held_now(s), {}]
 	_next_kith = 0.0
 	_kith_t = 0.0
@@ -157,6 +167,11 @@ func _read_paid(s) -> void:
 				back_by[id] = back_by.get(id, 0) + back
 		_regained[why] = back_by
 	_regain_seen = s.economy.regained.duplicate(true)
+	for id in s.economy.vanished:
+		var gone: int = s.economy.vanished[id] - _vanish_seen.get(id, 0)
+		if gone > 0:
+			_vanished[id] = _vanished.get(id, 0) + gone
+	_vanish_seen = s.economy.vanished.duplicate()
 
 
 ## Seconds at the cap, and at 0 while a workshop's next cycle is short of that good.
@@ -184,6 +199,14 @@ func _read_idle(s) -> void:
 		_idle_longest = maxf(_idle_longest, _idle_run)
 	else:
 		_idle_run = 0.0
+	# The same, without the Kith whose workplace the Bloom took: the town could not have kept them in work.
+	var adjusted := maxf(_idle(s) - float(s.tide.lost_jobs), 0.0) / maxf(s.people.kith.size(), 1.0)
+	_adj_max_share = maxf(_adj_max_share, adjusted)
+	if adjusted > IDLE_SHARE:
+		_adj_run += 1.0
+		_adj_longest = maxf(_adj_longest, _adj_run)
+	else:
+		_adj_run = 0.0
 
 
 func _idle(s) -> float:
@@ -294,7 +317,8 @@ func finish(s) -> Dictionary:
 		var end := int(_stock[-1]["stock"].get(id, 0))
 		var held_change := int(_held[1].get(id, 0)) - int(_held[0].get(id, 0))
 		var change := float(end - start + held_change)
-		var flow := made + refunded + released - used - paid - spilled
+		var vanished: float = _vanished.get(id, 0)
+		var flow := made + refunded + released - used - paid - spilled - vanished
 		sum_change += change
 		sum_flow += flow
 		sum_through += made + used + paid
@@ -307,6 +331,7 @@ func finish(s) -> Dictionary:
 			"spilled": int(spilled),
 			"refunded": int(refunded),
 			"released": int(released),
+			"vanished": int(vanished),
 			"held": [int(_held[0].get(id, 0)), int(_held[1].get(id, 0))],
 			"stock": [start, int(middle.get(id, 0)), end],
 			"cap": int(s.economy.caps.get(id, 0)),
@@ -335,6 +360,8 @@ func finish(s) -> Dictionary:
 		"kith": _kith,
 		"idle_longest_over_25_s": _idle_longest,
 		"idle_max_share": snappedf(_idle_max_share, 0.01),
+		"idle_adjusted_longest_over_25_s": _adj_longest,
+		"idle_adjusted_max_share": snappedf(_adj_max_share, 0.01),
 	}
 	out["flags"] = _flags(out, length)
 	era = ""
@@ -382,10 +409,19 @@ func _flags(out: Dictionary, length: float) -> Array:
 		if out["finite"]["coal_in_ground"] <= 0 and g["stock"][2] <= 0 and made_stand <= 0.0:
 			flags.append("%s: nothing left in the ground or the stores, and no %s made" % [id, stand_in])
 	if out["idle_longest_over_25_s"] > IDLE_FOR:
-		flags.append(
-			(
-				"idle Kith over %.0f%% of the town for %.1f min in a row (up to %.0f%%)"
-				% [100.0 * IDLE_SHARE, out["idle_longest_over_25_s"] / 60.0, 100.0 * out["idle_max_share"]]
+		(
+			flags
+			. append(
+				(
+					"idle Kith over %.0f%% of the town for %.1f min in a row (up to %.0f%%); %.1f min (up to %.0f%%) without the jobs the Bloom took"
+					% [
+						100.0 * IDLE_SHARE,
+						out["idle_longest_over_25_s"] / 60.0,
+						100.0 * out["idle_max_share"],
+						out["idle_adjusted_longest_over_25_s"] / 60.0,
+						100.0 * out["idle_adjusted_max_share"]
+					]
+				)
 			)
 		)
 	if not out["check"]["met"]:
@@ -411,12 +447,13 @@ func to_dict() -> Dictionary:
 		"held": _held,
 		"spilled": _spilled,
 		"regained": _regained,
+		"vanished": _vanished,
 		"cap_s": _cap_s,
 		"zero_s": _zero_s,
 		"stock": _stock,
 		"kith": _kith,
 		"food": [_food_made, _food_eaten, _food_seen[0], _food_seen[1]],
-		"idle": [_idle_run, _idle_longest, _idle_max_share],
+		"idle": [_idle_run, _idle_longest, _idle_max_share, _adj_run, _adj_longest, _adj_max_share],
 		"next_kith": _next_kith,
 		"clock_seen": _clock_seen,
 		"kith_t": _kith_t,
@@ -432,6 +469,7 @@ func from_dict(d: Dictionary) -> void:
 	_held = d["held"]
 	_spilled = d["spilled"]
 	_regained = d["regained"]
+	_vanished = d.get("vanished", {})
 	_cap_s = d["cap_s"]
 	_zero_s = d["zero_s"]
 	_stock = d["stock"]
@@ -442,9 +480,14 @@ func from_dict(d: Dictionary) -> void:
 	_idle_run = d["idle"][0]
 	_idle_longest = d["idle"][1]
 	_idle_max_share = d["idle"][2]
+	if d["idle"].size() > 3:
+		_adj_run = d["idle"][3]
+		_adj_longest = d["idle"][4]
+		_adj_max_share = d["idle"][5]
 	_next_kith = d["next_kith"]
 	_kith_t = d["kith_t"]
 	_clock_seen = int(d.get("clock_seen", -1))  # the flow window is saved with the game: read on from where it was left
 	_paid_seen = {}  # Economy.paid and spilled_of are not saved: a resumed run counts them from 0
 	_spill_seen = {}
 	_regain_seen = {}
+	_vanish_seen = {}

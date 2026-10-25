@@ -658,6 +658,12 @@ func _owned(_id: String) -> bool:
 	return false
 
 
+## False in an era whose bot lets a full store do the resting: a hut or workshop is not paused only because its good has piled up
+## (the store at its cap already stops it, and a pause turns its places into idle Kith).
+func _rest_at_cap() -> bool:
+	return true
+
+
 ## True for a good the blocking goal is short of itself: a workshop that is not making an owned good does not eat it.
 func _reserved(_id: String) -> bool:
 	return false
@@ -701,7 +707,11 @@ func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
 			# A town with no free hand and a raw good short lets a surplus hut go, so its Kith can build the hut that good needs.
 			var hand_wanted := births.raw_short(self, short)
 			idle = (
-				idle and (hand_wanted or births.room(self, idle_est + (0 if b["paused"] else Buildings.crew_size(b))))
+				idle
+				and (
+					hand_wanted
+					or (_rest_at_cap() and births.room(self, idle_est + (0 if b["paused"] else Buildings.crew_size(b))))
+				)
 			)
 			idle = idle and not _owned(id)
 			if idle != b["paused"]:
@@ -712,7 +722,9 @@ func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
 			continue  # a Mine makes no stock of its own
 		var made: String = def["out"].keys()[0]
 		var room: bool = births.room(self, idle_est + (0 if b["paused"] else Buildings.crew_size(b)))
-		var surplus: bool = s.economy.inv.get(made, 0) >= later.get(made, 0) + 10 and not short.has(made) and room
+		var surplus: bool = (
+			_rest_at_cap() and s.economy.inv.get(made, 0) >= later.get(made, 0) + 10 and not short.has(made) and room
+		)
 		for id in def["in"]:
 			if saving.has(id) and births.may_save(self, room, saved, idle_est):
 				surplus = true

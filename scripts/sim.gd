@@ -285,6 +285,7 @@ func _remove_building(i: int) -> void:
 ## The Bloom takes the building at index i: its worker goes idle and whatever it held is lost with it.
 func lose_building(i: int) -> void:
 	var b: Dictionary = town.buildings[i]
+	economy.lose_stock(b)
 	people.release_worker(b)
 	people.drop_tasks_at(i)
 	town.remove_at(i)

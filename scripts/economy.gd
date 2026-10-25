@@ -35,6 +35,7 @@ var caps: Dictionary = {}
 var spilled := 0  # goods lost over the cap this run, for the scorecards; not saved
 var spilled_of: Dictionary = {}  # the same by good, for the baseline; not saved
 var made_on: Dictionary = {"coal": {}, "charcoal": {}}  # what the metal works made on each fuel, by good, for the baseline; not saved
+var vanished: Dictionary = {}  # good -> units lost with a building the Bloom took (its buffers; baseline only, not saved)
 var paid: Dictionary = {}  # "build" or "research" -> {good: units} paid for them this run (baseline only, not saved)
 var regained: Dictionary = {}  # "refund" / "released" -> {good: units} back in the stores with no flow (baseline only, not saved)
 var burnt_by: Dictionary = {}  # building type -> {fuel: units} burnt by engines and Scorchers (baseline only, not saved)
@@ -117,6 +118,13 @@ func refresh_caps(buildings: Array) -> void:
 	caps = {}
 	for id in Data.ITEM_ORDER:
 		caps[id] = Storage.capacity(id, storehouses, _techs)
+
+
+## Note the goods that left the game with a building the Bloom took, for the baseline's ledger.
+func lose_stock(b: Dictionary) -> void:
+	for buf in [b["out"], b["inbuf"]]:
+		for id in buf:
+			vanished[id] = vanished.get(id, 0) + int(buf[id])
 
 
 ## Count goods that reach the stores without a flow (a demolition refund, a released worker's load) for the baseline's ledger.
