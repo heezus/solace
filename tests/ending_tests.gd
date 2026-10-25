@@ -7,6 +7,7 @@ const Sim = preload("res://scripts/sim.gd")
 const RunSave = preload("res://scripts/run_save.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const MomentCard = preload("res://scripts/moment_card.gd")
+const GlyphPicker = preload("res://scripts/glyph_picker.gd")
 const StarfallTests = preload("res://tests/starfall_tests.gd")
 
 var t  # the runner, tests/run_tests.gd
@@ -23,6 +24,7 @@ func run(runner) -> void:
 	test_the_shards_lend_the_cairns_light_away()
 	test_going_dark_slows_the_workshops()
 	test_the_warning_waits_for_the_questions()
+	test_a_right_warning_says_so_while_the_questions_wait()
 	test_the_warning_ends_the_era()
 	test_the_lean_follows_trust()
 	test_the_moment_card_has_a_button_per_choice()
@@ -211,6 +213,44 @@ func test_the_warning_waits_for_the_questions() -> void:
 	s.starfall.choose(0)
 	t.check(s.starfall.check() and s.starfall.locked.has("warning"), "answered, it reads")
 	t.check(s.starfall.ended and s.starfall.next_moment() == "", "and the era is over")
+
+
+func test_a_right_warning_says_so_while_the_questions_wait() -> void:
+	var s := _at_the_end("warning")
+	s.starfall.answered.clear()
+	var wall := GlyphPicker.new()
+	wall.setup(s)
+	s.town.add_building("glyph_wall", _h._spot(s, "glyph_wall"))
+	var b: Dictionary = s.town.buildings[s.town.buildings.size() - 1]
+	wall.show_for(b)
+	var right := Data.WARNING_RIGHT_WAITING % [3, 3]
+	t.check(_has_line(wall, right), "a right Warning before the questions says the strangers will speak (3 of 3 left)")
+	t.check(not s.starfall.check() and s.starfall.warning_right(), "and the guesses are kept, nothing is read")
+	s.starfall.answered["hunger"] = 0
+	wall.show_for(b)
+	t.check(_has_line(wall, Data.WARNING_RIGHT_WAITING % [2, 3]), "the count is live")
+	s.starfall.answered["shards"] = 0
+	wall.show_for(b)
+	t.check(_has_line(wall, Data.WARNING_RIGHT_WAITING % [1, 3]), "down to the last question")
+	var g: String = Data.GLYPH_SETS[6]["glyphs"][0]
+	s.starfall.guesses[g] = "Water"
+	wall.show_for(b)
+	t.check(
+		_has_line(wall, Data.WARNING_NEEDS) and not _has_line(wall, Data.WARNING_RIGHT_WAITING % [1, 3]),
+		"a wrong Warning does not get the 'Right' line"
+	)
+	s.starfall.guesses[g] = Data.GLYPHS[g]["word"]
+	s.starfall.answered["warning"] = 0
+	wall.show_for(b)
+	t.check(not _has_line(wall, Data.WARNING_RIGHT_WAITING % [1, 3]), "with the questions done the line goes")
+	wall.free()
+
+
+func _has_line(wall: Control, text: String) -> bool:
+	for c in wall.find_children("*", "Label", true, false):
+		if c.text == text:
+			return true
+	return false
 
 
 func test_the_warning_ends_the_era() -> void:
