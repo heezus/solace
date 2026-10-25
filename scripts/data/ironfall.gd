@@ -94,9 +94,5 @@ const GOALS_ERA4 := [
 		"text": "Discover Bloom Sampling: send an expedition to the Bloom patches in the far south",
 		"tech": "bloom_sampling"
 	},
-	{
-		"id": "livewire",
-		"text": "Discover Livewire, the gate: {cost} and the three Bloom Lessons",
-		"tech": "livewire"
-	},
+	{"id": "livewire", "text": "Discover Livewire, the gate: {cost} and the three Bloom Lessons", "tech": "livewire"},
 ]

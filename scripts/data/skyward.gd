@@ -56,9 +56,5 @@ const GOALS_FACTORIES := [
 		"id": "south_held",
 		"text": "Hold the south: a Scorcher burning and two Arc Lamps lit in the land south of the Hearth"
 	},
-	{
-		"id": "skyward",
-		"text": "Discover Skyward, the gate: {cost}",
-		"tech": "skyward"
-	},
+	{"id": "skyward", "text": "Discover Skyward, the gate: {cost}", "tech": "skyward"},
 ]

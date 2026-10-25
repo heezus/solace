@@ -57,7 +57,9 @@ func _init() -> void:
 			if a.begins_with("from="):
 				from = a.substr(5)
 		if "era=ironfall" in args:
-			_ironfall_alone(int(args[0]), minutes, out, from if from != "" else "%s/ironfall_start_%d.json" % [out, int(args[0])])
+			_ironfall_alone(
+				int(args[0]), minutes, out, from if from != "" else "%s/ironfall_start_%d.json" % [out, int(args[0])]
+			)
 			return
 		if from != "":
 			_from_livewire_start(int(args[0]), minutes, out, from, "notide" not in args)
@@ -313,7 +315,8 @@ func _ironfall_alone(m: int, minutes: float, out: String, from: String) -> void:
 	wire.probe = func(s): probe.observe(s)
 	wire.watch = {"livewire_start": "livewire_begins"}
 	wire.stop_when_watched = true
-	wire.on_checkpoint = func(_id: String, bot): _write_file("%s/livewire_start_%d.json" % [out, m], RunSave.to_json(RunSave.dump(bot.s)))
+	wire.on_checkpoint = func(_id: String, bot):
+		_write_file("%s/livewire_start_%d.json" % [out, m], RunSave.to_json(RunSave.dump(bot.s)))
 	DirAccess.make_dir_recursive_absolute(out)
 	var r: Dictionary = wire.play_livewire(game, minutes * 60.0)
 	if probe.era == "ironfall":

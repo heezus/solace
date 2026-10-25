@@ -47,6 +47,7 @@ var _steam_cart_at := -1.0
 var _tile_memo := {}
 var _tile_size := -1
 var _own := {}  # the goods the blocking goal owns this decision (_path_goods)
+var _short_ids := {}  # the goods the road to the gate is short of itself, the roots of _own
 
 
 ## Play `game` (an Ironfall start) from here to the Livewire gate, or until `max_seconds` pass.
@@ -402,6 +403,7 @@ func _pick_tile() -> Vector2i:
 
 
 func _decide() -> void:
+	_short_ids = _short_goods()
 	_own = _path_goods()
 	_aim()
 	_flood_reach()
@@ -451,21 +453,33 @@ func _owned(id: String) -> bool:
 	return _own.has(id)
 
 
+## True for a good the road to the gate is itself short of (see _short_goods).
+func _reserved(id: String) -> bool:
+	return _short_ids.has(id)
+
+
+## The goods the road to the gate is still short of: the techs' costs, the Steel's iron and coal, the Bloomeries' ore, and the
+## Copper the Wire asks. Nothing else spends them while they are short.
+func _short_goods() -> Dictionary:
+	var out := {}
+	if s.tech_tree.researched.has(gate):
+		return out
+	var ids := {"iron": true, "coal": true, "iron_ore": true, "steel": true, "copper": true}
+	for tech in Rules.route_to(gate, s.tech_tree.researched, Rules.visible_techs(s.shard_seen)):
+		for id in s.tech_tree.cost_of(tech):
+			ids[id] = true
+	for id in ids:
+		if _gate_short(id) > 0:
+			out[id] = true
+	return out
+
+
 ## The goods the blocking goal owns: what the road to the gate is still short of (Iron, Steel, Coal and the rest of the techs'
 ## costs, the Steel's iron and coal, the Bloomeries' ore and coal), and everything those are made from, down the chain. A works
 ## that makes one of them is never paused and a paused one is started; no later goal spends them (_leaves_route_paid).
 func _path_goods() -> Dictionary:
 	var out := {}
-	if s.tech_tree.researched.has(gate):
-		return out
-	var ids := {"iron": true, "coal": true, "iron_ore": true, "steel": true}
-	for tech in Rules.route_to(gate, s.tech_tree.researched, Rules.visible_techs(s.shard_seen)):
-		for id in s.tech_tree.cost_of(tech):
-			ids[id] = true
-	var todo: Array = []
-	for id in ids:
-		if _gate_short(id) > 0:
-			todo.append(id)
+	var todo: Array = _short_ids.keys()
 	while not todo.is_empty():
 		var id: String = todo.pop_back()
 		if out.has(id):

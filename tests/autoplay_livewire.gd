@@ -143,6 +143,8 @@ func _goal_wants(want: Dictionary) -> void:
 
 func _gate_need(id: String) -> int:
 	var need := super._gate_need(id)
+	if id == "copper" and _livewire_open():
+		need += _wire_short()  # a Crucible may not take the Copper the Wire Mills are short of
 	if id == "coal" and _livewire_open():
 		need += COAL_FOR_ENGINES
 	return need
