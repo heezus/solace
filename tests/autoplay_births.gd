@@ -41,8 +41,8 @@ func raw_short(bot, short: Dictionary) -> bool:
 
 ## True when a pause may save an input: births go on anyway, or fewer than SAVING_PAUSES have, and in a town under SMALL_TOWN Kith
 ## only while nobody is free yet (one pause gives a small town the hand it needs; two would start the wait).
-func may_save(bot, room: bool, saved: int, idle_est: int) -> bool:
-	if room:
+func may_save(bot, births_go: bool, saved: int, idle_est: int) -> bool:
+	if births_go:
 		return true
 	return saved < SAVING_PAUSES and (bot.s.people.kith.size() >= SMALL_TOWN or idle_est == 0)
 
