@@ -14,6 +14,7 @@ extends RefCounted
 
 signal said(message: String)
 
+const Buildings = preload("res://scripts/buildings.gd")
 const Data = preload("res://scripts/data.gd")
 const Codec = preload("res://scripts/save_codec.gd")
 const Fuel = preload("res://scripts/fuel.gd")
@@ -28,6 +29,7 @@ var burnt: Dictionary = {}  # tile -> true: ground burnt clear, which the tide n
 var front: Dictionary = {}  # tile -> the tide time it joins the Bloom
 var hit: Dictionary = {}  # the tile of an overgrown building -> seconds it has been overgrown
 var lost := 0  # buildings the Bloom has taken
+var lost_jobs := 0  # places for workers those buildings had (the measuring tools count the Kith they left jobless)
 var woke_at := -1.0  # the game clock (Seasons.time) when the tide woke, -1 before
 var drawn := 0  # power units the machines draw now, read every Data.TIDE_ETA_SECONDS
 var pace_hold := 0.0  # above 0: seconds per open tile whatever the town draws (a test or a measurement pins the pace)
@@ -263,6 +265,9 @@ func is_held_at(_s, p: Vector2i) -> bool:
 
 func _lose(s, p: Vector2i) -> void:
 	var name: String = Data.BUILDINGS[s.town.built_type(p)]["name"]
+	var taken: Dictionary = s.town.buildings[s.town.building_at[p]]
+	if Buildings.needs_worker(taken):
+		lost_jobs += Buildings.crew_size(taken)
 	s.lose_building(s.town.building_at[p])
 	hit.erase(p)
 	lost += 1
@@ -523,6 +528,7 @@ func to_dict() -> Dictionary:
 		"front": f,
 		"hit": h,
 		"lost": lost,
+		"lost_jobs": lost_jobs,
 		"woke_at": woke_at,
 		"drawn": drawn,
 		"told": Codec.vec_keys(_told),
@@ -541,6 +547,7 @@ func from_dict(d: Dictionary) -> void:
 	for e in d.get("hit", []):
 		hit[Vector2i(int(e[0]), int(e[1]))] = float(e[2])
 	lost = int(d.get("lost", 0))
+	lost_jobs = int(d.get("lost_jobs", 0))
 	woke_at = float(d.get("woke_at", -1.0))
 	drawn = int(d.get("drawn", 0))
 	_pace_clock = 0.0

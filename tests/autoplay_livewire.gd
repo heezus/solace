@@ -25,6 +25,8 @@ const TECH_ORDER := [
 ]
 const WIRE_MILLS := 3
 const GENERATORS := 2
+const FRONT_WARN := 120.0  # seconds: a building the front reaches sooner than this, with no Scorcher in reach, gets one
+const UNVALUED := ["gatherers_hut", "firebreak", "field", "flax_field", "road"]  # buildings the bot lets the Bloom have
 const CORE_RING := 4.0  # tiles from the first Generator within which a core lamp stands
 const CORE_LAMPS := 2  # Arc Lamps beside the engines: the Bloom must not take the power the Scorcher and the lamps run on
 const WIRE_PER_MILL := 60.0  # one more Wire Mill for every this much Wire still short
@@ -210,7 +212,7 @@ func _build_livewire() -> bool:
 		return true
 	if _place_wire_mill():
 		return true
-	if _place_core_lamp():
+	if _place_core_lamp() or _guard_front():
 		return true
 	if _lay_south_poles():
 		return true
@@ -290,6 +292,52 @@ func _clear_hut(suits: Callable, what: String) -> bool:
 			lines.append("%5.0f s    - Gatherer's Hut at %s torn down to make room for %s" % [clock, b["pos"], what])
 			return true
 	return false
+
+
+## The bot plays the tide as a player does: a Scorcher for each building the front reaches in under FRONT_WARN seconds that no
+## Scorcher covers (Tide Watch's times), as many as it takes, if the stores can pay. A building already overgrown counts as at once.
+func _guard_front() -> bool:
+	if not answer_tide or not s.town.unlocked("scorcher") or _poles().is_empty():
+		return false
+	var site := Vector2i(-1, -1)
+	var soonest := FRONT_WARN
+	for b in s.town.buildings:
+		var p: Vector2i = b["pos"]
+		if b["type"] in UNVALUED or _scorcher_covers(p):
+			continue
+		var left: float = 0.0 if s.tide.hit.has(p) else (s.tide.eta[p] - s.tide.time if s.tide.eta.has(p) else INF)
+		if left < soonest or (left == 0.0 and site.x < 0):
+			site = p
+			soonest = left
+	if site.x < 0 or not s.economy.can_afford(s.town.price("scorcher")):
+		return false
+	var from := _front_near(site)
+	var score := func(p):
+		var d := Vector2(p).distance_to(Vector2(site))
+		if not _on_net(p) or d > Data.SCORCH_REACH - 1.0:
+			return -INF
+		return -(Vector2(p).distance_to(Vector2(from)) if from.x >= 0 else d)
+	if _place_best("scorcher", score):
+		marks["scorcher_%d" % _count("scorcher")] = clock
+		lines.append(
+			(
+				"%5.0f s    guard: a Scorcher for the %s at %s (the front: %.0f s)"
+				% [clock, s.town.built_type(site), site, soonest]
+			)
+		)
+		return true
+	return _lay_scorcher_pole(site)
+
+
+func _scorcher_covers(p: Vector2i) -> bool:
+	for b in s.town.buildings:
+		if b["type"] == "scorcher" and Vector2(b["pos"]).distance_to(Vector2(p)) <= Data.SCORCH_REACH:
+			return true
+	return false
+
+
+func _rest_at_cap() -> bool:
+	return not _livewire_open()
 
 
 ## An Arc Lamp on the net beside the first Generator, CORE_LAMPS of them: its light holds the engines, the Poles and the Scorcher's

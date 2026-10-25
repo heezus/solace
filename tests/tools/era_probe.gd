@@ -122,6 +122,7 @@ func begin(name: String, s) -> void:
 		_row["tide_woke_min"] = -1.0
 		_row["lost_before_first_scorcher"] = -1
 		_row["lost_within_20_of_wake"] = -1
+		_row["lost_at_min"] = []  # the minute of each building the Bloom took
 		_row["firebreak_tiles"] = 0
 		_row["pace_every_min"] = []
 		_row["power_zero_with_wood_s"] = 0.0  # seconds a net asked for power and none was given, with Wood in the stores
@@ -400,6 +401,8 @@ func _tide(s) -> void:
 		_row["first_overgrown_min"] = snappedf(t / 60.0, 0.1)
 	if _row["first_lost_min"] < 0.0 and s.tide.lost > 0:
 		_row["first_lost_min"] = snappedf(t / 60.0, 0.1)
+	while _row["lost_at_min"].size() < s.tide.lost:
+		_row["lost_at_min"].append(snappedf(t / 60.0, 0.1))
 	if _row["lost_by_15"] < 0 and t >= LOST_BY:
 		_row["lost_by_15"] = s.tide.lost
 	if _row["lost_within_20_of_wake"] < 0 and s.tide.begun and s.seasons.time - s.tide.woke_at >= WAKE_WINDOW:
