@@ -505,10 +505,11 @@ func _power(s) -> void:
 	_burn_seen = s.economy.burnt_by.duplicate(true)
 
 
-## Livewire only: for each engine (Boiler, Generator, Wheel), Arc Lamp, Scorcher and Pole the tide stands on, what held it or did
-## not, read every sample while it is overgrown: the nearest Arc Lamp (distance, its light, whether it is powered and overgrown itself) and the nearest Scorcher
-## (distance, burning, powered, overgrown), whether the game counts the tile held, and the first Tide Watch warning (seconds ahead
-## of the front, with the minute it came). When the engine goes, the last reading becomes an `engine_losses` entry.
+## Livewire only: for each engine (Boiler, Generator, Wheel), Arc Lamp, Scorcher and Pole the tide stands on, what held it
+## or did not, read every sample while it is overgrown: the nearest Arc Lamp (distance, its light, whether it is powered and
+## overgrown itself), the nearest Scorcher (distance, burning, powered, overgrown), whether the game counts the tile held, and the
+## first Tide Watch warning (seconds ahead of the front, with the minute it came). When the building goes, the last reading becomes
+## an `engine_losses` entry.
 func _watch_engines(s) -> void:
 	var t: float = s.seasons.time - _at
 	var watch: Dictionary = _row["engine_watch"]
