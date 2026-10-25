@@ -103,7 +103,7 @@ func _init() -> void:
 	town.lesson_has = teardown.knows
 	tech_tree.gift_has = starfall.read  # a tech may wait on a gift read or a Lesson learned (Ironfall)
 	tech_tree.lesson_has = teardown.knows
-	tech_tree.deed_has = gate.deed  # the Skyward gate's deeds (Livewire)
+	tech_tree.set_deeds(gate.deed, gate.note)  # the Skyward gate's deeds and why one is not done (Livewire)
 
 
 # --- Map ---------------------------------------------------------------------

@@ -115,6 +115,8 @@ static func style_of(text: String) -> Dictionary:
 		return {"seconds": 0.0, "sticky": true, "key": ""}
 	if text == Data.FOOD_LOW_EVENT % Data.PEOPLE["many"]:
 		return {"seconds": 0.0, "sticky": true, "key": "food"}
+	if text.begins_with(Data.SOUTH_LINES["lost"].split("%")[0]) or text == Data.SOUTH_LINES["held"]:
+		return {"seconds": 10.0, "sticky": false, "key": "south"}  # the south falls and is held again in the same place
 	for k in Data.SEASONS:  # a season's toast stays for the season, and the end of it takes its place
 		if text.begins_with(Data.SEASONS[k]["told"]):
 			return {"seconds": Data.SEASON_LENGTH, "sticky": false, "key": "season"}

@@ -25,6 +25,18 @@ const DEED_NAMES := {
 	"orders_written": "five standing orders written",
 	"south_held": "the south held: a Scorcher burning and two Arc Lamps lit in the south land",
 }
+## The south goal, its toast and the card's words. The deed is checked live, so a Bloom that darkens a lamp un-ticks the goal and
+## says why: "goal_lost" and "now" wrap a goal's or a card's words and the reason, the rest are the reasons.
+const SOUTH_LINES := {
+	"lost": "The south is no longer held: %s",
+	"held": "The south is held again",
+	"goal_lost": "%s (lost: %s)",
+	"now": "%s (now: %s)",
+	"lamps": "%d of %d Arc Lamps lit",
+	"no_scorcher": "no Scorcher",
+	"unpowered": "Scorcher unpowered",
+	"cold": "Scorcher not burning",
+}
 const SKYWARD_EVENT := "skyward_raised"
 const SKYWARD_TITLE := "Skyward"
 const SKYWARD_TEXT := (

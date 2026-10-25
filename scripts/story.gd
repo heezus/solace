@@ -24,10 +24,13 @@ var events: Array = []  # story ids, in the order they happened
 ## The first cairn went up before the Falling Star fell: a run flag, saved, that a future first contact will read.
 var cairn_before_landing := false
 var goals_done: Dictionary = {}  # goal id -> true; goals stay done once met, even after the items are spent
+var south_note := ""  # why the south is not held now (Gate.note), for the goal's words
+var south_lost := false  # the south was held and is not now
 ## True while an era card is up (the owner sets it, never saved): the era after it begins the tick after it is put away.
 var card_up := false
 var _ore_tiles: Dictionary = {}  # tile id -> its positions in the grown land (see _ore)
 var _ore_width := 0
+var _south_was := false  # the south was held at the last update
 
 
 ## True once the story moment `id` has happened.
@@ -90,12 +93,31 @@ func update(s) -> void:
 		for g in list:
 			if not goals_done.has(g["id"]) and goal_met(s, g):
 				goals_done[g["id"]] = true
+	if goal_list() == Data.GOALS_ERA5 and not s.tech_tree.researched.has("skyward"):
+		_hold_south(s)
 	# After the goals, so the era's last one (the Warning read) is ticked while its list is still in force.
 	if s.starfall.ended and s.starfall.pending == "":
 		record(Data.IRONFALL_EVENT)  # the Starfall is over and its card is put away: Ironfall begins
 	if events.has(Data.LIVEWIRE_EVENT) and not card_up and not events.has(Data.LIVEWIRE_BEGUN):
 		record(Data.LIVEWIRE_BEGUN)  # the Wires Hum card is put away: Livewire begins
 		_chart_seam(s)
+
+
+## The south goal is not a latch: Skyward asks for the south held at the moment it is bought (Gate.south_held), so the goal
+## un-ticks when the Bloom or the fuel takes that away, and the log says why.
+func _hold_south(s) -> void:
+	var held: bool = s.gate.south_held()
+	south_note = "" if held else s.gate.note("south_held")
+	if held:
+		if south_lost:
+			s.events.append(Data.SOUTH_LINES["held"])
+		south_lost = false
+	else:
+		goals_done.erase("south_held")
+		if _south_was:
+			south_lost = true
+			s.events.append(Data.SOUTH_LINES["lost"] % south_note)
+	_south_was = held
 
 
 ## The charts lift the fog off the nearest seam nobody has seen, and the log says which way it lies.
@@ -128,6 +150,8 @@ func goal_text(g: Dictionary) -> String:
 		for id in cost:
 			parts.append("%d %s" % [cost[id], Data.ITEMS[id]["name"]])
 		text = text.replace("{cost}", ", ".join(parts))
+	if g["id"] == "south_held" and south_note != "" and not goals_done.has("south_held"):
+		text = (Data.SOUTH_LINES["goal_lost"] if south_lost else Data.SOUTH_LINES["now"]) % [text, south_note]
 	return text
 
 
