@@ -37,6 +37,10 @@ const INPUT_HINTS := {"wire_mill": "Copper comes from the Smelters: keep them ru
 ## building) within POLE_REACH tiles of a pole is on that pole's net: the machine draws from it, the engine feeds it.
 const POLE_LINK := 3.0
 const POLE_REACH := 2.0
+## A Pole stands on any open land: grass, or ground a building clears (forest, clay, flax, berries, grain, riverbed gravel), which it
+## turns to grass. Never on water, rock, ore, the Strange Stone, the Bloom or a built tile. The wire spans a river of up to 2 tiles.
+const POLE_TILES := ["grass", "tree", "clay", "flax", "berry", "grain", "gravel"]
+const POLE_ONLY_LAND := "A Pole stands on open land, not on water, rock or ore"
 ## A machine asks MACHINE_ASK units while it works. An engine gives its `gives` (Data.BUILDINGS): a Water Wheel 2, a Boiler 3 while
 ## lit, a Generator 8 while lit. A net that gives less than its machines ask runs them all at the ratio.
 const MACHINE_ASK := 1
