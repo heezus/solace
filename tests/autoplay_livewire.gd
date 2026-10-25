@@ -328,7 +328,8 @@ func _guard_front() -> bool:
 			)
 		)
 		return true
-	return _lay_scorcher_pole(site)
+	var fits := func(p): return score.call(p) > -INF
+	return _tear_down_for("scorcher", fits) or _clear_hut(fits, "a Scorcher") or _lay_scorcher_pole(site)
 
 
 func _scorcher_covers(p: Vector2i) -> bool:
