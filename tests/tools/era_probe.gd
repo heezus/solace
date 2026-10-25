@@ -123,6 +123,12 @@ func begin(name: String, s) -> void:
 		_row["lost_before_first_scorcher"] = -1
 		_row["lost_within_20_of_wake"] = -1
 		_row["lost_at_min"] = []  # the minute of each building the Bloom took
+		_row["power_given_min_after_scorcher"] = -1  # fewest units the nets gave, from the first Scorcher on (-1: none built)
+		_row["power_share_min_after_scorcher"] = -1.0  # lowest share of what the nets asked that they gave, the same time
+		_row["engines_peak"] = 0  # most engines (Boilers, Generators, Wheels) standing at once
+		_row["engines_min_after_peak"] = 0  # fewest standing after that peak
+		_row["engine_lost_and_back"] = false  # the engines fell below their peak and later stood at it again
+		_row["engines_dipped"] = false
 		_row["firebreak_tiles"] = 0
 		_row["pace_every_min"] = []
 		_row["power_zero_with_wood_s"] = 0.0  # seconds a net asked for power and none was given, with Wood in the stores
@@ -470,6 +476,7 @@ func _zero_note(s, now: float) -> Dictionary:
 func _power(s) -> void:
 	if not s.tide.begun:
 		return
+	_engines(s)
 	var zero := false
 	for n in s.livewire.nets:
 		if n["asks"] > 0 and n["given"] <= 0:
@@ -492,6 +499,38 @@ func _power(s) -> void:
 				by[fuel] = by.get(fuel, 0) + more
 				_row["fuel_burned"][type] = by
 	_burn_seen = s.economy.burnt_by.duplicate(true)
+
+
+## Engines standing, and (once a Scorcher stands) how little power the nets gave: the edge each win is won on.
+func _engines(s) -> void:
+	var engines := 0
+	for b in s.town.buildings:
+		if Data.BUILDINGS[b["type"]]["kind"] == "power":
+			engines += 1
+	if engines >= _row["engines_peak"]:
+		_row["engines_peak"] = engines
+		_row["engines_min_after_peak"] = engines
+		if _row["engines_dipped"]:
+			_row["engine_lost_and_back"] = true
+			_row["engines_dipped"] = false
+	elif engines < _row["engines_min_after_peak"]:
+		_row["engines_min_after_peak"] = engines
+		_row["engines_dipped"] = true
+	elif engines < _row["engines_peak"]:
+		_row["engines_dipped"] = true
+	if _count(s, "scorcher") == 0:
+		return
+	var given := 0
+	var asks := 0
+	for n in s.livewire.nets:
+		given += n["given"]
+		asks += n["asks"]
+	if _row["power_given_min_after_scorcher"] < 0 or given < _row["power_given_min_after_scorcher"]:
+		_row["power_given_min_after_scorcher"] = given
+	if asks > 0:
+		var share := snappedf(float(given) / float(asks), 0.01)
+		if _row["power_share_min_after_scorcher"] < 0.0 or share < _row["power_share_min_after_scorcher"]:
+			_row["power_share_min_after_scorcher"] = share
 
 
 ## The probe as plain data (and back), so a long run can be kept and picked up: the rows so far and the era in progress.

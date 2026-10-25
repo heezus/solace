@@ -338,10 +338,6 @@ func _scorcher_covers(p: Vector2i) -> bool:
 	return false
 
 
-func _rest_at_cap() -> bool:
-	return not _livewire_open()
-
-
 ## An Arc Lamp on the net beside the first Generator, CORE_LAMPS of them: its light holds the engines, the Poles and the Scorcher's
 ## coal, so the town keeps its power when the front reaches it. Before the lamps of the south.
 func _place_core_lamp() -> bool:
