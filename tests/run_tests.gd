@@ -260,9 +260,8 @@ func _init() -> void:
 
 ## A headless player (tests/autoplay_bronze.gd) plays the stone age on a few maps. It should reach Bronze Dawn
 ## in 8 to 25 simulated minutes; data.gd is tuned so it takes about 12 to 16. The game at that moment must match
-## tests/golden.json. It then plays on to its first Bronze, which should come 7 to 21 minutes later (the target is about
-## 10 to 14; chained neighbours run by haulers add a couple of minutes, see the decision log, and births wait for work, so a
-## bot that builds few workshops grows slowly), and the game at that
+## tests/golden.json. It then plays on to its first Bronze, which should come 7 to 19 minutes later (the target is about
+## 10 to 14; chained neighbours run by haulers add a couple of minutes, see the decision log), and the game at that
 ## moment must match tests/golden_bronze.json. The Falling Star follows 7 to 36 minutes after
 ## that: homes ask for more as they grow (page 17), so a whole run is about 45 to 60 minutes by bot.
 func test_pacing_bot() -> void:
@@ -286,8 +285,8 @@ func test_pacing_bot() -> void:
 		check(r["won"], "the bot reaches Bronze Dawn on map %d" % map_seed)
 		check(minutes >= 8.0 and minutes <= 25.0, "map %d takes 8 to 25 minutes (%.1f)" % [map_seed, minutes])
 		check(
-			r["minutes"] >= 7.0 and r["minutes"] <= 21.0,
-			"map %d: the first Bronze takes 7 to 21 minutes more (%.1f)" % [map_seed, r["minutes"]]
+			r["minutes"] >= 7.0 and r["minutes"] <= 19.0,
+			"map %d: the first Bronze takes 7 to 19 minutes more (%.1f)" % [map_seed, r["minutes"]]
 		)
 		check(
 			star >= 7.0 and star <= 36.0,
