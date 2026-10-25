@@ -356,10 +356,12 @@ func _place_core_lamp() -> bool:
 			lamps += 1
 	if lamps >= CORE_LAMPS:
 		return false
-	var score := func(p):
-		var d := Vector2(p).distance_to(Vector2(home))
-		return -d if d <= CORE_RING and _on_net(p) else -INF
-	return _place_best("arc_lamp", score)
+	var beside := func(p): return Vector2(p).distance_to(Vector2(home)) <= CORE_RING and _on_net(p)
+	if _place_best("arc_lamp", func(p): return -Vector2(p).distance_to(Vector2(home)) if beside.call(p) else -INF):
+		return true
+	if not s.economy.can_afford(s.town.price("arc_lamp")):
+		return false
+	return _tear_down_for("arc_lamp", beside) or _clear_hut(beside, "an Arc Lamp")
 
 
 ## Wire Mills on the net, as many as the Wire still short asks for.
@@ -367,8 +369,24 @@ func _place_wire_mill() -> bool:
 	if not s.town.unlocked("wire_mill") or _count("wire_mill") >= _livewire_target("wire_mill") or _poles().is_empty():
 		return false
 	var home := _anchor()
-	var score := func(p): return -Vector2(p).distance_to(Vector2(home)) if _on_net(p) else -INF
+	var target := _south_target()
+	var tip_d := _tip_distance(target)
+	# The ground ahead of the southern chain's last Pole is the chain's: a Wire Mill there boxes the next Pole in.
+	var score := func(p):
+		if not _on_net(p) or Vector2(p).distance_to(Vector2(target)) < tip_d:
+			return -INF
+		return -Vector2(p).distance_to(Vector2(home))
 	return _place_best("wire_mill", score)
+
+
+## How far the southern chain's nearest Pole stands from `target`, or 0 once the chain is given up or has arrived.
+func _tip_distance(target: Vector2i) -> float:
+	if _stuck_poles >= POLE_STUCK:
+		return 0.0
+	var best := INF
+	for q in _poles():
+		best = minf(best, Vector2(q).distance_to(Vector2(target)))
+	return 0.0 if best <= Data.POLE_REACH - 0.5 else best
 
 
 ## The tile the southern net runs to: beside the Coal Mine (or Mine) in the south land nearest the Hearth, or straight south.
