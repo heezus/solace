@@ -252,15 +252,15 @@ func test_a_pole_chain_runs_to_the_coal() -> void:
 		rerolled += 1 if report["attempts"] > 1 else 0
 		var faults := MapSouth.pole_chain_faults(w, strip)
 		t.check(faults.is_empty(), "map %d: %s" % [map_seed, faults])
-	var w := World.new()
-	w.generate(3)
-	w.grow_east()
-	var strip := MapSouth.make(w)
-	var cut := strip.duplicate()
+	var wide := World.new()
+	wide.generate(3)
+	wide.grow_east()
+	var flat := MapSouth.make(wide)
+	var cut := flat.duplicate()
 	for i in cut.size():
-		if floori(float(i) / w.width) < 3:
+		if floori(float(i) / wide.width) < 3:
 			cut[i] = "river"  # a river wider than the wire spans (3 tiles), all the way across
-	t.check(not MapSouth.pole_chain_faults(w, cut).is_empty(), "a wide river across the strip breaks the chain")
+	t.check(not MapSouth.pole_chain_faults(wide, cut).is_empty(), "a wide river across the strip breaks the chain")
 	print("Pole chain: 40 seeds, %d needed a reroll" % rerolled)
 
 
