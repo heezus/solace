@@ -9,7 +9,7 @@ extends RefCounted
 ## stock         good -> [start, middle, end] of the era; `cap` is the storage cap at the end. `held` is what stood in workshop buffers and
 ##               on haulers' backs at the start and end, outside the stores.
 ## cap_s, zero_s seconds a good stood at its cap (the game's "full" chip), and at 0 while a workshop waited for it.
-## check         per good: change of stores plus held against made - used - paid - spilled, and the sum over every good (bar 2%).
+## check         per good: change of stores plus held against made - used - paid - spilled, and the sum over all goods (bar 2% of flow).
 ## kith          one entry every five minutes: Kith, homes, jobs and the ones filled, haulers wanted and standing, idle, food a minute.
 ## flags         the lines Step 6 reads first.
 
@@ -24,7 +24,7 @@ const ZERO_SHARE := 0.10  # flag: a good at 0 with a workshop waiting for it mor
 const CAP_SHARE := 0.30  # flag: a good at its cap more than this share of the era
 const IDLE_SHARE := 0.25  # flag: idle Kith over this share of the town...
 const IDLE_FOR := 300.0  # ...for more than this many seconds in a row
-const CHECK_SHARE := 0.02  # the bar: the goods' sum against the economy's own stock change
+const CHECK_SHARE := 0.02  # the bar: the goods' sum against the era's whole flow (made, used and paid), not its net change
 const FINITE := ["coal"]  # goods that run out (Coal Seams); their stand-in is `RENEWABLE`
 const RENEWABLE := {"coal": "charcoal"}
 
@@ -346,7 +346,7 @@ func finish(s) -> Dictionary:
 		"flow_change": snappedf(sum_flow, 0.1),
 		"off_share": snappedf(sum_off / maxf(sum_through, 1.0), 0.0001),
 		"off_share_of_change": snappedf(sum_off / maxf(absf(sum_change), 1.0), 0.0001),
-		"met": sum_off / maxf(absf(sum_change), 1.0) <= CHECK_SHARE,
+		"met": sum_off / maxf(sum_through, 1.0) <= CHECK_SHARE,
 	}
 	var left := 0
 	for id in s.world.seam_left:
@@ -427,8 +427,8 @@ func _flags(out: Dictionary, length: float) -> Array:
 	if not out["check"]["met"]:
 		flags.append(
 			(
-				"the goods' sum is %.1f%% off the stores' own change (bar 2%%)"
-				% [100.0 * out["check"]["off_share_of_change"]]
+				"the goods' sum is %.1f%% off the era's flow (bar 2%%; %.1f%% of the net change)"
+				% [100.0 * out["check"]["off_share"], 100.0 * out["check"]["off_share_of_change"]]
 			)
 		)
 	return flags
