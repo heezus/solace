@@ -39,6 +39,7 @@ const FIREBREAK_RING := 3  # tiles from a site (the southern mine, a far Generat
 const FIREBREAK_CAP := 60  # Firebreaks the bot lays in all
 const GUARD_LAMP_RANGE := 15.0  # a guard Scorcher is for what a lit Arc Lamp's net can hold: nothing further out than this
 const ISLAND_ENGINES := 2  # Generators the bot adds to a cut-off net it cannot join to the core, in all
+const REHOLD_WAIT := 20.0  # seconds between the south's lamps and Scorcher the gate is short of
 const POLES_FREED := 3  # Gatherer's Huts the bot takes down beside a boxed-in Pole, in all
 const POLE_STUCK := 12  # decisions without a new pole before the bot gives the southern net up
 const ORDER_PLAN := [
@@ -59,6 +60,8 @@ var skyward_at := -1.0
 var _stuck_poles := 0
 var _stuck_scorch_poles := 0
 var _huts_freed := 0
+var _rehold_at := -1000.0
+var _rehold_stuck := 0
 var _island_engines := 0
 var _scorcher_idle := {}  # a Scorcher tile -> the clock when it was first seen with nothing in reach
 var _scorcher_moves := 0
@@ -156,6 +159,9 @@ func _gate_need(id: String) -> int:
 		need += _wire_short()  # a Crucible may not take the Copper the Wire Mills are short of
 	if id == "coal" and _livewire_open():
 		need += COAL_FOR_ENGINES
+	if _rehold_due():  # the lamps and the Scorcher the south lacks are paid for out of what Skyward asks
+		for type in _south_lacks():
+			need += s.town.price(type).get(id, 0)
 	return need
 
 
@@ -212,6 +218,8 @@ func _build_livewire() -> bool:
 	if _place_board():
 		return true
 	if _place_generator():
+		return true
+	if _rehold_south():
 		return true
 	if _lay_hub_pole():
 		return true
@@ -306,6 +314,62 @@ func _chain_goal(target: Vector2i) -> Vector2i:
 				gap = d
 				goal = q
 	return goal
+
+
+## True when Skyward is the only thing left and the south, which the gate asks to be held when it is bought, is not.
+func _rehold_due() -> bool:
+	if not _livewire_open() or s.tech_tree.researched.has(SKYWARD) or s.gate.south_held():
+		return false
+	for tech in Data.TECHS[SKYWARD]["requires"]:
+		if not s.tech_tree.researched.has(tech):
+			return false
+	return true
+
+
+## What the south lacks of the gate's deed: an Arc Lamp for each lit one short of DEED_LAMPS, and a Scorcher when none stands
+## powered (one that has no fuel yet is on its way: the haulers bring it).
+func _south_lacks() -> Array:
+	var lit := 0
+	var scorcher := false
+	for b in s.town.buildings:
+		if not s.gate.in_south(b["pos"]) or not s.town.is_powered(b["pos"]):
+			continue
+		var kind: String = Data.BUILDINGS[b["type"]]["kind"]
+		if kind == "arc_lamp" and not s.tide.is_overgrown_at(b["pos"]):
+			lit += 1
+		elif kind == "scorcher":
+			scorcher = true
+	var out: Array = []
+	for i in maxi(Data.DEED_LAMPS - lit, 0):
+		out.append("arc_lamp")
+	if not scorcher:
+		out.append("scorcher")
+	return out
+
+
+## The gate is bought with the south held, and the Bloom may have taken what held it: lamps and a Scorcher go up again on a net that
+## has an engine, nearest the Hearth, or a Pole chain runs there from the live net first. Nothing else is built meanwhile.
+func _rehold_south() -> bool:
+	if not _rehold_due() or clock - _rehold_at < REHOLD_WAIT:
+		return false
+	var lacks := _south_lacks()
+	if lacks.is_empty():
+		return false
+	var live := func(p):
+		if not s.gate.in_south(p) or not _on_net(p) or s.tide.grown.has(p):
+			return -INF
+		return -Vector2(p).distance_to(Vector2(s.world.camp_pos))
+	for type in lacks:
+		if s.town.unlocked(type) and _place_best(type, live):
+			_rehold_at = clock
+			lines.append("%5.0f s    south re-held: %s" % [clock, Data.BUILDINGS[type]["name"]])
+			return true
+	if _rehold_stuck >= POLE_STUCK:
+		return false
+	var edge: Vector2i = s.world.camp_pos + Vector2i(0, Data.SOUTH_ROWS_BELOW_HEARTH + 1)
+	var made := _lay_pole_toward(_chain_goal(edge), "the Pole to the south")
+	_rehold_stuck = 0 if made > 0 else _rehold_stuck + (1 if made < 0 else 0)
+	return made > 0
 
 
 ## A first Pole beside the Generator, so the net has a heart.
@@ -464,7 +528,17 @@ func _lay_south_poles() -> bool:
 		return false
 	if _count("arc_lamp") >= _livewire_target("arc_lamp") and _count("scorcher") >= _livewire_target("scorcher"):
 		return false
-	var target := _chain_goal(_south_target())
+	var made := _lay_pole_toward(_chain_goal(_south_target()), "the next Pole south")
+	if made > 0:
+		_stuck_poles = 0
+	elif made < 0:
+		_stuck_poles += 1
+	return made > 0
+
+
+## One Pole from the live net toward `target`: 1 when laid (or a Hut taken down for it), 0 when there is nothing to do (the net is
+## there, or the stores cannot pay), -1 when no ground is free for the next one.
+func _lay_pole_toward(target: Vector2i, what: String) -> int:
 	var from := Vector2i(-1, -1)
 	var from_d := INF
 	for q in _poles_on(true):
@@ -473,7 +547,7 @@ func _lay_south_poles() -> bool:
 			from = q
 			from_d = d
 	if from_d <= Data.POLE_REACH - 0.5:
-		return false  # the net is there
+		return 0  # the net is there
 	var score := func(p):
 		var d := Vector2(p).distance_to(Vector2(from))
 		if d < 1.5 or d > Data.POLE_LINK:
@@ -481,16 +555,13 @@ func _lay_south_poles() -> bool:
 		var left := Vector2(p).distance_to(Vector2(target))
 		return -INF if left >= from_d else -left
 	if _place_best("power_pole", score):
-		_stuck_poles = 0
-		return true
+		return 1
 	if not s.economy.can_afford(s.town.price("power_pole")):
-		return false
+		return 0
 	var fits := func(p): return score.call(p) > -INF
-	if _tear_down_for("power_pole", fits) or _clear_hut(fits, "the next Pole south"):
-		_stuck_poles = 0
-		return true
-	_stuck_poles += 1
-	return false
+	if _tear_down_for("power_pole", fits) or _clear_hut(fits, what):
+		return 1
+	return -1
 
 
 ## A cut-off net with something on it that the bot cannot join to the core (the chain gave up): a Generator beside its Poles, if the

@@ -22,6 +22,7 @@ var story_has: Callable = func(_id): return false  # (String) -> bool: has that 
 var gift_has: Callable = func(_id): return true  # (String) -> bool: is that Lumen gift (a glyph set) read? Set by the owner
 var lesson_has: Callable = func(_id): return true  # (String) -> bool: is that Lesson learned? Set by the owner
 var deed_has: Callable = func(_id): return true  # (String) -> bool: is that gate deed done (scripts/gate.gd)? Set by the owner
+var deed_note: Callable = func(_id): return ""  # (String) -> String: why a deed is not done, in a few words ("" for none)
 var _economy: Economy
 var _hidden_shown: Callable  # () -> bool: true once hidden techs are on show (the Strange Stone was clicked)
 var _extra_discount: Callable  # () -> float: a share (0 to 1) off every tech, from what stands in the town; may be unset
@@ -94,6 +95,12 @@ func _discovered(tech: String, shown: bool) -> bool:
 	return any.is_empty() or any.any(func(r): return _vis.has(r))
 
 
+## Where the town reports its deeds (scripts/gate.gd): whether one is done and, when it is not, why.
+func set_deeds(has: Callable, note: Callable) -> void:
+	deed_has = has
+	deed_note = note
+
+
 ## The gift a tech needs read, the Lessons it needs learned and the deeds it needs done (`gift`, `lessons`, `deeds`) that are not
 ## yet, as the names to show ("the Shardlight gift", "the Spore sample Lesson", "five standing orders written"). They come from
 ## the Lumen, the Bench and the town, not from other techs.
@@ -107,7 +114,8 @@ func open_needs(tech: String) -> Array:
 			out.append("the %s Lesson" % Data.LESSONS[id]["name"])
 	for id in def.get("deeds", []):
 		if not deed_has.call(id):
-			out.append(Data.DEED_NAMES[id])
+			var why: String = deed_note.call(id)
+			out.append(Data.SOUTH_LINES["now"] % [Data.DEED_NAMES[id], why] if why != "" else Data.DEED_NAMES[id])
 	return out
 
 
