@@ -30,13 +30,14 @@ func show_for(b: Dictionary) -> void:
 		return
 	var f := state.starfall
 	var now := (
-		"%s|%s|%s|%s|%s|%s|%s"
+		"%s|%s|%s|%s|%s|%s|%s|%s"
 		% [
 			f.copied,
 			f.guesses,
 			f.locked,
 			f.guests or f.trust >= Data.CONTEXT_TRUST,
 			f.answered.size(),
+			f.pending,
 			f.roads,
 			f.road_queue
 		]
@@ -72,7 +73,10 @@ func show_for(b: Dictionary) -> void:
 				add_child(_row(g, f.locked.has(gset["id"])))
 	var end: Vector2i = f.progress(Data.ENDING_SET)
 	if end.x == end.y and not f.locked.has(Data.ENDING_SET) and not f.may_end():
-		add_child(_wrapped(Data.WARNING_NEEDS, Ui.TEXT_DIM))
+		if f.warning_right():
+			add_child(_wrapped(Data.WARNING_RIGHT_WAITING % [f.questions_left(), Data.MOMENT_ORDER.size()], Ui.GOOD))
+		else:
+			add_child(_wrapped(Data.WARNING_NEEDS, Ui.TEXT_DIM))
 	if f.locked.has("name") and f.wreck_has_more():
 		add_child(_wrapped(Data.WALL_WRECK_HINT, Ui.TEXT_DIM))
 	add_child(_wrapped(Data.WALL_HINT, Ui.TEXT_DIM))

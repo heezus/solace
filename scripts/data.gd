@@ -629,6 +629,7 @@ const LEAN_NEIGHBOURS := DataStarfall.LEAN_NEIGHBOURS
 const LEANS := DataStarfall.LEANS
 const WARNING_LINE := DataStarfall.WARNING_LINE
 const WARNING_NEEDS := DataStarfall.WARNING_NEEDS
+const WARNING_RIGHT_WAITING := DataStarfall.WARNING_RIGHT_WAITING
 const BLOOM_LINE := DataStarfall.BLOOM_LINE
 const BLOOM_SIGHT := DataStarfall.BLOOM_SIGHT
 const BLOOM_DISTANCE := DataStarfall.BLOOM_DISTANCE

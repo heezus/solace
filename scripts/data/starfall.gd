@@ -642,6 +642,12 @@ const WARNING_LINE := (
 	"The three marks fit. They mean: Hunger, Spread, Danger. "
 	+ "The strangers did not come to live here. They came to hide."
 )
+## On the Wall once the Warning's three marks are right and the strangers' questions are still open: a right answer never
+## looks like a wrong one. Filled with the questions left and the questions asked in all.
+const WARNING_RIGHT_WAITING := (
+	"Right. The strangers go quiet at these marks: "
+	+ "they will speak of them once their questions are answered (%d of %d left)."
+)
 const WARNING_NEEDS := "The Kith cannot read the Warning until they have answered what the strangers asked."
 const BLOOM_LINE := "Far to the east, at the edge of the fog, something is growing that no one planted."
 const BLOOM_SIGHT := 3  # how much fog the Bloom sign lifts around it

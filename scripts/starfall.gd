@@ -388,6 +388,23 @@ func check() -> bool:
 	return got
 
 
+## How many of the strangers' questions (and road cards) still stand between the Kith and the Warning, at least 1 while
+## `may_end` is false and never more than the questions in all.
+func questions_left() -> int:
+	var left := (
+		Data.MOMENT_ORDER.size() - answered.size() + road_queue.size() + (1 if pending.begins_with("road_") else 0)
+	)
+	return clampi(left, 1, Data.MOMENT_ORDER.size())
+
+
+## True when every mark of the Warning is on the Wall with its right word set.
+func warning_right() -> bool:
+	for g in Data.GLYPH_SETS.values().filter(func(x): return x["id"] == Data.ENDING_SET)[0]["glyphs"]:
+		if not copied.has(g) or guesses.get(g, "") != Data.GLYPHS[g]["word"]:
+			return false
+	return true
+
+
 ## The Warning cannot be read until the strangers' three questions are answered and none waits on the player.
 func may_end() -> bool:
 	return pending == "" and road_queue.is_empty() and answered.size() == Data.MOMENT_ORDER.size()
