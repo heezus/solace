@@ -302,6 +302,23 @@ func _queue_and_forges(s) -> void:
 				break
 
 
+## The research queue empty before the era's gate is learned, and a Forge paused while a queued tech lacks Steel: the two ways the
+## metal's road has stood still for the bot's own doing.
+func _queue_and_forges(s) -> void:
+	var gate := "livewire" if era == "ironfall" else "skyward"
+	if s.tech_tree.queue.is_empty() and not s.tech_tree.researched.has(gate):
+		_row["queue_empty_s"] += SAMPLE
+	var lacks := false
+	for tech in s.tech_tree.queue:
+		if s.tech_tree.cost_of(tech).get("steel", 0) > s.economy.inv.get("steel", 0):
+			lacks = true
+	if lacks:
+		for b in s.town.buildings:
+			if b["type"] == "forge" and b["paused"]:
+				_row["forge_paused_steel_wanted_s"] += SAMPLE
+				break
+
+
 ## Add a second to every building in `now`'s streak in `streaks`, drop the ones that stopped, and keep the longest in `_row[key]`
 ## (and in `_row[key + "_what"]`, the building's type and status when that streak set it).
 ## With `count`, each streak that ends adds one to `_row[count]` (waits that ended, for the mean wait per pickup).
