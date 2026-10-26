@@ -109,6 +109,9 @@ func begin(name: String, s) -> void:
 		"fuel_starved_s": 0.0,
 		"fuel_starved_longest_s": 0.0,
 		"wood_short_s": 0.0,
+		"research_wait_head_s": 0.0,  # seconds the head of the research queue had its requirements and not its materials
+		"research_wait_all_s": 0.0,  # seconds the queue was not empty and nothing in it could be paid for yet
+		"research_wait_by": {},  # the same head seconds, by tech
 		"depots_every_5_min": [],
 		"town_every_5_min": [],
 	}
@@ -244,6 +247,7 @@ func _sample(s) -> void:
 			fuelless[b["pos"]] = "%s: %s" % [b["type"], status]
 	if s.economy.inv.get("wood", 0) < 10:
 		_row["wood_short_s"] += SAMPLE
+	_research_wait(s)
 	if era == "ironfall" or era == "livewire":
 		_queue_and_forges(s)
 	_keep_streaks(_streak, waiting, "hauler_wait_longest_s", "hauler_waits")
@@ -293,6 +297,22 @@ func _town(s, t: float) -> Dictionary:
 		"overgrown": s.tide.hit.size() if era == "livewire" else 0,
 		"lost": s.tide.lost,
 	}
+
+
+## Seconds a tech in the queue stood ready (its requirements met) with its materials not in the stores: what research costs in time.
+func _research_wait(s) -> void:
+	var tt = s.tech_tree
+	if tt.queue.is_empty():
+		return
+	var head: String = tt.queue[0]
+	var head_waits: bool = tt.requirements_met(head) and not s.economy.can_afford(tt.cost_of(head))
+	if head_waits:
+		_row["research_wait_head_s"] += SAMPLE
+		_row["research_wait_by"][head] = _row["research_wait_by"].get(head, 0.0) + SAMPLE
+	for tech in tt.queue:
+		if tt.can_research(tech):
+			return
+	_row["research_wait_all_s"] += SAMPLE
 
 
 ## The research queue empty before the era's gate is learned, and a Forge paused while a queued tech lacks Steel: the two ways the
