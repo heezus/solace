@@ -12,6 +12,7 @@ const Buildings = preload("res://scripts/buildings.gd")
 const Work = preload("res://scripts/work.gd")
 const Fuel = preload("res://scripts/fuel.gd")
 const Hands = preload("res://scripts/hands.gd")
+const Bonuses = preload("res://scripts/bonuses.gd")
 const GrowthNote = preload("res://scripts/growth_note.gd")
 const Steam = preload("res://scripts/steam.gd")
 const StoreRest = preload("res://scripts/store_rest.gd")
@@ -223,12 +224,16 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 		else:
 			b["status"] = Steam.shed_status(s, def)
 			if def["kind"] == "arc_lamp":
-				b["status"] = Data.ARC_LIT % def["light"] if s.town.is_powered(b["pos"]) else Data.ARC_DARK
+				b["status"] = (Data.ARC_LIT % def["light"] if s.town.is_powered(b["pos"]) else Data.ARC_DARK)
 		return
 	if def.has("makes"):
 		Work.choose_tool(s, b)
 	if b["paused"]:
 		s.town.set_status(b, "Paused: its %s is free for other jobs" % s.people.building_job(b), "Paused")
+		return
+	if def.get("lit", false) and not Bonuses.lit(s, b["pos"]):  # a Grove or a Shardwright out of shardlight (Data.LUMEN)
+		var radius := int(Data.SHARDLIGHT_RADIUS)
+		s.town.set_status(b, Data.LUMEN["needs_light_status"] % [radius, radius], Data.LUMEN["needs_light"])
 		return
 	if not Buildings.is_staffed(b):
 		if s.people.held_for_haulers():
@@ -261,6 +266,9 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 	if not s.people.worker_home(b):
 		b["status"] = "%s walking here" % s.people.title_of(s.people.kith[b["worker"]])
 		return
+	if def.get("mends", false):  # a Healing House: the Mender's help is in Buildings.mender_cover, there is no cycle
+		b["status"] = Data.LUMEN["mending"] % int(Data.LUMEN["mender_radius"])
+		return
 	if s.livewire.is_held(b) and b["progress"] <= 0.0:
 		s.town.set_status(b, Data.ORDER_PAUSED_STATUS, Data.ORDER_PAUSED_ALERT)  # a standing order: the job is done, so it waits
 		return
@@ -286,7 +294,7 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 			"to_home":
 				b["status"] = "Carrying %s home" % Data.ITEMS[k["carry"].keys()[0]]["name"]
 			"to_depot":
-				b["status"] = "Carrying %s to the stockpile" % Data.ITEMS[k["carry"].keys()[0]]["name"]
+				b["status"] = ("Carrying %s to the stockpile" % Data.ITEMS[k["carry"].keys()[0]]["name"])
 			"forage_out", "forage_pick", "forage_back":
 				b["status"] = Data.FORAGE_STATUS
 			"home":

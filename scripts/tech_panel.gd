@@ -13,6 +13,7 @@ const Ui = preload("res://scripts/ui.gd")
 const Rules = preload("res://scripts/rules.gd")
 const TechBoard = preload("res://scripts/tech_board.gd")
 const TechNextView = preload("res://scripts/tech_next_view.gd")
+const LumenView = preload("res://scripts/lumen_view.gd")
 const Ranks = preload("res://scripts/ranks.gd")
 
 const BG := Ui.PANEL
@@ -23,6 +24,9 @@ const STRIP_SIDE_W := 330.0  # its right column: needs, leads to, route
 var state: Sim
 var board: TechBoard
 var next_view: TechNextView
+var lumen: LumenView  # the Lumen tab's four cards (Data.LUMEN)
+var lumen_tab: Button
+var lumen_on := false  # the Lumen tab is the one showing
 var view := "next"  # "next": What to learn next; "all": the whole board
 var counter: Label
 var title: Label
@@ -68,6 +72,11 @@ func setup(game: Sim) -> void:
 		tab.pressed.connect(func(): _pick_era(which))
 		head.add_child(tab)
 		era_buttons[e] = tab
+	lumen_tab = Ui.button(Data.LUMEN["tab"])  # and the Lumen's, once the strangers have come
+	lumen_tab.toggle_mode = true
+	lumen_tab.custom_minimum_size = Vector2(0, 26)
+	lumen_tab.pressed.connect(_pick_lumen)
+	head.add_child(lumen_tab)
 	counter = Ui.label("", Ui.MIN_TEXT)
 	counter.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	counter.add_theme_color_override("font_color", Ui.TEXT_DIM)
@@ -129,6 +138,9 @@ func setup(game: Sim) -> void:
 	v.add_child(next_view)
 	next_view.setup(state)
 	next_view.chosen.connect(_on_card)
+	lumen = LumenView.new()
+	v.add_child(lumen)
+	lumen.setup(state)
 	board = TechBoard.new()
 	v.add_child(board)
 	board.setup(state)
@@ -233,10 +245,23 @@ func _pick_era(e: int) -> void:
 		refresh()
 		return
 	era_chosen = true
+	lumen_on = false
+	_apply_view(view)
 	board.set_era(e)
 	selected = ""
 	previewed = ""
 	rows_key = ""
+	refresh()
+
+
+## The player picked the Lumen tab (open once the strangers have come): from then on the panel keeps it.
+func _pick_lumen() -> void:
+	if not state.starfall.arrived():
+		refresh()
+		return
+	era_chosen = true
+	lumen_on = true
+	_apply_view(view)
 	refresh()
 
 
@@ -263,12 +288,17 @@ func _pick_view(which: String) -> void:
 ## Show one of the two views: "next" (What to learn next) or "all" (the whole board, with its queue, ready row and strip).
 func _apply_view(which: String) -> void:
 	view = which
-	var whole := view == "all"
+	var whole := view == "all" and not lumen_on
 	board.visible = whole
-	next_view.visible = not whole
+	next_view.visible = not whole and not lumen_on
+	lumen.visible = lumen_on
 	detail.visible = whole
 	for b in board_buttons:
 		b.visible = whole
+	for b in view_buttons.values():
+		b.visible = not lumen_on
+	counter.visible = not lumen_on
+	explain.visible = not lumen_on
 	explain.text = (
 		"Brass lines: needs. Moss lines: leads to. Click to discover or queue. Drag to move, wheel to zoom, F to fit."
 		if whole
@@ -330,9 +360,12 @@ func refresh() -> void:
 	var ready_here := ready_now.filter(func(t): return t in mine).size()
 	counter.text = Data.COUNTER % [done, seen, ready_here]
 	title.text = Data.BOARD_TITLE % Data.ERAS[board.era]["name"]
+	lumen_tab.button_pressed = lumen_on
+	lumen_tab.disabled = not state.starfall.arrived()
+	lumen_tab.tooltip_text = (Data.LUMEN["tab_tip"] if state.starfall.arrived() else Data.LUMEN["tab_locked"])
 	for e in era_buttons:
 		var tab: Button = era_buttons[e]
-		tab.button_pressed = e == board.era
+		tab.button_pressed = e == board.era and not lumen_on
 		tab.disabled = not _era_open(e)
 		tab.tooltip_text = (
 			Data.ERA_TAB_TIP % Data.ERAS[e]["name"]
@@ -349,11 +382,16 @@ func refresh() -> void:
 		var c: Dictionary = stock_chips[id]
 		c["box"].visible = state.economy.seen.has(id)
 		c["count"].text = str(state.economy.inv.get(id, 0))
-	queue_row.visible = view == "all" or not state.tech_tree.queue.is_empty()  # over the cards, only when it holds something
+	# over the cards, the queue shows only when it holds something
+	queue_row.visible = not lumen_on and (view == "all" or not state.tech_tree.queue.is_empty())
 	var key := "%s|%s|%s" % [state.tech_tree.queue, ready_now, state.tech_tree.goal]
 	if key != rows_key:
 		rows_key = key
 		_fill_queue()
+	if lumen_on:
+		title.text = Data.LUMEN["title"]
+		lumen.refresh()
+		return
 	if view == "next":
 		next_view.refresh(board.era)
 		return
@@ -410,7 +448,7 @@ func _show_frontier(ready_now: Array) -> void:
 	var names: Array = ready_now.map(func(t): return Data.TECHS[t]["name"])
 	strip["title"].text = "Choose a discovery"
 	strip["title"].add_theme_color_override("font_color", Ui.TEXT)
-	strip["state"].text = "Ready now: " + ", ".join(names) if not names.is_empty() else Data.STRIP_NONE
+	strip["state"].text = ("Ready now: " + ", ".join(names) if not names.is_empty() else Data.STRIP_NONE)
 	strip["state"].text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	strip["state"].clip_text = true
 	strip["state"].tooltip_text = strip["state"].text
@@ -459,7 +497,7 @@ func _show_tech(tech: String) -> void:
 	strip["cost"].text = (
 		Data.TECH_UNBUILT
 		if unbuilt
-		else "Research (have/need): " + Ui.progress_text(state.economy.inv, state.tech_tree.cost_of(tech), 99)
+		else ("Research (have/need): " + Ui.progress_text(state.economy.inv, state.tech_tree.cost_of(tech), 99))
 	)
 	var researched: bool = state.tech_tree.researched.has(tech)
 	_show_prices({} if unbuilt else (Ranks.next_cost(state, tech) if researched else state.tech_tree.cost_of(tech)))
@@ -476,7 +514,7 @@ func _show_tech(tech: String) -> void:
 	if Ranks.has_ranks(tech):
 		var r := Ranks.rank(state, tech)
 		strip["cost"].text += (
-			"     " + Data.RANK_LINE % [Ranks.effect_text(tech), Data.RANK_NAMES[r] if r > 0 else Data.RANK_NONE]
+			"     " + (Data.RANK_LINE % [Ranks.effect_text(tech), Data.RANK_NAMES[r] if r > 0 else Data.RANK_NONE])
 		)
 		if not Ranks.next_cost(state, tech).is_empty():
 			strip["cost"].text += (" · next: " + Ui.progress_text(state.economy.inv, Ranks.next_cost(state, tech), 99))
@@ -497,7 +535,7 @@ func _show_tech(tech: String) -> void:
 	b.visible = not unbuilt and (not researched or not Ranks.next_cost(state, tech).is_empty())
 	b.disabled = false
 	Ui.action_button(b, state.tech_tree.can_research(tech))
-	b.text = Data.DISCOVER_BUTTON % t["name"] if state.tech_tree.can_research(tech) else Data.QUEUE_BUTTON
+	b.text = (Data.DISCOVER_BUTTON % t["name"] if state.tech_tree.can_research(tech) else Data.QUEUE_BUTTON)
 	if state.tech_tree.goal == tech:
 		b.text = Data.QUEUED
 	if state.tech_tree.researched.has(tech) and b.visible:

@@ -3,7 +3,8 @@ extends RefCounted
 
 ## kind: "camp" | "house" | "road" | "bridge" | "field" | "depot" | "gatherer" | "processor" | "power" | "aura" | "cairn"
 ##   | "shed" (a Cart Shed) | "tower" (a Watchtower) | "wall" (the Glyph Wall)
-##   | "refuge" (the Lumen Camp, the shared shrine, the Guard Post) | "bench" (the Teardown Bench) | "barrel" (the Rain Barrel)
+##   | "lantern" (the Shard Lantern) | "refuge" (the Lumen Camp, the shared shrine, the Guard Post) | "bench" (the Teardown Bench)
+##   | "barrel" (the Rain Barrel)
 ## A building with an `event` (and no tech) opens when that story event has happened (Data.STORY_EVENTS): the era of the
 ## Lumen has no research to gate it, and the card stays off the build bar until then.
 ## A "field" with `crop` "flax" sows flax instead of grain (World.flax_fields); it yields fiber as wild flax does.
@@ -806,12 +807,69 @@ const BUILDINGS := {
 		"A watch on the strangers. The Kith near it work a little faster, and the strangers trust the Kith less while it stands.",
 		"status": "The Kith keep watch.",
 	},
+	"shard_lantern":
+	{
+		"name": "Shard Lantern",
+		"kind": "lantern",
+		"tech": "",
+		"lumen": "light",
+		"cost": {"stone": 10, "brick": 10, "bronze": 4},
+		"color": Color("caf0f8"),
+		"desc":
+		"Hangs shardlight 4 tiles round. Gatherers in it work 25% faster, and a Grove or a Shardwright can work there. No worker.",
+		"status": "Its shardlight reaches 4 tiles.",
+	},
+	"healing_house":
+	{
+		"name": "Healing House",
+		"kind": "processor",
+		"job": "Mender",
+		"tech": "",
+		"lumen": "body",
+		"cost": {"wood": 20, "brick": 10, "fiber": 10},
+		"mends": true,
+		"color": Color("b9d9b0"),
+		"desc":
+		"A Mender tends the sick and the tools. Homes within 6 tiles have births 20% sooner, and tools used there last 40% longer.",
+	},
+	"starfruit_grove":
+	{
+		"name": "Starfruit Grove",
+		"kind": "processor",
+		"job": "Grower",
+		"tech": "",
+		"lumen": "growth",
+		"cost": {"wood": 20, "stone": 10},
+		"in": {},
+		"out": {"starfruit": 1},
+		"time": 8.5,
+		"lit": true,
+		"color": Color("f2c14e"),
+		"desc": "Grows Starfruit, a food worth two berries, but only in shardlight (the Cairn's or a Lantern's).",
+	},
+	"shardwright":
+	{
+		"name": "Shardwright",
+		"kind": "processor",
+		"job": "Shardwright",
+		"tech": "",
+		"lumen": "craft",
+		"cost": {"stone": 30, "brick": 20, "bronze": 6},
+		"in": {"rope": 2, "bronze": 1},
+		"out": {"shardwork": 1},
+		"time": 10.0,
+		"lit": true,
+		"color": Color("9fd8e8"),
+		"desc":
+		"Binds Rope and Bronze with shard into Shardwork, but only in shardlight. Workshops within its light work 25% faster.",
+	},
 }
 
 ## The build bar's tabs, in order. Craft by hand has its own small group beside them.
 const BUILD_TABS := {
-	"Homes": ["dwelling"],
-	"Gathering": ["gatherers_hut", "field", "flax_field", "fishing_weir", "rain_barrel", "beast_pen"],
+	"Homes": ["dwelling", "healing_house"],
+	"Gathering":
+	["gatherers_hut", "field", "flax_field", "fishing_weir", "rain_barrel", "beast_pen", "starfruit_grove"],
 	"Workshops":
 	[
 		"tool_bench",
@@ -824,7 +882,8 @@ const BUILD_TABS := {
 		"generator",
 		"shard_dynamo",
 		"scorcher",
-		"grindstone"
+		"grindstone",
+		"shardwright"
 	],
 	"Metal": ["mine", "coal_mine", "smelter", "crucible", "bloomery", "forge", "wire_mill", "factory_floor"],
 	"Logistics":
@@ -856,7 +915,8 @@ const BUILD_TABS := {
 		"teardown_bench",
 		"shard_lamp",
 		"order_board",
-		"arc_lamp"
+		"arc_lamp",
+		"shard_lantern"
 	],
 }
 
@@ -912,6 +972,10 @@ const BUILD_ORDER := [
 	"arc_lamp",
 	"scorcher",
 	"firebreak",
+	"shard_lantern",
+	"healing_house",
+	"starfruit_grove",
+	"shardwright",
 ]
 
 ## Output a building holds before it stops, when nobody hauls it away.

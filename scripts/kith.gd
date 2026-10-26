@@ -28,6 +28,7 @@ const Buildings = preload("res://scripts/buildings.gd")
 const Codec = preload("res://scripts/save_codec.gd")
 const Data = preload("res://scripts/data.gd")
 const Economy = preload("res://scripts/economy.gd")
+const Mender = preload("res://scripts/mender.gd")
 const Pathing = preload("res://scripts/pathing.gd")
 const Research = preload("res://scripts/research.gd")
 const World = preload("res://scripts/world.gd")
@@ -45,7 +46,7 @@ var births := 0  # people named so far, for the next name
 var grow_timer := 0.0
 var starve_timer := 0.0
 var idle_now := 0  # Kith with no work, as the Sim counted them this tick (Hauling.idle_kith): births wait while they are a fifth
-var gift: Callable = func(_set_id: String) -> bool: return false  # (set id) -> true once that glyph set is read (Starfall)
+var twin: Callable = func(_set_id: String) -> bool: return false  # (set id) -> true while that refused gift's Kith twin is lit (Starfall)
 ## () -> the haulers the depots want (Hauling.total_needed): a workshop is staffed only while that many are left in the pool.
 var hauler_reserve: Callable = func() -> int: return 0
 ## (depot) -> haulers it has beyond what it wants (Hauling.surplus): a workshop takes its hand from the depot with the most spare.
@@ -112,8 +113,14 @@ func _next_name() -> String:
 
 ## Seconds between births. Storytelling shortens it.
 func grow_time() -> float:
-	var healed: float = Data.HEALER_GROW if gift.call("body") else 1.0  # the Lumen Healer's leaves
+	var healed: float = 1.0 - (1.0 - Data.HEALER_GROW) * mender_share()  # the Healing House's leaves
 	return Data.GROW_TIME * (Data.STORYTELLING_GROW if _research.unlocked("storytelling") else 1.0) * healed
+
+
+## 0 to 1: how much of the Healer's help the homes have. The Bonesetter's rule (the Kith's own twin of the gift) reaches all of
+## them; a staffed Healing House reaches the homes within its radius (Buildings.mender_cover).
+func mender_share() -> float:
+	return 1.0 if twin.call("body") else Mender.cover(_town)
 
 
 ## True while births wait for work: a fifth of the town or more has nothing to do.
@@ -393,7 +400,7 @@ func wear(b: Dictionary) -> void:
 	var k: Dictionary = kith[b["worker"]]
 	if k["tool"] > 0:
 		var id := tool_of(k)
-		k["wear_acc"] = float(k.get("wear_acc", 0.0)) + (Data.HEALER_WEAR if gift.call("body") else 1.0)
+		k["wear_acc"] = (float(k.get("wear_acc", 0.0)) + 1.0 - (1.0 - Data.HEALER_WEAR) * mender_share())
 		if k["wear_acc"] >= 1.0:
 			k["wear_acc"] -= 1.0
 			k["tool"] -= 1
@@ -520,7 +527,7 @@ func round_trip(from: Vector2i, to: Vector2i) -> float:
 		return -1.0
 	var secs := 0.0
 	for i in range(1, path.size()):
-		secs += Vector2(path[i - 1]).distance_to(Vector2(path[i])) * _pathing.walk_cost(path[i]) / Data.KITH_SPEED
+		secs += (Vector2(path[i - 1]).distance_to(Vector2(path[i])) * _pathing.walk_cost(path[i]) / Data.KITH_SPEED)
 	return secs * 2.0
 
 
@@ -548,7 +555,7 @@ func trip_info(p: Vector2i) -> Dictionary:
 		return {"ok": false, "tiles": 0, "seconds": 0.0, "depot": depot}
 	var secs := 0.0
 	for i in range(1, path.size()):
-		secs += Vector2(path[i - 1]).distance_to(Vector2(path[i])) * _pathing.walk_cost(path[i]) / Data.KITH_SPEED
+		secs += (Vector2(path[i - 1]).distance_to(Vector2(path[i])) * _pathing.walk_cost(path[i]) / Data.KITH_SPEED)
 	return {"ok": true, "tiles": path.size() - 1, "seconds": secs * 2.0, "depot": depot}
 
 

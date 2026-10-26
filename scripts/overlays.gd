@@ -322,9 +322,29 @@ static func ghost_text(type: String, err: String) -> String:
 	return err
 
 
+## Lumen reach, drawn while one is being placed: a ring round every source of shardlight (the Cairn, each Lantern) and round the
+## Lantern being placed, where a Grove or a Shardwright can work; a Healing House shows how far its Mender reaches.
+static func lumen_rings(ci: CanvasItem, s, type: String, p: Vector2i) -> void:
+	var k := Art.ui_k
+	if type == "healing_house":
+		Art.dashed_circle(
+			ci, center(p), Data.LUMEN["mender_radius"] * TILE, Color("b9d9b0", 0.8), 2.0 * k, 8.0 * k, 6.0 * k
+		)
+	elif type == "shard_lantern" or Data.BUILDINGS[type].get("lit", false):
+		var rings: Array = s.town.buildings.filter(func(b): return b["type"] in ["shard_cairn", "shard_lantern"])
+		var spots: Array = rings.map(func(b): return b["pos"])
+		if type == "shard_lantern":
+			spots.append(p)
+		for at in spots:
+			Art.dashed_circle(
+				ci, center(at), Data.SHARDLIGHT_RADIUS * TILE, Color("9fe0f0", 0.7), 2.0 * k, 8.0 * k, 6.0 * k
+			)
+
+
 ## The ghost of the building being placed: its sprite over a green or alert tint, and a pill
 ## saying why when the spot won't do.
 static func placement_ghost(ci: CanvasItem, s, type: String, p: Vector2i, note: String) -> void:
+	lumen_rings(ci, s, type, p)
 	var err: String = s.town.placement_error(type, p)
 	var r := rect(p)
 	ci.draw_rect(r.grow(-2), Color(0.3, 1, 0.4, 0.4) if err == "" else Color(ALERT, 0.45))

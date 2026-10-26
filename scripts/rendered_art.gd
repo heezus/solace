@@ -274,11 +274,19 @@ const SINGLE_BUILDINGS := {
 	"scorcher": ["scorcher", 0],
 	"factory_floor": ["factory_floor", 0],
 	"shard_dynamo": ["shard_dynamo", 0],
+	# Starfall's Lumen buildings borrow a picture until Codex paints them (docs/art/requests.md): the Lantern the Shard Lamp, the
+	# Healing House the Lumen Camp, the Grove the Twine Post and the Shardwright the Kiln (the last two tinted, see TINTS).
+	"shard_lantern": ["shard_lamp", 0],
+	"healing_house": ["starfall-lumen-camp", 0],
+	"starfruit_grove": ["workshops", 2],
+	"shardwright": ["workshops", 3],
 }
 ## The tint of a placeholder that borrows another one's sprite, by feature or building id.
 const TINTS := {
 	"teardown_bench": Color(0.78, 0.7, 1.0),
 	"rain_barrel": Color(0.55, 0.8, 1.0),
+	"starfruit_grove": Color(1.0, 0.9, 0.45),
+	"shardwright": Color(0.6, 0.85, 1.0),
 }
 ## The fourteen Starfall icons, in the order of the "starfall-icons" regions: the three packs (Starfall.PACKS keys), the Shard,
 ## the four gifts (LUMEN_GIFTS keys) and the six glyph-set headings (GLYPH_SETS ids).
@@ -319,9 +327,11 @@ const ITEM_IDS := [
 	"bronze_tools"
 ]
 
-## Iron Gears has no icon of its own yet: it borrows another's, recolored (docs/art/requests.md has the slot).
+## Iron Gears, Starfruit and Shardwork have no icon of their own yet: they borrow another's, recolored (docs/art/requests.md has the slot).
 const BORROWED_ITEMS := {
 	"iron_gears": ["copper", Color(0.72, 0.76, 0.84)],
+	"starfruit": ["berries", Color(1.0, 0.85, 0.35)],
+	"shardwork": ["bronze", Color(0.62, 0.9, 1.0)],
 }
 ## Wire, Steel Tools and the Shard, each a picture of its own (docs/art/ironfall/livewire-items). The Shard's Starfall icon
 ## (STARFALL_ICONS) stays for the Starfall panels; this one is the item.

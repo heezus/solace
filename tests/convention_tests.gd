@@ -473,6 +473,9 @@ func test_tree_gates_every_building() -> void:
 		if tech == "" and def.has("lesson"):
 			t.check(Data.LESSONS.has(def["lesson"]), "%s opens with a real Lesson (%s)" % [type, def["lesson"]])
 			continue  # taught by a part at the Teardown Bench (tests/teardown_tests.gd)
+		if tech == "" and def.has("lumen"):
+			t.check(Data.LUMEN["cards"].has(def["lumen"]), "%s opens with a real glyph set (%s)" % [type, def["lumen"]])
+			continue  # a Lumen building waits for its glyph set to be read (tests/lumen_tests.gd)
 		if tech == "":
 			always.append(type)
 			continue

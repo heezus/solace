@@ -21,8 +21,9 @@ const Runway = preload("res://scripts/runway.gd")
 const RAW := [
 	"wood", "stone", "flint", "fiber", "clay", "berries", "grain", "fish", "copper_ore", "tin", "coal", "iron_ore"
 ]
-## Where each row of goods starts in ITEM_ORDER: raw, made, Bronze Dawn's five with Livewire's Wire (made of Copper), Ironfall's seven.
-const ROWS := [0, 7, 13, 19, 26]
+## Where each row of goods starts in ITEM_ORDER: raw, made, Bronze Dawn's five with Livewire's Wire and Starfall's Shardwork,
+## Ironfall's seven with Starfall's Shard and Starfruit.
+const ROWS := [0, 7, 13, 20, 28]
 const LOSS := Ui.SHORT  # `alert`, lifted to read on cocoa
 ## The Food readout's text while the warning is up: light enough to read on the bar (over 4.5 to 1) at every moment.
 const ALARM_TEXT := Ui.SHORT
@@ -32,7 +33,7 @@ const FLASH_TO := Ui.TEXT
 const FLASH_SPEED := 7.0
 const FLAT := Ui.TEXT_DIM
 const MINUS := "−"
-const CHIP_W := 80.0
+const CHIP_W := 74.0
 const ICON := 24.0  # a good's sprite, with nothing behind it
 ## A row of chips keeps this height whether or not its goods have appeared yet. Four rows fill the bar's goods area.
 const ROW_H := 30.0
@@ -156,7 +157,7 @@ func setup(game: Sim) -> void:
 		var b := Ui.button(part[0])
 		b.toggle_mode = true
 		b.custom_minimum_size = Vector2(60 if part[1] == 0 else 36, 28)
-		b.tooltip_text = "Pause or resume (Space)" if part[1] == 0 else "Speed x%d (key %d)" % [part[1], part[1]]
+		b.tooltip_text = ("Pause or resume (Space)" if part[1] == 0 else "Speed x%d (key %d)" % [part[1], part[1]])
 		var v: int = part[1]
 		b.pressed.connect(func(): speed_picked.emit(v))
 		speeds.add_child(b)
@@ -286,7 +287,7 @@ func refresh(paused: bool, speed: int) -> void:
 	var workers := Ui.jobs_filled(state)
 	var jobs := Ui.job_slots(state)
 	var haulers: String = state.hauling.bar_text() if state.tech_tree.researched.has("haulers") else ""
-	kith_label.text = Data.KITH_LABEL % [Data.PEOPLE["many"], state.people.kith.size(), state.town.housing()]
+	kith_label.text = (Data.KITH_LABEL % [Data.PEOPLE["many"], state.people.kith.size(), state.town.housing()])
 	var note := GrowthNote.bar_note(state)
 	kith_label.get_parent().tooltip_text = (
 		Data.JOBS_TIP % [state.people.job_counts(), Data.PEOPLE["many"]]
@@ -380,7 +381,7 @@ func _refresh_food() -> void:
 	var growth := GrowthNote.progress_text(state)
 	food_sub.text = sub + ("\n" + growth if growth != "" else "")
 	var more := GrowthNote.progress_tip(state)
-	food_box.tooltip_text = Data.FOOD_TIP % Data.PEOPLE["one"] + ("\n\n" + more if more != "" else "")
+	food_box.tooltip_text = (Data.FOOD_TIP % Data.PEOPLE["one"] + ("\n\n" + more if more != "" else ""))
 	var alarm := eco.low or eco.starving
 	food_label.add_theme_color_override("font_color", ALARM_TEXT if alarm else Ui.TEXT)
 	food_sub.add_theme_color_override("font_color", ALARM_TEXT if alarm else rate_color(fr))

@@ -90,7 +90,7 @@ func _init() -> void:
 	town.story_has = story.has_event
 	tech_tree.story_has = story.has_event
 	story.recorded.connect(_on_story)
-	people.gift = starfall.boon  # the Healer's leaves, from the gift or the Kith's own twin
+	people.twin = starfall.twin  # the Healer's leaves for every home, from the Kith's own twin
 	starfall.said.connect(_announce)
 	starfall.moment.connect(story.record)
 	teardown.said.connect(_announce)
