@@ -13,7 +13,10 @@ extends "res://tests/autoplay_bronze.gd"
 
 const Expedition = preload("res://scripts/expedition.gd")
 const Starfall = preload("res://scripts/starfall.gd")
+const Bonuses = preload("res://scripts/bonuses.gd")
 
+const LANTERNS_MAX := 3  # Shard Lanterns: the first by the Grove and the Shardwright, the rest by gatherers still in the dark
+const GROVES := 2  # Starfruit Groves: the Ward asks 60 Starfruit
 const PACK_ROPE := 12  # rope kept in the stores for the Post: _orders() sends a standard pack at this much
 
 var marks := {}  # milestone -> clock
@@ -54,6 +57,17 @@ func _goal_wants(list: Dictionary) -> void:
 			_want(list, s.town.price(type), 1)
 	if Expedition.has_post(s):
 		list["rope"] = maxi(list.get("rope", 0), PACK_ROPE)
+	_shardwork_wants(list)
+
+
+## The Shardwright works from Rope and Bronze: keep them coming for the Shardwork the Ward still asks (the base bot makes both).
+func _shardwork_wants(list: Dictionary) -> void:
+	var f: Starfall = s.starfall
+	if not f.opens("craft") or f.ward_stands():
+		return
+	var need: int = Data.BUILDINGS["lumen_ward"]["cost"]["shardwork"] - int(s.economy.inv.get("shardwork", 0))
+	if need > 0:
+		_want(list, Data.BUILDINGS["shardwright"]["in"], need)
 
 
 func _mark(key: String) -> void:
@@ -86,11 +100,55 @@ func _lumen() -> bool:
 	_guess()
 	_orders()
 	for type in _wanted():
-		if _count(type) == 0 and s.town.unlocked(type) and _place_near_hearth(type):
+		if _count(type) < _want_of(type) and s.town.unlocked(type) and _place_lumen(type):
 			_mark("%s built" % type)
 			lines.append("%5d s    + %s" % [int(clock), Data.BUILDINGS[type]["name"]])
 			return true
 	return false
+
+
+## How many of a building the era's bot raises: one of each, but Lanterns follow the dark gatherers and Groves are two.
+func _want_of(type: String) -> int:
+	match type:
+		"shard_lantern":
+			return LANTERNS_MAX if _count(type) == 0 or _huts_in_the_dark() > 0 else 0
+		"starfruit_grove":
+			return GROVES
+	return 1
+
+
+## Gatherers' Huts no shardlight reaches.
+func _huts_in_the_dark() -> int:
+	var n := 0
+	for b in s.town.buildings:
+		if b["type"] == "gatherers_hut" and not Bonuses.lit(s, b["pos"]):
+			n += 1
+	return n
+
+
+## Place one Lumen building: a Lantern where it lights the most huts still in the dark (the first one near the Hearth, for the Grove
+## and the Shardwright), those two only inside shardlight, the rest near the Hearth.
+func _place_lumen(type: String) -> bool:
+	var hearth := Vector2(s.world.camp_pos)
+	match type:
+		"shard_lantern":
+			return _place_best(
+				type,
+				func(p):
+					var dark := 0
+					for b in s.town.buildings:
+						if (
+							b["type"] == "gatherers_hut"
+							and Vector2(b["pos"]).distance_to(Vector2(p)) <= Data.SHARDLIGHT_RADIUS
+						):
+							dark += 0 if Bonuses.lit(s, b["pos"]) else 1
+					if _count(type) > 0 and dark == 0:
+						return -INF
+					return dark * 4.0 - Vector2(p).distance_to(hearth)
+			)
+		"starfruit_grove", "shardwright":
+			return _place_best(type, func(p): return -Vector2(p).distance_to(hearth) if Bonuses.lit(s, p) else -INF)
+	return _place_near_hearth(type)
 
 
 ## The buildings the era asks for, in the order a player would meet them.
@@ -102,6 +160,11 @@ func _wanted() -> Array:
 		out.append("expedition_post")
 	if f.seen.has("market_open"):
 		out.append("lumen_market")
+	for id in Data.ROAD_ORDER:
+		if f.opens(id):
+			out.append(Data.LUMEN["cards"][id]["building"])
+	if f.opens("craft"):
+		out.append("lumen_ward")
 	return out
 
 
