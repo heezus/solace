@@ -31,6 +31,7 @@ func run(runner) -> void:
 	test_hands_short_and_gaps_must_last()
 	test_the_store_the_season_and_births_have_their_moments()
 	test_the_bronze_dawn_hints()
+	test_the_lumen_hints()
 	test_the_tools_make_none()
 	test_the_old_profile_still_loads()
 	_end()
@@ -69,7 +70,7 @@ func _hints_up(queue: Messages) -> Array:
 
 
 func test_the_data_is_well_formed() -> void:
-	t.check(Data.HINT_ORDER.size() == 9, "nine hints for the stone age and Bronze Dawn")
+	t.check(Data.HINT_ORDER.size() == 11, "eleven hints: the stone age, Bronze Dawn and two for the Lumen")
 	for id in Data.HINT_ORDER:
 		t.check(Data.HINTS.has(id), "%s has its words" % id)
 		t.check(id == "births_wait" or Data.HINTS[id].length() > 20, "%s is a sentence" % id)
@@ -229,6 +230,31 @@ func test_the_bronze_dawn_hints() -> void:
 		s.town.buildings.any(func(b): return b["type"] == "mine") == hints.has_shown("mine"),
 		"and the first Mine its own, when a Mine stands"
 	)
+
+
+func test_the_lumen_hints() -> void:
+	_forget()
+	var made := _setup()
+	var hints: Hints = made[0]
+	var queue: Messages = made[1]
+	var s: Sim = made[2]
+	hints.update(s, 1.0)
+	t.check(_hints_up(queue).is_empty(), "before a set is read, nothing is said")
+	s.starfall.locked["light"] = true
+	hints.update(s, 1.0)
+	t.check(_hints_up(queue)[0]["text"] == Data.HINTS["lumen_open"], "the first card to open brings its hint")
+	t.check(Data.HINTS["lumen_open"].contains("Lumen tab"), "which points at the Lumen tab")
+	queue.dismiss(_hints_up(queue)[0]["id"])
+	s.town.add_building("starfruit_grove", s.world.camp_pos + Vector2i(-6, 4))
+	var grove: Dictionary = s.town.buildings[s.town.buildings.size() - 1]
+	hints.update(s, 1.0)
+	t.check(_hints_up(queue).is_empty(), "a Grove that is working says nothing")
+	grove["alert"] = Data.LUMEN["needs_light"]
+	hints.update(s, 1.0)
+	t.check(_hints_up(queue)[0]["text"] == Data.HINTS["needs_light"], "the first building in the dark brings its hint")
+	queue.dismiss(_hints_up(queue)[0]["id"])
+	hints.update(s, 1.0)
+	t.check(_hints_up(queue).is_empty(), "and each shows once")
 
 
 func test_the_tools_make_none() -> void:

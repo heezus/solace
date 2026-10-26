@@ -30,7 +30,7 @@ func show_for(b: Dictionary) -> void:
 		return
 	var f := state.starfall
 	var now := (
-		"%s|%s|%s|%s|%s|%s|%s|%s"
+		"%s|%s|%s|%s|%s|%s|%s|%s|%s"
 		% [
 			f.copied,
 			f.guesses,
@@ -39,7 +39,8 @@ func show_for(b: Dictionary) -> void:
 			f.answered.size(),
 			f.pending,
 			f.roads,
-			f.road_queue
+			f.road_queue,
+			f.ward_stands()
 		]
 	)
 	if now == key:
@@ -74,7 +75,10 @@ func show_for(b: Dictionary) -> void:
 	var end: Vector2i = f.progress(Data.ENDING_SET)
 	if end.x == end.y and not f.locked.has(Data.ENDING_SET) and not f.may_end():
 		if f.warning_right():
-			add_child(_wrapped(Data.WARNING_RIGHT_WAITING % [f.questions_left(), Data.MOMENT_ORDER.size()], Ui.GOOD))
+			var ward: String = Data.LUMEN["ward_word"][int(f.ward_stands())]
+			add_child(
+				_wrapped(Data.WARNING_RIGHT_WAITING % [ward, f.questions_left(), Data.MOMENT_ORDER.size()], Ui.GOOD)
+			)
 		else:
 			add_child(_wrapped(Data.WARNING_NEEDS, Ui.TEXT_DIM))
 	if f.locked.has("name") and f.wreck_has_more():

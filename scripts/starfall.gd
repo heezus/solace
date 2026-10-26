@@ -167,6 +167,7 @@ func _tick_standing(delta: float) -> void:
 	_stand("lumen_market", 0.0, Data.MARKET_TRUST_PER_MINUTE, Data.MARKET_BUILT_LINE, delta, Data.MARKET_TRUST_CAP)
 	_stand("shared_shrine", Data.TRUST_SHRINE, Data.TRUST_SHRINE_PER_MINUTE, Data.SHRINE_BUILT_LINE, delta)
 	_stand("guard_post", Data.TRUST_GUARD, Data.TRUST_GUARD_PER_MINUTE, Data.GUARD_BUILT_LINE, delta)
+	_stand("lumen_ward", Data.LUMEN["ward_trust"], 0.0, Data.LUMEN["ward_built"], delta)
 
 
 ## A building that moves trust: counted once when it first stands (a step, a line, a story id), then a little each minute.
@@ -389,13 +390,13 @@ func check() -> bool:
 	return got
 
 
-## How many of the strangers' questions (and road cards) still stand between the Kith and the Warning, at least 1 while
-## `may_end` is false and never more than the questions in all.
+## How many of the strangers' questions (and road cards) still stand between the Kith and the Warning, never more than the
+## questions in all.
 func questions_left() -> int:
 	var left := (
 		Data.MOMENT_ORDER.size() - answered.size() + road_queue.size() + (1 if pending.begins_with("road_") else 0)
 	)
-	return clampi(left, 1, Data.MOMENT_ORDER.size())
+	return clampi(left, 0, Data.MOMENT_ORDER.size())
 
 
 ## True when every mark of the Warning is on the Wall with its right word set.
@@ -406,9 +407,14 @@ func warning_right() -> bool:
 	return true
 
 
-## The Warning cannot be read until the strangers' three questions are answered and none waits on the player.
+## True while a Lumen Ward stands: the strangers will not speak the Warning before it does (Data.LUMEN).
+func ward_stands() -> bool:
+	return has_building("lumen_ward")
+
+
+## The Warning cannot be read until the Ward stands, the strangers' three questions are answered and none waits on the player.
 func may_end() -> bool:
-	return pending == "" and road_queue.is_empty() and answered.size() == Data.MOMENT_ORDER.size()
+	return pending == "" and road_queue.is_empty() and answered.size() == Data.MOMENT_ORDER.size() and ward_stands()
 
 
 ## The Warning is read: the era ends. The lean is the trust now, a Bloom sign stands at the edge of the fog and the ending

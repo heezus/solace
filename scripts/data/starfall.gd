@@ -644,12 +644,12 @@ const WARNING_LINE := (
 	+ "The strangers did not come to live here. They came to hide."
 )
 ## On the Wall once the Warning's three marks are right and the strangers' questions are still open: a right answer never
-## looks like a wrong one. Filled with the questions left and the questions asked in all.
+## looks like a wrong one. Filled with the Ward's state (Data.LUMEN "ward_word"), the questions left and the questions asked in all.
 const WARNING_RIGHT_WAITING := (
-	"Right. The strangers go quiet at these marks: "
-	+ "they will speak of them once their questions are answered (%d of %d left)."
+	"Right. The strangers will speak of these marks once the Ward stands and their questions are answered "
+	+ "(Ward: %s; %d of %d left)."
 )
-const WARNING_NEEDS := "The Kith cannot read the Warning until they have answered what the strangers asked."
+const WARNING_NEEDS := "The Kith cannot read the Warning until the Ward stands and they have answered what the strangers asked."
 const BLOOM_LINE := "Far to the east, at the edge of the fog, something is growing that no one planted."
 const BLOOM_SIGHT := 3  # how much fog the Bloom sign lifts around it
 const BLOOM_DISTANCE := 7  # tiles from the Wreck (north of it, or south if there is no room)
@@ -692,6 +692,12 @@ const GOALS_ERA3 := [
 		"id": "lumen_market",
 		"text": "Build a Market once the strangers trust you enough to trade",
 		"building": "lumen_market"
+	},
+	{
+		"id": "lumen_ward",
+		"text":
+		"Raise the Lumen Ward once the Craft marks are read: the strangers will not speak the Warning before it stands",
+		"building": "lumen_ward"
 	},
 	{"id": "moments_answered", "text": "Answer the strangers' three questions: they will ask, and the game waits"},
 	{"id": "warning_read", "text": "Copy and read the Warning: it ends the era"},

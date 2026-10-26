@@ -40,6 +40,14 @@ func refresh() -> void:
 				def["cost"].keys().map(func(c): return state.economy.inv.get(c, 0))
 			]
 		)
+	var ward: Dictionary = Data.BUILDINGS["lumen_ward"]
+	parts.append(
+		[
+			state.starfall.opens("craft"),
+			state.starfall.ward_stands(),
+			ward["cost"].keys().map(func(c): return state.economy.inv.get(c, 0))
+		]
+	)
 	var now := str(parts)
 	if now == key:
 		return
@@ -68,6 +76,23 @@ func _build() -> void:
 		var card := _card(id)
 		flow.add_child(card)
 		cards[id] = card
+	if state.starfall.opens("craft"):
+		box.add_child(_ward_row())
+
+
+## The Lumen Ward under the cards, once the Craft marks are read: whether it stands, and what it costs while it does not.
+func _ward_row() -> Control:
+	var def: Dictionary = Data.BUILDINGS["lumen_ward"]
+	var stands: bool = state.starfall.ward_stands()
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 6)
+	v.add_child(
+		_wrapped(Data.LUMEN["ward_row"] % Data.LUMEN["ward_word"][int(stands)], Ui.GOOD if stands else Ui.ACTION)
+	)
+	if not stands:
+		v.add_child(_cost_row(def["cost"]))
+		v.add_child(_wrapped(Data.LUMEN["build_on"] % "Lore", Ui.TEXT_DIM))
+	return v
 
 
 ## One set's card.

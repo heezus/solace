@@ -27,6 +27,10 @@ func run(runner) -> void:
 	test_a_staffed_healing_house_helps_the_homes_round_it()
 	test_the_lumen_tab_shows_the_cards()
 	test_an_old_save_mid_starfall_gets_the_buildings()
+	test_the_ward_opens_with_craft_on_every_road()
+	test_the_ward_lifts_trust_once_and_is_a_goal()
+	test_every_road_reaches_the_warning()
+	test_an_old_save_with_a_ward_owed_shows_the_goal()
 
 
 ## An arrived town with full stores, the name read and the strangers' questions answered, and a Cairn.
@@ -311,3 +315,118 @@ func test_an_old_save_mid_starfall_gets_the_buildings() -> void:
 		"the sets it read open their buildings"
 	)
 	t.check(not back.town.unlocked("healing_house") and not back.town.unlocked("shardwright"), "and the rest wait")
+
+
+func test_the_ward_opens_with_craft_on_every_road() -> void:
+	var s := _town()
+	var spot: Vector2i = _h._spot(s, "lumen_ward")
+	t.check(
+		not s.town.unlocked("lumen_ward") and s.town.placement_error("lumen_ward", spot) == "Not discovered yet",
+		"no Ward before the Craft marks"
+	)
+	_take(s, "light")
+	_take(s, "growth")
+	t.check(not s.town.unlocked("lumen_ward"), "other sets do not open it")
+	_take(s, "craft")
+	t.check(
+		s.town.unlocked("lumen_ward") and s.town.placement_error("lumen_ward", spot) == "", "reading Craft opens it"
+	)
+	var goods: Dictionary = Data.BUILDINGS["lumen_ward"]["cost"]
+	var before: Dictionary = s.economy.inv.duplicate()
+	t.check(s.place("lumen_ward", spot), "and it is built like any building")
+	for id in goods:
+		t.check(s.economy.inv[id] == before[id] - goods[id], "paying %d %s" % [goods[id], id])
+	t.check(
+		s.starfall.ward_stands() and s.town.placement_error("lumen_ward", _h._spot(s, "lumen_ward")) != "",
+		"one Ward is all there is"
+	)
+	var refused := _town()
+	for id in Data.ROAD_ORDER:
+		_refuse(refused, id)
+	t.check(refused.town.unlocked("lumen_ward"), "the Kith who refused every gift can still raise the Ward")
+	t.check(
+		refused.town.unlocked("shardwright") and refused.town.unlocked("starfruit_grove"),
+		"and make what it is built of"
+	)
+
+
+func test_the_ward_lifts_trust_once_and_is_a_goal() -> void:
+	var s := _town()
+	_take(s, "craft")
+	s.starfall.trust = 40.0
+	s.starfall.tick(1.0)
+	t.check(is_equal_approx(s.starfall.trust, 40.0), "no Ward, no change")
+	s.town.add_building("lumen_ward", _h._spot(s, "lumen_ward"))
+	s.starfall.tick(1.0)
+	t.check(
+		s.starfall.trust >= 50.0 and s.starfall.trust < 51.0,
+		"a standing Ward lifts trust by 10 (%s)" % s.starfall.trust
+	)
+	var after: float = s.starfall.trust
+	s.starfall.tick(30.0)
+	t.check(is_equal_approx(s.starfall.trust, after), "once, not each minute")
+	var ids: Array = Data.GOALS_ERA3.map(func(g): return g["id"])
+	t.check(
+		"lumen_ward" in ids and ids.find("lumen_ward") < ids.find("moments_answered"),
+		"Raise the Lumen Ward is one of the era's goals"
+	)
+	var bare := _town()
+	_take(bare, "craft")
+	t.check(not bare.story.goal_met(bare, Data.GOALS_ERA3[ids.find("lumen_ward")]), "not met until it stands")
+	t.check(s.story.goal_met(s, Data.GOALS_ERA3[ids.find("lumen_ward")]), "met once it does")
+
+
+## The all-refused road: every gift turned down, and the Warning can still be read once the Ward stands and the questions are answered.
+func test_every_road_reaches_the_warning() -> void:
+	for refuse in [true, false]:
+		var s := _town()
+		for id in Data.ROAD_ORDER:
+			if refuse:
+				_refuse(s, id)
+			else:
+				_take(s, id)
+		s.starfall.locked["name"] = true
+		for g in Data.GLYPH_SETS[6]["glyphs"]:
+			s.starfall.copied.append(g)
+			s.starfall.guesses[g] = Data.GLYPHS[g]["word"]
+		var road := "refused" if refuse else "taken"
+		t.check(
+			not s.starfall.check() and not s.starfall.locked.has("warning"), "every gift %s: no Ward, no Warning" % road
+		)
+		t.check(
+			s.town.unlocked("shardwright") and s.town.unlocked("starfruit_grove") and s.town.unlocked("lumen_ward"),
+			"every gift %s: the Ward and what it needs are open" % road
+		)
+		s.economy.inv["shardwork"] = 0
+		s.economy.inv["starfruit"] = 0
+		t.check(
+			not s.place("lumen_ward", _h._spot(s, "lumen_ward")), "every gift %s: the goods are made, not given" % road
+		)
+		s.economy.inv["shardwork"] = 30
+		s.economy.inv["starfruit"] = 60
+		t.check(s.place("lumen_ward", _h._spot(s, "lumen_ward")), "every gift %s: the Ward goes up" % road)
+		t.check(s.starfall.check() and s.starfall.ended, "every gift %s: and the Warning reads" % road)
+
+
+func test_an_old_save_with_a_ward_owed_shows_the_goal() -> void:
+	var s := _town()
+	_take(s, "craft")
+	s.starfall.locked["warning"] = false  # the Warning is still ahead
+	s.starfall.locked.erase("warning")
+	var back := Sim.new()
+	back.generate(1)
+	t.check(
+		RunSave.restore(back, RunSave.from_json(RunSave.to_json(RunSave.dump(s)))),
+		"a save with the Craft marks read loads"
+	)
+	t.check(back.town.unlocked("lumen_ward") and not back.starfall.ward_stands(), "the Ward is open and owed")
+	var ward_goal: Dictionary = Data.GOALS_ERA3.filter(func(g): return g["id"] == "lumen_ward")[0]
+	t.check(
+		back.story.goal_list().has(ward_goal) and not back.story.goal_met(back, ward_goal), "and the goal shows, unmet"
+	)
+	for g in Data.GLYPH_SETS[6]["glyphs"]:
+		back.starfall.copied.append(g)
+		back.starfall.guesses[g] = Data.GLYPHS[g]["word"]
+	for id in Data.MOMENT_ORDER:
+		back.starfall.answered[id] = 0
+	t.check(not back.starfall.may_end(), "the Warning will not read without it")
