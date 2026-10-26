@@ -248,7 +248,11 @@ static func gathering_tab(main: Node, when: String) -> Array:
 	var window := Rect2(Vector2.ZERO, main.get_viewport_rect().size)
 	var cards: Array = []
 	for type in Data.BUILD_TABS["Gathering"]:
-		if Data.BUILDINGS[type].has("lesson") or int(Data.TECHS[Data.BUILDINGS[type]["tech"]].get("era", 1)) == 4:
+		if (
+			Data.BUILDINGS[type].has("lesson")
+			or Data.BUILDINGS[type].has("lumen")
+			or int(Data.TECHS[Data.BUILDINGS[type]["tech"]].get("era", 1)) == 4
+		):
 			continue
 		var card: Control = bar.build_buttons[type]["button"]
 		if not card.is_visible_in_tree():

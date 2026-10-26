@@ -95,13 +95,13 @@ const ITEM_ORDER := [
 	"flour",
 	"flint_tools",
 	"fish",
-	"starfruit",
 	"copper_ore",
 	"tin",
 	"copper",
 	"bronze",
 	"bronze_tools",
 	"wire",
+	"shardwork",
 	"coal",
 	"iron_ore",
 	"iron",
@@ -109,7 +109,7 @@ const ITEM_ORDER := [
 	"iron_tools",
 	"steel_tools",
 	"shard",
-	"shardwork",
+	"starfruit",
 ]
 
 ## Food value of each edible item. The Kith eat from the stockpile.
