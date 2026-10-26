@@ -16,7 +16,7 @@ const Starfall = preload("res://scripts/starfall.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 
 const LANTERNS_MAX := 3  # Shard Lanterns: the first by the Grove and the Shardwright, the rest by gatherers still in the dark
-const GROVES := 2  # Starfruit Groves: the Ward asks 60 Starfruit
+const GROVES := 1  # Starfruit Groves: one grows the Ward's 60 Starfruit in about 7 minutes
 const PACK_ROPE := 12  # rope kept in the stores for the Post: _orders() sends a standard pack at this much
 
 var marks := {}  # milestone -> clock
