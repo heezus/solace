@@ -718,6 +718,14 @@ func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
 				s.set_paused(i, idle)
 				idle_est = maxi(idle_est + (1 if idle else -1) * Buildings.crew_size(b), 0)
 			continue
+		if def.get("lit", false):
+			# A Starfruit Grove or a Shardwright (the Lumen's workshops) is known to rest once the Ward stands: Shardwork and Starfruit
+			# have no other call, and the Shardwright eats Rope and Bronze the later eras want.
+			var rest: bool = s.starfall.ward_stands()
+			if rest != b["paused"]:
+				s.set_paused(i, rest)
+				idle_est = maxi(idle_est + (1 if rest else -1) * Buildings.crew_size(b), 0)
+			continue
 		if def["kind"] != "processor" or def["out"].is_empty():
 			continue  # a Mine makes no stock of its own
 		var made: String = def["out"].keys()[0]
