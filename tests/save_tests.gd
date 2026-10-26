@@ -348,7 +348,10 @@ func test_profile_is_tolerant() -> void:
 	var q := Profile.new()
 	q.merge(["shard_found", "haulers"], ["flint", "wood"])
 	var d := q.to_dict()
-	t.check(d.keys() == ["version", "chronicle", "knowledge", "hints"], "the profile's top-level keys")
+	t.check(
+		d.keys() == ["version", "chronicle", "knowledge", "hints", "techs", "marks", "echoes", "exoduses"],
+		"the profile's top-level keys"
+	)
 	p.from_dict(via_json(d))
 	t.check(text(p.to_dict()) == text(d), "a dict, through JSON text, comes back the same")
 	t.check(p.from_json(q.to_json()) and p.chronicle == q.chronicle and p.knowledge == q.knowledge, "so does its text")
@@ -386,7 +389,7 @@ func test_run_save_and_profile_stay_apart() -> void:
 		not text(saved_run).contains('"chronicle"') and not text(saved_run).contains('"knowledge"'),
 		"nor any profile key deeper down"
 	)
-	var allowed := ["version", "chronicle", "knowledge", "hints"]
+	var allowed := ["version", "chronicle", "knowledge", "hints", "techs", "marks", "echoes", "exoduses"]
 	t.check(profile.keys() == allowed, "the profile has only its own keys")
 	for key in RunSave.SECTIONS:
 		t.check(not profile.has(key), "the profile has no %s" % key)

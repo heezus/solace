@@ -2,9 +2,11 @@ extends Control
 ## The end of an era: a card, centred over a dimmed map view, shown once when The Falling Star is discovered (a cliffhanger,
 ## not the crash: the words are in Data, ERA_END_*) and once more when Livewire is (the end of Ironfall, Data.LIVEWIRE_*). The
 ## button puts the card away, and the game goes on. The owner pauses while it is up and resumes on `closed`.
-## Signal: closed fires when the player puts the card away.
+## The end of Livewire's card has a second button, "Set out" (the Exodus: Data.EXODUS): it asks, and the owner puts the question.
+## Signals: closed fires when the player puts the card away; set_out_pressed when they press "Set out" (the card stays up).
 
 signal closed
+signal set_out_pressed
 
 const Data = preload("res://scripts/data.gd")
 const Ui = preload("res://scripts/ui.gd")
@@ -54,6 +56,14 @@ func setup() -> void:
 	go.add_theme_font_size_override("font_size", 18)
 	go.pressed.connect(close)
 	v.add_child(go)
+	var out := Ui.button(Data.EXODUS["set_out"])
+	Ui.action_button(out)
+	out.text = Data.EXODUS["set_out"]
+	out.tooltip_text = Data.EXODUS["confirm"]
+	_words["set_out"] = out
+	out.add_theme_font_size_override("font_size", 18)
+	out.pressed.connect(func(): set_out_pressed.emit())
+	v.add_child(out)
 
 
 ## Lay the card over `area` (the map view): the dim covers just the map, the card sits in its middle, and the top bar
@@ -72,6 +82,7 @@ func open(story_id := "star_falling") -> void:
 	_words["text"].text = Data.SKYWARD_TEXT if sky else (Data.LIVEWIRE_TEXT if live else Data.ERA_END_TEXT)
 	_words["note"].text = Data.SKYWARD_NOTE if sky else (Data.LIVEWIRE_NOTE if live else Data.ERA_END_NOTE)
 	_words["button"].text = Data.SKYWARD_BUTTON if sky else (Data.LIVEWIRE_BUTTON if live else Data.ERA_END_BUTTON)
+	_words["set_out"].visible = sky  # only the end of Livewire can be left behind
 	visible = true
 
 

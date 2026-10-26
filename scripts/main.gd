@@ -128,7 +128,7 @@ func _ready() -> void:
 	state = Sim.new()
 	if not Launch.start_into(state):
 		state = Sim.new()
-		state.generate(randi())
+		Launch.begin_new(state)
 	cam = Overlays.center(state.world.camp_pos)  # start looking at the Hearth
 	_build_ui()
 	Flavor.mark_told(state, told)  # a loaded run has had its warm lines and its banner already
@@ -658,7 +658,7 @@ func _build_ui() -> void:
 	notice_card.closed.connect(_on_notice_closed)
 	game_menu = GameMenu.new()
 	layer.add_child(game_menu)
-	game_menu.setup(state)
+	game_menu.setup(state, era_card)
 	game_menu.paused_changed.connect(func(on: bool): paused = on)
 	PlayRecorder.attach(layer, self)  # the play log and its era-end questions (scripts/play_recorder.gd)
 	CutscenePlayer.attach(layer, state, self)  # last, so a sequence plays over every card

@@ -2,13 +2,16 @@ extends Control
 ## The pause menu: Resume, Save game, Load game and Quit to title, on a card over the dimmed map, and two switches: Cutscenes
 ## (on unless the player turns it off: scripts/cutscene_settings.gd) and Debug keys (off unless turned on: scripts/debug_keys.gd).
 ## The owner (scripts/main.gd) pauses while it is up and does the real work; this only shows the buttons and a one-line
-## status ("Saved to slot 2."). Save and Load open the slot screen.
-## Signals: resumed, save_pressed, load_pressed, quit_pressed.
+## status ("Saved to slot 2."). Save and Load open the slot screen. "Set out" (the Exodus) is greyed until Skyward stands, and
+## "Forget past runs" clears the profile; both ask first (scripts/game_menu.gd).
+## Signals: resumed, save_pressed, load_pressed, quit_pressed, set_out_pressed, forget_pressed.
 
 signal resumed
 signal save_pressed
 signal load_pressed
 signal quit_pressed
+signal set_out_pressed
+signal forget_pressed
 
 const Data = preload("res://scripts/data.gd")
 const Ui = preload("res://scripts/ui.gd")
@@ -23,6 +26,7 @@ const PlayLogSettings = preload("res://scripts/play_log_settings.gd")
 const WIDTH := 300.0
 
 var load_button: Button
+var set_out_button: Button
 var debug_toggle: CheckButton
 var cutscene_toggle: CheckButton
 var hints_toggle: CheckButton
@@ -57,6 +61,11 @@ func setup() -> void:
 	load_button = _button(Data.PAUSE_LOAD, false, func(): load_pressed.emit())
 	v.add_child(load_button)
 	v.add_child(_button(Data.PAUSE_QUIT, false, func(): quit_pressed.emit()))
+	var exodus := HBoxContainer.new()  # the two small ones: leaving this land, and forgetting the past ones
+	exodus.add_theme_constant_override("separation", 8)
+	set_out_button = _small_button(exodus, Data.EXODUS["set_out"], func(): set_out_pressed.emit())
+	_small_button(exodus, Data.EXODUS["forget"], func(): forget_pressed.emit()).tooltip_text = Data.EXODUS["forget_tip"]
+	v.add_child(exodus)
 	cutscene_toggle = _switch(Data.CUTSCENES_LABEL, Data.CUTSCENES_HELP, CutsceneSettings.set_on)
 	v.add_child(cutscene_toggle)
 	hints_toggle = _switch(Data.HINTS_LABEL, Data.HINTS_HELP, HintSettings.set_on)
@@ -97,6 +106,15 @@ func _switch(text: String, help: String, on_toggle: Callable) -> CheckButton:
 	c.add_theme_font_size_override("font_size", Ui.MIN_TEXT)
 	c.toggled.connect(func(on): on_toggle.call(on))
 	return c
+
+
+func _small_button(row: HBoxContainer, text: String, on_press: Callable) -> Button:
+	var b := _button(text, false, on_press)
+	b.custom_minimum_size = Vector2(0, 32)
+	MenuFonts.style_button(b, 15)
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(b)
+	return b
 
 
 func _button(text: String, primary: bool, on_press: Callable) -> Button:

@@ -19,7 +19,7 @@ static func end_card(main: Node, when: String) -> Array:
 	for c in _all(card):
 		if c is PanelContainer:
 			panel = c
-		elif c is Button:
+		elif c is Button and c != card._words["set_out"]:  # Keep building is the card's own button; Set out is the Skyward card's second
 			button = c
 	if panel == null or button == null or not card.visible:
 		return ["%s: the end card isn't up with its panel and button" % when]

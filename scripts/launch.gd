@@ -5,6 +5,7 @@ extends RefCounted
 
 const RunSave = preload("res://scripts/run_save.gd")
 const SaveSlots = preload("res://scripts/save_slots.gd")
+const Profile = preload("res://scripts/profile.gd")
 
 static var _slot := 0  # the save slot to start from, 0 for none
 static var _stage: Dictionary = {}  # the run dump of a stage start, {} for none
@@ -42,3 +43,12 @@ static func start_into(s, dir := SaveSlots.DIR) -> bool:
 	if not stage.is_empty():
 		return RunSave.restore(s, stage)
 	return slot > 0 and SaveSlots.load_into(s, slot, dir)
+
+
+## Begin a new run on a new map: the carry is the profile as it stands (empty, and so a first run, until the Kith have set out).
+## `seed_value` is the map's seed, a new one when it is -1.
+static func begin_new(s, seed_value := -1, profile_path := Profile.PATH) -> void:
+	s.generate(seed_value if seed_value >= 0 else randi())
+	var profile := Profile.new()
+	profile.load_file(profile_path)
+	s.carry.from_dict(profile.carry().to_dict())

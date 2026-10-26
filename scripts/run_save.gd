@@ -139,6 +139,7 @@ static func _game_to_dict(s) -> Dictionary:
 		"livewire": s.livewire.to_dict(),
 		"tide": s.tide.to_dict(),
 		"seasons": s.seasons.to_dict(),
+		"carry": s.carry.to_dict(),
 	}
 
 
@@ -160,4 +161,5 @@ static func _game_from_dict(s, d: Dictionary) -> void:
 	s.livewire.from_dict(d.get("livewire", {}))
 	s.tide.from_dict(d.get("tide", {}))
 	s.seasons.from_dict(d.get("seasons", {}))
+	s.carry.from_dict(d.get("carry", {}))  # a save from before the Exodus carries nothing
 	s.seasons.push_to_economy(s)  # the Economy eats by the season before the first tick
