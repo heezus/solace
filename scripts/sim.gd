@@ -39,6 +39,7 @@ const HaulingBlock = preload("res://scripts/hauling.gd")
 const TideBlock = preload("res://scripts/tide.gd")
 const Gate = preload("res://scripts/gate.gd")
 const SeasonsBlock = preload("res://scripts/seasons.gd")
+const CarryBlock = preload("res://scripts/carry.gd")
 
 var won := false
 var hand_tools := false  # you've made a Flint Tool, so hand gathering is doubled for good
@@ -71,6 +72,7 @@ var livewire := LivewireBlock.new()  # Livewire: the Power Pole nets and the Ord
 var tide := TideBlock.new()  # Livewire stage 2: the Bloom's creep out of the south, and what holds it back
 var gate := Gate.new(livewire, town, world, tide)  # Livewire stage 3: the Skyward gate's two deeds
 var seasons := SeasonsBlock.new()  # Seasons of Strain: a pressure every few minutes and the answer to it
+var carry := CarryBlock.new()  # Step 7, the Exodus: what the Kith carry from earlier runs (read only; empty in a first run)
 
 
 ## Wire the blocks together. Every signal connection in the game is here, so it is all in one place.

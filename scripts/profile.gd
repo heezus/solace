@@ -1,31 +1,52 @@
 extends RefCounted
 ## The profile: what outlives a run (design-system/12-knowledge-is-progress.md, 13-three-perspectives.md).
-## Three things, and nothing else yet:
+## Four things, and nothing else yet:
 ##   `chronicle`: the story event ids (Data.STORY_EVENTS) in the order they first happened, across runs. It is the
 ##     start of the Chronicle, the record of story moments a later run can read.
 ##   `knowledge`: the item ids the people have learned to gather. A future time loop rebuilds the map and
 ##     carries only this over, since knowledge is of kinds of things, never of places.
 ##   `hints`: the ids of the first-time hints already shown (scripts/hints.gd), so none comes back in a later run. A profile
 ##     written before hints existed has none and still loads.
+##   the carry (version 2): `techs` (tech ids researched), `marks` (glyph ids read), `echoes` (Lumen set ids read) and `exoduses`
+##     (how many times the Kith set out). They are banked only by bank(), when the player sets out, so what a run that never
+##     set out learned is not carried. A new run begins with them as its carry (scripts/carry.gd). A version 1 profile loads
+##     with them empty.
 ## absorb(state) merges a run (finished or in progress) into the profile: new ids are added at the end, ids
 ## already held keep their place, and absorbing the same run twice changes nothing.
 ## The profile is its own file (PATH), apart from the run save (scripts/run_save.gd): a run save holds no
 ## profile data and the profile holds no run data (no map, stockpile, buildings, people or research).
 ## A missing or corrupt file gives an empty profile and prints nothing. No faction words are spelled here.
-## Nothing reads the profile to change how a game starts or plays. A run writes to it only at an ending (note_run).
+## Only the carry changes how a game starts: a run writes the rest to the profile at an ending (note_run), and the carry
+## when the player sets out (set_out).
 
-const VERSION := 1
+const Carry = preload("res://scripts/carry.gd")
+
+const VERSION := 2
+const OLDEST := 1  # the oldest version still read
 const PATH := "user://profile.json"
 const SECTIONS := ["chronicle", "knowledge"]
 
 var chronicle: Array = []  # story ids, in the order they first happened
 var knowledge: Array = []  # item ids, in the order they were first learned
 var hints: Array = []  # first-time hint ids, in the order they were shown
+var techs: Array = []  # tech ids researched in a run that set out
+var marks: Array = []  # glyph ids read in a run that set out
+var echoes: Array = []  # Lumen set ids read in a run that set out
+var exoduses := 0  # how many times the Kith have set out
+var saved := true  # set_out: the file was written
 
 
 ## True while the profile holds nothing.
 func is_empty() -> bool:
-	return chronicle.is_empty() and knowledge.is_empty() and hints.is_empty()
+	return (
+		chronicle.is_empty()
+		and knowledge.is_empty()
+		and hints.is_empty()
+		and techs.is_empty()
+		and marks.is_empty()
+		and echoes.is_empty()
+		and exoduses == 0
+	)
 
 
 ## Merge the run in `s` (a Sim) into the profile: its story ids and the items its people have learned.
@@ -38,6 +59,26 @@ func absorb(s) -> void:
 func merge(story_ids: Array, item_ids: Array) -> void:
 	_add_all(chronicle, story_ids)
 	_add_all(knowledge, item_ids)
+
+
+## Bank what the run in `s` taught into the carry: its techs, the marks it read and the echoes of the sets it read, and count
+## one more Exodus. Ids already held keep their place. Only set_out calls this.
+func bank(s) -> void:
+	var earned := Carry.earned(s)
+	_add_all(techs, earned["techs"])
+	_add_all(marks, earned["marks"])
+	_add_all(echoes, earned["echoes"])
+	exoduses += 1
+
+
+## The carry a run begins with: what has been banked, and which Exodus the run is.
+func carry() -> Carry:
+	var c := Carry.new()
+	c.techs = techs.duplicate()
+	c.marks = marks.duplicate()
+	c.echoes = echoes.duplicate()
+	c.exodus = exoduses
+	return c
 
 
 ## True when the first-time hint `id` has been shown in any run.
@@ -71,12 +112,34 @@ static func note_run(s, path: String = PATH) -> bool:
 	return profile.save(path)
 
 
+## The player sets out: fold the run in `s` into the profile saved at `path` (note_run's work), bank its carry and write it
+## back. Returns the profile as banked; `saved` says whether the file was written (the carry holds for the next run either way).
+static func set_out(s, path: String = PATH):
+	var profile := new()
+	profile.load_file(path)
+	profile.absorb(s)
+	profile.bank(s)
+	profile.saved = profile.save(path)
+	return profile
+
+
+## Forget every past run: the file at `path` is removed, so the next game is a first game. False when it could not be removed.
+static func forget(path: String = PATH) -> bool:
+	if not FileAccess.file_exists(path):
+		return true
+	return DirAccess.remove_absolute(path) == OK
+
+
 func to_dict() -> Dictionary:
 	return {
 		"version": VERSION,
 		"chronicle": chronicle.duplicate(),
 		"knowledge": knowledge.duplicate(),
-		"hints": hints.duplicate()
+		"hints": hints.duplicate(),
+		"techs": techs.duplicate(),
+		"marks": marks.duplicate(),
+		"echoes": echoes.duplicate(),
+		"exoduses": exoduses,
 	}
 
 
@@ -86,11 +149,18 @@ func from_dict(d) -> void:
 	chronicle = []
 	knowledge = []
 	hints = []
+	techs = []
+	marks = []
+	echoes = []
+	exoduses = 0
 	if not is_profile(d):
 		return
 	merge(d["chronicle"], d["knowledge"])
-	if typeof(d.get("hints")) == TYPE_ARRAY:
-		_add_all(hints, d["hints"])
+	for pair in [[hints, "hints"], [techs, "techs"], [marks, "marks"], [echoes, "echoes"]]:
+		if typeof(d.get(pair[1])) == TYPE_ARRAY:
+			_add_all(pair[0], d[pair[1]])
+	if typeof(d.get("exoduses")) == TYPE_INT or typeof(d.get("exoduses")) == TYPE_FLOAT:
+		exoduses = maxi(int(d["exoduses"]), 0)
 
 
 ## True when `d` looks like a profile this code can read.
@@ -98,7 +168,11 @@ static func is_profile(d) -> bool:
 	if typeof(d) != TYPE_DICTIONARY:
 		return false
 	var version = d.get("version")
-	if (typeof(version) != TYPE_INT and typeof(version) != TYPE_FLOAT) or int(version) != VERSION:
+	if (
+		(typeof(version) != TYPE_INT and typeof(version) != TYPE_FLOAT)
+		or int(version) < OLDEST
+		or int(version) > VERSION
+	):
 		return false
 	for key in SECTIONS:
 		if typeof(d.get(key)) != TYPE_ARRAY:
