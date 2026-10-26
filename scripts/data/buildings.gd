@@ -827,6 +827,8 @@ const BUILDINGS := {
 		"tech": "",
 		"lumen": "body",
 		"cost": {"wood": 20, "brick": 10, "fiber": 10},
+		"in": {},
+		"out": {},
 		"mends": true,
 		"color": Color("b9d9b0"),
 		"desc":

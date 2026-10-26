@@ -281,8 +281,8 @@ static func _market_on(s: Sim) -> Sim:
 	return s
 
 
-## Five sets read and every question answered, the Warning copied and guessed right: the Kith read it at the next talk, a
-## few seconds on, and the era ends.
+## Five sets read and every question answered, the Lumen Ward standing, the Warning copied and guessed right: the Kith read it at
+## the next talk, a few seconds on, and the era ends.
 static func _starfall_end() -> Sim:
 	return _end_on(_starfall_market())
 
@@ -292,6 +292,7 @@ static func _end_on(s: Sim) -> Sim:
 		s.starfall.locked[Data.GLYPH_SETS[n]["id"]] = true
 	for id in Data.MOMENT_ORDER:
 		s.starfall.answered[id] = 0
+	_build(s, "lumen_ward")
 	for g in Data.GLYPH_SETS[6]["glyphs"]:
 		if g not in s.starfall.copied:
 			s.starfall.copied.append(g)
