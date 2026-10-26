@@ -827,6 +827,8 @@ const BUILDINGS := {
 		"tech": "",
 		"lumen": "body",
 		"cost": {"wood": 20, "brick": 10, "fiber": 10},
+		"in": {},
+		"out": {},
 		"mends": true,
 		"color": Color("b9d9b0"),
 		"desc":
@@ -846,6 +848,18 @@ const BUILDINGS := {
 		"lit": true,
 		"color": Color("f2c14e"),
 		"desc": "Grows Starfruit, a food worth two berries, but only in shardlight (the Cairn's or a Lantern's).",
+	},
+	"lumen_ward":
+	{
+		"name": "Lumen Ward",
+		"kind": "refuge",
+		"tech": "",
+		"lumen": "craft",
+		"unique": true,
+		"cost": {"shardwork": 30, "starfruit": 60, "brick": 40},
+		"color": Color("9fd8e8"),
+		"desc": "A ring of shard where the strangers can hide. They will not speak the Warning until it stands.",
+		"status": "The strangers shelter here.",
 	},
 	"shardwright":
 	{
@@ -916,7 +930,8 @@ const BUILD_TABS := {
 		"shard_lamp",
 		"order_board",
 		"arc_lamp",
-		"shard_lantern"
+		"shard_lantern",
+		"lumen_ward"
 	],
 }
 
@@ -976,6 +991,7 @@ const BUILD_ORDER := [
 	"healing_house",
 	"starfruit_grove",
 	"shardwright",
+	"lumen_ward",
 ]
 
 ## Output a building holds before it stops, when nobody hauls it away.

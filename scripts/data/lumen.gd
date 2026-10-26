@@ -59,4 +59,10 @@ const LUMEN := {
 	"Needs shardlight: build a Shard Lantern within %d tiles, or stand within %d tiles of the Cairn",
 	"mending": "Mending: homes within %d tiles have births sooner and their tools last longer",
 	"mender_radius": 6.0,
+	# The Lumen Ward (Lore tab, opens with the Craft set): the strangers will not speak the Warning until one stands.
+	"ward_trust": 10.0,
+	"ward_built":
+	"The strangers step inside the Ward and the shardlight holds. For the first time they look as if they might sleep.",
+	"ward_word": ["not built", "built"],
+	"ward_row": "The Lumen Ward: %s. The strangers will not speak the Warning until it stands.",
 }

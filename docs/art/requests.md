@@ -168,6 +168,17 @@ Livewire stage 3 (the Factory Floor, the Shard Dynamo, Chain Orders, the Skyward
 - [x] **Research card icons.** Factory Floor, Shard Dynamo, Chain Orders and Skyward borrow existing icons (see `icon` in `scripts/data/livewire/techs.gd`); paint their own. Wired 2026-10-23 from Codex's #135-#139 art.
 - Noted, not changed: the Floor's Recipe button and the Order Board's While button are plain text buttons; an icon for what the Floor makes would be welcome.
 
+## 2026-10-26: Starfall's Lumen buildings, art slots (Claude)
+Starfall part D (the Lumen tab, design-system/16-starfall.md) ships on **placeholder art**: nothing was added to `art/` and no `.import` file was made. Footprints are all 1x1. Look: the misty-highlands miniature atlas, 35 px common height, shardlight cool cyan against the warm Kith browns. Each slot names what stands in for it now (`Rendered.SINGLE_BUILDINGS` and `Rendered.BORROWED_ITEMS` in `scripts/rendered_art.gd`).
+- [ ] **Shard Lantern (`shard_lantern`, Lore tab).** A slim post of pale stone with a small shard held in a cradle at the top, glowing cool cyan; it should read as "a light you can plant anywhere". The 4-tile reach is a code-drawn ring (`Overlays.lumen_rings`). Now: the Shard Lamp region.
+- [ ] **Healing House (`healing_house`, Homes tab).** A low round house with a green-grey thatch, hanging herbs by the door and a soft cyan lamp; one Kith (the Mender) works here. Now: the Lumen Camp region.
+- [ ] **Starfruit Grove (`starfruit_grove`, Gathering tab).** Three or four small trees with pale, faintly glowing fruit, a low rope fence and a basket; it only bears in shardlight, so a stopped Grove (no light) could show the fruit dim. Now: a Workshops region, tinted.
+- [ ] **Shardwright (`shardwright`, Workshops tab).** A small bench workshop with a bronze-bound vise, coils of rope and a few shard chips glowing on the bench; a cool glow from inside while it works. Now: a Workshops region, tinted.
+- [ ] **Lumen Ward (`lumen_ward`, Lore tab).** A ring of five upright stones with shard-bright bands set round a low plinth, bigger than the Lantern; it should read as "a place the Lumen's protection stands". It is the goal the Warning waits on, so it can be the most striking of the five. Now: the Shard Cairn region.
+- [ ] **Starfruit item icon (`starfruit`).** A pale gold fruit with a faint star-shaped glow, readable at 20 px in the top bar. Now: the Berries icon tinted gold.
+- [ ] **Shardwork item icon (`shardwork`).** A small bound bar of bronze with a shard chip set in it, readable at 20 px. Now: the Bronze icon tinted cyan.
+- [ ] **Lumen tab card art (UI, optional).** Each of the four cards on the tech panel's Lumen tab shows its building at 40 px (`scripts/lumen_view.gd`); a card frame with a faint cyan edge when open would carry it.
+
 ### Ironfall Phase B delivery — PR #93
 All five exact-name paintings and generated imports are supplied under `art/rendered/cutscenes/`: ironfall_1, ironfall_2, ironfall_3, bloom_sign_1, bloom_sign_2. Original size is the accepted 1586×992. The current player loads these automatically by filename. Prompts, provenance and real player captures are in `docs/art/ironfall/phase-b/`; Sela and the existing #73 Bloom design are reused as references. Review current-head CI before merge. Full stage 1 visual batch: tiles #90, buildings #91, items #92, stills #93. Map/item hooks are in their measured-region specs; renderer/gameplay code stays Claude's.
 

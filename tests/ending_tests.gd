@@ -32,8 +32,8 @@ func run(runner) -> void:
 
 
 ## Stand every set before the Warning as read and every question answered but `leave`; the Warning's marks are on the Wall
-## and guessed right.
-func _at_the_end(leave := "") -> Sim:
+## and guessed right. The Lumen Ward stands (its trust already counted) unless `ward` is false.
+func _at_the_end(leave := "", ward := true) -> Sim:
 	var s: Sim = _h._arrived()
 	for n in [1, 2, 3, 4, 5]:
 		s.starfall.locked[Data.GLYPH_SETS[n]["id"]] = true
@@ -43,6 +43,9 @@ func _at_the_end(leave := "") -> Sim:
 	for g in Data.GLYPH_SETS[6]["glyphs"]:
 		s.starfall.copied.append(g)
 		s.starfall.guesses[g] = Data.GLYPHS[g]["word"]
+	if ward:
+		s.town.add_building("lumen_ward", _h._spot(s, "lumen_ward"))
+		s.starfall.seen["lumen_ward"] = true
 	return s
 
 
@@ -213,6 +216,14 @@ func test_the_warning_waits_for_the_questions() -> void:
 	s.starfall.choose(0)
 	t.check(s.starfall.check() and s.starfall.locked.has("warning"), "answered, it reads")
 	t.check(s.starfall.ended and s.starfall.next_moment() == "", "and the era is over")
+	var bare := _at_the_end("", false)
+	t.check(
+		not bare.starfall.may_end() and not bare.starfall.check(),
+		"with the questions answered but no Ward, it does not"
+	)
+	t.check(not bare.starfall.locked.has("warning") and not bare.starfall.ended, "and the era goes on")
+	bare.town.add_building("lumen_ward", _h._spot(bare, "lumen_ward"))
+	t.check(bare.starfall.may_end() and bare.starfall.check(), "once the Ward stands it reads")
 
 
 func test_a_right_warning_says_so_while_the_questions_wait() -> void:
@@ -223,26 +234,32 @@ func test_a_right_warning_says_so_while_the_questions_wait() -> void:
 	s.town.add_building("glyph_wall", _h._spot(s, "glyph_wall"))
 	var b: Dictionary = s.town.buildings[s.town.buildings.size() - 1]
 	wall.show_for(b)
-	var right := Data.WARNING_RIGHT_WAITING % [3, 3]
+	var right := Data.WARNING_RIGHT_WAITING % ["built", 3, 3]
 	t.check(_has_line(wall, right), "a right Warning before the questions says the strangers will speak (3 of 3 left)")
 	t.check(not s.starfall.check() and s.starfall.warning_right(), "and the guesses are kept, nothing is read")
 	s.starfall.answered["hunger"] = 0
 	wall.show_for(b)
-	t.check(_has_line(wall, Data.WARNING_RIGHT_WAITING % [2, 3]), "the count is live")
+	t.check(_has_line(wall, Data.WARNING_RIGHT_WAITING % ["built", 2, 3]), "the count is live")
 	s.starfall.answered["shards"] = 0
 	wall.show_for(b)
-	t.check(_has_line(wall, Data.WARNING_RIGHT_WAITING % [1, 3]), "down to the last question")
+	t.check(_has_line(wall, Data.WARNING_RIGHT_WAITING % ["built", 1, 3]), "down to the last question")
 	var g: String = Data.GLYPH_SETS[6]["glyphs"][0]
 	s.starfall.guesses[g] = "Water"
 	wall.show_for(b)
 	t.check(
-		_has_line(wall, Data.WARNING_NEEDS) and not _has_line(wall, Data.WARNING_RIGHT_WAITING % [1, 3]),
+		_has_line(wall, Data.WARNING_NEEDS) and not _has_line(wall, Data.WARNING_RIGHT_WAITING % ["built", 1, 3]),
 		"a wrong Warning does not get the 'Right' line"
 	)
 	s.starfall.guesses[g] = Data.GLYPHS[g]["word"]
 	s.starfall.answered["warning"] = 0
 	wall.show_for(b)
-	t.check(not _has_line(wall, Data.WARNING_RIGHT_WAITING % [1, 3]), "with the questions done the line goes")
+	t.check(not _has_line(wall, Data.WARNING_RIGHT_WAITING % ["built", 1, 3]), "with the questions done the line goes")
+	s.town.remove_at(s.town.buildings.find_custom(func(x): return x["type"] == "lumen_ward"))
+	wall.show_for(b)
+	t.check(
+		_has_line(wall, Data.WARNING_RIGHT_WAITING % ["not built", 0, 3]),
+		"without the Ward the line names it: not built"
+	)
 	wall.free()
 
 

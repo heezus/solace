@@ -21,6 +21,8 @@ const HINT_ORDER := [
 	"gap",
 	"mine",
 	"storehouse",
+	"lumen_open",
+	"needs_light",
 ]
 const HINTS := {
 	"hut": "Huts gather what's in reach. Click one to choose what it gathers.",
@@ -32,4 +34,6 @@ const HINTS := {
 	"gap": "Hold Alt to see where goods move and why a building is stuck.",
 	"mine": "Mines dig ore from the hills. Smelters turn ore into metal; both need haulers to keep moving.",
 	"storehouse": "A Storehouse is a second Hearth for haulers. Its card shows how many it has and how many it needs.",
+	"lumen_open": "Each set you read opens a Lumen building. Find it on the Lumen tab.",
+	"needs_light": "This one works only in shardlight. Put it near the Cairn, or light the spot with a Shard Lantern.",
 }

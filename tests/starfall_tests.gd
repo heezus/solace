@@ -196,7 +196,7 @@ func test_the_starfall_has_its_own_goals() -> void:
 	t.check(before.story.goal_list() != Data.GOALS_ERA3, "before the star falls the Starfall goals are not in force")
 	var s := _fallen()
 	t.check(s.story.goal_list() == Data.GOALS_ERA3, "once the star falls the Starfall goals are")
-	t.check(Data.GOALS_ERA3.size() == 9, "nine of them")
+	t.check(Data.GOALS_ERA3.size() == 10, "ten of them")
 	var seen := {}
 	for g in Data.GOALS_ERA3:
 		t.check(g["text"] != "" and not seen.has(g["id"]), "%s: a goal with words and its own id" % g["id"])

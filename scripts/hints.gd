@@ -89,6 +89,10 @@ func _moment(s, id: String, delta: float) -> bool:
 			return _any_building(s, func(b): return b["type"] == "mine")
 		"storehouse":
 			return _any_building(s, func(b): return b["type"] == "storehouse")
+		"lumen_open":
+			return Data.ROAD_ORDER.any(func(set_id): return s.starfall.opens(set_id))
+		"needs_light":
+			return _any_building(s, func(b): return b["alert"] == Data.LUMEN["needs_light"])
 	return false
 
 
