@@ -71,7 +71,7 @@ func show_for(b: Dictionary) -> void:
 				add_child(IconRow.wrap("gift_" + gset["id"], gift_line, gift["name"]))
 		for g in f.glyph_order(n):
 			if f.copied.has(g):
-				add_child(_row(g, f.locked.has(gset["id"])))
+				add_child(_row(g, f.locked.has(gset["id"]) or f.carry.knows_mark(g)))  # a mark read in an earlier run shows its word
 	var end: Vector2i = f.progress(Data.ENDING_SET)
 	if end.x == end.y and not f.locked.has(Data.ENDING_SET) and not f.may_end():
 		if f.warning_right():

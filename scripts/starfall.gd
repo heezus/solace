@@ -19,6 +19,7 @@ signal moment(id: String)
 const Data = preload("res://scripts/data.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Economy = preload("res://scripts/economy.gd")
+const Carry = preload("res://scripts/carry.gd")
 
 ## The story id a stage 4 building records the first time it stands (the Market has its own: market_open).
 const STAND_STORY := {"shared_shrine": "shrine_raised", "guard_post": "guard_raised"}
@@ -52,6 +53,7 @@ var twin_lit: Dictionary = {}  # gift set id -> true while a refused gift's twin
 var twin_paid: Dictionary = {}  # gift set id -> true once a twin's one-time price is paid
 var twin_clock := 0.0  # seconds since the twins' upkeep was last paid (Data.TWIN_EVERY)
 var pops: Array = []  # short texts the map floats over the Hearth ("+6 trust"); main takes them every frame
+var carry := Carry.new()  # from earlier runs: read marks show their word, an echo opens a Lumen card (Sim shares its own)
 var _stock: Economy  # for the one thing a moment can take: food
 var _town: Buildings
 
@@ -136,7 +138,7 @@ func _tick_arrived(delta: float) -> void:
 			copy_clock -= Data.COPY_SECONDS
 			var next := _next_to_copy()
 			if next != "":
-				copied.append(next)
+				_copy(next)
 				said.emit(Data.COPIED_LINE)
 	check_clock += delta
 	if check_clock >= Data.CHECK_SECONDS:
@@ -348,6 +350,14 @@ func _scramble(k: int) -> int:
 	return absi(((wreck.x + 7) * 73856093) ^ ((wreck.y + 11) * 19349663) ^ (k * 83492791)) % 1000003
 
 
+## Put mark `glyph` on the Wall. A mark the Kith read in an earlier run shows its word at once (the guess is already right), so
+## its set is read at the next check once all three marks are copied: the Wall still copies it and the story still happens.
+func _copy(glyph: String) -> void:
+	copied.append(glyph)
+	if carry.knows_mark(glyph):
+		guesses[glyph] = Data.GLYPHS[glyph]["word"]
+
+
 ## The first glyph of the first unread set that is not on the Wall yet, "" when every mark is copied. Only the sets the
 ## survivors show are copied by the Wall itself; the rest come home from the Wreck (add_finds).
 func _next_to_copy() -> String:
@@ -443,11 +453,14 @@ func gift(set_id: String) -> bool:
 	return locked.has(set_id) and roads.get(set_id, "") != "refuse" and not road_queue.has(set_id)
 
 
-## True when the Lumen building of the set called `set_id` is open (Data.LUMEN): the set is read and its gift taken, or the Kith
+## True when the Lumen building of the set called `set_id` is open (Data.LUMEN): the set's echo is carried from an earlier run (open
+## from the start), or the set is read and its gift taken, or the Kith
 ## refused the Growth or Craft gift and found their own way, so no road shuts the Lumen Ward out (it needs a Grove and a Shardwright).
 func opens(set_id: String) -> bool:
 	return (
-		gift(set_id) or (locked.has(set_id) and roads.get(set_id, "") == "refuse" and Data.LUMEN["own_way"].has(set_id))
+		carry.has_echo(set_id)
+		or gift(set_id)
+		or (locked.has(set_id) and roads.get(set_id, "") == "refuse" and Data.LUMEN["own_way"].has(set_id))
 	)
 
 
@@ -563,7 +576,7 @@ func add_finds(count: int) -> int:
 			continue
 		for g in glyph_order(n):
 			if added < count and not copied.has(g):
-				copied.append(g)
+				_copy(g)
 				added += 1
 	return added
 
@@ -580,9 +593,9 @@ func wreck_has_more() -> bool:
 
 
 ## Move the guess on mark `glyph` to the next word of the list. Only a copied mark in an unread set can be guessed.
-## Returns the word it now holds, or "" when nothing changed.
+## Returns the word it now holds, or "" when nothing changed. A mark read in an earlier run keeps its word.
 func cycle_guess(glyph: String) -> String:
-	if not copied.has(glyph) or set_of(glyph) == "" or locked.has(set_of(glyph)):
+	if not copied.has(glyph) or set_of(glyph) == "" or locked.has(set_of(glyph)) or carry.knows_mark(glyph):
 		return ""
 	var taken := _read_words()
 	var at: int = Data.GLYPH_WORDS.find(guesses.get(glyph, ""))

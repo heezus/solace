@@ -1,12 +1,16 @@
 extends RefCounted
-## Step 7 part A, the first reset (design-system/12-knowledge-is-progress.md, "Exodus as built"): the profile's carry (version 2), banked
-## only when the Kith set out, the run that begins with it and keeps it through a save, the Skyward card's "Set out" and the game
-## menu's two entries, each with a confirm that can be said no to. Nothing here plays a game. Run from tests/run_tests.gd.
+## Step 7, the first reset (design-system/12-knowledge-is-progress.md, "Exodus as built"). Part A: the profile's carry (version 2),
+## banked only when the Kith set out, the run that begins with it and keeps it through a save, the Skyward card's "Set out" and the
+## game menu's two entries, each with a confirm that can be said no to. Part B: what the carry does in play (a known tech costs its share
+## the study, a read mark shows its word, an echo opens its Lumen card from the first minute) and the card that opens the new land.
+## Nothing here plays a game. Run from tests/run_tests.gd.
 
 const Carry = preload("res://scripts/carry.gd")
 const Data = preload("res://scripts/data.gd")
 const EraCard = preload("res://scripts/era_card.gd")
 const GameMenu = preload("res://scripts/game_menu.gd")
+const NoticeCard = preload("res://scripts/notice_card.gd")
+const StarfallTests = preload("res://tests/starfall_tests.gd")
 const Launch = preload("res://scripts/launch.gd")
 const Profile = preload("res://scripts/profile.gd")
 const RunSave = preload("res://scripts/run_save.gd")
@@ -29,6 +33,10 @@ func run(runner) -> void:
 	test_set_out_waits_for_skyward_and_the_confirm_can_be_cancelled()
 	test_forget_asks_first()
 	test_the_skyward_card_offers_set_out()
+	test_a_known_tech_costs_its_share_rounded_up()
+	test_echo_cards_open_from_minute_zero_and_only_for_read_sets()
+	test_read_marks_show_their_words_and_the_wall_still_copies()
+	test_the_new_land_card_opens_once()
 	_clean()
 
 
@@ -233,4 +241,109 @@ func test_the_skyward_card_offers_set_out() -> void:
 	t.check(not button.visible, "no other end of an era has it")
 	card.open(Data.LIVEWIRE_EVENT)
 	t.check(not button.visible, "not Ironfall's either")
+	card.free()
+
+
+func test_a_known_tech_costs_its_share_rounded_up() -> void:
+	var s := Sim.new()
+	s.generate(5)
+	var tech := "cordage"
+	var base: Dictionary = Data.TECHS[tech]["cost"]
+	t.check(s.tech_tree.cost_of(tech) == base, "a first run pays the price in the data")
+	s.carry.techs.append(tech)
+	var known: Dictionary = s.tech_tree.cost_of(tech)
+	var odd := false
+	for id in base:
+		t.check(
+			known[id] == ceili(base[id] * Data.EXODUS["known_share"]),
+			"%s costs its share, rounded up (%d of %d)" % [id, known[id], base[id]]
+		)
+		odd = odd or fmod(base[id] * Data.EXODUS["known_share"], 1.0) > 0.0
+	t.check(odd, "(a price does not divide evenly, so the rounding is tried)")
+	t.check(s.tech_tree.cost_of("fire") == Data.TECHS["fire"]["cost"], "a tech not learned before costs what it says")
+	s.tech_tree.researched["tally_sticks"] = true
+	var tally: Dictionary = s.tech_tree.cost_of(tech)
+	for id in known:
+		t.check(
+			tally[id] == maxi(roundi(known[id] * Data.TALLY_DISCOUNT), 1),
+			"Tally Sticks takes its tenth off the known price"
+		)
+	var one := Sim.new()
+	one.generate(5)
+	one.carry.techs.append("knapping")
+	for id in one.tech_tree.cost_of("knapping"):
+		t.check(one.tech_tree.cost_of("knapping")[id] >= 1, "never less than one")
+
+
+func test_echo_cards_open_from_minute_zero_and_only_for_read_sets() -> void:
+	var s := Sim.new()
+	s.generate(5)
+	t.check(
+		not s.town.unlocked("shard_lantern") and not s.town.unlocked("healing_house"), "no echo: the cards are shut"
+	)
+	s.carry.echoes = ["light"]
+	t.check(s.town.unlocked("shard_lantern"), "the Light echo opens the Shard Lantern at minute 0")
+	t.check(not s.town.unlocked("healing_house") and not s.town.unlocked("starfruit_grove"), "and only that card")
+	t.check(
+		not s.starfall.arrived() and not s.starfall.read("light"),
+		"though the strangers have not come and nothing is read"
+	)
+	var price: Dictionary = s.town.price("shard_lantern")
+	t.check(price == Data.BUILDINGS["shard_lantern"]["cost"], "it still costs its normal materials")
+	t.check(s.town.placement_error("shard_lantern", Vector2i(-1, -1)) == "Off the map", "and is placed like any other")
+	var banked := _ended_run()
+	t.check(
+		Carry.earned(banked)["echoes"] == ["light"], "only a fully read set gives an echo: the Body set is not read"
+	)
+
+
+func test_read_marks_show_their_words_and_the_wall_still_copies() -> void:
+	var h := StarfallTests.new()
+	h.t = t
+	var s: Sim = h._arrived()
+	var marks: Array = Data.GLYPH_SETS[1]["glyphs"]
+	s.carry.marks = marks.duplicate()
+	var heard := []
+	s.starfall.moment.connect(func(id): heard.append(id))
+	h._wall(s)
+	h._wait(s, Data.COPY_SECONDS)
+	t.check(s.starfall.copied.size() == 1, "the Wall copies a mark as it always does")
+	var first: String = s.starfall.copied[0]
+	t.check(s.starfall.guesses.get(first, "") == Data.GLYPHS[first]["word"], "and the mark shows its word at once")
+	t.check(s.starfall.cycle_guess(first) == "", "a click does not move it off")
+	t.check(not s.starfall.locked.has("name"), "the set is not read before all three are on the Wall")
+	h._wait(s, Data.COPY_SECONDS * 2 + Data.CHECK_SECONDS)
+	t.check(s.starfall.copied.size() == 3 and s.starfall.locked.has("name"), "then it is read, with no guessing")
+	t.check(heard.has("name_read"), "and the story moment still happens")
+	var fresh: Sim = h._arrived()
+	h._wall(fresh)
+	h._wait(fresh, Data.COPY_SECONDS * 3 + Data.CHECK_SECONDS)
+	t.check(
+		fresh.starfall.copied.size() == 3 and not fresh.starfall.locked.has("name"), "a first run still has to guess"
+	)
+
+
+func test_the_new_land_card_opens_once() -> void:
+	var s := Sim.new()
+	s.generate(5)
+	var card := NoticeCard.new()
+	card.setup()
+	t.check(not card.poll(s, false) and not card.visible, "a first run opens with no card")
+	s.carry.from_dict(
+		{"techs": ["knapping", "fire"], "marks": Data.GLYPH_SETS[2]["glyphs"], "echoes": ["light"], "exodus": 1}
+	)
+	t.check(not card.poll(s, true), "it waits while another card is up")
+	t.check(card.poll(s, false) and card.visible, "a run with a carry opens with the card")
+	var words := ""
+	for c in card._box.get_children():
+		if c is Label:
+			words += c.text + "\n"
+	t.check(words.contains(Data.EXODUS["land_title"]) and words.contains("2 things"), "which counts the techs")
+	t.check(words.contains("3 marks") and words.contains("Shard Lantern"), "the marks and the echo's building")
+	t.check(s.carry.told and not card.poll(s, false), "and says so once")
+	var back := Sim.new()
+	t.check(
+		RunSave.restore(back, JSON.parse_string(RunSave.to_json(RunSave.dump(s)))) and back.carry.told,
+		"a loaded run does not say it again"
+	)
 	card.free()
