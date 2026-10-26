@@ -1,7 +1,8 @@
 extends Control
 ## A plain card over a dimmed map: a title, some words and one button per choice. It puts itself up for the run's first famine and for
 ## each season of strain (design-system/24-balance.md): `poll` is asked every frame, opens the card when one is due and says so, and
-## the owner pauses while it is up and resumes on `closed`. A season's answer goes to the Seasons block from here.
+## the owner pauses while it is up and resumes on `closed`. A season's answer goes to the Seasons block from here. A run that
+## begins with a carry (the Exodus) opens with "A new land", once.
 ## Signal: closed(look) fires once when a button is pressed; `look` is true when the player asked to see the Hearth.
 
 signal closed(look: bool)
@@ -46,6 +47,11 @@ func place(area: Rect2) -> void:
 func poll(s, blocked: bool) -> bool:
 	if blocked or visible:
 		return false
+	if s.carry.exodus > 0 and not s.carry.told:
+		s.carry.told = true
+		_season = false
+		open(Data.EXODUS["land_title"], _land_text(s), [Data.EXODUS["land_button"]])
+		return true
 	if s.seasons.phase == "pending":
 		var def: Dictionary = Data.SEASONS[s.seasons.kind]
 		var labels: Array = []
@@ -64,6 +70,20 @@ func poll(s, blocked: bool) -> bool:
 		open(Data.FAMINE_TITLE, words, [Data.FAMINE_LOOK, Data.FAMINE_CARRY_ON])
 		return true
 	return false
+
+
+## What the Kith carry, one line each: the techs, the marks and the echoes (the Lumen building each opens).
+func _land_text(s) -> String:
+	var lines: Array = [Data.EXODUS["land_text"], ""]
+	if not s.carry.techs.is_empty():
+		lines.append(Data.EXODUS["land_techs"] % s.carry.techs.size())
+	if not s.carry.marks.is_empty():
+		lines.append(Data.EXODUS["land_marks"] % s.carry.marks.size())
+	for id in Data.ROAD_ORDER:
+		if s.carry.has_echo(id):
+			var card: Dictionary = Data.LUMEN["cards"][id]
+			lines.append(Data.EXODUS["land_echoes"] % [card["set"], Data.BUILDINGS[card["building"]]["name"]])
+	return "\n".join(lines)
 
 
 ## Put the card up with `title`, `text` and a button for each of `labels`, each with its `notes` line under it when given.

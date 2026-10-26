@@ -16,6 +16,10 @@ extends SceneTree
 ## A baseline run keeps the game as each era begins in `out` (<era>_start_<map>.json), and `until=<era>` stops it there. `era=ironfall`
 ## plays Ironfall alone from such a start (`from=<file>`, by default `out`'s own) with the bot a baseline run uses, so one era is one
 ## job: a restart repeats only that era, and two jobs from the same start play the same.
+## With `exodus=<file>` the baseline's first job (stone age to the Ironfall start) is the Exodus run: <file> is the end of a run (a run
+## dump, or a baseline's checkpoint in user://baseline_work/) and the Kith set out from it, exactly as the game menu's Set out does
+## (Profile.set_out), onto map <map> (the run's own seed plus 1000 when it is meant to follow it). The era jobs after it take the
+## carry from the start files, so each era is still its own job.
 ## Run: godot --headless --path . -s tests/tools/pace.gd --
 ##   [map|all] [minutes] [quiet] [bronze|star|ironfall [steam|teardown]|livewire|baseline [noseams] [until=<era>] out=<folder>] [cache]
 ##   <map> <minutes> quiet baseline era=ironfall [from=<file>] out=<folder>
@@ -27,6 +31,8 @@ const AutoplayLivewire = preload("res://tests/autoplay_livewire.gd")
 const AutoplayStarfall = preload("res://tests/autoplay_starfall.gd")
 const DevStarts = preload("res://scripts/dev_starts.gd")
 const EraProbe = preload("res://tests/tools/era_probe.gd")
+const Launch = preload("res://scripts/launch.gd")
+const Profile = preload("res://scripts/profile.gd")
 const RunSave = preload("res://scripts/run_save.gd")
 const Sim = preload("res://scripts/sim.gd")
 
@@ -216,7 +222,8 @@ func _baseline(m: int, minutes: float, out: String) -> void:
 			until = a.substr(6)
 	var stage := _baseline_resume(work, probe, game)
 	if stage == "":
-		game.generate(m)
+		if not _begin_run(game, m):
+			return
 		stage = "stone_age"
 		probe.begin("stone_age", game)
 	var at := [stage, game.seasons.time, Time.get_ticks_msec()]  # the stage, and the game clock and wall clock of the last checkpoint
@@ -283,6 +290,30 @@ func _baseline(m: int, minutes: float, out: String) -> void:
 			)
 		)
 	quit(0)
+
+
+## A new run on map `m`: a first run, or (with `exodus=<file>`) the Kith set out from the end of the run in <file> onto the map.
+func _begin_run(game: Sim, m: int) -> bool:
+	var from := ""
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("exodus="):
+			from = a.substr(7)
+	if from == "":
+		game.generate(m)
+		return true
+	var kept: Variant = JSON.parse_string(FileAccess.get_file_as_string(from))
+	if typeof(kept) == TYPE_DICTIONARY and kept.has("run"):
+		kept = RunSave.from_json(kept["run"])  # a baseline's checkpoint holds the run as text
+	var end := Sim.new()
+	if not RunSave.restore(end, kept):
+		print("exodus: no run to set out from at %s" % from)
+		quit(1)
+		return false
+	var path := "user://exodus_profile_%d.json" % m
+	Profile.forget(path)
+	Profile.set_out(end, path)
+	Launch.begin_new(game, m, path)
+	return true
 
 
 ## Keep the game as era `stage` begins (once: a run picked up mid-era does not overwrite it), and stop there when `until` is that era.

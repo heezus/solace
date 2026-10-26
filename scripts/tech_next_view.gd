@@ -132,6 +132,8 @@ func _card(tech: String, is_pick: bool, why: String) -> PanelContainer:
 		v.add_child(reason)
 	v.add_child(_wrapped(Data.NEXT_UNLOCKS % Data.TECH_BLURBS.get(tech, def["unlock"]), Ui.TEXT))
 	v.add_child(_cost_row(state.tech_tree.cost_of(tech)))
+	if state.carry.knows_tech(tech):
+		v.add_child(_wrapped(Data.EXODUS["known_line"], Ui.GOOD))
 	var short := TechNext.short_text(state, tech)
 	var status := _wrapped(Data.NEXT_ENOUGH if paid else Data.NEXT_SHORT % short, Ui.GOOD if paid else Ui.SHORT)
 	v.add_child(status)

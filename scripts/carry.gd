@@ -3,7 +3,7 @@ extends RefCounted
 ## Knowledge of kinds, never of places: the techs already learned, the glyph marks already read, the Lumen sets whose echo is
 ## open. A first run carries nothing (`exodus` 0) and plays exactly as it always did. The carry is fixed when a run begins (it
 ## is the profile as it stood then, scripts/profile.gd) and is saved with the run, so a loaded run plays the same even if the
-## profile has changed since. It is a block of the Sim, but only reads: nothing in a run changes it.
+## profile has changed since. It is a block of the Sim that the run only reads, apart from `told`: the opening card was shown.
 
 const Data = preload("res://scripts/data.gd")
 
@@ -11,6 +11,7 @@ var techs: Array = []  # tech ids learned in an earlier run: they cost half the 
 var marks: Array = []  # glyph ids read in an earlier run: they show their word
 var echoes: Array = []  # Lumen set ids read in an earlier run: that set's building is open from the start
 var exodus := 0  # which Exodus this run is: 0 for a first run
+var told := false  # the card that opens an Exodus run has been shown (scripts/notice_card.gd)
 
 
 ## True for a first run, which carries nothing.
@@ -50,7 +51,13 @@ static func earned(s) -> Dictionary:
 
 
 func to_dict() -> Dictionary:
-	return {"techs": techs.duplicate(), "marks": marks.duplicate(), "echoes": echoes.duplicate(), "exodus": exodus}
+	return {
+		"techs": techs.duplicate(),
+		"marks": marks.duplicate(),
+		"echoes": echoes.duplicate(),
+		"exodus": exodus,
+		"told": told,
+	}
 
 
 ## Replace the carry with `d` (a run save without one gives a first run's).
@@ -59,6 +66,7 @@ func from_dict(d: Dictionary) -> void:
 	marks = _strings(d.get("marks", []))
 	echoes = _strings(d.get("echoes", []))
 	exodus = maxi(int(d.get("exodus", 0)), 0)
+	told = bool(d.get("told", false))
 
 
 static func _strings(list) -> Array:

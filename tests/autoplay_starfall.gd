@@ -13,10 +13,7 @@ extends "res://tests/autoplay_bronze.gd"
 
 const Expedition = preload("res://scripts/expedition.gd")
 const Starfall = preload("res://scripts/starfall.gd")
-const Bonuses = preload("res://scripts/bonuses.gd")
 
-const LANTERNS_MAX := 3  # Shard Lanterns: the first by the Grove and the Shardwright, the rest by gatherers still in the dark
-const GROVES := 1  # Starfruit Groves: one grows the Ward's 60 Starfruit in about 7 minutes
 const PACK_ROPE := 12  # rope kept in the stores for the Post: _orders() sends a standard pack at this much
 
 var marks := {}  # milestone -> clock
@@ -100,55 +97,11 @@ func _lumen() -> bool:
 	_guess()
 	_orders()
 	for type in _wanted():
-		if _count(type) < _want_of(type) and s.town.unlocked(type) and _place_lumen(type):
+		if _count(type) < Lumen.want_of(self, type) and s.town.unlocked(type) and Lumen.place(self, type):
 			_mark("%s built" % type)
 			lines.append("%5d s    + %s" % [int(clock), Data.BUILDINGS[type]["name"]])
 			return true
 	return false
-
-
-## How many of a building the era's bot raises: one of each, but Lanterns follow the dark gatherers and Groves are two.
-func _want_of(type: String) -> int:
-	match type:
-		"shard_lantern":
-			return LANTERNS_MAX if _count(type) == 0 or _huts_in_the_dark() > 0 else 0
-		"starfruit_grove":
-			return GROVES
-	return 1
-
-
-## Gatherers' Huts no shardlight reaches.
-func _huts_in_the_dark() -> int:
-	var n := 0
-	for b in s.town.buildings:
-		if b["type"] == "gatherers_hut" and not Bonuses.lit(s, b["pos"]):
-			n += 1
-	return n
-
-
-## Place one Lumen building: a Lantern where it lights the most huts still in the dark (the first one near the Hearth, for the Grove
-## and the Shardwright), those two only inside shardlight, the rest near the Hearth.
-func _place_lumen(type: String) -> bool:
-	var hearth := Vector2(s.world.camp_pos)
-	match type:
-		"shard_lantern":
-			return _place_best(
-				type,
-				func(p):
-					var dark := 0
-					for b in s.town.buildings:
-						if (
-							b["type"] == "gatherers_hut"
-							and Vector2(b["pos"]).distance_to(Vector2(p)) <= Data.SHARDLIGHT_RADIUS
-						):
-							dark += 0 if Bonuses.lit(s, b["pos"]) else 1
-					if _count(type) > 0 and dark == 0:
-						return -INF
-					return dark * 4.0 - Vector2(p).distance_to(hearth)
-			)
-		"starfruit_grove", "shardwright":
-			return _place_best(type, func(p): return -Vector2(p).distance_to(hearth) if Bonuses.lit(s, p) else -INF)
-	return _place_near_hearth(type)
 
 
 ## The buildings the era asks for, in the order a player would meet them.

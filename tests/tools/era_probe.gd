@@ -81,6 +81,7 @@ func begin(name: String, s) -> void:
 				paused += 1
 	_row = {
 		"era": name,
+		"exodus": s.carry.exodus,  # 0 for a first run
 		"start":
 		{
 			"minute": snappedf(_at / 60.0, 0.1),

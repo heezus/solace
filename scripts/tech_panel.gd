@@ -503,6 +503,8 @@ func _show_tech(tech: String) -> void:
 	_show_prices({} if unbuilt else (Ranks.next_cost(state, tech) if researched else state.tech_tree.cost_of(tech)))
 	if not researched and not unbuilt and Ui.then_builds_text(tech) != "":
 		strip["cost"].text += "     " + Ui.then_builds_text(tech)
+	if not researched and not unbuilt and state.carry.knows_tech(tech):
+		strip["cost"].text += "     " + Data.EXODUS["known_line"]  # learned in an earlier run: half the study
 	var warn := (
 		""
 		if researched or not state.tech_tree.can_research(tech)

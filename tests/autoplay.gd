@@ -17,6 +17,7 @@ const World = preload("res://scripts/world.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Homes = preload("res://scripts/homes.gd")
 const BirthsWaitAnswer = preload("res://tests/autoplay_births.gd")
+const Lumen = preload("res://tests/autoplay_lumen.gd")
 
 const DT := 0.1
 const THINK := 1.0  # seconds between decisions
@@ -487,7 +488,7 @@ func _decide() -> void:
 	var later := _route_need()
 	births.watch(self)
 	_pause_surplus(short, later)
-	if births.answer(self, short):
+	if births.answer(self, short) or Lumen.echoes(self):
 		return
 	if _buy_rank(short):
 		return

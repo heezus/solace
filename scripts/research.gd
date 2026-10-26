@@ -21,6 +21,7 @@ var queue: Array = []  # the next techs on the way there, researched as soon as 
 var story_has: Callable = func(_id): return false  # (String) -> bool: has that story moment happened? Set by the owner
 var gift_has: Callable = func(_id): return true  # (String) -> bool: is that Lumen gift (a glyph set) read? Set by the owner
 var lesson_has: Callable = func(_id): return true  # (String) -> bool: is that Lesson learned? Set by the owner
+var known_before: Callable = func(_id): return false  # (String) -> bool: learned in an earlier run (the Exodus)? Set by the owner
 var deed_has: Callable = func(_id): return true  # (String) -> bool: is that gate deed done (scripts/gate.gd)? Set by the owner
 var deed_note: Callable = func(_id): return ""  # (String) -> String: why a deed is not done, in a few words ("" for none)
 var _economy: Economy
@@ -173,10 +174,16 @@ static func enabled(tech: String) -> bool:
 	return Rules.tech_enabled(tech)
 
 
-## What `tech` costs now: Tally Sticks makes every tech a tenth cheaper, and whatever the town reports as an extra
-## discount (a Shard Cairn) takes a little more off. The two multiply and the item is rounded once, never to less than 1.
+## What `tech` costs now: a tech learned in an earlier run costs Data.EXODUS["known_share"] of its study first (each item
+## rounded up). Then Tally Sticks makes every tech a tenth cheaper, and whatever the town reports as an extra discount
+## (a Shard Cairn) takes a little more off. Those multiply and the item is rounded once, never to less than 1.
 func cost_of(tech: String) -> Dictionary:
 	var cost: Dictionary = Data.TECHS[tech]["cost"]
+	if known_before.call(tech):
+		var half := {}
+		for id in cost:
+			half[id] = ceili(cost[id] * Data.EXODUS["known_share"])
+		cost = half
 	var share := 1.0
 	if comes_later(tech):
 		share *= Data.FORK_LATER_COST

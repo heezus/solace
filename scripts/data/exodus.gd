@@ -4,6 +4,16 @@ extends RefCounted
 ## one dictionary so the facade stays small. The words are placeholders until the story framing of a second run is chosen.
 
 const EXODUS := {
+	# What the carry does. A tech learned in an earlier run costs this share of its study (each item rounded up).
+	"known_share": 0.5,
+	"known_line": "Known from before: half the study",
+	# The card that opens a run that begins with a carry.
+	"land_title": "A NEW LAND",
+	"land_text": "The town stays behind. The Kith walk into a land they have not seen, carrying what they know.",
+	"land_techs": "%d things they learned before, each at half the study",
+	"land_marks": "%d marks of the strangers' writing, already read",
+	"land_echoes": "The echo of %s: %s",  # the set, the building it opens
+	"land_button": "Begin",
 	# The Skyward card's second button, the game menu's entry and the confirm.
 	"set_out": "Set out",
 	"set_out_tip": "Leave this land for a new one, carrying what the Kith know. Opens once Skyward is raised.",

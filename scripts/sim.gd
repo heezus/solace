@@ -105,6 +105,8 @@ func _init() -> void:
 	town.lesson_has = teardown.knows
 	tech_tree.gift_has = starfall.read  # a tech may wait on a gift read or a Lesson learned (Ironfall)
 	tech_tree.lesson_has = teardown.knows
+	tech_tree.known_before = carry.knows_tech  # the Exodus: a tech learned in an earlier run costs half the study
+	starfall.carry = carry  # and its read marks show their word, its echoes open the Lumen cards
 	tech_tree.set_deeds(gate.deed, gate.note)  # the Skyward gate's deeds and why one is not done (Livewire)
 
 
