@@ -406,6 +406,8 @@ func _from_livewire_start(m: int, minutes: float, out: String, from: String, ans
 	if out != "":
 		DirAccess.make_dir_recursive_absolute(out)
 		_write_file("%s/%s_seed_%d.json" % [out, "livewire" if answer else "variant", m], JSON.stringify(row, "\t"))
+		if row["ended"]:  # the run's end, for an Exodus job to set out from (`baseline exodus=<file>`)
+			_write_file("%s/skyward_end_%d.json" % [out, m], RunSave.to_json(RunSave.dump(game)))
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(work))  # finished: the next run starts afresh
 	print(
 		(
