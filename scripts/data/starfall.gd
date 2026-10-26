@@ -331,34 +331,34 @@ const SURVIVOR_CLOSE := 2.5  # ... and when it is full
 const SURVIVOR_AT_CAMP := 1.6  # tiles from a Lumen Camp, once one stands
 
 # --- The gifts: what reading a set gives (scripts/starfall.gd `gift`; the effects are in Data.BONUSES and Kith) ---
-## `line` is said when the set is read. Shardlight, Starfruit and Shardwork are Data.BONUSES entries that work within
-## SHARDLIGHT_RADIUS tiles of a Shard Cairn; the Healer's gift is a slower tool wear and a quicker birth (Kith).
+## `line` is said when the set is read; `note` is what the road card promises. Each gift opens one Lumen building (Data.LUMEN): the
+## Shard Lantern gives shardlight SHARDLIGHT_RADIUS tiles round, the Healing House's Mender tends the homes round it (Kith), the
+## Starfruit Grove grows food in shardlight and the Shardwright makes Shardwork there.
 const LUMEN_GIFTS := {
 	"light":
 	{
 		"name": "Shardlight",
-		"line": "The Cairn begins to hum and glow. Gatherers working in its light go faster. (Shardlight)",
-		"note": "Gatherers near a Shard Cairn work 25% faster.",
+		"line": "The Cairn begins to hum and glow. The Kith learn to hang its light in lanterns. (Shard Lantern)",
+		"note": "Opens the Shard Lantern: gatherers in its light work 25% faster.",
 	},
 	"body":
 	{
 		"name": "Lumen Healer",
-		"line":
-		"The Lumen teach the Kith their leaves and cloths. Tools last longer, children come sooner. (Lumen Healer)",
-		"note": "Tools last 40% longer and births come 20% sooner.",
+		"line": "The Lumen teach the Kith their leaves and cloths. A Mender can tend the homes now. (Healing House)",
+		"note": "Opens the Healing House: homes near it have births 20% sooner and their tools last 40% longer.",
 	},
 	"growth":
 	{
 		"name": "Starfruit",
-		"line": "The Lumen's seeds take in shardlight. Berries near the Cairn grow fat and sweet. (Starfruit)",
-		"note": "Berries picked near a Shard Cairn yield 50% more.",
+		"line": "The Lumen's seeds take in shardlight. A grove of them gives fat, sweet fruit. (Starfruit Grove)",
+		"note": "Opens the Starfruit Grove: a food worth two berries, grown in shardlight.",
 	},
 	"craft":
 	{
 		"name": "Shardwork",
 		"line":
-		"The Lumen show the Kith how to bind and shape with shard. Workshops in its light go faster. (Shardwork)",
-		"note": "Workshops near a Shard Cairn work 25% faster.",
+		"The Lumen show the Kith how to bind and shape with shard. A Shardwright can make Shardwork now. (Shardwright)",
+		"note": "Opens the Shardwright: it makes Shardwork in shardlight, and workshops in its light work 25% faster.",
 	},
 }
 const SHARDLIGHT_RADIUS := 4.0  # tiles from a Shard Cairn
@@ -409,7 +409,7 @@ const TWINS := {
 		"says":
 		'"They grow fat on shardlight," says ' + LEAD_NAME + '. "Yours will grow slow and honest. Your choice."',
 		"line": "The Kith decline the seeds and plant their own trees. The strangers look away.",
-		"note": "Berries picked near a Dwelling yield 50% more, for 40 Wood once.",
+		"note": "Berries picked near a Dwelling yield 50% more, for 40 Wood once. The Starfruit Grove opens anyway.",
 		"once": {"wood": 40},
 		"cost": "40 Wood",
 	},
@@ -420,7 +420,8 @@ const TWINS := {
 		"The Lumen offer to teach binding and shaping with shard. The Kith could also keep a Smelter lit for it.",
 		"says": '"It is easier with shard," says ' + LEAD_NAME + '. "But I hear you like hard work."',
 		"line": "The Kith decline and keep the Smelter burning. The strangers go quiet.",
-		"note": "Workshops beside a Smelter work 25% faster, for 1 Charcoal a minute per Smelter.",
+		"note":
+		"Workshops beside a Smelter work 25% faster, for 1 Charcoal a minute per Smelter. The Shardwright opens anyway.",
 		"feed": {"good": "charcoal", "n": 1, "per": "smelter"},
 	},
 }

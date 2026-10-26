@@ -15,6 +15,21 @@ const ITEMS := {
 	"flour": {"name": "Flour", "color": Color("f1e3c8")},
 	"flint_tools": {"name": "Flint Tools", "one": "Flint Tool", "short": "Tools", "color": Color("6c757d")},
 	"fish": {"name": "Fish", "color": Color("5fa8d3")},
+	# Era 3 (Starfall): what the Lumen buildings make (Data.LUMEN). Starfruit is a food like any other.
+	"starfruit":
+	{
+		"name": "Starfruit",
+		"color": Color("f2c14e"),
+		"era": 3,
+		"desc": "Grown in shardlight at a Starfruit Grove. Worth two berries as food",
+	},
+	"shardwork":
+	{
+		"name": "Shardwork",
+		"color": Color("9fd8e8"),
+		"era": 3,
+		"desc": "Rope and bronze bound with shard at a Shardwright. The Lumen Ward is built of it",
+	},
 	# Era 2 (Bronze Dawn). `era` marks an item the stone age never holds.
 	"copper_ore": {"name": "Copper Ore", "short": "Ore", "color": Color("a5683a"), "era": 2},
 	"tin": {"name": "Tin", "color": Color("c0c7cf"), "era": 2},
@@ -34,8 +49,9 @@ const ITEMS := {
 	"iron": {"name": "Iron", "color": Color("7d8791"), "era": 4},
 	"steel": {"name": "Steel", "color": Color("a9bfd1"), "era": 4},
 	"iron_tools": {"name": "Iron Tools", "one": "Iron Tool", "short": "Tools", "color": Color("56606b"), "era": 4},
+	"steel_tools":
 	# Stage 3: Steel Tools (the Steel tech) and the Shard, chipped by hand from the Strange Stone once Shard Lamps is learned.
-	"steel_tools": {"name": "Steel Tools", "one": "Steel Tool", "short": "Tools", "color": Color("8aa3b8"), "era": 4},
+	{"name": "Steel Tools", "one": "Steel Tool", "short": "Tools", "color": Color("8aa3b8"), "era": 4},
 	"shard":
 	{
 		"name": "Shard",
@@ -79,6 +95,7 @@ const ITEM_ORDER := [
 	"flour",
 	"flint_tools",
 	"fish",
+	"starfruit",
 	"copper_ore",
 	"tin",
 	"copper",
@@ -92,12 +109,13 @@ const ITEM_ORDER := [
 	"iron_tools",
 	"steel_tools",
 	"shard",
+	"shardwork",
 ]
 
 ## Food value of each edible item. The Kith eat from the stockpile.
-const FOOD_VALUE := {"berries": 1.0, "fish": 2.0, "flour": 3.0}
+const FOOD_VALUE := {"berries": 1.0, "fish": 2.0, "starfruit": 2.0, "flour": 3.0}
 ## The order the Kith eat in. Flour comes last, and only what research doesn't need.
-const EAT_ORDER := ["berries", "fish", "flour"]
+const EAT_ORDER := ["berries", "fish", "starfruit", "flour"]
 
 ## What Smoking and Baking make food worth (researched in the tech tree).
 const SMOKED_BERRY_FOOD := 2.0

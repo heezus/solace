@@ -42,6 +42,8 @@ var road_net: Dictionary = {}  # Roads' cache of the road networks and which bui
 var story_has: Callable = func(_id): return false
 ## (String) -> bool: is this Lesson learned? Sim connects it to the Teardown block; it opens a building's `lesson`.
 var lesson_has: Callable = func(_id): return false
+## (String) -> bool: is the Lumen building of this glyph set open? Sim connects it to the Starfall block; it opens a building's `lumen`.
+var lumen_has: Callable = func(_id): return false
 ## (Vector2i) -> bool: does a Power Pole net that gives power reach this tile? Sim connects it to the Livewire block.
 var on_net: Callable = func(_p): return false
 ## (Vector2i) -> bool: does the Bloom stand on the building at this tile (it is overgrown)? Sim connects it to the Tide block.
@@ -68,6 +70,8 @@ func unlocked(type: String) -> bool:
 	var def: Dictionary = Data.BUILDINGS[type]
 	if def.has("lesson") and not lesson_has.call(def["lesson"]):
 		return false  # taught by a part: nothing to build until the Bench has opened it
+	if def.has("lumen") and not lumen_has.call(def["lumen"]):
+		return false  # a Lumen building: nothing to build until its glyph set is read (Data.LUMEN)
 	var tech: String = def["tech"]
 	if tech == "":
 		return def.get("event", "") == "" or story_has.call(def["event"])
@@ -554,7 +558,7 @@ static func recipe_out(b: Dictionary) -> Dictionary:
 		return {b["ore"]: def["dig"]}
 	if def.get("trade", false):
 		return {b["get"]: Data.TRADE_GET} if is_trading(b) else {}
-	return def["out"]
+	return def.get("out", {})
 
 
 ## What a cycle at `b` uses: the building's `in`, for a Trading Post what it is set to give, for a Tool Bench what

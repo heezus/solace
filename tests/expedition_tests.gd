@@ -272,20 +272,22 @@ func test_the_gifts_work() -> void:
 	var berries := Bonuses.yield_mult(s, hut, "berries")
 	s.starfall.locked["growth"] = true
 	t.check(
-		is_equal_approx(Bonuses.yield_mult(s, hut, "berries"), berries + 0.5),
-		"Starfruit: berries near the Cairn yield 50% more"
+		is_equal_approx(Bonuses.yield_mult(s, hut, "berries"), berries),
+		"Starfruit is a Grove now: berries near the Cairn yield as ever"
 	)
-	t.check(is_equal_approx(Bonuses.yield_mult(s, hut, "clay"), Bonuses.yield_mult(s, hut, "clay")), "only berries")
 	var grow: float = s.people.grow_time()
 	s.starfall.locked["body"] = true
-	t.check(is_equal_approx(s.people.grow_time(), grow * Data.HEALER_GROW), "Lumen Healer: births come sooner")
+	t.check(
+		is_equal_approx(s.people.grow_time(), grow),
+		"the Healer is a Healing House now: with none standing, births are as ever"
+	)
 	var k: Dictionary = s.people.kith[0]
 	hut["worker"] = 0
 	k["tool"] = 40
 	k["tool_id"] = "flint_tools"
 	for i in 10:
 		s.people.wear(hut)
-	t.check(k["tool"] > 30 and k["tool"] < 40, "and a tool wears a little slower: %d" % k["tool"])
+	t.check(k["tool"] == 30, "and a tool wears as ever: %d" % k["tool"])
 	var plain: Sim = _h._arrived()
 	t.check(not plain.starfall.gift("light") and not plain.starfall.gift("body"), "no gifts before a set is read")
 

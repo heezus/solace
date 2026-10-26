@@ -155,21 +155,12 @@ const BONUSES := {
 	"steel_tools":
 	{"name": "Steel Tools", "group": "speed", "add": 2.25, "kinds": ["gatherer", "processor"], "tool": "steel_tools"},
 	"blast_furnace":
+	# Era 3 gifts (a Lumen building open, `opens`; Starfall.opens): Shardlight works for gatherers in shardlight (`lit`, the Cairn's or
 	{"name": "Blast Furnace", "group": "output", "add": 1.0, "tech": "blast_furnace", "types": ["bloomery"]},
-	# Era 3 gifts (a glyph set read, `gift`; they work within Data.SHARDLIGHT_RADIUS of a Shard Cairn, `near_cairn`).
+	# a Lantern's, Bonuses.lit). The Starfruit and the Healer are buildings now (Data.LUMEN): a Grove makes the food, a Mender tends.
 	"shardlight":
-	{"name": "Shardlight", "group": "speed", "add": 0.25, "kinds": ["gatherer"], "gift": "light", "near_cairn": true},
-	"starfruit":
-	{
-		"name": "Starfruit",
-		"group": "yield",
-		"add": 0.5,
-		"item": "berries",
-		"kinds": ["gatherer"],
-		"gift": "growth",
-		"near_cairn": true
-	},
 	# The Kith's twins of the gifts (Data.TWINS, design-system/29-two-roads.md): the same help, bought by refusing the gift. `twin`
+	{"name": "Shardlight", "group": "speed", "add": 0.25, "kinds": ["gatherer"], "opens": "light", "lit": true},
 	# needs that twin paid for (Starfall.twin); they work within Data.SHARDLIGHT_RADIUS tiles of what they name (`near_types`).
 	"cairnfire":
 	{
@@ -204,7 +195,15 @@ const BONUSES := {
 	},
 	"shardwork":
 	# Era 4, stage 2: what two Lessons give (scripts/teardown.gd). `lesson` needs it learned; `fed` needs one of that good in the
-	{"name": "Shardwork", "group": "speed", "add": 0.25, "kinds": ["processor"], "gift": "craft", "near_cairn": true},
+	{
+		"name": "Shardwork",
+		"group": "speed",
+		"add": 0.25,
+		"kinds": ["processor"],
+		"opens": "craft",
+		"near_types": ["shardwright"],
+		"radius": 4.0
+	},
 	# workshop's input; `near_types` needs a building of one of those types within `radius` tiles.
 	"iron_gears":
 	{

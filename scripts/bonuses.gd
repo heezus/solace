@@ -23,6 +23,8 @@ static func active(s, b: Dictionary, item: String) -> Array:
 			continue
 		if bonus.has("gift") and not s.starfall.gift(bonus["gift"]):
 			continue
+		if bonus.has("opens") and not s.starfall.opens(bonus["opens"]):
+			continue
 		if bonus.has("twin") and not s.starfall.twin(bonus["twin"]):
 			continue
 		if bonus.has("lesson") and not s.teardown.knows(bonus["lesson"]):
@@ -51,7 +53,7 @@ static func active(s, b: Dictionary, item: String) -> Array:
 
 ## Checks that depend on the building itself: its worker's tool, a Standing Stone nearby.
 static func _applies(s, b: Dictionary, id: String) -> bool:
-	if Data.BONUSES[id].get("near_cairn", false) and (s.starfall.dimmed() or not _near_cairn(s, b["pos"])):
+	if Data.BONUSES[id].get("lit", false) and not lit(s, b["pos"]):
 		return false
 	if Data.BONUSES[id].get("near_guard", false) and not _near(s, b["pos"], "guard_post", Data.GUARD_RADIUS):
 		return false
@@ -71,9 +73,16 @@ static func _applies(s, b: Dictionary, id: String) -> bool:
 	return true
 
 
-## True when a Shard Cairn stands within Data.SHARDLIGHT_RADIUS tiles of `p`.
-static func _near_cairn(s, p: Vector2i) -> bool:
-	return _near(s, p, "shard_cairn", Data.SHARDLIGHT_RADIUS)
+## True when `p` is in shardlight: within Data.SHARDLIGHT_RADIUS tiles of a Shard Cairn (not while the Cairn's light is lent away,
+## Starfall.dimmed) or of a Shard Lantern, and the Bloom does not stand on it.
+static func lit(s, p: Vector2i) -> bool:
+	for c in s.town.buildings:
+		var type: String = c["type"]
+		if type != "shard_lantern" and (type != "shard_cairn" or s.starfall.dimmed()):
+			continue
+		if Vector2(c["pos"]).distance_to(Vector2(p)) <= Data.SHARDLIGHT_RADIUS and not s.tide.is_overgrown(c):
+			return true
+	return false
 
 
 ## True when a building of `type` stands within `radius` tiles of `p`.

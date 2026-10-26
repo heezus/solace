@@ -117,6 +117,8 @@ func test_card_line_always_fits() -> void:
 			s.story.record(Data.BUILDINGS[type]["event"])  # the era after the star opens with its story
 		if Data.BUILDINGS[type].has("lesson"):
 			s.teardown.lessons.append(Data.BUILDINGS[type]["lesson"])  # a part's Lesson opens it
+		if Data.BUILDINGS[type].has("lumen"):
+			s.starfall.locked[Data.BUILDINGS[type]["lumen"]] = true  # a glyph set read opens a Lumen building
 		for width in [CARD_TEXT_W, 70.0, 40.0]:
 			var line: String = CardText.state_line(s, type, "", width)
 			t.check(

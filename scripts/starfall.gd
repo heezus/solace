@@ -58,6 +58,7 @@ var _town: Buildings
 
 func _init(town: Buildings, stock: Economy = null) -> void:
 	_town = town
+	_town.lumen_has = opens  # a Lumen building opens with its glyph set (Data.LUMEN)
 	_stock = stock
 
 
@@ -434,6 +435,14 @@ func _bloom_tile() -> Vector2i:
 ## True once the set called `set_id` is read: its gift (Data.LUMEN_GIFTS) is in effect.
 func gift(set_id: String) -> bool:
 	return locked.has(set_id) and roads.get(set_id, "") != "refuse" and not road_queue.has(set_id)
+
+
+## True when the Lumen building of the set called `set_id` is open (Data.LUMEN): the set is read and its gift taken, or the Kith
+## refused the Growth or Craft gift and found their own way, so no road shuts the Lumen Ward out (it needs a Grove and a Shardwright).
+func opens(set_id: String) -> bool:
+	return (
+		gift(set_id) or (locked.has(set_id) and roads.get(set_id, "") == "refuse" and Data.LUMEN["own_way"].has(set_id))
+	)
 
 
 ## True once the set called `set_id` is read, whether the Kith took its gift or not (a tech may wait on it).

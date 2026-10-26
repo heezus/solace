@@ -94,7 +94,7 @@ func _gap_of(s, b: Dictionary) -> Dictionary:
 		return _gap("held", Data.SIGHT_HELD)
 	if alert.begins_with("Full") and Roads.automated(s, b):
 		return _gap("full", Data.SIGHT_FULL)
-	if alert.begins_with("Needs "):
+	if alert.begins_with("Needs ") and alert != Data.LUMEN["needs_light"]:
 		if Roads.automated(s, b):
 			var missing := WaitWhy.missing(s, b, Buildings.recipe_in(b))
 			if missing != "":

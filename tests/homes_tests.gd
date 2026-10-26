@@ -375,6 +375,7 @@ func test_a_homestead_grows_into_a_longhouse_and_then_wants_three_foods() -> voi
 	t.check(s.economy.inv["brick"] <= 200 - up["brick"], "the Brick left the stockpile")
 	t.check(Homes.status(s, b)["goods"].size() == 2, "and it now wants two goods")
 	s.economy.inv["fish"] = 0
+	s.economy.inv["starfruit"] = 0
 	for id in ["berries", "flour"]:
 		s.economy.inv[id] = 200
 	_run(s, 200.0)
