@@ -1076,3 +1076,9 @@ An Arc Lamp keeps the Bloom 5 tiles from its light and a Scorcher reached 4, so 
 - Use borderless 16 px panels, 12 px cards, pill buttons, brass active fills/text, solid brass primary actions, round goods swatches and a top gradient with protected readouts. Raise panel alpha to 94.1% so bright-ground text remains as readable as before; small red Sight labels use a darker 98% chip to exceed their former outline contrast.
 - Sight chips include padding in collision bounds, share at most eight labels including hover, and paint after flow lines; gathering, status meanings, saves and gameplay remain untouched.
 - Before/after native screenshots, contrast calculations and reproduction are in `docs/art/glass-look/README.md`. Claude reviews and merges on green; Jon reviews the images.
+
+## 2026-10-26: The first reset, Exodus, is built (Step 7, PRs #161 and 7B)
+- Set out is a button on the Skyward card and in the game menu, with a confirm. It folds the run into the profile (v2: techs, marks, echoes, exoduses) and starts a new run on a new map. "Forget past runs" gives a true first run again.
+- Carry: a known tech costs 30% of its materials (rounded up per item, before Tally Sticks and the Cairn), read glyph marks show their word, one Lumen echo per fully read Lumen set opens its card at minute 0 (it still needs normal materials). Map, buildings, stock, people, research progress and Starfall choices do not carry.
+- Why 0.3 and not 0.5: bots on three new maps took 62 / 94 / 57 min at half price (mean 14% under run 1, with the hard map over the era band) and 56 / 64 / 55 min at 30% (mean 29% under, every era 8 to 16 min). Eras below 8 min are the floor, so it goes no lower. Value is `Data.EXODUS["known_share"]`.
+- First runs are untouched: an empty carry changes nothing, goldens did not move.

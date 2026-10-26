@@ -7,7 +7,7 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 
-var techs: Array = []  # tech ids learned in an earlier run: they cost half the study
+var techs: Array = []  # tech ids learned in an earlier run: they cost a share of the study
 var marks: Array = []  # glyph ids read in an earlier run: they show their word
 var echoes: Array = []  # Lumen set ids read in an earlier run: that set's building is open from the start
 var exodus := 0  # which Exodus this run is: 0 for a first run

@@ -44,6 +44,24 @@ Each reset ends a run, keeps knowledge (not stock) and changes the map, as the T
 | **Cataclysm** | Magic overreach breaks the world. You wake in the ruins and dig up relics. | Relics: magic artifacts | Lean "enemies" (force), heavy magic |
 | **Time loop** | The planet rewinds; only you remember. Each loop is shorter and goes further. | Memory: permanent meta-upgrades, glyphs, finds | Lean "allies", the deepest layer |
 
+## Exodus as built (Step 7)
+The first reset is real. The Skyward card has a second button, "Set out" (the game menu has it too, greyed until Skyward stands). A confirm reads "Leave this land? The town stays behind. The Kith carry what they know." Setting out folds the run into the profile, banks what carries, and starts a new run on a new map.
+- **Carries** (profile v2: `techs`, `marks`, `echoes`, `exoduses`; a v1 profile loads with them empty): every tech the run learned costs `Data.EXODUS["known_share"]` (0.3) of its materials (rounded up per item, applied before Tally Sticks and the Cairn); every read glyph mark shows its word, while the Wall still copies it and the strangers' moments still happen; one Lumen echo per fully read Lumen set (the Lantern, Healing House, Grove and Shardwright cards open at minute 0 and still need their normal materials); taught job kinds and shown hints, as before.
+- **Does not carry:** the map, buildings, stock, people, research progress, Starfall choices.
+- **Banking** happens only on Set out. A finished run that is not set out leaves the profile alone, and "Forget past runs" (a confirm in the game menu) gives a true first run again. The run save records its own carry, so a mid-run load keeps it; a save without one loads as a first run.
+- **A new land** card opens the new run once and lists what the Kith remember. Tech cards say "Known from before: 30% of the study".
+- **First runs do not change.** An empty carry has no effect: the goldens did not move and the empty-profile bot times are identical.
+- **Bots** in the Exodus run build the Lantern and Healing House as soon as they can pay, in any era, and know everything from run 1 (the pace tool's `exodus=` argument sets a saved Skyward end out onto the map seed + 1000).
+- **Pace, measured** (bots on three new maps, 1001/1002/1004 = seeds 1/2/4 set out from the Step 6 Skyward ends; each era its own job; run 1 is 79.2 / 80.0 / 87.6 min on the original maps):
+
+| Known share | Run 2, seeds 1 / 2 / 4 | Against run 1 | Eras |
+|---|---|---|---|
+| 0.5 | 62.3 / 93.5 / 57.4 min | -21% / +17% / -34% (mean -14%) | map 1002 had Bronze 30.5 and Ironfall 29.3 (over 25) and Livewire 7.4 (under 8) |
+| **0.3 (shipped)** | 55.8 / 64.2 / 54.6 min | -30% / -20% / -38% (mean -29%) | all 15 eras 8.0 to 16.1 min, every era won |
+
+  Map 1002 is a hard map: its first run with no carry needed 47 min for Bronze Dawn and did not finish Ironfall in 70, so the half-price run was good news there and still too slow; 0.3 brings it in. Livewire on map 1004 sits at the 8-minute floor, so 0.3 is as far as this knob should go. The ledger leak was under 0.4% of the flow in every era of both chains.
+
+
 ## Decided (the project owner, 2026-10-06, on cards)
 1. Three eras after Starfall: Ironfall, Livewire, Skyreach.
 2. The Bloom builds slowly: signs in Ironfall, a tide in Livewire, arrival in Skyreach.

@@ -1,7 +1,7 @@
 extends RefCounted
 ## Step 7, the first reset (design-system/12-knowledge-is-progress.md, "Exodus as built"). Part A: the profile's carry (version 2),
 ## banked only when the Kith set out, the run that begins with it and keeps it through a save, the Skyward card's "Set out" and the
-## game menu's two entries, each with a confirm that can be said no to. Part B: what the carry does in play (a known tech costs half
+## game menu's two entries, each with a confirm that can be said no to. Part B: what the carry does in play (a known tech costs its share
 ## the study, a read mark shows its word, an echo opens its Lumen card from the first minute) and the card that opens the new land.
 ## Nothing here plays a game. Run from tests/run_tests.gd.
 
@@ -33,7 +33,7 @@ func run(runner) -> void:
 	test_set_out_waits_for_skyward_and_the_confirm_can_be_cancelled()
 	test_forget_asks_first()
 	test_the_skyward_card_offers_set_out()
-	test_a_known_tech_costs_half_rounded_up()
+	test_a_known_tech_costs_its_share_rounded_up()
 	test_echo_cards_open_from_minute_zero_and_only_for_read_sets()
 	test_read_marks_show_their_words_and_the_wall_still_copies()
 	test_the_new_land_card_opens_once()
@@ -244,25 +244,29 @@ func test_the_skyward_card_offers_set_out() -> void:
 	card.free()
 
 
-func test_a_known_tech_costs_half_rounded_up() -> void:
+func test_a_known_tech_costs_its_share_rounded_up() -> void:
 	var s := Sim.new()
 	s.generate(5)
 	var tech := "cordage"
 	var base: Dictionary = Data.TECHS[tech]["cost"]
 	t.check(s.tech_tree.cost_of(tech) == base, "a first run pays the price in the data")
 	s.carry.techs.append(tech)
-	var half: Dictionary = s.tech_tree.cost_of(tech)
+	var known: Dictionary = s.tech_tree.cost_of(tech)
 	var odd := false
 	for id in base:
-		t.check(half[id] == (int(base[id]) + 1) / 2, "%s costs half, rounded up (%d of %d)" % [id, half[id], base[id]])
-		odd = odd or int(base[id]) % 2 == 1
-	t.check(odd, "(the tech has an odd price, so the rounding is tried)")
+		t.check(
+			known[id] == ceili(base[id] * Data.EXODUS["known_share"]),
+			"%s costs its share, rounded up (%d of %d)" % [id, known[id], base[id]]
+		)
+		odd = odd or fmod(base[id] * Data.EXODUS["known_share"], 1.0) > 0.0
+	t.check(odd, "(a price does not divide evenly, so the rounding is tried)")
 	t.check(s.tech_tree.cost_of("fire") == Data.TECHS["fire"]["cost"], "a tech not learned before costs what it says")
 	s.tech_tree.researched["tally_sticks"] = true
 	var tally: Dictionary = s.tech_tree.cost_of(tech)
-	for id in half:
+	for id in known:
 		t.check(
-			tally[id] == maxi(roundi(half[id] * Data.TALLY_DISCOUNT), 1), "Tally Sticks takes its tenth off the half"
+			tally[id] == maxi(roundi(known[id] * Data.TALLY_DISCOUNT), 1),
+			"Tally Sticks takes its tenth off the known price"
 		)
 	var one := Sim.new()
 	one.generate(5)
