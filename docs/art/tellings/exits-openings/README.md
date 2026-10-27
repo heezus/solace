@@ -1,6 +1,6 @@
 # Three endings, three beginnings
 
-Six original 1586×992 painted stills in `art/rendered/cutscenes/`: `ending_exodus_1`, `ending_cataclysm_1`, `ending_loop_1`, `next_land_1`, `next_ruins_1`, `next_valley_1`. Godot-generated imports accompany the exact stems; Claude wires them after review. No `.gd`, tests, UI or overlays change.
+Six original 1585–1586×992 painted stills in `art/rendered/cutscenes/`: `ending_exodus_1`, `ending_cataclysm_1`, `ending_loop_1`, `next_land_1`, `next_ruins_1`, `next_valley_1`. Godot-generated imports accompany the exact stems; Claude wires them after review. No `.gd`, tests, UI or overlays change.
 
 The full prompts, reference roles and generated source basenames are in adjacent JSON records; `spec.json` supplies dimensions and SHA-256 hashes. Built-in imagegen supplied every original; pixels are copied unchanged. The loop correction reduces Sela to a dark remembered silhouette. References are fictional project art and the approved Sela/Kith standard; no personal photos or real-person likeness inputs.
 
