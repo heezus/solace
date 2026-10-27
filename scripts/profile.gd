@@ -15,6 +15,8 @@ extends RefCounted
 ##     the small Starfall choices, the lean, the trust and the ending) and `last` (the latest ending with what the next run
 ##     is made from: its seed, its end trust and, after a Cataclysm, the ruins and the dormant Bloom patches). A version 1 or 2
 ##     profile loads with them empty (its `runs` is its `exoduses`).
+##   the Chronicle (Step 7G): `embers`, the hidden moments any telling has shown (scripts/chronicle.gd). Each telling's record also
+##     keeps its numbers and a small map of its land, and the Embers it lit first. A profile without them loads with none.
 ##   the blueprints (Step 7D): `blueprints`, the saved parts of towns (scripts/blueprints.gd). Only an Exodus banks the blueprints of the
 ##     run that ends; any other ending keeps the ones banked before. A profile without them loads with none.
 ## absorb(state) merges a run (finished or in progress) into the profile: new ids are added at the end, ids
@@ -44,6 +46,7 @@ var runs := 0  # how many runs have ended in an ending (the Exodus, the Cataclys
 var tellings: Array = []  # one record per ended run (Endings.telling), in order
 var last: Dictionary = {}  # the latest ending's handoff to the next run (Endings.handoff), {} before any
 var blueprints: Array = []  # the blueprints banked by an Exodus (scripts/blueprints.gd)
+var embers: Array = []  # the Embers found in any telling (Chronicle.embers_of), in the order they were first lit
 var saved := true  # set_out: the file was written
 
 
@@ -61,6 +64,7 @@ func is_empty() -> bool:
 		and tellings.is_empty()
 		and last.is_empty()
 		and blueprints.is_empty()
+		and embers.is_empty()
 	)
 
 
@@ -90,7 +94,11 @@ func bank(s, ending := "exodus") -> void:
 		blueprints = s.carry.blueprints.duplicate(true)  # the run's book: the ones it began with and the ones it saved
 		for bp in blueprints:
 			bp["banked"] = true  # from now on they are carried knowledge
-	tellings.append(Endings.telling(s, ending))
+	var record := Endings.telling(s, ending)
+	var shown: Array = record["embers"]
+	record["embers"] = shown.filter(func(id): return not id in embers)  # the telling that first lit an Ember keeps it
+	_add_all(embers, shown)
+	tellings.append(record)
 	last = Endings.handoff(s, ending)
 
 
@@ -174,6 +182,7 @@ func to_dict() -> Dictionary:
 		"tellings": tellings.duplicate(true),
 		"last": last.duplicate(true),
 		"blueprints": blueprints.duplicate(true),
+		"embers": embers.duplicate(),
 	}
 
 
@@ -191,6 +200,7 @@ func from_dict(d) -> void:
 	tellings = []
 	last = {}
 	blueprints = []
+	embers = []
 	if not is_profile(d):
 		return
 	merge(d["chronicle"], d["knowledge"])
@@ -207,6 +217,8 @@ func from_dict(d) -> void:
 	if typeof(d.get("last")) == TYPE_DICTIONARY:
 		last = d["last"].duplicate(true)
 	blueprints = Carry._dicts(d.get("blueprints", []))
+	if typeof(d.get("embers")) == TYPE_ARRAY:
+		_add_all(embers, d["embers"])
 
 
 ## True when `d` looks like a profile this code can read.

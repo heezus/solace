@@ -3,9 +3,11 @@ extends RefCounted
 ## the records an ending leaves in the profile. Exodus is always open, the Cataclysm needs the Lumen as enemies and the Time loop
 ## needs them as allies. The words are in Data.ENDINGS. Static, and works on the Sim passed in, like Roads and Workers.
 ## `telling` is the Chronicle's record of a run (its number, map seed, the small Starfall choices, the lean, the trust and the
-## ending); `handoff` is what the next run is made from (scripts/carry.gd reads it): the seed it uses, the trust it begins at and,
-## after a Cataclysm, the ruins and the dormant Bloom patches (scripts/ruins.gd).
+## ending, and the Chronicle's numbers, small map and Embers: scripts/chronicle.gd); `handoff` is what the next run is made from
+## (scripts/carry.gd reads it): the seed it uses, the trust it begins at and, after a Cataclysm,
+## the ruins and the dormant Bloom patches (scripts/ruins.gd).
 
+const Chronicle = preload("res://scripts/chronicle.gd")
 const Data = preload("res://scripts/data.gd")
 const Ruins = preload("res://scripts/ruins.gd")
 
@@ -36,6 +38,12 @@ static func telling(s, ending: String) -> Dictionary:
 		"lean": s.starfall.lean,
 		"trust": snappedf(s.starfall.trust, 0.1),
 		"ending": ending,
+		"minutes": snappedf(s.seasons.time / 60.0, 0.1),
+		"kin": s.people.kith.size(),
+		"buildings": s.town.buildings.size(),
+		"lost": s.tide.lost,
+		"embers": Chronicle.embers_of(s),
+		"map": Chronicle.map_of(s),
 	}
 
 

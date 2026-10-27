@@ -180,6 +180,18 @@ func start_next() -> bool:
 	return false
 
 
+## Play sequence `id` again at once, as the Chronicle's "Watch" does: nothing is recorded, and the run in `state` is only a stand-in
+## for the telling shown. `began` is the ending that began that telling, `ended` the one that ended it and `lean` the lean it ended
+## with, which pick the stills' variants. Nothing happens while a sequence is on screen or for an id that is not a sequence.
+func play(id: String, began := "", ended := "", lean := "") -> void:
+	if active or not Data.CUTSCENES.has(id):
+		return
+	state.carry.ending = began
+	state.starfall.lean = lean
+	state.story.events = [Data.ENDINGS[ended]["id"]] if ended != "" else []
+	_start(id)
+
+
 func _start(id: String) -> void:
 	current = id
 	stills = resolve(id)

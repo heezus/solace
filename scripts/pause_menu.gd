@@ -4,15 +4,17 @@ extends Control
 ## The owner (scripts/main.gd) pauses while it is up and does the real work; this only shows the buttons and a one-line
 ## status ("Saved to slot 2."). Save and Load open the slot screen. "Choose an ending" is greyed until Skyward stands, and
 ## "Forget past runs" clears the profile; both ask first (scripts/game_menu.gd).
-## Signals: resumed, save_pressed, load_pressed, quit_pressed, set_out_pressed, forget_pressed.
+## Signals: resumed, save_pressed, load_pressed, chronicle_pressed, quit_pressed, set_out_pressed, forget_pressed.
 
 signal resumed
 signal save_pressed
 signal load_pressed
+signal chronicle_pressed
 signal quit_pressed
 signal set_out_pressed
 signal forget_pressed
 
+const ChronicleWords = preload("res://scripts/chronicle_words.gd")
 const Data = preload("res://scripts/data.gd")
 const Ui = preload("res://scripts/ui.gd")
 const MenuFonts = preload("res://scripts/menu_fonts.gd")
@@ -60,6 +62,7 @@ func setup() -> void:
 	v.add_child(_button(Data.PAUSE_SAVE, false, func(): save_pressed.emit()))
 	load_button = _button(Data.PAUSE_LOAD, false, func(): load_pressed.emit())
 	v.add_child(load_button)
+	v.add_child(_button(ChronicleWords.TITLE, false, func(): chronicle_pressed.emit()))
 	v.add_child(_button(Data.PAUSE_QUIT, false, func(): quit_pressed.emit()))
 	var exodus := HBoxContainer.new()  # the two small ones: leaving this land, and forgetting the past ones
 	exodus.add_theme_constant_override("separation", 8)
