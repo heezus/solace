@@ -3,6 +3,7 @@ extends RefCounted
 ## never opening by itself, one key for every build tab, the Wanderer whole once it has fallen. Run from tests/run_tests.gd.
 
 const Data = preload("res://scripts/data.gd")
+const OldShip = preload("res://scripts/old_ship.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Sim = preload("res://scripts/sim.gd")
 const StartTidy = preload("res://scripts/start_tidy.gd")
@@ -88,10 +89,11 @@ func test_the_wanderer_is_whole_once_it_has_fallen() -> void:
 ## Every mark's word is one of the words the player can try, every mark has its three clues, and the first clue (the one every player
 ## sees) hints without giving the word away: it holds none of the words on the list.
 func test_every_glyph_clue_points_at_its_word() -> void:
-	var words: Array = Data.GLYPH_WORDS.map(func(w): return w.to_lower())
 	for id in Data.GLYPHS:
 		var g: Dictionary = Data.GLYPHS[id]
-		t.check(g["word"] in Data.GLYPH_WORDS, "%s: its word is on the list of words to try" % id)
+		var every: Array = OldShip.words_for(id)  # the old marks add three words, to their own lists only
+		var words: Array = every.map(func(w): return w.to_lower())
+		t.check(g["word"] in every, "%s: its word is on the list of words to try" % id)
 		t.check(g["found"].size() == 3 and g["found"].all(func(l): return l != ""), "%s has three clues" % id)
 		var first_words := RegEx.create_from_string("[a-z]+").search_all(String(g["found"][0]).to_lower())
 		for m in first_words:

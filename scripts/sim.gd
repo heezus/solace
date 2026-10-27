@@ -205,7 +205,7 @@ func _wreck_tile() -> Vector2i:
 ## Connected to Story.recorded: the Falling Star starts the era after it (a Cairn built first means friendly strangers).
 func _on_story(id: String) -> void:
 	if id == "star_falling":
-		starfall.begin(story.cairn_before_landing, _wreck_tile())
+		starfall.begin(story.cairn_before_landing, _wreck_tile(), Expedition.old_ship_tile(self))
 	elif id == "bloom_seen" and starfall.bloom.x >= 0:
 		fog.reveal(starfall.bloom, Data.BLOOM_SIGHT)  # the first sign shows at the edge of the fog
 

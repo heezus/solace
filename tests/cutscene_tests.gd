@@ -56,8 +56,11 @@ func finish(p: Node) -> void:
 
 func test_the_data_is_well_formed() -> void:
 	t.check(
-		Data.CUTSCENES.keys() == PHASE_A + ["ironfall", "bloom_sign", "skyward_end", "fireside"],
-		"the nine sequences, in the order they play"
+		(
+			Data.CUTSCENES.keys()
+			== PHASE_A + ["ironfall", "bloom_sign", "skyward_end", "kin_reveal", "broken_world", "way_out", "fireside"]
+		),
+		"the twelve sequences, in the order they play"
 	)
 	var triggers := {}
 	for id in Data.CUTSCENES:

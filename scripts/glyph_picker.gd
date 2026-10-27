@@ -10,6 +10,7 @@ const Sim = preload("res://scripts/sim.gd")
 const Ui = preload("res://scripts/ui.gd")
 const GlyphMark = preload("res://scripts/glyph_mark.gd")
 const IconRow = preload("res://scripts/icon_row.gd")
+const OldShip = preload("res://scripts/old_ship.gd")
 
 var state: Sim
 var key := ""  # what the rows were built from, so they are built again only when it changes
@@ -30,7 +31,7 @@ func show_for(b: Dictionary) -> void:
 		return
 	var f := state.starfall
 	var now := (
-		"%s|%s|%s|%s|%s|%s|%s|%s|%s"
+		"%s|%s|%s|%s|%s|%s|%s|%s|%s|%s"
 		% [
 			f.copied,
 			f.guesses,
@@ -40,7 +41,8 @@ func show_for(b: Dictionary) -> void:
 			f.pending,
 			f.roads,
 			f.road_queue,
-			f.ward_stands()
+			f.ward_stands(),
+			f.lean_now()
 		]
 	)
 	if now == key:
@@ -50,10 +52,17 @@ func show_for(b: Dictionary) -> void:
 		c.queue_free()
 		remove_child(c)
 	add_child(_wrapped(Data.WALL_HOW % [int(Data.COPY_SECONDS), int(Data.CHECK_SECONDS)], Ui.TEXT_DIM))
-	for n in f.set_order():
-		var gset: Dictionary = Data.GLYPH_SETS[n]
-		if gset["source"] == "wreck" and f.progress(gset["id"]).x == 0 and not f.locked.has(gset["id"]):
-			continue  # a set the Wreck holds shows once its first mark is home
+	var shown: Array = f.set_order()
+	for n in OldShip.sets(f):
+		shown.append(n)  # the old marks, after the six, once their first mark is home
+	for n in shown:
+		var gset: Dictionary = OldShip.set_def(n)
+		if (
+			gset.get("source", "old_ship") != "survivors"
+			and f.progress(gset["id"]).x == 0
+			and not f.locked.has(gset["id"])
+		):
+			continue  # a set the Wreck or the first ship holds shows once its first mark is home
 		var head := _wrapped(header_text(state, gset), Ui.TEXT)
 		if f.locked.has(gset["id"]):  # its name, and the icon that goes with it, once it is read
 			add_child(IconRow.wrap("set_" + gset["id"], head, gset["name"]))
@@ -72,6 +81,13 @@ func show_for(b: Dictionary) -> void:
 		for g in f.glyph_order(n):
 			if f.copied.has(g):
 				add_child(_row(g, f.locked.has(gset["id"]) or f.carry.knows_mark(g)))  # a mark read in an earlier run shows its word
+		if (
+			gset.has("lean")
+			and not f.locked.has(gset["id"])
+			and f.progress(gset["id"]).x == 3
+			and f.lean_now() != gset["lean"]
+		):
+			add_child(_wrapped(Data.ENDINGS["old"]["needs_lean"], Ui.TEXT_DIM))
 	var end: Vector2i = f.progress(Data.ENDING_SET)
 	if end.x == end.y and not f.locked.has(Data.ENDING_SET) and not f.may_end():
 		if f.warning_right():
@@ -83,6 +99,8 @@ func show_for(b: Dictionary) -> void:
 			add_child(_wrapped(Data.WARNING_NEEDS, Ui.TEXT_DIM))
 	if f.locked.has("name") and f.wreck_has_more():
 		add_child(_wrapped(Data.WALL_WRECK_HINT, Ui.TEXT_DIM))
+	if f.locked.has("name") and f.old_ship.x >= 0 and OldShip.has_more(f):
+		add_child(_wrapped(Data.ENDINGS["old"]["wall_hint"], Ui.TEXT_DIM))
 	add_child(_wrapped(Data.WALL_HINT, Ui.TEXT_DIM))
 
 
@@ -91,6 +109,8 @@ static func header_text(s: Sim, gset: Dictionary) -> String:
 	if s.starfall.locked.has(gset["id"]):
 		return Data.WALL_SET_LOCKED % gset["name"]
 	var have: Vector2i = s.starfall.progress(gset["id"])
+	if gset.has("run"):
+		return Data.ENDINGS["old"]["set_line"] % [have.x, have.y]
 	return Data.WALL_SET_LINE % [s.starfall.set_number(gset["id"]), Data.GLYPH_SETS.size(), have.x, have.y]
 
 

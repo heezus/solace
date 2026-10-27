@@ -15,6 +15,7 @@ const Kith = preload("res://scripts/kith.gd")
 const Scouting = preload("res://scripts/scouting.gd")
 const Finds = preload("res://scripts/teardown_finds.gd")
 const Steam = preload("res://scripts/steam.gd")
+const OldShip = preload("res://scripts/old_ship.gd")
 
 const AUTO_SECONDS := 5.0  # how often a standing order looks for a chance to send
 
@@ -39,12 +40,19 @@ static func has_post(s) -> bool:
 	return false
 
 
+## Where the first ship's site lies in this run (Starfall.begin keeps it), (-1, -1) in a first run.
+static func old_ship_tile(s) -> Vector2i:
+	return OldShip.tile(s)
+
+
 ## The tile a party walks to for `target`: the Wreck's (or dry ground next to it), or the nearest fog. (-1, -1) for none.
 static func target_tile(s, target: String) -> Vector2i:
 	if target == "wreck":
 		return Scouting.goal(s, s.starfall.wreck) if s.starfall.wreck.x >= 0 else Vector2i(-1, -1)
 	if target == "bloom":
 		return Finds.bloom_goal(s)
+	if target == "old_ship":
+		return Scouting.goal(s, s.starfall.old_ship) if s.starfall.old_ship.x >= 0 else Vector2i(-1, -1)
 	var best := Vector2i(-1, -1)
 	var best_d := INF
 	var wet := Vector2i(-1, -1)
@@ -93,6 +101,8 @@ static func plan(s) -> Dictionary:
 		and s.starfall.wreck_found
 		and not (s.starfall.wreck_has_more() or Finds.wreck_has_parts(s))
 	):
+		return {"ok": false, "why": Data.POST_NO_TARGET, "seconds": 0.0, "late": false}
+	if o["target"] == "old_ship" and s.starfall.old_ship_found and not OldShip.has_more(s.starfall):
 		return {"ok": false, "why": Data.POST_NO_TARGET, "seconds": 0.0, "late": false}
 	if o["target"] == "bloom" and Finds.bloom_problem(s) != "":
 		return {"ok": false, "why": Finds.bloom_problem(s), "seconds": 0.0, "late": false}
@@ -182,6 +192,12 @@ static func _arrive(s, k: Dictionary, task: Dictionary) -> void:
 			s.starfall.wreck_found = true
 			s.events.append(Data.WRECK_FOUND_LINE)
 			s.story.record("wreck_found")
+	elif task["target"] == "old_ship":
+		s.fog.reveal(s.starfall.old_ship, Data.WRECK_SIGHT)
+		if task["lead"] and not s.starfall.old_ship_found:
+			s.starfall.old_ship_found = true
+			s.events.append(Data.ENDINGS["old"]["found_line"])
+			s.story.record("old_ship_found")
 	else:
 		s.fog.reveal(Kith.tile_of(k), Data.EXPEDITION_SIGHT)
 
@@ -202,6 +218,10 @@ static func _finish(s, k: Dictionary, task: Dictionary) -> void:
 			s.events.append(Finds.wreck_line(parts))
 		elif n == 0:
 			s.events.append(Data.WRECK_NOTHING_LINE)
+	elif task["target"] == "old_ship":
+		var finds: int = Data.PACKS[task["pack"]]["finds"]
+		var n: int = OldShip.add_finds(s.starfall, ceili(finds / 2.0) if late else finds)
+		s.events.append(Data.ENDINGS["old"]["marks_line"] % n if n > 0 else Data.ENDINGS["old"]["nothing_line"])
 	elif task["target"] == "bloom":
 		if Finds.take_sample(s, task["tile"]) == "":
 			s.events.append(Data.BLOOM_NONE_LEFT)

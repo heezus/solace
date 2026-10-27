@@ -122,4 +122,49 @@ const ENDINGS := {
 	"dig_busy": "A crew is digging there already.",
 	"dig_nobody": "Nobody is free to dig.",
 	"dig_progress": "Digging the %s",
+	# The old marks (Step 7F, scripts/starfall.gd `sets`): three sets beyond the six, found at the first ship's site (scripts/old_ship.gd).
+	# `run` is the run they appear from (a first run is run 1), `cataclysm_run` an earlier run for a Cataclysm's, `lean` the lean the
+	# strangers must stand in for the set to be read. Reading one gives the usual trust and its lore (a cutscene, scripts/data/cutscenes.gd).
+	"old":
+	{
+		"sets":
+		{
+			7:
+			{
+				"id": "ship",
+				"name": "The First Ship",
+				"glyphs": ["g_ship", "g_kin_old", "g_home_old"],
+				"run": 2,
+			},
+			8:
+			{
+				"id": "broke",
+				"name": "What Broke",
+				"glyphs": ["g_shape_old", "g_broke", "g_hurt_old"],
+				"run": 3,
+				"cataclysm_run": 2,
+			},
+			9:
+			{
+				"id": "way",
+				"name": "The Way Out",
+				"glyphs": ["g_door", "g_heal_old", "g_go_old"],
+				"run": 4,
+				"lean": "allies",
+			},
+		},
+		"words": ["Ship", "Broke", "Door"],  # the words these marks add to the list of words to try
+		"warm": 6.0,  # once The First Ship is read, every later run's strangers begin this much warmer
+		"site_near": 12,  # the first ship's site lies this many tiles from the Hearth at the least, and "site_far" at the most
+		"site_far": 22,
+		"site_apart": 10,  # and this far from the crash site
+		"found_line":
+		"The party reaches a hull older than the ships: a ribbed shape under the roots, green with the Bloom's first growth.",
+		"marks_line": "The party comes home with %d new marks copied from the first ship.",
+		"nothing_line": "The party comes home. The first ship has nothing more to show them.",
+		"set_line": "An older set: %d of %d marks copied",
+		"wall_hint": "Older marks wait at the first ship's site. An Expedition Post can send a party for them.",
+		"needs_lean": "The marks fit together, but the strangers will not say them yet: the Kith are not their allies.",
+		"no_site": "There is no first ship's site on this land.",
+	},
 }

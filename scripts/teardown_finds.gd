@@ -131,6 +131,8 @@ static func bloom_problem(s) -> String:
 
 ## Whether the Expedition Post's target list offers `target`: the Bloom patch only once the Kith can open what they find.
 static func target_listed(s, target: String) -> bool:
+	if target == "old_ship":
+		return s.starfall.old_ship.x >= 0  # the first ship's site, in a second run or later
 	return target != "bloom" or active(s)
 
 
