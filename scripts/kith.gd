@@ -443,7 +443,7 @@ func job_of(k: Dictionary) -> String:
 		"haul":
 			return Data.JOB_HAULER
 		"scout":
-			return Data.JOB_SCOUT
+			return Data.ENDINGS["job_dig"] if String(k["phase"]).begins_with("dig") else Data.JOB_SCOUT
 		"expedition":
 			return Data.JOB_PARTY
 	return Data.JOB_IDLE

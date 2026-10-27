@@ -5,6 +5,7 @@ extends RefCounted
 ## Run from tests/run_tests.gd.
 
 const BlueprintTests = preload("res://tests/blueprint_tests.gd")
+const RelicTests = preload("res://tests/relic_tests.gd")
 const Carry = preload("res://scripts/carry.gd")
 const Clearing = preload("res://scripts/clearing.gd")
 const CutscenePlayer = preload("res://scripts/cutscene_player.gd")
@@ -41,7 +42,8 @@ func run(runner) -> void:
 	test_the_time_loop_remembers_and_the_cataclysm_arrives_wary()
 	test_each_ending_opens_the_next_run_with_its_own_card()
 	test_the_skyward_cutscene_and_the_greeting()
-	BlueprintTests.new().run(t)  # Step 7D rides with the endings: tests/run_tests.gd is at its line cap
+	BlueprintTests.new().run(t)  # Steps 7D and 7E ride with the endings: tests/run_tests.gd is at its line cap
+	RelicTests.new().run(t)
 	_clean()
 
 

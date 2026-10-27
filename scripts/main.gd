@@ -452,10 +452,10 @@ func _click_tile(p: Vector2i) -> void:
 			popups.append({"pos": _tile_center(p), "text": note, "t": 0.0})
 		building_panel.select(p)
 		return
-	if not state.fog.is_revealed(p):
-		var note := Scouting.send(state, p)  # clicking fog sends the nearest idle Kith to look: no road, no building needed
-		if note != "":
-			_toast(note, 3.0)
+	var sent := Scouting.click(state, p)  # fog sends the nearest idle Kith to look (no road needed); a relic's ruin sends a crew
+	if sent != "":
+		_toast(sent, 3.0)
+	if sent != "" or not state.fog.is_revealed(p):
 		return
 	if Hands.item_at(state, p) == "" and state.world.tile_at(p) != "shard":
 		building_panel.select(Vector2i(-1, -1))  # clicking bare ground puts the card away; holding a resource keeps it

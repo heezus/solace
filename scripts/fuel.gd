@@ -11,6 +11,8 @@ const Data = preload("res://scripts/data.gd")
 
 ## True for a building that burns fuel: a Bloomery or Forge, or a Floor set to copy one.
 static func burns(b: Dictionary) -> bool:
+	if b.has("relic"):  # the Everburning Forge (scripts/relics.gd) burns nothing
+		return false
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
 	if def.get("fuel", false):
 		return true

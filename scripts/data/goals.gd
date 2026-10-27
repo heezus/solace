@@ -43,6 +43,9 @@ const STORY_EVENTS := {
 	"ending_exodus": "The Kith set out for a new land",
 	"ending_cataclysm": "The old town was broken, and the Kith woke in its ruins",
 	"ending_loop": "The planet turned back, and only the Kith remembered",
+	"relic_forge": "The crew dug the Everburning Forge out of the ruins",
+	"relic_lantern": "The crew dug the Old Lantern out of the ruins",
+	"relic_cart": "The crew dug the Founders' Cart out of the ruins",
 }
 
 ## Techs that are story moments: tech id -> the STORY_EVENTS id the Story block records when it is researched.

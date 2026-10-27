@@ -10,6 +10,7 @@ const Ui = preload("res://scripts/ui.gd")
 const Rules = preload("res://scripts/rules.gd")
 const FieldText = preload("res://scripts/field_text.gd")
 const Clearing = preload("res://scripts/clearing.gd")
+const Relics = preload("res://scripts/relics.gd")
 
 const TILE := 48.0  # map px per tile at the default zoom
 const OUTLINE: Color = Art.OUTLINE
@@ -169,6 +170,7 @@ static func alert_badge_at(p: Vector2i) -> Vector2:
 ## text on the map: the words are in the Info panel while the mouse is over the building. (Playtest 5 had pills
 ## stacking over each other and over the next building; a badge inside its own tile cannot.)
 static func alert_badges(ci: CanvasItem, s) -> void:
+	relic_marks(ci, s)
 	if badges_hidden:
 		return
 	var font := ThemeDB.fallback_font
@@ -182,6 +184,21 @@ static func alert_badges(ci: CanvasItem, s) -> void:
 		var px := roundi(14.0 * Art.ui_k)
 		var wide := font.get_string_size("!", HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
 		ci.draw_string(font, at + Vector2(-wide / 2.0, px * 0.36), "!", HORIZONTAL_ALIGNMENT_LEFT, -1, px, Ui.TEXT)
+
+
+## A gold glint on every ruin that still holds a relic, and a ring that fills while a crew digs it out (scripts/relics.gd).
+static func relic_marks(ci: CanvasItem, s) -> void:
+	var k := Art.ui_k
+	var gold := Color("f3d36b")
+	for r in Relics.waiting(s):
+		if not s.fog.is_revealed(r["pos"]):
+			continue
+		var at := center(r["pos"])
+		ci.draw_circle(at, 5.0 * k, gold)
+		ci.draw_arc(at, 9.0 * k, 0, TAU, 20, Color(gold, 0.55), 2.0 * k, true)
+		var done: float = Relics.progress(s, r["def"]["id"])
+		if done > 0.0:
+			ci.draw_arc(at, 13.0 * k, -PI / 2.0, -PI / 2.0 + TAU * done, 32, Color("fff3b0"), 3.0 * k, true)
 
 
 ## The edge of the lit land: each explored tile next to fog fades into the fog color over its own width, so the
@@ -332,13 +349,11 @@ static func lumen_rings(ci: CanvasItem, s, type: String, p: Vector2i) -> void:
 		)
 	elif type == "shard_lantern" or Data.BUILDINGS[type].get("lit", false):
 		var rings: Array = s.town.buildings.filter(func(b): return b["type"] in ["shard_cairn", "shard_lantern"])
-		var spots: Array = rings.map(func(b): return b["pos"])
+		var spots: Array = rings.map(func(b): return [b["pos"], Relics.radius(b)])
 		if type == "shard_lantern":
-			spots.append(p)
+			spots.append([p, Data.SHARDLIGHT_RADIUS])
 		for at in spots:
-			Art.dashed_circle(
-				ci, center(at), Data.SHARDLIGHT_RADIUS * TILE, Color("9fe0f0", 0.7), 2.0 * k, 8.0 * k, 6.0 * k
-			)
+			Art.dashed_circle(ci, center(at[0]), at[1] * TILE, Color("9fe0f0", 0.7), 2.0 * k, 8.0 * k, 6.0 * k)
 
 
 ## The ghost of the building being placed: its sprite over a green or alert tint, and a pill
@@ -410,4 +425,6 @@ static func blocked_hint(s, p: Vector2i) -> String:
 			return "Cross with a Wooden Bridge (Paths & Haulers)"
 		"rock":
 			return "Cut a pass with a Road (%d Stone)" % Data.PASS_COST["stone"]
+		"ruins":
+			return Relics.tip(s, p)
 	return ""

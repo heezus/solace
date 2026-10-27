@@ -10,6 +10,7 @@ const Fuel = preload("res://scripts/fuel.gd")
 const Ranks = preload("res://scripts/ranks.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Kith = preload("res://scripts/kith.gd")
+const Relics = preload("res://scripts/relics.gd")
 
 
 ## The bonuses at work on building b now, for `item` (yield bonuses name the item they apply to):
@@ -80,7 +81,7 @@ static func lit(s, p: Vector2i) -> bool:
 		var type: String = c["type"]
 		if type != "shard_lantern" and (type != "shard_cairn" or s.starfall.dimmed()):
 			continue
-		if Vector2(c["pos"]).distance_to(Vector2(p)) <= Data.SHARDLIGHT_RADIUS and not s.tide.is_overgrown(c):
+		if Vector2(c["pos"]).distance_to(Vector2(p)) <= Relics.radius(c) and not s.tide.is_overgrown(c):
 			return true
 	return false
 

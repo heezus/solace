@@ -82,4 +82,43 @@ const ENDINGS := {
 	"stone_min": 3,  # clearing a ruin gives its weight (what its building cost) / stone_per, between these
 	"stone_max": 20,
 	"stone_per": 25,
+	# Relics, the Cataclysm's gift (scripts/relics.gd): the largest ruins each hold one, dug out by a crew, used up with the run.
+	"relics":
+	[
+		{
+			"id": "forge",
+			"name": "Everburning Forge",
+			"building": "forge",
+			"event": "relic_forge",
+			"line": "A forge that was never let go out.",
+		},
+		{
+			"id": "lantern",
+			"name": "Old Lantern",
+			"building": "shard_lantern",
+			"event": "relic_lantern",
+			"line": "A lantern from the first ship, still lit.",
+		},
+		{
+			"id": "cart",
+			"name": "Founders' Cart",
+			"building": "storehouse",
+			"event": "relic_cart",
+			"line": "The cart the first ones pulled, mended with care.",
+		},
+	],
+	"dig_seconds": 60.0,  # a crew works this long at a relic
+	"lantern_reach": 2.0,  # the Old Lantern lights this many times the Shard Lantern's radius
+	"cart_reach": 8.0,  # haulers within this many tiles of the Founders' Cart...
+	"cart_load": 1.5,  # ...carry this many times as much
+	"job_dig": "Digger",
+	"relic_ruin_kept": "A relic lies under this ruin: dig it out first.",
+	"relic_here": "A relic lies under this ruin: click it to dig it out.",
+	"relic_tip": "%s: click to send a crew to dig (about a minute, and it needs a road beside it).",
+	"dig_sent": "%s went to dig out the %s.",  # the Kith, the relic
+	"dig_done": "The crew dug out the %s. %s",  # the relic, its line
+	"dig_no_road": "A crew can only reach it by a road: lay a road beside the ruin.",
+	"dig_busy": "A crew is digging there already.",
+	"dig_nobody": "Nobody is free to dig.",
+	"dig_progress": "Digging the %s",
 }
