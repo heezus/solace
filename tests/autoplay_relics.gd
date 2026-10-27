@@ -11,6 +11,10 @@ const Ui = preload("res://scripts/ui.gd")
 
 const WANTED := ["lantern", "cart"]
 const ROADS_PER_DECISION := 4
+const RETRY := 30  # decisions to leave a ruin alone after a road to it could not be laid (the search is the dear part)
+
+## Relic id -> decisions left before the bot tries its road again.
+static var _rest := {}
 
 
 ## What the bot does about what an ending handed on: lay a kept blueprint when it can pay for it, or work toward a relic. True when
@@ -28,9 +32,13 @@ static func dig(bot) -> bool:
 		var id: String = r["def"]["id"]
 		if id not in WANTED or not s.fog.is_revealed(r["pos"]) or not Relics.digging(s, id).is_empty():
 			continue
+		if _rest.get(id, 0) > 0:
+			_rest[id] -= 1
+			continue
 		if Relics.roads_beside(s, r["pos"]).is_empty():
 			if _road(bot, r["pos"]):
 				return true
+			_rest[id] = RETRY
 		elif Ui.idle_kith(s) > 0:
 			Scouting.dig(s, r["pos"])
 			if not Relics.digging(s, id).is_empty():
