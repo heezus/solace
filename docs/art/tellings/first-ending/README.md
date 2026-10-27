@@ -1,6 +1,6 @@
 # First telling: Skyward and the fireside
 
-Four original 1586×992 built-in imagegen paintings, at the exact runtime stems in `art/rendered/cutscenes/`: `skyward_end_1`, `skyward_end_2`, `skyward_end_3`, `fireside_1`. No baked text. Godot 4.7.2 generated their imports. Claude owns subsequent wiring and merging; no `.gd`, tests, UI or overlay changes are included.
+Four original 1585–1586×992 built-in imagegen paintings, at the exact runtime stems in `art/rendered/cutscenes/`: `skyward_end_1`, `skyward_end_2`, `skyward_end_3`, `fireside_1`. No baked text. Godot 4.7.2 generated their imports. Claude owns subsequent wiring and merging; no `.gd`, tests, UI or overlay changes are included.
 
 Each `*-prompt.json` records the full final prompt, reference roles and generated source basename. [spec.json](spec.json) records original dimensions and SHA-256 hashes. Generated pixels are copied unchanged; no enlargement, background removal or paint reconstruction was used. References are project paintings and the approved fictional [Sela/Kith standard](../../../design-system/mockups/character-standard.md), with no personal photos or real-person likeness inputs.
 

@@ -9,7 +9,7 @@ Owner: the project owner (heezus). Two AI teams, one repo, coordinated by respon
 - **Reserved files:** those four PNG/import pairs in `art/rendered/cutscenes/`, `docs/art/tellings/first-ending/`, this entry and the art decision log. No `.gd`, tests, UI or overlays.
 - **Acceptance criteria:** Misty Highlands, approved Sela/Kith references, 1586×992 accepted, no text, central 80% story action and calm dark lower third; inspected native framing/comparison, original provenance, generated imports and green CI.
 - **Status:** four original PNG/imports and inspected native player comparisons published in draft PR #165. Reservation released on publication. The owner's 2026-10-27 request releases these Skyward stills from the prior hold; Skyreach buildings and UI remain held.
-- **Next action:** Claude reviews #165 after exact-head CI. Codex continues endings/openings, lore, portraits and map art on independent branches; their reservations are limited to new named assets and group-specific art docs.
+- **Next action:** Claude reviews #165 after exact-head CI. All 29 assets are published in independent drafts: first ending #165, exits/openings #166, lore #167, portraits #168, map/relics #170. All reservations released. Native comparisons and imports inspected; local lint/format, strict warnings, full logic, input play, layout, menu and play-log passes succeed. Exact-head CI remains required; Claude reviews, wires and merges.
 
 
 ### Codex — Glass interface skin
