@@ -1,0 +1,10 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: illustration-story. Production painted cutscene still for Solace. Single landscape image, 1586x992, 16:10. Misty Highlands: grounded sculpted toy-like miniature materials and painterly cinematic lighting, cool misted Highland mountains, warm timber/stone, rich yet restrained brushwork. Match the supplied established cutscene reference. Human faces and compact sturdy miniature anatomy for all Kith/Lumen, never photorealistic people. Compose all important faces/hands/story objects within middle 80% and upper two thirds; bottom third calm, darker low-detail ground for later captions. No text, lettering, numbers, watermark, UI or borders. Cyan light belongs to Lumen; magenta and sickly green glow only to Bloom. No real people's likenesses. Primary request: At the base of Skyreach, close view of ONE Kith hand and ONE Lumen hand resting TOGETHER on a glowing glyph RING laid into pale stone. Kith hand with rust/cream practical traveller sleeve, Lumen hand with ivory/gold sleeve, pale blue drape edge and restrained cyan clasp accents. Warm copper-gold and cyan paths meet in the ring. Symbol marks are abstract decorative shapes, no words. Two natural human hands with five fingers each; gestures show cooperation. Hands and complete ring within central 80% ABOVE lower third, which remains dark soft stone. Intimate hopeful conclusion, cinematic painted miniature materials. Input roles: image 1 Kith sleeve/skin/material language; image 2 Lumen sleeve/gold/cyan language; image 3 Skyreach pale stone/light setting. New close-up with hands and ring centered above caption zone.",
+  "source": "exec-c4eb32fc-cd66-42fc-a740-c1881f9dbe3c.png",
+  "references": [
+    "art/rendered/walk.png",
+    "docs/art/character-standard/sela-candidate.png",
+    "art/rendered/cutscenes/way_out_1.png"
+  ]
+}

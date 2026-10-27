@@ -1,0 +1,8 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: illustration-story. Production painted cutscene still for Solace. Single landscape image, 1586x992, 16:10. Misty Highlands: grounded sculpted toy-like miniature materials and painterly cinematic lighting, cool misted Highland mountains, warm timber/stone, rich yet restrained brushwork. Match the supplied established cutscene reference. Human faces and compact sturdy miniature anatomy for all Kith/Lumen, never photorealistic people. Compose all important faces/hands/story objects within middle 80% and upper two thirds; bottom third calm, darker low-detail ground for later captions. No text, lettering, numbers, watermark, UI or borders. Cyan light belongs to Lumen; magenta and sickly green glow only to Bloom. No real people's likenesses. Primary request: The EXACT SAME WORLD and camera as reference broken_world_1, now cracked apart by its own magic. Preserve the main branching tree structure, garden terraces and root arch positions so before/after unmistakably match. Land split into great fissures, previously cultivated plants wild and magenta/sickly green, roots tearing across stone, sky visibly torn in luminous ragged fractures. Ancient sorrow and terrible cost, not a monster attack. Memory vision in faded colours with magenta plant magic as main surviving brightness, no cyan. Main destruction upper-middle, calm dark broken-earth lower third, no text. Input roles: image 1 is the EXACT before-state and composition reference, transform that same world and camera into the after-state.",
+  "source": "exec-8ce1a9af-e643-4988-9166-2ed92dd7e663.png",
+  "references": [
+    "art/rendered/cutscenes/broken_world_1.png (same world/camera)"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: illustration-story. Production painted cutscene still for Solace. Single landscape image, 1586x992, 16:10. Misty Highlands: grounded sculpted toy-like miniature materials and painterly cinematic lighting, cool misted Highland mountains, warm timber/stone, rich yet restrained brushwork. Match the supplied established cutscene reference. Human faces and compact sturdy miniature anatomy for all Kith/Lumen, never photorealistic people. Compose all important faces/hands/story objects within middle 80% and upper two thirds; bottom third calm, darker low-detail ground for later captions. No text, lettering, numbers, watermark, UI or borders. Cyan light belongs to Lumen; magenta and sickly green glow only to Bloom. No real people's likenesses. Primary request: An ANCIENT Lumen hull, far older than the recent crash, half sunk in a Highland hillside. Thick moss blankets its ivory/pale-gold metal ribs, old vines root around seams, earth accumulated inside the broken ship. A few barely visible soft cyan inlays beneath lichen. No flames or fresh impact. Wide quiet archaeological discovery, hull profile and ancient ribs across central upper-middle, dim low-detail ground bottom third. Input roles: image 1 recent Lumen crash hull supplies material and rib DESIGN only; this is a DIFFERENT far older ship entirely overgrown, no fresh wreck/fire. Image 2 established landscape brushwork.",
+  "source": "exec-6f29c623-dae7-4af0-8a8c-e40222a30906.png",
+  "references": [
+    "art/rendered/cutscenes/starfall_end_1.png (hull material language only)",
+    "art/rendered/cutscenes/opening_1.png"
+  ]
+}
