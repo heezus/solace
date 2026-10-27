@@ -3,8 +3,8 @@ extends RefCounted
 ## it into open grass, so a hut can be steered to one resource or a site opened up. It is free and gives nothing back.
 ## Static: `s` is the Sim. Which tiles may go, and the words, are in scripts/data/tiles.gd (`clearable`, `stays`).
 ## Not cleared: a ruin that holds a relic until it is dug out (scripts/relics.gd), anything built (that is torn down as before),
-## unexplored land, the river, the Strange Stone, ore, and the last tile of a kind (a kind must keep Data.CLEAR_KEEP other tiles on the map, so nothing the settlement needs is
-## ever lost for good). A Road or Bridge laid over Rocks or Forest still clears it (Buildings.place).
+## unexplored land, the river, the Strange Stone, ore, and the last tile of a kind (a kind must keep Data.CLEAR_KEEP other tiles on the map,
+## so nothing the settlement needs is ever lost for good). A Road or Bridge laid over Rocks or Forest still clears it (Buildings.place).
 
 const Data = preload("res://scripts/data.gd")
 const Relics = preload("res://scripts/relics.gd")
