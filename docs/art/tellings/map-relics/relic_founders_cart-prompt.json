@@ -1,0 +1,8 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: stylized-concept. Asset: Solace RELIC ITEM ICON, single isolated object, square transparent PNG. Match Misty Highlands rendered miniature materials and three-quarter upper-left-lit view, painted sculpted stone/wood/metal, cool shadows, warm highlights. MUST BE READABLE AT 20 PIXELS: one bold silhouette, 2-3 large colour masses, minimal tiny detail, fill central 80% with transparent margin. No plaque, border, ground tile, scenic backdrop, pedestal, text, letters, numbers, watermark, UI or people. Cyan light only Lumen. Genuine transparent background. Subject relic_founders_cart: ONE weathered Kith wooden HAND CART, shallow plank bed, TWO LARGE CARVED WOODEN WHEELS with simple broad radial cuts, paired forward handles. Beloved old founding travellers' relic, worn honey-brown wood and simple dark iron axle. Show the near carved wheel very clearly as a large round shape, with far wheel visible behind, handles form readable fork. NO cargo, bundles, people, animals, ground, flags or inscriptions. Distinct chunky silhouette readable at 20px, subtle carved wood texture but no tiny clutter. Reference 1 established Kith cart/material design only; create a standalone item icon.",
+  "source": "exec-70ac1c61-20e7-4d9e-9a68-482e5cc25f28.png",
+  "references": [
+    "art/rendered/cutscenes/bronze_dawn_2.png (cart material/design only)"
+  ]
+}

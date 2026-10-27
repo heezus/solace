@@ -1,0 +1,8 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: stylized-concept. Asset: Solace RELIC ITEM ICON, single isolated object, square transparent PNG. Match Misty Highlands rendered miniature materials and three-quarter upper-left-lit view, painted sculpted stone/wood/metal, cool shadows, warm highlights. MUST BE READABLE AT 20 PIXELS: one bold silhouette, 2-3 large colour masses, minimal tiny detail, fill central 80% with transparent margin. No plaque, border, ground tile, scenic backdrop, pedestal, text, letters, numbers, watermark, UI or people. Cyan light only Lumen. Genuine transparent background. Subject relic_everburning_forge: a small weathered grey-stone OPEN FORGE with ONE bold warm gold-orange FLAME that never dies. Low chunky dark forge bowl/arch, one simple iron lip and broad bright flame rising above it as dominant recognizable shape. No surrounding shed, chimney or tools, no fuel pile, no complex workshop. Timeless precious Kith relic, worn but cared for. Image 1 is existing forged-stone/fire MATERIAL reference only, simplify to a small item emblem.",
+  "source": "exec-f461b1c7-fa11-4488-9dc4-dd47502f735f.png",
+  "references": [
+    "art/rendered/bloomery.png (materials only)"
+  ]
+}

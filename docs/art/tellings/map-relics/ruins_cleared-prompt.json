@@ -1,0 +1,9 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: stylized-concept. Solace production map miniature sprite, SINGLE 1x1 tile subject, square canvas, genuinely transparent background. Match existing Misty Highlands rendered art: sculpted painterly stone/timber/organic forms, three-quarter top-down camera, consistent upper-left warm highlight and cool soft shadows. Strong clear silhouette readable inside one 48px game tile; restrained chunky detail, natural materials. Subject isolated with transparent margin and transparent ground gaps; no background, horizon, scenic vignette, text, labels, UI, border, hard pedestal, square tile plate or cast shadow outside footprint. No people. Cyan glow only Lumen; magenta/sickly-green glow only Bloom. No unrelated buildings or game mechanics. Primary request: The CLEARED footprint of one destroyed Kith building: a very low irregular scatter of swept flat grey stones, subdued ash stain, a few tiny charred flecks. No standing walls, piled rubble, unbroken beams or objects. Clearly lower/flatter than ruins. Transparent ragged edges and gaps, no solid square slab or raised pedestal. Same materials/camera as rubble reference, 1x1 tile.",
+  "source": "exec-eddc581f-a178-4578-ab5d-5875fa06d1c5.png",
+  "references": [
+    "art/rendered/ruins.png"
+  ],
+  "status": "initial, corrected to remove piled rubble"
+}

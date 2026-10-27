@@ -1,0 +1,200 @@
+[
+  {
+    "id": "ruins",
+    "path": "res://art/rendered/ruins.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "sha256": "089577bc0aa57b7aace150c11164f76ed8f26a8fa2d1887c2b1e9b98f6471e76",
+    "region": [
+      34,
+      186,
+      1199,
+      970
+    ],
+    "original_pixels": true,
+    "footprint": [
+      1,
+      1
+    ],
+    "fit_box": 46
+  },
+  {
+    "id": "ruins_2",
+    "path": "res://art/rendered/ruins_2.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "sha256": "8597864ae76c1331a07f7757ddae8f7431e9f0a14846fc731e512a289c312d31",
+    "region": [
+      27,
+      113,
+      1201,
+      1016
+    ],
+    "original_pixels": true,
+    "footprint": [
+      1,
+      1
+    ],
+    "fit_box": 46
+  },
+  {
+    "id": "ruins_cleared",
+    "path": "res://art/rendered/ruins_cleared.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "sha256": "5a9ee98dcfad9728da0495620986302b22afb4974e1bf4c2f77e8efc094d5b6c",
+    "region": [
+      21,
+      377,
+      1210,
+      740
+    ],
+    "original_pixels": true,
+    "footprint": [
+      1,
+      1
+    ],
+    "fit_box": 46
+  },
+  {
+    "id": "bloom_dormant",
+    "path": "res://art/rendered/bloom_dormant.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "sha256": "d008ff4a5924e0c48b90827db03aad97749d4fd50f1f9aca73c9ecb3b9bb0ed0",
+    "region": [
+      57,
+      71,
+      1168,
+      1123
+    ],
+    "original_pixels": true,
+    "footprint": [
+      1,
+      1
+    ],
+    "fit_box": 46
+  },
+  {
+    "id": "relic_dig",
+    "path": "res://art/rendered/relic_dig.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "sha256": "3bca6a170c629b411305008c41048ddeef01ba709c3e0c3d4471549f906659ee",
+    "region": [
+      26,
+      95,
+      1214,
+      1065
+    ],
+    "original_pixels": true,
+    "footprint": [
+      1,
+      1
+    ],
+    "fit_box": 46
+  },
+  {
+    "id": "first_wreck",
+    "path": "res://art/rendered/first_wreck.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "sha256": "372701a64ab8a69b52e8c7324e3133c8fe8821dd339588da7fc8d6af598ceee7",
+    "region": [
+      72,
+      198,
+      1138,
+      881
+    ],
+    "original_pixels": true,
+    "footprint": [
+      1,
+      1
+    ],
+    "fit_box": 46
+  },
+  {
+    "id": "first_wreck_2",
+    "path": "res://art/rendered/first_wreck_2.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "sha256": "04052da4a56a63949604b930986c467cdd1565352a11e24d92ce242ed9970687",
+    "region": [
+      43,
+      382,
+      1181,
+      597
+    ],
+    "original_pixels": true,
+    "footprint": [
+      1,
+      1
+    ],
+    "fit_box": 46
+  },
+  {
+    "id": "relic_everburning_forge",
+    "path": "res://art/rendered/relic_everburning_forge.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "sha256": "b0f9068538d051684f27a2d00d41e9b27435884d0534b1db93bb08e1baffa185",
+    "region": [
+      166,
+      44,
+      957,
+      1142
+    ],
+    "original_pixels": true,
+    "icon_size": 20
+  },
+  {
+    "id": "relic_old_lantern",
+    "path": "res://art/rendered/relic_old_lantern.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "sha256": "21f8a1e796a6593b6e419c54212bb82f98d27bd9d6272f994ee51ce1cee9462e",
+    "region": [
+      309,
+      23,
+      680,
+      1172
+    ],
+    "original_pixels": true,
+    "icon_size": 20
+  },
+  {
+    "id": "relic_founders_cart",
+    "path": "res://art/rendered/relic_founders_cart.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "sha256": "0067bdd427dca07d4454eaf329e67417aedc1f05d8dbd8af0cfb6ebfa78bada1",
+    "region": [
+      49,
+      242,
+      1156,
+      732
+    ],
+    "original_pixels": true,
+    "icon_size": 20
+  }
+]

@@ -1,0 +1,9 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: stylized-concept. Solace production map miniature sprite, SINGLE 1x1 tile subject, square canvas, genuinely transparent background. Match existing Misty Highlands rendered art: sculpted painterly stone/timber/organic forms, three-quarter top-down camera, consistent upper-left warm highlight and cool soft shadows. Strong clear silhouette readable inside one 48px game tile; restrained chunky detail, natural materials. Subject isolated with transparent margin and transparent ground gaps; no background, horizon, scenic vignette, text, labels, UI, border, hard pedestal, square tile plate or cast shadow outside footprint. No people. Cyan glow only Lumen; magenta/sickly-green glow only Bloom. No unrelated buildings or game mechanics. Primary request: A SMALL fragment of the ancient FIRST Lumen hull, MUCH older than the current crash site reference: two pale-gold rib arches and an ivory-grey curved hull plate, buried beneath thick green moss and a few climbing vines. One extremely faint cyan inlay under lichen. No ember, flame, smoke, fresh shards or bright light. Single broken hull segment, not a whole ship, compact 1x1 footprint. Reuse reference hull rib/material family, with deep weathering and rounded eroded breaks. Image 1 established recent-crash hull material/camera only; image 2 ancient mossed cinematic hull material reference. A MUCH SMALLER fragment than a whole ship.",
+  "source": "exec-0024287c-4620-4368-b028-3c11105e2963.png",
+  "references": [
+    "art/rendered/starfall-wreck.png",
+    "art/rendered/cutscenes/kin_reveal_1.png (#167)"
+  ]
+}

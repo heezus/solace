@@ -1,0 +1,8 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: stylized-concept. Asset: Solace RELIC ITEM ICON, single isolated object, square transparent PNG. Match Misty Highlands rendered miniature materials and three-quarter upper-left-lit view, painted sculpted stone/wood/metal, cool shadows, warm highlights. MUST BE READABLE AT 20 PIXELS: one bold silhouette, 2-3 large colour masses, minimal tiny detail, fill central 80% with transparent margin. No plaque, border, ground tile, scenic backdrop, pedestal, text, letters, numbers, watermark, UI or people. Cyan light only Lumen. Genuine transparent background. Subject relic_old_lantern: one OLD LUMEN HAND LANTERN with a large BRIGHT CYAN CORE enclosed in a simple weathered pale-gold metal and ivory frame, small curved carry handle. Clear stout lantern silhouette and a bold luminous cyan central mass remain readable at 20px. Age shown by worn edges and a single crack, not busy ornament. No orange candle flame, no chain, no extra props or ground. Image 1 existing Lumen metal/cyan material family only, not a hull silhouette.",
+  "source": "exec-f6767b6b-1808-4557-afab-aefa7863053a.png",
+  "references": [
+    "art/rendered/starfall-wreck.png (Lumen materials only)"
+  ]
+}
