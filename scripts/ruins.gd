@@ -86,6 +86,11 @@ static func _open_near(s, from: Vector2i, taken: Dictionary) -> Vector2i:
 	return Vector2i(-1, -1)
 
 
+## The tile of a ruin or of a patch of the carry (a ruin is {"pos": [x, y], "weight": n}, a patch [x, y]).
+static func tile_of(r) -> Vector2i:
+	return _pos(r)
+
+
 static func _pos(r) -> Vector2i:
 	var a = r["pos"] if typeof(r) == TYPE_DICTIONARY else r
 	return Vector2i(int(a[0]), int(a[1]))

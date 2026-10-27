@@ -11,6 +11,7 @@ const Rules = preload("res://scripts/rules.gd")
 const FieldText = preload("res://scripts/field_text.gd")
 const Clearing = preload("res://scripts/clearing.gd")
 const Relics = preload("res://scripts/relics.gd")
+const Rendered = preload("res://scripts/rendered_art.gd")
 
 const TILE := 48.0  # map px per tile at the default zoom
 const OUTLINE: Color = Art.OUTLINE
@@ -194,11 +195,14 @@ static func relic_marks(ci: CanvasItem, s) -> void:
 		if not s.fog.is_revealed(r["pos"]):
 			continue
 		var at := center(r["pos"])
-		ci.draw_circle(at, 5.0 * k, gold)
-		ci.draw_arc(at, 9.0 * k, 0, TAU, 20, Color(gold, 0.55), 2.0 * k, true)
 		var done: float = Relics.progress(s, r["def"]["id"])
+		if done > 0.0:  # the crew is at it: the dig opens the ruin
+			Rendered.telling(ci, "relic_dig", at, r["pos"], 46.0)
+		var icon := Rendered.relic_icon(r["def"]["id"])
+		ci.draw_texture_rect(icon, Rect2(at - Vector2(10, 10) * k, Vector2(20, 20) * k), false)
+		ci.draw_arc(at, 14.0 * k, 0, TAU, 24, Color(gold, 0.55), 2.0 * k, true)
 		if done > 0.0:
-			ci.draw_arc(at, 13.0 * k, -PI / 2.0, -PI / 2.0 + TAU * done, 32, Color("fff3b0"), 3.0 * k, true)
+			ci.draw_arc(at, 18.0 * k, -PI / 2.0, -PI / 2.0 + TAU * done, 32, Color("fff3b0"), 3.0 * k, true)
 	if s.carry.dug.has("cart"):  # the Founders' Cart stands where it was dug: a small cart and its wheels
 		var cart := center(Relics.site_of(s, "cart"))
 		ci.draw_rect(Rect2(cart + Vector2(-9, -7) * k, Vector2(18, 9) * k), Color("8d6e63"))

@@ -12,6 +12,7 @@ signal kept
 const Data = preload("res://scripts/data.gd")
 const Endings = preload("res://scripts/endings.gd")
 const MenuFonts = preload("res://scripts/menu_fonts.gd")
+const Rendered = preload("res://scripts/rendered_art.gd")
 const Ui = preload("res://scripts/ui.gd")
 
 const WIDTH := 480.0
@@ -77,9 +78,27 @@ func _row(id: String) -> Control:
 	box.add_child(b)
 	var line := _words(box, def["line"], 16, Ui.TEXT)
 	var gives := _words(box, Data.ENDINGS["gives"] % def["gives"], Ui.MIN_TEXT, Ui.TEXT_DIM)
+	if id == "cataclysm":
+		box.add_child(_relic_icons())
 	var why := _words(box, "", Ui.MIN_TEXT, Ui.SHORT)
 	_rows[id] = {"button": b, "line": line, "gives": gives, "why": why}
 	return panel
+
+
+## The Cataclysm's three relics (Data.ENDINGS["relics"]) as their 20 px icons, in a row under what the row gives.
+func _relic_icons() -> Control:
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 12)
+	for r in Data.ENDINGS["relics"]:
+		var icon := TextureRect.new()
+		icon.texture = Rendered.relic_icon(r["id"])
+		icon.custom_minimum_size = Vector2(20, 20)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.tooltip_text = r["name"]
+		row.add_child(icon)
+	return row
 
 
 ## Lay the card over `area` (the map view), as the other cards do.
