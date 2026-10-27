@@ -1090,3 +1090,10 @@ An Arc Lamp keeps the Bloom 5 tiles from its light and a Scorcher reached 4, so 
 - **Gifts.** Exodus gives blueprints, Cataclysm gives relics, the Time loop gives memory. Every ending keeps what the Kith know.
 - **Skyreach** opens only from run 2.
 - **Built in 7C:** the ending card and its locks, the three handoffs, ruins and dormant Bloom patches, the Time loop's trust, the `skyward_end` cutscene, the `fireside` scene after any ending and the profile's tellings (see [18](18-roadmap.md)). One call of ours: after a Cataclysm the Lumen "start one step lower" is the wary start (trust 0, no guests), the only step below a guest's, since trust cannot go under 0.
+
+
+## 2026-10-27: Paint the story of many tellings (PR #165)
+- Codex follows the owner's new art-only brief: 1586×992 stills, approved Sela/Kith miniature references, central 80% story action, calm dark caption foregrounds, no baked text; Claude wires after review.
+- Skyward is a hopeful cliffhanger: an inhabited warm town, a thin cyan mast hum, a distant low Bloom horizon and Sela's quiet promise. The fireside Hearthkeeper and four children carry the story onward.
+- Subsequent independent art groups cover the three exits/new valleys, Kin and broken-world reveals, the distant Skyreach promise, three transparent painted busts, and ruins/dormant growth/relic miniatures. Cyan remains Lumen; magenta/sickly green identify Bloom. No global scale, gameplay or UI change.
+- Native player comparisons and provenance accompany the first group; later map/icons are reviewed at 48/20 px. Skyreach buildings and other held UI/overlay work remain deferred.

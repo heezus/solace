@@ -8,8 +8,8 @@ Owner: the project owner (heezus). Two AI teams, one repo, coordinated by respon
 - **Task:** owner-requested art-only `skyward_end_1`, `skyward_end_2`, `skyward_end_3`, `fireside_1` on `codex/tellings-first-ending`, first of five separate groups.
 - **Reserved files:** those four PNG/import pairs in `art/rendered/cutscenes/`, `docs/art/tellings/first-ending/`, this entry and the art decision log. No `.gd`, tests, UI or overlays.
 - **Acceptance criteria:** Misty Highlands, approved Sela/Kith references, 1586×992 accepted, no text, central 80% story action and calm dark lower third; inspected native framing/comparison, original provenance, generated imports and green CI.
-- **Status:** painting the urgent group. The owner's 2026-10-27 request releases these Skyward stills from the prior hold; Skyreach buildings and UI remain held.
-- **Next action:** publish focused draft PR for Claude review/wiring, then endings/openings, lore, portraits and map art on independent branches.
+- **Status:** four original PNG/imports and inspected native player comparisons published in draft PR #165. Reservation released on publication. The owner's 2026-10-27 request releases these Skyward stills from the prior hold; Skyreach buildings and UI remain held.
+- **Next action:** Claude reviews #165 after exact-head CI. Codex continues endings/openings, lore, portraits and map art on independent branches; their reservations are limited to new named assets and group-specific art docs.
 
 
 ### Codex — Glass interface skin
