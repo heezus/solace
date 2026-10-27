@@ -6,7 +6,8 @@ extends RefCounted
 ##   after    optional: a story id that must have happened first, else it waits (the Bloom sign waits for Ironfall)
 ##   by       optional: what picks a still's variant (see ARRIVAL_KEY and LEAN_KEY in scripts/cutscene_player.gd)
 ##   stills   the painted stills in order: `art` is the file name under CUTSCENE_ART_DIR (no extension), `line` the
-##            caption, and `variants` (optional) maps a variant key to the `art` and/or `line` it swaps in
+##            caption, and `variants` (optional) maps a variant key to the `art` and/or `line` it swaps in; `portrait`
+##            (optional) is a painted bust (art/rendered/portraits/) that sits by the caption
 ## A still whose picture is not painted yet shows its line over a dark panel, so the story ships first.
 ## Nothing here names a faction: the Kith, the Lumen and Sela are the words of the page, kept in data.
 
@@ -31,6 +32,30 @@ const CUTSCENES := {
 			{"art": "opening_1", "line": "Solace was quiet when the Kith came."},
 			{"art": "opening_2", "line": "They raised a fire and called the place home."},
 			{"art": "opening_3", "line": "Nothing yet told them they were not alone."},
+		],
+	},
+	# A run that begins after an ending opens in the land that ending led to. No trigger: the player queues it after the opening,
+	# from the ending that began the run.
+	"next_telling":
+	{
+		"triggers": [],
+		"by": "ending",
+		"stills":
+		[
+			{
+				"art": "next_land_1",
+				"line": "Past the last hill there was a country nobody had named.",
+				"variants":
+				{
+					"cataclysm":
+					{
+						"art": "next_ruins_1",
+						"line": "The same hills, the same river. Grass had come into the town, and small green buds."
+					},
+					"loop":
+					{"art": "next_valley_1", "line": "A different valley. A Kith woke in it, remembering everything."},
+				},
+			},
 		],
 	},
 	"bronze_dawn":
@@ -155,15 +180,34 @@ const CUTSCENES := {
 			},
 		],
 	},
-	# After any ending, before the next run: the Hearthkeeper tells the children the telling that just ended (placeholder words; the
-	# Chronicle of the tellings, Step 7G, opens after it).
+	# After any ending, before the next run: the ending itself, then the Hearthkeeper tells the children the telling that just ended
+	# (placeholder words; the Chronicle of the tellings, Step 7G, opens after it).
 	"fireside":
 	{
 		"triggers": ["ending_exodus", "ending_cataclysm", "ending_loop"],
+		"by": "chosen",
 		"stills":
 		[
 			{
+				"art": "ending_exodus_1",
+				"line": "The town was left with its lamps lit.\nThe Kith walked out past it, carrying what they knew.",
+				"variants":
+				{
+					"cataclysm":
+					{
+						"art": "ending_cataclysm_1",
+						"line": "The light broke the sky.\nThe town woke as ruin, with something green in it."
+					},
+					"loop":
+					{
+						"art": "ending_loop_1",
+						"line": "The planet turned back on itself.\nThe town was gone. Only the Kith remembered."
+					},
+				},
+			},
+			{
 				"art": "fireside_1",
+				"portrait": "portrait_kin_elder",
 				"line":
 				(
 					"By the fire, the Hearthkeeper told it to the children:\nthe mast, the strangers, the choice.\n"

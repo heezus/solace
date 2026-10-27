@@ -10,7 +10,7 @@ const CutscenePlayer = preload("res://scripts/cutscene_player.gd")
 const CutsceneSettings = preload("res://scripts/cutscene_settings.gd")
 
 const PHASE_A := ["opening", "bronze_dawn", "falling_star", "first_contact", "starfall_end"]
-const PAINTED := PHASE_A  # the sequences whose stills exist in art/rendered/cutscenes
+const OTHER_ART := {"next_telling": "next_", "fireside": "ending_"}  # sequences that also show stills named for another moment
 const SETTINGS_PATH := "user://test_cutscenes.cfg"
 
 var t  # the runner, tests/run_tests.gd
@@ -24,7 +24,7 @@ class FakeHost:
 func run(runner) -> void:
 	t = runner
 	test_the_data_is_well_formed()
-	test_every_phase_a_still_is_painted()
+	test_every_still_is_painted()
 	test_the_setting_is_kept_apart()
 	test_a_fresh_run_opens_and_a_loaded_one_does_not()
 	test_story_moments_queue_their_sequence()
@@ -58,14 +58,18 @@ func test_the_data_is_well_formed() -> void:
 	t.check(
 		(
 			Data.CUTSCENES.keys()
-			== PHASE_A + ["ironfall", "bloom_sign", "skyward_end", "kin_reveal", "broken_world", "way_out", "fireside"]
+			== (
+				["opening", "next_telling"]
+				+ PHASE_A.slice(1)
+				+ ["ironfall", "bloom_sign", "skyward_end", "kin_reveal", "broken_world", "way_out", "fireside"]
+			)
 		),
-		"the twelve sequences, in the order they play"
+		"the thirteen sequences, in the order they play"
 	)
 	var triggers := {}
 	for id in Data.CUTSCENES:
 		var def: Dictionary = Data.CUTSCENES[id]
-		var fewest := 1 if id == "fireside" else 2  # the fireside is one still told in three lines
+		var fewest := 1 if id == "next_telling" else 2  # the land a run opens in is one still
 		t.check(def["stills"].size() >= fewest and def["stills"].size() <= 4, "%s has %d to 4 stills" % [id, fewest])
 		for trigger in def["triggers"]:
 			t.check(trigger == "start" or Data.STORY_EVENTS.has(trigger), "%s: %s is a story id" % [id, trigger])
@@ -76,7 +80,10 @@ func test_the_data_is_well_formed() -> void:
 			t.check(still["line"] != "", "%s: a still has a line" % id)
 			for row in still["line"].split("\n"):
 				t.check(row.length() <= 70, "%s: a short line: %s" % [id, row])
-			t.check(still["art"].begins_with(id + "_"), "%s: its art is named for it (%s)" % [id, still["art"]])
+			t.check(
+				still["art"].begins_with(id + "_") or still["art"].begins_with(OTHER_ART.get(id, "-")),
+				"%s: its art is named for it (%s)" % [id, still["art"]]
+			)
 			for key in still.get("variants", {}):
 				t.check(def.has("by"), "%s: a variant needs something to pick it" % id)
 	for row in Data.CUTSCENE_VARIANT_LINES:
@@ -86,10 +93,15 @@ func test_the_data_is_well_formed() -> void:
 	t.check(Data.CUTSCENE_MEMORY.size() == 5, "five memory overlays")
 
 
-func test_every_phase_a_still_is_painted() -> void:
-	for id in PAINTED:
+func test_every_still_is_painted() -> void:
+	for id in Data.CUTSCENES:
 		for still in Data.CUTSCENES[id]["stills"]:
 			var arts: Array = [still["art"]]
+			if still.get("portrait", "") != "":
+				t.check(
+					ResourceLoader.exists(CutscenePlayer.PORTRAIT_DIR + still["portrait"] + ".png"),
+					"%s is painted" % still["portrait"]
+				)
 			for v in still.get("variants", {}).values():
 				arts.append(v.get("art", still["art"]))
 			for art in arts:

@@ -19,6 +19,8 @@ const Profile = preload("res://scripts/profile.gd")
 const CutsceneSettings = preload("res://scripts/cutscene_settings.gd")
 
 const GROUP := "cutscene_player"
+const PORTRAIT_DIR := "res://art/rendered/portraits/"
+const PORTRAIT_HEIGHT := 0.3  # a still's portrait stands this share of the window high, at the lower left beside the caption
 
 static var suppress := false  # play nothing: set by the scripted play-through tools, which drive the game scene headless
 
@@ -83,6 +85,8 @@ func setup(s, owner_node = null, prior_ids = null) -> void:
 	s.story.recorded.connect(_on_story)
 	if is_fresh_run(s):
 		enqueue("opening")
+		if s.carry.ending != "":
+			enqueue("next_telling")  # the land the ending before this run led to
 
 
 ## True for a run that has not begun: nothing recorded, one building (the Hearth), nothing learned.
@@ -111,14 +115,17 @@ func enqueue(id: String) -> void:
 
 
 ## The stills of sequence `id` as they play now: the variant for how the strangers came or how the era ended, and one line
-## swapped when an earlier run holds a matching echo (Data.CUTSCENE_VARIANT_LINES). Each is {art, line}.
+## swapped when an earlier run holds a matching echo (Data.CUTSCENE_VARIANT_LINES). Each is {art, line}, and {portrait} when the still has one.
 func resolve(id: String) -> Array:
 	var def: Dictionary = Data.CUTSCENES[id]
 	var key := variant_key(def.get("by", ""))
 	var out: Array = []
 	for still in def["stills"]:
 		var v: Dictionary = still.get("variants", {}).get(key, {})
-		out.append({"art": v.get("art", still["art"]), "line": v.get("line", still["line"])})
+		var row := {"art": v.get("art", still["art"]), "line": v.get("line", still["line"])}
+		if still.has("portrait"):
+			row["portrait"] = still["portrait"]
+		out.append(row)
 	for row in Data.CUTSCENE_VARIANT_LINES:
 		if row["seq"] == id and row["still"] < out.size() and row["needs"] in prior:
 			out[row["still"]]["line"] = row["line"]
@@ -127,13 +134,20 @@ func resolve(id: String) -> Array:
 
 
 ## What picks a still's variant: "loop" after a Time loop (Sela knows the Kith), else "guests" when a Cairn stood before the star fell
-## (else ""), and the lean when the era ends.
+## (else ""), the lean when the era ends, the ending that began this run ("ending"), or the one just chosen, whose story id is
+## recorded ("chosen"; the Exodus picks no variant).
 func variant_key(by: String) -> String:
 	match by:
 		"arrival":
 			return "loop" if state.carry.ending == "loop" else ("guests" if state.starfall.guests else "")
 		"lean":
 			return state.starfall.lean
+		"ending":
+			return state.carry.ending
+		"chosen":
+			for ending in ["cataclysm", "loop"]:
+				if state.story.has_event(Data.ENDINGS[ending]["id"]):
+					return ending
 	return ""
 
 
@@ -248,7 +262,7 @@ func _input(event: InputEvent) -> void:
 ## The painted still `art`, or null when it is not painted yet.
 func texture(art: String) -> Texture2D:
 	if not _textures.has(art):
-		var path: String = Data.CUTSCENE_ART_DIR + art + ".png"
+		var path: String = (PORTRAIT_DIR if art.begins_with("portrait_") else Data.CUTSCENE_ART_DIR) + art + ".png"
 		_textures[art] = load(path) if ResourceLoader.exists(path) else null
 	return _textures[art]
 
@@ -259,11 +273,25 @@ func _layout() -> void:
 	var h := size.y
 	var share: float = Data.CUTSCENE_CAPTION_SHARE
 	_caption.add_theme_font_size_override("font_size", clampi(roundi(h * 0.036), 20, 44))
-	_caption.position = Vector2(size.x * 0.12, h * (1.0 - share) if has_art else h * 0.3)
-	_caption.size = Vector2(size.x * 0.76, h * share * 0.8 if has_art else h * 0.4)
+	var left := size.x * 0.12 + (_portrait_box().size.x if _portrait() != null else 0.0)  # a portrait takes the caption's left
+	_caption.position = Vector2(left, h * (1.0 - share) if has_art else h * 0.3)
+	_caption.size = Vector2(size.x * 0.88 - left, h * share * 0.8 if has_art else h * 0.4)
 	_caption.modulate.a = envelope()
 	_hint.position = Vector2(size.x - _hint.size.x - 18.0, h - _hint.size.y - 12.0)
 	_hint.modulate.a = envelope()
+
+
+## The painted bust beside the still's caption, or null when the still has none or it is not painted.
+func _portrait() -> Texture2D:
+	return texture(stills[index]["portrait"]) if stills[index].has("portrait") else null
+
+
+## Where the portrait stands: the lower left, its height a share of the window's.
+func _portrait_box() -> Rect2:
+	var tex := _portrait()
+	var height := size.y * PORTRAIT_HEIGHT
+	var width := height * tex.get_width() / tex.get_height()
+	return Rect2(Vector2(size.x * 0.06, size.y - height - size.y * 0.04), Vector2(width, height))
 
 
 func _draw() -> void:
@@ -291,3 +319,5 @@ func _draw() -> void:
 	var clear := Color(dark, 0.0)
 	var points := PackedVector2Array([Vector2(0, top), Vector2(size.x, top), size, Vector2(0, size.y)])
 	draw_polygon(points, PackedColorArray([clear, clear, dark, dark]))
+	if _portrait() != null:
+		draw_texture_rect(_portrait(), _portrait_box(), false, Color(1, 1, 1, env))

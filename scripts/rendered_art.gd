@@ -182,6 +182,17 @@ const REGIONS := {
 	"starfall-lumen-camp": [[162, 272, 977, 713]],
 	"starfall-expedition-post": [[146, 122, 1059, 1026]],
 	"starfall-wreck": [[80, 110, 1647, 667]],
+	# The tellings (docs/art/tellings/map-relics): one subject per image, 1x1 on the map, relic icons at 20 px.
+	"ruins": [[34, 186, 1199, 970]],
+	"ruins_2": [[27, 113, 1201, 1016]],
+	"ruins_cleared": [[21, 377, 1210, 740]],
+	"bloom_dormant": [[57, 71, 1168, 1123]],
+	"relic_dig": [[26, 95, 1214, 1065]],
+	"first_wreck": [[72, 198, 1138, 881]],
+	"first_wreck_2": [[43, 382, 1181, 597]],
+	"relic_everburning_forge": [[166, 44, 957, 1142]],
+	"relic_old_lantern": [[309, 23, 680, 1172]],
+	"relic_founders_cart": [[49, 242, 1156, 732]],
 	"starfall-lumen-strangers": [[307, 51, 319, 620], [891, 53, 368, 618], [1537, 57, 306, 614]],
 	"starfall-party-pack": [[279, 270, 733, 725]],
 	"starfall-icons":
@@ -225,6 +236,13 @@ const FEATURES := {
 }
 ## A tile that picks its variant with another tile's hash: a worked-out seam keeps the ridge shape its coal seam had.
 const VARIANT_SALT := {"spent_seam": "coal_seam"}
+## The tellings' tiles that have two paintings (the second is the sheet named `<id>_2`).
+const TELLING_PAIRS := {"ruins": ["ruins", "ruins_2"], "first_wreck": ["first_wreck", "first_wreck_2"]}
+const RELIC_ICONS := {
+	"forge": "relic_everburning_forge",
+	"lantern": "relic_old_lantern",
+	"cart": "relic_founders_cart",
+}
 const BUILDINGS := {"dwelling": 0, "gatherers_hut": 3, "camp": 6}
 const SINGLE_BUILDINGS := {
 	"tool_bench": ["tool-bench", 0],  # Codex's painted Tool Bench (docs/art/tool-bench)
@@ -429,6 +447,9 @@ static func fit(ci: CanvasItem, tex: Texture2D, box: Rect2, tint := Color.WHITE)
 static func feature(ci: CanvasItem, type: String, at: Vector2, p: Vector2i, time: float) -> bool:
 	if BloomLook.draw(ci, type, at, p, time):  # the Bloom patches: placeholder tiles (docs/art/requests.md)
 		return true
+	if type == "ruins":  # what a Cataclysm leaves of the town: two paintings, told apart by the tile
+		telling(ci, "ruins", at, p, 31.0)
+		return true
 	if not FEATURES.has(type):
 		return false
 	var spec: Array = FEATURES[type]
@@ -488,6 +509,20 @@ static func party_pack(ci: CanvasItem, at: Vector2, flip: bool) -> void:
 	var side := -1.0 if flip else 1.0
 	var box := Rect2(at + Vector2(3 * side - (12.0 if flip else 0.0), -21), Vector2(12, 14))
 	fit(ci, sprite("starfall-party-pack", 0), box)
+
+
+## A telling's 1x1 sprite `id` (TELLING_PAIRS has two paintings for some) fitted in a `box` square about `center`. Which painting a tile
+## wears comes from the tile and the map, never the simulation's random numbers.
+static func telling(ci: CanvasItem, id: String, center: Vector2, p: Vector2i, box: float) -> void:
+	var name: String = id
+	if TELLING_PAIRS.has(id):
+		name = TELLING_PAIRS[id][variant(p, 2, id.hash(), map_seed)]
+	fit(ci, sprite(name, 0), Rect2(center - Vector2(box, box) * 0.5, Vector2(box, box)))
+
+
+## The 20 px icon of relic `id` ("forge", "lantern" or "cart", Data.ENDINGS["relics"]), or null for another id.
+static func relic_icon(id: String) -> Texture2D:
+	return sprite(RELIC_ICONS[id], 0) if RELIC_ICONS.has(id) else null
 
 
 ## The crash hull, in a centered 96x48 box at the 48 px tile.

@@ -7,6 +7,7 @@ extends RefCounted
 const BlueprintTests = preload("res://tests/blueprint_tests.gd")
 const RelicTests = preload("res://tests/relic_tests.gd")
 const OldMarksTests = preload("res://tests/old_marks_tests.gd")
+const TellingArtTests = preload("res://tests/telling_art_tests.gd")
 const Carry = preload("res://scripts/carry.gd")
 const Clearing = preload("res://scripts/clearing.gd")
 const CutscenePlayer = preload("res://scripts/cutscene_player.gd")
@@ -46,6 +47,7 @@ func run(runner) -> void:
 	BlueprintTests.new().run(t)  # Steps 7D and 7E ride with the endings: tests/run_tests.gd is at its line cap
 	RelicTests.new().run(t)
 	OldMarksTests.new().run(t)
+	TellingArtTests.new().run(t)
 	_clean()
 
 
@@ -466,8 +468,8 @@ func test_the_skyward_cutscene_and_the_greeting() -> void:
 			f.queue.has("fireside") and f.fireside_pending(), "the %s queues the fireside before the next run" % ending
 		)
 		f.free()
-	t.check(Data.CUTSCENES["fireside"]["stills"].size() == 1, "the fireside is one still")
-	t.check(Data.CUTSCENES["fireside"]["stills"][0]["line"].count("\n") == 2, "of three lines")
+	t.check(Data.CUTSCENES["fireside"]["stills"].size() == 2, "the fireside is the ending, then the telling")
+	t.check(Data.CUTSCENES["fireside"]["stills"][1]["line"].count("\n") == 2, "told in three lines")
 	var loop := Sim.new()
 	loop.generate(SEED)
 	loop.carry.from_dict({"exodus": 1, "ending": "loop"})

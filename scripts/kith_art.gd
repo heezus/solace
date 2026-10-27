@@ -12,6 +12,7 @@ const Overlays = preload("res://scripts/overlays.gd")
 const Rendered = preload("res://scripts/rendered_art.gd")
 const Expedition = preload("res://scripts/expedition.gd")
 const Lessons = preload("res://scripts/lessons.gd")
+const TellingMarks = preload("res://scripts/telling_marks.gd")
 
 const KITH := Color("e76f51")
 const SPRITE := Overlays.TILE  # the sprite's square: drawn at 1.5x, so its 2-unit outline is 3 px
@@ -111,7 +112,7 @@ static func draw_strangers(ci: CanvasItem, s, time: float) -> void:
 
 ## The crash site (Starfall.wreck), once a party has lifted the fog there: a low broken hull in the grass, with embers about it.
 static func draw_wreck(ci: CanvasItem, s, time: float) -> void:
-	draw_old_ship(ci, s, time)
+	TellingMarks.draw(ci, s)  # the first ship's hull, swept ruins and sleeping Bloom of the tellings
 	var w: Vector2i = s.starfall.wreck
 	if w.x < 0 or not s.starfall.wreck_found or not s.fog.is_revealed(w):
 		return
@@ -120,24 +121,6 @@ static func draw_wreck(ci: CanvasItem, s, time: float) -> void:
 	for i in 3:
 		var flick := 0.5 + 0.5 * sin(time * 3.0 + i * 2.0)
 		ci.draw_circle(c + Vector2(-22 + i * 22, -6 - 4 * flick), 4.0 + 2.0 * flick, Color(1.0, 0.62, 0.25, 0.55))
-
-
-## The first ship's site (Starfall.old_ship, Step 7F), once a party has lifted the fog there: the ribs of a hull under the roots, a
-## faint shard glint inside. Stand-in art until Codex paints the `first_wreck` tile.
-static func draw_old_ship(ci: CanvasItem, s, time: float) -> void:
-	var w: Vector2i = s.starfall.old_ship
-	if w.x < 0 or not s.starfall.old_ship_found or not s.fog.is_revealed(w):
-		return
-	var c := (Vector2(w) + Vector2(0.5, 0.5)) * Overlays.TILE
-	ci.draw_circle(c + Vector2(0, 6), 38.0, Color(0.1, 0.16, 0.1, 0.35))
-	for i in 5:
-		var x := -30.0 + i * 15.0
-		ci.draw_line(c + Vector2(x, 10), c + Vector2(x * 0.7, -16), Color(0.42, 0.4, 0.34), 3.0)
-	ci.draw_line(c + Vector2(-34, 10), c + Vector2(34, 10), Color(0.42, 0.4, 0.34), 3.0)
-	for i in 4:
-		ci.draw_circle(c + Vector2(-24 + i * 16, -6 + (i % 2) * 8), 6.0, Color(0.25, 0.55, 0.3, 0.8))
-	var glint := 0.5 + 0.5 * sin(time * 1.6)
-	ci.draw_circle(c + Vector2(0, -2), 4.0 + 2.0 * glint, Color(0.6, 0.92, 1.0, 0.55))
 
 
 ## The first Bloom sign (Starfall.bloom), once the Warning is read and the fog is lifted there: a patch of growth nobody
