@@ -56,19 +56,23 @@ func finish(p: Node) -> void:
 
 func test_the_data_is_well_formed() -> void:
 	t.check(
-		Data.CUTSCENES.keys() == PHASE_A + ["ironfall", "bloom_sign"], "the seven sequences, in the order they play"
+		Data.CUTSCENES.keys() == PHASE_A + ["ironfall", "bloom_sign", "skyward_end", "fireside"],
+		"the nine sequences, in the order they play"
 	)
 	var triggers := {}
 	for id in Data.CUTSCENES:
 		var def: Dictionary = Data.CUTSCENES[id]
-		t.check(def["stills"].size() >= 2 and def["stills"].size() <= 4, "%s has 2 to 4 stills" % id)
+		var fewest := 1 if id == "fireside" else 2  # the fireside is one still told in three lines
+		t.check(def["stills"].size() >= fewest and def["stills"].size() <= 4, "%s has %d to 4 stills" % [id, fewest])
 		for trigger in def["triggers"]:
 			t.check(trigger == "start" or Data.STORY_EVENTS.has(trigger), "%s: %s is a story id" % [id, trigger])
 			t.check(not triggers.has(trigger), "%s: %s starts one sequence only" % [id, trigger])
 			triggers[trigger] = id
 		t.check(def.get("after", "") == "" or Data.STORY_EVENTS.has(def["after"]), "%s waits for a real moment" % id)
 		for still in def["stills"]:
-			t.check(still["line"] != "" and still["line"].length() <= 70, "%s: a short line: %s" % [id, still["line"]])
+			t.check(still["line"] != "", "%s: a still has a line" % id)
+			for row in still["line"].split("\n"):
+				t.check(row.length() <= 70, "%s: a short line: %s" % [id, row])
 			t.check(still["art"].begins_with(id + "_"), "%s: its art is named for it (%s)" % [id, still["art"]])
 			for key in still.get("variants", {}):
 				t.check(def.has("by"), "%s: a variant needs something to pick it" % id)

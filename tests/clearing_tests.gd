@@ -60,13 +60,15 @@ func test_the_clearable_set_is_data() -> void:
 	for kind in Data.TILES:
 		if Data.TILES[kind].get("clearable", false):
 			clearable.append(kind)
-			t.check(Data.TILES[kind]["yields"] != "", "%s yields something" % kind)
+			t.check(
+				Data.TILES[kind]["yields"] != "" or kind == "ruins", "%s yields something (rubble gives Stone)" % kind
+			)
 		else:
 			t.check(kind == "grass" or Data.TILES[kind].has("stays"), "%s says why it stays" % kind)
 	clearable.sort()
 	t.check(
-		clearable == ["berry", "clay", "flax", "grain", "gravel", "rock", "tree"],
-		"the clearable tiles are the seven gatherable kinds: " + str(clearable)
+		clearable == ["berry", "clay", "flax", "grain", "gravel", "rock", "ruins", "tree"],
+		"the clearable tiles are the seven gatherable kinds and a Cataclysm's ruins: " + str(clearable)
 	)
 
 

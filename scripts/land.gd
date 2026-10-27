@@ -6,6 +6,7 @@ extends RefCounted
 ## Static, and works on the Sim passed in, like Roads and Workers.
 
 const Data = preload("res://scripts/data.gd")
+const Ruins = preload("res://scripts/ruins.gd")
 
 const SIDES := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 const ORE_ORDER := ["copper_hills", "tin_stream"]  # the order the player is pointed to them
@@ -16,9 +17,12 @@ const ORE_ORDER := ["copper_hills", "tin_stream"]  # the order the player is poi
 static func grow_if_due(s) -> void:
 	if s.tech_tree.researched.has("bronze_dawn") and s.world.grow_east():
 		s.fog.widen(s.world.width)
+		Ruins.lay(s, Rect2i(s.world.width / 2, 0, s.world.width / 2, s.world.height))  # a Cataclysm's ruins in the new land
 		_took_in(s, Data.LAND_GREW_EVENT)
 	if Data.SOUTH_TECHS.any(func(t): return s.tech_tree.researched.has(t)) and s.world.grow_south():
 		s.fog.lengthen(s.world.height)
+		var old: int = s.world.height - Data.SOUTH_ROWS
+		Ruins.lay(s, Rect2i(0, old, s.world.width, Data.SOUTH_ROWS))
 		_took_in(s, Data.LAND_GREW_SOUTH_EVENT)
 
 

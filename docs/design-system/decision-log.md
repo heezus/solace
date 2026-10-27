@@ -1082,3 +1082,11 @@ An Arc Lamp keeps the Bloom 5 tiles from its light and a Scorcher reached 4, so 
 - Carry: a known tech costs 30% of its materials (rounded up per item, before Tally Sticks and the Cairn), read glyph marks show their word, one Lumen echo per fully read Lumen set opens its card at minute 0 (it still needs normal materials). Map, buildings, stock, people, research progress and Starfall choices do not carry.
 - Why 0.3 and not 0.5: bots on three new maps took 62 / 94 / 57 min at half price (mean 14% under run 1, with the hard map over the era band) and 56 / 64 / 55 min at 30% (mean 29% under, every era 8 to 16 min). Eras below 8 min are the floor, so it goes no lower. Value is `Data.EXODUS["known_share"]`.
 - First runs are untouched: an empty carry changes nothing, goldens did not move.
+
+## 2026-10-27: Several runs to the true ending, three endings by lean (the project owner, six cards; Step 7C)
+- **Several runs.** The true ending takes about four runs; every run is a telling of the same history, and run 1 ends at Skyward on a cliffhanger, not a loss.
+- **Three endings, offered by the lean.** The three resets are three endings: Exodus is always open, the Cataclysm needs the Lumen as enemies, the Time loop needs them as allies. Every reset changes the map, except that the Cataclysm keeps the seed and turns the old town into ruins (page 12: "we want the map to change", read as a changed land).
+- **Lore.** The Kith are Kin: the first shards were an earlier Lumen ship and the Kith are its children. The Bloom is what is left of a world whose magic broke it, and a Cataclysm makes a new Bloom. See [03](03-world-lore.md).
+- **Gifts.** Exodus gives blueprints, Cataclysm gives relics, the Time loop gives memory. Every ending keeps what the Kith know.
+- **Skyreach** opens only from run 2.
+- **Built in 7C:** the ending card and its locks, the three handoffs, ruins and dormant Bloom patches, the Time loop's trust, the `skyward_end` cutscene, the `fireside` scene after any ending and the profile's tellings (see [18](18-roadmap.md)). One call of ours: after a Cataclysm the Lumen "start one step lower" is the wary start (trust 0, no guests), the only step below a guest's, since trust cannot go under 0.

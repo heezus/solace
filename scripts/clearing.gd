@@ -7,6 +7,7 @@ extends RefCounted
 ## ever lost for good). A Road or Bridge laid over Rocks or Forest still clears it (Buildings.place).
 
 const Data = preload("res://scripts/data.gd")
+const Ruins = preload("res://scripts/ruins.gd")
 
 
 ## What a Demolish click on the unbuilt tile p would do: {"ok": true when it would clear, "text": the pill's words}.
@@ -20,7 +21,7 @@ static func check(s, p: Vector2i) -> Dictionary:
 	var def: Dictionary = Data.TILES[kind]
 	if not def.get("clearable", false):
 		return {"ok": false, "text": def.get("stays", "")}
-	if _others(s.world, kind, p) < Data.CLEAR_KEEP:
+	if not def.get("plenty", false) and _others(s.world, kind, p) < Data.CLEAR_KEEP:
 		return {"ok": false, "text": Data.CLEAR_LAST % def["name"]}
 	return {"ok": true, "text": Data.CLEAR_TEXT % def["name"]}
 
@@ -32,6 +33,10 @@ static func clear(s, p: Vector2i) -> String:
 		return ""
 	var kind: String = s.world.tile_at(p)
 	s.world.set_tile(p, "grass")
+	if kind == "ruins":  # the rubble gives its stone
+		var stone := Ruins.stone_at(s, p)
+		s.economy.add("stone", stone)
+		s.economy.note("stone", stone, Data.FLOW_HAND_SOURCE)
 	s.pathing.update_cell(p)
 	if s.harvest_tile == p:
 		s.release_harvest()

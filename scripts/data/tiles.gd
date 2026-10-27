@@ -27,6 +27,18 @@ const TILES := {
 	"berry":
 	{"name": "Berry Bushes", "yields": "berries", "color": Color("558b2f"), "buildable": false, "clearable": true},
 	"grain": {"name": "Wild Grain", "yields": "grain", "color": Color("d4b44a"), "buildable": false, "clearable": true},
+	# What a Cataclysm leaves where the old town stood (scripts/ruins.gd): rubble nothing can be built on until Demolish clears it,
+	# which gives Stone. `plenty`: clearing it needs no other tile of its kind to remain.
+	"ruins":
+	{
+		"name": "Ruins",
+		"yields": "",
+		"color": Color("6e665c"),
+		"buildable": false,
+		"clearable": true,
+		"plenty": true,
+		"hint": "Rubble where the old town stood. Clear it with Demolish for Stone.",
+	},
 	"river":
 	{
 		"name": "River",

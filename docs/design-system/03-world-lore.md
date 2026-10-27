@@ -24,6 +24,14 @@ The laws that never bend (physics, magic, technology, death, etc).
 | Era / date | Event |
 |---|---|
 
+## The lore across tellings (decided by the project owner, 2026-10-26 and 2026-10-27, on cards)
+The true ending takes several runs, about four, each one a telling of the same history. Four layers, one found per telling by reading glyph sets a first run cannot reach. Layers 2 and 3 are decided; layer 4 is the design doc's proposal.
+1. **They came to hide** (run 1, built): the Bloom hunts the Lumen, and Kith industry is noise it can hear. Shown by set 6, the Warning, and the Skyward card.
+2. **Kin** (decided): the shards that fell ages ago were an earlier Lumen ship, and the Kith are its children, who forgot the light. "Kith" and the mark "Kin" are the same word. Found in a later run (glyph set 7, at the old ship's site, Step 7F).
+3. **What the Bloom is** (decided): the Bloom is what is left of a world whose magic broke it. A Cataclysm makes a new Bloom. Found in a later run (glyph set 8, or in the sprouting ruins after a Cataclysm).
+4. **The way out** (proposed): Kith fire and Lumen light together can end the cycle at Skyreach. Only read while the Lumen are allies (glyph set 9).
+Run 1 is not a loss: it ends at Skyward on a cliffhanger ("The first telling ends here"), because the Bloom is coming and the Kith cannot stop it yet. Sela says, "Not this time. But you'll remember."
+
 ## Places
 | Name | Description | Notes |
 |---|---|---|

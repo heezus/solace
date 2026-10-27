@@ -67,7 +67,11 @@ const CUTSCENES := {
 				{"guests": {"art": "first_contact_1_guests", "line": "Three strangers came to the Cairn, as guests."}},
 			},
 			{"art": "first_contact_2", "line": "The tall one smiled anyway."},
-			{"art": "first_contact_3", "line": "She tapped her chest and said a word, and waited."},
+			{
+				"art": "first_contact_3",
+				"line": "She tapped her chest and said a word, and waited.",
+				"variants": {"loop": {"line": "She said the Kith's name first, and smiled."}},
+			},
 		],
 	},
 	"starfall_end":
@@ -107,6 +111,34 @@ const CUTSCENES := {
 		[
 			{"art": "bloom_sign_1", "line": "It was not there yesterday."},
 			{"art": "bloom_sign_2", "line": "Sela stopped smiling. She knew what it was."},
+		],
+	},
+	# The end of a telling (Data.SKYWARD_EVENT): the cliffhanger the first run ends on, before the ending card.
+	"skyward_end":
+	{
+		"triggers": ["skyward_raised"],
+		"stills":
+		[
+			{"art": "skyward_end_1", "line": "The mast stood lit over the town."},
+			{"art": "skyward_end_2", "line": "On the horizon, the Bloom was waking."},
+			{"art": "skyward_end_3", "line": 'Sela said, "Not this time. But you\'ll remember."'},
+		],
+	},
+	# After any ending, before the next run: the Hearthkeeper tells the children the telling that just ended (placeholder words; the
+	# Chronicle of the tellings, Step 7G, opens after it).
+	"fireside":
+	{
+		"triggers": ["ending_exodus", "ending_cataclysm", "ending_loop"],
+		"stills":
+		[
+			{
+				"art": "fireside_1",
+				"line":
+				(
+					"By the fire, the Hearthkeeper told it to the children:\nthe mast, the strangers, the choice.\n"
+					+ '"And then?" they asked. "Then we began again."'
+				)
+			},
 		],
 	},
 }

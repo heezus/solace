@@ -14,13 +14,6 @@ const EXODUS := {
 	"land_marks": "%d marks of the strangers' writing, already read",
 	"land_echoes": "The echo of %s: %s",  # the set, the building it opens
 	"land_button": "Begin",
-	# The Skyward card's second button, the game menu's entry and the confirm.
-	"set_out": "Set out",
-	"set_out_tip": "Leave this land for a new one, carrying what the Kith know. Opens once Skyward is raised.",
-	"confirm": "Leave this land? The town stays behind. The Kith carry what they know.",
-	"confirm_yes": "Set out",
-	"confirm_no": "Stay",
-	"unsaved": "The Kith's story could not be kept, so they stay.",
 	# Forget past runs: the profile cleared, so the next game is a first game.
 	"forget": "Forget past runs",
 	"forget_tip": "Clear what earlier runs left behind: the next new game is a first game.",

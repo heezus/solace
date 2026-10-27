@@ -2,7 +2,7 @@ extends Control
 ## The pause menu: Resume, Save game, Load game and Quit to title, on a card over the dimmed map, and two switches: Cutscenes
 ## (on unless the player turns it off: scripts/cutscene_settings.gd) and Debug keys (off unless turned on: scripts/debug_keys.gd).
 ## The owner (scripts/main.gd) pauses while it is up and does the real work; this only shows the buttons and a one-line
-## status ("Saved to slot 2."). Save and Load open the slot screen. "Set out" (the Exodus) is greyed until Skyward stands, and
+## status ("Saved to slot 2."). Save and Load open the slot screen. "Choose an ending" is greyed until Skyward stands, and
 ## "Forget past runs" clears the profile; both ask first (scripts/game_menu.gd).
 ## Signals: resumed, save_pressed, load_pressed, quit_pressed, set_out_pressed, forget_pressed.
 
@@ -63,7 +63,7 @@ func setup() -> void:
 	v.add_child(_button(Data.PAUSE_QUIT, false, func(): quit_pressed.emit()))
 	var exodus := HBoxContainer.new()  # the two small ones: leaving this land, and forgetting the past ones
 	exodus.add_theme_constant_override("separation", 8)
-	set_out_button = _small_button(exodus, Data.EXODUS["set_out"], func(): set_out_pressed.emit())
+	set_out_button = _small_button(exodus, Data.ENDINGS["choose"], func(): set_out_pressed.emit())
 	_small_button(exodus, Data.EXODUS["forget"], func(): forget_pressed.emit()).tooltip_text = Data.EXODUS["forget_tip"]
 	v.add_child(exodus)
 	cutscene_toggle = _switch(Data.CUTSCENES_LABEL, Data.CUTSCENES_HELP, CutsceneSettings.set_on)

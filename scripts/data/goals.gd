@@ -40,6 +40,9 @@ const STORY_EVENTS := {
 	"livewire_lit": "The wires hummed, and the age of iron was done",
 	"livewire_begun": "The wires were strung, and the Kith began to write their orders",
 	"skyward_raised": "A mast went up over the town, and something answered",
+	"ending_exodus": "The Kith set out for a new land",
+	"ending_cataclysm": "The old town was broken, and the Kith woke in its ruins",
+	"ending_loop": "The planet turned back, and only the Kith remembered",
 }
 
 ## Techs that are story moments: tech id -> the STORY_EVENTS id the Story block records when it is researched.
