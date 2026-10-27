@@ -1,0 +1,8 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: precise-object-edit. Edit target ruins_cleared. Keep square canvas, genuine transparency, camera, warm-upper-left material light and irregular 1x1 footprint. Change rubble into a CLEARED SITE. Remove ALL large rocks, piled stones, standing block edges, clumps of grass and long charcoal fragments. Only a sparse thin scatter of FLAT worn paving fragments set flush in SWEPT GREY ASH remains; irregular soft transparent edges, flat ground decal with NO raised perimeter, NO wall, NO mound, NO square platform. Broad simple calm center; just a few tiny black ash flecks. It must look fully cleared and ready for rebuilding, distinct from ruined heap. No background or text. Preserve transparency.",
+  "source": "exec-a11617a8-ab55-4609-a5c2-b6ed4676f0bb.png",
+  "references": [
+    "art/rendered/ruins_cleared.png (initial revision)"
+  ]
+}
