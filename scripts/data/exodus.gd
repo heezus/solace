@@ -22,4 +22,22 @@ const EXODUS := {
 	"forget_no": "Keep",
 	"forget_done": "Past runs forgotten.",
 	"forget_failed": "The past runs could not be cleared.",
+	# Blueprints, the Exodus's gift (scripts/blueprints.gd): a boxed part of the town saved under a name, laid down again as plans.
+	"bp_max": 6,  # blueprints held at once
+	"bp_label": "Blueprints",
+	"bp_tip": "Save a part of the town as a blueprint, and lay it down again anywhere.",
+	"bp_title": "BLUEPRINTS",
+	"bp_save": "Save a blueprint: drag a box",
+	"bp_save_hint": "Drag a box over what to keep. Right click to stop.",
+	"bp_lay": "Lay down",
+	"bp_drop": "Delete",
+	"bp_empty": "Nothing saved yet. Drag a box over a road grid or a yard and keep it.",
+	"bp_full": "Six blueprints are kept. Delete one to save another.",
+	"bp_nothing": "Nothing in that box to keep.",
+	"bp_saved": "Saved %s: %d parts",  # the name, the parts
+	"bp_laid": "Plans laid for %d parts of %s",  # the parts, the name
+	"bp_done": "The laid plans are all built",
+	"bp_dropped": "%d plans could not be laid and were dropped",
+	"bp_name": "Blueprint %d",
+	"bp_carried": "%d blueprints carried from before",  # the new-land card line
 }

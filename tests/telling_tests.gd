@@ -4,6 +4,7 @@ extends RefCounted
 ## the trust it ended with), what the profile keeps of each telling, and the words the next run opens with. Nothing here plays a game.
 ## Run from tests/run_tests.gd.
 
+const BlueprintTests = preload("res://tests/blueprint_tests.gd")
 const Carry = preload("res://scripts/carry.gd")
 const Clearing = preload("res://scripts/clearing.gd")
 const CutscenePlayer = preload("res://scripts/cutscene_player.gd")
@@ -40,6 +41,7 @@ func run(runner) -> void:
 	test_the_time_loop_remembers_and_the_cataclysm_arrives_wary()
 	test_each_ending_opens_the_next_run_with_its_own_card()
 	test_the_skyward_cutscene_and_the_greeting()
+	BlueprintTests.new().run(t)  # Step 7D rides with the endings: tests/run_tests.gd is at its line cap
 	_clean()
 
 

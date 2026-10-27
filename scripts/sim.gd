@@ -310,6 +310,7 @@ func set_paused(i: int, on: bool) -> void:
 func tick(delta: float) -> void:
 	Hands.age_stash(self, delta)
 	Land.grow_if_due(self)
+	carry.build_plans(self)
 	economy.refresh_caps(town.buildings)
 	economy.advance(delta)
 	for tech in tech_tree.tick():
