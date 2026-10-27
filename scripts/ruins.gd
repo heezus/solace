@@ -48,7 +48,7 @@ static func patches_of(s, ruins: Array) -> Array:
 	var out: Array = []
 	if ruins.is_empty():
 		return out
-	var n := clampi(ruins.size() / 12, Data.ENDINGS["patches_min"], Data.ENDINGS["patches_max"])
+	var n := clampi(floori(ruins.size() / 12.0), Data.ENDINGS["patches_min"], Data.ENDINGS["patches_max"])
 	var taken := {}
 	for r in ruins:
 		taken[_pos(r)] = true
@@ -117,6 +117,8 @@ static func stone_at(s, p: Vector2i) -> int:
 	for r in s.carry.ruins:
 		if _pos(r) == p:
 			return clampi(
-				int(r["weight"]) / Data.ENDINGS["stone_per"], Data.ENDINGS["stone_min"], Data.ENDINGS["stone_max"]
+				floori(float(r["weight"]) / Data.ENDINGS["stone_per"]),
+				Data.ENDINGS["stone_min"],
+				Data.ENDINGS["stone_max"]
 			)
 	return Data.ENDINGS["stone_min"]

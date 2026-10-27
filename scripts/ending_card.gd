@@ -51,8 +51,8 @@ func setup() -> void:
 	v.add_child(_keep)
 
 
-func _words(into: Control, text: String, size: int, color: Color) -> Label:
-	var l := Ui.label(text, size)
+func _words(into: Control, text: String, font: int, color: Color) -> Label:
+	var l := Ui.label(text, font)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.add_theme_color_override("font_color", color)
