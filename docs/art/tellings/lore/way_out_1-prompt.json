@@ -1,0 +1,8 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: illustration-story. Production painted cutscene still for Solace. Single landscape image, 1586x992, 16:10. Misty Highlands: grounded sculpted toy-like miniature materials and painterly cinematic lighting, cool misted Highland mountains, warm timber/stone, rich yet restrained brushwork. Match the supplied established cutscene reference. Human faces and compact sturdy miniature anatomy for all Kith/Lumen, never photorealistic people. Compose all important faces/hands/story objects within middle 80% and upper two thirds; bottom third calm, darker low-detail ground for later captions. No text, lettering, numbers, watermark, UI or borders. Cyan light belongs to Lumen; magenta and sickly green glow only to Bloom. No real people's likenesses. Primary request: Skyreach: a single tall mysterious structure reaching into clouds, viewed from FAR BELOW, upward cinematic perspective. Pale weathered stone and Lumen metal, a slender vertical silhouette partly lost in Highland mist, restrained CYAN and WARM GOLDEN light working together along its central ascent. Promise of a way out, quiet awe, no battle. This is distant story concept art only; do not show detailed new era buildings or UI. Keep essential tower light within central 80%, base above calm dark foreground third, upper structure dissolves into cloud. Input roles: supplied cutscene is atmosphere, material finish and Highland scale language only. New upward-facing image. Only this story still is authorised Skyreach architecture, keep other era art outside scope.",
+  "source": "exec-2291d8a7-406b-4cc8-b7f5-d9730d2abd23.png",
+  "references": [
+    "art/rendered/cutscenes/opening_1.png (style only)"
+  ]
+}

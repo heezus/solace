@@ -1,0 +1,62 @@
+[
+  {
+    "id": "kin_reveal_1",
+    "path": "res://art/rendered/cutscenes/kin_reveal_1.png",
+    "size": [
+      1586,
+      992
+    ],
+    "sha256": "29b75ae5bac0c797a3bd6981fdd414d514b9d8586e327c53efd2bde7c3316c4e",
+    "original_pixels": true
+  },
+  {
+    "id": "kin_reveal_2",
+    "path": "res://art/rendered/cutscenes/kin_reveal_2.png",
+    "size": [
+      1586,
+      992
+    ],
+    "sha256": "2f9986749b9ad214fd94c6aa14ac0e61d1554a4c635660ea9dbe0f57225252b3",
+    "original_pixels": true
+  },
+  {
+    "id": "broken_world_1",
+    "path": "res://art/rendered/cutscenes/broken_world_1.png",
+    "size": [
+      1585,
+      992
+    ],
+    "sha256": "2dd0a97fabb5c878811dfaf3018bb1dc037fc9ec673919832c8aa38e5d280a06",
+    "original_pixels": true
+  },
+  {
+    "id": "broken_world_2",
+    "path": "res://art/rendered/cutscenes/broken_world_2.png",
+    "size": [
+      1586,
+      992
+    ],
+    "sha256": "06bd94615b2e505acdb975f7668fd52bd93c65b8b6f191e838abc7a5efcd2306",
+    "original_pixels": true
+  },
+  {
+    "id": "way_out_1",
+    "path": "res://art/rendered/cutscenes/way_out_1.png",
+    "size": [
+      1586,
+      992
+    ],
+    "sha256": "52ad53ac65d22d84f573983a79ac974f0e192a02359e31d8b17efd6b94b4ae55",
+    "original_pixels": true
+  },
+  {
+    "id": "way_out_2",
+    "path": "res://art/rendered/cutscenes/way_out_2.png",
+    "size": [
+      1585,
+      992
+    ],
+    "sha256": "05b31b87093ebe19f84546a698738a743d6047319d6c1fa72cfa21359620ddf6",
+    "original_pixels": true
+  }
+]
