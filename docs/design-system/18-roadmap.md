@@ -66,7 +66,7 @@ The first reset is real. (Step 7C turned its "Set out" button into "Choose an en
 Skyward's card has "Choose an ending" beside "Keep building" (the game menu has it too, greyed until Skyward stands). It opens a card headed "The first telling ends here" (later runs: "Telling N ends here") with three rows, each with its name, a line of story, what it gives and, when the lean shuts it, why. A chosen row asks "Leave this land?" in the words of how that ending ends; a yes records the ending as a Chronicle moment (`ending_exodus`, `ending_cataclysm`, `ending_loop`), banks the carry and begins the next run. Before the card, the `skyward_end` cutscene (the mast lit, the Bloom on the horizon, Sela: "Not this time. But you'll remember.") plays. After any ending, before the next run starts, a short `fireside` scene plays (one still, three placeholder lines: the Hearthkeeper tells the children the telling that just ended); the Chronicle book that opens after it is Step 7G, so for now the next run's "A new land" card follows it. Cutscenes switched off skip it.
 - **Locks** (the lean Starfall ended with): Exodus always; Cataclysm needs "the Lumen as enemies"; Time loop needs "the Lumen as allies". Neighbours open only the Exodus.
 - **Exodus:** a new map (as built in 7B).
-- **Cataclysm:** the next run keeps the same map seed. Up to 60 of the old town's dearest buildings become Ruins tiles (one tile each, none within 3 tiles of the Hearth): rubble nothing can be built on until Demolish clears it, which gives Stone (the building's cost over 25, from 3 to 20). Ruins in the land that grows east or south are laid when the land grows. Two to four dormant Bloom patches (two tiles of Bloom ground) sit by the largest ruins; the tide still wakes at the first engine and spreads from them as well as from the south. The Lumen arrive wary even if a Cairn stood first (trust 0, no guests).
+- **Cataclysm:** the next run keeps the same map seed. Up to 60 of the old town's dearest buildings become Ruins tiles (one tile each, none within 3 tiles of the Hearth): rubble nothing can be built on until Demolish clears it, which gives Stone (the building's cost over 25, from 3 to 20). Ruins in the land that grows east or south are laid when the land grows. Two to four dormant Bloom patches (two tiles of Bloom ground) sit by the largest ruins, never closer than 12 tiles to the Hearth (`Data.ENDINGS["patch_clear"]`, set in the Step 7 tune); the tide still wakes at the first engine and spreads from them as well as from the south. The Lumen arrive wary even if a Cairn stood first (trust 0, no guests).
 - **Time loop:** a new map. The Lumen remember: trust starts at the trust the last run ended with, Sela greets the Kith by name and the run notes the lean they had.
 - **Profile (version 3):** `runs`, `tellings` (one record per ended run: number, seed, the small Starfall choices, lean, trust, ending) and `last` (the latest ending's handoff: seed, trust, lean, and after a Cataclysm the ruins and patches). A version 1 or 2 profile loads (its runs are its Exoduses).
 - **Not built yet:** the gifts (relics, memory beyond trust; blueprints are built, see below), the new glyph sets, Skyreach and the Chronicle book that opens after an ending. The end cards use placeholder words.
@@ -118,8 +118,19 @@ The Cataclysm's gift. In a Cataclysm run the three heaviest ruins (the first thr
 |---|---|---|---|---|---|---|---|
 | 1 | 11.0 | 10.7 | 11.3 | 13.4 | 8.1 | 54.5 | cart in the Stone age, lantern later |
 | 4 | 13.4 | 9.5 | 11.0 | 12.2 | 11.0 | 57.1 | cart and lantern before Ironfall |
-RELIC_MAP2
-The bar (a bot Cataclysm run on map 1 won in every era, 8 to 25 minutes an era): met.
+| 2 | 11.6 | 10.0 | 11.3 | 13.3 | lost | n/a | Livewire lost: see the tune below |
+
+The bar (a bot Cataclysm run on map 1 won in every era, 8 to 25 minutes an era): met on maps 1 and 4. Map 2 lost Livewire, because its dormant patches sat 4 tiles from the Hearth and the tide reached the town almost at once.
+
+**The Cataclysm tune (director, 2026-10-27).** Step 1 of the director's three: dormant patches lie 12 or more tiles from the Hearth (either tile of a patch, counted both ways), still beside the largest ruins that allow it; two to four, as before. Steps 2 (the patches wake 5 game minutes after the first engine, "The old ground stirs") and 3 (cap the patches at 2) were not needed. Bot Cataclysm runs on the same seed as run 1, minutes of game time, every era won:
+
+| Map | Stone age | Bronze Dawn | Starfall | Ironfall | Livewire | Total | Buildings the Bloom took in Livewire |
+|---|---|---|---|---|---|---|---|
+| 1 | 10.7 | 9.9 | 12.0 | 12.4 | 9.2 | 54.2 | 6 |
+| 2 | 11.5 | 9.8 | 11.3 | 11.7 | 12.3 | 56.6 | 19 |
+| 4 | 13.3 | 10.4 | 11.3 | 14.4 | 7.9 | 57.3 | 7 |
+
+Verdict: **CONCERNS**. Every era is won on all three maps and the tide still takes buildings (6 to 19), but map 4's Livewire is 7.9 minutes, 0.1 under the 8-minute floor. The director accepted that as bot noise: the floor exists to catch trivially short eras. A check at 10 tiles (the director's one extra try) won maps 2 (Livewire 9.1) and 4 (15.2), but the tide took only 2 buildings on map 2 (toothless) and map 1 had not finished after an hour of bot time, so 12 stays. The AI player's relic dig also waits 30 seconds before it tries a failed dig again (`tests/autoplay_relics.gd`).
 
 ## Decided (the project owner, 2026-10-06, on cards)
 1. Three eras after Starfall: Ironfall, Livewire, Skyreach.
