@@ -586,6 +586,10 @@ static func recipe_in(b: Dictionary) -> Dictionary:
 		)
 	if def.get("trade", false):
 		return {b["give"]: def.get("trade_give", Data.TRADE_GIVE)} if is_trading(b) else {}
+	if b.has("relic"):  # the Everburning Forge: its Iron, and no Coal
+		var inputs: Dictionary = def.get("in", {}).duplicate()
+		inputs.erase("coal")
+		return inputs
 	return Fuel.swap(b, def.get("in", {})) if def.get("fuel", false) else def.get("in", {})
 
 

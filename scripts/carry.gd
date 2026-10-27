@@ -19,6 +19,7 @@ var ruins: Array = []  # the Cataclysm's ruins, [{"pos": [x, y], "weight": n}] (
 var patches: Array = []  # and its dormant Bloom patches, [[x, y], ...]
 var told := false  # the card that opens a run after an ending has been shown (scripts/notice_card.gd)
 var blueprints: Array = []  # the run's blueprint book (scripts/blueprints.gd): begins as the profile's, the run adds to it
+var dug: Array = []  # the relic ids dug out of the ruins this run (scripts/relics.gd): used up with the run, never carried on
 var plans: Array = []  # the parts of laid blueprints still waiting to be built, [{"t": type, "x": column, "y": row}]
 
 
@@ -102,6 +103,7 @@ func to_dict() -> Dictionary:
 		"told": told,
 		"blueprints": blueprints.duplicate(true),
 		"plans": plans.duplicate(true),
+		"dug": dug.duplicate(),
 	}
 
 
@@ -125,6 +127,7 @@ func from_dict(d: Dictionary) -> void:
 	told = bool(d.get("told", false))
 	blueprints = _dicts(d.get("blueprints", []))
 	plans = _dicts(d.get("plans", []))
+	dug = _strings(d.get("dug", []))
 
 
 static func _dicts(list) -> Array:

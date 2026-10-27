@@ -2,11 +2,12 @@ extends RefCounted
 ## Clearing natural land: the Demolish tool on a resource tile (Forest, Rocks, Flax, Berries, Grain, Gravel, Clay) turns
 ## it into open grass, so a hut can be steered to one resource or a site opened up. It is free and gives nothing back.
 ## Static: `s` is the Sim. Which tiles may go, and the words, are in scripts/data/tiles.gd (`clearable`, `stays`).
-## Not cleared: anything built (that is torn down as before), unexplored land, the river, the Strange Stone, ore, and the
-## last tile of a kind (a kind must keep Data.CLEAR_KEEP other tiles on the map, so nothing the settlement needs is
-## ever lost for good). A Road or Bridge laid over Rocks or Forest still clears it (Buildings.place).
+## Not cleared: a ruin that holds a relic until it is dug out (scripts/relics.gd), anything built (that is torn down as before),
+## unexplored land, the river, the Strange Stone, ore, and the last tile of a kind (a kind must keep Data.CLEAR_KEEP other tiles on the map,
+## so nothing the settlement needs is ever lost for good). A Road or Bridge laid over Rocks or Forest still clears it (Buildings.place).
 
 const Data = preload("res://scripts/data.gd")
+const Relics = preload("res://scripts/relics.gd")
 const Ruins = preload("res://scripts/ruins.gd")
 
 
@@ -19,6 +20,8 @@ static func check(s, p: Vector2i) -> Dictionary:
 		return {"ok": false, "text": Data.CLEAR_FOG}
 	var kind: String = s.world.tile_at(p)
 	var def: Dictionary = Data.TILES[kind]
+	if kind == "ruins" and Relics.tip(s, p) != "":  # a relic lies under it: dig it out first (Scouting.dig)
+		return {"ok": false, "text": Data.ENDINGS["relic_ruin_kept"]}
 	if not def.get("clearable", false):
 		return {"ok": false, "text": def.get("stays", "")}
 	if not def.get("plenty", false) and _others(s.world, kind, p) < Data.CLEAR_KEEP:

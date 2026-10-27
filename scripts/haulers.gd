@@ -10,6 +10,7 @@ const Roads = preload("res://scripts/roads.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Work = preload("res://scripts/work.gd")
 const Homes = preload("res://scripts/homes.gd")
+const Relics = preload("res://scripts/relics.gd")
 const Teardown = preload("res://scripts/teardown.gd")
 const Steam = preload("res://scripts/steam.gd")
 
@@ -21,6 +22,8 @@ const STOCK_SECONDS := 40.0  # a workshop is brought what it works through in th
 ## Data.CART_LOAD times, a Steam Cart with steam up Data.STEAM_LOAD times (a cold one is a plain hauler).
 static func carry_cap(s, k := {}) -> int:
 	var n: int = Data.CARRY * (2 if s.tech_tree.researched.has("carrying_poles") else 1)
+	if not k.is_empty():
+		n = Relics.load_of(s, k, n)  # the Founders' Cart (scripts/relics.gd)
 	match Roads.ride(k):
 		"cart":
 			return n * Data.CART_LOAD

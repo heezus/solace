@@ -328,7 +328,7 @@ func _begin_run(game: Sim, m: int) -> bool:
 	Profile.set_out(end, path, ending)
 	Launch.begin_new(game, m, path)
 	if with_blueprints:
-		print("blueprints: %d plans laid" % AutoplayBlueprints.lay_all(game))
+		print("blueprints: %d kept to lay when they can be paid for" % AutoplayBlueprints.hold_all(game))
 	return true
 
 

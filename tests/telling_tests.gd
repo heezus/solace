@@ -5,6 +5,7 @@ extends RefCounted
 ## Run from tests/run_tests.gd.
 
 const BlueprintTests = preload("res://tests/blueprint_tests.gd")
+const RelicTests = preload("res://tests/relic_tests.gd")
 const Carry = preload("res://scripts/carry.gd")
 const Clearing = preload("res://scripts/clearing.gd")
 const CutscenePlayer = preload("res://scripts/cutscene_player.gd")
@@ -41,7 +42,8 @@ func run(runner) -> void:
 	test_the_time_loop_remembers_and_the_cataclysm_arrives_wary()
 	test_each_ending_opens_the_next_run_with_its_own_card()
 	test_the_skyward_cutscene_and_the_greeting()
-	BlueprintTests.new().run(t)  # Step 7D rides with the endings: tests/run_tests.gd is at its line cap
+	BlueprintTests.new().run(t)  # Steps 7D and 7E ride with the endings: tests/run_tests.gd is at its line cap
+	RelicTests.new().run(t)
 	_clean()
 
 
@@ -292,11 +294,12 @@ func test_the_cataclysm_keeps_the_map_and_lays_the_ruins() -> void:
 
 func test_clearing_a_ruin_gives_stone() -> void:
 	_clean()
-	var old := _ended_run("enemies")
+	var old := _ended_run("enemies", 50.0, 10)
 	Profile.set_out(old, TEMP_PROFILE, "cataclysm")
 	var n := Sim.new()
 	Launch.begin_new(n, -1, TEMP_PROFILE)
-	var p := Vector2i(int(n.carry.ruins[0]["pos"][0]), int(n.carry.ruins[0]["pos"][1]))
+	t.check(n.carry.ruins.size() > Data.ENDINGS["relics"].size(), "more ruins than relics")
+	var p := Vector2i(int(n.carry.ruins[-1]["pos"][0]), int(n.carry.ruins[-1]["pos"][1]))  # the lightest holds no relic
 	n.fog.reveal(p, 3)
 	t.check(Clearing.check(n, p)["ok"], "Demolish may clear a ruin")
 	var before: int = n.economy.inv.get("stone", 0)
@@ -323,6 +326,8 @@ func test_ruins_in_the_land_that_grows_are_laid_as_it_grows() -> void:
 		if east.x >= 0:
 			break
 	old.town.add_building("kiln", east)
+	for p in _spots(old, 3):  # three heavier ruins take the relics: the east one is a bare ruin
+		old.town.add_building("forge", p)
 	old.starfall.lean = "enemies"
 	old.story.record(Data.SKYWARD_EVENT)
 	Profile.set_out(old, TEMP_PROFILE, "cataclysm")

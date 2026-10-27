@@ -90,7 +90,36 @@ The Exodus's gift. A **Blueprints** button sits beside Demolish on the build bar
 | road grid and storehouses only | 70% | 52.3 (Livewire 7.8) | not won in 70 |
 | roads and storehouses, smelter yard | 70% | 55.8 | 55.9 (Livewire 7.3) |
 
-The spec's bar was a bot Exodus run at least 3 minutes faster on both maps with no era under 8: **not met**. A blueprint saves a player's clicks, not materials; the bot already places what it wants the moment it can pay, so queued plans mostly spend stone and wood on things it would have built later, ahead of research. The 70% share (the director's call) was kept as the rule and not lowered. See the decision log, 2026-10-27.
+The first bar was a bot Exodus run at least 3 minutes faster on both maps with no era under 8: **not met**. A blueprint saves a player's clicks, not materials; the bot already places what it wants the moment it can pay, so queued plans mostly spend stone and wood on things it would have built later, ahead of research. The 70% share (the director's call) was kept as the rule and not lowered.
+
+**The revised bar** (director, 2026-10-27): at 70%, a bot Exodus run with blueprints is no more than 2 minutes slower than 7B on the same map, stays inside 50 to 75 minutes, and has no era under 8. 1004 was +6.5 because the bot queued a whole yard at minute 0, which tied its stone and wood up before research could use them. So the AI player now keeps its blueprints on a waiting list and lays one only once every type in it is known and the stores hold half of what its parts cost (at the banked share); roads still go down first. Rerun at 70%, both Hearth yard and smelter yard:
+
+| Map | 7B (no blueprints) | Laid at minute 0 | Laid when half paid for | Eras of the new run |
+|---|---|---|---|---|
+| 1001 | 55.8 | 55.8 | 55.8 | 10.6 / 10.2 / 12.3 / 12.8 / 9.9 |
+| 1004 | 54.6 | 61.1 | 54.6 | 11.4 / 9.5 / 12.7 / 13.0 / 8.0 |
+
+Both maps now meet the revised bar. The real value of a blueprint is the clicks it saves a player, which the bots cannot feel: that is checked in the Mac launch. See the decision log, 2026-10-27.
+
+## Relics as built (Step 7E)
+
+The Cataclysm's gift. In a Cataclysm run the three heaviest ruins (the first three of the carried ruin list, heaviest first) each hold a **relic**: the Everburning Forge, the Old Lantern, the Founders' Cart, in that order (`Data.ENDINGS["relics"]`). A ruin that holds one wears a gold glint on the map, and its hover pill says what lies under it ("click to send a crew to dig").
+
+- **Digging.** Click the ruin: the nearest idle Kith (a hauler with nothing in hand counts) walks to a road tile beside it (any of the eight neighbours), digs for 60 game seconds (`dig_seconds`; a ring fills round the glint) and walks home. No road beside the ruin, no crew; one crew a relic; nobody free, nobody goes. The crew is a scout in the Kith's own fields (job "scout", phase "dig_out", "dig_work" or "dig_home", `task` {tile, relic}), so it saves with them and needs no new Sim code; the people list calls it a Digger. Demolish refuses a ruin that still holds a relic ("dig it out first"); an ordinary ruin clears for its Stone as before.
+- **The Everburning Forge** becomes a real Forge on the cleared ground that burns nothing: its recipe is 2 Iron to 1 Steel (no Coal), it has no fuel setting, and it keeps the Forge's other needs (a Smith, power, a road). It stands where the old town's heaviest building stood, so it is not always where the smelters are.
+- **The Old Lantern** becomes a Shard Lantern whose shardlight reaches 8 tiles, double the usual 4 (`lantern_reach`); the lantern rings drawn while placing a Lantern follow each one's own reach.
+- **The Founders' Cart** leaves no building: a small cart is drawn on the cleared ground, and any hauler within 8 tiles of it (`cart_reach`) carries 50% more (`cart_load`, rounded up) on its next pickup.
+- **Used up with the run.** `carry.dug` is saved with the run and is never handed on, so the next Cataclysm finds its own three; nothing about a dug relic survives an ending. Any ending that is not a Cataclysm has no ruins and so no relics. First runs are unchanged (goldens did not move).
+- **The AI player** (`tests/autoplay_relics.gd`): once haulers are known it lays road from the network to the Lantern's and the Cart's ruins and sends a Kith. It leaves the Forge alone: it builds its own Forge beside the Boiler it powers.
+
+**What the bot got from it** (Cataclysm run on the same seed as run 1, minutes of game time per era; every era is won):
+
+| Map | Stone age | Bronze Dawn | Starfall | Ironfall | Livewire | Total | Relics dug |
+|---|---|---|---|---|---|---|---|
+| 1 | 11.0 | 10.7 | 11.3 | 13.4 | 8.1 | 54.5 | cart in the Stone age, lantern later |
+| 4 | 13.4 | 9.5 | 11.0 | 12.2 | 11.0 | 57.1 | cart and lantern before Ironfall |
+RELIC_MAP2
+The bar (a bot Cataclysm run on map 1 won in every era, 8 to 25 minutes an era): met.
 
 ## Decided (the project owner, 2026-10-06, on cards)
 1. Three eras after Starfall: Ironfall, Livewire, Skyreach.
