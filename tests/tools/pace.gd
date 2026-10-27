@@ -21,11 +21,14 @@ extends SceneTree
 ## (Profile.set_out), onto map <map> (the run's own seed plus 1000 when it is meant to follow it). The era jobs after it take the
 ## carry from the start files, so each era is still its own job. `ending=cataclysm` or `ending=loop` takes that ending instead (the Exodus
 ## by default); give the map the run's own seed for a Cataclysm, which keeps the map, and the bot does not check the lean.
+## `blueprints` with `exodus=` keeps the run's Hearth yard and smelter yard as blueprints (tests/autoplay_blueprints.gd) and lays them on
+## the new map at the Hearth, to see what plans save a bot (the era jobs after the first read the plans from the start files).
 ## Run: godot --headless --path . -s tests/tools/pace.gd --
 ##   [map|all] [minutes] [quiet] [bronze|star|ironfall [steam|teardown]|livewire|baseline [noseams] [until=<era>] out=<folder>] [cache]
 ##   <map> <minutes> quiet baseline era=ironfall [from=<file>] out=<folder>
 
 const Autoplay = preload("res://tests/autoplay.gd")
+const AutoplayBlueprints = preload("res://tests/autoplay_blueprints.gd")
 const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
 const AutoplayIronfall = preload("res://tests/autoplay_ironfall.gd")
 const AutoplayLivewire = preload("res://tests/autoplay_livewire.gd")
@@ -315,8 +318,13 @@ func _begin_run(game: Sim, m: int) -> bool:
 		return false
 	var path := "user://exodus_profile_%d.json" % m
 	Profile.forget(path)
+	var with_blueprints := "blueprints" in OS.get_cmdline_user_args()  # keep the run's yards and lay them again (Step 7D)
+	if with_blueprints:
+		AutoplayBlueprints.save_all(end)
 	Profile.set_out(end, path, ending)
 	Launch.begin_new(game, m, path)
+	if with_blueprints:
+		print("blueprints: %d plans laid" % AutoplayBlueprints.lay_all(game))
 	return true
 
 

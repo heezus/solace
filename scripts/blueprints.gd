@@ -17,8 +17,9 @@ const UNEXPLORED := "Unexplored"
 
 
 ## The parts of the town inside `box` (tile corners inclusive), in the order they should go down: roads and bridges, then fields, then
-## buildings, each by row then column. The Hearth is never kept.
-static func parts_in(s, box: Rect2i) -> Array:
+## buildings, each by row then column. The Hearth is never kept, nor any part whose kind is in `skip` (a tool for a player who boxes
+## a yard and leaves its gatherers behind, and for the bots).
+static func parts_in(s, box: Rect2i, skip := []) -> Array:
 	var roads := []
 	var fields := []
 	var buildings := []
@@ -30,7 +31,7 @@ static func parts_in(s, box: Rect2i) -> Array:
 				continue
 			var kind: String = Data.BUILDINGS[type]["kind"]
 			var part := {"t": type, "x": x - box.position.x, "y": y - box.position.y}
-			if kind == "camp":
+			if kind == "camp" or kind in skip:
 				continue
 			if kind in ["road", "bridge"]:
 				roads.append(part)
@@ -42,10 +43,10 @@ static func parts_in(s, box: Rect2i) -> Array:
 
 
 ## Keep the part of the town in `box` as a new blueprint. Returns "" when it was saved, otherwise the reason it was not.
-static func save(s, box: Rect2i, label := "") -> String:
+static func save(s, box: Rect2i, label := "", skip := []) -> String:
 	if s.carry.blueprints.size() >= int(Data.EXODUS["bp_max"]):
 		return Data.EXODUS["bp_full"]
-	var parts := parts_in(s, box)
+	var parts := parts_in(s, box, skip)
 	if parts.is_empty():
 		return Data.EXODUS["bp_nothing"]
 	var n: int = s.carry.blueprints.size() + 1
