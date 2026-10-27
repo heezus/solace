@@ -36,6 +36,8 @@ func run(runner) -> void:
 	test_a_scene_replays_in_the_variant_of_its_telling()
 	test_the_sky_reads_as_a_sky()
 	test_numbers_and_map_belong_to_the_ending_star()
+	test_a_map_draws_buildings_roads_and_fields_apart()
+	test_each_era_keeps_its_minutes()
 	_clean()
 
 
@@ -423,3 +425,59 @@ func test_numbers_and_map_belong_to_the_ending_star() -> void:
 	words = book._detail.find_children("*", "Label", true, false).map(func(l): return l.text)
 	t.check(words.any(func(w): return w.contains("50 minutes")), "with the telling's numbers")
 	book.free()
+
+
+func test_a_map_draws_buildings_roads_and_fields_apart() -> void:
+	var s := Sim.new()
+	s.generate(SEED)
+	var hearth := s.world.camp_pos
+	var road := Vector2i(-1, -1)
+	var field := Vector2i(-1, -1)
+	for y in s.world.height:
+		for x in s.world.width:
+			var p := Vector2i(x, y)
+			if s.world.tile_at(p) != "grass" or s.town.building_at.has(p):
+				continue
+			if road.x < 0:
+				road = p
+			elif field.x < 0 and p.distance_to(road) > 3.0:
+				field = p
+	s.world.roads[road] = true
+	s.world.fields[field] = true
+	var rows: Array = Chronicle.map_of(s)["rows"]
+	t.check(rows[hearth.y][hearth.x] == "#", "a building is a building")
+	t.check(rows[road.y][road.x] == "=", "a road is not drawn as one")
+	t.check(rows[field.y][field.x] == "f", "nor is a field")
+	var buildings := 0
+	for row in rows:
+		buildings += String(row).count("#")
+	t.check(buildings >= 1 and buildings <= s.town.building_at.size(), "only a building's tiles are lit")
+
+
+func test_each_era_keeps_its_minutes() -> void:
+	var s := Sim.new()
+	s.generate(SEED)
+	t.check(s.story.era_minutes(5.0) == [5.0], "a run still in the stone age has one era")
+	var marks := {"bronze_dawn": 600.0, "star_falling": 1500.0, Data.IRONFALL_EVENT: 2400.0}
+	for id in marks:
+		s.seasons.time = marks[id]
+		s.story.record(id)
+		s.story.update(s)
+	t.check(s.story.era_minutes(50.0) == [10.0, 15.0, 15.0, 10.0], "each era runs from its opening to the next")
+	var back := Sim.new()
+	back.generate(SEED)
+	back.story.from_dict(s.story.to_dict())
+	t.check(back.story.era_minutes(50.0) == [10.0, 15.0, 15.0, 10.0], "and the minutes are saved with the run")
+	var old := s.story.to_dict()
+	old.erase("stamps")
+	back.story.from_dict(old)
+	t.check(back.story.era_minutes(50.0).is_empty(), "a save from before they were kept says so")
+	s.seasons.time = 3000.0
+	var record := Endings.telling(s, "exodus")
+	t.check(record.get("eras", []) == [10.0, 15.0, 15.0, 10.0], "a telling keeps them")
+	t.check(
+		Chronicle.eras_line(record).begins_with("Stone Age 10 · Bronze Dawn 15 · Starfall 15"),
+		"and reads them in a line"
+	)
+	record.erase("eras")
+	t.check(Chronicle.eras_line(record) == "", "a telling from before has only its total")

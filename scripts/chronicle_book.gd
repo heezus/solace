@@ -31,9 +31,10 @@ const STAR_COLOR := Color("eee7d6")
 const EMBER_COLOR := Color("ffd27a")
 const NEBULA_COLOR := Color("6f8fc8")
 const CELL_COLORS := {
-	"#": Color("dcc08a"),
+	"#": Color("ffb040"),
 	"b": Color("b24a9a"),
 	"=": Color("8d7b5c"),
+	"f": Color("c2b05a"),
 	"r": Color("6e665c"),
 	"~": Color("3a86c8"),
 	"t": Color("3d6b34"),
@@ -338,6 +339,9 @@ func _select(run: int, kind: String) -> void:
 	var numbers := Chronicle.numbers_line(telling)
 	if numbers != "":
 		_detail.add_child(_wrapped(numbers, Ui.TEXT_DIM, DETAIL_WIDTH))
+	var eras := Chronicle.eras_line(telling)
+	if eras != "":
+		_detail.add_child(_wrapped(eras, Ui.TEXT_DIM, DETAIL_WIDTH))
 	if telling.get("map", {}).has("rows"):
 		var map := MiniMap.new()
 		map.map = telling["map"]
