@@ -318,7 +318,11 @@ func _begin_run(game: Sim, m: int) -> bool:
 		return false
 	var path := "user://exodus_profile_%d.json" % m
 	Profile.forget(path)
-	var with_blueprints := "blueprints" in OS.get_cmdline_user_args()  # keep the run's yards and lay them again (Step 7D)
+	var with_blueprints := false  # keep the run's yards and lay them again (Step 7D): `blueprints` or `blueprints=<mode>`
+	for a in OS.get_cmdline_user_args():
+		if a == "blueprints" or a.begins_with("blueprints="):
+			with_blueprints = true
+			AutoplayBlueprints.mode = a.substr(11) if a.length() > 10 else "all"
 	if with_blueprints:
 		AutoplayBlueprints.save_all(end)
 	Profile.set_out(end, path, ending)

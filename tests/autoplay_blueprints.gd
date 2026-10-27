@@ -12,16 +12,24 @@ const Data = preload("res://scripts/data.gd")
 const YARD_RADIUS := 8  # the Hearth yard reaches this many tiles each way from the Hearth
 const SMELTING := ["smelter", "crucible", "bloomery", "forge"]
 const SKIP := ["gatherer"]  # kinds a bot does not keep: they are placed where their resource is
+const ROAD_KINDS := ["road", "bridge", "depot"]  # what the "roads" mode keeps: the road grid and its storehouses
+
 const SMELTER_YARD_MAX := 22  # tiles across: wider than this is not one yard
 
 ## Hearth-relative corners of the boxes last saved, in blueprint order (the blueprint itself keeps no place).
 static var corners: Array = []
+
+## What the bot keeps (`blueprints=<mode>` on the pace tool): "all" the yards, "yards" (roads and storehouses at the Hearth, the smelter
+## yard whole), or "roads" (the road grid and storehouses only).
+static var mode := "all"
 
 
 ## The boxes worth keeping from the run in `s`: the Hearth yard, then the smelter yard when there is one.
 static func boxes(s) -> Array:
 	var camp: Vector2i = s.world.camp_pos
 	var out := [Rect2i(camp - Vector2i(YARD_RADIUS, YARD_RADIUS), Vector2i.ONE * (2 * YARD_RADIUS + 1))]
+	if mode == "roads":
+		return out
 	var lo := Vector2i(1 << 20, 1 << 20)
 	var hi := Vector2i(-(1 << 20), -(1 << 20))
 	var n := 0
@@ -38,8 +46,13 @@ static func boxes(s) -> Array:
 ## Keep the boxes of the run in `s` in its blueprint book. Returns how many were kept.
 static func save_all(s) -> int:
 	corners = []
-	for box in boxes(s):
-		if Blueprints.save(s, box, "", SKIP) == "":
+	var list := boxes(s)
+	for i in list.size():
+		var box: Rect2i = list[i]
+		var skip: Array = SKIP
+		if mode != "all" and i == 0:  # the Hearth yard keeps only roads and storehouses
+			skip = Data.BUILDINGS.values().map(func(d): return d["kind"]).filter(func(k): return k not in ROAD_KINDS)
+		if Blueprints.save(s, box, "", skip) == "":
 			corners.append(box.position - s.world.camp_pos)
 	return corners.size()
 
