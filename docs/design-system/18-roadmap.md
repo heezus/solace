@@ -45,7 +45,7 @@ Each reset ends a run, keeps knowledge (not stock) and changes the map, as the T
 | **Time loop** | The planet rewinds; only you remember. Each loop is shorter and goes further. | Memory: permanent meta-upgrades, glyphs, finds | Lean "allies", the deepest layer |
 
 ## Exodus as built (Step 7)
-The first reset is real. The Skyward card has a second button, "Set out" (the game menu has it too, greyed until Skyward stands). A confirm reads "Leave this land? The town stays behind. The Kith carry what they know." Setting out folds the run into the profile, banks what carries, and starts a new run on a new map.
+The first reset is real. (Step 7C turned its "Set out" button into "Choose an ending", below; the Exodus is one of the three rows and its confirm reads "The town stays behind. The Kith walk into a land they have not seen, carrying what they know.") Setting out folds the run into the profile, banks what carries, and starts a new run on a new map.
 - **Carries** (profile v2: `techs`, `marks`, `echoes`, `exoduses`; a v1 profile loads with them empty): every tech the run learned costs `Data.EXODUS["known_share"]` (0.3) of its materials (rounded up per item, applied before Tally Sticks and the Cairn); every read glyph mark shows its word, while the Wall still copies it and the strangers' moments still happen; one Lumen echo per fully read Lumen set (the Lantern, Healing House, Grove and Shardwright cards open at minute 0 and still need their normal materials); taught job kinds and shown hints, as before.
 - **Does not carry:** the map, buildings, stock, people, research progress, Starfall choices.
 - **Banking** happens only on Set out. A finished run that is not set out leaves the profile alone, and "Forget past runs" (a confirm in the game menu) gives a true first run again. The run save records its own carry, so a mid-run load keeps it; a save without one loads as a first run.
@@ -61,6 +61,15 @@ The first reset is real. The Skyward card has a second button, "Set out" (the ga
 
   Map 1002 is a hard map: its first run with no carry needed 47 min for Bronze Dawn and did not finish Ironfall in 70, so the half-price run was good news there and still too slow; 0.3 brings it in. Livewire on map 1004 sits at the 8-minute floor, so 0.3 is as far as this knob should go. The ledger leak was under 0.4% of the flow in every era of both chains.
 
+
+## Endings as built (Step 7C)
+Skyward's card has "Choose an ending" beside "Keep building" (the game menu has it too, greyed until Skyward stands). It opens a card headed "The first telling ends here" (later runs: "Telling N ends here") with three rows, each with its name, a line of story, what it gives and, when the lean shuts it, why. A chosen row asks "Leave this land?" in the words of how that ending ends; a yes records the ending as a Chronicle moment (`ending_exodus`, `ending_cataclysm`, `ending_loop`), banks the carry and begins the next run. Before the card, the `skyward_end` cutscene (the mast lit, the Bloom on the horizon, Sela: "Not this time. But you'll remember.") plays.
+- **Locks** (the lean Starfall ended with): Exodus always; Cataclysm needs "the Lumen as enemies"; Time loop needs "the Lumen as allies". Neighbours open only the Exodus.
+- **Exodus:** a new map (as built in 7B).
+- **Cataclysm:** the next run keeps the same map seed. Up to 60 of the old town's dearest buildings become Ruins tiles (one tile each, none within 3 tiles of the Hearth): rubble nothing can be built on until Demolish clears it, which gives Stone (the building's cost over 25, from 3 to 20). Ruins in the land that grows east or south are laid when the land grows. Two to four dormant Bloom patches (two tiles of Bloom ground) sit by the largest ruins; the tide still wakes at the first engine and spreads from them as well as from the south. The Lumen arrive wary even if a Cairn stood first (trust 0, no guests).
+- **Time loop:** a new map. The Lumen remember: trust starts at the trust the last run ended with, Sela greets the Kith by name and the run notes the lean they had.
+- **Profile (version 3):** `runs`, `tellings` (one record per ended run: number, seed, the small Starfall choices, lean, trust, ending) and `last` (the latest ending's handoff: seed, trust, lean, and after a Cataclysm the ruins and patches). A version 1 or 2 profile loads (its runs are its Exoduses).
+- **Not built yet:** the gifts (blueprints, relics, memory beyond trust), the new glyph sets, Skyreach and the Chronicle book that opens after an ending. The end cards use placeholder words.
 
 ## Decided (the project owner, 2026-10-06, on cards)
 1. Three eras after Starfall: Ironfall, Livewire, Skyreach.

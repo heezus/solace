@@ -118,11 +118,12 @@ func resolve(id: String) -> Array:
 	return out
 
 
-## What picks a still's variant: "guests" when a Cairn stood before the star fell (else ""), the lean when the era ends.
+## What picks a still's variant: "loop" after a Time loop (Sela knows the Kith), else "guests" when a Cairn stood before the star fell
+## (else ""), and the lean when the era ends.
 func variant_key(by: String) -> String:
 	match by:
 		"arrival":
-			return "guests" if state.starfall.guests else ""
+			return "loop" if state.carry.ending == "loop" else ("guests" if state.starfall.guests else "")
 		"lean":
 			return state.starfall.lean
 	return ""

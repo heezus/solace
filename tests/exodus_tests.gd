@@ -32,7 +32,7 @@ func run(runner) -> void:
 	test_forget_past_runs_gives_a_true_first_run()
 	test_set_out_waits_for_skyward_and_the_confirm_can_be_cancelled()
 	test_forget_asks_first()
-	test_the_skyward_card_offers_set_out()
+	test_the_skyward_card_offers_an_ending()
 	test_a_known_tech_costs_its_share_rounded_up()
 	test_echo_cards_open_from_minute_zero_and_only_for_read_sets()
 	test_read_marks_show_their_words_and_the_wall_still_copies()
@@ -65,10 +65,12 @@ func test_a_version_1_profile_loads_with_an_empty_carry() -> void:
 	t.check(p.chronicle == ["haulers"] and p.knowledge == ["wood"] and p.hints == ["hut"], "with what it held")
 	t.check(p.techs.is_empty() and p.marks.is_empty() and p.echoes.is_empty() and p.exoduses == 0, "and an empty carry")
 	t.check(p.carry().is_first(), "which is a first run's")
-	t.check(not p.from_json('{"version": 3, "chronicle": [], "knowledge": []}'), "a version from the future is refused")
+	t.check(not p.from_json('{"version": 4, "chronicle": [], "knowledge": []}'), "a version from the future is refused")
 	t.check(not p.from_json('{"version": 0, "chronicle": [], "knowledge": []}'), "and so is one before the first")
 	var d := p.to_dict()
-	t.check(d["version"] == 2 and d.has("techs") and d.has("exoduses"), "saved again it is version 2")
+	t.check(
+		d["version"] == 3 and d.has("techs") and d.has("exoduses") and d.has("tellings"), "saved again it is version 3"
+	)
 	p.from_dict({"version": 2, "chronicle": [], "knowledge": [], "techs": ["a", 3, "a"], "marks": null, "exoduses": -4})
 	t.check(p.techs == ["a"] and p.marks.is_empty() and p.exoduses == 0, "stray carry entries are dropped")
 
@@ -188,15 +190,22 @@ func test_set_out_waits_for_skyward_and_the_confirm_can_be_cancelled() -> void:
 	menu.open()
 	t.check(not menu.menu.set_out_button.disabled, "it opens once Skyward stands")
 	menu.menu.set_out_pressed.emit()
-	t.check(menu.confirm.visible, "pressing it asks first")
-	t.check(menu.confirm._text.text == Data.EXODUS["confirm"], "in the words of the design")
+	t.check(menu.endings.visible and not menu.confirm.visible, "pressing it opens the ending card")
+	menu.close()
+	t.check(not menu.endings.visible and menu.is_open(), "Esc puts it away and leaves the menu")
+	menu.ask_set_out()
+	menu.endings.button_of("exodus").pressed.emit()
+	t.check(menu.confirm.visible and not menu.endings.visible, "an ending asks first")
+	t.check(menu.confirm._text.text == Data.ENDINGS["exodus"]["end"], "in the words of that ending")
 	menu.close()
 	t.check(not menu.confirm.visible and menu.is_open(), "Esc puts the question away and leaves the menu")
 	t.check(not FileAccess.file_exists(TEMP_PROFILE), "with nothing banked")
 	menu.ask_set_out()
+	menu.endings.button_of("exodus").pressed.emit()
 	menu.confirm._no.pressed.emit()
 	t.check(not menu.confirm.visible and not FileAccess.file_exists(TEMP_PROFILE), "saying no changes nothing")
 	menu.ask_set_out()
+	menu.endings.button_of("exodus").pressed.emit()
 	menu.confirm._yes.pressed.emit()
 	var p := Profile.new()
 	t.check(p.load_file(TEMP_PROFILE) and p.exoduses == 1 and p.techs.has("knapping"), "saying yes banks the carry")
@@ -225,14 +234,16 @@ func test_forget_asks_first() -> void:
 	_clean()
 
 
-func test_the_skyward_card_offers_set_out() -> void:
+func test_the_skyward_card_offers_an_ending() -> void:
 	var card := EraCard.new()
 	card.setup()
 	var presses := [0]
 	card.set_out_pressed.connect(func(): presses[0] += 1)
 	card.open(Data.SKYWARD_EVENT)
 	var button: Button = card._words["set_out"]
-	t.check(button.visible and button.text == Data.EXODUS["set_out"], "the end of Livewire has a Set out button")
+	t.check(
+		button.visible and button.text == Data.ENDINGS["choose"], "the end of Livewire has a Choose an ending button"
+	)
 	t.check(card._words["button"].text == Data.SKYWARD_BUTTON, "beside Keep building")
 	button.pressed.emit()
 	t.check(presses[0] == 1 and card.visible, "it asks, and the card stays up")

@@ -71,8 +71,8 @@ func begin(friendly: bool, wreck_tile := Vector2i(-1, -1)) -> void:
 	wreck = wreck_tile
 	stage = "falling"
 	clock = 0.0
-	guests = friendly
-	trust = Data.TRUST_START_GUESTS if friendly else Data.TRUST_START_WARY
+	guests = carry.guests_welcome(friendly)
+	trust = carry.start_trust(Data.TRUST_START_GUESTS if guests else Data.TRUST_START_WARY)  # a loop picks up where it ended
 
 
 func arrived() -> bool:
@@ -122,9 +122,21 @@ func tick(delta: float) -> void:
 				stage = "arrived"
 				clock = 0.0
 				said.emit(Data.ARRIVED_GUESTS if guests else Data.ARRIVED_WARY)
+				_remember()
 				moment.emit("lumen_arrived")
 		"arrived":
 			_tick_arrived(delta)
+
+
+## What the strangers remember of the telling before, said once as they arrive: Sela greets the Kith by name after a Time loop
+## and the run notes the lean it ended with; after a Cataclysm they come wary, remembering the ruins.
+func _remember() -> void:
+	match carry.ending:
+		"loop":
+			said.emit(Data.ENDINGS["greet"])
+			said.emit(Data.ENDINGS["remembered"] % Data.ENDINGS["lean_words"].get(carry.last_lean, carry.last_lean))
+		"cataclysm":
+			said.emit(Data.ENDINGS["wary"])
 
 
 func _tick_arrived(delta: float) -> void:

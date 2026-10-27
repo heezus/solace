@@ -10,13 +10,43 @@ const Data = preload("res://scripts/data.gd")
 var techs: Array = []  # tech ids learned in an earlier run: they cost a share of the study
 var marks: Array = []  # glyph ids read in an earlier run: they show their word
 var echoes: Array = []  # Lumen set ids read in an earlier run: that set's building is open from the start
-var exodus := 0  # which Exodus this run is: 0 for a first run
-var told := false  # the card that opens an Exodus run has been shown (scripts/notice_card.gd)
+var exodus := 0  # how many endings came before this run: 0 for a first run (the field keeps the Exodus's name)
+var ending := ""  # the ending that began this run: "exodus", "cataclysm" or "loop", "" for a first run
+var last_lean := ""  # the Lumen lean the run before ended with
+var last_trust := 0.0  # the trust it ended with (the Time loop begins there)
+var ruins: Array = []  # the Cataclysm's ruins, [{"pos": [x, y], "weight": n}] (scripts/ruins.gd)
+var patches: Array = []  # and its dormant Bloom patches, [[x, y], ...]
+var told := false  # the card that opens a run after an ending has been shown (scripts/notice_card.gd)
 
 
 ## True for a first run, which carries nothing.
 func is_first() -> bool:
 	return exodus == 0
+
+
+## Take what the last ending handed on (Endings.handoff): the ending, the lean and trust it ended with, and the Cataclysm's ruins.
+func set_handoff(h: Dictionary) -> void:
+	ending = String(h.get("ending", ""))
+	last_lean = String(h.get("lean", ""))
+	last_trust = float(h.get("trust", 0.0))
+	ruins = h.get("ruins", []).duplicate(true) if typeof(h.get("ruins")) == TYPE_ARRAY else []
+	patches = h.get("patches", []).duplicate(true) if typeof(h.get("patches")) == TYPE_ARRAY else []
+
+
+## The trust the strangers start at, given `base` (the first run's: a Cairn first makes them guests): the Time loop begins where the
+## last run ended, a Cataclysm makes them arrive wary (no Cairn's welcome), any other run begins as a first run does.
+func start_trust(base: float) -> float:
+	match ending:
+		"loop":
+			return last_trust
+		"cataclysm":
+			return Data.TRUST_START_WARY
+	return base
+
+
+## True when the Lumen are welcomed as guests at the arrival: a Cairn first, and not after a Cataclysm.
+func guests_welcome(cairn_first: bool) -> bool:
+	return cairn_first and ending != "cataclysm"
 
 
 func knows_tech(tech: String) -> bool:
@@ -56,6 +86,11 @@ func to_dict() -> Dictionary:
 		"marks": marks.duplicate(),
 		"echoes": echoes.duplicate(),
 		"exodus": exodus,
+		"ending": ending,
+		"last_lean": last_lean,
+		"last_trust": last_trust,
+		"ruins": ruins.duplicate(true),
+		"patches": patches.duplicate(true),
 		"told": told,
 	}
 
@@ -66,6 +101,17 @@ func from_dict(d: Dictionary) -> void:
 	marks = _strings(d.get("marks", []))
 	echoes = _strings(d.get("echoes", []))
 	exodus = maxi(int(d.get("exodus", 0)), 0)
+	set_handoff(
+		{
+			"ending": d.get("ending", ""),
+			"lean": d.get("last_lean", ""),
+			"trust": d.get("last_trust", 0.0),
+			"ruins": d.get("ruins"),
+			"patches": d.get("patches")
+		}
+	)
+	if ending == "" and exodus > 0:
+		ending = "exodus"  # a run begun before the endings existed followed an Exodus
 	told = bool(d.get("told", false))
 
 

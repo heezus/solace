@@ -18,6 +18,7 @@ const Buildings = preload("res://scripts/buildings.gd")
 const Data = preload("res://scripts/data.gd")
 const Codec = preload("res://scripts/save_codec.gd")
 const Fuel = preload("res://scripts/fuel.gd")
+const Ruins = preload("res://scripts/ruins.gd")
 
 const SIDES := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 const PATCH_TILES := ["bloom_ground", "bloom_spore", "bloom_root", "bloom_sap"]
@@ -89,6 +90,8 @@ func begin(s) -> void:
 	for i in range(s.world.base_height * w, s.world.tiles.size()):
 		if s.world.tiles[i] in PATCH_TILES:
 			_spread_from(s, Vector2i(i % w, floori(float(i) / w)))
+	for p in Ruins.patch_tiles(s):  # a Cataclysm's dormant patches wake with the tide
+		_spread_from(s, p)
 	rev += 1
 	said.emit(Data.TIDE_BEGAN_LINE)
 

@@ -19,7 +19,8 @@ extends SceneTree
 ## With `exodus=<file>` the baseline's first job (stone age to the Ironfall start) is the Exodus run: <file> is the end of a run (a run
 ## dump, or a baseline's checkpoint in user://baseline_work/) and the Kith set out from it, exactly as the game menu's Set out does
 ## (Profile.set_out), onto map <map> (the run's own seed plus 1000 when it is meant to follow it). The era jobs after it take the
-## carry from the start files, so each era is still its own job.
+## carry from the start files, so each era is still its own job. `ending=cataclysm` or `ending=loop` takes that ending instead (the Exodus
+## by default); give the map the run's own seed for a Cataclysm, which keeps the map, and the bot does not check the lean.
 ## Run: godot --headless --path . -s tests/tools/pace.gd --
 ##   [map|all] [minutes] [quiet] [bronze|star|ironfall [steam|teardown]|livewire|baseline [noseams] [until=<era>] out=<folder>] [cache]
 ##   <map> <minutes> quiet baseline era=ironfall [from=<file>] out=<folder>
@@ -295,9 +296,12 @@ func _baseline(m: int, minutes: float, out: String) -> void:
 ## A new run on map `m`: a first run, or (with `exodus=<file>`) the Kith set out from the end of the run in <file> onto the map.
 func _begin_run(game: Sim, m: int) -> bool:
 	var from := ""
+	var ending := "exodus"
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("exodus="):
 			from = a.substr(7)
+		if a.begins_with("ending="):
+			ending = a.substr(7)
 	if from == "":
 		game.generate(m)
 		return true
@@ -311,7 +315,7 @@ func _begin_run(game: Sim, m: int) -> bool:
 		return false
 	var path := "user://exodus_profile_%d.json" % m
 	Profile.forget(path)
-	Profile.set_out(end, path)
+	Profile.set_out(end, path, ending)
 	Launch.begin_new(game, m, path)
 	return true
 

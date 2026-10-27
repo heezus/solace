@@ -2,8 +2,8 @@ extends Control
 ## The end of an era: a card, centred over a dimmed map view, shown once when The Falling Star is discovered (a cliffhanger,
 ## not the crash: the words are in Data, ERA_END_*) and once more when Livewire is (the end of Ironfall, Data.LIVEWIRE_*). The
 ## button puts the card away, and the game goes on. The owner pauses while it is up and resumes on `closed`.
-## The end of Livewire's card has a second button, "Set out" (the Exodus: Data.EXODUS): it asks, and the owner puts the question.
-## Signals: closed fires when the player puts the card away; set_out_pressed when they press "Set out" (the card stays up).
+## The end of Livewire's card has a second button, "Choose an ending" (Data.ENDINGS): it asks, and the owner puts the card.
+## Signals: closed fires when the player puts the card away; set_out_pressed when they press "Choose an ending" (the card stays up).
 
 signal closed
 signal set_out_pressed
@@ -56,10 +56,10 @@ func setup() -> void:
 	go.add_theme_font_size_override("font_size", 18)
 	go.pressed.connect(close)
 	v.add_child(go)
-	var out := Ui.button(Data.EXODUS["set_out"])
+	var out := Ui.button(Data.ENDINGS["choose"])
 	Ui.action_button(out)
-	out.text = Data.EXODUS["set_out"]
-	out.tooltip_text = Data.EXODUS["confirm"]
+	out.text = Data.ENDINGS["choose"]
+	out.tooltip_text = Data.ENDINGS["choose_tip"]
 	_words["set_out"] = out
 	out.add_theme_font_size_override("font_size", 18)
 	out.pressed.connect(func(): set_out_pressed.emit())

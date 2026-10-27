@@ -47,7 +47,7 @@ Set aside for now: the Bloom as a spreading tide (its own later era), stories th
 
 ## Open
 - Map generation: see "Smarter maps" below.
-- Exodus is built (see "Exodus as built" in [18](18-roadmap.md)): known techs cost half, read marks show their word, Lumen echoes open their cards at minute 0, and the map is new. Cataclysm keeps its own carry-over (06-mechanics.md) and is not built. Whether it also changes the map is open; the default is yes.
+- The three resets are built as endings (see "Exodus as built" and "Endings as built" in [18](18-roadmap.md)): every ending keeps known techs at 30% of their study, read marks and echoes; the Exodus and the Time loop wake the Kith in a new valley, and the Cataclysm on the same map as ruins. The gifts (blueprints, relics) are not built yet.
 - How many glyphs, and the word list, get designed with era 3.
 
 ## Smarter maps (proposed, 2026-09-30)

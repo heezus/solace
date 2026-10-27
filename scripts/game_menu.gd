@@ -2,8 +2,10 @@ extends Control
 ## The game's menu: the pause menu card and what its buttons do. Resume puts it away; Save game opens the slot screen to
 ## pick a slot and writes the run there; Load game opens it to pick a save (or a stage start, which begins a new run) and
 ## starts the game scene again from it, so nothing of this run is left behind; Quit to title goes back to the first screen.
-## Set out (the Exodus) and Forget past runs ask first, on a confirm card (scripts/confirm_card.gd); the Skyward card's own "Set out"
-## asks the same question through `ask_set_out`.
+## "Choose an ending" (the entry here and the Skyward card's own button, through `ask_set_out`) opens the ending card
+## (scripts/ending_card.gd): the Exodus, the Cataclysm or the Time loop, as far as the Lumen lean opens them. The row chosen asks
+## "Leave this land?" on a confirm card (scripts/confirm_card.gd) that says how that ending ends, and a yes sets out. Forget past
+## runs asks first on the same card.
 ## The owner (scripts/main.gd) pauses while it is open and resumes when it closes, through `paused_changed`.
 ## Signal: paused_changed(on) fires when the menu opens (true) or closes (false).
 
@@ -15,6 +17,8 @@ const SlotScreen = preload("res://scripts/slot_screen.gd")
 const SaveSlots = preload("res://scripts/save_slots.gd")
 const Launch = preload("res://scripts/launch.gd")
 const ConfirmCard = preload("res://scripts/confirm_card.gd")
+const EndingCard = preload("res://scripts/ending_card.gd")
+const Endings = preload("res://scripts/endings.gd")
 const Profile = preload("res://scripts/profile.gd")
 
 const TITLE_SCENE := "res://scenes/title.tscn"
@@ -24,6 +28,7 @@ var slot_dir := SaveSlots.DIR
 var menu: PauseMenu
 var slots: SlotScreen
 var confirm: ConfirmCard
+var endings: EndingCard
 var profile_path := Profile.PATH
 
 
@@ -41,6 +46,10 @@ func setup(game, era_card = null) -> void:
 	confirm = ConfirmCard.new()
 	add_child(confirm)
 	confirm.setup()
+	endings = EndingCard.new()
+	add_child(endings)
+	endings.setup()
+	endings.chosen.connect(ask_confirm)
 	menu.set_out_pressed.connect(ask_set_out)
 	if era_card != null:
 		era_card.set_out_pressed.connect(ask_set_out)
@@ -57,25 +66,28 @@ func setup(game, era_card = null) -> void:
 func place(area: Rect2) -> void:
 	menu.place(area)
 	slots.place(area)
+	endings.place(area)
 	confirm.place(area)
 
 
 func is_open() -> bool:
-	return menu.visible or confirm.visible
+	return menu.visible or confirm.visible or endings.visible
 
 
 ## Put the menu up and pause the game behind it. Set out is open once Skyward stands.
 func open() -> void:
 	menu.open()
 	menu.set_out_button.disabled = not set_out_open()
-	menu.set_out_button.tooltip_text = Data.EXODUS["set_out_tip"]
+	menu.set_out_button.tooltip_text = Data.ENDINGS["choose_tip"]
 	paused_changed.emit(true)
 
 
-## Esc: put the question away if one is up, else the slot screen if it is up, else the menu and let the game go on.
+## Esc: put the question away if one is up, else the ending card, else the slot screen if it is up, else the menu and let the game go on.
 func close() -> void:
 	if confirm.visible:
 		confirm.cancel()
+	elif endings.visible:
+		endings.cancel()
 	elif slots.visible:
 		slots.close()
 	else:
@@ -119,25 +131,38 @@ func quit_to_title() -> void:
 	get_tree().change_scene_to_file(TITLE_SCENE)
 
 
-## True once Skyward stands: only then can the Kith set out.
+## True once Skyward stands: only then can the Kith end the telling.
 func set_out_open() -> bool:
 	return state.story.events.has(Data.SKYWARD_EVENT)
 
 
-## Ask "Leave this land?": a yes sets out, a no changes nothing.
+## Choose an ending: the ending card goes up for this run's number and the Lumen lean the Starfall era ended with.
 func ask_set_out() -> void:
 	if set_out_open():
-		confirm.ask(Data.EXODUS["confirm"], Data.EXODUS["confirm_yes"], Data.EXODUS["confirm_no"], set_out)
+		endings.open(state.carry.exodus + 1, state.starfall.lean)
 
 
-## Set out: the run is folded into the profile with its carry banked, and a new run begins on a new map (the scene starts again;
-## the new run reads the carry from the profile). False, and the Kith stay, when Skyward does not stand yet or the profile could
-## not be written (the carry would be lost).
-func set_out() -> bool:
-	if not set_out_open():
+## The row `ending` was chosen: ask "Leave this land?" in the words of how that ending ends. A yes sets out, a no changes nothing.
+func ask_confirm(ending: String) -> void:
+	if set_out_open() and Endings.is_open(ending, state.starfall.lean):
+		confirm.ask(
+			Data.ENDINGS[ending]["end"],
+			Data.ENDINGS["confirm_yes"],
+			Data.ENDINGS["confirm_no"],
+			func(): set_out(ending)
+		)
+
+
+## Set out with `ending` ("exodus", "cataclysm" or "loop"): the ending is a story moment, the run is folded into the profile with
+## its carry banked, and a new run begins (the scene starts again; the new run reads the carry from the profile). False, and
+## the Kith stay, when Skyward does not stand yet, the Lumen lean shuts that ending or the profile could not be written (the
+## carry would be lost).
+func set_out(ending := "exodus") -> bool:
+	if not set_out_open() or not Endings.is_open(ending, state.starfall.lean):
 		return false
-	if not Profile.set_out(state, profile_path).saved:
-		menu.say(Data.EXODUS["unsaved"], false)
+	state.story.record(Data.ENDINGS[ending]["id"])
+	if not Profile.set_out(state, profile_path, ending).saved:
+		menu.say(Data.ENDINGS["unsaved"], false)
 		return false
 	if is_inside_tree():
 		get_tree().reload_current_scene()

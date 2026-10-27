@@ -6,6 +6,7 @@ extends RefCounted
 const RunSave = preload("res://scripts/run_save.gd")
 const SaveSlots = preload("res://scripts/save_slots.gd")
 const Profile = preload("res://scripts/profile.gd")
+const Ruins = preload("res://scripts/ruins.gd")
 
 static var _slot := 0  # the save slot to start from, 0 for none
 static var _stage: Dictionary = {}  # the run dump of a stage start, {} for none
@@ -45,10 +46,16 @@ static func start_into(s, dir := SaveSlots.DIR) -> bool:
 	return slot > 0 and SaveSlots.load_into(s, slot, dir)
 
 
-## Begin a new run on a new map: the carry is the profile as it stands (empty, and so a first run, until the Kith have set out).
-## `seed_value` is the map's seed, a new one when it is -1.
+## Begin a new run: the carry is the profile as it stands (empty, and so a first run, until a telling has ended). The map is a new one
+## from `seed_value` (a fresh seed when it is -1), except after a Cataclysm, which keeps the map of the run it ended: the old town's
+## ruins and the dormant Bloom patches are laid on it (scripts/ruins.gd). An explicit `seed_value` always wins.
 static func begin_new(s, seed_value := -1, profile_path := Profile.PATH) -> void:
-	s.generate(seed_value if seed_value >= 0 else randi())
 	var profile := Profile.new()
 	profile.load_file(profile_path)
-	s.carry.from_dict(profile.carry().to_dict())
+	var carry := profile.carry()
+	var seed_used := seed_value
+	if seed_used < 0:
+		seed_used = int(profile.last.get("seed", randi())) if carry.ending == "cataclysm" else randi()
+	s.carry.from_dict(carry.to_dict())  # before the map, which reads it
+	s.generate(seed_used)
+	Ruins.lay(s, Rect2i(0, 0, s.world.width, s.world.height))

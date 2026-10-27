@@ -8,9 +8,13 @@ extends RefCounted
 ##   `hints`: the ids of the first-time hints already shown (scripts/hints.gd), so none comes back in a later run. A profile
 ##     written before hints existed has none and still loads.
 ##   the carry (version 2): `techs` (tech ids researched), `marks` (glyph ids read), `echoes` (Lumen set ids read) and `exoduses`
-##     (how many times the Kith set out). They are banked only by bank(), when the player sets out, so what a run that never
-##     set out learned is not carried. A new run begins with them as its carry (scripts/carry.gd). A version 1 profile loads
-##     with them empty.
+##     (how many times the Kith chose the Exodus). They are banked only by bank(), when the player ends a run with an ending
+##     (scripts/endings.gd), so what a run that never ended learned is not carried. A new run begins with them as its carry
+##     (scripts/carry.gd). A version 1 profile loads with them empty.
+##   the tellings (version 3): `runs` (how many runs have ended), `tellings` (one record per ended run: its number, map seed,
+##     the small Starfall choices, the lean, the trust and the ending) and `last` (the latest ending with what the next run
+##     is made from: its seed, its end trust and, after a Cataclysm, the ruins and the dormant Bloom patches). A version 1 or 2
+##     profile loads with them empty (its `runs` is its `exoduses`).
 ## absorb(state) merges a run (finished or in progress) into the profile: new ids are added at the end, ids
 ## already held keep their place, and absorbing the same run twice changes nothing.
 ## The profile is its own file (PATH), apart from the run save (scripts/run_save.gd): a run save holds no
@@ -20,8 +24,9 @@ extends RefCounted
 ## when the player sets out (set_out).
 
 const Carry = preload("res://scripts/carry.gd")
+const Endings = preload("res://scripts/endings.gd")
 
-const VERSION := 2
+const VERSION := 3
 const OLDEST := 1  # the oldest version still read
 const PATH := "user://profile.json"
 const SECTIONS := ["chronicle", "knowledge"]
@@ -32,7 +37,10 @@ var hints: Array = []  # first-time hint ids, in the order they were shown
 var techs: Array = []  # tech ids researched in a run that set out
 var marks: Array = []  # glyph ids read in a run that set out
 var echoes: Array = []  # Lumen set ids read in a run that set out
-var exoduses := 0  # how many times the Kith have set out
+var exoduses := 0  # how many times the Kith have chosen the Exodus
+var runs := 0  # how many runs have ended in an ending (the Exodus, the Cataclysm or the Time loop)
+var tellings: Array = []  # one record per ended run (Endings.telling), in order
+var last: Dictionary = {}  # the latest ending's handoff to the next run (Endings.handoff), {} before any
 var saved := true  # set_out: the file was written
 
 
@@ -46,6 +54,9 @@ func is_empty() -> bool:
 		and marks.is_empty()
 		and echoes.is_empty()
 		and exoduses == 0
+		and runs == 0
+		and tellings.is_empty()
+		and last.is_empty()
 	)
 
 
@@ -62,22 +73,30 @@ func merge(story_ids: Array, item_ids: Array) -> void:
 
 
 ## Bank what the run in `s` taught into the carry: its techs, the marks it read and the echoes of the sets it read, and count
-## one more Exodus. Ids already held keep their place. Only set_out calls this.
-func bank(s) -> void:
+## one more ending, `ending` ("exodus", "cataclysm" or "loop"): its telling and what the next run is made from are kept.
+## Ids already held keep their place. Only set_out calls this.
+func bank(s, ending := "exodus") -> void:
 	var earned := Carry.earned(s)
 	_add_all(techs, earned["techs"])
 	_add_all(marks, earned["marks"])
 	_add_all(echoes, earned["echoes"])
-	exoduses += 1
+	runs += 1
+	if ending == "exodus":
+		exoduses += 1
+	tellings.append(Endings.telling(s, ending))
+	last = Endings.handoff(s, ending)
 
 
-## The carry a run begins with: what has been banked, and which Exodus the run is.
+## The carry a run begins with: what has been banked, which telling the run is, and what the last ending made of its world.
 func carry() -> Carry:
 	var c := Carry.new()
 	c.techs = techs.duplicate()
 	c.marks = marks.duplicate()
 	c.echoes = echoes.duplicate()
-	c.exodus = exoduses
+	c.exodus = runs
+	c.set_handoff(last)
+	if c.ending == "" and c.exodus > 0:
+		c.ending = "exodus"  # a version 2 profile: its runs all set out
 	return c
 
 
@@ -112,13 +131,14 @@ static func note_run(s, path: String = PATH) -> bool:
 	return profile.save(path)
 
 
-## The player sets out: fold the run in `s` into the profile saved at `path` (note_run's work), bank its carry and write it
-## back. Returns the profile as banked; `saved` says whether the file was written (the carry holds for the next run either way).
-static func set_out(s, path: String = PATH):
+## The player ends the run with `ending`: fold the run in `s` into the profile saved at `path` (note_run's work), bank its carry
+## and write it back. Returns the profile as banked; `saved` says whether the file was written (the carry holds for the next
+## run either way).
+static func set_out(s, path: String = PATH, ending := "exodus"):
 	var profile := new()
 	profile.load_file(path)
 	profile.absorb(s)
-	profile.bank(s)
+	profile.bank(s, ending)
 	profile.saved = profile.save(path)
 	return profile
 
@@ -140,6 +160,9 @@ func to_dict() -> Dictionary:
 		"marks": marks.duplicate(),
 		"echoes": echoes.duplicate(),
 		"exoduses": exoduses,
+		"runs": runs,
+		"tellings": tellings.duplicate(true),
+		"last": last.duplicate(true),
 	}
 
 
@@ -153,6 +176,9 @@ func from_dict(d) -> void:
 	marks = []
 	echoes = []
 	exoduses = 0
+	runs = 0
+	tellings = []
+	last = {}
 	if not is_profile(d):
 		return
 	merge(d["chronicle"], d["knowledge"])
@@ -161,6 +187,13 @@ func from_dict(d) -> void:
 			_add_all(pair[0], d[pair[1]])
 	if typeof(d.get("exoduses")) == TYPE_INT or typeof(d.get("exoduses")) == TYPE_FLOAT:
 		exoduses = maxi(int(d["exoduses"]), 0)
+	runs = exoduses  # a version 2 profile had only Exodus endings
+	if typeof(d.get("runs")) == TYPE_INT or typeof(d.get("runs")) == TYPE_FLOAT:
+		runs = maxi(int(d["runs"]), 0)
+	if typeof(d.get("tellings")) == TYPE_ARRAY:
+		tellings = d["tellings"].filter(func(x): return typeof(x) == TYPE_DICTIONARY)
+	if typeof(d.get("last")) == TYPE_DICTIONARY:
+		last = d["last"].duplicate(true)
 
 
 ## True when `d` looks like a profile this code can read.
