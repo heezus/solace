@@ -1,0 +1,77 @@
+[
+  {
+    "id": "portrait_kin_elder",
+    "path": "res://art/rendered/portraits/portrait_kin_elder.png",
+    "size": [
+      1024,
+      1280
+    ],
+    "source_size": [
+      1122,
+      1402
+    ],
+    "sha256": "1b158a2bc6731324e99340650f00b1559541a3a99e7d919ef83c420381312147",
+    "source_sha256": "2d62c3270fba5eb611eec5a930c7348b56fc4ad34366b152a4dc4ea029ff38ad",
+    "alpha_extrema": [
+      0,
+      255
+    ],
+    "region": [
+      0,
+      77,
+      1017,
+      1151
+    ],
+    "export": "aspect-preserving sips -Z 1280"
+  },
+  {
+    "id": "portrait_sela",
+    "path": "res://art/rendered/portraits/portrait_sela.png",
+    "size": [
+      1024,
+      1280
+    ],
+    "source_size": [
+      1122,
+      1402
+    ],
+    "sha256": "8452846707e0e4c78117158d4d5163d3900bfa9ae5dc59feb0cf925f23b52520",
+    "source_sha256": "67abd2c308da649aa05e10bcd4a77f811e83ebe71fc95db99520f1016d007e19",
+    "alpha_extrema": [
+      0,
+      255
+    ],
+    "region": [
+      43,
+      59,
+      929,
+      1190
+    ],
+    "export": "aspect-preserving sips -Z 1280"
+  },
+  {
+    "id": "portrait_bloom",
+    "path": "res://art/rendered/portraits/portrait_bloom.png",
+    "size": [
+      1024,
+      1280
+    ],
+    "source_size": [
+      1122,
+      1402
+    ],
+    "sha256": "02c24d4376fbc9856b45f181d301c0df77d1dcd51698b95dba8cd71bba034871",
+    "source_sha256": "0c19a166d92327e8a3b529938b55aa5814b2c083fc128a4d783cf5d9709ac3ac",
+    "alpha_extrema": [
+      0,
+      255
+    ],
+    "region": [
+      37,
+      0,
+      968,
+      1276
+    ],
+    "export": "aspect-preserving sips -Z 1280"
+  }
+]
