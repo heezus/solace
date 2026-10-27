@@ -10,7 +10,7 @@ extends RefCounted
 const Data = preload("res://scripts/data.gd")
 const Words = preload("res://scripts/chronicle_words.gd")
 
-const MAP_STRIDE := 3  # tiles per cell of a telling's small map
+const MAP_STRIDE := 1  # tiles per cell of a telling's small map: one a tile, drawn small in the book
 # What a cell shows when several tiles fall in it, first wins: building, Bloom, road, ruins, river, trees, rock, grass.
 const MAP_ORDER := "#b=r~t^."
 
