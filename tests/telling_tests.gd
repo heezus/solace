@@ -6,6 +6,7 @@ extends RefCounted
 
 const BlueprintTests = preload("res://tests/blueprint_tests.gd")
 const RelicTests = preload("res://tests/relic_tests.gd")
+const OldMarksTests = preload("res://tests/old_marks_tests.gd")
 const Carry = preload("res://scripts/carry.gd")
 const Clearing = preload("res://scripts/clearing.gd")
 const CutscenePlayer = preload("res://scripts/cutscene_player.gd")
@@ -44,6 +45,7 @@ func run(runner) -> void:
 	test_the_skyward_cutscene_and_the_greeting()
 	BlueprintTests.new().run(t)  # Steps 7D and 7E ride with the endings: tests/run_tests.gd is at its line cap
 	RelicTests.new().run(t)
+	OldMarksTests.new().run(t)
 	_clean()
 
 

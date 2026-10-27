@@ -93,7 +93,7 @@ func _page(f: Starfall, _why: String) -> String:
 	out.append("")
 	out.append_array(_wall_lines(f))
 	out.append("")
-	var read: Array = f._read_words()
+	var read: Array = f._read_words("g_star")  # the six sets
 	out.append("Words a click can still reach: %s" % ", ".join(Data.GLYPH_WORDS.filter(func(w): return w not in read)))
 	out.append("")
 	out.append(

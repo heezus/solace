@@ -6,6 +6,7 @@ extends RefCounted
 ## themselves are the Teardown block's (`sim.teardown`).
 
 const Data = preload("res://scripts/data.gd")
+const OldShip = preload("res://scripts/old_ship.gd")
 const Scouting = preload("res://scripts/scouting.gd")
 
 
@@ -131,6 +132,10 @@ static func bloom_problem(s) -> String:
 
 ## Whether the Expedition Post's target list offers `target`: the Bloom patch only once the Kith can open what they find.
 static func target_listed(s, target: String) -> bool:
+	if target == "old_ship":
+		return s.starfall.old_ship.x >= 0  # the first ship's site, in a second run or later
+	if target == "old_ruin":
+		return OldShip.ruin_tile(s.starfall).x >= 0 and OldShip.sets(s.starfall).has(8)  # What Broke, in a Cataclysm run
 	return target != "bloom" or active(s)
 
 

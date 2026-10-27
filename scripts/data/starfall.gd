@@ -308,6 +308,141 @@ const GLYPHS := {
 			"and they put out their fire before they will say what it means",
 		],
 	},
+	# The old marks (sets 7 to 9, Data.ENDINGS["old"]): found at the first ship's site in a later run. Words repeat the ones above.
+	"g_ship":
+	{
+		"word": "Ship",
+		"strokes":
+		[
+			[[0.1, 0.7], [0.9, 0.7]],
+			[[0.2, 0.7], [0.35, 0.9], [0.8, 0.9], [0.9, 0.7]],
+			[[0.5, 0.7], [0.5, 0.15]],
+			[[0.5, 0.15], [0.8, 0.55], [0.5, 0.55]]
+		],
+		"found":
+		[
+			"carved deep into a rib of the hull, the wood grown into the carving",
+			"and a stranger lays a hand flat on the hull and goes quiet",
+			"and they say it the way the Kith say a grandmother's name",
+		],
+	},
+	"g_kin_old":
+	{
+		"word": "Kin",
+		"strokes":
+		[
+			[[0.25, 0.15], [0.25, 0.85]],
+			[[0.75, 0.15], [0.75, 0.85]],
+			[[0.25, 0.5], [0.75, 0.5]],
+			[[0.5, 0.15], [0.5, 0.5]]
+		],
+		"found":
+		[
+			"scratched over a row of small beds, all too short for adults",
+			"and a stranger counts the beds with a finger, and stops",
+			"and they look at the Kith's children, then at the beds",
+		],
+	},
+	"g_home_old":
+	{
+		"word": "Home",
+		"strokes":
+		[
+			[[0.2, 0.5], [0.5, 0.2], [0.8, 0.5], [0.8, 0.85], [0.2, 0.85], [0.2, 0.5]],
+			[[0.45, 0.85], [0.45, 0.6], [0.6, 0.6], [0.6, 0.85]]
+		],
+		"found":
+		[
+			"burned beside a ring of stones, the same ring the Kith build at the Hearth",
+			"and a stranger sets a stone on the ring",
+			"and they say it, and point at the Kith, and do not say strangers",
+		],
+	},
+	"g_shape_old":
+	{
+		"word": "Shape",
+		"strokes":
+		[
+			[[0.15, 0.2], [0.85, 0.2]],
+			[[0.15, 0.2], [0.15, 0.8]],
+			[[0.85, 0.2], [0.85, 0.8]],
+			[[0.15, 0.8], [0.85, 0.8]]
+		],
+		"found":
+		[
+			"pressed into a slab of black glass, where the Bloom has not grown",
+			"and a stranger will not touch it",
+			"and they touch it once, quickly, and say it was beautiful",
+		],
+	},
+	"g_broke":
+	{
+		"word": "Broke",
+		"strokes":
+		[
+			[[0.15, 0.2], [0.85, 0.2]],
+			[[0.15, 0.2], [0.15, 0.8]],
+			[[0.85, 0.2], [0.85, 0.8]],
+			[[0.5, 0.2], [0.4, 0.45], [0.6, 0.6], [0.5, 0.8]]
+		],
+		"found":
+		[
+			"cut across the slab, a crack through the mark above it",
+			"and a stranger breaks a twig in two and holds both halves",
+			"and they say it the way the Kith say a grave",
+		],
+	},
+	"g_hurt_old":
+	{
+		"word": "Hurt",
+		"strokes":
+		[[[0.5, 0.1], [0.5, 0.55]], [[0.4, 0.75], [0.6, 0.75]], [[0.15, 0.3], [0.85, 0.3]], [[0.2, 0.9], [0.8, 0.9]]],
+		"found":
+		[
+			"burned round the crack, a mark the Kith know from their own wounds",
+			"and a stranger lays a hand on the soil, as on a wound",
+			"and they say the ground is still hurting, and has not stopped",
+		],
+	},
+	"g_door":
+	{
+		"word": "Door",
+		"strokes": [[[0.25, 0.9], [0.25, 0.2], [0.75, 0.2], [0.75, 0.9]], [[0.58, 0.55], [0.64, 0.55]]],
+		"found":
+		[
+			"etched on a plate in the deck, with a ring set in it",
+			"and a stranger kneels at the ring and does not pull it",
+			"and they say it quietly: closed, or kept",
+		],
+	},
+	"g_heal_old":
+	{
+		"word": "Heal",
+		"strokes":
+		[
+			[[0.5, 0.1], [0.5, 0.9]],
+			[[0.1, 0.5], [0.9, 0.5]],
+			[[0.25, 0.25], [0.75, 0.75]],
+			[[0.75, 0.25], [0.25, 0.75]]
+		],
+		"found":
+		[
+			"stamped over the plate, a cross drawn by many hands",
+			"and a stranger holds up a leaf and a shard together",
+			"and they say it for the Bloom, not for themselves",
+		],
+	},
+	"g_go_old":
+	{
+		"word": "Go",
+		"strokes": [[[0.1, 0.5], [0.9, 0.5]], [[0.7, 0.3], [0.9, 0.5], [0.7, 0.7]], [[0.1, 0.3], [0.1, 0.7]]],
+		"found":
+		[
+			"scratched past the plate, a long line running out to the edge of the hull",
+			"and a stranger points up, then at the Kith",
+			"and they say it for everyone, together, never for one",
+		],
+	},
 }
 
 # --- The Lumen Camp (a place for the survivors) ---
@@ -455,8 +590,14 @@ const PACKS := {
 const PACK_ORDER := ["light", "standard", "heavy"]
 ## `bloom` (Ironfall, scripts/teardown_finds.gd) goes to the nearest Bloom patch in the far south for its sample; the picker
 ## offers it only while a patch is left to sample.
-const TARGETS := {"wreck": "The crash site (east)", "fog": "The nearest fog", "bloom": "A Bloom patch (far south)"}
-const TARGET_ORDER := ["wreck", "fog", "bloom"]
+const TARGETS := {
+	"wreck": "The crash site (east)",
+	"fog": "The nearest fog",
+	"bloom": "A Bloom patch (far south)",
+	"old_ship": "The first ship's site",
+	"old_ruin": "The sprouting ruins",
+}
+const TARGET_ORDER := ["wreck", "fog", "bloom", "old_ship", "old_ruin"]
 const POST_TARGET := "Going to: %s"
 const POST_PACK := "Pack: %s (%s), %d marks"  # name, cost, finds
 const POST_HINT := "Click a line to change it. A party leaves when you press Send, or again and again while Keep sending is on."

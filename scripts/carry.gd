@@ -43,14 +43,16 @@ func set_handoff(h: Dictionary) -> void:
 
 
 ## The trust the strangers start at, given `base` (the first run's: a Cairn first makes them guests): the Time loop begins where the
-## last run ended, a Cataclysm makes them arrive wary (no Cairn's welcome), any other run begins as a first run does.
+## last run ended, a Cataclysm makes them arrive wary (no Cairn's welcome), any other run begins as a first run does. Once The First
+## Ship has been read (set 7), every run begins one step warmer.
 func start_trust(base: float) -> float:
+	var warm: float = Data.ENDINGS["old"]["warm"] if knows_mark(Data.ENDINGS["old"]["sets"][7]["glyphs"][0]) else 0.0
 	match ending:
 		"loop":
-			return last_trust
+			return minf(last_trust + warm, Data.TRUST_MAX)
 		"cataclysm":
-			return Data.TRUST_START_WARY
-	return base
+			return Data.TRUST_START_WARY + warm
+	return base + warm
 
 
 ## True when the Lumen are welcomed as guests at the arrival: a Cairn first, and not after a Cataclysm.
@@ -79,8 +81,10 @@ static func earned(s) -> Dictionary:
 			techs_out.append(tech)
 	var marks_out := []
 	var echoes_out := []
-	for n in Data.GLYPH_SETS:
-		var gset: Dictionary = Data.GLYPH_SETS[n]
+	var every: Dictionary = Data.GLYPH_SETS.duplicate()
+	every.merge(Data.ENDINGS["old"]["sets"])  # the old marks read are carried too
+	for n in every:
+		var gset: Dictionary = every[n]
 		if not s.starfall.locked.has(gset["id"]):
 			continue
 		marks_out.append_array(gset["glyphs"])

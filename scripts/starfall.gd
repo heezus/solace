@@ -20,6 +20,7 @@ const Data = preload("res://scripts/data.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Economy = preload("res://scripts/economy.gd")
 const Carry = preload("res://scripts/carry.gd")
+const OldShip = preload("res://scripts/old_ship.gd")
 
 ## The story id a stage 4 building records the first time it stands (the Market has its own: market_open).
 const STAND_STORY := {"shared_shrine": "shrine_raised", "guard_post": "guard_raised"}
@@ -37,6 +38,8 @@ var camp_seen := false  # the Lumen Camp has been counted once (the one-time tru
 var seen: Dictionary = {}  # the shrine, Guard Post and Market counted once, and "market_open" once the Lumen would trade
 var wreck := Vector2i(-1, -1)  # where the ship came down (set when the star falls): hidden in the fog until a party reaches it
 var wreck_found := false
+var old_ship := Vector2i(-1, -1)  # the first ship's site, (-1, -1) in a first run: where the old marks are found (scripts/old_ship.gd)
+var old_ship_found := false
 var post_clock := 0.0  # seconds since a standing order last looked for a chance to send (Expedition.auto)
 var orders := {"target": "wreck", "pack": "standard", "keep": false}  # the Expedition Post's standing choices
 var pending := ""  # a moment (Data.MOMENT_ORDER) or "ending" that waits for the player's answer: the game is paused behind it
@@ -65,10 +68,11 @@ func _init(town: Buildings, stock: Economy = null) -> void:
 
 
 ## The Falling Star fell: the silence starts. `friendly` is the run flag of a Cairn built first.
-func begin(friendly: bool, wreck_tile := Vector2i(-1, -1)) -> void:
+func begin(friendly: bool, wreck_tile := Vector2i(-1, -1), ship_tile := Vector2i(-1, -1)) -> void:
 	if stage != "":
 		return
 	wreck = wreck_tile
+	old_ship = ship_tile
 	stage = "falling"
 	clock = 0.0
 	guests = carry.guests_welcome(friendly)
@@ -342,7 +346,7 @@ func set_order() -> Array:
 
 ## The marks of set `n` in the order the Wall gets them (shuffled like the sets).
 func glyph_order(n: int) -> Array:
-	var out: Array = Data.GLYPH_SETS[n]["glyphs"].duplicate()
+	var out: Array = OldShip.set_def(n)["glyphs"].duplicate()
 	if wreck.x >= 0:
 		out.sort_custom(func(a, b): return _scramble(a.hash() % 997 + n) < _scramble(b.hash() % 997 + n))
 	return out
@@ -387,8 +391,9 @@ func _next_to_copy() -> String:
 ## mark at a time. True when a set was read just now.
 func check() -> bool:
 	var got := false
-	for n in Data.GLYPH_SETS:
-		var gset: Dictionary = Data.GLYPH_SETS[n]
+	var all := OldShip.all_sets(self)
+	for n in all:
+		var gset: Dictionary = all[n]
 		if locked.has(gset["id"]):
 			continue
 		var right := true
@@ -396,6 +401,8 @@ func check() -> bool:
 			right = right and copied.has(g) and guesses.get(g, "") == Data.GLYPHS[g]["word"]
 		if right and gset["id"] == Data.ENDING_SET and not may_end():
 			continue
+		if right and gset.has("lean") and lean_now() != gset["lean"]:
+			continue  # an old set that only friends can read
 		if right:
 			locked[gset["id"]] = true
 			got = true
@@ -609,11 +616,12 @@ func wreck_has_more() -> bool:
 func cycle_guess(glyph: String) -> String:
 	if not copied.has(glyph) or set_of(glyph) == "" or locked.has(set_of(glyph)) or carry.knows_mark(glyph):
 		return ""
-	var taken := _read_words()
-	var at: int = Data.GLYPH_WORDS.find(guesses.get(glyph, ""))
+	var taken := _read_words(glyph)
+	var list := OldShip.words_for(glyph)
+	var at: int = list.find(guesses.get(glyph, ""))
 	var word := ""
-	for i in range(1, Data.GLYPH_WORDS.size() + 1):
-		var next: String = Data.GLYPH_WORDS[(at + i) % Data.GLYPH_WORDS.size()]
+	for i in range(1, list.size() + 1):
+		var next: String = list[(at + i) % list.size()]
 		if next not in taken:
 			word = next
 			break
@@ -623,11 +631,15 @@ func cycle_guess(glyph: String) -> String:
 	return word
 
 
-## The words of every mark already read: they are settled, so a guess on another mark skips them.
-func _read_words() -> Array:
+## The words of every mark already read in the same group as `glyph` (the six sets, or the old ones): they are settled, so a guess
+## on another mark skips them.
+func _read_words(glyph: String) -> Array:
 	var out: Array = []
-	for n in Data.GLYPH_SETS:
-		var gset: Dictionary = Data.GLYPH_SETS[n]
+	# the old marks repeat words of the six, so they settle among themselves
+	var old := not Data.GLYPH_SETS.values().any(func(x): return glyph in x["glyphs"])
+	var all := OldShip.sets(self) if old else Data.GLYPH_SETS
+	for n in all:
+		var gset: Dictionary = all[n]
 		if locked.has(gset["id"]):
 			for g in gset["glyphs"]:
 				out.append(Data.GLYPHS[g]["word"])
@@ -639,6 +651,9 @@ static func set_of(glyph: String) -> String:
 	for n in Data.GLYPH_SETS:
 		if glyph in Data.GLYPH_SETS[n]["glyphs"]:
 			return Data.GLYPH_SETS[n]["id"]
+	for n in Data.ENDINGS["old"]["sets"]:
+		if glyph in Data.ENDINGS["old"]["sets"][n]["glyphs"]:
+			return Data.ENDINGS["old"]["sets"][n]["id"]
 	return ""
 
 
@@ -651,8 +666,9 @@ func found_lines(glyph: String) -> Array:
 
 ## How many marks of the set called `set_id` are on the Wall, and how many it has.
 func progress(set_id: String) -> Vector2i:
-	for n in Data.GLYPH_SETS:
-		var gset: Dictionary = Data.GLYPH_SETS[n]
+	var all := OldShip.all_sets(self)
+	for n in all:
+		var gset: Dictionary = all[n]
 		if gset["id"] == set_id:
 			var have := 0
 			for g in gset["glyphs"]:
@@ -690,6 +706,8 @@ func to_dict() -> Dictionary:
 		"seen": seen.duplicate(),
 		"wreck": [wreck.x, wreck.y],
 		"wreck_found": wreck_found,
+		"old_ship": [old_ship.x, old_ship.y],
+		"old_ship_found": old_ship_found,
 		"orders": orders.duplicate(),
 		"pending": pending,
 		"answered": answered.duplicate(),
@@ -730,6 +748,9 @@ func from_dict(d: Dictionary) -> void:
 	var w: Array = d.get("wreck", [-1, -1])
 	wreck = Vector2i(int(w[0]), int(w[1]))
 	wreck_found = bool(d.get("wreck_found", false))
+	var o: Array = d.get("old_ship", [-1, -1])
+	old_ship = Vector2i(int(o[0]), int(o[1]))
+	old_ship_found = bool(d.get("old_ship_found", false))
 	orders = {"target": "wreck", "pack": "standard", "keep": false}
 	for k in d.get("orders", {}):
 		orders[String(k)] = d["orders"][k]

@@ -124,6 +124,37 @@ const CUTSCENES := {
 			{"art": "skyward_end_3", "line": 'Sela said, "Not this time. But you\'ll remember."'},
 		],
 	},
+	# The old marks (Step 7F): what each of the three sets said when it was read. Placeholder words until Codex paints the stills.
+	"kin_reveal":
+	{
+		"triggers": ["ship_read"],
+		"stills":
+		[
+			{"art": "kin_reveal_1", "line": "The ship that fell before ours was full of children."},
+			{"art": "kin_reveal_2", "line": 'Sela said, "We did not find you. We came home."'},
+		],
+	},
+	"broken_world":
+	{
+		"triggers": ["broke_read"],
+		"stills":
+		[
+			{"art": "broken_world_1", "line": "This world was shaped too hard, by hands that loved it."},
+			{"art": "broken_world_2", "line": 'In the growth, a voice: "I was a river once."'},
+		],
+	},
+	"way_out":
+	{
+		"triggers": ["way_read"],
+		"stills":
+		[
+			{"art": "way_out_1", "line": "There is a door the first ship could not use."},
+			{
+				"art": "way_out_2",
+				"line": "It needs everyone it has ever carried.\nShut it, heal what is outside it, or go."
+			},
+		],
+	},
 	# After any ending, before the next run: the Hearthkeeper tells the children the telling that just ended (placeholder words; the
 	# Chronicle of the tellings, Step 7G, opens after it).
 	"fireside":
