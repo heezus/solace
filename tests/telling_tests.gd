@@ -294,11 +294,12 @@ func test_the_cataclysm_keeps_the_map_and_lays_the_ruins() -> void:
 
 func test_clearing_a_ruin_gives_stone() -> void:
 	_clean()
-	var old := _ended_run("enemies")
+	var old := _ended_run("enemies", 50.0, 10)
 	Profile.set_out(old, TEMP_PROFILE, "cataclysm")
 	var n := Sim.new()
 	Launch.begin_new(n, -1, TEMP_PROFILE)
-	var p := Vector2i(int(n.carry.ruins[0]["pos"][0]), int(n.carry.ruins[0]["pos"][1]))
+	t.check(n.carry.ruins.size() > Data.ENDINGS["relics"].size(), "more ruins than relics")
+	var p := Vector2i(int(n.carry.ruins[-1]["pos"][0]), int(n.carry.ruins[-1]["pos"][1]))  # the lightest holds no relic
 	n.fog.reveal(p, 3)
 	t.check(Clearing.check(n, p)["ok"], "Demolish may clear a ruin")
 	var before: int = n.economy.inv.get("stone", 0)
@@ -325,6 +326,8 @@ func test_ruins_in_the_land_that_grows_are_laid_as_it_grows() -> void:
 		if east.x >= 0:
 			break
 	old.town.add_building("kiln", east)
+	for p in _spots(old, 3):  # three heavier ruins take the relics: the east one is a bare ruin
+		old.town.add_building("forge", p)
 	old.starfall.lean = "enemies"
 	old.story.record(Data.SKYWARD_EVENT)
 	Profile.set_out(old, TEMP_PROFILE, "cataclysm")
