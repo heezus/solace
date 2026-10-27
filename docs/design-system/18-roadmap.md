@@ -132,6 +132,24 @@ The bar (a bot Cataclysm run on map 1 won in every era, 8 to 25 minutes an era):
 
 Verdict: **CONCERNS**. Every era is won on all three maps and the tide still takes buildings (6 to 19), but map 4's Livewire is 7.9 minutes, 0.1 under the 8-minute floor. The director accepted that as bot noise: the floor exists to catch trivially short eras. A check at 10 tiles (the director's one extra try) won maps 2 (Livewire 9.1) and 4 (15.2), but the tide took only 2 buildings on map 2 (toothless) and map 1 was still computing after an hour (a stuck or very slow Livewire), so 12 stays. The AI player's relic dig also waits 30 seconds before it tries a failed dig again (`tests/autoplay_relics.gd`).
 
+## Old marks as built (Step 7F)
+
+Three glyph sets beyond the six, kept in `Data.ENDINGS["old"]` and read by `OldShip` (`scripts/old_ship.gd`); `Data.GLYPH_SETS`, `set_order`, the "of 6" count and the Warning are untouched, so a first run and its goldens do not move. The old sets are optional: the Warning does not wait on them.
+
+| Set | Name | Appears | Marks (words) | Reading it shows |
+|---|---|---|---|---|
+| 7 | The First Ship | run 2 on | Ship, Kin, Home | lore layer 2 (`kin_reveal`): the Kith are Kin |
+| 8 | What Broke | run 3 on, or run 2 after a Cataclysm | Shape, Broke, Hurt | lore layer 3 (`broken_world`): the Bloom is the broken world |
+| 9 | The Way Out | run 4 on, and only read while the Lumen are allies | Door, Heal, Go | lore layer 4 (`way_out`): shut it, heal it or go |
+
+- **The first ship's site.** From run 2 the land holds one more hidden place: the hull of the ship that fell ages ago. `OldShip.tile` picks open grass 12 to 22 tiles from the Hearth and at least 10 from the crash site that a party can walk to and back in one day, from a fixed scramble of the map (the same tile every time, no gameplay random numbers). `Starfall.old_ship` and `old_ship_found` are saved. A first run has none.
+- **The Expedition Post.** A fourth target, "The first ship's site", listed once a site exists. A pack brings back the same number of marks as at the crash site (half when late), taken from the lowest old set first. Reaching it for the first time logs a line and records `old_ship_found`. Placeholder art draws ribs under the roots and a faint shard glint until Codex paints the `first_wreck` tile.
+- **The Wall.** An old set shows once its first mark is home, headed "An older set: n of 3 marks copied". Old marks reuse words of the six (Kin, Home, Shape, Hurt, Heal, Go) and add three (Ship, Broke, Door), which only old marks can try; read words settle only within their own group, so a word read among the six never blocks an old mark. Set 9 with all three marks right but the Lumen not allies waits, and the Wall says so.
+- **Gifts.** Reading an old set gives the usual trust step. Reading The First Ship also warms every later run: the carried marks include `g_ship`, and the strangers begin one step (6 trust) warmer in any run after it.
+- **Scenes.** `kin_reveal`, `broken_world` and `way_out`, two stills each, placeholder words until Codex paints them.
+- **Carried on.** The old marks read are carried with the others, so a later run shows their words at once.
+- **The AI player** does not go for the old marks yet (they are optional, and the Step 7 time bars are measured without them).
+
 ## Decided (the project owner, 2026-10-06, on cards)
 1. Three eras after Starfall: Ironfall, Livewire, Skyreach.
 2. The Bloom builds slowly: signs in Ironfall, a tide in Livewire, arrival in Skyreach.

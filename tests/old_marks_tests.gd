@@ -154,7 +154,6 @@ func test_the_old_marks_are_guessed_among_themselves() -> void:
 	t.check(f.check(), "set 7 is read when all three are right")
 	t.check(f.locked.has("ship") and s.story.events.has("ship_read"), "and the story notes it")
 	t.check(not f.locked.has("warning"), "the Warning does not wait on it and is not touched")
-	var plain := Sim.new().starfall
 	t.check(OldShip.words_for("g_star").size() == Data.GLYPH_WORDS.size(), "the six sets keep the 21 words")
 	t.check(OldShip.words_for(kin).size() == Data.GLYPH_WORDS.size() + 3, "the old marks add three")
 
