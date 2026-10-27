@@ -148,7 +148,7 @@ Three glyph sets beyond the six, kept in `Data.ENDINGS["old"]` and read by `OldS
 - **Gifts.** Reading an old set gives the usual trust step. Reading The First Ship also warms every later run: the carried marks include `g_ship`, and the strangers begin one step (6 trust) warmer in any run after it.
 - **Scenes.** `kin_reveal`, `broken_world` and `way_out`, two stills each, placeholder words over Codex's `kin_reveal`, `broken_world` and `way_out` stills.
 - **Carried on.** The old marks read are carried with the others, so a later run shows their words at once.
-- **The AI player** does not go for the old marks yet (they are optional, and the Step 7 time bars are measured without them).
+- **The AI player** uses them (Jon's rule: bots know everything from earlier runs). Once the Wreck has given all it has, its Post sends the party to the first ship's site, or in a Cataclysm run to the largest ruin for What Broke, and it guesses the old marks like the others. Set 9 waits for Step 8 (only read while the Lumen are allies). A first run is unchanged.
 
 ## Decided (the project owner, 2026-10-06, on cards)
 1. Three eras after Starfall: Ironfall, Livewire, Skyreach.
