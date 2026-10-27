@@ -102,7 +102,7 @@ const ENDINGS := {
 		{
 			"id": "cart",
 			"name": "Founders' Cart",
-			"building": "storehouse",
+			"building": "",
 			"event": "relic_cart",
 			"line": "The cart the first ones pulled, mended with care.",
 		},

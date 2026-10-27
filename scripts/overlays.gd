@@ -199,6 +199,11 @@ static func relic_marks(ci: CanvasItem, s) -> void:
 		var done: float = Relics.progress(s, r["def"]["id"])
 		if done > 0.0:
 			ci.draw_arc(at, 13.0 * k, -PI / 2.0, -PI / 2.0 + TAU * done, 32, Color("fff3b0"), 3.0 * k, true)
+	if s.carry.dug.has("cart"):  # the Founders' Cart stands where it was dug: a small cart and its wheels
+		var cart := center(Relics.site_of(s, "cart"))
+		ci.draw_rect(Rect2(cart + Vector2(-9, -7) * k, Vector2(18, 9) * k), Color("8d6e63"))
+		ci.draw_circle(cart + Vector2(-5, 5) * k, 4.0 * k, Color("4e342e"))
+		ci.draw_circle(cart + Vector2(5, 5) * k, 4.0 * k, Color("4e342e"))
 
 
 ## The edge of the lit land: each explored tile next to fog fades into the fog color over its own width, so the

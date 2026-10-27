@@ -2,9 +2,10 @@ extends RefCounted
 ## Relics, the Cataclysm's gift (Step 7E, design-system/18-roadmap.md "Relics as built"): in a Cataclysm run the three heaviest ruins
 ## each hold a relic (Data.ENDINGS["relics"], in that order: the Everburning Forge, the Old Lantern, the Founders' Cart). A Kith crew
 ## digs one out (Scouting.dig: about Data.ENDINGS["dig_seconds"] and a road beside the ruin), and the ruin becomes the relic's
-## building: a Forge that burns nothing, a Shard Lantern that lights twice as far, a Storehouse that makes the haulers near it carry
-## half as much again. A relic is used up with the run: `carry.dug` is saved with the run and never handed on, so the next
-## Cataclysm finds its own. Static, and works on the Sim passed in; Scouting walks the crew and calls `finish`.
+## building: a Forge that burns nothing, a Shard Lantern that lights twice as far. The Founders' Cart stands on the cleared ground
+## as a drawn cart and makes the haulers within reach of it carry half as much again. A relic is used up with the run:
+## `carry.dug` is saved with the run and never handed on, so the next Cataclysm finds its own. Static, and works on the Sim passed in;
+## Scouting walks the crew and calls `finish`.
 
 const Data = preload("res://scripts/data.gd")
 const Kith = preload("res://scripts/kith.gd")
@@ -88,8 +89,9 @@ static func finish(s, id: String) -> void:
 	s.carry.dug.append(id)
 	s.world.set_tile(p, "grass")
 	s.pathing.update_cell(p)
-	s.town.add_building(def["building"], p)
-	s.town.buildings[s.town.building_at[p]]["relic"] = id
+	if def["building"] != "":
+		s.town.add_building(def["building"], p)
+		s.town.buildings[s.town.building_at[p]]["relic"] = id
 	s.story.record(def["event"])
 	s.events.append(Data.ENDINGS["dig_done"] % [def["name"], def["line"]])
 
@@ -104,16 +106,11 @@ static func radius(c: Dictionary) -> float:
 	return Data.SHARDLIGHT_RADIUS * (Data.ENDINGS["lantern_reach"] if is_relic(c) else 1.0)
 
 
-## A hauler's load `n` (carry_cap) once the Founders' Cart is dug: half as much again for a hauler within its reach, while the
-## cart stands and the Bloom is not on it.
+## A hauler's load `n` (carry_cap) once the Founders' Cart is dug: half as much again for a hauler within its reach.
 static func load_of(s, k: Dictionary, n: int) -> int:
 	if not s.carry.dug.has("cart"):
 		return n
-	var at_cart := site_of(s, "cart")
-	var i: int = s.town.building_at.get(at_cart, -1)
-	if i < 0 or not is_relic(s.town.buildings[i]) or s.tide.is_overgrown(s.town.buildings[i]):
-		return n
-	if Vector2(Kith.tile_of(k)).distance_to(Vector2(at_cart)) > Data.ENDINGS["cart_reach"]:
+	if Vector2(Kith.tile_of(k)).distance_to(Vector2(site_of(s, "cart"))) > Data.ENDINGS["cart_reach"]:
 		return n
 	return ceili(n * Data.ENDINGS["cart_load"])
 

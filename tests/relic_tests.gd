@@ -229,8 +229,7 @@ func test_the_cart_lifts_the_loads_near_it() -> void:
 	t.check(Haulers.carry_cap(s, near) == ceili(base * 1.5), "a hauler within eight tiles carries half as much again")
 	t.check(Haulers.carry_cap(s, far) == base, "a hauler farther off does not")
 	t.check(Haulers.carry_cap(s) == base, "and a load counted with no hauler named is the plain one")
-	s.town.remove_at(s.town.building_at[p])
-	t.check(Haulers.carry_cap(s, near) == base, "once the cart is torn down the bonus goes")
+	t.check(s.world.tile_at(p) == "grass" and not s.town.building_at.has(p), "the cart stands on open ground")
 
 
 func test_a_relic_is_used_up_with_the_run() -> void:
