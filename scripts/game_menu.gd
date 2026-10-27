@@ -11,6 +11,7 @@ extends Control
 
 signal paused_changed(on: bool)
 
+const ChronicleBook = preload("res://scripts/chronicle_book.gd")
 const CutscenePlayer = preload("res://scripts/cutscene_player.gd")
 const Data = preload("res://scripts/data.gd")
 const PauseMenu = preload("res://scripts/pause_menu.gd")
@@ -30,6 +31,7 @@ var menu: PauseMenu
 var slots: SlotScreen
 var confirm: ConfirmCard
 var endings: EndingCard
+var book: ChronicleBook
 var profile_path := Profile.PATH
 
 
@@ -51,6 +53,10 @@ func setup(game, era_card = null) -> void:
 	add_child(endings)
 	endings.setup()
 	endings.chosen.connect(ask_confirm)
+	book = ChronicleBook.new()
+	add_child(book)
+	book.setup()
+	menu.chronicle_pressed.connect(open_chronicle)
 	menu.set_out_pressed.connect(ask_set_out)
 	if era_card != null:
 		era_card.set_out_pressed.connect(ask_set_out)
@@ -69,10 +75,11 @@ func place(area: Rect2) -> void:
 	slots.place(area)
 	endings.place(area)
 	confirm.place(area)
+	book.place(area)
 
 
 func is_open() -> bool:
-	return menu.visible or confirm.visible or endings.visible
+	return menu.visible or confirm.visible or endings.visible or book.visible
 
 
 ## Put the menu up and pause the game behind it. Set out is open once Skyward stands.
@@ -89,6 +96,8 @@ func close() -> void:
 		confirm.cancel()
 	elif endings.visible:
 		endings.cancel()
+	elif book.visible:
+		book.close()
 	elif slots.visible:
 		slots.close()
 	else:
@@ -170,18 +179,31 @@ func set_out(ending := "exodus") -> bool:
 	return true
 
 
-## The next run begins by starting the scene again, after the fireside the ending queued (when cutscenes are on) has been told.
+## The Chronicle (scripts/chronicle_book.gd), from the pause menu: every telling that has ended, read from the profile.
+func open_chronicle(page := "tellings", after_ending := false) -> void:
+	var profile := Profile.new()
+	profile.load_file(profile_path)
+	book.open(profile, page, after_ending)
+
+
+## The next run begins by starting the scene again, after the fireside the ending queued (when cutscenes are on) has been told and
+## the Chronicle has opened on the telling that just ended.
 func _begin_next_run() -> void:
 	for player in get_tree().get_nodes_in_group(CutscenePlayer.GROUP):
 		if player.fireside_pending():
 			player.finished.connect(_fireside_told)
 			return
-	get_tree().reload_current_scene()
+	_chronicle_then_next_run()
 
 
 func _fireside_told(id: String, _skipped: bool) -> void:
 	if id == "fireside":
-		get_tree().reload_current_scene()
+		_chronicle_then_next_run()
+
+
+func _chronicle_then_next_run() -> void:
+	book.closed.connect(get_tree().reload_current_scene, CONNECT_ONE_SHOT)
+	open_chronicle("tellings", true)
 
 
 ## Ask "Forget every past run?": a yes clears the profile, a no changes nothing.

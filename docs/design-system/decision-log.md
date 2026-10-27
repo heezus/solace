@@ -1123,3 +1123,8 @@ An Arc Lamp keeps the Bloom 5 tiles from its light and a Scorcher reached 4, so 
 - **Our calls.** The fireside grew from one still to two (the ending's painting first) rather than adding three sequences, because a story id may start one sequence only. The next land is its own one-still sequence queued after the opening, so a Time loop's different valley follows the opening instead of replacing it. The two-painting tiles pick by `Rendered.variant` on the tile and the map. Feed and dig status stay text (an icon there would be a UI change Codex's brief holds).
 - **Left for 7G.** `portrait_sela` and `portrait_bloom` go on the Chronicle's People page.
 
+## 2026-10-27: The Chronicle (Step 7G)
+- **What was built.** The book from the Chronicle Crossroads picks: a sky of tellings (one constellation each, a star per choice, a line of light from each ending to the next telling), many voices, whispers for the roads not taken, Embers, and the pages Lore, People and Endings. Opened from the title screen, the pause menu and between tellings. See [18](18-roadmap.md).
+- **Our calls.** Four pages (the director's list) with Watch buttons on every page rather than a fifth for scenes. A road not taken is a whisper on the star you chose, never a faint star. Embers are judged from the telling's story ids and state when it ends, so the Sim and the saves gain nothing. The Bloom's fragments begin with the third telling. The words are placeholders in the draft's voice, kept in `scripts/chronicle_words.gd` for review.
+- **Left out on purpose.** Minutes per era and the peak town size: the Story block keeps no event times, and adding them touches the save. The numbers kept are the totals at the end of a telling.
+

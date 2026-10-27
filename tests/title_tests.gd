@@ -10,6 +10,7 @@ const Launch = preload("res://scripts/launch.gd")
 const TitleScreen = preload("res://scripts/title_screen.gd")
 const PauseMenu = preload("res://scripts/pause_menu.gd")
 const BuildInfo = preload("res://scripts/build_info.gd")
+const ChronicleWords = preload("res://scripts/chronicle_words.gd")
 const GameMenu = preload("res://scripts/game_menu.gd")
 const SaveSlots = preload("res://scripts/save_slots.gd")
 
@@ -81,9 +82,10 @@ func test_the_title_offers_continue_only_with_a_save() -> void:
 	_clean()
 	var title := TitleScreen.new()
 	title.slot_dir = TEMP_DIR
+	title.profile_path = TEMP_DIR + "no_profile.json"
 	title._ready()
 	var buttons := _buttons(title)
-	t.check(buttons.size() >= 4, "Continue, New game, Load game and Quit are there")
+	t.check(buttons.size() >= 5, "Continue, New game, Load game, the Chronicle and Quit are there")
 	t.check(buttons[0].disabled and buttons[0].text == Data.TITLE_NO_SAVE, "with no save, Continue is off and says why")
 	t.check(not buttons[1].disabled and buttons[1].text == Data.TITLE_NEW, "New game is on")
 	t.check(
@@ -93,6 +95,9 @@ func test_the_title_offers_continue_only_with_a_save() -> void:
 	t.check(not title.slots.visible, "and the Load screen is put away")
 	buttons[2].pressed.emit()
 	t.check(title.slots.visible and title.slots.mode == "load", "Load game opens the Load screen")
+	t.check(buttons[3].text == ChronicleWords.TITLE and not title.book.visible, "the Chronicle is never out of reach")
+	buttons[3].pressed.emit()
+	t.check(title.book.visible and title.book.page == "tellings", "and opens on its sky, empty before a first telling")
 	title.free()
 	var s := Sim.new()
 	s.generate(3)
@@ -121,12 +126,9 @@ func test_the_pause_menu_has_its_buttons() -> void:
 	menu.load_pressed.connect(func(): got.append("load"))
 	menu.quit_pressed.connect(func(): got.append("quit"))
 	var buttons := _buttons(menu)
-	(
-		t
-		. check(
-			buttons.size() == 11,
-			"Resume, Save, Load, Set out, Quit, Keys, Forget past runs and the Cutscenes, Hints, Play log and debug keys switches"
-		)
+	t.check(
+		buttons.size() == 12,
+		"Resume, Save, Load, Chronicle, Set out, Quit, Keys, Forget past runs and the four switches"
 	)
 	t.check(menu.cutscene_toggle.text == Data.CUTSCENES_LABEL, "the Cutscenes switch is named")
 	for b in buttons:

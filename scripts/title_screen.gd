@@ -11,6 +11,9 @@ const Ui = preload("res://scripts/ui.gd")
 const Art = preload("res://scripts/art.gd")
 const MenuFonts = preload("res://scripts/menu_fonts.gd")
 const BuildInfo = preload("res://scripts/build_info.gd")
+const ChronicleBook = preload("res://scripts/chronicle_book.gd")
+const ChronicleWords = preload("res://scripts/chronicle_words.gd")
+const Profile = preload("res://scripts/profile.gd")
 const Launch = preload("res://scripts/launch.gd")
 const SaveSlots = preload("res://scripts/save_slots.gd")
 const SlotScreen = preload("res://scripts/slot_screen.gd")
@@ -30,11 +33,14 @@ const BAND_STEPS := 40
 var slot_dir := SaveSlots.DIR
 var time := 0.0
 var slots: SlotScreen
+var book: ChronicleBook
+var profile_path := Profile.PATH
 var _art: Texture2D
 var _stars: Array = []  # [x share, y share, twinkle offset], fixed
 var _continue: Button
 var _new_game: Button
 var _load: Button
+var _chronicle: Button
 var _quit: Button
 
 
@@ -89,6 +95,9 @@ func _build_menu() -> void:
 	_load = _button(Data.TITLE_LOAD, false)
 	_load.pressed.connect(func(): slots.open("load"))
 	column.add_child(_load)
+	_chronicle = _button(ChronicleWords.TITLE, false)
+	_chronicle.pressed.connect(open_chronicle)
+	column.add_child(_chronicle)
 	if not OS.has_feature("web"):
 		_quit = _button(Data.TITLE_QUIT, false)
 		_quit.pressed.connect(func(): get_tree().quit())
@@ -100,11 +109,22 @@ func _build_menu() -> void:
 	slots.setup()
 	slots.slot_picked.connect(start)
 	slots.start_picked.connect(start_stage)
+	book = ChronicleBook.new()
+	add_child(book)
+	book.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	book.setup()
 	var build := BuildInfo.label(Ui.MIN_TEXT)
 	add_child(build)
 	build.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
 	build.offset_left = 14.0
 	build.offset_top = -30.0
+
+
+## The Chronicle: every telling that has ended, read from the profile (an empty sky before the first).
+func open_chronicle() -> void:
+	var profile := Profile.new()
+	profile.load_file(profile_path)
+	book.open(profile)
 
 
 func _button(text: String, primary: bool) -> Button:
