@@ -1,0 +1,9 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: illustration-story. Production painted cutscene still for Solace. Single landscape image, 1586x992, 16:10. Misty Highlands: grounded sculpted toy-like miniature materials and painterly cinematic lighting, cool misted Highland mountains, warm timber/stone, rich yet restrained brushwork. Match the supplied established cutscene reference. Human faces and compact sturdy miniature anatomy for all Kith/Lumen, never photorealistic people. Compose all important faces/hands/story objects within middle 80% and upper two thirds; bottom third calm, darker low-detail ground for later captions. No text, lettering, numbers, watermark, UI or borders. Cyan light belongs to Lumen; magenta and sickly green glow only to Bloom. No real people's likenesses. Primary request: Sela at the FOOT of the same timber/iron/copper Skyward mast at night, looking directly at viewer, calm and gently sad: a promise, not defeated. One hand visibly resting against its mast above the caption area. Use approved reference for Sela's warm human face, large expressive brown-hazel eyes, long pale-gold hair, compact miniature anatomy, ivory/gold clothes, pale blue drape, small cyan collar clasp and gold/cyan jewelry. Medium view; face and hand around upper middle; dark quiet foreground below chest/waist; warm mast lamp rim against cool night. Input roles: image 1 AUTHORITATIVE approved Sela identity/anatomy; image 2 mast and night setting reference. New composition, preserve her identity; cinematic warm/cool painted light.",
+  "source": "exec-9cd3064f-0b03-470d-bd46-e5f5d08292e2.png",
+  "references": [
+    "docs/art/character-standard/sela-candidate.png",
+    "art/rendered/cutscenes/skyward_end_1.png"
+  ]
+}

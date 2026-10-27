@@ -1,0 +1,9 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: illustration-story. Production painted cutscene still for Solace. Single landscape image, 1586x992, 16:10. Misty Highlands: grounded sculpted toy-like miniature materials and painterly cinematic lighting, cool misted Highland mountains, warm timber/stone, rich yet restrained brushwork. Match the supplied established cutscene reference. Human faces and compact sturdy miniature anatomy for all Kith/Lumen, never photorealistic people. Compose all important faces/hands/story objects within middle 80% and upper two thirds; bottom third calm, darker low-detail ground for later captions. No text, lettering, numbers, watermark, UI or borders. Cyan light belongs to Lumen; magenta and sickly green glow only to Bloom. No real people's likenesses. Primary request: Night beside the Kith stone-ring Hearth. An old Kith Hearthkeeper storyteller with kind tired eyes, grey hair and beard, worn shawl over rust/cream/moss traveller clothes and a small carved hearth stone on a cord, tells a story to FOUR small Kith children in practical traveller clothes. Their expressive human miniature faces attentive, gathered closely around the fire, all above bottom third. Faint stars overhead, a few brighter, no constellation drawings. Warm firelight against cool Highland night; tender continuity, the story carries on. Fire and faces across upper middle; foreground calm dark earth, no bright flames in bottom third. Input roles: image 1 Kith proportions/facial style and clothing reference only; image 2 established cinematic miniature lighting/material style only. Invent an elderly storyteller in that Kith family, no Sela in scene.",
+  "source": "exec-85b44c27-8c8f-4014-848a-3e20785da404.png",
+  "references": [
+    "art/rendered/walk.png",
+    "art/rendered/cutscenes/bloom_sign_2.png"
+  ]
+}

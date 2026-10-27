@@ -1,0 +1,8 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: illustration-story. Production painted cutscene still for Solace. Single landscape image, 1586x992, 16:10. Misty Highlands: grounded sculpted toy-like miniature materials and painterly cinematic lighting, cool misted Highland mountains, warm timber/stone, rich yet restrained brushwork. Match the supplied established cutscene reference. Human faces and compact sturdy miniature anatomy for all Kith/Lumen, never photorealistic people. Compose all important faces/hands/story objects within middle 80% and upper two thirds; bottom third calm, darker low-detail ground for later captions. No text, lettering, numbers, watermark, UI or borders. Cyan light belongs to Lumen; magenta and sickly green glow only to Bloom. No real people's likenesses. Primary request: Night over the wire-age Kith town, the Skyward mast fully lit. A tall assembled timber-and-iron mast with copper wire supports rises from a stone footing, its enduring warm lamp burning at the top, a THIN delicate cyan hum climbing along its wire. Modest workshops, warm windows, low wire lines and a shared Hearth below; mountain mist under stars. Hopeful, quiet, no Bloom yet. Wide establishing view, mast fully inside frame at center, town across the middle, dim quiet foreground. Input roles: existing opening_3 is atmosphere/material reference only; make a new night-time wire-age scene.",
+  "source": "exec-0747ac8e-a1f1-431b-9e74-c5590ada8600.png",
+  "references": [
+    "art/rendered/cutscenes/opening_3.png"
+  ]
+}

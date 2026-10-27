@@ -1,0 +1,42 @@
+[
+  {
+    "id": "skyward_end_1",
+    "path": "res://art/rendered/cutscenes/skyward_end_1.png",
+    "size": [
+      1586,
+      992
+    ],
+    "sha256": "6f4bfff1dd201d5fa0ffb977ef7e0e6f577d8af32bbc530a0515e11a23c0896d",
+    "original_pixels": true
+  },
+  {
+    "id": "skyward_end_2",
+    "path": "res://art/rendered/cutscenes/skyward_end_2.png",
+    "size": [
+      1585,
+      992
+    ],
+    "sha256": "891c7d2cad0eaa414a7668a29dcc7ff0a05e66b1bb94d524224b15a085c1d216",
+    "original_pixels": true
+  },
+  {
+    "id": "skyward_end_3",
+    "path": "res://art/rendered/cutscenes/skyward_end_3.png",
+    "size": [
+      1585,
+      992
+    ],
+    "sha256": "cbdf033f3eb4f7f9879d4ab045080c5e995dec0e9bffa9ba7ca7f40af11e8cb1",
+    "original_pixels": true
+  },
+  {
+    "id": "fireside_1",
+    "path": "res://art/rendered/cutscenes/fireside_1.png",
+    "size": [
+      1586,
+      992
+    ],
+    "sha256": "4aca95c0e68e8eeb969f663193fa6f212cdaf5d2fed82aeb887dca8ad6981219",
+    "original_pixels": true
+  }
+]
