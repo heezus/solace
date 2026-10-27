@@ -124,6 +124,23 @@ const CUTSCENES := {
 			{"art": "skyward_end_3", "line": 'Sela said, "Not this time. But you\'ll remember."'},
 		],
 	},
+	# After any ending, before the next run: the Hearthkeeper tells the children the telling that just ended (placeholder words; the
+	# Chronicle of the tellings, Step 7G, opens after it).
+	"fireside":
+	{
+		"triggers": ["ending_exodus", "ending_cataclysm", "ending_loop"],
+		"stills":
+		[
+			{
+				"art": "fireside_1",
+				"line":
+				(
+					"By the fire, the Hearthkeeper told it to the children:\nthe mast, the strangers, the choice.\n"
+					+ '"And then?" they asked. "Then we began again."'
+				)
+			},
+		],
+	},
 }
 
 ## Repeat runs remember: a sequence may swap ONE line when the profile holds a matching story id from an earlier run
