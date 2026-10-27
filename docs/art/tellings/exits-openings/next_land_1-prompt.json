@@ -1,0 +1,9 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: illustration-story. Production painted cutscene still for Solace. Single landscape image, 1586x992, 16:10. Misty Highlands: grounded sculpted toy-like miniature materials and painterly cinematic lighting, cool misted Highland mountains, warm timber/stone, rich yet restrained brushwork. Match the supplied established cutscene reference. Human faces and compact sturdy miniature anatomy for all Kith/Lumen, never photorealistic people. Compose all important faces/hands/story objects within middle 80% and upper two thirds; bottom third calm, darker low-detail ground for later captions. No text, lettering, numbers, watermark, UI or borders. Cyan light belongs to Lumen; magenta and sickly green glow only to Bloom. No real people's likenesses. Primary request: New green Highland valley seen from a ridge at dawn, DIFFERENT unfamiliar rounded and split hills from previous craggy town valley. Kith travellers with wooden hand cart and bundles just arriving atop ridge, backs and three-quarter profiles looking out. Their compact anatomy/clothes match the Kith sheet. Expansive new valley, thin river and morning mist, no town yet. Fresh beginning after Exodus. Small arrival group placed across upper middle of dark ridge; bottom third calm shaded earth. Input roles: Kith miniature anatomy/clothes, existing cutscene material/landscape language only. NEW hill silhouettes; do not copy reference geography.",
+  "source": "exec-ea00fbd4-7372-42c8-b3df-ec4bb1594148.png",
+  "references": [
+    "art/rendered/walk.png",
+    "art/rendered/cutscenes/opening_1.png"
+  ]
+}
