@@ -53,6 +53,9 @@ static func target_tile(s, target: String) -> Vector2i:
 		return Finds.bloom_goal(s)
 	if target == "old_ship":
 		return Scouting.goal(s, s.starfall.old_ship) if s.starfall.old_ship.x >= 0 else Vector2i(-1, -1)
+	if target == "old_ruin":
+		var ruin := OldShip.ruin_tile(s.starfall)
+		return Scouting.goal(s, ruin) if ruin.x >= 0 else Vector2i(-1, -1)
 	var best := Vector2i(-1, -1)
 	var best_d := INF
 	var wet := Vector2i(-1, -1)
@@ -103,6 +106,8 @@ static func plan(s) -> Dictionary:
 	):
 		return {"ok": false, "why": Data.POST_NO_TARGET, "seconds": 0.0, "late": false}
 	if o["target"] == "old_ship" and s.starfall.old_ship_found and not OldShip.has_more(s.starfall):
+		return {"ok": false, "why": Data.POST_NO_TARGET, "seconds": 0.0, "late": false}
+	if o["target"] == "old_ruin" and not OldShip.has_more(s.starfall, "old_ruin"):
 		return {"ok": false, "why": Data.POST_NO_TARGET, "seconds": 0.0, "late": false}
 	if o["target"] == "bloom" and Finds.bloom_problem(s) != "":
 		return {"ok": false, "why": Finds.bloom_problem(s), "seconds": 0.0, "late": false}
@@ -198,6 +203,8 @@ static func _arrive(s, k: Dictionary, task: Dictionary) -> void:
 			s.starfall.old_ship_found = true
 			s.events.append(Data.ENDINGS["old"]["found_line"])
 			s.story.record("old_ship_found")
+	elif task["target"] == "old_ruin":
+		s.fog.reveal(OldShip.ruin_tile(s.starfall), Data.WRECK_SIGHT)
 	else:
 		s.fog.reveal(Kith.tile_of(k), Data.EXPEDITION_SIGHT)
 
@@ -222,6 +229,12 @@ static func _finish(s, k: Dictionary, task: Dictionary) -> void:
 		var finds: int = Data.PACKS[task["pack"]]["finds"]
 		var n: int = OldShip.add_finds(s.starfall, ceili(finds / 2.0) if late else finds)
 		s.events.append(Data.ENDINGS["old"]["marks_line"] % n if n > 0 else Data.ENDINGS["old"]["nothing_line"])
+	elif task["target"] == "old_ruin":
+		var finds: int = Data.PACKS[task["pack"]]["finds"]
+		var n: int = OldShip.add_finds(s.starfall, ceili(finds / 2.0) if late else finds, "old_ruin")
+		s.events.append(
+			Data.ENDINGS["old"]["ruin_marks_line"] % n if n > 0 else Data.ENDINGS["old"]["ruin_nothing_line"]
+		)
 	elif task["target"] == "bloom":
 		if Finds.take_sample(s, task["tile"]) == "":
 			s.events.append(Data.BLOOM_NONE_LEFT)

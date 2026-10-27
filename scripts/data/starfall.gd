@@ -595,8 +595,9 @@ const TARGETS := {
 	"fog": "The nearest fog",
 	"bloom": "A Bloom patch (far south)",
 	"old_ship": "The first ship's site",
+	"old_ruin": "The sprouting ruins",
 }
-const TARGET_ORDER := ["wreck", "fog", "bloom", "old_ship"]
+const TARGET_ORDER := ["wreck", "fog", "bloom", "old_ship", "old_ruin"]
 const POST_TARGET := "Going to: %s"
 const POST_PACK := "Pack: %s (%s), %d marks"  # name, cost, finds
 const POST_HINT := "Click a line to change it. A party leaves when you press Send, or again and again while Keep sending is on."

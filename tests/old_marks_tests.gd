@@ -4,6 +4,7 @@ extends RefCounted
 ## later run; The Way Out reads only for friends. A first run has none of it. Run from tests/telling_tests.gd.
 
 const Carry = preload("res://scripts/carry.gd")
+const Finds = preload("res://scripts/teardown_finds.gd")
 const Data = preload("res://scripts/data.gd")
 const Expedition = preload("res://scripts/expedition.gd")
 const ExpeditionTests = preload("res://tests/expedition_tests.gd")
@@ -28,6 +29,7 @@ func run(runner) -> void:
 	test_a_first_run_has_none_of_it()
 	test_the_first_ship_lies_where_a_party_can_go()
 	test_a_party_brings_the_old_marks_home()
+	test_what_broke_lies_in_the_ruins_after_a_cataclysm()
 	test_the_old_marks_are_guessed_among_themselves()
 	test_the_first_ship_warms_the_next_run()
 	test_the_way_out_needs_friends()
@@ -133,6 +135,41 @@ func test_a_party_brings_the_old_marks_home() -> void:
 	)
 	t.check(not Expedition.plan(s)["ok"], "a party has nothing more to find")
 	t.check(s.starfall.wreck_has_more(), "while the crash site still holds its own")
+
+
+func test_what_broke_lies_in_the_ruins_after_a_cataclysm() -> void:
+	var s := _later(1, "cataclysm")
+	var f := s.starfall
+	var spot: Vector2i = _x._h._spot(s, "gatherers_hut")
+	f.carry.ruins = [{"pos": [spot.x, spot.y], "weight": 90}]
+	t.check(_ids(OldShip.sets(f)) == [7, 8], "a Cataclysm brings What Broke in run 2")
+	t.check(
+		OldShip.source(f, 8) == "old_ruin" and OldShip.source(f, 7) == "old_ship",
+		"set 8 lies in the ruins, set 7 at the ship"
+	)
+	t.check(OldShip.ruin_tile(f) == spot, "at the largest ruin")
+	t.check(Finds.target_listed(s, "old_ruin") and Finds.target_listed(s, "old_ship"), "the Post offers both places")
+	t.check(Expedition.target_tile(s, "old_ruin").x >= 0, "and a party can walk to the ruin")
+	s.starfall.orders["target"] = "old_ruin"
+	s.starfall.orders["pack"] = "heavy"
+	t.check(Expedition.plan(s)["ok"], "a party can go: " + str(Expedition.plan(s)["why"]))
+	Expedition.send(s)
+	_x._run(s, 900.0, func(): return _x._back(s))
+	t.check(_x._back(s), "the party came home")
+	var broke: Array = Data.ENDINGS["old"]["sets"][8]["glyphs"]
+	t.check(f.copied.size() == 3 and f.copied.all(func(g): return g in broke), "with the three marks of What Broke")
+	t.check(
+		not OldShip.has_more(f, "old_ruin") and OldShip.has_more(f, "old_ship"),
+		"the ruins are bare; The First Ship is still to find"
+	)
+	t.check(not Expedition.plan(s)["ok"], "a party has nothing more to find in the ruins")
+	f.orders["target"] = "old_ship"
+	Expedition.send(s)
+	_x._run(s, 900.0, func(): return _x._back(s))
+	t.check(f.copied.size() == 6 and f.old_ship_found, "the ship gives its own marks (set 7)")
+	var plain := _later(2)
+	t.check(OldShip.source(plain.starfall, 8) == "old_ship", "any other run keeps What Broke at the ship")
+	t.check(not Finds.target_listed(plain, "old_ruin"), "and lists no ruin")
 
 
 func test_the_old_marks_are_guessed_among_themselves() -> void:

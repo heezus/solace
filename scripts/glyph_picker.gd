@@ -101,6 +101,8 @@ func show_for(b: Dictionary) -> void:
 		add_child(_wrapped(Data.WALL_WRECK_HINT, Ui.TEXT_DIM))
 	if f.locked.has("name") and f.old_ship.x >= 0 and OldShip.has_more(f):
 		add_child(_wrapped(Data.ENDINGS["old"]["wall_hint"], Ui.TEXT_DIM))
+	if f.locked.has("name") and OldShip.has_more(f, "old_ruin"):
+		add_child(_wrapped(Data.ENDINGS["old"]["ruin_hint"], Ui.TEXT_DIM))
 	add_child(_wrapped(Data.WALL_HINT, Ui.TEXT_DIM))
 
 

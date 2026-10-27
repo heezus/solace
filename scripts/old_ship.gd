@@ -69,13 +69,29 @@ static func all_sets(f) -> Dictionary:
 	return out
 
 
-## A party came back from the first ship's site: put up to `count` more of the old marks on the Wall of `f` (the lowest set first).
-## Returns how many were added, 0 once every old mark this run can read is on the Wall.
-static func add_finds(f, count: int) -> int:
+## Where old set `n` is found in the run of `f`: "old_ship" (the first ship's site), or "old_ruin" for What Broke in a Cataclysm
+## run, which lies in the sprouting ruins, at the largest ruin.
+static func source(f, n: int) -> String:
+	if n == 8 and f.carry.ending == "cataclysm" and not f.carry.ruins.is_empty():
+		return "old_ruin"
+	return "old_ship"
+
+
+## The largest ruin of a Cataclysm run, where What Broke lies: (-1, -1) when the run has none.
+static func ruin_tile(f) -> Vector2i:
+	if f.carry.ending != "cataclysm" or f.carry.ruins.is_empty():
+		return Vector2i(-1, -1)
+	var at: Array = f.carry.ruins[0]["pos"]
+	return Vector2i(int(at[0]), int(at[1]))
+
+
+## A party came back from `from` ("old_ship" or "old_ruin"): put up to `count` more of the old marks found there on the Wall of `f`
+## (the lowest set first). Returns how many were added, 0 once every old mark this run can read there is on the Wall.
+static func add_finds(f, count: int, from := "old_ship") -> int:
 	var added := 0
 	var all := sets(f)
 	for n in all:
-		if f.locked.has(all[n]["id"]):
+		if f.locked.has(all[n]["id"]) or source(f, n) != from:
 			continue
 		for g in f.glyph_order(n):
 			if added < count and not f.copied.has(g):
@@ -84,11 +100,11 @@ static func add_finds(f, count: int) -> int:
 	return added
 
 
-## True while the first ship's site still holds an old mark nobody has copied.
-static func has_more(f) -> bool:
+## True while `from` ("old_ship" or "old_ruin") still holds an old mark nobody has copied.
+static func has_more(f, from := "old_ship") -> bool:
 	var all := sets(f)
 	for n in all:
-		if not f.locked.has(all[n]["id"]):
+		if not f.locked.has(all[n]["id"]) and source(f, n) == from:
 			for g in all[n]["glyphs"]:
 				if not f.copied.has(g):
 					return true
