@@ -442,6 +442,18 @@ func test_the_skyward_cutscene_and_the_greeting() -> void:
 		Data.CUTSCENES["skyward_end"]["stills"][2]["line"].contains("But you'll remember"), "the last is Sela's line"
 	)
 	p.free()
+	for ending in ["exodus", "cataclysm", "loop"]:
+		var e := Sim.new()
+		e.generate(SEED)
+		var f = CutscenePlayer.new()
+		f.setup(e, null, [])
+		e.story.record(Data.ENDINGS[ending]["id"])
+		t.check(
+			f.queue.has("fireside") and f.fireside_pending(), "the %s queues the fireside before the next run" % ending
+		)
+		f.free()
+	t.check(Data.CUTSCENES["fireside"]["stills"].size() == 1, "the fireside is one still")
+	t.check(Data.CUTSCENES["fireside"]["stills"][0]["line"].count("\n") == 2, "of three lines")
 	var loop := Sim.new()
 	loop.generate(SEED)
 	loop.carry.from_dict({"exodus": 1, "ending": "loop"})

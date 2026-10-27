@@ -11,6 +11,7 @@ extends Control
 
 signal paused_changed(on: bool)
 
+const CutscenePlayer = preload("res://scripts/cutscene_player.gd")
 const Data = preload("res://scripts/data.gd")
 const PauseMenu = preload("res://scripts/pause_menu.gd")
 const SlotScreen = preload("res://scripts/slot_screen.gd")
@@ -165,8 +166,22 @@ func set_out(ending := "exodus") -> bool:
 		menu.say(Data.ENDINGS["unsaved"], false)
 		return false
 	if is_inside_tree():
-		get_tree().reload_current_scene()
+		_begin_next_run()
 	return true
+
+
+## The next run begins by starting the scene again, after the fireside the ending queued (when cutscenes are on) has been told.
+func _begin_next_run() -> void:
+	for player in get_tree().get_nodes_in_group(CutscenePlayer.GROUP):
+		if player.fireside_pending():
+			player.finished.connect(_fireside_told)
+			return
+	get_tree().reload_current_scene()
+
+
+func _fireside_told(id: String, _skipped: bool) -> void:
+	if id == "fireside":
+		get_tree().reload_current_scene()
 
 
 ## Ask "Forget every past run?": a yes clears the profile, a no changes nothing.

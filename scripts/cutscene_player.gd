@@ -18,6 +18,8 @@ const MenuFonts = preload("res://scripts/menu_fonts.gd")
 const Profile = preload("res://scripts/profile.gd")
 const CutsceneSettings = preload("res://scripts/cutscene_settings.gd")
 
+const GROUP := "cutscene_player"
+
 static var suppress := false  # play nothing: set by the scripted play-through tools, which drive the game scene headless
 
 var active := false  # a sequence is on screen: the owner's simulation waits
@@ -56,6 +58,7 @@ func setup(s, owner_node = null, prior_ids = null) -> void:
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_STOP  # the game behind it takes no clicks while it plays
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_to_group(GROUP)  # the game menu waits for the fireside to end before the next run begins
 	_caption = Ui.label("", 28)
 	_caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -85,6 +88,11 @@ func setup(s, owner_node = null, prior_ids = null) -> void:
 ## True for a run that has not begun: nothing recorded, one building (the Hearth), nothing learned.
 static func is_fresh_run(s) -> bool:
 	return s.story.events.is_empty() and s.town.buildings.size() <= 1 and s.tech_tree.researched.is_empty()
+
+
+## True while the fireside (after an ending) is playing or waiting its turn.
+func fireside_pending() -> bool:
+	return current == "fireside" or queue.has("fireside")
 
 
 func _on_story(id: String) -> void:
