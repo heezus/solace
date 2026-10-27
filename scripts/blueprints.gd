@@ -5,7 +5,8 @@ extends RefCounted
 ## in the run's Carry (scripts/carry.gd), which begins with the ones banked in the profile (only an Exodus banks a run's blueprints,
 ## scripts/profile.gd).
 ## Laying one down queues a plan for every part. A plan is built when its turn comes and its tech is known, its ground is open and the
-## stockpile pays for it, exactly as if the player had placed it: nothing is free. The queue goes in order, and the part that waits for
+## stockpile pays for it, exactly as if the player had placed it: nothing is free, though a plan laid from a banked blueprint (one an
+## Exodus carried from an earlier run: the Kin have built it before) costs Data.EXODUS["bp_share"] of the price, each item rounded up.
 ## materials holds what follows it back, so a road grid does not eat the stone its smelter is waiting on. A part whose tech is not known
 ## or whose ground is still in the fog is passed over until it can go. A part that can never go (the ground is wrong, something stands
 ## there) is dropped. Nothing here happens in a first run that never saves a blueprint.
@@ -51,7 +52,13 @@ static func save(s, box: Rect2i, label := "", skip := []) -> String:
 		return Data.EXODUS["bp_nothing"]
 	var n: int = s.carry.blueprints.size() + 1
 	s.carry.blueprints.append(
-		{"name": label if label != "" else Data.EXODUS["bp_name"] % n, "w": box.size.x, "h": box.size.y, "items": parts}
+		{
+			"name": label if label != "" else Data.EXODUS["bp_name"] % n,
+			"w": box.size.x,
+			"h": box.size.y,
+			"items": parts,
+			"banked": false  # saved this run: full price; an Exodus banks it, and a later run lays it at Data.EXODUS["bp_share"]
+		}
 	)
 	s.events.append(Data.EXODUS["bp_saved"] % [s.carry.blueprints[n - 1]["name"], parts.size()])
 	return ""
@@ -77,7 +84,7 @@ static func lay(s, i: int, at: Vector2i) -> int:
 		if not s.world.in_bounds(p):
 			continue
 		s.carry.plans = s.carry.plans.filter(func(q): return Vector2i(int(q["x"]), int(q["y"])) != p)
-		s.carry.plans.append({"t": part["t"], "x": p.x, "y": p.y})
+		s.carry.plans.append({"t": part["t"], "x": p.x, "y": p.y, "b": bool(bp.get("banked", false))})
 		n += 1
 	if n > 0:
 		s.events.append(Data.EXODUS["bp_laid"] % [n, bp["name"]])
@@ -99,10 +106,12 @@ static func tick(s) -> void:
 	var held := false  # a part waits on materials: the ones behind it wait their turn
 	for q in s.carry.plans:
 		var p := Vector2i(int(q["x"]), int(q["y"]))
+		s.town.plan_share = float(Data.EXODUS["bp_share"]) if q.get("b", false) else 1.0
 		var err: String = s.town.placement_error(q["t"], p)
-		if err == "" and not held:
-			if s.place(q["t"], p):
-				continue
+		var built: bool = err == "" and not held and s.place(q["t"], p)
+		s.town.plan_share = 1.0
+		if built:
+			continue
 		if err in WAITS or err.begins_with(UNEXPLORED) or (err == "" and held):
 			keep.append(q)
 			held = held or err == WAITS[0]

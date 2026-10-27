@@ -88,6 +88,8 @@ func bank(s, ending := "exodus") -> void:
 	if ending == "exodus":
 		exoduses += 1
 		blueprints = s.carry.blueprints.duplicate(true)  # the run's book: the ones it began with and the ones it saved
+		for bp in blueprints:
+			bp["banked"] = true  # from now on they are carried knowledge
 	tellings.append(Endings.telling(s, ending))
 	last = Endings.handoff(s, ending)
 
@@ -101,6 +103,8 @@ func carry() -> Carry:
 	c.exodus = runs
 	c.set_handoff(last)
 	c.blueprints = blueprints.duplicate(true)
+	for bp in c.blueprints:
+		bp["banked"] = true
 	if c.ending == "" and c.exodus > 0:
 		c.ending = "exodus"  # a version 2 profile: its runs all set out
 	return c

@@ -20,6 +20,7 @@ func run(runner) -> void:
 	test_six_blueprints_are_held_and_an_empty_box_is_refused()
 	test_laying_queues_every_part_on_the_map_once()
 	test_plans_wait_for_tech_and_materials_in_order()
+	test_a_banked_blueprint_costs_a_share_and_a_fresh_one_costs_full_price()
 	test_a_part_that_can_never_go_is_dropped()
 	test_an_exodus_banks_the_book_and_other_endings_keep_the_old_one()
 	test_the_book_and_the_plans_survive_a_save_and_a_profile_file()
@@ -145,6 +146,52 @@ func test_plans_wait_for_tech_and_materials_in_order() -> void:
 	t.check(
 		s.economy.inv["stone"] == 4.0 or int(s.economy.inv["stone"]) == 4, "it cost what a hut costs: nothing is free"
 	)
+
+
+func test_a_banked_blueprint_costs_a_share_and_a_fresh_one_costs_full_price() -> void:
+	var made := _yard_sim()
+	var src: Sim = made[0]
+	var at: Vector2i = made[1]
+	Blueprints.save(src, Rect2i(at, Vector2i(3, 2)))
+	t.check(not src.carry.blueprints[0]["banked"], "a blueprint saved this run is not banked yet")
+	var profile := Profile.new()
+	profile.bank(src, "exodus")
+	var s := _sim()
+	s.carry = profile.carry()
+	t.check(s.carry.blueprints[0]["banked"], "one carried from an earlier run is")
+	for tech in ["haulers", "gatherers_hut"]:
+		s.tech_tree.researched[tech] = true
+	Blueprints.lay(s, 0, at)
+	t.check(s.carry.plans[0]["b"], "its plans are marked banked")
+	s.economy.inv["wood"] = 100
+	s.economy.inv["stone"] = 100
+	s.tick(0.1)
+	t.check(s.carry.plans.is_empty(), "the yard goes up")
+	var share: float = Data.EXODUS["bp_share"]
+	var road_wood := maxi(ceili(float(Data.BUILDINGS["road"]["cost"]["wood"]) * share - 0.0001), 1)
+	var hut: Dictionary = Data.BUILDINGS["gatherers_hut"]["cost"]
+	var hut_wood := ceili(float(hut["wood"]) * share - 0.0001)
+	var spent_wood := 100 - int(s.economy.inv["wood"])
+	t.check(
+		spent_wood == 3 * road_wood + hut_wood,
+		"three roads and a hut cost the share of their price (%d wood)" % spent_wood
+	)
+	t.check(
+		int(s.economy.inv["stone"]) == 100 - ceili(float(hut["stone"]) * share - 0.0001),
+		"and the share of its stone, rounded up"
+	)
+	t.check(is_equal_approx(s.town.plan_share, 1.0), "the discount is not left on for the player's own building")
+	var fresh := _sim()
+	fresh.carry.blueprints = src.carry.blueprints.duplicate(true)
+	fresh.carry.blueprints[0]["banked"] = false
+	for tech in ["haulers", "gatherers_hut"]:
+		fresh.tech_tree.researched[tech] = true
+	Blueprints.lay(fresh, 0, at)
+	fresh.economy.inv["wood"] = 100
+	fresh.economy.inv["stone"] = 100
+	fresh.tick(0.1)
+	var full_wood := 3 * int(Data.BUILDINGS["road"]["cost"]["wood"]) + int(hut["wood"])
+	t.check(100 - int(fresh.economy.inv["wood"]) == full_wood, "a blueprint saved this run costs full price")
 
 
 func test_a_part_that_can_never_go_is_dropped() -> void:

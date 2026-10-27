@@ -24,6 +24,7 @@ const EXODUS := {
 	"forget_failed": "The past runs could not be cleared.",
 	# Blueprints, the Exodus's gift (scripts/blueprints.gd): a boxed part of the town saved under a name, laid down again as plans.
 	"bp_max": 6,  # blueprints held at once
+	"bp_share": 0.7,  # a part laid from a banked blueprint (carried from an earlier run) costs this share of its price, rounded up
 	"bp_label": "Blueprints",
 	"bp_tip": "Save a part of the town as a blueprint, and lay it down again anywhere.",
 	"bp_title": "BLUEPRINTS",
