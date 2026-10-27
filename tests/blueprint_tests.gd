@@ -126,7 +126,10 @@ func test_plans_wait_for_tech_and_materials_in_order() -> void:
 	t.check(not s.world.roads.has(at + Vector2i(1, 0)), "and the next waits for materials")
 	s.economy.inv["wood"] = 10
 	s.tick(0.1)
-	t.check(s.world.roads.has(at + Vector2i(1, 0)) and s.world.roads.has(at + Vector2i(2, 0)), "the rest of the road follows")
+	t.check(
+		s.world.roads.has(at + Vector2i(1, 0)) and s.world.roads.has(at + Vector2i(2, 0)),
+		"the rest of the road follows"
+	)
 	t.check(s.carry.plans.size() == 1, "the hut still waits for its tech")
 	s.tech_tree.researched["gatherers_hut"] = true
 	s.economy.inv["wood"] = 3
@@ -135,8 +138,13 @@ func test_plans_wait_for_tech_and_materials_in_order() -> void:
 	t.check(s.carry.plans.size() == 1, "a plan held for materials builds nothing short of its price")
 	s.economy.inv["wood"] = 12
 	s.tick(0.1)
-	t.check(s.carry.plans.is_empty() and s.town.building_at.has(at + Vector2i(1, 1)), "the hut goes up and the queue is empty")
-	t.check(s.economy.inv["stone"] == 4.0 or int(s.economy.inv["stone"]) == 4, "it cost what a hut costs: nothing is free")
+	t.check(
+		s.carry.plans.is_empty() and s.town.building_at.has(at + Vector2i(1, 1)),
+		"the hut goes up and the queue is empty"
+	)
+	t.check(
+		s.economy.inv["stone"] == 4.0 or int(s.economy.inv["stone"]) == 4, "it cost what a hut costs: nothing is free"
+	)
 
 
 func test_a_part_that_can_never_go_is_dropped() -> void:
@@ -145,10 +153,19 @@ func test_a_part_that_can_never_go_is_dropped() -> void:
 	s.economy.inv["wood"] = 20
 	var at := _clearing(s, 3, 2)
 	s.world.add_road(at + Vector2i(1, 0), 0)  # a road already stands in the middle
-	s.carry.blueprints = [{"name": "Test", "w": 3, "h": 1, "items": [{"t": "road", "x": 0, "y": 0}, {"t": "gatherers_hut", "x": 1, "y": 0}]}]
+	s.carry.blueprints = [
+		{
+			"name": "Test",
+			"w": 3,
+			"h": 1,
+			"items": [{"t": "road", "x": 0, "y": 0}, {"t": "gatherers_hut", "x": 1, "y": 0}]
+		}
+	]
 	Blueprints.lay(s, 0, at)
 	s.tick(0.1)
-	t.check(s.carry.plans.size() == 1, "the part that fits goes down and the one on a road is dropped or waits for its tech")
+	t.check(
+		s.carry.plans.size() == 1, "the part that fits goes down and the one on a road is dropped or waits for its tech"
+	)
 	s.tech_tree.researched["gatherers_hut"] = true
 	s.tick(0.1)
 	t.check(s.carry.plans.is_empty(), "a hut on a road can never go and is dropped")
@@ -184,7 +201,10 @@ func test_the_book_and_the_plans_survive_a_save_and_a_profile_file() -> void:
 	Blueprints.lay(s, 0, made[1])
 	var again := Carry.new()
 	again.from_dict(JSON.parse_string(JSON.stringify(s.carry.to_dict())))
-	t.check(again.blueprints.size() == 1 and again.plans.size() == 4, "the carry keeps its blueprints and plans through a save")
+	t.check(
+		again.blueprints.size() == 1 and again.plans.size() == 4,
+		"the carry keeps its blueprints and plans through a save"
+	)
 	t.check(again.blueprints[0]["items"].size() == 4, "with every part")
 	var profile := Profile.new()
 	profile.bank(s, "exodus")
@@ -194,4 +214,6 @@ func test_the_book_and_the_plans_survive_a_save_and_a_profile_file() -> void:
 	var old := profile.to_dict()
 	old.erase("blueprints")
 	copy.from_dict(old)
-	t.check(copy.blueprints.is_empty() and copy.runs == 1, "a version 3 profile written before blueprints loads with none")
+	t.check(
+		copy.blueprints.is_empty() and copy.runs == 1, "a version 3 profile written before blueprints loads with none"
+	)

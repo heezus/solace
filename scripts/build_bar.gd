@@ -7,6 +7,7 @@ signal build_picked(type: String)
 signal craft_picked(recipe: String)
 signal tech_pressed
 signal demolish_pressed
+signal blueprints_pressed
 
 const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
@@ -42,6 +43,7 @@ var craft_buttons := {}
 var pulses := {}  # building type or tab name -> seconds of glow left
 var tech_button: Button
 var demolish_button: Button
+var blueprints_button: Button  # Step 7D: opens the blueprint panel (scripts/blueprint_panel.gd); shown once roads can be laid
 var row: HBoxContainer
 var homes_strip: HomesStrip  # the Homes tab's caps (scripts/homes_strip.gd)
 var build_scroll: ScrollContainer
@@ -94,6 +96,13 @@ func setup(game: Sim) -> void:
 	demolish_button = _demolish_button()  # the far right: small, ghost style, red only while it is the tool in use
 	demolish_button.pressed.connect(func(): demolish_pressed.emit())
 	h.add_child(demolish_button)
+	blueprints_button = _demolish_button()
+	blueprints_button.text = Data.EXODUS["bp_label"]
+	blueprints_button.tooltip_text = Data.EXODUS["bp_tip"]
+	blueprints_button.icon = null
+	blueprints_button.pressed.connect(func(): blueprints_pressed.emit())
+	h.add_child(blueprints_button)
+	h.move_child(blueprints_button, demolish_button.get_index())
 	_build_drawer(game)
 	_show_tab(tab)
 	close_drawer()
@@ -356,6 +365,7 @@ func refresh(placing: String, ready_count: int) -> void:
 		Ui.update_pips(parts["pips"], price, state.economy.inv)
 		parts["icon"].modulate = Color(1, 1, 1, 1.0 if unlocked else 0.4)
 		b.tooltip_text = _tooltip(type)
+	blueprints_button.visible = state.tech_tree.researched.has("haulers") or not state.carry.blueprints.is_empty()
 	var demo := Ui.button_style(Color(Ui.BAD, 0.20) if placing == "demolish" else Ui.GLASS_BUTTON, 4)
 	demolish_button.add_theme_stylebox_override("normal", demo)
 	for key in ["font_color", "font_hover_color", "font_pressed_color"]:
