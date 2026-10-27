@@ -1,0 +1,9 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: illustration-story. Asset: Solace painted portrait bust, SINGLE character, three-quarter view, CHEST UP, 1024x1280 portrait canvas with genuine transparent background. Match established Misty Highlands sculpted painted miniature anatomy and expressive human facial treatment, richer cinematic brushwork, warm firelight from one side with soft cool dusk fill. Bust centered, entire hair/head/shoulder silhouette safely inside frame with transparent margin; no scenery, backing plaque, ground, text, lettering, watermark or UI. No real person's likeness. Preserve native generated alpha. Cyan only for Lumen, magenta and sickly green light only for Bloom. Subject: SELA from authoritative approved reference, preserve her human warm face shape, expressive brown-hazel eyes, long pale-gold hair, ivory/gold clothing, pale blue drape, gold/cyan diamond earrings and collar clasp. Chest-up three-quarter pose, open and thoughtful expression, lips gently closed with a quiet warmth. A small restrained CYAN GLYPH LIGHT at her collar, no large glowing eyes or changed costume. Warm firelight against cool dusk fill matching cutscene, no background. Single bust ONLY. EXACT export intent 1024x1280. Input role: approved Sela identity/anatomy/costume reference.",
+  "source": "exec-7bc1bf87-44e0-4184-8850-83d13a0c7d7a.png",
+  "references": [
+    "docs/art/character-standard/sela-candidate.png"
+  ],
+  "export": "sips -Z 1280; aspect-preserving downsample to 1024x1280, alpha retained; unmodified generated source retained in sources/"
+}
