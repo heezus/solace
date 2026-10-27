@@ -1,0 +1,8 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: illustration-story. Production painted cutscene still for Solace. Single landscape image, 1586x992, 16:10. Misty Highlands: grounded sculpted toy-like miniature materials and painterly cinematic lighting, cool misted Highland mountains, warm timber/stone, rich yet restrained brushwork. Match the supplied established cutscene reference. Human faces and compact sturdy miniature anatomy for all Kith/Lumen, never photorealistic people. Compose all important faces/hands/story objects within middle 80% and upper two thirds; bottom third calm, darker low-detail ground for later captions. No text, lettering, numbers, watermark, UI or borders. Cyan light belongs to Lumen; magenta and sickly green glow only to Bloom. No real people's likenesses. Primary request: The SAME valley geometry and town terrace as the supplied Skyward town reference, years later after Cataclysm: grass-covered stone rubble exactly where the buildings stood, blackened timber ribs, broken mast stump, old river/crossing route. A few SMALL dormant Bloom patches with dull closed magenta buds and grey-green leaves beside largest ruins, not an active tide or giant plants. Morning mist, melancholy new beginning. Match reference ridge silhouettes/waterfall for continuity; middle-distance ruins, calm dark foreground third. Input roles: skyward_end_1 is exact geography/town placement reference. Repaint SAME place years after destruction, from same camera; old town gone.",
+  "source": "exec-7ec61750-9af1-4a30-8e79-5a94664611af.png",
+  "references": [
+    "art/rendered/cutscenes/skyward_end_1.png (#165)"
+  ]
+}

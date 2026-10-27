@@ -1,0 +1,9 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: illustration-story. Production painted cutscene still for Solace. Single landscape image, 1586x992, 16:10. Misty Highlands: grounded sculpted toy-like miniature materials and painterly cinematic lighting, cool misted Highland mountains, warm timber/stone, rich yet restrained brushwork. Match the supplied established cutscene reference. Human faces and compact sturdy miniature anatomy for all Kith/Lumen, never photorealistic people. Compose all important faces/hands/story objects within middle 80% and upper two thirds; bottom third calm, darker low-detail ground for later captions. No text, lettering, numbers, watermark, UI or borders. Cyan light belongs to Lumen; magenta and sickly green glow only to Bloom. No real people's likenesses. Primary request: Dawn. A long line of Kith travellers with wooden hand carts, rolled plans, bundles and bedrolls walks out of the old Highland valley. Their warm wire-town lights and timber/iron Skyward mast remain behind them in mist. Adult miniature Kith with compact bodies, rust/cream/moss traveller kit, sturdy boots. A quiet procession bending across middle of image toward a new ridge, continuing beyond view; hopeful endurance, not a rout. Bottom third quiet dark roadside earth. Input roles: image 1 established town reference; image 2 Kith clothing/anatomy reference.",
+  "source": "exec-244a99cc-1a7d-4598-8ce0-60bde6a278fa.png",
+  "references": [
+    "art/rendered/cutscenes/skyward_end_1.png (#165)",
+    "art/rendered/walk.png"
+  ]
+}
