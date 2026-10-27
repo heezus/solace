@@ -1,0 +1,8 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: precise-object-edit. Edit target first_wreck_2. Make this a CLEARLY DIFFERENT LOW FALLEN HULL FRAGMENT, preserving only its material language, old moss/vines, warm upper-left light, transparent background, square canvas and 1x1 scale. Remove BOTH upright rib arches completely. Place ONE pale-gold curved rib LYING ALMOST HORIZONTALLY ACROSS THE FOREGROUND from lower left to right; behind it a SMALL BROKEN FLAT IVORY-GREY PANEL with moss. At back-right only ONE short broken upright STRUT about one-quarter of the original arch height, not an arch. Overall subject is wide and low, no tall uprights, no whole hull bow shape, no oval glowing porthole. Dense old green moss and restrained vines, maybe one tiny cyan seam at most, no fire/embers. No text, pedestal or scenery. Maintain real alpha and margin.",
+  "source": "exec-bd4dd67e-f3e8-4c2f-8a1a-67fd7f455af8.png",
+  "references": [
+    "art/rendered/first_wreck_2.png (initial revision)"
+  ]
+}

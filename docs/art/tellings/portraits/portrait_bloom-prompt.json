@@ -1,0 +1,9 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: illustration-story. Asset: Solace painted portrait bust, SINGLE character, three-quarter view, CHEST UP, 1024x1280 portrait canvas with genuine transparent background. Match established Misty Highlands sculpted painted miniature anatomy and expressive human facial treatment, richer cinematic brushwork, warm firelight from one side with soft cool dusk fill. Bust centered, entire hair/head/shoulder silhouette safely inside frame with transparent margin; no scenery, backing plaque, ground, text, lettering, watermark or UI. No real person's likeness. Preserve native generated alpha. Cyan only for Lumen, magenta and sickly green light only for Bloom. Subject: the BLOOM, NOT A PERSON. A half-seen shape in tangled magenta and grey-green growth, only an implied sorrowful FACE in negative spaces between roots and closed buds, a loose crown of roots. Ancient exhausted memory of a broken world, tender and sorrowful, not monstrous, not threatening. No obvious eyes, mouth, skull, teeth, horns, humanoid woman or green skin. Organic tangled silhouette in a chest-up portrait envelope, restrained dull magenta bud light and soft green reflected light, painterly sculpted root/leaves, plenty of transparent holes between outer tendrils. Three-quarter implied turn. No pot, pedestal or backdrop. Image 1 is the broken-world botanical family reference only. Output intended 1024x1280 transparent.",
+  "source": "exec-dcc0c9fe-f37f-47ec-9e64-301a0a186551.png",
+  "references": [
+    "art/rendered/cutscenes/broken_world_2.png (#167)"
+  ],
+  "export": "sips -Z 1280; aspect-preserving downsample to 1024x1280, alpha retained; unmodified generated source retained in sources/"
+}

@@ -1,0 +1,9 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: illustration-story. Production painted cutscene still for Solace. Single landscape image, 1586x992, 16:10. Misty Highlands: grounded sculpted toy-like miniature materials and painterly cinematic lighting, cool misted Highland mountains, warm timber/stone, rich yet restrained brushwork. Match the supplied established cutscene reference. Human faces and compact sturdy miniature anatomy for all Kith/Lumen, never photorealistic people. Compose all important faces/hands/story objects within middle 80% and upper two thirds; bottom third calm, darker low-detail ground for later captions. No text, lettering, numbers, watermark, UI or borders. Cyan light belongs to Lumen; magenta and sickly green glow only to Bloom. No real people's likenesses. Primary request: A young adult Kith waking up in long grass in a DIFFERENT misty Highland valley in early morning, propped on one elbow, thoughtful and disoriented as if remembering being here. Use approved Kith sheet face and compact anatomy, rust scarf, cream traveller sleeves, moss belt and worn boots. Ordinary human face, no magical eyes. Dewy long grass around him, unfamiliar rolling hills in morning mist. Face and supporting hand upper-middle, calm dark soft foreground grass in bottom third. Gentle uncanny deja vu, no ring or overt symbols. Input roles: image 1 anatomy/clothes reference; image 2 painting atmosphere only, invent different valley geography.",
+  "source": "exec-87dba731-6793-4ef2-b58d-4ba2bccfbcd5.png",
+  "references": [
+    "art/rendered/walk.png",
+    "art/rendered/cutscenes/opening_1.png"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: illustration-story. Asset: Solace painted portrait bust, SINGLE character, three-quarter view, CHEST UP, 1024x1280 portrait canvas with genuine transparent background. Match established Misty Highlands sculpted painted miniature anatomy and expressive human facial treatment, richer cinematic brushwork, warm firelight from one side with soft cool dusk fill. Bust centered, entire hair/head/shoulder silhouette safely inside frame with transparent margin; no scenery, backing plaque, ground, text, lettering, watermark or UI. No real person's likeness. Preserve native generated alpha. Cyan only for Lumen, magenta and sickly green light only for Bloom. Subject: the old Kith Hearthkeeper storyteller in the supplied fireside reference, SAME grey hair, beard, warm kind tired eyes and rounded sturdy Kith face. Practical cream traveller tunic, rust/moss layers under a worn shawl, small carved hearth stone hanging on a simple cord visibly at chest. Tender open thoughtful expression, firelight warms one cheek; chest-up only, no hands necessary. Image 1 is identity, clothing and light reference only; isolate the elder as a new transparent portrait, no children or hearth background.",
+  "source": "exec-4a84f201-010d-42b9-a973-9b4fd7c99cf6.png",
+  "references": [
+    "art/rendered/cutscenes/fireside_1.png (#165)"
+  ],
+  "export": "sips -Z 1280; aspect-preserving downsample to 1024x1280, alpha retained; unmodified generated source retained in sources/"
+}

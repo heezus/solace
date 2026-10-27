@@ -1,0 +1,8 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: precise-object-edit. Edit target: ending_loop_1. Keep the entire painted Highland town, ring, doubled hills, camera, palette and existing framing unchanged. Change ONLY Sela inside ring: she must be a SMALL DARK SILHOUETTE rimmed by pale cyan, recognisable long hair and draped cloak, with no detailed face or brightly lit white costume. Reduce her apparent height by about 20% and leave her in exactly the same upper central position. Quiet remembered presence rather than airborne portrait. No text. Preserve dark foreground and original 1586x992 landscape.",
+  "source": "exec-8bb51c72-60c2-413d-b4a6-cbfdabb2192a.png",
+  "references": [
+    "art/rendered/cutscenes/ending_loop_1.png (initial revision)"
+  ]
+}

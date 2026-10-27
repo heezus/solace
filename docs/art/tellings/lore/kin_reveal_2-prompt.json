@@ -1,0 +1,10 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: illustration-story. Production painted cutscene still for Solace. Single landscape image, 1586x992, 16:10. Misty Highlands: grounded sculpted toy-like miniature materials and painterly cinematic lighting, cool misted Highland mountains, warm timber/stone, rich yet restrained brushwork. Match the supplied established cutscene reference. Human faces and compact sturdy miniature anatomy for all Kith/Lumen, never photorealistic people. Compose all important faces/hands/story objects within middle 80% and upper two thirds; bottom third calm, darker low-detail ground for later captions. No text, lettering, numbers, watermark, UI or borders. Cyan light belongs to Lumen; magenta and sickly green glow only to Bloom. No real people's likenesses. Primary request: Sela and one adult Kith examining the ancient moss-covered Lumen hull TOGETHER. They compare ONE simple decorative glyph carved in an exposed old hull rib with the IDENTICAL glyph on a small carved stone the Kith holds beside it. Both marks clearly visible SIDE BY SIDE at same orientation above caption area. The mark is a simple closed circle with three short radial notches, no letters. Sela has approved face/long pale hair/ivory-gold and pale blue drape/cyan collar clasp, Kith compact in rust/cream/moss traveller clothes. Wonder and recognition, shared origins. Medium cinematic view, faces and both marks in central 80% upper two thirds, no one pointing at random unrelated marks. Calm dark foreground. Input roles: image 1 authoritative Sela; image 2 Kith clothing/anatomy; image 3 ancient hull materials/setting. Glyph is a decorative matching visual prop, not a new UI glyph alphabet.",
+  "source": "exec-6cdf98ff-fd0c-47a7-9670-fd88e215e440.png",
+  "references": [
+    "docs/art/character-standard/sela-candidate.png",
+    "art/rendered/walk.png",
+    "art/rendered/cutscenes/kin_reveal_1.png"
+  ]
+}

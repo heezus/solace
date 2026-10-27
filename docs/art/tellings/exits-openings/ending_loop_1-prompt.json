@@ -1,0 +1,9 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: illustration-story. Production painted cutscene still for Solace. Single landscape image, 1586x992, 16:10. Misty Highlands: grounded sculpted toy-like miniature materials and painterly cinematic lighting, cool misted Highland mountains, warm timber/stone, rich yet restrained brushwork. Match the supplied established cutscene reference. Human faces and compact sturdy miniature anatomy for all Kith/Lumen, never photorealistic people. Compose all important faces/hands/story objects within middle 80% and upper two thirds; bottom third calm, darker low-detail ground for later captions. No text, lettering, numbers, watermark, UI or borders. Cyan light belongs to Lumen; magenta and sickly green glow only to Bloom. No real people's likenesses. Primary request: The sky above the Kith stone-ring Hearth FOLDS into a PALE CYAN-WHITE RING OF LIGHT. Highland hills and warm timber town are subtly doubled, ghosted, fading in a rewinding echo. Sela's recognisable small silhouette within the ring: long pale hair and cloak, not a giant realistic figure. Ring and silhouette fully in middle 80%, above caption third. Hearth below ring, warm ember, no bright foreground. Quiet strange compassion, planetary rewind; no text, no clock or numerals. Input roles: image 1 established warm Kith town/Hearth, image 2 approved Sela silhouette and costume; scene at night.",
+  "source": "exec-45235ba4-85f7-4cc2-9dc6-c3625037e0a2.png",
+  "references": [
+    "art/rendered/cutscenes/skyward_end_1.png (#165)",
+    "docs/art/character-standard/sela-candidate.png"
+  ]
+}

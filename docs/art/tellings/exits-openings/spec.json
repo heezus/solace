@@ -1,0 +1,62 @@
+[
+  {
+    "id": "ending_exodus_1",
+    "path": "res://art/rendered/cutscenes/ending_exodus_1.png",
+    "size": [
+      1586,
+      992
+    ],
+    "sha256": "0b78943613edb06d5ec89029daa683acbf53543ecdd48bde205e64e90fe2ccdb",
+    "original_pixels": true
+  },
+  {
+    "id": "ending_cataclysm_1",
+    "path": "res://art/rendered/cutscenes/ending_cataclysm_1.png",
+    "size": [
+      1585,
+      992
+    ],
+    "sha256": "57c100200973677c2f15faf32e3f6a83ac57ea09585c5db5cc37def8a84942e8",
+    "original_pixels": true
+  },
+  {
+    "id": "ending_loop_1",
+    "path": "res://art/rendered/cutscenes/ending_loop_1.png",
+    "size": [
+      1586,
+      992
+    ],
+    "sha256": "89336396a9092823f40805b9e26dba0851ca83885f80818c76ba543cf8b00cb8",
+    "original_pixels": true
+  },
+  {
+    "id": "next_land_1",
+    "path": "res://art/rendered/cutscenes/next_land_1.png",
+    "size": [
+      1586,
+      992
+    ],
+    "sha256": "5ca84ae1a20c636264836f352dd82bcb163d8e598151e0df128b49fec6469e1a",
+    "original_pixels": true
+  },
+  {
+    "id": "next_ruins_1",
+    "path": "res://art/rendered/cutscenes/next_ruins_1.png",
+    "size": [
+      1586,
+      992
+    ],
+    "sha256": "23d4e1abeb0938cb49e6691329f73cc5c539cf2285bcde82748ed81917fd5a2f",
+    "original_pixels": true
+  },
+  {
+    "id": "next_valley_1",
+    "path": "res://art/rendered/cutscenes/next_valley_1.png",
+    "size": [
+      1585,
+      992
+    ],
+    "sha256": "e5881e577ba7356df9fb27db2ddeaf3e232c516896e68a6132c1bf12d0744a8b",
+    "original_pixels": true
+  }
+]

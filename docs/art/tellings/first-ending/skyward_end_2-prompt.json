@@ -1,0 +1,8 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: illustration-story. Production painted cutscene still for Solace. Single landscape image, 1586x992, 16:10. Misty Highlands: grounded sculpted toy-like miniature materials and painterly cinematic lighting, cool misted Highland mountains, warm timber/stone, rich yet restrained brushwork. Match the supplied established cutscene reference. Human faces and compact sturdy miniature anatomy for all Kith/Lumen, never photorealistic people. Compose all important faces/hands/story objects within middle 80% and upper two thirds; bottom third calm, darker low-detail ground for later captions. No text, lettering, numbers, watermark, UI or borders. Cyan light belongs to Lumen; magenta and sickly green glow only to Bloom. No real people's likenesses. Primary request: Same wire-age town and lit timber/iron/copper Skyward mast as reference image 1, now small in foreground/middle distance. Far south on horizon below heavy clouds: a LOW distant continuous wall of magenta and sickly-green Bloom glow creeping closer through mist. Keep this threat distant and low, no giant tentacles or monsters. The town remains warm and alive. View outward across valley; low glow clearly above the calm dark caption foreground. Uncertainty and resolve, not defeat. Input roles: skyward_end_1 is town/mast/material continuity reference. Create a new outward-facing view.",
+  "source": "exec-e4d1ff67-b28d-4ddf-a9f7-d6247234b2ee.png",
+  "references": [
+    "art/rendered/cutscenes/skyward_end_1.png"
+  ]
+}

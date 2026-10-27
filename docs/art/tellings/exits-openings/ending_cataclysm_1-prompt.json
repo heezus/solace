@@ -1,0 +1,8 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: illustration-story. Production painted cutscene still for Solace. Single landscape image, 1586x992, 16:10. Misty Highlands: grounded sculpted toy-like miniature materials and painterly cinematic lighting, cool misted Highland mountains, warm timber/stone, rich yet restrained brushwork. Match the supplied established cutscene reference. Human faces and compact sturdy miniature anatomy for all Kith/Lumen, never photorealistic people. Compose all important faces/hands/story objects within middle 80% and upper two thirds; bottom third calm, darker low-detail ground for later captions. No text, lettering, numbers, watermark, UI or borders. Cyan light belongs to Lumen; magenta and sickly green glow only to Bloom. No real people's likenesses. Primary request: The same Highland wire town and mast as reference. A surge of CYAN Lumen magic erupts from the town center, BREAKING THE GROUND with clear fissures and throwing up chunks of rock. Timber-and-stone roofs crack and partly collapse. At the distant EDGES of the valley, magenta and sickly-green Bloom glow is visibly pushed back by the cyan wave. Wide cinematic view, no people in danger close-up, no gore. The main blast and broken town occupy upper-middle; bottom third dark quiet foreground ledge. A grave costly choice, no triumphant explosion spectacle. Input roles: established town and distant Bloom reference. Paint a new dramatic wide view.",
+  "source": "exec-2a4300a9-31ac-419c-a6d4-c6339595ce00.png",
+  "references": [
+    "art/rendered/cutscenes/skyward_end_2.png (#165)"
+  ]
+}
