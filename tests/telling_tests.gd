@@ -263,15 +263,13 @@ func test_the_cataclysm_keeps_the_map_and_lays_the_ruins() -> void:
 	t.check(near == 0, "none lies by the Hearth")
 	var patches := Ruins.patch_tiles(n)
 	t.check(n.carry.patches.size() >= 2 and n.carry.patches.size() <= 4, "two to four dormant Bloom patches")
-	t.check(
-		patches.all(
-			func(p):
-				return (
-					maxi(absi(p.x - n.world.camp_pos.x), absi(p.y - n.world.camp_pos.y)) >= Data.ENDINGS["patch_clear"]
-				)
-		),
-		"none within %d tiles of the Hearth" % Data.ENDINGS["patch_clear"]
-	)
+	var far := true
+	for p in n.carry.patches:
+		far = (
+			far
+			and maxi(absi(p[0] - n.world.camp_pos.x), absi(p[1] - n.world.camp_pos.y)) >= Data.ENDINGS["patch_clear"]
+		)
+	t.check(far, "none within %d tiles of the Hearth" % Data.ENDINGS["patch_clear"])
 	t.check(
 		patches.size() >= 2 and patches.all(func(p): return n.world.tile_at(p) == "bloom_ground"),
 		"each laid as Bloom ground"
