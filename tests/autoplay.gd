@@ -489,7 +489,7 @@ func _decide() -> void:
 	var later := _route_need()
 	births.watch(self)
 	_pause_surplus(short, later)
-	if births.answer(self, short) or Lumen.echoes(self) or AutoplayRelics.dig(self):
+	if births.answer(self, short) or Lumen.echoes(self) or AutoplayRelics.carried(self):
 		return
 	if _buy_rank(short):
 		return

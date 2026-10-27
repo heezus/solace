@@ -4,12 +4,19 @@ extends RefCounted
 ## Everburning Forge where it lies: the bot raises its Forge in its own yard, beside the Boiler it powers, and a relic Forge stands where
 ## the old town's heaviest building stood. All static, over the bot.
 
+const AutoplayBlueprints = preload("res://tests/autoplay_blueprints.gd")
 const Relics = preload("res://scripts/relics.gd")
 const Scouting = preload("res://scripts/scouting.gd")
 const Ui = preload("res://scripts/ui.gd")
 
 const WANTED := ["lantern", "cart"]
 const ROADS_PER_DECISION := 4
+
+
+## What the bot does about what an ending handed on: lay a kept blueprint when it can pay for it, or work toward a relic. True when
+## the decision was spent.
+static func carried(bot) -> bool:
+	return AutoplayBlueprints.lay_ready(bot) or dig(bot)
 
 
 ## One step toward the next relic worth digging, true when it was spent (a road laid, or a crew sent). Nothing in a run with no ruins.

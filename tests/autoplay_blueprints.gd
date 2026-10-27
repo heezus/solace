@@ -4,7 +4,8 @@ extends RefCounted
 ## yard (every road, field and building but the gatherers within YARD_RADIUS of the Hearth: a hut belongs beside what it
 ## works, which differs from map to map) and the smelter yard (the box round its smelters, crucibles,
 ## bloomeries and forges, when they stand close enough to be one yard). Both are kept with their corner's offset from the Hearth, so
-## laying puts each where it stood in relation to the new Hearth. All static; tests/tools/pace.gd calls these.
+## laying puts each where it stood in relation to the new Hearth, once the bot can pay for it (`lay_ready`). All static;
+## tests/tools/pace.gd keeps them and the bot's decisions lay them.
 
 const Blueprints = preload("res://scripts/blueprints.gd")
 const Data = preload("res://scripts/data.gd")
@@ -15,9 +16,13 @@ const SKIP := ["gatherer"]  # kinds a bot does not keep: they are placed where t
 const ROAD_KINDS := ["road", "bridge", "depot"]  # what the "roads" mode keeps: the road grid and its storehouses
 
 const SMELTER_YARD_MAX := 22  # tiles across: wider than this is not one yard
+const HOLD_SHARE := 0.5  # the bot holds this share of what a blueprint's parts cost before it lays it
 
 ## Hearth-relative corners of the boxes last saved, in blueprint order (the blueprint itself keeps no place).
 static var corners: Array = []
+
+## The blueprints of the run's book that the bot has not laid yet, by index: `lay_ready` lays each once it can pay for it.
+static var waiting: Array = []
 
 ## What the bot keeps (`blueprints=<mode>` on the pace tool): "all" the yards, "yards" (roads and storehouses at the Hearth, the smelter
 ## yard whole), or "roads" (the road grid and storehouses only).
@@ -57,9 +62,36 @@ static func save_all(s) -> int:
 	return corners.size()
 
 
-## Lay every kept blueprint of the run in `s` (its book came from the profile) where it stands against `s`'s Hearth.
-static func lay_all(s) -> int:
-	var n := 0
-	for i in mini(s.carry.blueprints.size(), corners.size()):
-		n += Blueprints.lay(s, i, s.world.camp_pos + corners[i])
-	return n
+## Put every kept blueprint of the run in `s` (its book came from the profile) on the waiting list. Returns how many.
+static func hold_all(s) -> int:
+	waiting = range(mini(s.carry.blueprints.size(), corners.size()))
+	return waiting.size()
+
+
+## Lay the first waiting blueprint, once every type in it is known and the stores hold at least HOLD_SHARE of what its parts cost
+## (at the share a banked blueprint pays): a yard laid before it can be paid for only ties up stone and wood the bot would spend on its
+## research. The plans go down roads first (scripts/blueprints.gd). Always false: laying costs nothing, so the decision is not spent.
+static func lay_ready(bot) -> bool:
+	var s = bot.s
+	if waiting.is_empty() or not s.tech_tree.researched.has("haulers"):
+		return false
+	var i: int = waiting[0]
+	if i >= s.carry.blueprints.size() or not _ready(s, s.carry.blueprints[i]):
+		return false
+	waiting.pop_front()
+	Blueprints.lay(s, i, s.world.camp_pos + corners[i])
+	return false
+
+
+static func _ready(s, bp: Dictionary) -> bool:
+	var share: float = float(Data.EXODUS["bp_share"]) if bp.get("banked", false) else 1.0
+	var cost := {}
+	for part in bp["items"]:
+		if not s.town.unlocked(part["t"]):
+			return false
+		for id in Data.BUILDINGS[part["t"]].get("cost", {}):
+			cost[id] = cost.get(id, 0.0) + float(Data.BUILDINGS[part["t"]]["cost"][id]) * share
+	for id in cost:
+		if s.economy.inv.get(id, 0) < ceili(cost[id] * HOLD_SHARE):
+			return false
+	return true
