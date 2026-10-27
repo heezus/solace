@@ -130,7 +130,7 @@ The bar (a bot Cataclysm run on map 1 won in every era, 8 to 25 minutes an era):
 | 2 | 11.5 | 9.8 | 11.3 | 11.7 | 12.3 | 56.6 | 19 |
 | 4 | 13.3 | 10.4 | 11.3 | 14.4 | 7.9 | 57.3 | 7 |
 
-Verdict: **CONCERNS**. Every era is won on all three maps and the tide still takes buildings (6 to 19), but map 4's Livewire is 7.9 minutes, 0.1 under the 8-minute floor. The director accepted that as bot noise: the floor exists to catch trivially short eras. A check at 10 tiles (the director's one extra try) won maps 2 (Livewire 9.1) and 4 (15.2), but the tide took only 2 buildings on map 2 (toothless) and map 1 had not finished after an hour of bot time, so 12 stays. The AI player's relic dig also waits 30 seconds before it tries a failed dig again (`tests/autoplay_relics.gd`).
+Verdict: **CONCERNS**. Every era is won on all three maps and the tide still takes buildings (6 to 19), but map 4's Livewire is 7.9 minutes, 0.1 under the 8-minute floor. The director accepted that as bot noise: the floor exists to catch trivially short eras. A check at 10 tiles (the director's one extra try) won maps 2 (Livewire 9.1) and 4 (15.2), but the tide took only 2 buildings on map 2 (toothless) and map 1 was still computing after an hour (a stuck or very slow Livewire), so 12 stays. The AI player's relic dig also waits 30 seconds before it tries a failed dig again (`tests/autoplay_relics.gd`).
 
 ## Decided (the project owner, 2026-10-06, on cards)
 1. Three eras after Starfall: Ironfall, Livewire, Skyreach.
