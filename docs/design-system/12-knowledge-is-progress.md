@@ -47,7 +47,7 @@ Set aside for now: the Bloom as a spreading tide (its own later era), stories th
 
 ## Open
 - Map generation: see "Smarter maps" below.
-- The three resets are built as endings (see "Exodus as built" and "Endings as built" in [18](18-roadmap.md)): every ending keeps known techs at 30% of their study, read marks and echoes; the Exodus and the Time loop wake the Kith in a new valley, and the Cataclysm on the same map as ruins. The gifts (blueprints, relics) are not built yet.
+- The three resets are built as endings (see "Exodus as built" and "Endings as built" in [18](18-roadmap.md)): every ending keeps known techs at 30% of their study, read marks and echoes; the Exodus and the Time loop wake the Kith in a new valley, and the Cataclysm on the same map as ruins. Blueprints, the Exodus gift, are built (see "Blueprints as built" in [18](18-roadmap.md)); relics are not built yet.
 - How many glyphs, and the word list, get designed with era 3.
 
 ## Smarter maps (proposed, 2026-09-30)

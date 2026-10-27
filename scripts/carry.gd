@@ -5,6 +5,7 @@ extends RefCounted
 ## is the profile as it stood then, scripts/profile.gd) and is saved with the run, so a loaded run plays the same even if the
 ## profile has changed since. It is a block of the Sim that the run only reads, apart from `told`: the opening card was shown.
 
+const Blueprints = preload("res://scripts/blueprints.gd")
 const Data = preload("res://scripts/data.gd")
 
 var techs: Array = []  # tech ids learned in an earlier run: they cost a share of the study
@@ -17,6 +18,13 @@ var last_trust := 0.0  # the trust it ended with (the Time loop begins there)
 var ruins: Array = []  # the Cataclysm's ruins, [{"pos": [x, y], "weight": n}] (scripts/ruins.gd)
 var patches: Array = []  # and its dormant Bloom patches, [[x, y], ...]
 var told := false  # the card that opens a run after an ending has been shown (scripts/notice_card.gd)
+var blueprints: Array = []  # the run's blueprint book (scripts/blueprints.gd): begins as the profile's, the run adds to it
+var plans: Array = []  # the parts of laid blueprints still waiting to be built, [{"t": type, "x": column, "y": row}]
+
+
+## Build what the laid blueprints allow (scripts/blueprints.gd): the Sim calls this every tick.
+func build_plans(s) -> void:
+	Blueprints.tick(s)
 
 
 ## True for a first run, which carries nothing.
@@ -92,6 +100,8 @@ func to_dict() -> Dictionary:
 		"ruins": ruins.duplicate(true),
 		"patches": patches.duplicate(true),
 		"told": told,
+		"blueprints": blueprints.duplicate(true),
+		"plans": plans.duplicate(true),
 	}
 
 
@@ -113,6 +123,17 @@ func from_dict(d: Dictionary) -> void:
 	if ending == "" and exodus > 0:
 		ending = "exodus"  # a run begun before the endings existed followed an Exodus
 	told = bool(d.get("told", false))
+	blueprints = _dicts(d.get("blueprints", []))
+	plans = _dicts(d.get("plans", []))
+
+
+static func _dicts(list) -> Array:
+	var out := []
+	if typeof(list) == TYPE_ARRAY:
+		for x in list:
+			if typeof(x) == TYPE_DICTIONARY:
+				out.append(x.duplicate(true))
+	return out
 
 
 static func _strings(list) -> Array:

@@ -69,7 +69,28 @@ Skyward's card has "Choose an ending" beside "Keep building" (the game menu has 
 - **Cataclysm:** the next run keeps the same map seed. Up to 60 of the old town's dearest buildings become Ruins tiles (one tile each, none within 3 tiles of the Hearth): rubble nothing can be built on until Demolish clears it, which gives Stone (the building's cost over 25, from 3 to 20). Ruins in the land that grows east or south are laid when the land grows. Two to four dormant Bloom patches (two tiles of Bloom ground) sit by the largest ruins; the tide still wakes at the first engine and spreads from them as well as from the south. The Lumen arrive wary even if a Cairn stood first (trust 0, no guests).
 - **Time loop:** a new map. The Lumen remember: trust starts at the trust the last run ended with, Sela greets the Kith by name and the run notes the lean they had.
 - **Profile (version 3):** `runs`, `tellings` (one record per ended run: number, seed, the small Starfall choices, lean, trust, ending) and `last` (the latest ending's handoff: seed, trust, lean, and after a Cataclysm the ruins and patches). A version 1 or 2 profile loads (its runs are its Exoduses).
-- **Not built yet:** the gifts (blueprints, relics, memory beyond trust), the new glyph sets, Skyreach and the Chronicle book that opens after an ending. The end cards use placeholder words.
+- **Not built yet:** the gifts (relics, memory beyond trust; blueprints are built, see below), the new glyph sets, Skyreach and the Chronicle book that opens after an ending. The end cards use placeholder words.
+
+## Blueprints as built (Step 7D)
+
+The Exodus's gift. A **Blueprints** button sits beside Demolish on the build bar (it appears once Haulers is known, or once the book holds a blueprint) and opens a small panel over the foot of the map: up to six blueprints, each with a name that can be typed over, "Lay down" and a delete, and "Save a blueprint: drag a box".
+
+- **Saving.** The next drag on the map becomes a box. Everything inside it that the player built is kept: roads, bridges, fields and buildings, never the Hearth, as a type and an offset from the box's corner (kinds and shapes, never places). A box over bare ground keeps nothing, and a seventh blueprint is refused until one is deleted.
+- **Laying.** "Lay down", then a click puts the blueprint's corner on that tile and queues one plan per part that falls on the map (no rotation). A plan is built the way the player would build it, so nothing is free: roads first, then fields, then buildings, one pass every tick. A part waits while its tech is not known or its ground is still in the fog; the part that waits for materials holds the ones behind it back, so a road grid never eats the stone its smelter is waiting on; a part that can never go (the ground is wrong, something stands there) is dropped. Ordinary buildings have no construction site in this game (they are paid for and stand at once), so the plans place themselves; they do not wait for haulers.
+- **Banking.** Blueprints saved in a run live in the run's save. Only an **Exodus** banks the run's whole book into the profile; a Cataclysm or a Time loop leaves the profile's blueprints as they were before the run. A new run begins with the profile's book.
+- **What the Kin know.** A part laid from a banked blueprint (one carried from an earlier run) costs 70% of its price, each item rounded up and never below 1 (`Data.EXODUS["bp_share"]`); the Kin have built it before, the same idea as a known tech costing 30% of its study. A blueprint saved in the run in hand costs full price.
+- **The AI player.** `tests/autoplay_blueprints.gd`, used by the pace tool (`baseline exodus=<run> blueprints[=all|yards|roads]`): the run's Hearth yard (everything within eight tiles of the Hearth but the gatherers) and its smelter yard are kept at the end of run 1 and laid at the new Hearth.
+
+**What the bot got from it** (minutes of game time through all five eras, run 2 on maps 1001 / 1004; 7B without blueprints: 55.8 / 54.6, every era 8.0 to 13.0):
+
+| Bot keeps | Share | 1001 | 1004 |
+|---|---|---|---|
+| Hearth yard and smelter yard | full price | 60.9 | 66.6 |
+| the same | 70% | 55.8 | 61.1 |
+| road grid and storehouses only | 70% | 52.3 (Livewire 7.8) | not won in 70 |
+| roads and storehouses, smelter yard | 70% | 55.8 | 55.9 (Livewire 7.3) |
+
+The spec's bar was a bot Exodus run at least 3 minutes faster on both maps with no era under 8: **not met**. A blueprint saves a player's clicks, not materials; the bot already places what it wants the moment it can pay, so queued plans mostly spend stone and wood on things it would have built later, ahead of research. The 70% share (the director's call) was kept as the rule and not lowered. See the decision log, 2026-10-27.
 
 ## Decided (the project owner, 2026-10-06, on cards)
 1. Three eras after Starfall: Ironfall, Livewire, Skyreach.

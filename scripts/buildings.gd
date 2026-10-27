@@ -36,6 +36,7 @@ var buildings: Array = []
 var building_at: Dictionary = {}  # Vector2i -> index into buildings
 ## The most homes the player allows at each tier or above (index = tier; a Dwelling is always allowed). Saved.
 var home_caps: Array = [Data.HOME_CAP_OPEN, Data.HOME_CAP_OPEN, Data.HOME_CAP_OPEN]
+var plan_share := 1.0  # Step 7D: while a plan from a banked blueprint is placed, the share of the price it costs (scripts/blueprints.gd)
 var road_rev := 0  # bumped whenever roads or buildings change, so Roads rebuilds its networks
 var road_net: Dictionary = {}  # Roads' cache of the road networks and which buildings they link
 ## (String) -> bool: has this story event happened? Sim connects it to the Story block; it opens a building's `event`.
@@ -157,7 +158,7 @@ func _on_tiles_error(def: Dictionary, tile: String) -> String:
 ## laid over one that stands there costs only the difference.
 func cost_here(type: String, p: Vector2i) -> Dictionary:
 	if Data.BUILDINGS[type]["kind"] in ["road", "bridge"]:
-		return Rules.cost_at(type, _world.tile_at(p), built_type(p) if _world.roads.has(p) else "")
+		return _planned(Rules.cost_at(type, _world.tile_at(p), built_type(p) if _world.roads.has(p) else ""))
 	return price(type)
 
 
@@ -173,7 +174,17 @@ func copies(type: String) -> int:
 ## What the next building of `type` costs: its listed price, with 15% more for each production copy already standing
 ## (never past 4 times, see Rules.price). Homes, roads, bridges and the rest stay flat.
 func price(type: String) -> Dictionary:
-	return Rules.price(type, copies(type))
+	return _planned(Rules.price(type, copies(type)))
+
+
+## `cost` at the share a plan from a banked blueprint pays (each item rounded up, never below 1): the Kin have built it before.
+func _planned(cost: Dictionary) -> Dictionary:
+	if plan_share >= 1.0:
+		return cost
+	var out := {}
+	for id in cost:
+		out[id] = maxi(ceili(float(cost[id]) * plan_share - 0.0001), 1)
+	return out
 
 
 ## Why `type` can't be laid over the road or bridge already at p, or "" when it upgrades it: a higher road tier over a
