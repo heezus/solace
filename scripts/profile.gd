@@ -15,6 +15,8 @@ extends RefCounted
 ##     the small Starfall choices, the lean, the trust and the ending) and `last` (the latest ending with what the next run
 ##     is made from: its seed, its end trust and, after a Cataclysm, the ruins and the dormant Bloom patches). A version 1 or 2
 ##     profile loads with them empty (its `runs` is its `exoduses`).
+##   the blueprints (Step 7D): `blueprints`, the saved parts of towns (scripts/blueprints.gd). Only an Exodus banks the blueprints of the
+##     run that ends; any other ending keeps the ones banked before. A profile without them loads with none.
 ## absorb(state) merges a run (finished or in progress) into the profile: new ids are added at the end, ids
 ## already held keep their place, and absorbing the same run twice changes nothing.
 ## The profile is its own file (PATH), apart from the run save (scripts/run_save.gd): a run save holds no
@@ -41,6 +43,7 @@ var exoduses := 0  # how many times the Kith have chosen the Exodus
 var runs := 0  # how many runs have ended in an ending (the Exodus, the Cataclysm or the Time loop)
 var tellings: Array = []  # one record per ended run (Endings.telling), in order
 var last: Dictionary = {}  # the latest ending's handoff to the next run (Endings.handoff), {} before any
+var blueprints: Array = []  # the blueprints banked by an Exodus (scripts/blueprints.gd)
 var saved := true  # set_out: the file was written
 
 
@@ -57,6 +60,7 @@ func is_empty() -> bool:
 		and runs == 0
 		and tellings.is_empty()
 		and last.is_empty()
+		and blueprints.is_empty()
 	)
 
 
@@ -83,6 +87,9 @@ func bank(s, ending := "exodus") -> void:
 	runs += 1
 	if ending == "exodus":
 		exoduses += 1
+		blueprints = s.carry.blueprints.duplicate(true)  # the run's book: the ones it began with and the ones it saved
+		for bp in blueprints:
+			bp["banked"] = true  # from now on they are carried knowledge
 	tellings.append(Endings.telling(s, ending))
 	last = Endings.handoff(s, ending)
 
@@ -95,6 +102,9 @@ func carry() -> Carry:
 	c.echoes = echoes.duplicate()
 	c.exodus = runs
 	c.set_handoff(last)
+	c.blueprints = blueprints.duplicate(true)
+	for bp in c.blueprints:
+		bp["banked"] = true
 	if c.ending == "" and c.exodus > 0:
 		c.ending = "exodus"  # a version 2 profile: its runs all set out
 	return c
@@ -163,6 +173,7 @@ func to_dict() -> Dictionary:
 		"runs": runs,
 		"tellings": tellings.duplicate(true),
 		"last": last.duplicate(true),
+		"blueprints": blueprints.duplicate(true),
 	}
 
 
@@ -179,6 +190,7 @@ func from_dict(d) -> void:
 	runs = 0
 	tellings = []
 	last = {}
+	blueprints = []
 	if not is_profile(d):
 		return
 	merge(d["chronicle"], d["knowledge"])
@@ -194,6 +206,7 @@ func from_dict(d) -> void:
 		tellings = d["tellings"].filter(func(x): return typeof(x) == TYPE_DICTIONARY)
 	if typeof(d.get("last")) == TYPE_DICTIONARY:
 		last = d["last"].duplicate(true)
+	blueprints = Carry._dicts(d.get("blueprints", []))
 
 
 ## True when `d` looks like a profile this code can read.

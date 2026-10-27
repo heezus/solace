@@ -8,6 +8,7 @@ const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const TechPanel = preload("res://scripts/tech_panel.gd")
 const BuildBar = preload("res://scripts/build_bar.gd")
+const BlueprintPanel = preload("res://scripts/blueprint_panel.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
 const Overlays = preload("res://scripts/overlays.gd")
@@ -64,7 +65,6 @@ const FRAME_W := 4.0  # the cocoa frame round the map view
 const BANNER_SECONDS := 14.0  # how long the Bronze Dawn banner stays up
 const FIT_SETTLE_FRAMES := 3  # frames after a window resize while the bars settle to their new size
 const OUTLINE: Color = Art.OUTLINE
-const OUTLINE_W := 2.5
 const KITH: Color = Ui.KITH
 const SIDE_W := 264.0
 const BAD: Color = Ui.BAD
@@ -93,7 +93,6 @@ var ground := WorldGround.new()
 var road_tiers := RoadLayer.new()
 var popups: Array = []  # {pos: Vector2, text: String, t: float}
 var rubble: Array = []  # {pos: Vector2i, t: float}, torn-down buildings fading out
-
 var messages := Messages.new()
 var toasts: ToastStack
 var east_pointer: EastPointer  # the lasting pointer to the new land (after Bronze Dawn)
@@ -617,6 +616,7 @@ func _build_ui() -> void:
 	bottom_bar.craft_picked.connect(func(r): Hands.craft(state, r))
 	bottom_bar.tech_pressed.connect(func(): tech_panel.visible = not tech_panel.visible)
 	bottom_bar.demolish_pressed.connect(func(): placing = "" if placing == "demolish" else "demolish")
+	BlueprintPanel.attach(layer, state, self, bottom_bar)  # Step 7D: takes the map's mouse while a blueprint is saved or laid
 
 	# The side panel: Goals, and the Info section that also holds the selected building's card.
 	side_panel = SidePanel.new()

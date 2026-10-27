@@ -362,7 +362,8 @@ func test_profile_is_tolerant() -> void:
 				"exoduses",
 				"runs",
 				"tellings",
-				"last"
+				"last",
+				"blueprints"
 			]
 		),
 		"the profile's top-level keys"
@@ -405,7 +406,18 @@ func test_run_save_and_profile_stay_apart() -> void:
 		"nor any profile key deeper down"
 	)
 	var allowed := [
-		"version", "chronicle", "knowledge", "hints", "techs", "marks", "echoes", "exoduses", "runs", "tellings", "last"
+		"version",
+		"chronicle",
+		"knowledge",
+		"hints",
+		"techs",
+		"marks",
+		"echoes",
+		"exoduses",
+		"runs",
+		"tellings",
+		"last",
+		"blueprints"
 	]
 	t.check(profile.keys() == allowed, "the profile has only its own keys")
 	for key in RunSave.SECTIONS:
