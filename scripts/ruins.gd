@@ -43,7 +43,8 @@ static func _near_camp(s, p: Vector2i, within: int) -> bool:
 
 
 ## The dormant Bloom patches beside the largest of `ruins`: [[x, y], ...], each the first open grass two to four tiles from
-## its ruin (two tiles side by side), at least Data.ENDINGS["patches_min"] and at most "patches_max" (a town of few ruins gets the fewest).
+## its ruin (two tiles side by side) and Data.ENDINGS["patch_clear"] tiles or more from the Hearth, at least Data.ENDINGS["patches_min"]
+## and at most "patches_max" (a town of few ruins gets the fewest).
 static func patches_of(s, ruins: Array) -> Array:
 	var out: Array = []
 	if ruins.is_empty():
@@ -78,7 +79,8 @@ static func _open_near(s, from: Vector2i, taken: Dictionary) -> Vector2i:
 					and s.world.tile_at(p + Vector2i(1, 0)) == "grass"
 					and not taken.has(p)
 					and not taken.has(p + Vector2i(1, 0))
-					and not _near_camp(s, p, Data.ENDINGS["ruins_clear"] + 1)
+					and not _near_camp(s, p, Data.ENDINGS["patch_clear"] - 1)
+					and not _near_camp(s, p + Vector2i(1, 0), Data.ENDINGS["patch_clear"] - 1)
 				):
 					return p
 	return Vector2i(-1, -1)

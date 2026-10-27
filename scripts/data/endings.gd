@@ -79,6 +79,7 @@ const ENDINGS := {
 	"ruins_clear": 3,  # tiles round the Hearth where nothing is left
 	"patches_min": 2,  # the dormant Bloom patches, one beside each of the largest ruins
 	"patches_max": 4,
+	"patch_clear": 12,  # no dormant patch lies closer than this to the Hearth (tiles, either way)
 	"stone_min": 3,  # clearing a ruin gives its weight (what its building cost) / stone_per, between these
 	"stone_max": 20,
 	"stone_per": 25,
