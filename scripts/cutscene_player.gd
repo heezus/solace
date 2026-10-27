@@ -115,7 +115,7 @@ func enqueue(id: String) -> void:
 
 
 ## The stills of sequence `id` as they play now: the variant for how the strangers came or how the era ended, and one line
-## swapped when an earlier run holds a matching echo (Data.CUTSCENE_VARIANT_LINES). Each is {art, line}, and {portrait} when the still has one.
+## swapped when an earlier run holds a matching echo (Data.CUTSCENE_VARIANT_LINES). Each is {art, line}, plus {portrait} if it has one.
 func resolve(id: String) -> Array:
 	var def: Dictionary = Data.CUTSCENES[id]
 	var key := variant_key(def.get("by", ""))
