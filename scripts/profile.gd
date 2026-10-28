@@ -17,6 +17,9 @@ extends RefCounted
 ##     profile loads with them empty (its `runs` is its `exoduses`).
 ##   the Chronicle (Step 7G): `embers`, the hidden moments any telling has shown (scripts/chronicle.gd). Each telling's record also
 ##     keeps its numbers and a small map of its land, and the Embers it lit first. A profile without them loads with none.
+##   the name (Step 7): `kin_known`, true once the first ship's marks (glyph set 7) are read in any run, from then on the people are
+##     "Kin" on screen (scripts/kin_name.gd), and `kin_told`, true once the card that says so has been shown. A profile written before
+##     them has `kin_known` when it holds the story moment "ship_read".
 ##   the blueprints (Step 7D): `blueprints`, the saved parts of towns (scripts/blueprints.gd). Only an Exodus banks the blueprints of the
 ##     run that ends; any other ending keeps the ones banked before. A profile without them loads with none.
 ## absorb(state) merges a run (finished or in progress) into the profile: new ids are added at the end, ids
@@ -34,6 +37,7 @@ const VERSION := 3
 const OLDEST := 1  # the oldest version still read
 const PATH := "user://profile.json"
 const SECTIONS := ["chronicle", "knowledge"]
+const KIN_EVENT := "ship_read"  # the story moment of reading set 7 (Data.GOALS), the one that makes the people Kin
 
 var chronicle: Array = []  # story ids, in the order they first happened
 var knowledge: Array = []  # item ids, in the order they were first learned
@@ -47,6 +51,8 @@ var tellings: Array = []  # one record per ended run (Endings.telling), in order
 var last: Dictionary = {}  # the latest ending's handoff to the next run (Endings.handoff), {} before any
 var blueprints: Array = []  # the blueprints banked by an Exodus (scripts/blueprints.gd)
 var embers: Array = []  # the Embers found in any telling (Chronicle.embers_of), in the order they were first lit
+var kin_known := false  # the people are Kin: set 7 was read in a run (Profile.note_kin)
+var kin_told := false  # the card "Your people are now called Kin." has been shown
 var saved := true  # set_out: the file was written
 
 
@@ -65,6 +71,8 @@ func is_empty() -> bool:
 		and last.is_empty()
 		and blueprints.is_empty()
 		and embers.is_empty()
+		and not kin_known
+		and not kin_told
 	)
 
 
@@ -78,6 +86,7 @@ func absorb(s) -> void:
 func merge(story_ids: Array, item_ids: Array) -> void:
 	_add_all(chronicle, story_ids)
 	_add_all(knowledge, item_ids)
+	kin_known = kin_known or has_story(KIN_EVENT)
 
 
 ## Bank what the run in `s` taught into the carry: its techs, the marks it read and the echoes of the sets it read, and count
@@ -129,6 +138,23 @@ static func note_hint(id: String, path: String = PATH) -> bool:
 	profile.load_file(path)
 	_add_all(profile.hints, [id])
 	return profile.save(path)
+
+
+## Fold "the first ship's marks were read" into the profile saved at `path` and write it back: the people are Kin from now on, in
+## every run. `told` also notes that the card was shown. False when the file could not be written.
+static func note_kin(told := false, path: String = PATH) -> bool:
+	var profile := new()
+	profile.load_file(path)
+	profile.kin_known = true
+	profile.kin_told = profile.kin_told or told
+	return profile.save(path)
+
+
+## True when the profile saved at `path` says the people are Kin (a missing file says no).
+static func kin_known_at(path: String = PATH) -> bool:
+	var profile := new()
+	profile.load_file(path)
+	return profile.kin_known
 
 
 func knows(item: String) -> bool:
@@ -183,6 +209,8 @@ func to_dict() -> Dictionary:
 		"last": last.duplicate(true),
 		"blueprints": blueprints.duplicate(true),
 		"embers": embers.duplicate(),
+		"kin_known": kin_known,
+		"kin_told": kin_told,
 	}
 
 
@@ -201,6 +229,8 @@ func from_dict(d) -> void:
 	last = {}
 	blueprints = []
 	embers = []
+	kin_known = false
+	kin_told = false
 	if not is_profile(d):
 		return
 	merge(d["chronicle"], d["knowledge"])
@@ -219,6 +249,8 @@ func from_dict(d) -> void:
 	blueprints = Carry._dicts(d.get("blueprints", []))
 	if typeof(d.get("embers")) == TYPE_ARRAY:
 		_add_all(embers, d["embers"])
+	kin_known = kin_known or d.get("kin_known") == true
+	kin_told = d.get("kin_told") == true
 
 
 ## True when `d` looks like a profile this code can read.

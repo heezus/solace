@@ -14,6 +14,7 @@ extends RefCounted
 const Art = preload("res://scripts/art.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Data = preload("res://scripts/data.gd")
+const KinName = preload("res://scripts/kin_name.gd")
 const Overlays = preload("res://scripts/overlays.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Ui = preload("res://scripts/ui.gd")
@@ -362,4 +363,6 @@ func _paint_chip(ci: CanvasItem, box: Rect2, at: Vector2, text: String, col: Col
 	style.set_corner_radius_all(maxi(roundi(8.0 * Art.ui_k), 1))
 	style.shadow_size = maxi(roundi(3.0 * Art.ui_k), 1)
 	ci.draw_style_box(style, box)
-	ci.draw_string(ThemeDB.fallback_font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(14.0 * Art.ui_k), col)
+	ci.draw_string(
+		ThemeDB.fallback_font, at, KinName.say(text), HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(14.0 * Art.ui_k), col
+	)

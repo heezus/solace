@@ -94,6 +94,11 @@ static func is_fresh_run(s) -> bool:
 	return s.story.events.is_empty() and s.town.buildings.size() <= 1 and s.tech_tree.researched.is_empty()
 
 
+## True while sequence `id` is playing or waiting its turn.
+func pending(id: String) -> bool:
+	return current == id or queue.has(id)
+
+
 ## True while the fireside (after an ending) is playing or waiting its turn.
 func fireside_pending() -> bool:
 	return current == "fireside" or queue.has("fireside")

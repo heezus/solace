@@ -181,6 +181,9 @@ Codex's 29 paintings (docs/art/tellings) are wired by name, with no change to a 
 - **Map.** A standing ruin is `ruins` or `ruins_2` (by the tile and the map, `Rendered.telling`); ground a ruin was cleared from wears `ruins_cleared` while nothing is built on it; a dormant patch wears `bloom_dormant` until the tide begins; a crew at a relic shows `relic_dig`; the first ship's site is `first_wreck` or `first_wreck_2` (`scripts/telling_marks.gd`).
 - **Relics.** Each relic's 20 px icon (`relic_everburning_forge`, `relic_old_lantern`, `relic_founders_cart`) marks its ruin on the map in place of the gold dot, and the three sit under the Cataclysm's row on the ending card. The feed and the dig text stay words.
 
+## Kith, then Kin (Step 7)
+The people are Kith until set 7 is read, then Kin everywhere they are shown, in every later run (`kin_known` in the profile; scripts/kin_name.gd). The `kin_reveal` sequence has a third still, the Hearthkeeper over the fireside: "We were never only Kith. We are Kin." After it, a one-time card ("A new name", `kin_told` in the profile) says "Your people are now called Kin." The Lore page's line for the first ship reads "The Kith learned they were Kin...". See the decision log, 2026-10-28.
+
 ## The Chronicle as built (Step 7G)
 
 The book of every telling (`scripts/chronicle_book.gd`; the sky is worked out in `scripts/chronicle.gd`, the words are `scripts/chronicle_words.gd`). It reads the profile and nothing else, so a first run, its saves and its goldens are untouched.

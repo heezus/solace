@@ -10,7 +10,8 @@ const CutscenePlayer = preload("res://scripts/cutscene_player.gd")
 const CutsceneSettings = preload("res://scripts/cutscene_settings.gd")
 
 const PHASE_A := ["opening", "bronze_dawn", "falling_star", "first_contact", "starfall_end"]
-const OTHER_ART := {"next_telling": "next_", "fireside": "ending_"}  # sequences that also show stills named for another moment
+# sequences that also show stills named for another moment
+const OTHER_ART := {"next_telling": "next_", "fireside": "ending_", "kin_reveal": "fireside_"}
 const SETTINGS_PATH := "user://test_cutscenes.cfg"
 
 var t  # the runner, tests/run_tests.gd
