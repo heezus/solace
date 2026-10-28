@@ -12,6 +12,7 @@ extends "res://tests/autoplay_bronze.gd"
 ## ending card is put away (the era over), or `max_seconds` pass.
 
 const Expedition = preload("res://scripts/expedition.gd")
+const OldShip = preload("res://scripts/old_ship.gd")
 const Starfall = preload("res://scripts/starfall.gd")
 
 const PACK_ROPE := 12  # rope kept in the stores for the Post: _orders() sends a standard pack at this much
@@ -158,17 +159,28 @@ func _guess() -> void:
 		if set_id == "" or f.locked.has(set_id):
 			continue
 		var want: String = Data.GLYPHS[g]["word"]
-		for i in Data.GLYPH_WORDS.size():
+		for i in OldShip.words_for(g).size():
 			if f.guesses.get(g, "") == want:
 				break
 			f.cycle_guess(g)
 
 
-## The Post sends parties to the Wreck on its own while the Wall still lacks marks (and the stores can pay the pack).
+## The Post sends parties to the Wreck on its own while the Wall still lacks marks (and the stores can pay the pack). Once the Wreck
+## has given all it has, a later run's party goes on to the old marks: What Broke at the largest ruin of a Cataclysm run, the others
+## at the first ship's site (Step 7F); the AI player uses everything the earlier runs showed.
 func _orders() -> void:
-	var o: Dictionary = s.starfall.orders
+	var f: Starfall = s.starfall
+	var o: Dictionary = f.orders
 	if not Expedition.has_post(s):
 		return
 	o["target"] = "wreck"
+	var more: bool = f.wreck_has_more() or not f.wreck_found
+	if not more:
+		if OldShip.has_more(f, "old_ruin"):
+			o["target"] = "old_ruin"
+			more = true
+		elif f.old_ship.x >= 0 and OldShip.has_more(f):
+			o["target"] = "old_ship"
+			more = true
 	o["pack"] = "standard" if int(s.economy.inv.get("rope", 0)) >= PACK_ROPE else "light"
-	o["keep"] = s.starfall.wreck_has_more() or not s.starfall.wreck_found
+	o["keep"] = more
