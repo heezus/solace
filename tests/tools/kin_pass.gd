@@ -17,6 +17,7 @@ const LINE := "A Kith was born. We were never only Kith. We are Kin."
 
 var frame := 0
 var problems: Array = []
+var early: Label
 var label: Label
 var button: Button
 var rich: RichTextLabel
@@ -38,8 +39,17 @@ func _init() -> void:
 ## Called once per frame; true ends the run.
 func _process(_delta: float) -> bool:
 	frame += 1
+	if frame == 1:  # a title screen of a profile that is Kin already: the name is set the moment the scene is built
+		early = Label.new()
+		root.add_child(early)
+		early.text = "Kith"
+		KinName.set_known(true)
 	if frame == 2:
-		KinName.install()
+		_expect(
+			early.get_total_character_count() == 3,
+			"a control built before the Translation was in is shaped again, as Kin"
+		)
+		KinName.set_known(false)
 		_expect(KinName.known == false, "the people begin as Kith")
 		label.text = LINE
 		button.text = "Kith: 3"

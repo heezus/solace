@@ -34,6 +34,7 @@ static func say(text: String) -> String:
 
 
 ## Put the Translation in the TranslationServer (once, and only with a running scene tree). Nothing reads differently until `known`.
+## The Holder goes in at the end of the frame (a scene may be mid-setup) and puts the Translation in as it arrives.
 static func install() -> void:
 	var tree := Engine.get_main_loop() as SceneTree
 	if _hook != null or tree == null:
@@ -41,11 +42,10 @@ static func install() -> void:
 	var hook := Hook.new()
 	hook.filter = say
 	hook.locale = "en"
-	TranslationServer.add_translation(hook)
 	_hook = hook
 	var holder := Holder.new()
 	holder.hook = hook
-	tree.root.add_child(holder)
+	tree.root.add_child.call_deferred(holder)
 
 
 ## Change the name on screen, and have every control shape its text again. Does nothing when it is already so.
@@ -69,10 +69,15 @@ class Hook:
 		return StringName(said) if said != String(src_message) else &""
 
 
-## Takes the Translation out again as the game closes: a script's Translation left in the TranslationServer aborts the exit.
+## Puts the Translation in as it enters the tree and takes it out again as the game closes: a script's Translation left in the
+## TranslationServer aborts the exit.
 class Holder:
 	extends Node
 	var hook: Translation
+
+	func _enter_tree() -> void:
+		TranslationServer.add_translation(hook)
+		get_tree().root.propagate_notification.call_deferred(Node.NOTIFICATION_TRANSLATION_CHANGED)
 
 	func _exit_tree() -> void:
 		TranslationServer.remove_translation(hook)
