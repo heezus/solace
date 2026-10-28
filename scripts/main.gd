@@ -898,16 +898,7 @@ func _draw() -> void:
 		var top_mid := (Vector2(view.get_center().x, view.position.y + 12.0) - position) / scale.x
 		Art.pill(self, top_mid, "Paused · Space to resume", GOAL_COLOR, OUTLINE, 16)
 
-	var font := ThemeDB.fallback_font
-	for pop in popups:
-		var pos: Vector2 = pop["pos"] + Vector2(-20, -10 - pop["t"] * 30) * Art.ui_k
-		var a: float = 1.0 - pop["t"] / 1.2
-		var px := roundi(16.0 * Art.ui_k)
-		draw_string_outline(
-			font, pos, pop["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, px, roundi(5.0 * Art.ui_k), Color(OUTLINE, a)
-		)
-		var col: Color = pop.get("col", Ui.TEXT)
-		draw_string(font, pos, pop["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(col, a))
+	PopFeed.draw(self, popups)
 
 
 ## A Standing Stone's reach: under the cursor while placing one, around each one while hovering one.

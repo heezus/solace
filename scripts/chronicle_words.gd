@@ -338,7 +338,7 @@ const LAYERS := [
 		"title": "The Kin",
 		"event": "ship_read",
 		"text":
-		"The ship that fell before ours was full of children. The Kith are Kin of the Lumen, who came home and did not know it.",
+		"The ship that fell before ours was full of children. The Kith learned they were Kin of the Lumen, who came home and did not know it.",
 	},
 	{
 		"title": "The broken world",

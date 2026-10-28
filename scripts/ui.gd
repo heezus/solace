@@ -3,6 +3,7 @@ extends RefCounted
 ## Everything is built in code, so these keep the look in one place.
 
 const Data = preload("res://scripts/data.gd")
+const KinName = preload("res://scripts/kin_name.gd")
 const Art = preload("res://scripts/art.gd")
 const Rules = preload("res://scripts/rules.gd")
 const Buildings = preload("res://scripts/buildings.gd")
@@ -154,9 +155,10 @@ static func key_hint(b: Button, suffix: String, solid_action: bool = false) -> v
 static func _draw_key_hint(b: Button, suffix: String, solid_action: bool) -> void:
 	var font := b.get_theme_font("font")
 	var px := b.get_theme_font_size("font_size")
-	var width := font.get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
+	var text := KinName.say(b.text)
+	var width := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
 	var at := Vector2((b.size.x - width) / 2.0, (b.size.y - font.get_height(px)) / 2.0 + font.get_ascent(px))
-	var prefix := b.text.trim_suffix(suffix)
+	var prefix := text.trim_suffix(suffix)
 	var col := LINE if solid_action else ACTION if b.button_pressed else TEXT
 	if b.disabled:
 		col = Color(TEXT_DIM, 0.6)

@@ -76,6 +76,10 @@ jobs:
         run: |
           tests/tools/run_checked.sh ./godot --headless --fixed-fps 60 --path . -s tests/tools/menu_pass.gd
 
+      - name: The people are Kin on screen once the first ship is read, and the game closes cleanly
+        run: |
+          tests/tools/run_checked.sh ./godot --headless --fixed-fps 60 --path . -s tests/tools/kin_pass.gd
+
       - name: Play log and its era-end question card
         run: |
           tests/tools/run_checked.sh ./godot --headless --fixed-fps 60 --path . -s tests/tools/play_log_pass.gd

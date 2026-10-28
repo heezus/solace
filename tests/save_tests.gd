@@ -364,7 +364,9 @@ func test_profile_is_tolerant() -> void:
 				"tellings",
 				"last",
 				"blueprints",
-				"embers"
+				"embers",
+				"kin_known",
+				"kin_told"
 			]
 		),
 		"the profile's top-level keys"
@@ -419,7 +421,9 @@ func test_run_save_and_profile_stay_apart() -> void:
 		"tellings",
 		"last",
 		"blueprints",
-		"embers"
+		"embers",
+		"kin_known",
+		"kin_told"
 	]
 	t.check(profile.keys() == allowed, "the profile has only its own keys")
 	for key in RunSave.SECTIONS:

@@ -2,23 +2,31 @@ extends Control
 ## A plain card over a dimmed map: a title, some words and one button per choice. It puts itself up for the run's first famine and for
 ## each season of strain (design-system/24-balance.md): `poll` is asked every frame, opens the card when one is due and says so, and
 ## the owner pauses while it is up and resumes on `closed`. A season's answer goes to the Seasons block from here. A run that
-## begins after an ending opens with that ending's card ("A new land" for the Exodus, "The ruins", "Another valley"), once.
+## begins after an ending opens with that ending's card ("A new land" for the Exodus, "The ruins", "Another valley"), once. It also
+## changes the people's name: once the first ship's marks are read and the Hearthkeeper has told it, the people are Kin
+## (scripts/kin_name.gd) and the card says so, once.
 ## Signal: closed(look) fires once when a button is pressed; `look` is true when the player asked to see the Hearth.
 
 signal closed(look: bool)
 
+const CutscenePlayer = preload("res://scripts/cutscene_player.gd")
 const Data = preload("res://scripts/data.gd")
+const KinName = preload("res://scripts/kin_name.gd")
+const Profile = preload("res://scripts/profile.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
 const Ui = preload("res://scripts/ui.gd")
 
 const WIDTH := 460.0
 
+var profile_path := Profile.PATH
 var _box: VBoxContainer
 var _state  # the Sim, kept while a season's card is up so the answer can reach its Seasons block
 var _season := false  # the card now up is a season's
+var _kin := false  # the card now up is the one that names the Kin
 
 
 func setup() -> void:
+	KinName.set_known(Profile.kin_known_at(profile_path))  # the game scene is built: Kin if an earlier run read set 7
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_STOP  # the map behind it takes no clicks while it is up
 	var dim := ColorRect.new()
@@ -47,6 +55,14 @@ func place(area: Rect2) -> void:
 func poll(s, blocked: bool) -> bool:
 	if blocked or visible:
 		return false
+	_kin = false
+	if _kin_due(s):
+		_season = false
+		_kin = true
+		Profile.note_kin(true, profile_path)
+		KinName.set_known(true)
+		open(KinName.CARD_TITLE, KinName.CARD_TEXT, [KinName.CARD_BUTTON])
+		return true
 	if s.carry.exodus > 0 and not s.carry.told:
 		s.carry.told = true
 		_season = false
@@ -71,6 +87,18 @@ func poll(s, blocked: bool) -> bool:
 		open(Data.FAMINE_TITLE, words, [Data.FAMINE_LOOK, Data.FAMINE_CARRY_ON])
 		return true
 	return false
+
+
+## True once the first ship is read in this run and the Hearthkeeper's telling of it has been seen (or is off): the people become Kin.
+func _kin_due(s) -> bool:
+	if KinName.known or not s.story.has_event(Profile.KIN_EVENT):
+		return false
+	if not is_inside_tree():
+		return true
+	for player in get_tree().get_nodes_in_group(CutscenePlayer.GROUP):
+		if player.pending("kin_reveal"):
+			return false
+	return true
 
 
 ## What the Kith carry, one line each: the techs, the marks and the echoes (the Lumen building each opens).
@@ -121,4 +149,4 @@ func _pick(index: int) -> void:
 	visible = false
 	if _season:
 		_state.seasons.choose(_state, index)
-	closed.emit(not _season and index == 0)
+	closed.emit(not _season and not _kin and index == 0)

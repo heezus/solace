@@ -9,6 +9,7 @@ const RelicTests = preload("res://tests/relic_tests.gd")
 const OldMarksTests = preload("res://tests/old_marks_tests.gd")
 const TellingArtTests = preload("res://tests/telling_art_tests.gd")
 const ChronicleTests = preload("res://tests/chronicle_tests.gd")
+const KinNameTests = preload("res://tests/kin_name_tests.gd")
 const Carry = preload("res://scripts/carry.gd")
 const Clearing = preload("res://scripts/clearing.gd")
 const CutscenePlayer = preload("res://scripts/cutscene_player.gd")
@@ -50,6 +51,7 @@ func run(runner) -> void:
 	OldMarksTests.new().run(t)
 	TellingArtTests.new().run(t)
 	ChronicleTests.new().run(t)
+	KinNameTests.new().run(t)
 	_clean()
 
 

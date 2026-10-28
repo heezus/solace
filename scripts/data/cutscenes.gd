@@ -157,6 +157,11 @@ const CUTSCENES := {
 		[
 			{"art": "kin_reveal_1", "line": "The ship that fell before ours was full of children."},
 			{"art": "kin_reveal_2", "line": 'Sela said, "We did not find you. We came home."'},
+			{
+				"art": "fireside_1",
+				"portrait": "portrait_kin_elder",
+				"line": 'The Hearthkeeper said, "We were never only Kith. We are Kin."'  # kept as written (KinName.KEPT)
+			},
 		],
 	},
 	"broken_world":

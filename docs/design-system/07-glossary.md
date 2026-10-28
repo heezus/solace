@@ -6,7 +6,7 @@ Every canonical name and term, alphabetical. Spell it here once; spell it this w
 |---|---|---|---|
 | Bloom, the | Faction | A living, alien growth that consumes worlds. It hunted the Lumen to Solace. Future third adversary; the Life force of the triad. | World & Lore |
 | Bronze Dawn | Tech node / era gate | Research that ends the stone age and opens the next era. | First Playable |
-| Kith, the | Faction | The player's people, starting in the stone age. Working name. | World & Lore |
+| Kith, the | Faction | The player's people, starting in the stone age. Working name. From the reading of glyph set 7 on, the text says **Kin** (the code and the saves keep "kith"). | World & Lore |
 | Lumen, the | Faction | Magic-wielding refugees who arrived on a fallen star, fleeing a greater enemy. Rivals to the player; can be traded with, fought, or bridged. | World & Lore |
 | Solace | Place; game title | The planet where the game takes place, and the title of the game. | World & Lore |
 | Star shard | Item | A faintly glowing stone from the ancient star fall; the first, sparing trace of magic. | World & Lore |

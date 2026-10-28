@@ -3,6 +3,7 @@ extends RefCounted
 ## Static helpers that draw onto whichever CanvasItem is passed in, during its draw.
 
 const Data = preload("res://scripts/data.gd")
+const KinName = preload("res://scripts/kin_name.gd")
 const Rendered = preload("res://scripts/rendered_art.gd")
 
 const OUTLINE := Color("1b1b1f")
@@ -91,6 +92,7 @@ static func pill(ci: CanvasItem, at: Vector2, text: String, bg: Color, fg: Color
 	var font := ThemeDB.fallback_font
 	var k := ui_k
 	var px := maxi(roundi(size * k), 1)
+	text = KinName.say(text)
 	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x + 14.0 * k
 	var h := px + 8.0 * k
 	var r := Rect2(at - Vector2(w / 2.0, 0), Vector2(w, h))
@@ -108,6 +110,7 @@ static func pill(ci: CanvasItem, at: Vector2, text: String, bg: Color, fg: Color
 static func outlined_text(ci: CanvasItem, pos: Vector2, text: String, size: int, col: Color) -> void:
 	var font := ThemeDB.fallback_font
 	var px := maxi(roundi(size * ui_k), 1)
+	text = KinName.say(text)
 	ci.draw_string_outline(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, maxi(roundi(4.0 * ui_k), 1), OUTLINE)
 	ci.draw_string(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, col)
 

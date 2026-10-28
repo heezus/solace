@@ -14,6 +14,7 @@ signal card_clicked(tech: String)
 signal hover_changed(tech: String)
 
 const Data = preload("res://scripts/data.gd")
+const KinName = preload("res://scripts/kin_name.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
@@ -354,7 +355,7 @@ func _text(at: Vector2, s: String, px: int, col: Color, width := -1.0, heavy := 
 	draw_string(
 		bold if heavy else ThemeDB.fallback_font,
 		at,
-		s,
+		KinName.say(s),
 		HORIZONTAL_ALIGNMENT_LEFT,
 		width,
 		px,

@@ -13,6 +13,7 @@ const MenuFonts = preload("res://scripts/menu_fonts.gd")
 const BuildInfo = preload("res://scripts/build_info.gd")
 const ChronicleBook = preload("res://scripts/chronicle_book.gd")
 const ChronicleWords = preload("res://scripts/chronicle_words.gd")
+const KinName = preload("res://scripts/kin_name.gd")
 const Profile = preload("res://scripts/profile.gd")
 const Launch = preload("res://scripts/launch.gd")
 const SaveSlots = preload("res://scripts/save_slots.gd")
@@ -53,6 +54,7 @@ static func art_choice(found: Array, roll: float) -> String:
 
 
 func _ready() -> void:
+	KinName.set_known(Profile.kin_known_at(profile_path))  # Kin on the whole screen once an earlier run read the first ship
 	Ui.apply_theme()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var found := [ART_PATH, ALT_ART_PATH].filter(func(path): return ResourceLoader.exists(path))
