@@ -132,6 +132,25 @@ The bar (a bot Cataclysm run on map 1 won in every era, 8 to 25 minutes an era):
 
 Verdict: **CONCERNS**. Every era is won on all three maps and the tide still takes buildings (6 to 19), but map 4's Livewire is 7.9 minutes, 0.1 under the 8-minute floor. The director accepted that as bot noise: the floor exists to catch trivially short eras. A check at 10 tiles (the director's one extra try) won maps 2 (Livewire 9.1) and 4 (15.2), but the tide took only 2 buildings on map 2 (toothless) and map 1 was still computing after an hour (a stuck or very slow Livewire), so 12 stays. The AI player's relic dig also waits 30 seconds before it tries a failed dig again (`tests/autoplay_relics.gd`).
 
+### The old square survives; the old edge burns (run 3, 2026-10-28)
+
+A Cataclysm that came after an Exodus (run 3) failed where the first Cataclysm run did not. Cause, measured on the bots' towns of 150 to 180 buildings: (1) up to 60 ruins lay as close as 4 tiles to the Hearth, so the new town's roads and workshops met rubble (baseline map 1 Ironfall 39 minutes; the old-marks map 2 never built a Bloomery or the Teardown Bench, its kilns idle on "Needs Clay"); (2) the dormant patches lay 12 tiles out, which is the new town's own edge, so the tide took 147 to 152 buildings on maps 1 and 4 (Livewire lost). The clay stall was the same rubble, not a bot bug: with the old square clear map 2 builds on and Ironfall takes 13.2 minutes.
+
+The fix, one rule each: nothing within 8 tiles of the Hearth is left as ruins (`ruins_clear` 8); a Road laid on rubble clears it and gives its Stone (a ruin that holds a relic is dug out first); a building refused on rubble says "Rubble is in the way. Lay a road over it to clear it (gives Stone)."; each dormant patch lies at least 20 tiles out (`patch_clear`) and beyond the old town's 90% edge (`patch_edge`, `Ruins.edge_of`), 6 or more tiles from another patch, 2 to 4 of them. The patches now lie in the land that grows east and south, so they wake with the tide once that land has grown (it has by Livewire).
+
+Bot chains, minutes of game time, run 3 Cataclysm after an Exodus on the same seed (baseline = the bot before the old-marks rules, old marks = with them). Tide reach is what the tide would take of the town at the start of Livewire, at 5 and 10 minutes (20 s a tile):
+
+| Map | Path | Run 3 eras (Stone age / Bronze / Starfall / Ironfall / Livewire) | Run 3 total | Livewire buildings lost | Tide reach 5 / 10 min | Run 4 total |
+|---|---|---|---|---|---|---|
+| 1 | baseline | 10.7 / 12.4 / 12.0 / 18.0 / 6.8 | 59.9 | 1 | 7 / 33 of 101 | 56.8 |
+| 2 | baseline | 10.6 / 19.6 / 12.0 / 13.9 / 6.7 | 62.8 | 1 | 25 / 60 of 107 | 56.6 |
+| 4 | baseline | 11.2 / 8.7 / 12.0 / 14.8 / 9.2 | 55.9 | 1 | 8 / 49 of 98 | 59.0 |
+| 1 | old marks | 10.7 / 9.5 / 12.3 / 13.3 / 9.1 | 54.9 | 8 | 9 / 36 of 98 | 51.9 |
+| 2 | old marks | 10.6 / 12.2 / 12.0 / 13.2 / 6.8 | 54.8 | 0 | 23 / 46 of 102 | 55.4 |
+| 4 | old marks | 11.2 / 9.8 / 12.3 / 13.5 / 10.2 | 57.0 | 1 | 8 / 49 of 98 | 56.9 |
+
+Every run 3 era is won on all six, and every run 3 is 54.8 to 62.8 minutes (bar 50 to 75). Runs 2 are unchanged (the code is only on the Cataclysm's path) and runs 4 match the earlier chains where those finished (51.9, 56.6, 56.9). Before: tide reach at 12 tiles was 37 / 56, 45 / 70 and 35 / 65 buildings at 5 / 10 minutes on the three baseline-era cells against 0 / 22 after an Exodus; now it is 7 to 25 at 5 minutes and 33 to 60 at 10, so the Cataclysm still has teeth but the town is not lost. Verdict: **CONCERNS**. Three cells' Livewire is 6.7 to 6.8 minutes, under the 8-minute floor: a run 3 knows the techs of runs 1 and 2 (each costs 30%), its research waits shrink, and the tide takes 0 to 1 buildings before the era ends. Every other era is 8.7 to 19.6 except baseline map 1 Ironfall at 18.0 (was 39).
+
 ## Old marks as built (Step 7F)
 
 Three glyph sets beyond the six, kept in `Data.ENDINGS["old"]` and read by `OldShip` (`scripts/old_ship.gd`); `Data.GLYPH_SETS`, `set_order`, the "of 6" count and the Warning are untouched, so a first run and its goldens do not move. The old sets are optional: the Warning does not wait on them.
