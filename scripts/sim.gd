@@ -103,8 +103,8 @@ func _init() -> void:
 	town.on_net = livewire.powered_at
 	town.overgrown = tide.is_overgrown_at
 	town.on_bloom = tide.bloom_at
-	town.relic_under = func(p): return Ruins.holds_relic(self, p)
-	town.rubble_stone = func(p): return Ruins.stone_at(self, p)
+	var weak: WeakRef = weakref(self)  # a lambda that held the Sim itself would keep it alive for ever
+	town.rubble_at = func(p): return Ruins.rubble(weak.get_ref(), p)
 	town.lesson_has = teardown.knows
 	tech_tree.gift_has = starfall.read  # a tech may wait on a gift read or a Lesson learned (Ironfall)
 	tech_tree.lesson_has = teardown.knows

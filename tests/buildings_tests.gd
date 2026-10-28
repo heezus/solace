@@ -247,7 +247,7 @@ func test_a_road_clears_rubble_and_nothing_else_goes_on_it() -> void:
 	var b := _block(_rich(), ["haulers", "farming", "knapping"])
 	var rubble := Vector2i(4, 2)
 	_world.set_tile(rubble, "ruins")
-	b.rubble_stone = func(_p): return 7
+	b.rubble_at = func(_p): return {"relic": false, "stone": 7}
 	t.check(b.placement_error("road", rubble) == "", "a road may be laid on rubble")
 	t.check(
 		b.placement_error("dwelling", rubble) == Data.ENDINGS["rubble_in_the_way"],
@@ -261,12 +261,12 @@ func test_a_road_clears_rubble_and_nothing_else_goes_on_it() -> void:
 		),
 		"in words"
 	)
-	b.relic_under = func(_p): return true
+	b.rubble_at = func(_p): return {"relic": true, "stone": 7}
 	t.check(
 		b.placement_error("road", rubble) == Data.ENDINGS["relic_ruin_kept"],
 		"a road does not clear a ruin that holds a relic"
 	)
-	b.relic_under = func(_p): return false
+	b.rubble_at = func(_p): return {"relic": false, "stone": 7}
 	var stone: int = _eco.inv["stone"]
 	var wood: int = _eco.inv["wood"]
 	t.check(b.place("road", rubble) == {"kind": "road", "cleared": "ruins"}, "the road reports the rubble it cleared")

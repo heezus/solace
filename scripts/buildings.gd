@@ -51,10 +51,9 @@ var on_net: Callable = func(_p): return false
 var overgrown: Callable = func(_p): return false
 ## (Vector2i) -> bool: is this tile Bloom ground the tide took? Nothing is built on it.
 var on_bloom: Callable = func(_p): return false
-## (Vector2i) -> bool: does a relic lie under the rubble at this tile (a road does not clear it; it is dug out first)? Sim connects it.
-var relic_under: Callable = func(_p): return false
-## (Vector2i) -> int: the Stone the rubble at this tile gives when a road clears it. Sim connects it to Ruins.
-var rubble_stone: Callable = func(_p): return 0
+## (Vector2i) -> {"relic": a relic lies under the rubble at this tile (a road does not clear it: it is dug out first), "stone": the Stone
+## a road clearing it gives}. Sim connects it to Ruins.
+var rubble_at: Callable = func(_p): return {"relic": false, "stone": 0}
 var _world: World
 var _economy: Economy
 var _research: Research
@@ -129,7 +128,7 @@ func placement_error(type: String, p: Vector2i) -> String:
 
 ## Why a road can't go on `tile` at p: "" when it can (grassland, Forest it fells, Rocks it cuts through, rubble it clears).
 func _road_error(type: String, p: Vector2i, tile: String) -> String:
-	if tile == "ruins" and relic_under.call(p):
+	if tile == "ruins" and rubble_at.call(p)["relic"]:
 		return Data.ENDINGS["relic_ruin_kept"]
 	if tile == "river":
 		return "Roads can't cross the river: build a Wooden Bridge"
@@ -259,7 +258,7 @@ func place(type: String, p: Vector2i, focus := "") -> Dictionary:
 			cleared = tile
 			_world.set_tile(p, "grass")  # a mountain pass, the trees felled for the road, or the rubble cleared
 		if tile == "ruins":  # the rubble gives its Stone, as clearing it with Demolish does (scripts/clearing.gd)
-			var stone: int = rubble_stone.call(p)
+			var stone: int = rubble_at.call(p)["stone"]
 			_economy.add("stone", stone)
 			_economy.note("stone", stone, Data.FLOW_HAND_SOURCE)
 		if Data.BUILDINGS[type].get("stone", false):

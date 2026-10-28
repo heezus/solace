@@ -126,9 +126,10 @@ static func _fits(s, p: Vector2i, taken: Dictionary, min_dist: int, chosen: Arra
 	return true
 
 
-## A relic lies under the rubble at p: a road does not clear it, it is dug out first (scripts/scouting.gd).
-static func holds_relic(s, p: Vector2i) -> bool:
-	return Relics.tip(s, p) != ""
+## What a road laid on the rubble at p would meet: {"relic": a relic lies under it (a road does not clear it, it is dug out first,
+## scripts/scouting.gd), "stone": the Stone clearing it gives}.
+static func rubble(s, p: Vector2i) -> Dictionary:
+	return {"relic": Relics.tip(s, p) != "", "stone": stone_at(s, p)}
 
 
 ## The tile of a ruin or of a patch of the carry (a ruin is {"pos": [x, y], "weight": n}, a patch [x, y]).
