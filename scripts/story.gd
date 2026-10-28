@@ -20,9 +20,14 @@ const Roads = preload("res://scripts/roads.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Power = preload("res://scripts/power.gd")
 
+## The story moments that open an era after the stone age, in order: Bronze Dawn, the Starfall (the star falls), Ironfall, Livewire.
+const ERA_OPENINGS := ["bronze_dawn", "star_falling", Data.IRONFALL_EVENT, Data.LIVEWIRE_BEGUN]
+
 var events: Array = []  # story ids, in the order they happened
 ## The first cairn went up before the Falling Star fell: a run flag, saved, that a future first contact will read.
 var cairn_before_landing := false
+## Era-opening story id -> the game minute it was first seen (Story.update), saved, for the Chronicle's minutes per era.
+var stamps: Dictionary = {}
 var goals_done: Dictionary = {}  # goal id -> true; goals stay done once met, even after the items are spent
 var south_note := ""  # why the south is not held now (Gate.note), for the goal's words
 var south_lost := false  # the south was held and is not now
@@ -101,6 +106,25 @@ func update(s) -> void:
 	if events.has(Data.LIVEWIRE_EVENT) and not card_up and not events.has(Data.LIVEWIRE_BEGUN):
 		record(Data.LIVEWIRE_BEGUN)  # the Wires Hum card is put away: Livewire begins
 		_chart_seam(s)
+	for id in ERA_OPENINGS:
+		if events.has(id) and not stamps.has(id):
+			stamps[id] = snappedf(s.seasons.time / 60.0, 0.1)
+
+
+## The minutes each era the run has reached took, the stone age first, the last one running to `total` minutes: [] for a run whose
+## openings were not stamped (a save from before they were kept).
+func era_minutes(total: float) -> Array:
+	var starts := [0.0]
+	for id in ERA_OPENINGS:
+		if stamps.has(id):
+			starts.append(float(stamps[id]))
+		elif events.has(id):
+			return []
+	var out: Array = []
+	for i in starts.size():
+		var end: float = starts[i + 1] if i + 1 < starts.size() else total
+		out.append(snappedf(maxf(end - starts[i], 0.0), 0.1))
+	return out
 
 
 ## The south goal is not a latch: Skyward asks for the south held at the moment it is bought (Gate.south_held), so the goal
@@ -321,6 +345,7 @@ func to_dict() -> Dictionary:
 		"events": events.duplicate(),
 		"goals_done": Codec.keys(goals_done),
 		"cairn_before_landing": cairn_before_landing,
+		"stamps": stamps.duplicate(),
 	}
 
 
@@ -329,3 +354,9 @@ func from_dict(d: Dictionary) -> void:
 	events = Codec.strings(d.get("events", []))
 	goals_done = Codec.to_set(d.get("goals_done", []))
 	cairn_before_landing = bool(d.get("cairn_before_landing", false))
+	stamps = {}
+	var saved = d.get("stamps", {})
+	if typeof(saved) == TYPE_DICTIONARY:
+		for id in ERA_OPENINGS:
+			if saved.has(id) and typeof(saved[id]) in [TYPE_INT, TYPE_FLOAT]:
+				stamps[id] = float(saved[id])

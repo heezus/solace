@@ -10,9 +10,10 @@ extends RefCounted
 const Data = preload("res://scripts/data.gd")
 const Words = preload("res://scripts/chronicle_words.gd")
 
-const MAP_STRIDE := 3  # tiles per cell of a telling's small map
+const ERA_NAMES := [Data.ERA_STONE, Data.ERA_BRONZE, Data.ERA_STARFALL, Data.ERA_IRONFALL, Data.ERA_LIVEWIRE]
+const MAP_STRIDE := 1  # tiles per cell of a telling's small map: one a tile, drawn small in the book
 # What a cell shows when several tiles fall in it, first wins: building, Bloom, road, ruins, river, trees, rock, grass.
-const MAP_ORDER := "#b=r~t^."
+const MAP_ORDER := "#b=fr~t^."
 
 
 ## The option of star `kind` that `telling` (a record of Endings.telling) took, "" when the star was never asked.
@@ -100,6 +101,15 @@ static func numbers_line(telling: Dictionary) -> String:
 	)
 
 
+## The minutes each era took in one line ("Stone Age 10 · Bronze Dawn 10 ..."), "" for a record from before they were kept.
+static func eras_line(telling: Dictionary) -> String:
+	var eras: Array = telling.get("eras", [])
+	var parts: Array = []
+	for i in mini(eras.size(), ERA_NAMES.size()):
+		parts.append("%s %d" % [ERA_NAMES[i], roundi(float(eras[i]))])
+	return " · ".join(parts)
+
+
 ## The words of `voice` ("elder", "sela", ...) as a name.
 static func voice_name(voice: String) -> String:
 	return Words.VOICES.get(voice, voice)
@@ -130,7 +140,8 @@ static func embers_of(s) -> Array:
 
 
 ## The small map of the land the run in `s` (a Sim) ends on: {"cell", "w", "h", "rows"}, a row a string of one character a cell
-## (MAP_ORDER names them: "#" a building, "b" Bloom, "=" a road, "r" ruins, "~" a river, "t" trees, "^" rock and ore, "." grass).
+## (MAP_ORDER names them: "#" a building, "b" Bloom, "=" a road, "f" a field, "r" ruins, "~" a river, "t" trees, "^" rock and ore,
+## "." grass).
 static func map_of(s) -> Dictionary:
 	var w: int = s.world.width
 	var h: int = s.world.height
@@ -153,13 +164,15 @@ static func _cell(s, cx: int, cy: int, w: int, h: int) -> String:
 
 
 static func _mark(s, p: Vector2i) -> String:
-	if s.town.built_type(p) != "":
+	if s.town.building_at.has(p):
 		return "#"
 	var tile: String = s.world.tile_at(p)
 	if tile.begins_with("bloom_"):
 		return "b"
 	if s.world.roads.has(p):
 		return "="
+	if s.world.fields.has(p) or s.world.flax_fields.has(p):
+		return "f"
 	match tile:
 		"ruins":
 			return "r"

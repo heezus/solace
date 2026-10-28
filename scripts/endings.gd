@@ -31,7 +31,7 @@ static func telling(s, ending: String) -> Dictionary:
 	for id in Data.ENDINGS["choices"]:
 		if s.story.has_event(id):
 			choices.append(id)
-	return {
+	var record := {
 		"run": s.carry.exodus + 1,
 		"seed": s.world.map_seed,
 		"choices": choices,
@@ -45,6 +45,10 @@ static func telling(s, ending: String) -> Dictionary:
 		"embers": Chronicle.embers_of(s),
 		"map": Chronicle.map_of(s),
 	}
+	var eras: Array = s.story.era_minutes(s.seasons.time / 60.0)
+	if not eras.is_empty():
+		record["eras"] = eras  # minutes in each era reached, the stone age first
+	return record
 
 
 ## What the next run is made from, after `ending`: its seed (the Cataclysm keeps the map), the trust the run ended at, the lean

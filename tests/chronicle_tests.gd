@@ -34,6 +34,10 @@ func run(runner) -> void:
 	test_every_page_plays_its_scenes_again()
 	test_the_book_opens_from_the_menus_and_between_tellings()
 	test_a_scene_replays_in_the_variant_of_its_telling()
+	test_the_sky_reads_as_a_sky()
+	test_numbers_and_map_belong_to_the_ending_star()
+	test_a_map_draws_buildings_roads_and_fields_apart()
+	test_each_era_keeps_its_minutes()
 	_clean()
 
 
@@ -330,3 +334,150 @@ func test_a_scene_replays_in_the_variant_of_its_telling() -> void:
 		book.player.state.story.events.size() <= 1 and book._sim.story.events.size() <= 1, "and nothing is recorded"
 	)
 	book.free()
+
+
+## A profile of `count` tellings, each of the same four choices (so the sky's scatter differs only by the telling).
+func _long_profile(count: int) -> Profile:
+	var p := Profile.new()
+	for i in count:
+		p.tellings.append(
+			_telling(i + 1, ["cairn_raised", "hunger_shared", "shards_given", "dark_kept"], "neighbours", "exodus")
+		)
+	p.runs = count
+	return p
+
+
+func test_the_sky_reads_as_a_sky() -> void:
+	for count in [1, 3, 5]:
+		var book := ChronicleBook.new()
+		book.setup()
+		book.open(_long_profile(count))
+		var patches: Array = []
+		var spread_ok := true
+		var inside := true
+		var apart := true
+		for number in range(1, count + 1):
+			var at: Dictionary = book._points[number]
+			patches.append(at["patch"])
+			var ys: Array = at["stars"].map(func(p): return p.y)
+			spread_ok = spread_ok and ys.max() - ys.min() >= 40.0
+			for p in at["stars"] + at["embers"]:
+				inside = inside and at["patch"].has_point(p)
+			for i in at["stars"].size():
+				for j in range(i + 1, at["stars"].size()):
+					apart = apart and at["stars"][i].distance_to(at["stars"][j]) >= 30.0
+		t.check(spread_ok, "%d telling(s): the stars are scattered, not in a row" % count)
+		t.check(inside, "%d telling(s): every star stays in its patch of sky" % count)
+		t.check(apart, "%d telling(s): no two stars of a telling lie on top of each other" % count)
+		var overlap := false
+		for i in patches.size():
+			for j in range(i + 1, patches.size()):
+				overlap = overlap or patches[i].intersects(patches[j])
+		t.check(not overlap, "%d telling(s): each has its own patch" % count)
+		t.check(
+			book._sky.custom_minimum_size == Vector2(ChronicleBook.SKY_WIDTH, ChronicleBook.SKY_HEIGHT),
+			"the sky fills the page"
+		)
+		book.free()
+	var a := ChronicleBook.new()
+	a.setup()
+	a.open(_long_profile(3))
+	var b := ChronicleBook.new()
+	b.setup()
+	b.open(_long_profile(3))
+	t.check(a._points[2]["stars"] == b._points[2]["stars"], "the same tellings give the same sky every time")
+	t.check(a._points[1]["stars"] != a._points[2]["stars"], "and two tellings are not drawn alike")
+	var weights := {}
+	for entry in a.star_buttons:
+		if entry["run"] == 1 and not entry["kind"].begins_with("ember_"):
+			weights[entry["kind"]] = entry["button"].weight
+	t.check(
+		weights["ending"] > weights["lean"] and weights["lean"] > weights["cairn"],
+		"the ending is brightest, the lean between"
+	)
+	a.free()
+	b.free()
+
+
+func test_numbers_and_map_belong_to_the_ending_star() -> void:
+	var book := ChronicleBook.new()
+	book.setup()
+	var profile := _profile()
+	profile.tellings[0]["minutes"] = 50.0
+	var rows: Array = []
+	for y in 12:
+		rows.append(".".repeat(30))
+	profile.tellings[0]["map"] = {"cell": 1, "w": 30, "h": 12, "rows": rows}
+	book.open(profile)
+	book._select(1, "cairn")
+	var drawn := func(): return book._detail.get_children().filter(func(c): return "map" in c).size()
+	var watches := func(): return book._detail.find_children("*", "Button", true, false).size()
+	t.check(drawn.call() == 0 and watches.call() == 0, "the Cairn star shows only its lines")
+	var words: Array = book._detail.find_children("*", "Label", true, false).map(func(l): return l.text)
+	t.check(not words.any(func(w): return w.contains("minutes")), "and no numbers")
+	book._select(1, "ending")
+	t.check(drawn.call() == 1 and watches.call() >= 1, "the ending star shows the map and the scenes")
+	var map = book._detail.get_children().filter(func(c): return "map" in c)[0]
+	t.check(
+		is_equal_approx(map.custom_minimum_size.x, ChronicleBook.MAP_WIDTH) and map.custom_minimum_size.y == 88.0,
+		"the map is drawn 220 wide, in the land's shape"
+	)
+	words = book._detail.find_children("*", "Label", true, false).map(func(l): return l.text)
+	t.check(words.any(func(w): return w.contains("50 minutes")), "with the telling's numbers")
+	book.free()
+
+
+func test_a_map_draws_buildings_roads_and_fields_apart() -> void:
+	var s := Sim.new()
+	s.generate(SEED)
+	var hearth := s.world.camp_pos
+	var road := Vector2i(-1, -1)
+	var field := Vector2i(-1, -1)
+	for y in s.world.height:
+		for x in s.world.width:
+			var p := Vector2i(x, y)
+			if s.world.tile_at(p) != "grass" or s.town.building_at.has(p):
+				continue
+			if road.x < 0:
+				road = p
+			elif field.x < 0 and p.distance_to(road) > 3.0:
+				field = p
+	s.world.roads[road] = true
+	s.world.fields[field] = true
+	var rows: Array = Chronicle.map_of(s)["rows"]
+	t.check(rows[hearth.y][hearth.x] == "#", "a building is a building")
+	t.check(rows[road.y][road.x] == "=", "a road is not drawn as one")
+	t.check(rows[field.y][field.x] == "f", "nor is a field")
+	var buildings := 0
+	for row in rows:
+		buildings += String(row).count("#")
+	t.check(buildings >= 1 and buildings <= s.town.building_at.size(), "only a building's tiles are lit")
+
+
+func test_each_era_keeps_its_minutes() -> void:
+	var s := Sim.new()
+	s.generate(SEED)
+	t.check(s.story.era_minutes(5.0) == [5.0], "a run still in the stone age has one era")
+	var marks := {"bronze_dawn": 600.0, "star_falling": 1500.0, Data.IRONFALL_EVENT: 2400.0}
+	for id in marks:
+		s.seasons.time = marks[id]
+		s.story.record(id)
+		s.story.update(s)
+	t.check(s.story.era_minutes(50.0) == [10.0, 15.0, 15.0, 10.0], "each era runs from its opening to the next")
+	var back := Sim.new()
+	back.generate(SEED)
+	back.story.from_dict(s.story.to_dict())
+	t.check(back.story.era_minutes(50.0) == [10.0, 15.0, 15.0, 10.0], "and the minutes are saved with the run")
+	var old := s.story.to_dict()
+	old.erase("stamps")
+	back.story.from_dict(old)
+	t.check(back.story.era_minutes(50.0).is_empty(), "a save from before they were kept says so")
+	s.seasons.time = 3000.0
+	var record := Endings.telling(s, "exodus")
+	t.check(record.get("eras", []) == [10.0, 15.0, 15.0, 10.0], "a telling keeps them")
+	t.check(
+		Chronicle.eras_line(record).begins_with("Stone Age 10 · Bronze Dawn 15 · Starfall 15"),
+		"and reads them in a line"
+	)
+	record.erase("eras")
+	t.check(Chronicle.eras_line(record) == "", "a telling from before has only its total")

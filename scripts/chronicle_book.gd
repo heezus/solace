@@ -19,17 +19,22 @@ const Sim = preload("res://scripts/sim.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Words = preload("res://scripts/chronicle_words.gd")
 
-const ROW_HEIGHT := 112.0  # one constellation's row of the sky
-const SKY_WIDTH := 540.0
+const SKY_WIDTH := 760.0  # the sky fills the page; the entry sits beside it
+const SKY_HEIGHT := 720.0
 const DETAIL_WIDTH := 330.0
-const MAP_BOX := 150.0
+const MAP_WIDTH := 220.0  # a telling's end map is drawn this wide
+const PATCH_MARGIN := Vector2(54.0, 46.0)  # a constellation keeps this far in from its patch of sky
+const STAR_GAP := 52.0  # stars of one telling sit at least this far apart
+const DUST := 190  # faint background stars
 const SKY_COLOR := Color("0d1a22")
 const STAR_COLOR := Color("eee7d6")
 const EMBER_COLOR := Color("ffd27a")
+const NEBULA_COLOR := Color("6f8fc8")
 const CELL_COLORS := {
-	"#": Color("dcc08a"),
+	"#": Color("ffb040"),
 	"b": Color("b24a9a"),
 	"=": Color("8d7b5c"),
+	"f": Color("c2b05a"),
 	"r": Color("6e665c"),
 	"~": Color("3a86c8"),
 	"t": Color("3d6b34"),
@@ -50,6 +55,7 @@ var _detail: VBoxContainer
 var _selected := {}  # {run, kind}
 var _close: Button
 var _sim: Sim
+var _points := {}  # telling run -> {stars: [Vector2], embers: [Vector2], patch: Rect2}
 
 
 func setup() -> void:
@@ -178,11 +184,13 @@ func _build_tellings() -> Control:
 		box.add_child(_wrapped(Words.EMPTY_SKY, Ui.TEXT_DIM, 520.0))
 		return box
 	_sky = Control.new()
-	_sky.custom_minimum_size = Vector2(SKY_WIDTH, ROW_HEIGHT * sky.size() + 20.0)
+	_sky.custom_minimum_size = Vector2(SKY_WIDTH, SKY_HEIGHT)
 	_sky.draw.connect(_draw_sky.bind(sky))
 	box.add_child(_sky)
+	_points.clear()
 	for row in sky.size():
-		_add_stars(sky, row)
+		_layout(sky, row)
+		_add_stars(sky[row])
 	_detail = VBoxContainer.new()
 	_detail.custom_minimum_size = Vector2(DETAIL_WIDTH, 0)
 	_detail.add_theme_constant_override("separation", 6)
@@ -192,79 +200,113 @@ func _build_tellings() -> Control:
 	return box
 
 
-## The stars of constellation `row` as buttons over the sky, and the Embers it lit above them.
-func _add_stars(sky: Array, row: int) -> void:
+## The patch of sky of telling number `row` of `count`: one column up to three tellings, two after that.
+func _patch(row: int, count: int) -> Rect2:
+	var cols := 1 if count <= 3 else 2
+	var rows := ceili(count / float(cols))
+	var cell := Vector2(SKY_WIDTH / cols, SKY_HEIGHT / rows)
+	return Rect2(Vector2((row % cols) * cell.x, floorf(row / float(cols)) * cell.y), cell)
+
+
+## Where the stars and Embers of telling `row` of `sky` sit in its patch: scattered, never a row, and the same every time, since
+## the scatter is seeded from what that telling chose.
+func _layout(sky: Array, row: int) -> void:
 	var telling: Dictionary = sky[row]
+	var patch := _patch(row, sky.size())
+	var area := Rect2(patch.position + PATCH_MARGIN, patch.size - PATCH_MARGIN * 2.0)
+	var stars: Array = telling["stars"]
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(
+		(
+			"%d|%s|%s|%s"
+			% [telling["run"], telling["lean"], telling["ending"], "|".join(stars.map(func(x): return x["option"]))]
+		)
+	)
+	var points: Array = []
+	for i in stars.size():
+		var best := Vector2.ZERO
+		var far := -1.0
+		for attempt in 14:  # the try that sits furthest from the stars before it
+			var x := area.position.x + area.size.x * (i + rng.randf_range(0.1, 0.9)) / float(stars.size())
+			var y := area.position.y + area.size.y * rng.randf_range(0.0, 1.0)
+			if x < patch.position.x + 150.0:
+				y = maxf(y, patch.position.y + 74.0)  # keep clear of the telling's name
+			var p := Vector2(x, y)
+			var gap := 1000.0
+			for q in points:
+				gap = minf(gap, p.distance_to(q))
+			if gap > far:
+				far = gap
+				best = p
+			if gap >= STAR_GAP:
+				break
+		points.append(best)
+	var embers: Array = []
+	for j in telling["embers"].size():
+		var anchor: Vector2 = points[mini(j, points.size() - 1)] if not points.is_empty() else area.get_center()
+		var p: Vector2 = anchor + Vector2.from_angle(rng.randf_range(0.0, TAU)) * rng.randf_range(34.0, 52.0)
+		embers.append(Vector2(clampf(p.x, area.position.x, area.end.x), clampf(p.y, area.position.y, area.end.y)))
+	_points[telling["run"]] = {"stars": points, "embers": embers, "patch": patch}
+
+
+## The stars of one constellation as buttons over the sky, and the Embers it lit beside them.
+func _add_stars(telling: Dictionary) -> void:
+	var at: Dictionary = _points[telling["run"]]
 	for i in telling["stars"].size():
 		var star: Dictionary = telling["stars"][i]
-		_star(telling["run"], star["kind"], _star_at(row, i, telling["stars"].size()), star["name"], false)
+		_star(telling["run"], star["kind"], at["stars"][i], star["name"], false)
 	for i in telling["embers"].size():
 		var id: String = telling["embers"][i]
-		_star(
-			telling["run"],
-			"ember_" + id,
-			_star_at(row, i, telling["embers"].size()) - Vector2(0, 40),
-			Words.EMBERS[id]["name"],
-			true
-		)
+		_star(telling["run"], "ember_" + id, at["embers"][i], Words.EMBERS[id]["name"], true)
 
 
 func _star(run: int, kind: String, at: Vector2, tip: String, ember: bool) -> void:
 	var b := StarButton.new()
 	b.ember = ember
+	b.weight = 2 if kind == "ending" else (1 if kind == "lean" else 0)
 	b.flat = true
 	b.focus_mode = Control.FOCUS_NONE
-	b.custom_minimum_size = Vector2(32, 32)
-	b.size = Vector2(32, 32)
-	b.position = at - Vector2(16, 16)
+	b.custom_minimum_size = Vector2(40, 40)
+	b.size = Vector2(40, 40)
+	b.position = at - Vector2(20, 20)
 	b.tooltip_text = tip
 	b.pressed.connect(_select.bind(run, kind))
 	_sky.add_child(b)
 	star_buttons.append({"run": run, "kind": kind, "button": b})
 
 
-## Where star `i` of `n` in constellation `row` sits: along a gentle wave across the sky.
-func _star_at(row: int, i: int, n: int) -> Vector2:
-	var span := SKY_WIDTH - 110.0
-	var x := 70.0 + (span * i / float(maxi(n - 1, 1)) if n > 1 else span * 0.5)
-	return Vector2(x, 62.0 + row * ROW_HEIGHT + sin(i * 1.7 + row) * 16.0)
-
-
 func _draw_sky(sky: Array) -> void:
 	_sky.draw_rect(Rect2(Vector2.ZERO, _sky.size), SKY_COLOR)
 	var font := ThemeDB.fallback_font
-	for dust in 60:
-		var p := Vector2(fposmod(dust * 97.0, SKY_WIDTH), fposmod(dust * 53.0, _sky.size.y))
-		_sky.draw_circle(p, 1.0, Color(STAR_COLOR, 0.25))
+	var dust := RandomNumberGenerator.new()
+	dust.seed = 11
+	for i in DUST:  # a faint starfield behind everything
+		var p := Vector2(dust.randf_range(0.0, _sky.size.x), dust.randf_range(0.0, _sky.size.y))
+		_sky.draw_circle(p, dust.randf_range(0.6, 1.5), Color(STAR_COLOR, dust.randf_range(0.08, 0.38)))
 	for row in sky.size():
-		var n: int = sky[row]["stars"].size()
+		var at: Dictionary = _points[sky[row]["run"]]
+		var patch: Rect2 = at["patch"]
+		for ring in 9:  # a soft glow behind each constellation
+			_sky.draw_circle(patch.get_center(), patch.size.y * (0.48 - ring * 0.05), Color(NEBULA_COLOR, 0.014))
 		_sky.draw_string(
 			font,
-			Vector2(14, 22.0 + row * ROW_HEIGHT),
+			patch.position + Vector2(18, 30),
 			Words.OPEN_TELLING % sky[row]["run"],
 			HORIZONTAL_ALIGNMENT_LEFT,
 			-1,
 			Ui.MIN_TEXT,
-			Ui.TEXT_DIM
+			Color(Ui.TEXT_DIM, 0.7)
 		)
-		for i in range(1, n):
-			_sky.draw_line(_star_at(row, i - 1, n), _star_at(row, i, n), Color(STAR_COLOR, 0.55), 1.5, true)
-		var embers: int = sky[row]["embers"].size()
-		for i in embers:
+		var stars: Array = at["stars"]
+		for i in range(1, stars.size()):
+			_sky.draw_line(stars[i - 1], stars[i], Color(STAR_COLOR, 0.4), 1.2, true)
+		for i in at["embers"].size():
+			var anchor: Vector2 = stars[mini(i, stars.size() - 1)]
+			_sky.draw_line(at["embers"][i], anchor, Color(EMBER_COLOR, 0.25), 1.0, true)
+		if row + 1 < sky.size() and not stars.is_empty() and not _points[sky[row + 1]["run"]]["stars"].is_empty():
+			# a line of light from this ending to the next telling's first star
 			_sky.draw_line(
-				_star_at(row, i, embers) - Vector2(0, 40),
-				_star_at(row, mini(i, n - 1), n),
-				Color(EMBER_COLOR, 0.25),
-				1.0,
-				true
-			)
-		if row + 1 < sky.size() and n > 0 and sky[row + 1]["stars"].size() > 0:  # a line of light from this ending to the next telling
-			_sky.draw_line(
-				_star_at(row, n - 1, n),
-				_star_at(row + 1, 0, sky[row + 1]["stars"].size()),
-				Color(EMBER_COLOR, 0.45),
-				2.0,
-				true
+				stars[stars.size() - 1], _points[sky[row + 1]["run"]]["stars"][0], Color(EMBER_COLOR, 0.5), 2.0, true
 			)
 
 
@@ -292,13 +334,20 @@ func _select(run: int, kind: String) -> void:
 				_detail.add_child(_voiced(whisper["voice"], whisper["text"], true))
 			if star["bloom"] != "":
 				_detail.add_child(_voiced("bloom", star["bloom"], true))
+	if kind != "ending":
+		return  # the other stars show only their lines; the telling's numbers, map and scenes sit with its ending
 	var numbers := Chronicle.numbers_line(telling)
 	if numbers != "":
 		_detail.add_child(_wrapped(numbers, Ui.TEXT_DIM, DETAIL_WIDTH))
+	var eras := Chronicle.eras_line(telling)
+	if eras != "":
+		_detail.add_child(_wrapped(eras, Ui.TEXT_DIM, DETAIL_WIDTH))
 	if telling.get("map", {}).has("rows"):
 		var map := MiniMap.new()
 		map.map = telling["map"]
-		map.custom_minimum_size = Vector2(MAP_BOX, MAP_BOX)
+		var rows: Array = map.map["rows"]
+		var cols: int = String(rows[0]).length()
+		map.custom_minimum_size = Vector2(MAP_WIDTH, ceilf(MAP_WIDTH * rows.size() / float(cols)))
 		_detail.add_child(map)
 	var began := _ending_before(run)
 	_detail.add_child(
@@ -511,17 +560,20 @@ class StarButton:
 	extends Button
 	var lit := false
 	var ember := false
+	var weight := 0  # 0 a choice, 1 the lean, 2 the ending: bigger and brighter
 
 	func _draw() -> void:
 		var core := Color("ffd27a") if ember else Color("eee7d6")
 		var at := size / 2.0
+		var radius: float = 3.0 if ember else [4.0, 5.5, 8.0][weight]
 		if lit:
-			draw_circle(at, 15.0, Color(core, 0.3))
-		draw_circle(at, 9.0, Color(core, 0.16))
-		draw_circle(at, 3.0 if ember else 4.5, core)
+			draw_circle(at, radius + 10.0, Color(core, 0.3))
+		draw_circle(at, radius * 2.4, Color(core, 0.1 + 0.07 * weight))
+		draw_circle(at, radius * 1.5, Color(core, 0.18 + 0.1 * weight))
+		draw_circle(at, radius, core if weight < 2 else Color.WHITE)
 
 
-## A telling's land at its end, one small square a cell (Chronicle.map_of).
+## A telling's land at its end, one small square a tile (Chronicle.map_of), with the buildings lit.
 class MiniMap:
 	extends Control
 	var map: Dictionary = {}
@@ -536,4 +588,13 @@ class MiniMap:
 		for y in rows.size():
 			for x in cols:
 				var mark := String(rows[y])[x]
-				draw_rect(Rect2(Vector2(x, y) * cell, Vector2(cell, cell)), CELL_COLORS.get(mark, CELL_COLORS["."]))
+				var color: Color = CELL_COLORS.get(mark, CELL_COLORS["."])
+				if mark == "." or mark == "t":
+					color = color.darkened(0.035 * ((x * 37 + y * 91) % 4))  # a little grain, so open ground is not flat
+				var at := Vector2(floorf(x * cell), floorf(y * cell))
+				draw_rect(Rect2(at, Vector2(ceilf((x + 1) * cell) - at.x, ceilf((y + 1) * cell) - at.y)), color)
+		if cell >= 2.0:  # a thin edge round each building tile, so a town reads as a town
+			for y in rows.size():
+				for x in cols:
+					if String(rows[y])[x] == "#":
+						draw_rect(Rect2(Vector2(x, y) * cell, Vector2(cell, cell)), Color("5b4524"), false, 1.0)
