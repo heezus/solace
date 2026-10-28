@@ -39,6 +39,7 @@ func run(runner) -> void:
 	test_place_pays_and_books_a_building()
 	test_a_refused_place_changes_nothing()
 	test_place_clears_rocks_and_trees()
+	test_a_road_clears_rubble_and_nothing_else_goes_on_it()
 	test_place_a_bridge_and_a_field()
 	test_built_type()
 	test_demolish_a_building()
@@ -240,6 +241,39 @@ func test_place_clears_rocks_and_trees() -> void:
 	t.check(felled == {"kind": "road", "cleared": "tree"}, "a road through Forest reports the felling")
 	t.check(_world.tile_at(Vector2i(5, 2)) == "grass" and _eco.inv["wood"] == wood - 2, "the trees are felled")
 	t.check(b.buildings.size() == 1, "roads are not buildings")
+
+
+func test_a_road_clears_rubble_and_nothing_else_goes_on_it() -> void:
+	var b := _block(_rich(), ["haulers", "farming", "knapping"])
+	var rubble := Vector2i(4, 2)
+	_world.set_tile(rubble, "ruins")
+	b.rubble_stone = func(_p): return 7
+	t.check(b.placement_error("road", rubble) == "", "a road may be laid on rubble")
+	t.check(
+		b.placement_error("dwelling", rubble) == Data.ENDINGS["rubble_in_the_way"],
+		"a building's refusal names the rubble"
+	)
+	t.check(b.placement_error("field", rubble) == Data.ENDINGS["rubble_in_the_way"], "so does a field's")
+	t.check(
+		(
+			Data.ENDINGS["rubble_in_the_way"].contains("Rubble")
+			and Data.TILES["ruins"]["hint"].begins_with("Rubble. Lay a road")
+		),
+		"in words"
+	)
+	b.relic_under = func(_p): return true
+	t.check(
+		b.placement_error("road", rubble) == Data.ENDINGS["relic_ruin_kept"],
+		"a road does not clear a ruin that holds a relic"
+	)
+	b.relic_under = func(_p): return false
+	var stone: int = _eco.inv["stone"]
+	var wood: int = _eco.inv["wood"]
+	t.check(b.place("road", rubble) == {"kind": "road", "cleared": "ruins"}, "the road reports the rubble it cleared")
+	t.check(_world.tile_at(rubble) == "grass" and _world.roads.has(rubble), "the rubble is gone and the road is laid")
+	t.check(
+		_eco.inv["stone"] == stone + 7 and _eco.inv["wood"] == wood - 2, "its Stone is given, the road costs its wood"
+	)
 
 
 func test_place_a_bridge_and_a_field() -> void:
