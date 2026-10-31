@@ -141,9 +141,9 @@ func quit_to_title() -> void:
 	get_tree().change_scene_to_file(TITLE_SCENE)
 
 
-## True once Skyward stands: only then can the Kith end the telling.
+## True once the telling can end: Skyward stands in the first telling, the Skyreach in the second and later ones.
 func set_out_open() -> bool:
-	return state.story.events.has(Data.SKYWARD_EVENT)
+	return state.story.events.has(Data.SKYWARD_EVENT if state.carry.is_first() else Data.SKYREACH["done"])
 
 
 ## Choose an ending: the ending card goes up for this run's number and the Lumen lean the Starfall era ended with.

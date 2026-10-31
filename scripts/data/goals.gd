@@ -44,6 +44,8 @@ const STORY_EVENTS := {
 	"livewire_lit": "The wires hummed, and the age of iron was done",
 	"livewire_begun": "The wires were strung, and the Kith began to write their orders",
 	"skyward_raised": "A mast went up over the town, and something answered",
+	"skyreach_begun": "The sky opened, and the Kith began to read it",
+	"skyreach_done": "The Skyreach stood, and answered the sky",
 	"ending_exodus": "The Kith set out for a new land",
 	"ending_cataclysm": "The old town was broken, and the Kith woke in its ruins",
 	"ending_loop": "The planet turned back, and only the Kith remembered",

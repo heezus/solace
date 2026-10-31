@@ -21,7 +21,7 @@ const Buildings = preload("res://scripts/buildings.gd")
 const Power = preload("res://scripts/power.gd")
 
 ## The story moments that open an era after the stone age, in order: Bronze Dawn, the Starfall (the star falls), Ironfall, Livewire.
-const ERA_OPENINGS := ["bronze_dawn", "star_falling", Data.IRONFALL_EVENT, Data.LIVEWIRE_BEGUN]
+const ERA_OPENINGS := ["bronze_dawn", "star_falling", Data.IRONFALL_EVENT, Data.LIVEWIRE_BEGUN, "skyreach_begun"]
 
 var events: Array = []  # story ids, in the order they happened
 ## The first cairn went up before the Falling Star fell: a run flag, saved, that a future first contact will read.
@@ -106,6 +106,8 @@ func update(s) -> void:
 	if events.has(Data.LIVEWIRE_EVENT) and not card_up and not events.has(Data.LIVEWIRE_BEGUN):
 		record(Data.LIVEWIRE_BEGUN)  # the Wires Hum card is put away: Livewire begins
 		_chart_seam(s)
+	if events.has(Data.SKYWARD_EVENT) and not s.carry.is_first() and not card_up and not events.has("skyreach_begun"):
+		record("skyreach_begun")  # the Skyward card is put away, from the second telling on: the sky is open
 	for id in ERA_OPENINGS:
 		if events.has(id) and not stamps.has(id):
 			stamps[id] = snappedf(s.seasons.time / 60.0, 0.1)
@@ -156,6 +158,8 @@ func _chart_seam(s) -> void:
 
 ## The checklist in force: the stone age's, and the second era's once Bronze Dawn is discovered.
 func goal_list() -> Array:
+	if "skyreach_begun" in events:
+		return Data.SKYREACH["goals"]
 	if Data.LIVEWIRE_BEGUN in events:
 		return Data.GOALS_ERA5
 	if Data.IRONFALL_EVENT in events:
@@ -285,6 +289,8 @@ func _livewire_goal_met(s, id: String) -> bool:
 			return not s.tide.burnt.is_empty()
 		"orders_written", "south_held":
 			return s.gate.deed(id)
+		"survey_three", "stage_1", "stage_2", "stage_3":
+			return s.skyreach.goal(s, id)  # era 6 (Skyreach): the sky and the Skyreach's stages
 	return false
 
 

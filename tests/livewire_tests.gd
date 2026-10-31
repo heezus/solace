@@ -24,6 +24,7 @@ const Art = preload("res://scripts/art.gd")
 const OrdersTests = preload("res://tests/orders_tests.gd")
 const TideTests = preload("res://tests/tide_tests.gd")
 const SkywardTests = preload("res://tests/skyward_tests.gd")
+const SkyreachTests = preload("res://tests/skyreach_tests.gd")
 
 ## The three techs of stage 1, the seven of stage 2 (the tide), and the four of stage 3 (the factories and the gate).
 const STAGE_ONE := ["power_poles", "order_board", "generator"]
@@ -54,6 +55,7 @@ func run(runner) -> void:
 	OrdersTests.new().run(runner, self)  # the Order Board, the goals, the saves and the panels
 	TideTests.new().run(runner, self)  # stage 2: the tide, Arc Lamps, the Scorcher, Tide Watch
 	SkywardTests.new().run(runner, self)  # stage 3: the Factory Floor, the Dynamo, Chain Orders, the Skyward gate
+	SkyreachTests.new().run(runner, self)  # Step 8A: the sky, the landfalls, the Skyreach
 
 
 # --- Helpers ------------------------------------------------------------------

@@ -21,6 +21,7 @@ const Fuel = preload("res://scripts/fuel.gd")
 const Ruins = preload("res://scripts/ruins.gd")
 
 const SIDES := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+const IMMUNE := ["camp", "firebreak", "skyreach_tower"]  # the Bloom never overgrows these (the Skyreach is held by the sky's own light)
 const PATCH_TILES := ["bloom_ground", "bloom_spore", "bloom_root", "bloom_sap"]
 
 var begun := false
@@ -77,6 +78,22 @@ func tick(s, delta: float) -> void:
 	_overgrown(s, delta)
 	if s.tech_tree.researched.has("tide_watch"):
 		_watch(s, delta)
+
+
+## A landfall of Skyreach (scripts/skyreach.gd): a seed fell at p and the Bloom takes every tile within `radius` of it that it may,
+## then spreads as it does from any other. It wakes the tide first if the tide is not yet up. Returns the tiles taken.
+func land(s, p: Vector2i, radius: int) -> int:
+	if not begun:
+		begin(s)
+	var taken := 0
+	for dy in range(-radius, radius + 1):
+		for dx in range(-radius, radius + 1):
+			var t := p + Vector2i(dx, dy)
+			if dx * dx + dy * dy <= radius * radius + 1 and s.world.in_bounds(t) and _state(s, t) == 0:
+				_grow(s, t)
+				taken += 1
+	rev += 1
+	return taken
 
 
 ## Start the tide: every patch tile is Bloom already, and its neighbours join in their turn.
@@ -217,7 +234,7 @@ func _grow(s, p: Vector2i) -> void:
 	grown[p] = true
 	rev += 1
 	_convert(s, p)
-	if s.town.building_at.has(p) and s.town.built_type(p) not in ["camp", "firebreak"]:
+	if s.town.building_at.has(p) and s.town.built_type(p) not in IMMUNE:
 		hit[p] = 0.0
 		s.town.road_rev += 1  # the nets are counted again without it
 	_spread_from(s, p)
@@ -386,7 +403,7 @@ func project(s) -> void:
 	eta = {}
 	var targets := {}
 	for b in s.town.buildings:
-		if not hit.has(b["pos"]) and not grown.has(b["pos"]) and b["type"] not in ["camp", "firebreak"]:
+		if not hit.has(b["pos"]) and not grown.has(b["pos"]) and b["type"] not in IMMUNE:
 			targets[b["pos"]] = true
 	var heap: Array = []  # [tide time, tile], the soonest on top
 	var due: Dictionary = {}

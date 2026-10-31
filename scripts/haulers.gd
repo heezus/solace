@@ -13,6 +13,7 @@ const Homes = preload("res://scripts/homes.gd")
 const Relics = preload("res://scripts/relics.gd")
 const Teardown = preload("res://scripts/teardown.gd")
 const Steam = preload("res://scripts/steam.gd")
+const Skyreach = preload("res://scripts/skyreach.gd")
 
 const URGENT := 45.0  # game seconds a building may stand stopped for a hauler before it goes ahead of every nearer one
 const STOCK_SECONDS := 40.0  # a workshop is brought what it works through in this long (never over a load, never under two rounds)
@@ -149,6 +150,8 @@ static func birth_order(kith_name: String) -> int:
 static func stock_wanted(s, cand: Dictionary) -> Dictionary:
 	if Homes.is_home(cand):
 		return {} if s.tide.is_overgrown(cand) else Homes.wanted(cand)
+	if cand["type"] == Skyreach.TOWER:
+		return Skyreach.wanted(cand)  # the Skyreach's next stage, all at once
 	if cand["paused"] or s.livewire.is_held(cand) or s.tide.is_overgrown(cand) or Work.enough(s, cand):
 		return {}
 	if Buildings.is_tamed(cand):

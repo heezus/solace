@@ -707,10 +707,10 @@ func _watch_flavor() -> void:
 ## The story moments that do something on screen: the Falling Star, Livewire and Skyward end an era with a card (the game waits
 ## behind it) and go into the profile, the save that outlives a run.
 func _on_story(id: String) -> void:
-	if id in ["star_falling", Data.LIVEWIRE_EVENT, Data.SKYWARD_EVENT]:
+	if id in ["star_falling", Data.LIVEWIRE_EVENT, Data.SKYWARD_EVENT, Data.SKYREACH["done"]]:
 		paused = true
 		state.story.card_up = true  # now: the rest of this frame's ticks must not begin the next era
-		era_card.open(id)
+		era_card.open(id, not state.carry.is_first())
 		if not Profile.note_run(state):
 			_toast(Data.PROFILE_UNSAVED, 6.0)
 
