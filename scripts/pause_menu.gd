@@ -26,6 +26,7 @@ const HintSettings = preload("res://scripts/hint_settings.gd")
 const PlayLogSettings = preload("res://scripts/play_log_settings.gd")
 
 const WIDTH := 300.0
+const ROOM_MARGIN := 18.0  # space kept free above and below the card
 
 var load_button: Button
 var set_out_button: Button
@@ -34,6 +35,9 @@ var cutscene_toggle: CheckButton
 var hints_toggle: CheckButton
 var playlog_toggle: CheckButton
 var status: Label
+var scroll: ScrollContainer  # holds the column of buttons; as tall as the column, or as tall as the window allows
+var v: VBoxContainer
+var _room := 0.0  # the height the menu may take, set by place()
 
 
 func setup() -> void:
@@ -49,10 +53,13 @@ func setup() -> void:
 	var card := PanelContainer.new()
 	card.add_theme_stylebox_override("panel", Ui.panel_style(Ui.PANEL, 14))
 	centre.add_child(card)
-	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 10)
+	scroll = ScrollContainer.new()  # a window shorter than the menu scrolls it (see _fit), never cuts it off
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	card.add_child(scroll)
+	v = VBoxContainer.new()
+	v.add_theme_constant_override("separation", 6)
 	v.custom_minimum_size = Vector2(WIDTH, 0)
-	card.add_child(v)
+	scroll.add_child(v)
 	var title := Ui.label(Data.PAUSE_TITLE, 28)
 	MenuFonts.style_display(title, 30)
 	title.add_theme_color_override("font_color", Ui.HIGHLIGHT)
@@ -81,7 +88,7 @@ func setup() -> void:
 	keys.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	keys.visible = false
 	MenuFonts.style_caption(keys)
-	v.add_child(_button("Keys", false, func(): keys.visible = not keys.visible))
+	v.add_child(_button("Keys", false, _toggle_keys.bind(keys)))
 	v.add_child(keys)
 	status = Ui.label("", Ui.MIN_TEXT)
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -98,6 +105,12 @@ func setup() -> void:
 	var build := BuildInfo.label(Ui.MIN_TEXT)
 	build.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(build)
+
+
+## The Keys button: show or hide the list of hotkeys (and refit the card around it).
+func _toggle_keys(keys: Label) -> void:
+	keys.visible = not keys.visible
+	_fit.call_deferred()
 
 
 ## An on/off switch under the buttons, in the caption face; `on_toggle` is told the new state.
@@ -134,11 +147,23 @@ func _button(text: String, primary: bool, on_press: Callable) -> Button:
 func place(area: Rect2) -> void:
 	position = area.position
 	size = area.size
+	_room = area.size.y - 2.0 * ROOM_MARGIN
+	_fit()
+
+
+## The scroll is as tall as the column of buttons when the window has the room, else as tall as the room (and the column scrolls).
+func _fit() -> void:
+	if scroll == null:
+		return
+	var want: float = v.get_combined_minimum_size().y
+	var bar: float = 12.0 if _room > 0.0 and want > _room else 0.0  # the scroll bar's width, when there is one
+	scroll.custom_minimum_size = Vector2(WIDTH + bar, minf(want, _room) if _room > 0.0 else want)
 
 
 ## Put the menu up with a clean status line.
 func open() -> void:
 	status.text = ""
+	_fit()
 	debug_toggle.set_pressed_no_signal(DebugKeys.on())
 	cutscene_toggle.set_pressed_no_signal(CutsceneSettings.on())
 	hints_toggle.set_pressed_no_signal(HintSettings.on())
@@ -150,6 +175,7 @@ func open() -> void:
 func say(text: String, good := true) -> void:
 	status.text = text
 	status.add_theme_color_override("font_color", Ui.GOOD if good else Ui.BAD)
+	_fit.call_deferred()
 
 
 ## Put the menu away and say so.
