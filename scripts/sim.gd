@@ -40,6 +40,7 @@ const TideBlock = preload("res://scripts/tide.gd")
 const Gate = preload("res://scripts/gate.gd")
 const SeasonsBlock = preload("res://scripts/seasons.gd")
 const CarryBlock = preload("res://scripts/carry.gd")
+const Ruins = preload("res://scripts/ruins.gd")
 
 var won := false
 var hand_tools := false  # you've made a Flint Tool, so hand gathering is doubled for good
@@ -102,6 +103,8 @@ func _init() -> void:
 	town.on_net = livewire.powered_at
 	town.overgrown = tide.is_overgrown_at
 	town.on_bloom = tide.bloom_at
+	var weak: WeakRef = weakref(self)  # a lambda that held the Sim itself would keep it alive for ever
+	town.rubble_at = func(p): return Ruins.rubble(weak.get_ref(), p)
 	town.lesson_has = teardown.knows
 	tech_tree.gift_has = starfall.read  # a tech may wait on a gift read or a Lesson learned (Ironfall)
 	tech_tree.lesson_has = teardown.knows
@@ -233,11 +236,8 @@ func place(type: String, p: Vector2i, focus := "") -> bool:
 	var done := town.place(type, p, focus)
 	if done.is_empty():
 		return false
-	var cleared: String = done["cleared"]
-	if cleared == "rock":
-		events.append("Cut a pass through the rocks")
-	elif cleared == "tree":
-		events.append("Felled the trees for a road")
+	if Data.ENDINGS["road_clears"].has(done["cleared"]):
+		events.append(Data.ENDINGS["road_clears"][done["cleared"]])
 	var kind: String = done["kind"]
 	if kind in ["road", "bridge"]:
 		pathing.update_cell(p)

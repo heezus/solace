@@ -41,6 +41,7 @@ func run(runner) -> void:
 	test_the_exodus_begins_on_a_new_map()
 	test_the_cataclysm_keeps_the_map_and_lays_the_ruins()
 	test_clearing_a_ruin_gives_stone()
+	test_a_road_over_rubble_clears_it_for_its_stone()
 	test_ruins_in_the_land_that_grows_are_laid_as_it_grows()
 	test_the_tide_wakes_from_the_dormant_patches()
 	test_the_time_loop_remembers_and_the_cataclysm_arrives_wary()
@@ -61,7 +62,7 @@ func _clean() -> void:
 
 
 ## `n` open grass tiles well away from the Hearth, in row order.
-func _spots(s: Sim, n: int, from := 6) -> Array:
+func _spots(s: Sim, n: int, from := 9) -> Array:
 	var out := []
 	for y in s.world.height:
 		for x in s.world.width:
@@ -78,6 +79,8 @@ func _spots(s: Sim, n: int, from := 6) -> Array:
 func _ended_run(lean: String, trust := 50.0, buildings := 6) -> Sim:
 	var s := Sim.new()
 	s.generate(SEED)
+	s.world.grow_east()  # a telling ends on grown land: the dormant patches lie 20 tiles out
+	s.world.grow_south()
 	s.tech_tree.researched["knapping"] = true
 	s.starfall.locked["name"] = true
 	var spots := _spots(s, buildings)
@@ -268,7 +271,7 @@ func test_the_cataclysm_keeps_the_map_and_lays_the_ruins() -> void:
 	for r in n.carry.ruins:
 		var d := (Vector2i(int(r["pos"][0]), int(r["pos"][1])) - n.world.camp_pos).abs()
 		near += 1 if maxi(d.x, d.y) <= Data.ENDINGS["ruins_clear"] else 0
-	t.check(near == 0, "none lies by the Hearth")
+	t.check(near == 0, "none lies in the old square (within %d tiles of the Hearth)" % Data.ENDINGS["ruins_clear"])
 	var patches := Ruins.patch_tiles(n)
 	t.check(n.carry.patches.size() >= 2 and n.carry.patches.size() <= 4, "two to four dormant Bloom patches")
 	var far := true
@@ -278,9 +281,14 @@ func test_the_cataclysm_keeps_the_map_and_lays_the_ruins() -> void:
 			and maxi(absi(p[0] - n.world.camp_pos.x), absi(p[1] - n.world.camp_pos.y)) >= Data.ENDINGS["patch_clear"]
 		)
 	t.check(far, "none within %d tiles of the Hearth" % Data.ENDINGS["patch_clear"])
+	var rim: int = Ruins.edge_of(old)
+	var beyond := true
+	for p in n.carry.patches:
+		beyond = beyond and maxi(absi(p[0] - n.world.camp_pos.x), absi(p[1] - n.world.camp_pos.y)) > rim
+	t.check(beyond, "and each lies beyond the old town's edge (%d tiles)" % rim)
 	t.check(
-		patches.size() >= 2 and patches.all(func(p): return n.world.tile_at(p) == "bloom_ground"),
-		"each laid as Bloom ground"
+		patches.all(func(p): return n.world.tile_at(p) == "bloom_ground"),
+		"each is laid as Bloom ground, where the land is"
 	)
 	var same := 0
 	for y in n.world.height:
@@ -289,6 +297,10 @@ func test_the_cataclysm_keeps_the_map_and_lays_the_ruins() -> void:
 			if n.world.tile_at(p) == base.world.tile_at(p):
 				same += 1
 	t.check(same > n.world.width * n.world.height - 40, "the rest of the land is the old land")
+	n.world.grow_east()  # out at the old town's rim they wait for the land to grow
+	n.world.grow_south()
+	Ruins.lay(n, Rect2i(0, 0, n.world.width, n.world.height))
+	t.check(Ruins.patch_tiles(n).size() == 2 * n.carry.patches.size(), "and all of them once it has grown")
 	var clipped := _ended_run("enemies", 12.0)
 	var rec: Dictionary = Endings.handoff(clipped, "cataclysm")
 	t.check(rec["ruins"].size() <= Data.ENDINGS["ruins_max"], "no more ruins are kept than the cap")
@@ -323,6 +335,36 @@ func test_clearing_a_ruin_gives_stone() -> void:
 	t.check(
 		gave == Ruins.stone_at(n, p) and gave >= Data.ENDINGS["stone_min"] and gave <= Data.ENDINGS["stone_max"],
 		"giving Stone (%d)" % gave
+	)
+	_clean()
+
+
+func test_a_road_over_rubble_clears_it_for_its_stone() -> void:
+	_clean()
+	var old := _ended_run("enemies", 50.0, 10)
+	Profile.set_out(old, TEMP_PROFILE, "cataclysm")
+	var n := Sim.new()
+	Launch.begin_new(n, -1, TEMP_PROFILE)
+	n.tech_tree.researched["haulers"] = true
+	n.economy.inv["wood"] = 50
+	var p := Vector2i(int(n.carry.ruins[-1]["pos"][0]), int(n.carry.ruins[-1]["pos"][1]))  # the lightest holds no relic
+	n.fog.reveal(p, 3)
+	t.check(n.town.placement_error("road", p) == "", "a road may go on rubble")
+	t.check(
+		n.town.placement_error("dwelling", p) == Data.ENDINGS["rubble_in_the_way"],
+		"a building may not, and the refusal says why"
+	)
+	var before: int = n.economy.inv.get("stone", 0)
+	t.check(
+		n.place("road", p) and n.world.tile_at(p) == "grass" and n.world.roads.has(p), "laying it clears the rubble"
+	)
+	var gave: int = n.economy.inv.get("stone", 0) - before
+	t.check(gave == Ruins.stone_at(n, p) and gave >= Data.ENDINGS["stone_min"], "and gives its Stone (%d)" % gave)
+	t.check(n.events.has(Data.ENDINGS["road_clears"]["ruins"]), "the feed says so")
+	var held := Vector2i(int(n.carry.ruins[0]["pos"][0]), int(n.carry.ruins[0]["pos"][1]))  # the heaviest holds a relic
+	n.fog.reveal(held, 3)
+	t.check(
+		n.town.placement_error("road", held) == Data.ENDINGS["relic_ruin_kept"], "a road does not clear a relic's ruin"
 	)
 	_clean()
 
@@ -370,6 +412,9 @@ func test_the_tide_wakes_from_the_dormant_patches() -> void:
 	Profile.set_out(_ended_run("enemies"), TEMP_PROFILE, "cataclysm")
 	var n := Sim.new()
 	Launch.begin_new(n, -1, TEMP_PROFILE)
+	n.world.grow_east()  # the patches lie out at the old town's rim: the tide wakes after the land has grown there
+	n.world.grow_south()
+	Ruins.lay(n, Rect2i(0, 0, n.world.width, n.world.height))
 	var first: Vector2i = Ruins.patch_tiles(n)[0]
 	n.tide.begin(n)
 	var wakes := false

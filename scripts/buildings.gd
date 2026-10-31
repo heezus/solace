@@ -51,6 +51,9 @@ var on_net: Callable = func(_p): return false
 var overgrown: Callable = func(_p): return false
 ## (Vector2i) -> bool: is this tile Bloom ground the tide took? Nothing is built on it.
 var on_bloom: Callable = func(_p): return false
+## (Vector2i) -> {"relic": a relic lies under the rubble at this tile (a road does not clear it: it is dug out first), "stone": the Stone
+## a road clearing it gives}. Sim connects it to Ruins.
+var rubble_at: Callable = func(_p): return {"relic": false, "stone": 0}
 var _world: World
 var _economy: Economy
 var _research: Research
@@ -97,12 +100,10 @@ func placement_error(type: String, p: Vector2i) -> String:
 		if upgrade != "":
 			return upgrade
 		return "" if _economy.can_afford(cost_here(type, p)) else "Not enough materials"
+	if tile == "ruins" and def["kind"] != "road":
+		return Data.ENDINGS["rubble_in_the_way"]  # only a road clears rubble (it gives its Stone)
 	if def["kind"] == "road":
-		if tile == "river":
-			return "Roads can't cross the river: build a Wooden Bridge"
-		if tile not in ["grass", "rock", "tree"]:
-			return "Roads go on grassland or through Forest, or cut a pass through Rocks"
-		return "" if _economy.can_afford(cost_here(type, p)) else "Not enough materials"
+		return _road_error(type, p, tile)
 	if def["kind"] == "bridge":
 		if tile != "river":
 			return "Bridges go on river tiles"
@@ -123,6 +124,17 @@ func placement_error(type: String, p: Vector2i) -> String:
 	if not _economy.can_afford(price(type)):
 		return "Not enough materials"
 	return ""
+
+
+## Why a road can't go on `tile` at p: "" when it can (grassland, Forest it fells, Rocks it cuts through, rubble it clears).
+func _road_error(type: String, p: Vector2i, tile: String) -> String:
+	if tile == "ruins" and rubble_at.call(p)["relic"]:
+		return Data.ENDINGS["relic_ruin_kept"]
+	if tile == "river":
+		return "Roads can't cross the river: build a Wooden Bridge"
+	if tile not in ["grass", "rock", "tree", "ruins"]:
+		return "Roads go on grassland or through Forest, or cut a pass through Rocks"
+	return "" if _economy.can_afford(cost_here(type, p)) else "Not enough materials"
 
 
 ## Why `type` can't go at p for want of room: something stands there, or it is a one-of-a-kind building (`unique`) that stands already.
@@ -231,7 +243,7 @@ func built_type(p: Vector2i) -> String:
 
 ## Build `type` at p if placement_error allows: pay for it and put it in the World (a road on Rocks or Forest
 ## clears the tile first). Returns {} when it can't go here, otherwise {"kind": the building's kind,
-## "cleared": "rock" or "tree" when a road cut through one, else ""}. The owner lifts the fog, refreshes the
+## "cleared": "rock", "tree" or "ruins" when a road cut through one, else ""}. The owner lifts the fog, refreshes the
 ## walking cell and tells the player.
 func place(type: String, p: Vector2i, focus := "") -> Dictionary:
 	if placement_error(type, p) != "":
@@ -242,9 +254,13 @@ func place(type: String, p: Vector2i, focus := "") -> Dictionary:
 	var kind: String = Data.BUILDINGS[type]["kind"]
 	var cleared := ""
 	if kind in ["road", "bridge"]:
-		if tile in ["rock", "tree"]:
+		if tile in ["rock", "tree", "ruins"]:
 			cleared = tile
-			_world.set_tile(p, "grass")  # a mountain pass, or the trees felled for the road
+			_world.set_tile(p, "grass")  # a mountain pass, the trees felled for the road, or the rubble cleared
+		if tile == "ruins":  # the rubble gives its Stone, as clearing it with Demolish does (scripts/clearing.gd)
+			var stone: int = rubble_at.call(p)["stone"]
+			_economy.add("stone", stone)
+			_economy.note("stone", stone, Data.FLOW_HAND_SOURCE)
 		if Data.BUILDINGS[type].get("stone", false):
 			_world.add_stone_bridge(p)
 		else:

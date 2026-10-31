@@ -76,10 +76,11 @@ const ENDINGS := {
 	],
 	# The ruins a Cataclysm leaves on the map: the buildings of the old town as rubble (one tile each), the largest kept.
 	"ruins_max": 60,  # how many ruins are kept, the dearest buildings first
-	"ruins_clear": 3,  # tiles round the Hearth where nothing is left
+	"ruins_clear": 8,  # tiles round the Hearth where nothing is left: the old square survives, the build area is open ground
 	"patches_min": 2,  # the dormant Bloom patches, one beside each of the largest ruins
 	"patches_max": 4,
-	"patch_clear": 12,  # no dormant patch lies closer than this to the Hearth (tiles, either way)
+	"patch_clear": 20,  # no dormant patch lies closer than this to the Hearth (tiles, either way)
+	"patch_edge": 0.9,  # ...and each lies beyond the old town's edge: the distance (to the Hearth) that this share of its buildings are within
 	"stone_min": 3,  # clearing a ruin gives its weight (what its building cost) / stone_per, between these
 	"stone_max": 20,
 	"stone_per": 25,
@@ -114,6 +115,14 @@ const ENDINGS := {
 	"cart_load": 1.5,  # ...carry this many times as much
 	"job_dig": "Digger",
 	"relic_ruin_kept": "A relic lies under this ruin: dig it out first.",
+	# What the feed says when a road clears what lay in its way (Sim.place): Rocks, Forest, or the rubble of the old town.
+	"road_clears":
+	{
+		"rock": "Cut a pass through the rocks",
+		"tree": "Felled the trees for a road",
+		"ruins": "Cleared the rubble for a road",
+	},
+	"rubble_in_the_way": "Rubble is in the way. Lay a road over it to clear it (gives Stone).",
 	"relic_here": "A relic lies under this ruin: click it to dig it out.",
 	"relic_tip": "%s: click to send a crew to dig (about a minute, and it needs a road beside it).",
 	"dig_sent": "%s went to dig out the %s.",  # the Kith, the relic
