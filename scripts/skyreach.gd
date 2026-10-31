@@ -285,6 +285,16 @@ static func note(b: Dictionary) -> String:
 	return Data.SKYREACH["needs"] % [stage + 1, ", ".join(short) if not short.is_empty() else "nothing more"]
 
 
+## What a building's card says of the sky: the Skyreach's stage and what it waits for, or the sector a Signal Tower surveys.
+func card_note(s, b: Dictionary) -> String:
+	if b["type"] == TOWER:
+		return note(b)
+	if b["type"] == SIGNAL:
+		var sector := sector_name(sector_of(s.world.camp_pos, b["pos"]))
+		return ("Surveying the %s" if not s.tide.is_overgrown(b) else "Lost to the Bloom (the %s is dark)") % sector
+	return ""
+
+
 ## True for a goal of the era that is met now (Story asks).
 func goal(s, id: String) -> bool:
 	var stage := 0

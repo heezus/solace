@@ -1,0 +1,32 @@
+# 32. Skyreach (Step 8A)
+
+Era 6, mechanic **Survey the sky**, beat **the Bloom arrives**. Spec: the director's Step 8 (2026-10-31). Code: `scripts/skyreach.gd` (the block, `sim.skyreach`), `scripts/data/skyreach.gd` (`Data.SKYREACH`, every number and word), `Tide.land`.
+
+## When
+- **Run 1 is unchanged.** Skyward still ends the first telling and its card reads as it always did. The goldens do not move.
+- **From run 2 on** (`carry.is_first()` false), Skyward does not end the run. Once its card is put away `Story.update` records `skyreach_begun`; the card says "The sky is open" and the goals list becomes the Skyreach's (`Data.SKYREACH["goals"]`).
+- **The end.** The third stage records `skyreach_done`; the endings card (Set out) opens there from run 2 on, and its title is "The Skyreach stands". `GameMenu.set_out_open` follows the same rule.
+
+## Survey the sky
+- The map is cut into **6 sectors** round the Hearth (`Skyreach.sector_of`), 60 degrees each, 0 east then clockwise, each centred on the direction it is named for (east, south-east, south-west, west, north-west, north-east).
+- A **Signal Tower** (Steel 12, Wire 16, Shard 1, sight 12) surveys the sector it stands in. One tower, one sector; two in one sector survey it once. A tower the Bloom has taken surveys nothing.
+- The **first** Signal Tower finds the **site** of the Skyreach: the first open grass tile 8 to 13 tiles from the Hearth in its own sector, searched ring by ring from the near edge, with fog lifted round it. (Design call: the spec says the Watchtower is upgraded; it is a separate building here, so the Watchtower and every save stay as they are.)
+
+## Landfalls
+- Waves from **180 s** after the era begins, then every **120 s**. Wave k has `2 + floor(k / 3)` falls, at most 4. Each fall is 10 to 36 tiles from the Hearth, on ground a seed can land (grass, tree, gravel, berry, grain, flax), at least 6 tiles from the other falls of its wave. A map falls the same way every time: the generator is seeded from the map seed and the wave.
+- A wave is planned 90 s before it falls. A **surveyed** sector shows its landfalls on the map and in Sight (`Skyreach.marked`: position and seconds to go) and the log says "A landfall is coming in the west in 90 seconds". An unsurveyed sector gives no warning: the log says "Something fell in the dark, far off".
+- A fall starts a Bloom patch of radius 2 (`Tide.land`), which then spreads as the tide does. **Scorchers, Arc Lamps, Wards, Firebreaks and shard light stop it exactly as they stop the tide**; the Skyreach itself is immune (`Tide.IMMUNE`).
+
+## The Skyreach
+- Build the **Skyreach** (Stone 20) on the site; no other tile takes it, and only one stands. It is raised in **three stages**, each one delivery: haulers bring the whole stage at once (`Haulers.stock_wanted` -> `Skyreach.wanted`), then the stage takes **150 s**, or **105 s** when the Lumen help (lean allies or neighbours: -30%; enemies build alone).
+- Stage 1 Steel 40, Stone 160. Stage 2 Wire 60, Shard 3. Stage 3 Steel 30, Wire 30, Brick 120, Rope 80, Copper 80, Shard 2.
+- Shards are chipped off the Strange Stone by hand (5 s a hold); the era asks 8 in all, 11 with the Signal Towers' three.
+
+## Pace
+Bar: about 15 minutes, 10 to 20; the 6-minute floor for an era played twice before stays. Numbers in `Data.SKYREACH` are first guesses tuned with the bots (`tests/autoplay_skyreach.gd`, `pace.gd skyreach from=<a run from the end of Livewire>`). The result is in the Step 8A report.
+
+## Saves
+Run saves carry the block under `game.skyreach` (site, when the era began, the planned falls, the sectors told); a save from before has none and plays as if the era had not begun.
+
+## Tests
+`tests/skyreach_tests.gd`: run 1 ends at Skyward, run 2 goes on, a tower surveys its sector, a surveyed landfall is marked 90 s ahead, an unsurveyed one is not, a fall starts a patch, the site is the only place, three deliveries raise it and open the endings card, help shortens a stage, the save keeps the sky.

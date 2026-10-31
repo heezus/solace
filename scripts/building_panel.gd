@@ -264,7 +264,7 @@ func refresh() -> void:
 	parts["fuel"].show_for(b)
 	parts["places"].show_for(b)
 	parts["net"].text = "\n".join(
-		[Power.note(state, b), state.tide.note(state, b), state.tide.pace_note(state, b)].filter(
+		[Power.note(state, b), state.tide.note(state, b), state.tide.pace_note(state, b), state.skyreach.card_note(state, b)].filter(
 			func(l): return l != ""
 		)
 	)

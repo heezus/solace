@@ -12,6 +12,7 @@ const BlueprintPanel = preload("res://scripts/blueprint_panel.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
 const Overlays = preload("res://scripts/overlays.gd")
+const SkyMarks = preload("res://scripts/sky_marks.gd")
 const Rules = preload("res://scripts/rules.gd")
 const Workers = preload("res://scripts/workers.gd")
 const Roads = preload("res://scripts/roads.gd")
@@ -856,6 +857,7 @@ func _draw() -> void:
 	KithArt.draw_strangers(self, state, time)
 	Overlays.fog_edges(self, state, seen)
 	Overlays.alert_badges(self, state)
+	SkyMarks.draw(self, state, time)
 
 	# Placement ghost.
 	if placing == "demolish" and state.world.in_bounds(hover):
