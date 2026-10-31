@@ -100,7 +100,7 @@ func setup() -> void:
 		_tabs[id] = tab
 		var scroll := ScrollContainer.new()
 		scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO  # a window too narrow for a page scrolls it, never overlaps
 		body.add_child(scroll)
 		_pages[id] = scroll
 	_close = _button(Words.BACK, true, close)
