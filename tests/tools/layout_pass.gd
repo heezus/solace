@@ -1,12 +1,11 @@
 extends SceneTree
-## The map view over a long run: the bot plays to Bronze Dawn with the UI refreshing every frame, and the map's
-## view (its place between the bars and the zoom) may change only when the window size does (the bars must keep
-## steady heights). The view runs edge to edge between the bars and up to the side panel, with the Hearth in it.
-## It also checks the HUD's fit, at 1280x800 and after two resizes: the Info panel stays above the bottom bar
-## even with a wall of text, a building's details are docked in the Info panel (nothing floats over the map),
-## the top bar never runs past the window and none of its text is cut short (also with the food warning and
-## starvation showing), toasts stack without overlapping each other or a chip, every chip has a tooltip that names it
-## and a sprite, a Hearth's blurb shows once, every build card's text fits it, and the message log opens.
+## The map view over a long run: the bot plays to Bronze Dawn with the UI refreshing every frame, and the map's view (its place between the
+## bars and the zoom) may change only when the window size does (the bars must keep steady heights). The view runs edge to edge between the
+## bars and up to the side panel, with the Hearth in it. It also checks the HUD's fit, at 1280x800 and after two resizes: the Info panel
+## stays above the bottom bar even with a wall of text, a building's details are docked in the Info panel (nothing floats over the map),
+## the top bar never runs past the window and none of its text is cut short (also with the food warning and starvation showing), toasts
+## stack without overlapping each other or a chip, every chip has a tooltip that names it and a sprite, a Hearth's blurb shows once,
+## every build card's text fits it, the message log opens, and the pause menu and the Chronicle fit (tests/tools/menu_checks.gd).
 ## Run: godot --headless --fixed-fps 60 --path . -s tests/tools/layout_pass.gd   (exits 1 on a problem)
 
 const Data = preload("res://scripts/data.gd")
@@ -22,6 +21,7 @@ const HudChecks = preload("res://tests/tools/hud_checks.gd")
 const PickerChecks = preload("res://tests/tools/picker_checks.gd")
 const LivewireChecks = preload("res://tests/tools/livewire_checks.gd")
 const FoldChecks = preload("res://tests/tools/fold_checks.gd")
+const MenuChecks = preload("res://tests/tools/menu_checks.gd")
 const Autoplay = preload("res://tests/autoplay.gd")
 const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
 
@@ -57,7 +57,6 @@ var goals_height := 0.0  # the Goals list's height before a card opens
 var last_side_open := true
 var frozen := false  # the bot's ticking is paused while a check sets the state by hand
 var picker := PickerChecks.new()  # the hut picker's checks (tests/tools/picker_checks.gd)
-
 var window := Vector2i(1280, 800)  # the window size the pass wants now
 
 
@@ -169,6 +168,7 @@ func _era_two_checks() -> void:
 		frozen = false
 	if frame == dawn_frame + 70:
 		_check_east_pointer()
+	MenuChecks.step(self, frame - dawn_frame)  # (from dawn_frame + MenuChecks.AT, nothing before it)
 	match frame - dawn_frame:
 		90:
 			frozen = true

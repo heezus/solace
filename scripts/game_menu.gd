@@ -75,7 +75,9 @@ func place(area: Rect2) -> void:
 	slots.place(area)
 	endings.place(area)
 	confirm.place(area)
-	book.place(area)
+	# The Chronicle is a page of its own: over the whole window (the dock and bars too, dimmed), as on the title screen, so its
+	# columns never run over the goals panel.
+	book.place(Rect2(Vector2.ZERO, get_viewport_rect().size) if is_inside_tree() else area)
 
 
 func is_open() -> bool:
