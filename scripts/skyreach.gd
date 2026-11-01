@@ -277,7 +277,7 @@ func _plan(s, k: int) -> void:
 	rng.seed = hash([s.world.map_seed, k, 6])
 	var camp: Vector2i = s.world.camp_pos
 	var chosen: Array = []
-	var want := wave_size(k)
+	var want: int = wave_size(k) + s.carry.extra_falls()
 	var tries := 0
 	while chosen.size() < want and tries < 200:
 		tries += 1
