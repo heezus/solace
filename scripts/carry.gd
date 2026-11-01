@@ -12,6 +12,7 @@ var techs: Array = []  # tech ids learned in an earlier run: they cost a share o
 var marks: Array = []  # glyph ids read in an earlier run: they show their word
 var echoes: Array = []  # Lumen set ids read in an earlier run: that set's building is open from the start
 var exodus := 0  # how many endings came before this run: 0 for a first run (the field keeps the Exodus's name)
+var reached: Array = []  # every ending of the tellings before this run, in order ("exodus", "seal"...): the true endings read it
 var ending := ""  # the ending that began this run: "exodus", "cataclysm" or "loop", "" for a first run
 var last_lean := ""  # the Lumen lean the run before ended with
 var last_trust := 0.0  # the trust it ended with (the Time loop begins there)
@@ -26,6 +27,16 @@ var plans: Array = []  # the parts of laid blueprints still waiting to be built,
 ## Build what the laid blueprints allow (scripts/blueprints.gd): the Sim calls this every tick.
 func build_plans(s) -> void:
 	Blueprints.tick(s)
+
+
+## True when an earlier telling ended in `ending`.
+func has_reached(earlier: String) -> bool:
+	return earlier in reached
+
+
+## The number of true endings the tellings before this run reached: the cycle this run is in (Step 8C).
+func cycle() -> int:
+	return reached.filter(func(e): return e in Data.ENDINGS["true_order"]).size()
 
 
 ## True for a first run, which carries nothing.
@@ -99,6 +110,7 @@ func to_dict() -> Dictionary:
 		"marks": marks.duplicate(),
 		"echoes": echoes.duplicate(),
 		"exodus": exodus,
+		"reached": reached.duplicate(),
 		"ending": ending,
 		"last_lean": last_lean,
 		"last_trust": last_trust,
@@ -117,6 +129,7 @@ func from_dict(d: Dictionary) -> void:
 	marks = _strings(d.get("marks", []))
 	echoes = _strings(d.get("echoes", []))
 	exodus = maxi(int(d.get("exodus", 0)), 0)
+	reached = _strings(d.get("reached", []))
 	set_handoff(
 		{
 			"ending": d.get("ending", ""),

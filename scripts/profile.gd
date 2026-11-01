@@ -118,6 +118,8 @@ func carry() -> Carry:
 	c.marks = marks.duplicate()
 	c.echoes = echoes.duplicate()
 	c.exodus = runs
+	for t in tellings:
+		c.reached.append(String(t.get("ending", "")))
 	c.set_handoff(last)
 	c.blueprints = blueprints.duplicate(true)
 	for bp in c.blueprints:

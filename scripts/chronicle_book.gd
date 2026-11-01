@@ -13,6 +13,7 @@ signal closed
 const Chronicle = preload("res://scripts/chronicle.gd")
 const CutscenePlayer = preload("res://scripts/cutscene_player.gd")
 const Data = preload("res://scripts/data.gd")
+const Endings = preload("res://scripts/endings.gd")
 const GlyphMark = preload("res://scripts/glyph_mark.gd")
 const MenuFonts = preload("res://scripts/menu_fonts.gd")
 const Sim = preload("res://scripts/sim.gd")
@@ -29,6 +30,7 @@ const DUST := 190  # faint background stars
 const SKY_COLOR := Color("0d1a22")
 const STAR_COLOR := Color("eee7d6")
 const EMBER_COLOR := Color("ffd27a")
+const GOLD := Color("ffc83d")  # a true ending: its star, and its line on the Endings page
 const NEBULA_COLOR := Color("6f8fc8")
 const CELL_COLORS := {
 	"#": Color("ffb040"),
@@ -254,15 +256,21 @@ func _add_stars(telling: Dictionary) -> void:
 	var at: Dictionary = _points[telling["run"]]
 	for i in telling["stars"].size():
 		var star: Dictionary = telling["stars"][i]
-		_star(telling["run"], star["kind"], at["stars"][i], star["name"], false)
+		_star(telling["run"], star["kind"], at["stars"][i], star["name"], false, _is_whole(telling, star["kind"]))
 	for i in telling["embers"].size():
 		var id: String = telling["embers"][i]
 		_star(telling["run"], "ember_" + id, at["embers"][i], Words.EMBERS[id]["name"], true)
 
 
-func _star(run: int, kind: String, at: Vector2, tip: String, ember: bool) -> void:
+## True for the ending star of a telling that ended in a true ending: it is drawn gold.
+func _is_whole(telling: Dictionary, kind: String) -> bool:
+	return kind == "ending" and Endings.is_true(String(telling.get("ending", "")))
+
+
+func _star(run: int, kind: String, at: Vector2, tip: String, ember: bool, gold := false) -> void:
 	var b := StarButton.new()
 	b.ember = ember
+	b.gold = gold
 	b.weight = 2 if kind == "ending" else (1 if kind == "lean" else 0)
 	b.flat = true
 	b.focus_mode = Control.FOCUS_NONE
@@ -486,14 +494,12 @@ func _build_endings() -> Control:
 		if n > 0:
 			v.add_child(_watch("Watch the ending", "fireside", "endings", "", ending, ""))
 	v.add_child(_heading(Words.ENDINGS_TRUE))
-	for true_ending in Words.TRUE_ENDINGS:
-		v.add_child(
-			_wrapped(
-				"%s: %s  Needs: %s" % [true_ending["name"], true_ending["line"], true_ending["needs"]],
-				Ui.TEXT_DIM,
-				880.0
-			)
-		)
+	for id in Data.ENDINGS["true_order"]:
+		var def: Dictionary = Data.ENDINGS[id]
+		var n := Chronicle.times_reached(profile.tellings, id)
+		var line := "%s: %s  " % [def["name"], def["line"]]
+		line += Words.ENDINGS_TIMES % n + ("s" if n > 1 else "") if n > 0 else "Needs: %s" % Words.TRUE_NEEDS[id]
+		v.add_child(_wrapped(line, GOLD if n > 0 else Ui.TEXT_DIM, 880.0))
 	return v
 
 
@@ -561,16 +567,19 @@ class StarButton:
 	var lit := false
 	var ember := false
 	var weight := 0  # 0 a choice, 1 the lean, 2 the ending: bigger and brighter
+	var gold := false  # the ending star of a true ending (Step 8B)
 
 	func _draw() -> void:
 		var core := Color("ffd27a") if ember else Color("eee7d6")
+		if gold:
+			core = Color("ffc83d")
 		var at := size / 2.0
 		var radius: float = 3.0 if ember else [4.0, 5.5, 8.0][weight]
 		if lit:
 			draw_circle(at, radius + 10.0, Color(core, 0.3))
 		draw_circle(at, radius * 2.4, Color(core, 0.1 + 0.07 * weight))
 		draw_circle(at, radius * 1.5, Color(core, 0.18 + 0.1 * weight))
-		draw_circle(at, radius, core if weight < 2 else Color.WHITE)
+		draw_circle(at, radius, core if weight < 2 or gold else Color.WHITE)
 
 
 ## A telling's land at its end, one small square a tile (Chronicle.map_of), with the buildings lit.

@@ -19,6 +19,7 @@ const Profile = preload("res://scripts/profile.gd")
 const CutsceneSettings = preload("res://scripts/cutscene_settings.gd")
 
 const GROUP := "cutscene_player"
+const TRUE_ENDING_SCENES := ["seal_end", "heal_end", "leave_end"]  # the sequences after a true ending: each ends on the fireside
 const PORTRAIT_DIR := "res://art/rendered/portraits/"
 const PORTRAIT_HEIGHT := 0.3  # a still's portrait stands this share of the window high, at the lower left beside the caption
 
@@ -99,9 +100,9 @@ func pending(id: String) -> bool:
 	return current == id or queue.has(id)
 
 
-## True while the fireside (after an ending) is playing or waiting its turn.
+## True while the fireside (after an ending, or a true ending's last still) is playing or waiting its turn.
 func fireside_pending() -> bool:
-	return current == "fireside" or queue.has("fireside")
+	return current == "fireside" or queue.has("fireside") or TRUE_ENDING_SCENES.any(func(id): return pending(id))
 
 
 func _on_story(id: String) -> void:
