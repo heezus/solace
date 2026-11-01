@@ -12,6 +12,7 @@ const BlueprintPanel = preload("res://scripts/blueprint_panel.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
 const Overlays = preload("res://scripts/overlays.gd")
+const SkyMarks = preload("res://scripts/sky_marks.gd")
 const Rules = preload("res://scripts/rules.gd")
 const Workers = preload("res://scripts/workers.gd")
 const Roads = preload("res://scripts/roads.gd")
@@ -707,10 +708,10 @@ func _watch_flavor() -> void:
 ## The story moments that do something on screen: the Falling Star, Livewire and Skyward end an era with a card (the game waits
 ## behind it) and go into the profile, the save that outlives a run.
 func _on_story(id: String) -> void:
-	if id in ["star_falling", Data.LIVEWIRE_EVENT, Data.SKYWARD_EVENT]:
+	if id in ["star_falling", Data.LIVEWIRE_EVENT, Data.SKYWARD_EVENT, Data.SKYREACH["done"]]:
 		paused = true
 		state.story.card_up = true  # now: the rest of this frame's ticks must not begin the next era
-		era_card.open(id)
+		era_card.open(id, not state.carry.is_first())
 		if not Profile.note_run(state):
 			_toast(Data.PROFILE_UNSAVED, 6.0)
 
@@ -856,6 +857,7 @@ func _draw() -> void:
 	KithArt.draw_strangers(self, state, time)
 	Overlays.fog_edges(self, state, seen)
 	Overlays.alert_badges(self, state)
+	SkyMarks.draw(self, state, time)
 
 	# Placement ghost.
 	if placing == "demolish" and state.world.in_bounds(hover):

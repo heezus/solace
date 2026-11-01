@@ -32,6 +32,7 @@ const AutoplayBlueprints = preload("res://tests/autoplay_blueprints.gd")
 const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
 const AutoplayIronfall = preload("res://tests/autoplay_ironfall.gd")
 const AutoplayLivewire = preload("res://tests/autoplay_livewire.gd")
+const AutoplaySkyreach = preload("res://tests/autoplay_skyreach.gd")
 const AutoplayStarfall = preload("res://tests/autoplay_starfall.gd")
 const DevStarts = preload("res://scripts/dev_starts.gd")
 const EraProbe = preload("res://tests/tools/era_probe.gd")
@@ -57,6 +58,9 @@ func _init() -> void:
 		return
 	if "star" in args:
 		_star(maps, minutes, quiet)
+		return
+	if "skyreach" in args:
+		_skyreach(int(args[0]), minutes, args)
 		return
 	if "baseline" in args:
 		var out := ""
@@ -440,6 +444,47 @@ func _from_livewire_start(m: int, minutes: float, out: String, from: String, ans
 			]
 		)
 	)
+	quit(0)
+
+
+## Skyreach alone (tests/autoplay_skyreach.gd): `<map> <minutes> skyreach from=<a run from the end of Livewire, second telling or later>
+## [out=<folder>]`. Prints the clock at each Skyreach goal and writes the run's end to <out>/skyreach_end_<map>.json.
+func _skyreach(m: int, minutes: float, args: Array) -> void:
+	var from := ""
+	var out := ""
+	for a in args:
+		if a.begins_with("from="):
+			from = a.substr(5)
+		if a.begins_with("out="):
+			out = a.substr(4)
+	var game := Sim.new()
+	var kept := FileAccess.get_file_as_string(from)
+	if kept == "" or not RunSave.restore(game, RunSave.from_json(kept)):
+		print("skyreach: no run at %s" % from)
+		quit(1)
+		return
+	var bot := AutoplaySkyreach.new()
+	var r: Dictionary = bot.play_skyreach(game, minutes * 60.0)
+	for line in r["log"]:
+		if "quiet" not in args:
+			print("   ", line)
+	print("marks: ", r["marks"])
+	print("falls: ", bot.audit)
+	print(
+		(
+			"map %d: Skyreach %s at %.1f min, lost %d, trust %.1f"
+			% [
+				m,
+				"STANDS" if r["done"] else "not done",
+				r["seconds"] / 60.0 if r["done"] else bot.clock / 60.0,
+				game.tide.lost,
+				game.starfall.trust
+			]
+		)
+	)
+	if out != "":
+		DirAccess.make_dir_recursive_absolute(out)
+		_write_file("%s/skyreach_end_%d.json" % [out, m], RunSave.to_json(RunSave.dump(game)))
 	quit(0)
 
 

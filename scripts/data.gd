@@ -982,13 +982,13 @@ const SOUTH_LINES := DataSkyward.SOUTH_LINES
 const LUMEN := DataLumen.LUMEN  # the Lumen tab and its buildings (data/lumen.gd)
 const EXODUS := DataExodus.EXODUS  # Set out and what the Kith carry (data/exodus.gd)
 const ENDINGS := preload("res://scripts/data/endings.gd").ENDINGS  # the three endings, the ruins a Cataclysm leaves (data/endings.gd)
+const SKYREACH := preload("res://scripts/data/skyreach.gd").SKYREACH  # era 6, from the second telling on (data/skyreach.gd)
 const SKYWARD_EVENT := DataSkyward.SKYWARD_EVENT
 const SKYWARD_TITLE := DataSkyward.SKYWARD_TITLE
 const SKYWARD_TEXT := DataSkyward.SKYWARD_TEXT
 const SKYWARD_NOTE := DataSkyward.SKYWARD_NOTE
 const SKYWARD_BUTTON := DataSkyward.SKYWARD_BUTTON
 const GOALS_FACTORIES := DataSkyward.GOALS_FACTORIES
-
 # The play recorder (scripts/data/recorder.gd)
 const PLAYLOG_DIR := DataRecorder.PLAYLOG_DIR
 const PLAYLOG_SAMPLE_SECONDS := DataRecorder.PLAYLOG_SAMPLE_SECONDS

@@ -74,15 +74,31 @@ func place(area: Rect2) -> void:
 
 
 ## Put the card up: the Falling Star's, or (with the story id Data.LIVEWIRE_EVENT) the end of Ironfall's, or (with Data.SKYWARD_EVENT)
-## the end of Livewire's.
-func open(story_id := "star_falling") -> void:
-	var live: bool = story_id == Data.LIVEWIRE_EVENT
+## the end of Livewire's: in the first telling the end of the run, from the second on (`sky_opens`) the opening of Skyreach. The
+## Skyreach's own end (Data.SKYREACH["done"]) is the end of the run from the second telling on, as Skyward's card is in the first.
+func open(story_id := "star_falling", sky_opens := false) -> void:
 	var sky: bool = story_id == Data.SKYWARD_EVENT
-	_words["title"].text = Data.SKYWARD_TITLE if sky else (Data.LIVEWIRE_TITLE if live else Data.ERA_END_TITLE)
-	_words["text"].text = Data.SKYWARD_TEXT if sky else (Data.LIVEWIRE_TEXT if live else Data.ERA_END_TEXT)
-	_words["note"].text = Data.SKYWARD_NOTE if sky else (Data.LIVEWIRE_NOTE if live else Data.ERA_END_NOTE)
-	_words["button"].text = Data.SKYWARD_BUTTON if sky else (Data.LIVEWIRE_BUTTON if live else Data.ERA_END_BUTTON)
-	_words["set_out"].visible = sky  # only the end of Livewire can be left behind
+	var done: bool = story_id == Data.SKYREACH["done"]
+	var reach: bool = sky and sky_opens
+	var table := {
+		"title": [Data.ERA_END_TITLE, Data.LIVEWIRE_TITLE, Data.SKYWARD_TITLE, "card_title", "done_title"],
+		"text": [Data.ERA_END_TEXT, Data.LIVEWIRE_TEXT, Data.SKYWARD_TEXT, "card_text", "done_text"],
+		"note": [Data.ERA_END_NOTE, Data.LIVEWIRE_NOTE, Data.SKYWARD_NOTE, "card_note", "done_note"],
+		"button": [Data.ERA_END_BUTTON, Data.LIVEWIRE_BUTTON, Data.SKYWARD_BUTTON, "card_button", "done_button"],
+	}
+	var which := 0  # the Falling Star's card
+	if story_id == Data.LIVEWIRE_EVENT:
+		which = 1
+	elif reach:
+		which = 3  # the sky is open: Skyreach begins
+	elif sky:
+		which = 2
+	elif done:
+		which = 4
+	for key in table:
+		var entry: String = table[key][which]
+		_words[key].text = Data.SKYREACH[entry] if which >= 3 else entry
+	_words["set_out"].visible = which in [2, 4]  # only the end of a telling can be left behind
 	visible = true
 
 

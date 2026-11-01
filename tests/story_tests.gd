@@ -101,6 +101,8 @@ func test_story_ids_are_stable_and_unique() -> void:
 		"livewire_lit",
 		"livewire_begun",
 		"skyward_raised",
+		"skyreach_begun",
+		"skyreach_done",
 		"ending_exodus",
 		"ending_cataclysm",
 		"ending_loop",

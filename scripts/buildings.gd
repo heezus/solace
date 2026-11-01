@@ -53,6 +53,7 @@ var overgrown: Callable = func(_p): return false
 var on_bloom: Callable = func(_p): return false
 ## (Vector2i) -> {"relic": a relic lies under the rubble at this tile (a road does not clear it: it is dug out first), "stone": the Stone
 ## a road clearing it gives}. Sim connects it to Ruins.
+var site_at: Callable = func(): return Vector2i(-1, -1)  # where the Skyreach goes (scripts/skyreach.gd)
 var rubble_at: Callable = func(_p): return {"relic": false, "stone": 0}
 var _world: World
 var _economy: Economy
@@ -115,6 +116,8 @@ func placement_error(type: String, p: Vector2i) -> String:
 	var ground := _ground_error(def, tile)
 	if ground != "":
 		return ground
+	if def.get("sky_site", false) and p != site_at.call():
+		return Data.SKYREACH["site_tip"]  # the Skyreach goes only on the site a Signal Tower found
 	if def.get("needs_river", false) and not _world.touches_river(p):
 		return "Must touch the river"
 	if def.get("needs_shard", false) and not _world.touches(p, "shard"):
@@ -552,7 +555,7 @@ static func needs_worker(b: Dictionary) -> bool:
 ## in) and the fed ones (a Boiler's coal, a Shard Lamp's shard, a Beast Pen's grain).
 static func served(b: Dictionary) -> bool:
 	var def: Dictionary = Data.BUILDINGS[b["type"]]
-	return needs_worker(b) or def["kind"] in ["house", "bench"] or def.get("fed", false)
+	return needs_worker(b) or def["kind"] in ["house", "bench", "skyreach"] or def.get("fed", false)
 
 
 ## How many people building `b` needs at work: 1, or its `crew`.

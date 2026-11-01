@@ -1,11 +1,10 @@
 extends RefCounted
-## Sim: the whole simulation, with no rendering, so it runs headless in tests. It is a thin owner. It holds one of each
-## block (`fog`, `world`, `pathing`, `economy`, `tech_tree`, `town`, `people`, `story`, `sky`, `starfall`, `teardown`,
-## `livewire`) and nothing else about them: callers reach a block through its name (`sim.economy.inv`). What stays here is what
-## no single block can do: the commands that touch several blocks at once (`place`, `demolish`, `research`,
-## `gather_by_hand`...), the few flags of the run itself, and the tick order:
+## Sim: the whole simulation, with no rendering, so it runs headless in tests. It is a thin owner. It holds one of each block (`fog`,
+## `world`, `pathing`, `economy`, `tech_tree`, `town`, `people`, `story`, `sky`, `starfall`, `teardown`, `livewire`...) and nothing else
+## about them: callers reach a block through its name (`sim.economy.inv`). What stays here is what no single block can do: the commands
+## that touch several blocks at once (`place`, `demolish`, `research`, `gather_by_hand`...), the few flags of the run, and the tick order:
 ##   1. Land.grow_if_due (the tick after Bronze Dawn the map grows east, in Ironfall south), economy.advance, tech_tree.tick
-##   2. people.assign_jobs, economy.feed and people.grow, then story.update and sky.tick
+##   2. people.assign_jobs, economy.feed and people.grow, then story.update and the era blocks (sky, tide, skyreach)
 ##   3. every Kith takes a step (Forage, Workers, Haulers or a walk) and reveals what it sees; then each building's turn
 ## The work cycle is in Work, Bonuses, Hands, Roads, Workers, Haulers (static, take the Sim). Blocks only emit signals.
 
@@ -40,8 +39,8 @@ const TideBlock = preload("res://scripts/tide.gd")
 const Gate = preload("res://scripts/gate.gd")
 const SeasonsBlock = preload("res://scripts/seasons.gd")
 const CarryBlock = preload("res://scripts/carry.gd")
+const SkyreachBlock = preload("res://scripts/skyreach.gd")
 const Ruins = preload("res://scripts/ruins.gd")
-
 var won := false
 var hand_tools := false  # you've made a Flint Tool, so hand gathering is doubled for good
 var shard_seen := false  # the player has clicked the Strange Stone, revealing hidden techs
@@ -73,6 +72,7 @@ var livewire := LivewireBlock.new()  # Livewire: the Power Pole nets and the Ord
 var tide := TideBlock.new()  # Livewire stage 2: the Bloom's creep out of the south, and what holds it back
 var gate := Gate.new(livewire, town, world, tide)  # Livewire stage 3: the Skyward gate's two deeds
 var seasons := SeasonsBlock.new()  # Seasons of Strain: a pressure every few minutes and the answer to it
+var skyreach := SkyreachBlock.new()  # Step 8, Skyreach (run 2 on): the sky's sectors, landfalls and the tower
 var carry := CarryBlock.new()  # Step 7, the Exodus: what the Kith carry from earlier runs (read only; empty in a first run)
 
 
@@ -94,18 +94,17 @@ func _init() -> void:
 	tech_tree.story_has = story.has_event
 	story.recorded.connect(_on_story)
 	people.twin = starfall.twin  # the Healer's leaves for every home, from the Kith's own twin
-	starfall.said.connect(_announce)
+	for block in [starfall, teardown, livewire, tide, skyreach]:  # each tells the log what it did
+		block.said.connect(_announce)
 	starfall.moment.connect(story.record)
-	teardown.said.connect(_announce)
 	teardown.moment.connect(story.record)
-	livewire.said.connect(_announce)
-	tide.said.connect(_announce)
 	town.on_net = livewire.powered_at
 	town.overgrown = tide.is_overgrown_at
 	town.on_bloom = tide.bloom_at
 	var weak: WeakRef = weakref(self)  # a lambda that held the Sim itself would keep it alive for ever
 	town.rubble_at = func(p): return Ruins.rubble(weak.get_ref(), p)
 	town.lesson_has = teardown.knows
+	town.site_at = skyreach.site_pos
 	tech_tree.gift_has = starfall.read  # a tech may wait on a gift read or a Lesson learned (Ironfall)
 	tech_tree.lesson_has = teardown.knows
 	tech_tree.known_before = carry.knows_tech  # the Exodus: a tech learned in an earlier run costs a share of the study
@@ -323,6 +322,7 @@ func tick(delta: float) -> void:
 	story.update(self)
 	livewire.tick(self, delta)
 	tide.tick(self, delta)
+	skyreach.tick(self, delta)
 	seasons.tick(self, delta)
 	sky.tick(delta)
 	starfall.tick(delta)
