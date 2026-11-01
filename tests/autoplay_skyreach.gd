@@ -11,6 +11,7 @@ extends "res://tests/autoplay_livewire.gd"
 const Skyreach = preload("res://scripts/skyreach.gd")
 
 const TOWERS := 3  # Signal Towers the bot keeps: three sectors surveyed is the era's goal
+const MEND_ENGINES := 4  # a mended net may bring the Generators to this many
 const TOWER_NEAR := 8.0  # tiles from the Hearth a Signal Tower stands, as a rule
 const TOWER_FAR := 13.0
 
@@ -97,7 +98,7 @@ func _steel_left() -> int:
 func _short_goods() -> Dictionary:
 	var out := super._short_goods()
 	if _sky_working():
-		for id in ["iron", "coal", "iron_ore", "steel", "copper"]:
+		for id in ["iron", "coal", "iron_ore", "steel", "copper", "wire"]:
 			if _gate_short(id) > 0:
 				out[id] = true
 	return out
@@ -134,10 +135,47 @@ func _build_livewire() -> bool:
 
 func _build_sky() -> bool:
 	_look_at_stone()
+	if _mend_wire_power():
+		return true
 	if s.skyreach.site.x >= 0 and _skyreach().is_empty() and _place_skyreach():
 		return true
 	if _count("signal_tower") < TOWERS and s.town.unlocked("signal_tower") and _place_signal():
 		return true
+	return false
+
+
+## The Bloom eats poles and engines. While the Skyreach still wants Wire and a Wire Mill stands with no engine on its net, a player
+## puts an engine back beside that net's poles (or a pole beside a mill that fell off every net). Four engines at most.
+func _mend_wire_power() -> bool:
+	if _sky_need("wire") <= _inv("wire") or _count("generator") >= MEND_ENGINES:
+		return false
+	for b in s.town.buildings:
+		if b["type"] != "wire_mill" or b["paused"]:
+			continue
+		var at: Vector2i = b["pos"]
+		if s.livewire.net_of.has(at):
+			var net: Dictionary = s.livewire.nets[s.livewire.net_of[at]]
+			if not net["engines"].is_empty():
+				continue
+			var poles: Array = net["poles"]
+			var near := func(p):
+				var best := INF
+				for q in poles:
+					best = minf(best, Vector2(p).distance_to(Vector2(q)))
+				return -INF if best > Data.POLE_REACH else -best
+			if s.town.unlocked("generator") and _place_best("generator", near):
+				lines.append("%5.0f s    + Generator beside the cut net of the Wire Mill at %s" % [clock, at])
+				return true
+		elif s.town.unlocked("power_pole"):
+			var close := func(p):
+				return (
+					-Vector2(p).distance_to(Vector2(at))
+					if Vector2(p).distance_to(Vector2(at)) <= Data.POLE_REACH
+					else -INF
+				)
+			if _place_best("power_pole", close):
+				lines.append("%5.0f s    + Power Pole beside the Wire Mill at %s" % [clock, at])
+				return true
 	return false
 
 
