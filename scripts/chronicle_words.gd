@@ -254,6 +254,48 @@ const STARS := {
 					"text": "A second chance for everyone. I wonder what it costs the ones who do not know."
 				},
 			},
+			"seal":
+			{
+				"event": "ending_seal",
+				"label": "Seal Solace",
+				"entry":
+				{
+					"voice": "elder",
+					"text": "We shut the door with everyone standing at it, and kept the world as it was."
+				},
+				"whisper":
+				{
+					"voice": "elder",
+					"text": "A world kept whole is a world that does not change. I think of that sometimes."
+				},
+			},
+			"heal":
+			{
+				"event": "ending_heal",
+				"label": "Heal the Bloom",
+				"entry":
+				{
+					"voice": "elder",
+					"text": "We walked out to the green growth together, and it remembered it had been a river."
+				},
+				"whisper":
+				{"voice": "elder", "text": "I wonder what the river would have told us, had we asked sooner."},
+			},
+			"leave":
+			{
+				"event": "ending_leave",
+				"label": "Leave together",
+				"entry":
+				{
+					"voice": "elder",
+					"text": "The door opened for everyone it had ever carried, and we went through it together."
+				},
+				"whisper":
+				{
+					"voice": "elder",
+					"text": "Somewhere a world is healing without us. I hope it forgives the hands that broke it."
+				},
+			},
 		},
 	},
 }
@@ -384,23 +426,11 @@ const SELA_TRUST := "Telling %d: %s (%d trust)"
 
 # The endings page: the three that are open now, and the three true endings that Step 8 builds.
 const ENDINGS_TIMES := "%d time"
-const TRUE_ENDINGS := [
-	{
-		"name": "Seal Solace",
-		"line": "Shut the door, and keep the world as it is.",
-		"needs": "Read The Way Out while the Lumen are allies.",
-	},
-	{
-		"name": "Heal the Bloom",
-		"line": "Mend what the first hands broke.",
-		"needs": "Read The Way Out while the Lumen are allies, after an earlier Cataclysm.",
-	},
-	{
-		"name": "Leave together",
-		"line": "Go through the door, with everyone it has carried.",
-		"needs": "Read The Way Out while the Lumen are allies, after an earlier Time loop.",
-	},
-]
+const TRUE_NEEDS := {
+	"seal": "Read The Way Out while the Lumen are allies.",
+	"heal": "Read The Way Out while the Lumen are allies, after an earlier Cataclysm.",
+	"leave": "Read The Way Out while the Lumen are allies, after an earlier Time loop.",
+}
 
 # The book itself.
 const TITLE := "The Chronicle"

@@ -106,6 +106,9 @@ func test_story_ids_are_stable_and_unique() -> void:
 		"ending_exodus",
 		"ending_cataclysm",
 		"ending_loop",
+		"ending_seal",
+		"ending_heal",
+		"ending_leave",
 		"relic_forge",
 		"relic_lantern",
 		"relic_cart"

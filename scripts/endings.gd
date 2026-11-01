@@ -25,6 +25,32 @@ static func why_locked(ending: String, lean: String) -> String:
 	return Data.ENDINGS["needs_" + Data.ENDINGS[ending]["lean"]]
 
 
+## True once the true endings show on the card: the marks of The Way Out are read in this run (the old set only allies may read) and
+## the Lumen still stand as allies (Step 8B).
+static func way_open(s) -> bool:
+	return s.story.has_event("way_read") and s.starfall.lean == "allies"
+
+
+## Why the true ending `ending` ("seal", "heal" or "leave") is shut in the run `s`, in words: "" when it is open.
+static func true_why(ending: String, s) -> String:
+	if not way_open(s):
+		return Data.ENDINGS["needs_way"]
+	var need: String = Data.ENDINGS[ending]["needs"]
+	if need != "" and not s.carry.has_reached(need):
+		return Data.ENDINGS["needs_" + need]
+	return ""
+
+
+## True when the true ending `ending` is open in the run `s`.
+static func true_open(ending: String, s) -> bool:
+	return true_why(ending, s) == ""
+
+
+## True for one of the true endings.
+static func is_true(ending: String) -> bool:
+	return ending in Data.ENDINGS["true_order"]
+
+
 ## The record of the run in `s` (a Sim) that ends in `ending`.
 static func telling(s, ending: String) -> Dictionary:
 	var choices := []

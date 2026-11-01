@@ -22,6 +22,12 @@ Era 6, mechanic **Survey the sky**, beat **the Bloom arrives**. Spec: the direct
 - Stage 1 Steel 30, Stone 400. Stage 2 Wire 120, Shard 4. Stage 3 Steel 30, Wire 60, Brick 200, Rope 120, Copper 120, Shard 3.
 - Shards are chipped off the Strange Stone by hand (5 s a hold); the era asks 7 for the stages and 3 for the towers.
 
+## The true endings (Step 8B)
+- **Shown when** the marks of The Way Out (set 9) are read in this run and the Lumen still stand as allies (the set can only be read as allies). Then the ending card has a "The telling can be made whole" box above the three: **Seal Solace** (always open then), **Heal the Bloom** (needs a Cataclysm in an earlier telling) and **Leave together** (needs a Time loop in an earlier one). A shut one shows its need.
+- **What each does:** the telling is banked like any ending (`Profile.set_out`; the record's ending is `seal`, `heal` or `leave`, story moments `ending_seal`/`ending_heal`/`ending_leave`), then a 3-still cutscene (`seal_end`, `heal_end`, `leave_end`; placeholder words, no painted stills yet), its last still the fireside: "And that is how the telling became whole." Then the Chronicle opens on the telling with a **gold** ending star, and a card asks **Another telling** or the **Title screen**.
+- **Earlier endings** reach a run through `carry.reached` (every ending of the tellings before it, from the profile's tellings); `carry.cycle()` counts the true ones (Step 8C).
+- Where: `Endings.way_open/true_why/true_open`, `Data.ENDINGS["seal"|"heal"|"leave"]`, `EndingCard` (true box, scrolls in a short window), `GameMenu._may_end/_after_chronicle`, `CutscenePlayer.TRUE_ENDING_SCENES`, `ChronicleBook` (gold star, Endings page). Tests: `tests/true_endings_tests.gd`.
+
 ## Pace
 Bar: about 15 minutes, 10 to 20; the 6-minute floor for an era played twice before stays. Numbers in `Data.SKYREACH` are first guesses tuned with the bots (`tests/autoplay_skyreach.gd`, `pace.gd skyreach from=<a run from the end of Livewire>`). The result is in the Step 8A report.
 

@@ -16,11 +16,16 @@ const Rendered = preload("res://scripts/rendered_art.gd")
 const Ui = preload("res://scripts/ui.gd")
 
 const WIDTH := 480.0
+const ROOM_MARGIN := 24.0  # window left free above and below the card
 
 var _title: Label
 var _text: Label
 var _rows := {}  # ending id -> {"button", "line", "gives", "why"}
 var _keep: Button
+var _true_box: VBoxContainer
+var _scroll: ScrollContainer
+var _column: VBoxContainer
+var _room := 0.0  # the height the card may take, set by place()
 
 
 func setup() -> void:
@@ -36,12 +41,23 @@ func setup() -> void:
 	var card := PanelContainer.new()
 	card.add_theme_stylebox_override("panel", Ui.panel_style(Ui.PANEL, 14))
 	centre.add_child(card)
+	_scroll = ScrollContainer.new()  # a window shorter than the card scrolls it (see _fit), never cuts it off
+	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	card.add_child(_scroll)
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 12)
 	v.custom_minimum_size = Vector2(WIDTH, 0)
-	card.add_child(v)
+	_scroll.add_child(v)
+	_column = v
 	_title = _words(v, "", 26, Ui.HIGHLIGHT)
 	_text = _words(v, Data.ENDINGS["text"], 17, Ui.TEXT)
+	_true_box = VBoxContainer.new()  # the true endings (Step 8B) sit above the three, shown once the Way Out is read
+	_true_box.add_theme_constant_override("separation", 12)
+	v.add_child(_true_box)
+	_words(_true_box, Data.ENDINGS["true_title"], 20, Ui.HIGHLIGHT)
+	_words(_true_box, Data.ENDINGS["true_text"], 16, Ui.TEXT)
+	for id in Data.ENDINGS["true_order"]:
+		_true_box.add_child(_row(id))
 	for id in Data.ENDINGS["order"]:
 		v.add_child(_row(id))
 	_keep = Ui.button(Data.ENDINGS["keep"])
@@ -105,18 +121,32 @@ func _relic_icons() -> Control:
 func place(area: Rect2) -> void:
 	position = area.position
 	size = area.size
+	_room = area.size.y - 2.0 * ROOM_MARGIN
+	_fit()
+
+
+## The scroll is as tall as the column when the window has the room, else as tall as the room (and the column scrolls).
+func _fit() -> void:
+	if _scroll == null:
+		return
+	var want: float = _column.get_combined_minimum_size().y
+	var bar: float = 12.0 if _room > 0.0 and want > _room else 0.0
+	_scroll.custom_minimum_size = Vector2(WIDTH + bar, minf(want, _room) if _room > 0.0 else want)
 
 
 ## Put the card up for telling number `run` and the Lumen lean `lean`: a row the lean shuts is greyed, with its reason.
-func open(run: int, lean: String) -> void:
+## `true_why` is {true ending: why it is shut ("" when open)} once the Way Out is read; empty, the true endings do not show.
+func open(run: int, lean: String, true_why := {}) -> void:
 	_title.text = Data.ENDINGS["title_first"] if run <= 1 else Data.ENDINGS["title_later"] % run
+	_true_box.visible = not true_why.is_empty()
 	for id in _rows:
-		var reason := Endings.why_locked(id, lean)
+		var reason: String = true_why.get(id, "") if Endings.is_true(id) else Endings.why_locked(id, lean)
 		var row: Dictionary = _rows[id]
 		row["button"].disabled = reason != ""
 		row["why"].text = reason
 		row["why"].visible = reason != ""
 	visible = true
+	_fit.call_deferred()
 
 
 ## "Keep building": put the card away and say so.

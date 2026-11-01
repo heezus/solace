@@ -115,7 +115,7 @@ func test_every_road_not_taken_has_a_whisper() -> void:
 			for w in stars[0]["whispers"]:
 				t.check(w["text"] != "" and w["voice"] != "", "%s/%s: the whisper has a voice" % [kind, id])
 	t.check(
-		Words.TRUE_ENDINGS.size() == 3 and Words.TRUE_ENDINGS.all(func(e): return e["needs"] != ""),
+		Words.TRUE_NEEDS.size() == 3 and Words.TRUE_NEEDS.values().all(func(e): return e != ""),
 		"three true endings, each with its need"
 	)
 

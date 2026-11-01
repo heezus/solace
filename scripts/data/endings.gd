@@ -57,6 +57,61 @@ const ENDINGS := {
 		"next_title": "ANOTHER VALLEY",
 		"next_text": "A different valley, and the same people. The Lumen remember the Kith, and Sela knows their name.",
 	},
+	# Step 8B, the true endings: they appear on the card once the marks of The Way Out (set 9) are read while the Lumen are allies. Seal
+	# Solace is open then; Heal the Bloom needs a Cataclysm in an earlier telling and Leave together a Time loop in an earlier one.
+	# `needs` is the earlier ending ("" for none). A true ending ends the telling for good: its cutscene (scripts/data/cutscenes.gd),
+	# then the Chronicle with a gold star, then the player chooses Another telling (the cycles, Step 8C) or the title screen.
+	"true_order": ["seal", "heal", "leave"],
+	"true_title": "The telling can be made whole",
+	"true_text":
+	"The marks of the Way Out are read, and the Lumen stand with the Kith. Each of these ends the telling for good.",
+	"true_gives": "The telling is told whole",
+	"needs_way": "Needs the marks of The Way Out read while the Lumen are allies",
+	"needs_cataclysm": "Needs a Cataclysm in an earlier telling",
+	"needs_loop": "Needs a Time loop in an earlier telling",
+	"true_confirm_yes": "Make it whole",
+	"seal":
+	{
+		"id": "ending_seal",
+		"true": true,
+		"needs": "",
+		"gives": "The telling told whole",
+		"next_title": "ANOTHER TELLING",
+		"next_text": "A new land, and the Kin who remember a telling made whole. Whatever comes now comes harder.",
+		"name": "Seal Solace",
+		"line": "Shut the door, and keep the world as it is.",
+		"end":
+		"The door is shut with everyone it carried standing at it. Solace stays as it is, and the Bloom stays outside.",
+	},
+	"heal":
+	{
+		"id": "ending_heal",
+		"true": true,
+		"needs": "cataclysm",
+		"gives": "The telling told whole",
+		"next_title": "ANOTHER TELLING",
+		"next_text": "A new land, and the Kin who remember a telling made whole. Whatever comes now comes harder.",
+		"name": "Heal the Bloom",
+		"line": "Mend what the first hands broke.",
+		"end":
+		"The Kith and the Lumen walk out to the green growth together. The Bloom answers, and the river it was remembers its name.",
+	},
+	"leave":
+	{
+		"id": "ending_leave",
+		"true": true,
+		"needs": "loop",
+		"gives": "The telling told whole",
+		"next_title": "ANOTHER TELLING",
+		"next_text": "A new land, and the Kin who remember a telling made whole. Whatever comes now comes harder.",
+		"name": "Leave together",
+		"line": "Go through the door, with everyone it has carried.",
+		"end":
+		"The door opens for everyone it has ever carried. The Kith and the Lumen go through it, and Solace is left to heal.",
+	},
+	"next_choice": "The telling is whole. Begin another telling, or return to the title screen?",
+	"another": "Another telling",
+	"to_title": "Title screen",
 	# The first words of the next run for the Lumen's side, and the line that notes the lean you had.
 	"greet": "Sela said the Kith's name before they said hers.",
 	"remembered": "The Lumen remember: last time, you were %s.",
