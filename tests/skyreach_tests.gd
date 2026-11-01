@@ -24,6 +24,7 @@ func run(runner, helpers) -> void:
 	test_a_surveyed_landfall_is_marked_ahead()
 	test_an_unsurveyed_landfall_gives_no_warning()
 	test_a_landfall_starts_a_patch()
+	test_the_sky_opens_with_a_floor_of_stores()
 	test_a_scorcher_burns_a_seed_out()
 	test_the_site_is_the_only_place()
 	test_three_deliveries_raise_the_skyreach()
@@ -153,6 +154,37 @@ func test_a_landfall_starts_a_patch() -> void:
 	var same := sky()
 	base.tick_for(same, Skyreach.wave_time(0) - Data.SKYREACH["warn"] + 1.0)
 	t.check(same.skyreach.falls[0]["pos"] == f["pos"], "a map falls the same way every time")
+
+
+func test_the_sky_opens_with_a_floor_of_stores() -> void:
+	var floor_of: Dictionary = Data.SKYREACH["floor"]
+	var empty := town()
+	for id in floor_of:
+		empty.economy.inv[id] = 0
+	empty.economy.inv["wire"] = 5
+	empty.events.clear()
+	base.tick_for(empty, 2.0)
+	for id in floor_of:
+		t.check(
+			empty.economy.inv[id] == floor_of[id],
+			"%s is topped up to %d (%d)" % [id, floor_of[id], empty.economy.inv[id]]
+		)
+	t.check(empty.events.has(Data.SKYREACH["shared"]), "and the log says the Lumen shared what they salvaged")
+	var rich := town()
+	for id in floor_of:
+		rich.economy.inv[id] = floor_of[id] + 40
+	base.tick_for(rich, 2.0)
+	t.check(rich.economy.inv["wire"] >= floor_of["wire"] + 40, "stores above the floor are not touched")
+	var foes := town()
+	foes.starfall.lean = "enemies"
+	foes.economy.inv["wire"] = 0
+	foes.events.clear()
+	base.tick_for(foes, 2.0)
+	t.check(foes.events.has(Data.SKYREACH["scavenged"]), "scavengers bring it when the Lumen are enemies")
+	var first := town(false)
+	first.economy.inv["wire"] = 0
+	base.tick_for(first, 2.0)
+	t.check(first.economy.inv["wire"] == 0, "the first telling is given nothing")
 
 
 func test_a_scorcher_burns_a_seed_out() -> void:
