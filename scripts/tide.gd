@@ -59,7 +59,7 @@ func tick(s, delta: float) -> void:
 	if _pace_clock >= Data.TIDE_ETA_SECONDS:
 		_pace_clock = 0.0
 		drawn = units_drawn(s)
-	time += delta * s.seasons.tide_pace()
+	time += delta * s.seasons.tide_pace() * s.carry.tide_factor()
 	refresh_lights(s)
 	var due: Array = []
 	for p in front:

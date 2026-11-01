@@ -112,6 +112,22 @@ const ENDINGS := {
 	"next_choice": "The telling is whole. Begin another telling, or return to the title screen?",
 	"another": "Another telling",
 	"to_title": "Title screen",
+	# Step 8C, the cycles: from the first true ending on, every telling is a cycle that adds one strain to those before it (up to `cycle_cap`
+	# strains). The strains repeat in `strains` order, and a strain can come round again (the fourth is a second faster tide).
+	"cycle_cap": 5,
+	"strains": ["tide", "falls", "stock"],
+	"tide_step": 0.1,  # each tide strain: the tide's clock runs this much faster
+	"fall_step": 1,  # each falls strain: this many more falls in every landfall wave
+	"stock_step": 0.2,  # each stock strain: this share less in the stores when the telling begins
+	"cycle_label": "Cycle %d",
+	"cycle_first": "Cycle %d: %s",
+	"strain_words":
+	{
+		"tide": "the tide runs faster",
+		"falls": "more falls in each landfall wave",
+		"stock": "less in the stores at the start",
+	},
+	"cycle_band": "Cycle %d, telling %d",
 	# The first words of the next run for the Lumen's side, and the line that notes the lean you had.
 	"greet": "Sela said the Kith's name before they said hers.",
 	"remembered": "The Lumen remember: last time, you were %s.",
