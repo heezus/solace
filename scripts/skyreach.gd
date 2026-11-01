@@ -22,6 +22,8 @@ var begun_at := -1.0  # the game clock (Seasons.time) when the era began, -1 bef
 var falls: Array = []  # every landfall planned: {"pos": Vector2i, "at": seconds since begun_at, "sector": n, "fell": bool, "wave": n}
 var waves_planned := 0
 var surveyed: Dictionary = {}  # sector -> true, from the Signal Towers standing now (read, never saved)
+var _hold_rev := -1  # the road revision the held ground below was worked out at
+var _hold: Dictionary = {}  # tile -> true: the Skyreach's ground and the road that links it to a depot, which the Bloom never takes
 var _told_sectors: Dictionary = {}  # sector -> true once the log said it was surveyed
 var _told_warn: Dictionary = {}  # index into falls -> true once the log warned of it
 var _clock := 0.0
@@ -164,6 +166,52 @@ func _find_site(s, sector: int) -> void:
 	site = best
 	s.fog.reveal(site, Data.SKYREACH["site_sight"])
 	said.emit(Data.SKYREACH["site_found"] % sector_name(sector_of(camp, site)))
+
+
+## True on the Skyreach's own ground and on the one road that links it to a depot: the Bloom never takes it ("the tower's ground holds"),
+## so no player is ever locked out of the era by the tide. Worked out again when the roads or buildings change.
+func holds(s, p: Vector2i) -> bool:
+	if site.x < 0:
+		return false
+	if _hold_rev != s.town.road_rev:
+		_hold_rev = s.town.road_rev
+		_hold = _held_ground(s)
+	return _hold.has(p)
+
+
+## The tower's tile and the shortest run of road tiles from its sides to a tile beside a depot (or just the road tiles touching the
+## tower while no road links it yet).
+func _held_ground(s) -> Dictionary:
+	var out := {}
+	if not s.town.building_at.has(site) or s.town.built_type(site) != TOWER:
+		return out
+	out[site] = true
+	var depots: Array = Roads.depots(s)
+	var from := {}
+	var todo: Array = []
+	for n in s.world.NEIGHBORS:
+		var q: Vector2i = site + n
+		if s.world.roads.has(q):
+			out[q] = true
+			from[q] = site
+			todo.append(q)
+	while not todo.is_empty():
+		var q: Vector2i = todo.pop_front()
+		var done := false
+		for d in depots:
+			if absi(d.x - q.x) + absi(d.y - q.y) <= 1:
+				done = true
+		if done:
+			while q != site:
+				out[q] = true
+				q = from[q]
+			return out
+		for n in s.world.NEIGHBORS:
+			var r: Vector2i = q + n
+			if s.world.roads.has(r) and not from.has(r):
+				from[r] = q
+				todo.append(r)
+	return out
 
 
 ## The tiles a road could reach from the town's depots without a long detour (Data.SKYREACH["site_walk"] steps at most): from the roads

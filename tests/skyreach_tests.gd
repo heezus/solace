@@ -28,6 +28,7 @@ func run(runner, helpers) -> void:
 	test_a_scorcher_burns_a_seed_out()
 	test_the_site_is_the_only_place()
 	test_the_site_is_one_a_road_can_reach()
+	test_the_towers_ground_holds()
 	test_three_deliveries_raise_the_skyreach()
 	test_help_shortens_a_stage()
 	test_the_save_keeps_the_sky()
@@ -236,6 +237,45 @@ func test_the_site_is_one_a_road_can_reach() -> void:
 	t.check(not reach.has(across), "a site across a long river is not one a road can reach")
 	s.world.set_tile(camp + Vector2i(6, 1), "grain")
 	t.check(not s.skyreach._walkable(s).has(camp + Vector2i(6, 1)), "and a field is not ground for a road")
+
+
+func test_the_towers_ground_holds() -> void:
+	var s := sky()
+	var camp: Vector2i = s.world.camp_pos
+	var site: Vector2i = camp + Vector2i(0, 9)
+	s.skyreach.site = site
+	t.check(not s.skyreach.holds(s, site), "nothing is held before the tower stands")
+	base.put(s, Skyreach.TOWER, site)
+	var lane: Array = []
+	for y in range(camp.y + 1, site.y):  # a road from beside the Hearth to the tower's top side
+		lane.append(Vector2i(camp.x, y))
+	for p in lane:
+		s.world.roads[p] = true
+	var stray: Vector2i = camp + Vector2i(3, 4)
+	s.world.roads[stray] = true
+	s.town.road_rev += 1
+	t.check(s.skyreach.holds(s, site), "the tower's own ground holds")
+	t.check(s.skyreach.holds(s, lane[0]) and s.skyreach.holds(s, lane[-1]), "and the road that links it to a depot")
+	t.check(not s.skyreach.holds(s, stray), "but not a road that leads nowhere")
+	t.check(s.tide._state(s, lane[3]) == 2, "so the tide never takes it")
+	# the link is cut, then laid again by hand: the new link holds too
+	var cut: Vector2i = lane[3]
+	s.world.roads.erase(cut)
+	s.town.road_rev += 1
+	t.check(not s.skyreach.holds(s, lane[0]), "a road beyond a cut no longer links the tower, so it is not held")
+	t.check(s.skyreach.holds(s, lane[-1]), "the tower's own side stays held")
+	s.world.roads[cut] = true
+	s.town.road_rev += 1
+	t.check(s.skyreach.holds(s, cut) and s.skyreach.holds(s, lane[0]), "a link laid again holds")
+	t.check(s.tide._state(s, cut) == 2, "so the tide cannot take the mended tile")
+	var relaid: Vector2i = camp + Vector2i(1, 5)  # a different road to the same depot: the link may take any path
+	for y in range(camp.y + 2, site.y):
+		s.world.roads.erase(Vector2i(camp.x, y))
+	for y in range(camp.y + 1, site.y + 1):  # down the next column to the tower's side
+		s.world.roads[Vector2i(camp.x + 1, y)] = true
+	s.town.road_rev += 1
+	t.check(s.skyreach.holds(s, relaid), "a link by another way holds")
+	t.check(not s.skyreach.holds(s, lane[2]), "and the road it replaced is not held")
 
 
 func test_three_deliveries_raise_the_skyreach() -> void:

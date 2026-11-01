@@ -26,6 +26,10 @@ When the sky opens (run 2 on) the stores are topped up to **Wire 100 and Steel 3
 - Stage 1 Steel 30, Stone 400. Stage 2 Wire 120, Shard 4. Stage 3 Steel 30, Wire 60, Brick 200, Rope 120, Copper 120, Shard 3.
 - Shards are chipped off the Strange Stone by hand (5 s a hold); the era asks 7 for the stages and 3 for the towers.
 
+## The tower's ground holds (design call, director 2026-11-01)
+- For every run: the Skyreach tower's tile, and the road tiles that link it to a depot (the shortest road path from the tower's sides to a depot), cannot be overgrown by the Bloom (`Skyreach.holds`, read by `Tide._state`). A player cannot be locked out of their own Skyreach by a Bloom that closes round the tower.
+- It holds only roads that still stand when the tower is placed: it cannot restore a road the Bloom has already taken. In the chain-built run 3 on map 1 the roads were gone before the tower, so this alone did not finish that cell (Step 8 report).
+
 ## Pace
 A chain-built run 3 start (Cataclysm) on map 1 carries over about 1500 tiles of Bloom with every Copper Hill under it: the bot there trades its surplus for Copper and Wire at Trading Posts and rebuilds works on clear ground, and still ends with the Bloom round the tower (Step 8 report).
 

@@ -1143,3 +1143,7 @@ An Arc Lamp keeps the Bloom 5 tiles from its light and a Scorcher reached 4, so 
 ## 2026-10-31: Skyreach, the sixth era (Step 8A)
 - **What was built.** From run 2 on, Skyward opens the sky instead of ending the run. Signal Towers survey the 6 sectors of the sky; a surveyed sector shows its landfalls 90 s ahead; landfalls start Bloom patches that spread as the tide does; the Skyreach is raised on a site the first tower finds, in three single deliveries, with the Lumen's help speeding a stage by 30%. Its third stage ends the telling and opens the endings card. Run 1 is as it was. Page 32.
 - **Our calls.** The Signal Tower is a building of its own, not a Watchtower upgrade (no change to the Watchtower or its saves). The Bloom reuses the tide's rules, so every answer the player already has (Scorcher, Arc Lamp, Firebreak) works. Falls are seeded from the map, so a map falls the same way every time.
+
+## 2026-11-01: The tower's ground holds (Step 8A follow-up)
+- **What was built.** The Skyreach tower and the road tiles linking it to a depot cannot be overgrown by the Bloom, in every run. Page 32.
+- **Tried and dropped.** Holding the Livewire tech goal while the Bloom grows (Bloom 1526 to 2303 tiles at the Skyreach start). The chain-built run 3 on map 1 still does not finish with the hold: its roads were taken before the tower stood (Step 8 report).
