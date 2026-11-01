@@ -14,6 +14,10 @@ const TOWERS := 3  # Signal Towers the bot keeps: three sectors surveyed is the 
 const MEND_ENGINES := 4  # a mended net may bring the Generators to this many
 const TOWER_NEAR := 8.0  # tiles from the Hearth a Signal Tower stands, as a rule
 const TOWER_FAR := 13.0
+const SURPLUS := 300  # a good the town holds this much of beyond the era's need is one to trade away
+const KEEP_SWAPPING := 100  # a Trading Post keeps swapping a good while the town holds this much of it beyond the era's need
+const SAFE_CLEAR_MIN := 2
+const SAFE_CLEAR := 6  # tiles of clear ground round a rebuilt Mine, Smelter or Wire Mill: the safe side, away from the Bloom
 const NET_NEAR := 4.0  # a warned fall this near the power net (a Pole, Wire Mill or Generator) is met before it lands
 const NET_PARTS := ["power_pole", "wire_mill", "generator"]
 const NET_WEIGHT := 5  # a net building counts this many when the Signal Towers choose their sectors
@@ -224,12 +228,124 @@ func _build_sky() -> bool:
 	_look_at_stone()
 	if _mend_wire_power():
 		return true
+	if _rebuild_metal() or _trade_for_the_era():
+		return true
 	if _meet_landfalls():
 		return true
 	if s.skyreach.site.x >= 0 and _skyreach().is_empty() and _place_skyreach():
 		return true
 	if _count("signal_tower") < TOWERS and s.town.unlocked("signal_tower") and _place_signal():
 		return true
+	return false
+
+
+## The Bloom takes the metal works. While the era still wants Copper or Wire and none of the works for it stands, a player builds them
+## again on the safe side, away from the Bloom: a Mine on the Copper Hills and a Smelter for Copper, a Wire Mill on a net with an engine.
+func _rebuild_metal() -> bool:
+	if _sky_need("copper") > _inv("copper"):
+		var hills := func(p): return s.world.tile_at(p) == "copper_hills"
+		if s.town.unlocked("mine") and _live("mine", "copper_hills") == 0 and _place_safe("mine", hills):
+			return true
+		if s.town.unlocked("smelter") and _live("smelter", "") == 0 and _place_safe("smelter", func(_p): return true):
+			return true
+	if _sky_need("wire") > _inv("wire") and s.town.unlocked("wire_mill") and _live("wire_mill", "") == 0:
+		return _place_safe("wire_mill", func(p): return _on_net(p))
+	return false
+
+
+## When the Bloom has taken the works that make what the Skyreach still wants (the Copper Hills lie under it, the net is dead), a player
+## trades the surplus for it: a Trading Post swaps 3 of one good for 1 of another. A post for each good the era lacks, two at most, each
+## set to a good the town can spare and left alone while it can.
+func _trade_for_the_era() -> bool:
+	var shorts: Array = []
+	for id in ["copper", "wire"]:
+		if _sky_need(id) > _inv(id) and not _works_live(id):
+			shorts.append(id)
+	if shorts.is_empty():
+		return false
+	var posts: Array = []
+	for i in s.town.buildings.size():
+		var b: Dictionary = s.town.buildings[i]
+		if b["type"] == "trading_post" and not s.tide.is_overgrown(b):
+			posts.append(i)
+	for id in shorts:
+		var index := -1
+		for i in posts:
+			if s.town.buildings[i]["get"] == id:
+				index = i
+		if index < 0:
+			for i in posts:
+				if not shorts.has(s.town.buildings[i]["get"]):
+					index = i
+		if index < 0:
+			if (
+				posts.size() < shorts.size()
+				and s.town.unlocked("trading_post")
+				and _place_safe("trading_post", func(_p): return true)
+			):
+				return true
+			continue
+		if _set_swap(index, id):
+			return true
+	return false
+
+
+## Point Trading Post `index` at `get`, giving the good the town has most to spare (kept as it is while that can be spared).
+func _set_swap(index: int, want: String) -> bool:
+	var post: Dictionary = s.town.buildings[index]
+	if post["get"] == want and post["give"] != "" and _inv(post["give"]) - _sky_need(post["give"]) > KEEP_SWAPPING:
+		return false
+	var give := ""
+	var most := SURPLUS
+	for id in Data.ITEM_ORDER:
+		var spare := _inv(id) - _sky_need(id)
+		if id != want and spare > most and Buildings.trade_allows("trading_post", id):
+			give = id
+			most = spare
+	if give != "" and (post["give"] != give or post["get"] != want) and s.town.set_trade(index, give, want):
+		lines.append("%5.0f s    the Trading Post swaps %s for %s" % [clock, give, want])
+		return true
+	return false
+
+
+## True while works that make `id` stand: a Mine on Copper Hills clear of the Bloom and a Smelter for Copper, a Wire Mill whose net
+## has an engine.
+func _works_live(id: String) -> bool:
+	if id == "copper":
+		for b in s.town.buildings:
+			if b["type"] == "mine" and not s.tide.is_overgrown(b) and s.world.tile_at(b["pos"]) == "copper_hills":
+				return _live("smelter", "") > 0
+		return false
+	for b in s.town.buildings:
+		if b["type"] == "wire_mill" and not s.tide.is_overgrown(b) and not String(b["status"]).begins_with("No power"):
+			if not s.livewire.net_of.has(b["pos"]):
+				continue
+			if not s.livewire.nets[s.livewire.net_of[b["pos"]]]["engines"].is_empty():
+				return true
+	return false
+
+
+## How many `type` stand that the Bloom has not overgrown, on `tile` when one is named.
+func _live(type: String, tile: String) -> int:
+	var n := 0
+	for b in s.town.buildings:
+		if b["type"] == type and not s.tide.is_overgrown(b) and (tile == "" or s.world.tile_at(b["pos"]) == tile):
+			n += 1
+	return n
+
+
+## Build `type` on a tile `fits` accepts that has clear ground round it, nearest the Hearth among the clearest: as much clear ground
+## as there is to be had, down to SAFE_CLEAR_MIN tiles.
+func _place_safe(type: String, fits: Callable) -> bool:
+	for need in [SAFE_CLEAR, SAFE_CLEAR_MIN]:
+		var score := func(p):
+			var clear: int = s.skyreach.clear_of_bloom(s, p)
+			if clear < need or not fits.call(p):
+				return -INF
+			return float(clear) * 10.0 - Vector2(p).distance_to(Vector2(s.world.camp_pos))
+		if _place_best(type, score):
+			lines.append("%5.0f s    + %s on the safe side (the Bloom took the works)" % [clock, type])
+			return true
 	return false
 
 
