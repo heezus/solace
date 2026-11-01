@@ -151,18 +151,28 @@ func set_out_open() -> bool:
 ## Choose an ending: the ending card goes up for this run's number and the Lumen lean the Starfall era ended with.
 func ask_set_out() -> void:
 	if set_out_open():
-		endings.open(state.carry.exodus + 1, state.starfall.lean)
+		endings.open(state.carry.exodus + 1, state.starfall.lean, _true_why())
+
+
+## The true endings the card shows (Step 8B): {ending: why it is shut, "" when open}, empty until the Way Out is read.
+func _true_why() -> Dictionary:
+	var out := {}
+	if Endings.way_open(state):
+		for id in Data.ENDINGS["true_order"]:
+			out[id] = Endings.true_why(id, state)
+	return out
 
 
 ## The row `ending` was chosen: ask "Leave this land?" in the words of how that ending ends. A yes sets out, a no changes nothing.
 func ask_confirm(ending: String) -> void:
-	if set_out_open() and Endings.is_open(ending, state.starfall.lean):
-		confirm.ask(
-			Data.ENDINGS[ending]["end"],
-			Data.ENDINGS["confirm_yes"],
-			Data.ENDINGS["confirm_no"],
-			func(): set_out(ending)
-		)
+	if set_out_open() and _may_end(ending):
+		var yes: String = Data.ENDINGS["true_confirm_yes"] if Endings.is_true(ending) else Data.ENDINGS["confirm_yes"]
+		confirm.ask(Data.ENDINGS[ending]["end"], yes, Data.ENDINGS["confirm_no"], set_out.bind(ending))
+
+
+## True when the lean (or, for a true ending, the Way Out and the earlier endings) opens `ending`.
+func _may_end(ending: String) -> bool:
+	return Endings.true_open(ending, state) if Endings.is_true(ending) else Endings.is_open(ending, state.starfall.lean)
 
 
 ## Set out with `ending` ("exodus", "cataclysm" or "loop"): the ending is a story moment, the run is folded into the profile with
@@ -170,7 +180,7 @@ func ask_confirm(ending: String) -> void:
 ## the Kith stay, when Skyward does not stand yet, the Lumen lean shuts that ending or the profile could not be written (the
 ## carry would be lost).
 func set_out(ending := "exodus") -> bool:
-	if not set_out_open() or not Endings.is_open(ending, state.starfall.lean):
+	if not set_out_open() or not _may_end(ending):
 		return false
 	state.story.record(Data.ENDINGS[ending]["id"])
 	if not Profile.set_out(state, profile_path, ending).saved:
@@ -199,13 +209,34 @@ func _begin_next_run() -> void:
 
 
 func _fireside_told(id: String, _skipped: bool) -> void:
-	if id == "fireside":
+	if id == "fireside" or id in CutscenePlayer.TRUE_ENDING_SCENES:
 		_chronicle_then_next_run()
 
 
+## The Chronicle opens on the telling that just ended; closing it begins the next run, or after a true ending asks Another telling
+## or the title screen (the telling is whole).
 func _chronicle_then_next_run() -> void:
-	book.closed.connect(get_tree().reload_current_scene, CONNECT_ONE_SHOT)
+	var whole := _ended_whole()
+	book.closed.connect(_after_chronicle.bind(whole), CONNECT_ONE_SHOT)
 	open_chronicle("tellings", true)
+
+
+func _after_chronicle(whole: bool) -> void:
+	if not whole:
+		get_tree().reload_current_scene()
+		return
+	confirm.ask(
+		Data.ENDINGS["next_choice"],
+		Data.ENDINGS["another"],
+		Data.ENDINGS["to_title"],
+		get_tree().reload_current_scene,
+		quit_to_title
+	)
+
+
+## True when the telling that just ended was ended by a true ending.
+func _ended_whole() -> bool:
+	return Data.ENDINGS["true_order"].any(func(id): return state.story.has_event(Data.ENDINGS[id]["id"]))
 
 
 ## Ask "Forget every past run?": a yes clears the profile, a no changes nothing.

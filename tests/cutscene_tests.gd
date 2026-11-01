@@ -11,6 +11,8 @@ const CutsceneSettings = preload("res://scripts/cutscene_settings.gd")
 
 const PHASE_A := ["opening", "bronze_dawn", "falling_star", "first_contact", "starfall_end"]
 # sequences that also show stills named for another moment
+## The true endings' stills wait for Codex to paint them (Step 8D): they show their line over a dark panel until then.
+const UNPAINTED := ["seal_end", "heal_end", "leave_end"]
 const OTHER_ART := {"next_telling": "next_", "fireside": "ending_", "kin_reveal": "fireside_"}
 const SETTINGS_PATH := "user://test_cutscenes.cfg"
 
@@ -63,9 +65,10 @@ func test_the_data_is_well_formed() -> void:
 				["opening", "next_telling"]
 				+ PHASE_A.slice(1)
 				+ ["ironfall", "bloom_sign", "skyward_end", "kin_reveal", "broken_world", "way_out", "fireside"]
+				+ ["seal_end", "heal_end", "leave_end"]
 			)
 		),
-		"the thirteen sequences, in the order they play"
+		"the sixteen sequences, in the order they play"
 	)
 	var triggers := {}
 	for id in Data.CUTSCENES:
@@ -96,6 +99,8 @@ func test_the_data_is_well_formed() -> void:
 
 func test_every_still_is_painted() -> void:
 	for id in Data.CUTSCENES:
+		if id in UNPAINTED:
+			continue
 		for still in Data.CUTSCENES[id]["stills"]:
 			var arts: Array = [still["art"]]
 			if still.get("portrait", "") != "":

@@ -10,6 +10,7 @@ const MenuFonts = preload("res://scripts/menu_fonts.gd")
 const WIDTH := 400.0
 
 var _on_yes := Callable()
+var _on_no := Callable()
 var _text: Label
 var _yes: Button
 var _no: Button
@@ -61,24 +62,31 @@ func place(area: Rect2) -> void:
 	size = area.size
 
 
-## Put the question up: `text`, a "yes" button saying `yes_text` that runs `on_yes`, and a "no" button saying `no_text`.
-func ask(text: String, yes_text: String, no_text: String, on_yes: Callable) -> void:
+## Put the question up: `text`, a "yes" button saying `yes_text` that runs `on_yes`, and a "no" button saying `no_text`
+## (which runs `on_no`).
+func ask(text: String, yes_text: String, no_text: String, on_yes: Callable, on_no := Callable()) -> void:
 	_text.text = text
 	_yes.text = yes_text
 	_no.text = no_text
 	_on_yes = on_yes
+	_on_no = on_no
 	visible = true
 
 
-## "No": put the question away, and nothing else happens.
+## "No": put the question away, and nothing else happens (but what `ask` was given to run on "no").
 func cancel() -> void:
+	var action := _on_no
 	visible = false
 	_on_yes = Callable()
+	_on_no = Callable()
+	if action.is_valid():
+		action.call()
 
 
 func _yes_pressed() -> void:
 	var action := _on_yes
 	visible = false
 	_on_yes = Callable()
+	_on_no = Callable()
 	if action.is_valid():
 		action.call()
