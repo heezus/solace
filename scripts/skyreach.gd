@@ -87,6 +87,7 @@ func tick(s, delta: float) -> void:
 		return
 	if begun_at < 0.0:
 		begun_at = s.seasons.time
+		_share(s)
 	_clock += delta
 	if _clock >= 1.0:
 		_clock = 0.0
@@ -97,6 +98,21 @@ func tick(s, delta: float) -> void:
 	for b in s.town.buildings:
 		if b["type"] == TOWER:
 			_build(s, b, delta)
+
+
+## When the sky opens the stores are topped up to `Data.SKYREACH["floor"]` wherever they are lower: with Wire and Steel at nothing,
+## the first cut to the power net could never be mended and no Scorcher bought. The Lumen share what they salvaged, or scavengers
+## bring what they found when the Lumen are enemies.
+func _share(s) -> void:
+	var gave := false
+	for id in Data.SKYREACH["floor"]:
+		var lack: int = Data.SKYREACH["floor"][id] - s.economy.inv.get(id, 0)
+		if lack > 0:
+			s.economy.add(id, lack)
+			s.economy.note(id, lack, Data.FLOW_HAND_SOURCE)
+			gave = true
+	if gave:
+		said.emit(Data.SKYREACH["scavenged"] if s.starfall.lean == "enemies" else Data.SKYREACH["shared"])
 
 
 ## Read the Signal Towers once a second: say which sectors are newly surveyed, find the site, warn of landfalls.
