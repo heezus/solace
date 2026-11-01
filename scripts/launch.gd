@@ -58,4 +58,5 @@ static func begin_new(s, seed_value := -1, profile_path := Profile.PATH) -> void
 		seed_used = int(profile.last.get("seed", randi())) if carry.ending == "cataclysm" else randi()
 	s.carry.from_dict(carry.to_dict())  # before the map, which reads it
 	s.generate(seed_used)
+	s.carry.apply_start(s)  # the cycle's lean stores (Step 8C)
 	Ruins.lay(s, Rect2i(0, 0, s.world.width, s.world.height))

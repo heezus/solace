@@ -84,6 +84,9 @@ func _build_menu() -> void:
 	title.add_theme_constant_override("outline_size", 8)
 	column.add_child(title)
 	column.add_child(_caption(Data.TITLE_TAGLINE))
+	var cycle := _cycle_caption()
+	if cycle != null:
+		column.add_child(cycle)
 	column.add_child(_spacer(14.0))
 	var latest := SaveSlots.latest(slot_dir)
 	var has_save := latest > 0
@@ -120,6 +123,20 @@ func _build_menu() -> void:
 	build.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
 	build.offset_left = 14.0
 	build.offset_top = -30.0
+
+
+## "Cycle N" once an earlier telling ended in a true ending (Step 8C), with the strains it brings as its tip. Null before that.
+func _cycle_caption() -> Label:
+	var profile := Profile.new()
+	profile.load_file(profile_path)
+	var carry := profile.carry()
+	if carry.cycle() <= 0:
+		return null
+	var l := _caption(Data.ENDINGS["cycle_label"] % carry.cycle())
+	l.add_theme_color_override("font_color", Ui.HIGHLIGHT)
+	l.mouse_filter = Control.MOUSE_FILTER_STOP
+	l.tooltip_text = "\n".join(carry.strain_lines().map(func(w): return w.substr(0, 1).to_upper() + w.substr(1)))
+	return l
 
 
 ## The Chronicle: every telling that has ended, read from the profile (an empty sky before the first).

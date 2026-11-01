@@ -32,6 +32,7 @@ const STAR_COLOR := Color("eee7d6")
 const EMBER_COLOR := Color("ffd27a")
 const GOLD := Color("ffc83d")  # a true ending: its star, and its line on the Endings page
 const NEBULA_COLOR := Color("6f8fc8")
+const CYCLE_COLOR := Color("d9a45a")  # the second band of sky: the tellings of the cycles after the first true ending (Step 8C)
 const CELL_COLORS := {
 	"#": Color("ffb040"),
 	"b": Color("b24a9a"),
@@ -291,15 +292,22 @@ func _draw_sky(sky: Array) -> void:
 	for i in DUST:  # a faint starfield behind everything
 		var p := Vector2(dust.randf_range(0.0, _sky.size.x), dust.randf_range(0.0, _sky.size.y))
 		_sky.draw_circle(p, dust.randf_range(0.6, 1.5), Color(STAR_COLOR, dust.randf_range(0.08, 0.38)))
+	var first_true := _first_true(sky)
 	for row in sky.size():
 		var at: Dictionary = _points[sky[row]["run"]]
 		var patch: Rect2 = at["patch"]
+		var cycle := row - first_true if first_true >= 0 and row > first_true else 0  # the second band: a cycle's telling
+		var glow := CYCLE_COLOR if cycle > 0 else NEBULA_COLOR
 		for ring in 9:  # a soft glow behind each constellation
-			_sky.draw_circle(patch.get_center(), patch.size.y * (0.48 - ring * 0.05), Color(NEBULA_COLOR, 0.014))
+			_sky.draw_circle(patch.get_center(), patch.size.y * (0.48 - ring * 0.05), Color(glow, 0.014))
+		if cycle > 0:
+			_sky.draw_line(
+				patch.position + Vector2(8, 4), patch.position + Vector2(patch.size.x - 8, 4), Color(glow, 0.5), 1.5
+			)
 		_sky.draw_string(
 			font,
 			patch.position + Vector2(18, 30),
-			Words.OPEN_TELLING % sky[row]["run"],
+			_patch_name(cycle, sky[row]["run"]),
 			HORIZONTAL_ALIGNMENT_LEFT,
 			-1,
 			Ui.MIN_TEXT,
@@ -316,6 +324,19 @@ func _draw_sky(sky: Array) -> void:
 			_sky.draw_line(
 				stars[stars.size() - 1], _points[sky[row + 1]["run"]]["stars"][0], Color(EMBER_COLOR, 0.5), 2.0, true
 			)
+
+
+## The row of the first telling of `sky` that ended in a true ending, -1 for none: the cycles' second band begins after it.
+func _first_true(sky: Array) -> int:
+	for row in sky.size():
+		if Endings.is_true(String(sky[row].get("ending", ""))):
+			return row
+	return -1
+
+
+## The name written on a patch of sky: "Telling 3", or in the second band "Cycle 1, telling 5".
+func _patch_name(cycle: int, run: int) -> String:
+	return Data.ENDINGS["cycle_band"] % [cycle, run] if cycle > 0 else Words.OPEN_TELLING % run
 
 
 ## Read star `kind` of telling `run` into the panel beside the sky.

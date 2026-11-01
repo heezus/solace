@@ -21,6 +21,8 @@ extends SceneTree
 ## (Profile.set_out), onto map <map> (the run's own seed plus 1000 when it is meant to follow it). The era jobs after it take the
 ## carry from the start files, so each era is still its own job. `ending=cataclysm` or `ending=loop` takes that ending instead (the Exodus
 ## by default); give the map the run's own seed for a Cataclysm, which keeps the map, and the bot does not check the lean.
+## `profile=<file>` keeps the profile from run to run (the earlier tellings count, as for a player), `ending=auto` takes the first true
+## ending that is open (Heal, Leave, Seal) and else the Exodus (Step 8).
 ## `blueprints` with `exodus=` keeps the run's Hearth yard and smelter yard as blueprints (tests/autoplay_blueprints.gd) and lays them on
 ## the new map at the Hearth, to see what plans save a bot (the era jobs after the first read the plans from the start files).
 ## Run: godot --headless --path . -s tests/tools/pace.gd --
@@ -36,6 +38,7 @@ const AutoplaySkyreach = preload("res://tests/autoplay_skyreach.gd")
 const AutoplayStarfall = preload("res://tests/autoplay_starfall.gd")
 const DevStarts = preload("res://scripts/dev_starts.gd")
 const EraProbe = preload("res://tests/tools/era_probe.gd")
+const Endings = preload("res://scripts/endings.gd")
 const Launch = preload("res://scripts/launch.gd")
 const Profile = preload("res://scripts/profile.gd")
 const RunSave = preload("res://scripts/run_save.gd")
@@ -321,7 +324,21 @@ func _begin_run(game: Sim, m: int) -> bool:
 		quit(1)
 		return false
 	var path := "user://exodus_profile_%d.json" % m
-	Profile.forget(path)
+	var keep := ""  # `profile=<file>`: the tellings so far, kept from run to run as a player's profile is
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("profile="):
+			keep = a.substr(8)
+	if keep != "":
+		path = keep
+	else:
+		Profile.forget(path)
+	if ending == "auto":  # the true ending the Mixed path takes when the run may (Heal, then Leave, then Seal), else the Exodus
+		ending = "exodus"
+		for id in ["heal", "leave", "seal"]:
+			if Endings.true_open(id, end):
+				ending = id
+				break
+		print("ending: %s" % ending)
 	var with_blueprints := false  # keep the run's yards and lay them again (Step 7D): `blueprints` or `blueprints=<mode>`
 	for a in OS.get_cmdline_user_args():
 		if a == "blueprints" or a.begins_with("blueprints="):

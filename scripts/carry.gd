@@ -34,9 +34,55 @@ func has_reached(earlier: String) -> bool:
 	return earlier in reached
 
 
-## The number of true endings the tellings before this run reached: the cycle this run is in (Step 8C).
+## The cycle this run is in (Step 8C): 0 until a telling has ended in a true ending, then one more for every telling from that one on
+## (the true ending itself makes cycle 1, and any ending after it the next cycle).
 func cycle() -> int:
-	return reached.filter(func(e): return e in Data.ENDINGS["true_order"]).size()
+	for i in reached.size():
+		if reached[i] in Data.ENDINGS["true_order"]:
+			return reached.size() - i
+	return 0
+
+
+## How many times the strain `kind` ("tide", "falls" or "stock") weighs on this run: the first `cycle()` strains of the list, up to the cap.
+func strain_count(kind: String) -> int:
+	var list: Array = Data.ENDINGS["strains"]
+	var n := 0
+	for i in mini(cycle(), Data.ENDINGS["cycle_cap"]):
+		if list[i % list.size()] == kind:
+			n += 1
+	return n
+
+
+## How much faster the tide's clock runs in this cycle (1.0 outside the cycles).
+func tide_factor() -> float:
+	return 1.0 + Data.ENDINGS["tide_step"] * strain_count("tide")
+
+
+## The falls every landfall wave carries beyond its plan in this cycle.
+func extra_falls() -> int:
+	return Data.ENDINGS["fall_step"] * strain_count("falls")
+
+
+## The share of the start stock the stores keep in this cycle (1.0 outside the cycles).
+func stock_factor() -> float:
+	return maxf(1.0 - Data.ENDINGS["stock_step"] * strain_count("stock"), 0.0)
+
+
+## Take the cycle's start-stock strain out of the stores of the run `s`, which has just been made.
+func apply_start(s) -> void:
+	var f := stock_factor()
+	if f < 1.0:
+		for id in s.economy.inv:
+			s.economy.inv[id] = floori(s.economy.inv[id] * f)
+
+
+## The words of the strains of this cycle, one per line: "" outside the cycles.
+func strain_lines() -> Array:
+	var out: Array = []
+	for kind in Data.ENDINGS["strains"]:
+		if strain_count(kind) > 0:
+			out.append(Data.ENDINGS["strain_words"][kind])
+	return out
 
 
 ## True for a first run, which carries nothing.
