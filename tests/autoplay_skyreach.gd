@@ -182,19 +182,19 @@ func _fall_met(p: Vector2i) -> bool:
 ## A warned fall that will land near the net gets a Scorcher (or an Arc Lamp) on the net within reach of it, before it lands. While
 ## the stores cannot pay for one the Skyreach is paused, as a player does, so its haulers stop carrying off the Wire and Steel.
 func _meet_landfalls() -> bool:
-	var marks: Array = s.skyreach.marked(s)
-	marks.sort_custom(func(a, b): return a["eta"] < b["eta"])
+	var warned: Array = s.skyreach.marked(s)
+	warned.sort_custom(func(a, b): return a["eta"] < b["eta"])
 	var open_mark := false
-	for m in marks:
+	for m in warned:
 		var at: Vector2i = m["pos"]
 		if _net_dist(at) > NET_NEAR or _fall_met(at):
 			continue
 		open_mark = true
 		for type in ["scorcher", "arc_lamp"]:
-			var reach: float = Data.SCORCH_REACH - 1.0 if type == "scorcher" else 4.0
+			var span: float = Data.SCORCH_REACH - 1.0 if type == "scorcher" else 4.0
 			var score := func(p):
 				var d := Vector2(p).distance_to(Vector2(at))
-				return -INF if d > reach or not _on_net(p) else -d
+				return -INF if d > span or not _on_net(p) else -d
 			if _place_best(type, score):
 				lines.append("%5.0f s    + %s for the landfall at %s (%.0f s)" % [clock, type, at, m["eta"]])
 				return true
