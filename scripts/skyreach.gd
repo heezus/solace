@@ -12,6 +12,7 @@ extends RefCounted
 signal said(message: String)
 
 const Data = preload("res://scripts/data.gd")
+const Roads = preload("res://scripts/roads.gd")
 
 const TOWER := "skyreach_tower"
 const SIGNAL := "signal_tower"
@@ -149,6 +150,7 @@ func _find_site(s, sector: int) -> void:
 						or (only and sector_of(camp, p) != sector)
 						or not walk.has(p)
 						or not _open(s, p)
+						or not _approach(s, p, walk)
 					):
 						continue
 					var score := clear_of_bloom(s, p) * 10.0 - r
@@ -164,18 +166,52 @@ func _find_site(s, sector: int) -> void:
 	said.emit(Data.SKYREACH["site_found"] % sector_name(sector_of(camp, site)))
 
 
-## The tiles the Kith can walk to from the Hearth now: a site beyond a river or the Bloom would be one no road could reach.
+## The tiles a road could reach from the town's depots without a long detour (Data.SKYREACH["site_walk"] steps at most): from the roads
+## that reach a depot and the ground beside one, over roads and open ground a road goes on. A site beyond a river or the Bloom, round
+## a long way, or boxed in by fields and buildings would be one no road could reach.
 func _walkable(s) -> Dictionary:
-	var reach := {s.world.camp_pos: true}
-	var todo: Array = [s.world.camp_pos]
+	var reach := {}
+	var todo: Array = []
+	var linked := {}
+	for depot in Roads.depots(s):
+		for id in Roads.depot_nets(s, depot):
+			linked[id] = true
+		for n in [Vector2i.ZERO] + s.world.NEIGHBORS:
+			if not reach.has(depot + n):
+				reach[depot + n] = 0
+				todo.append(depot + n)
+	for q in s.town.road_net["net"]:
+		if linked.has(s.town.road_net["net"][q]) and not reach.has(q):
+			reach[q] = 0
+			todo.append(q)
+	var cap: int = Data.SKYREACH["site_walk"]
 	while not todo.is_empty():
-		var p: Vector2i = todo.pop_back()
+		var p: Vector2i = todo.pop_front()
+		if reach[p] >= cap:
+			continue
 		for n in s.world.NEIGHBORS:
 			var q: Vector2i = p + n
-			if s.world.in_bounds(q) and not reach.has(q) and not s.pathing.astar.is_point_solid(q):
-				reach[q] = true
+			if s.world.in_bounds(q) and not reach.has(q) and not s.pathing.astar.is_point_solid(q) and _roadable(s, q):
+				reach[q] = reach[p] + 1
 				todo.append(q)
 	return reach
+
+
+## True where a road runs or could be laid: grass, Forest, Rocks and ruins that nothing stands on, not a field.
+func _roadable(s, p: Vector2i) -> bool:
+	return (
+		s.world.roads.has(p)
+		or (not s.town.building_at.has(p) and s.world.tile_at(p) in ["grass", "tree", "rock", "ruins"])
+	)
+
+
+## True when a road could start beside `p`: one side lies on the tiles a road reaches.
+func _approach(s, p: Vector2i, walk: Dictionary) -> bool:
+	for n in s.world.NEIGHBORS:
+		var q: Vector2i = p + n
+		if s.world.in_bounds(q) and walk.has(q) and not s.tide.is_bloom(s, q):
+			return true
+	return false
 
 
 ## How many tiles from `p` the nearest Bloom lies, up to Data.SKYREACH["site_clear"].

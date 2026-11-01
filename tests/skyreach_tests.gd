@@ -27,6 +27,7 @@ func run(runner, helpers) -> void:
 	test_the_sky_opens_with_a_floor_of_stores()
 	test_a_scorcher_burns_a_seed_out()
 	test_the_site_is_the_only_place()
+	test_the_site_is_one_a_road_can_reach()
 	test_three_deliveries_raise_the_skyreach()
 	test_help_shortens_a_stage()
 	test_the_save_keeps_the_sky()
@@ -212,6 +213,29 @@ func test_the_site_is_the_only_place() -> void:
 	var b: Dictionary = s.town.buildings[s.town.building_at[site]]
 	t.check(Buildings.served(b), "and it is served by haulers")
 	t.check(not s.town.placement_error("skyreach_tower", site + Vector2i(1, 0)) == "", "only one")
+
+
+func test_the_site_is_one_a_road_can_reach() -> void:
+	var s := sky()
+	var camp: Vector2i = s.world.camp_pos
+	var near: Vector2i = camp + Vector2i(6, 0)
+	var across: Vector2i = camp + Vector2i(12, 0)
+	for dy in range(-32, 33):  # open ground all round the Hearth
+		for dx in range(-32, 33):
+			var q := camp + Vector2i(dx, dy)
+			if s.world.in_bounds(q) and q != camp and not s.town.building_at.has(q):
+				s.world.set_tile(q, "grass")
+	s.pathing.build()
+	t.check(s.skyreach._walkable(s).has(across), "on open ground a road reaches %s" % across)
+	for dy in range(-30, 31):  # a long river between the town and the far side
+		if s.world.in_bounds(camp + Vector2i(9, dy)):
+			s.world.set_tile(camp + Vector2i(9, dy), "river")
+	s.pathing.refresh()
+	var reach: Dictionary = s.skyreach._walkable(s)
+	t.check(reach.has(near), "the near bank is reached")
+	t.check(not reach.has(across), "a site across a long river is not one a road can reach")
+	s.world.set_tile(camp + Vector2i(6, 1), "grain")
+	t.check(not s.skyreach._walkable(s).has(camp + Vector2i(6, 1)), "and a field is not ground for a road")
 
 
 func test_three_deliveries_raise_the_skyreach() -> void:
