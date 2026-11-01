@@ -1147,3 +1147,7 @@ An Arc Lamp keeps the Bloom 5 tiles from its light and a Scorcher reached 4, so 
 ## 2026-11-01: The true endings (Step 8B)
 - **What was built.** Seal Solace, Heal the Bloom and Leave together, shown on the ending card once The Way Out is read while the Lumen are allies. Heal needs an earlier Cataclysm, Leave an earlier Time loop. Each plays a three-still cutscene ending on the fireside ("And that is how the telling became whole."), earns a gold star in the Chronicle, and asks Another telling or the title. Page 32.
 - **Our calls.** An ending is just another ending id in the profile (`seal`, `heal`, `leave`), so every Chronicle and carry rule that reads endings works unchanged; the earlier endings are `carry.reached`. The stills have no painted art yet (Step 8D); the cutscene tests list them as unpainted until Codex delivers.
+
+## 2026-11-01: The cycles (Step 8C)
+- **What was built.** After a true ending each telling is a cycle with a strain more than the one before, up to five: a 10% faster tide, one more fall in every landfall wave, 20% lean stores at the start, then the tide and the falls again. The title shows "Cycle N" and the Chronicle draws a second band. Page 32.
+- **Our calls.** "Start stock" is the starting stores (10 berries, 8 in a lean cycle) since that is all the stores hold at the start. A cycle is counted in tellings from the first true ending on, so a Cataclysm after a true ending is cycle 2 as well. The strains read the profile through `carry.reached`, so a loaded run keeps its cycle.

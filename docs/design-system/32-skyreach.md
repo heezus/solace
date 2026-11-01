@@ -28,6 +28,13 @@ Era 6, mechanic **Survey the sky**, beat **the Bloom arrives**. Spec: the direct
 - **Earlier endings** reach a run through `carry.reached` (every ending of the tellings before it, from the profile's tellings); `carry.cycle()` counts the true ones (Step 8C).
 - Where: `Endings.way_open/true_why/true_open`, `Data.ENDINGS["seal"|"heal"|"leave"]`, `EndingCard` (true box, scrolls in a short window), `GameMenu._may_end/_after_chronicle`, `CutscenePlayer.TRUE_ENDING_SCENES`, `ChronicleBook` (gold star, Endings page). Tests: `tests/true_endings_tests.gd`.
 
+## The cycles (Step 8C)
+- **Cycle N.** A telling that ends in a true ending is cycle 1 for the next telling; any ending after that is the next cycle (`carry.cycle()`: the tellings from the first true ending on, counted from the profile's `reached`). The title screen shows **Cycle N** under the tagline once cycle 1 is reached, and its tip lists the strains.
+- **Strains.** A cycle carries one strain per cycle so far, at most 5, in the order tide, falls, stock, tide, falls: **the tide's clock runs 10% faster** each (`Tide.tick`), **each landfall wave has one more fall** each (`Skyreach._plan`), **the stores start 20% lean** (`Carry.apply_start`, called by `Launch.begin_new`: it takes 20% off every starting stock, which is 10 berries, so 8). Cycle 4 is a second faster tide, cycle 5 a second extra fall; there is only ever one lean-stores strain.
+- **The Chronicle** draws the tellings of the cycles as a second band of sky: a warm glow and a line above each patch, named "Cycle 1, telling 5".
+- **Another telling** is the 8B offer after a true ending: a new run on a new map with the whole profile, so the strains start with it. In a cycle every ending leads on to the next one.
+- Where: `Data.ENDINGS["strains"|"cycle_cap"|...]`, `Carry.strain_count/tide_factor/extra_falls/stock_factor/apply_start`, `TitleScreen._cycle_caption`, `ChronicleBook._first_true`. Tests: `tests/cycle_tests.gd`.
+
 ## Pace
 Bar: about 15 minutes, 10 to 20; the 6-minute floor for an era played twice before stays. Numbers in `Data.SKYREACH` are first guesses tuned with the bots (`tests/autoplay_skyreach.gd`, `pace.gd skyreach from=<a run from the end of Livewire>`). The result is in the Step 8A report.
 
