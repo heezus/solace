@@ -27,7 +27,20 @@ func run(runner) -> void:
 	test_a_shut_one_cannot_be_taken()
 	test_the_carry_counts_the_cycle()
 	test_the_scenes_and_stars_exist()
+	test_the_words_say_kin()
 	DirAccess.remove_absolute(TEMP_PROFILE)
+
+
+## The true endings play after the Kin reveal (set 7 comes before set 9), so no line of theirs says "Kith".
+func test_the_words_say_kin() -> void:
+	var words: Array = [Data.ENDINGS["true_text"]]
+	for key in ["seal", "heal", "leave"]:
+		words.append(Data.ENDINGS[key]["end"])
+		words.append(Data.ENDINGS[key]["next_text"])
+		for still in Data.CUTSCENES[key + "_end"]["stills"]:
+			words.append(still["line"])
+	for line in words:
+		t.check(not String(line).contains("Kith"), "a true-ending line says Kin, not Kith: %s" % line)
 
 
 ## A run in the second telling or later, the Skyreach standing, the Lumen as `lean`, with the Way Out read when `way` is true and the

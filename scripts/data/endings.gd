@@ -64,7 +64,7 @@ const ENDINGS := {
 	"true_order": ["seal", "heal", "leave"],
 	"true_title": "The telling can be made whole",
 	"true_text":
-	"The marks of the Way Out are read, and the Lumen stand with the Kith. Each of these ends the telling for good.",
+	"The marks of the Way Out are read, and the Lumen stand with the Kin. Each of these ends the telling for good.",
 	"true_gives": "The telling is told whole",
 	"needs_way": "Needs the marks of The Way Out read while the Lumen are allies",
 	"needs_cataclysm": "Needs a Cataclysm in an earlier telling",
@@ -94,7 +94,7 @@ const ENDINGS := {
 		"name": "Heal the Bloom",
 		"line": "Mend what the first hands broke.",
 		"end":
-		"The Kith and the Lumen walk out to the green growth together. The Bloom answers, and the river it was remembers its name.",
+		"The Kin and the Lumen walk out to the green growth together. The Bloom answers, and the river it was remembers its name.",
 	},
 	"leave":
 	{
@@ -107,7 +107,7 @@ const ENDINGS := {
 		"name": "Leave together",
 		"line": "Go through the door, with everyone it has carried.",
 		"end":
-		"The door opens for everyone it has ever carried. The Kith and the Lumen go through it, and Solace is left to heal.",
+		"The door opens for everyone it has ever carried. The Kin and the Lumen go through it, and Solace is left to heal.",
 	},
 	"next_choice": "The telling is whole. Begin another telling, or return to the title screen?",
 	"another": "Another telling",

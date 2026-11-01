@@ -229,7 +229,7 @@ const CUTSCENES := {
 		[
 			{
 				"art": "seal_end_1",
-				"line": "The Kith and the Lumen stand at the door together.\nNo one is left outside it."
+				"line": "The Kin and the Lumen stand at the door together.\nNo one is left outside it."
 			},
 			{
 				"art": "seal_end_2",
@@ -250,7 +250,7 @@ const CUTSCENES := {
 		[
 			{
 				"art": "heal_end_1",
-				"line": "The Kith and the Lumen walk out together\nto the green growth at the edge of the fog."
+				"line": "The Kin and the Lumen walk out together\nto the green growth at the edge of the fog."
 			},
 			{"art": "heal_end_2", "line": 'A voice in it: "I was a river once."\nThe river runs again.'},
 			{
@@ -267,7 +267,7 @@ const CUTSCENES := {
 		"stills":
 		[
 			{"art": "leave_end_1", "line": "The door opens for everyone it has ever carried."},
-			{"art": "leave_end_2", "line": "The Kith and the Lumen go through it together.\nSolace is left to heal."},
+			{"art": "leave_end_2", "line": "The Kin and the Lumen go through it together.\nSolace is left to heal."},
 			{
 				"art": "leave_end_3",
 				"portrait": "portrait_kin_elder",
