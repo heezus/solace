@@ -15,6 +15,7 @@ Era 6, mechanic **Survey the sky**, beat **the Bloom arrives**. Spec: the direct
 ## Landfalls
 - Waves from **180 s** after the era begins, then every **120 s**. Wave k has `2 + floor(k / 3)` falls, at most 4. Each fall is 10 to 36 tiles from the Hearth, on ground a seed can land (grass, tree, gravel, berry, grain, flax), at least 6 tiles from the other falls of its wave. A map falls the same way every time: the generator is seeded from the map seed and the wave.
 - A wave is planned 90 s before it falls. A **surveyed** sector shows its landfalls on the map and in Sight (`Skyreach.marked`: position and seconds to go) and the log says "A landfall is coming in the west in 90 seconds". An unsurveyed sector gives no warning: the log says "Something fell in the dark, far off".
+- **A seed burns out near a Scorcher (design call, director 2026-11-01).** A fall that lands where a lit Arc Lamp keeps the Bloom off, or within reach (6 tiles) of a burning, powered Scorcher, takes no ground there (`Tide.scorched`; the lamp's light already did this). So meeting a warned fall with a Scorcher pays off. Measured on the four bot starts it changed no time (the Scorcher is seldom there in time: see the run 3 note in the Step 8 report), so it is kept as the player's tool, not as balance.
 - A fall starts a Bloom patch of radius 2 (`Tide.land`), which then spreads as the tide does. **Scorchers, Arc Lamps, Wards, Firebreaks and shard light stop it exactly as they stop the tide**; the Skyreach itself is immune (`Tide.IMMUNE`).
 
 ## The Skyreach

@@ -469,6 +469,7 @@ func _skyreach(m: int, minutes: float, args: Array) -> void:
 		if "quiet" not in args:
 			print("   ", line)
 	print("marks: ", r["marks"])
+	print("falls: ", bot.audit)
 	print(
 		(
 			"map %d: Skyreach %s at %.1f min, lost %d, trust %.1f"

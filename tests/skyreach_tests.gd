@@ -24,6 +24,7 @@ func run(runner, helpers) -> void:
 	test_a_surveyed_landfall_is_marked_ahead()
 	test_an_unsurveyed_landfall_gives_no_warning()
 	test_a_landfall_starts_a_patch()
+	test_a_scorcher_burns_a_seed_out()
 	test_the_site_is_the_only_place()
 	test_three_deliveries_raise_the_skyreach()
 	test_help_shortens_a_stage()
@@ -152,6 +153,15 @@ func test_a_landfall_starts_a_patch() -> void:
 	var same := sky()
 	base.tick_for(same, Skyreach.wave_time(0) - Data.SKYREACH["warn"] + 1.0)
 	t.check(same.skyreach.falls[0]["pos"] == f["pos"], "a map falls the same way every time")
+
+
+func test_a_scorcher_burns_a_seed_out() -> void:
+	var s := sky()
+	var p: Vector2i = s.world.camp_pos + Vector2i(14, 0)
+	t.check(not s.tide.scorched(p), "no Scorcher burning, no seed burns out")
+	s.tide._fires = [p + Vector2i(2, 0)]  # a burning, powered Scorcher (refresh_lights fills this from the buildings)
+	t.check(s.tide.scorched(p), "a burning Scorcher in reach burns a seed out on landing")
+	t.check(not s.tide.scorched(p + Vector2i(12, 0)), "but not one out of its reach")
 
 
 func test_the_site_is_the_only_place() -> void:
