@@ -24,6 +24,7 @@ const SKYREACH := {
 	"site_min": 8,  # the site lies this far from the Hearth, in the sector of the first Signal Tower
 	"site_max": 20,
 	"site_sight": 6,
+	"site_walk": 40,  # and no more than this many steps from the Hearth on foot, so a river between them rules a site out
 	"site_clear": 8,  # the site is picked as far from the Bloom as this many tiles allow
 	"floor": {"wire": 100, "steel": 30},  # the stores are topped up to this when the sky opens, wherever they are lower
 	"shared": "The Lumen share what they salvaged",

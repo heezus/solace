@@ -39,6 +39,15 @@ func play_skyreach(game: Sim, max_seconds: float) -> Dictionary:
 	return {"done": done_at >= 0.0, "seconds": done_at, "marks": marks, "log": lines}
 
 
+## The ring round the Skyreach's site stays open as well as the Hearth's lanes, so a road can always reach the tower.
+func _lane(p: Vector2i) -> bool:
+	if super._lane(p):
+		return true
+	if s != null and s.skyreach.site.x >= 0:
+		return maxi(absi(p.x - s.skyreach.site.x), absi(p.y - s.skyreach.site.y)) == 1
+	return false
+
+
 func _note_goals() -> void:
 	super._note_goals()
 	if not _sky_open():
