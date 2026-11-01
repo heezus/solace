@@ -28,6 +28,7 @@ func run(runner, helpers) -> void:
 	test_a_scorcher_burns_a_seed_out()
 	test_the_site_is_the_only_place()
 	test_the_site_is_one_a_road_can_reach()
+	test_the_site_has_room()
 	test_the_towers_ground_holds()
 	test_three_deliveries_raise_the_skyreach()
 	test_help_shortens_a_stage()
@@ -239,12 +240,49 @@ func test_the_site_is_one_a_road_can_reach() -> void:
 	t.check(not s.skyreach._walkable(s).has(camp + Vector2i(6, 1)), "and a field is not ground for a road")
 
 
+func test_the_site_has_room() -> void:
+	var s := sky()
+	var edge: int = Data.SKYREACH["site_edge"]
+	t.check(not s.skyreach._roomy(s, Vector2i(0, 19)), "a tile on the map's edge is no site")
+	t.check(not s.skyreach._roomy(s, Vector2i(edge - 1, 19)), "nor one %d tiles in" % (edge - 1))
+	t.check(s.skyreach._roomy(s, Vector2i(edge, edge)), "but one %d tiles in is" % edge)
+	var camp: Vector2i = s.world.camp_pos
+	for dy in range(-16, 17):
+		for dx in range(-16, 17):
+			var q := camp + Vector2i(dx, dy)
+			if s.world.in_bounds(q) and q != camp and not s.town.building_at.has(q):
+				s.world.set_tile(q, "grass")
+	s.pathing.build()
+	var walk: Dictionary = s.skyreach._walkable(s)
+	var spot: Vector2i = camp + Vector2i(7, 0)
+	t.check(s.skyreach._open_sides(s, spot, walk) == 4, "on open ground all four sides are open")
+	for d in [Vector2i(1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+		s.world.set_tile(spot + d, "river")
+	s.pathing.refresh()
+	walk = s.skyreach._walkable(s)
+	t.check(s.skyreach._open_sides(s, spot, walk) < Data.SKYREACH["site_sides"], "a tile with one open side is no site")
+	for d in [Vector2i(1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+		s.world.set_tile(spot + d, "grass")
+	s.pathing.refresh()
+	s.skyreach._find_site(s, 0)
+	var site: Vector2i = s.skyreach.site
+	t.check(site.x >= 0 and s.skyreach._roomy(s, site), "the site found keeps off the edge")
+	t.check(
+		s.skyreach._open_sides(s, site, s.skyreach._walkable(s)) >= Data.SKYREACH["site_sides"],
+		"and has room for a road"
+	)
+
+
 func test_the_towers_ground_holds() -> void:
 	var s := sky()
 	var camp: Vector2i = s.world.camp_pos
 	var site: Vector2i = camp + Vector2i(0, 9)
 	s.skyreach.site = site
-	t.check(not s.skyreach.holds(s, site), "nothing is held before the tower stands")
+	t.check(
+		s.skyreach.holds(s, site) and s.skyreach.holds(s, site + Vector2i(1, 1)),
+		"the site and the ring round it hold at once"
+	)
+	t.check(not s.skyreach.holds(s, site + Vector2i(2, 0)), "but not a tile beyond the ring")
 	base.put(s, Skyreach.TOWER, site)
 	var lane: Array = []
 	for y in range(camp.y + 1, site.y):  # a road from beside the Hearth to the tower's top side

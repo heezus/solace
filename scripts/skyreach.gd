@@ -21,6 +21,7 @@ var site := Vector2i(-1, -1)  # where the Skyreach goes, once a Signal Tower has
 var begun_at := -1.0  # the game clock (Seasons.time) when the era began, -1 before
 var falls: Array = []  # every landfall planned: {"pos": Vector2i, "at": seconds since begun_at, "sector": n, "fell": bool, "wave": n}
 var waves_planned := 0
+var way: Array = []  # the ground from beside a depot to the site, worked out when the site was found: the Bloom never takes it
 var surveyed: Dictionary = {}  # sector -> true, from the Signal Towers standing now (read, never saved)
 var _hold_rev := -1  # the road revision the held ground below was worked out at
 var _hold: Dictionary = {}  # tile -> true: the Skyreach's ground and the road that links it to a depot, which the Bloom never takes
@@ -152,7 +153,8 @@ func _find_site(s, sector: int) -> void:
 						or (only and sector_of(camp, p) != sector)
 						or not walk.has(p)
 						or not _open(s, p)
-						or not _approach(s, p, walk)
+						or not _roomy(s, p)
+						or _open_sides(s, p, walk) < Data.SKYREACH["site_sides"]
 					):
 						continue
 					var score := clear_of_bloom(s, p) * 10.0 - r
@@ -164,12 +166,14 @@ func _find_site(s, sector: int) -> void:
 	if best.x < 0:
 		return
 	site = best
+	way = _way_to(s, walk, site)
+	_hold_rev = -1
 	s.fog.reveal(site, Data.SKYREACH["site_sight"])
 	said.emit(Data.SKYREACH["site_found"] % sector_name(sector_of(camp, site)))
 
 
-## True on the Skyreach's own ground and on the one road that links it to a depot: the Bloom never takes it ("the tower's ground holds"),
-## so no player is ever locked out of the era by the tide. Worked out again when the roads or buildings change.
+## True on the Skyreach's own ground (the site and the ring round it), the way from a depot to it and the road that links the tower to a
+## depot: the Bloom never takes it ("the tower's ground holds"), so no player is ever locked out of the era by the tide.
 func holds(s, p: Vector2i) -> bool:
 	if site.x < 0:
 		return false
@@ -179,13 +183,20 @@ func holds(s, p: Vector2i) -> bool:
 	return _hold.has(p)
 
 
-## The tower's tile and the shortest run of road tiles from its sides to a tile beside a depot (or just the road tiles touching the
-## tower while no road links it yet).
+## The site and the ring round it, the way worked out when it was found, and (once the tower stands) the shortest run of road tiles from
+## its sides to a tile beside a depot.
 func _held_ground(s) -> Dictionary:
 	var out := {}
-	if not s.town.building_at.has(site) or s.town.built_type(site) != TOWER:
+	if site.x < 0:
 		return out
 	out[site] = true
+	for dy in range(-1, 2):
+		for dx in range(-1, 2):
+			out[site + Vector2i(dx, dy)] = true
+	for p in way:
+		out[p] = true
+	if not s.town.building_at.has(site) or s.town.built_type(site) != TOWER:
+		return out
 	var depots: Array = Roads.depots(s)
 	var from := {}
 	var todo: Array = []
@@ -211,6 +222,33 @@ func _held_ground(s) -> Dictionary:
 			if s.world.roads.has(r) and not from.has(r):
 				from[r] = q
 				todo.append(r)
+	return out
+
+
+## The ground a road from a depot to `to` would run over: from the tile beside the site that lies fewest steps from a depot, down the
+## steps of `walk` (the walk worked out from the depots) to one beside a depot, keeping off the Bloom where it can.
+func _way_to(s, walk: Dictionary, to: Vector2i) -> Array:
+	var out: Array = []
+	var at := to
+	var guard := 0
+	while guard < 200:
+		guard += 1
+		var next := Vector2i(-1, -1)
+		var best: int = walk.get(at, 9999)
+		for n in s.world.NEIGHBORS:
+			var q: Vector2i = at + n
+			if not walk.has(q) or walk[q] >= best:
+				continue
+			if next.x >= 0 and s.tide.is_bloom(s, q) and not s.tide.is_bloom(s, next):
+				continue
+			next = q
+			best = walk[q]
+		if next.x < 0:
+			break
+		out.append(next)
+		at = next
+		if walk[next] == 0:
+			break
 	return out
 
 
@@ -253,13 +291,20 @@ func _roadable(s, p: Vector2i) -> bool:
 	)
 
 
-## True when a road could start beside `p`: one side lies on the tiles a road reaches.
-func _approach(s, p: Vector2i, walk: Dictionary) -> bool:
-	for n in s.world.NEIGHBORS:
-		var q: Vector2i = p + n
+## How many of `p`'s four sides lie on the tiles a road reaches and are clear of the Bloom: the sides a road to a tower there could use.
+func _open_sides(s, p: Vector2i, walk: Dictionary) -> int:
+	var n := 0
+	for d in s.world.NEIGHBORS:
+		var q: Vector2i = p + d
 		if s.world.in_bounds(q) and walk.has(q) and not s.tide.is_bloom(s, q):
-			return true
-	return false
+			n += 1
+	return n
+
+
+## True when `p` lies at least Data.SKYREACH["site_edge"] tiles in from the map's edge, so the tower has ground round it.
+func _roomy(s, p: Vector2i) -> bool:
+	var e: int = Data.SKYREACH["site_edge"]
+	return p.x >= e and p.y >= e and p.x < s.world.width - e and p.y < s.world.height - e
 
 
 ## How many tiles from `p` the nearest Bloom lies, up to Data.SKYREACH["site_clear"].
@@ -457,6 +502,7 @@ func to_dict() -> Dictionary:
 		f.append([fall["pos"].x, fall["pos"].y, fall["at"], fall["fell"], fall["wave"], fall["sector"]])
 	return {
 		"site": [site.x, site.y],
+		"way": way.map(func(p): return [p.x, p.y]),
 		"begun_at": begun_at,
 		"waves": waves_planned,
 		"falls": f,
@@ -467,6 +513,10 @@ func to_dict() -> Dictionary:
 func from_dict(d: Dictionary) -> void:
 	var at: Array = d.get("site", [-1, -1])
 	site = Vector2i(int(at[0]), int(at[1]))
+	way = []
+	for row in d.get("way", []):
+		way.append(Vector2i(int(row[0]), int(row[1])))
+	_hold_rev = -1
 	begun_at = float(d.get("begun_at", -1.0))
 	waves_planned = int(d.get("waves", 0))
 	falls = []

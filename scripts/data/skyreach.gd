@@ -25,6 +25,8 @@ const SKYREACH := {
 	"site_max": 20,
 	"site_sight": 6,
 	"site_walk": 40,  # and no more than this many steps from the Hearth on foot, so a river between them rules a site out
+	"site_sides": 2,  # at least this many of the site's four sides are open ground a road reaches, so a link can be laid and held
+	"site_edge": 3,  # and the site lies this many tiles (and more) in from the map's edge
 	"site_clear": 8,  # the site is picked as far from the Bloom as this many tiles allow
 	"floor": {"wire": 100, "steel": 30},  # the stores are topped up to this when the sky opens, wherever they are lower
 	"shared": "The Lumen share what they salvaged",
