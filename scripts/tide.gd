@@ -175,7 +175,7 @@ func is_burnt(p: Vector2i) -> bool:
 
 ## 0 when the tide may take tile p now, 1 when it must wait (an Arc Lamp's light), 2 when it never will (taken, burnt, the Hearth's ring).
 func _state(s, p: Vector2i) -> int:
-	if grown.has(p) or burnt.has(p) or s.world.tile_at(p) in PATCH_TILES or _in_ring(s, p):
+	if grown.has(p) or burnt.has(p) or s.world.tile_at(p) in PATCH_TILES or _in_ring(s, p) or s.skyreach.holds(s, p):
 		return 2
 	return 1 if _lit_by_arc(p) else 0
 

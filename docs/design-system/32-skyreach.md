@@ -26,6 +26,10 @@ When the sky opens (run 2 on) the stores are topped up to **Wire 100 and Steel 3
 - Stage 1 Steel 30, Stone 400. Stage 2 Wire 120, Shard 4. Stage 3 Steel 30, Wire 60, Brick 200, Rope 120, Copper 120, Shard 3.
 - Shards are chipped off the Strange Stone by hand (5 s a hold); the era asks 7 for the stages and 3 for the towers.
 
+## The tower's ground holds (design call, director 2026-11-01)
+- For every run: the Skyreach tower's tile, and the road tiles that link it to a depot (the shortest road path from the tower's sides to a depot), cannot be overgrown by the Bloom (`Skyreach.holds`, read by `Tide._state`). A player cannot be locked out of their own Skyreach by a Bloom that closes round the tower.
+- It holds only roads that still stand when the tower is placed: it cannot restore a road the Bloom has already taken. In the chain-built run 3 on map 1 the roads were gone before the tower, so this alone did not finish that cell (Step 8 report).
+
 ## The true endings (Step 8B)
 - **Shown when** the marks of The Way Out (set 9) are read in this run and the Lumen still stand as allies (the set can only be read as allies). Then the ending card has a "The telling can be made whole" box above the three: **Seal Solace** (always open then), **Heal the Bloom** (needs a Cataclysm in an earlier telling) and **Leave together** (needs a Time loop in an earlier one). A shut one shows its need.
 - **What each does:** the telling is banked like any ending (`Profile.set_out`; the record's ending is `seal`, `heal` or `leave`, story moments `ending_seal`/`ending_heal`/`ending_leave`), then a 3-still cutscene (`seal_end`, `heal_end`, `leave_end`; placeholder words, no painted stills yet), its last still the fireside: "And that is how the telling became whole." Then the Chronicle opens on the telling with a **gold** ending star, and a card asks **Another telling** or the **Title screen**.
