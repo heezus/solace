@@ -27,8 +27,9 @@ When the sky opens (run 2 on) the stores are topped up to **Wire 100 and Steel 3
 - Shards are chipped off the Strange Stone by hand (5 s a hold); the era asks 7 for the stages and 3 for the towers.
 
 ## The tower's ground holds (design call, director 2026-11-01)
-- For every run: the Skyreach tower's tile, and the road tiles that link it to a depot (the shortest road path from the tower's sides to a depot), cannot be overgrown by the Bloom (`Skyreach.holds`, read by `Tide._state`). A player cannot be locked out of their own Skyreach by a Bloom that closes round the tower.
-- It holds only roads that still stand when the tower is placed: it cannot restore a road the Bloom has already taken. In the chain-built run 3 on map 1 the roads were gone before the tower, so this alone did not finish that cell (Step 8 report).
+- For every run the Bloom never takes: the site and the ring of 8 tiles round it, **the way** (the ground from beside a depot to the site, worked out once when the site is found and saved with it: `Skyreach.way`), and, once the tower stands, the road tiles on its current link to a depot (any link, including one laid again after a cut). `Skyreach.holds`, read by `Tide._state`. A player cannot be locked out of their own Skyreach by a Bloom that closes round the tower or over its road.
+- **The site keeps room:** at least `site_edge` (3) tiles in from the map's edge and at least `site_sides` (2) of its four sides open ground a road reaches and clear of the Bloom. A tower on the map's edge or with one open side has no link worth holding.
+- It cannot restore a road the Bloom already took before the site was found; the way is held from that moment on.
 
 ## The true endings (Step 8B)
 - **Shown when** the marks of The Way Out (set 9) are read in this run and the Lumen still stand as allies (the set can only be read as allies). Then the ending card has a "The telling can be made whole" box above the three: **Seal Solace** (always open then), **Heal the Bloom** (needs a Cataclysm in an earlier telling) and **Leave together** (needs a Time loop in an earlier one). A shut one shows its need.
