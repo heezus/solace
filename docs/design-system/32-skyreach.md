@@ -9,8 +9,8 @@ Era 6, mechanic **Survey the sky**, beat **the Bloom arrives**. Spec: the direct
 
 ## Survey the sky
 - The map is cut into **6 sectors** round the Hearth (`Skyreach.sector_of`), 60 degrees each, 0 east then clockwise, each centred on the direction it is named for (east, south-east, south-west, west, north-west, north-east).
-- A **Signal Tower** (Steel 12, Wire 16, Shard 1, sight 12) surveys the sector it stands in. One tower, one sector; two in one sector survey it once. A tower the Bloom has taken surveys nothing.
-- The **first** Signal Tower finds the **site** of the Skyreach: the first open grass tile 8 to 13 tiles from the Hearth in its own sector, searched ring by ring from the near edge, with fog lifted round it. (Design call: the spec says the Watchtower is upgraded; it is a separate building here, so the Watchtower and every save stay as they are.)
+- A **Signal Tower** (Wire 16, Brick 15, Shard 1, sight 12; no Steel, which some maps have little of after Livewire) surveys the sector it stands in. One tower, one sector; two in one sector survey it once. A tower the Bloom has taken surveys nothing.
+- The **first** Signal Tower finds the **site** of the Skyreach: of the open grass tiles 8 to 20 tiles from the Hearth in its own sector that the Kith can walk to, the one furthest from the Bloom (up to 8 tiles), nearer the Hearth on a tie, with fog lifted round it. So the first tower's sector is the player's choice of where the Skyreach goes; a sector with no such tile gives the best tile anywhere. (The first measure put the site in ground the tide later covered, and the Skyreach stood cut off.) (Design call: the spec says the Watchtower is upgraded; it is a separate building here, so the Watchtower and every save stay as they are.)
 
 ## Landfalls
 - Waves from **180 s** after the era begins, then every **120 s**. Wave k has `2 + floor(k / 3)` falls, at most 4. Each fall is 10 to 36 tiles from the Hearth, on ground a seed can land (grass, tree, gravel, berry, grain, flax), at least 6 tiles from the other falls of its wave. A map falls the same way every time: the generator is seeded from the map seed and the wave.
@@ -18,9 +18,9 @@ Era 6, mechanic **Survey the sky**, beat **the Bloom arrives**. Spec: the direct
 - A fall starts a Bloom patch of radius 2 (`Tide.land`), which then spreads as the tide does. **Scorchers, Arc Lamps, Wards, Firebreaks and shard light stop it exactly as they stop the tide**; the Skyreach itself is immune (`Tide.IMMUNE`).
 
 ## The Skyreach
-- Build the **Skyreach** (Stone 20) on the site; no other tile takes it, and only one stands. It is raised in **three stages**, each one delivery: haulers bring the whole stage at once (`Haulers.stock_wanted` -> `Skyreach.wanted`), then the stage takes **150 s**, or **105 s** when the Lumen help (lean allies or neighbours: -30%; enemies build alone).
-- Stage 1 Steel 40, Stone 160. Stage 2 Wire 60, Shard 3. Stage 3 Steel 30, Wire 30, Brick 120, Rope 80, Copper 80, Shard 2.
-- Shards are chipped off the Strange Stone by hand (5 s a hold); the era asks 8 in all, 11 with the Signal Towers' three.
+- Build the **Skyreach** (Stone 20) on the site; no other tile takes it, and only one stands. It is raised in **three stages**, each one delivery: haulers bring the whole stage at once (`Haulers.stock_wanted` -> `Skyreach.wanted`), then the stage takes **270 s**, or **189 s** when the Lumen help (lean allies or neighbours: -30%; enemies build alone).
+- Stage 1 Steel 30, Stone 400. Stage 2 Wire 120, Shard 4. Stage 3 Steel 30, Wire 60, Brick 200, Rope 120, Copper 120, Shard 3.
+- Shards are chipped off the Strange Stone by hand (5 s a hold); the era asks 7 for the stages and 3 for the towers.
 
 ## Pace
 Bar: about 15 minutes, 10 to 20; the 6-minute floor for an era played twice before stays. Numbers in `Data.SKYREACH` are first guesses tuned with the bots (`tests/autoplay_skyreach.gd`, `pace.gd skyreach from=<a run from the end of Livewire>`). The result is in the Step 8A report.

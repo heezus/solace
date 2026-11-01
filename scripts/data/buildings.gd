@@ -520,7 +520,7 @@ const BUILDINGS := {
 		"kind": "tower",
 		"tech": "",
 		"event": "skyreach_begun",
-		"cost": {"steel": 12, "wire": 16, "shard": 1},
+		"cost": {"wire": 16, "brick": 15, "shard": 1},
 		"sight": 12,
 		"color": Color("7fd0ff"),
 		"desc":

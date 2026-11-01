@@ -116,30 +116,65 @@ func _look(s) -> void:
 			said.emit(Data.SKYREACH["warned"] % [sector_name(f["sector"]), maxi(roundi(f["at"] - now(s)), 0)])
 
 
-## Choose the site: the first open tile at the right distance in `sector`, searched ring by ring from the near edge outwards.
+## Choose the site: of the open tiles 8 to 20 tiles out in `sector`, the one furthest from the Bloom (up to `site_clear` tiles),
+## nearer the Hearth on a tie, so a road can always reach it. With none open in the sector, the same over every sector.
 func _find_site(s, sector: int) -> void:
 	var camp: Vector2i = s.world.camp_pos
-	for r in range(Data.SKYREACH["site_min"], Data.SKYREACH["site_max"] + 1):
+	var best := Vector2i(-1, -1)
+	var walk := _walkable(s)
+	for only in [true, false]:
+		var best_score := -INF
+		for r in range(Data.SKYREACH["site_min"], Data.SKYREACH["site_max"] + 1):
+			for dy in range(-r, r + 1):
+				for dx in range(-r, r + 1):
+					var p := camp + Vector2i(dx, dy)
+					if (
+						maxi(absi(dx), absi(dy)) != r
+						or (only and sector_of(camp, p) != sector)
+						or not walk.has(p)
+						or not _open(s, p)
+					):
+						continue
+					var score := clear_of_bloom(s, p) * 10.0 - r
+					if score > best_score:
+						best = p
+						best_score = score
+		if best.x >= 0:
+			break
+	if best.x < 0:
+		return
+	site = best
+	s.fog.reveal(site, Data.SKYREACH["site_sight"])
+	said.emit(Data.SKYREACH["site_found"] % sector_name(sector_of(camp, site)))
+
+
+## The tiles the Kith can walk to from the Hearth now: a site beyond a river or the Bloom would be one no road could reach.
+func _walkable(s) -> Dictionary:
+	var reach := {s.world.camp_pos: true}
+	var todo: Array = [s.world.camp_pos]
+	while not todo.is_empty():
+		var p: Vector2i = todo.pop_back()
+		for n in s.world.NEIGHBORS:
+			var q: Vector2i = p + n
+			if s.world.in_bounds(q) and not reach.has(q) and not s.pathing.astar.is_point_solid(q):
+				reach[q] = true
+				todo.append(q)
+	return reach
+
+
+## How many tiles from `p` the nearest Bloom lies, up to Data.SKYREACH["site_clear"].
+func clear_of_bloom(s, p: Vector2i) -> int:
+	var far: int = Data.SKYREACH["site_clear"]
+	for r in range(1, far):
 		for dy in range(-r, r + 1):
 			for dx in range(-r, r + 1):
-				if maxi(absi(dx), absi(dy)) != r:
-					continue
-				var p := camp + Vector2i(dx, dy)
-				if sector_of(camp, p) == sector and _open(s, p):
-					site = p
-					s.fog.reveal(p, Data.SKYREACH["site_sight"])
-					said.emit(Data.SKYREACH["site_found"] % sector_name(sector))
-					return
-	# Nothing open there: take the first open tile anywhere from the near edge out.
-	for r in range(Data.SKYREACH["site_min"], Data.SKYREACH["site_max"] + 8):
-		for dy in range(-r, r + 1):
-			for dx in range(-r, r + 1):
-				var p := camp + Vector2i(dx, dy)
-				if maxi(absi(dx), absi(dy)) == r and _open(s, p):
-					site = p
-					s.fog.reveal(p, Data.SKYREACH["site_sight"])
-					said.emit(Data.SKYREACH["site_found"] % sector_name(sector_of(camp, p)))
-					return
+				if (
+					maxi(absi(dx), absi(dy)) == r
+					and s.world.in_bounds(p + Vector2i(dx, dy))
+					and s.tide.is_bloom(s, p + Vector2i(dx, dy))
+				):
+					return r
+	return far
 
 
 ## True when `p` is open ground nothing stands on and the Bloom has not taken.

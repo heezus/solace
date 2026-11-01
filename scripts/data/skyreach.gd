@@ -22,15 +22,16 @@ const SKYREACH := {
 	"apart": 6,  # falls of one wave keep this far from each other
 	# --- The Skyreach: three stages, each one delivery, then a building time ---
 	"site_min": 8,  # the site lies this far from the Hearth, in the sector of the first Signal Tower
-	"site_max": 13,
+	"site_max": 20,
 	"site_sight": 6,
+	"site_clear": 8,  # the site is picked as far from the Bloom as this many tiles allow
 	"stage_cost":
 	[
-		{"steel": 40, "stone": 160},
-		{"wire": 60, "shard": 3},
-		{"steel": 30, "wire": 30, "brick": 120, "rope": 80, "copper": 80, "shard": 2},
+		{"steel": 30, "stone": 400},
+		{"wire": 120, "shard": 4},
+		{"steel": 30, "wire": 60, "brick": 200, "rope": 120, "copper": 120, "shard": 3},
 	],
-	"stage_seconds": 150.0,
+	"stage_seconds": 270.0,
 	"help_speed": 0.7,  # a stage takes this share of its time with the Lumen helping (trust at neighbours or better)
 	"help_leans": ["allies", "neighbours"],
 	# --- The era card at Skyward (run 2 on) ---

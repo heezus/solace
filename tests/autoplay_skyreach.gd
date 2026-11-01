@@ -86,6 +86,23 @@ func _skyreach() -> Dictionary:
 	return {}
 
 
+## Steel the Skyreach still lacks, while the era is on (the gate itself is long learned).
+func _steel_left() -> int:
+	if _sky_working():
+		return maxi(_sky_need("steel") - _inv("steel"), 0)
+	return super._steel_left()
+
+
+## The goods the metal works must keep making for the era.
+func _short_goods() -> Dictionary:
+	var out := super._short_goods()
+	if _sky_working():
+		for id in ["iron", "coal", "iron_ore", "steel", "copper"]:
+			if _gate_short(id) > 0:
+				out[id] = true
+	return out
+
+
 func _route_cost(id: String) -> int:
 	return super._route_cost(id) + _sky_need(id)
 
@@ -98,19 +115,11 @@ func _goal_wants(want: Dictionary) -> void:
 			want[id] = want.get(id, 0) + need
 
 
-## The Strange Stone gives the shards the era asks for, by hand.
-func _most_short_raw(short: Dictionary) -> String:
-	var best := super._most_short_raw(short)
-	var n: int = short.get("shard", 0)
-	if n > 0 and Hands.chips_shard(s) and _nearest_tile("shard", s.world.camp_pos).x >= 0:
-		if best == "" or n * 20 > short.get(best, 0):
-			return "shard"
-	return best
-
-
 func _pick_tile() -> Vector2i:
-	if _sky_working() and _next_click() == "shard":
-		return _nearest_tile("shard", s.world.camp_pos)
+	if _sky_working() and _sky_need("shard") > _inv("shard") and Hands.chips_shard(s):
+		var stone := _nearest_tile("shard", s.world.camp_pos)
+		if stone.x >= 0:
+			return stone  # the shards are quick to chip and the era waits on them: they come before the rest
 	return super._pick_tile()
 
 
@@ -124,11 +133,24 @@ func _build_livewire() -> bool:
 
 
 func _build_sky() -> bool:
+	_look_at_stone()
 	if s.skyreach.site.x >= 0 and _skyreach().is_empty() and _place_skyreach():
 		return true
 	if _count("signal_tower") < TOWERS and s.town.unlocked("signal_tower") and _place_signal():
 		return true
 	return false
+
+
+## Click the Strange Stone once, as a player does, so that a hold on it chips Shards from then on.
+func _look_at_stone() -> void:
+	var p: Vector2i = s.world.shard_pos
+	if s.shard_seen or not s.world.in_bounds(p):
+		return
+	if s.fog.is_revealed(p):
+		s.gather_by_hand(p)
+		lines.append("%5.0f s    reads the Strange Stone" % clock)
+	else:
+		_explore_to(p)  # roads push the fog back toward the stone
 
 
 ## The Skyreach on its site, once it can be afforded.
@@ -154,12 +176,20 @@ func _place_signal() -> bool:
 		var sector := Skyreach.sector_of(camp, b["pos"])
 		weight[sector] = weight.get(sector, 0) + 1
 	var surveyed := s.skyreach.survey(s)
-	return _place_best(
-		"signal_tower",
-		func(p):
-			var sector := Skyreach.sector_of(camp, p)
-			var far := Vector2(p).distance_to(Vector2(camp))
-			if surveyed.has(sector) or far < TOWER_NEAR or far > TOWER_FAR:
-				return -INF
-			return float(weight.get(sector, 0)) * 10.0 - absf(far - (TOWER_NEAR + 1.0))
-	)
+	var first := _count("signal_tower") == 0
+	for reach_out in [TOWER_FAR, TOWER_FAR * 2.0]:  # a crowded Hearth has no open ground in the near ring: look further out
+		var placed := _place_best(
+			"signal_tower",
+			func(p):
+				var sector := Skyreach.sector_of(camp, p)
+				var far := Vector2(p).distance_to(Vector2(camp))
+				if surveyed.has(sector) or far < TOWER_NEAR or far > reach_out:
+					return -INF
+				var near := absf(far - (TOWER_NEAR + 1.0))
+				if first:  # the first tower finds the Skyreach's site in its own sector: put it where the Bloom is furthest
+					return float(s.skyreach.clear_of_bloom(s, p)) * 10.0 - near
+				return float(weight.get(sector, 0)) * 10.0 - near
+		)
+		if placed:
+			return true
+	return false
