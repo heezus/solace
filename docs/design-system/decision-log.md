@@ -1155,3 +1155,7 @@ An Arc Lamp keeps the Bloom 5 tiles from its light and a Scorcher reached 4, so 
 ## 2026-11-01: The cycles (Step 8C)
 - **What was built.** After a true ending each telling is a cycle with a strain more than the one before, up to five: a 10% faster tide, one more fall in every landfall wave, 20% lean stores at the start, then the tide and the falls again. The title shows "Cycle N" and the Chronicle draws a second band. Page 32.
 - **Our calls.** "Start stock" is the starting stores (10 berries, 8 in a lean cycle) since that is all the stores hold at the start. A cycle is counted in tellings from the first true ending on, so a Cataclysm after a true ending is cycle 2 as well. The strains read the profile through `carry.reached`, so a loaded run keeps its cycle.
+
+## 2026-11-01: The Skyreach keeps room and its way holds (Step 8A follow-up)
+- **What was built.** The Skyreach site lies 3+ tiles in from the map's edge with two open sides; the way from a depot to the site and the ring round the tower are held against the Bloom from the moment the site is found. Page 32.
+- **Why.** In the chain-built run 3 (a Cataclysm after an Exodus) the tower on map 4 sat on the map's edge with its one road tile taken, and on map 2 all four of its sides were Bloom. Not done at 40 min on maps 1, 2 and 4 before the change; 16.0, 20.6 and 22.5 min after (Step 8 report).
