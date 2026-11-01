@@ -69,6 +69,7 @@ const SKYREACH := {
 	"needs": "Stage %d needs %s",
 	"building": "Stage %d: %d s to go",
 	"ready": "The Skyreach stands",
+	"way_held": "The way to the Skyreach will hold",
 	"site_tip": "Build it on the site the Signal Tower found",
 	"goals":
 	[

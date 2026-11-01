@@ -170,6 +170,8 @@ func _find_site(s, sector: int) -> void:
 	_hold_rev = -1
 	s.fog.reveal(site, Data.SKYREACH["site_sight"])
 	said.emit(Data.SKYREACH["site_found"] % sector_name(sector_of(camp, site)))
+	if not way.is_empty():
+		said.emit(Data.SKYREACH["way_held"])
 
 
 ## True on the Skyreach's own ground (the site and the ring round it), the way from a depot to it and the road that links the tower to a

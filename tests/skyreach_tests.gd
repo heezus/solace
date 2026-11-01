@@ -264,8 +264,11 @@ func test_the_site_has_room() -> void:
 	for d in [Vector2i(1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
 		s.world.set_tile(spot + d, "grass")
 	s.pathing.refresh()
+	var told: Array = []
+	s.skyreach.said.connect(func(m): told.append(m))
 	s.skyreach._find_site(s, 0)
 	var site: Vector2i = s.skyreach.site
+	t.check(Data.SKYREACH["way_held"] in told, "the log says the way will hold: %s" % str(told))
 	t.check(site.x >= 0 and s.skyreach._roomy(s, site), "the site found keeps off the edge")
 	t.check(
 		s.skyreach._open_sides(s, site, s.skyreach._walkable(s)) >= Data.SKYREACH["site_sides"],
