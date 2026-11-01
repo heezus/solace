@@ -14,9 +14,14 @@ const TOWERS := 3  # Signal Towers the bot keeps: three sectors surveyed is the 
 const MEND_ENGINES := 4  # a mended net may bring the Generators to this many
 const TOWER_NEAR := 8.0  # tiles from the Hearth a Signal Tower stands, as a rule
 const TOWER_FAR := 13.0
+const NET_NEAR := 4.0  # a warned fall this near the power net (a Pole, Wire Mill or Generator) is met before it lands
+const NET_PARTS := ["power_pole", "wire_mill", "generator"]
+const NET_WEIGHT := 5  # a net building counts this many when the Signal Towers choose their sectors
 
 var done_at := -1.0
+var audit := {"falls": 0, "unsurveyed": 0, "near_net": 0, "met": 0}  # how the landfalls met the town (printed with the log)
 var _sky_goals := {}
+var _audited := {}  # the index of each fall already counted
 
 
 ## Play `game` (a run from the end of Livewire, Skyward learned) through the Skyreach, or until `max_seconds` pass.
@@ -133,9 +138,84 @@ func _build_livewire() -> bool:
 	return super._build_livewire()
 
 
+func _decide() -> void:
+	_audit_falls()
+	super._decide()
+
+
+## Count each landfall as it lands: was its sector surveyed, did it land near the net, was a Scorcher or lit Arc Lamp in reach.
+func _audit_falls() -> void:
+	for i in s.skyreach.falls.size():
+		var f: Dictionary = s.skyreach.falls[i]
+		if not f["fell"] or _audited.has(i):
+			continue
+		_audited[i] = true
+		audit["falls"] += 1
+		if not s.skyreach.surveyed.has(f["sector"]):
+			audit["unsurveyed"] += 1
+		if _net_dist(f["pos"]) <= NET_NEAR:
+			audit["near_net"] += 1
+			if _fall_met(f["pos"]):
+				audit["met"] += 1
+
+
+## The distance from p to the nearest Pole, Wire Mill or Generator.
+func _net_dist(p: Vector2i) -> float:
+	var best := INF
+	for b in s.town.buildings:
+		if b["type"] in NET_PARTS:
+			best = minf(best, Vector2(b["pos"]).distance_to(Vector2(p)))
+	return best
+
+
+## True when a Scorcher stands in reach of p or a lit Arc Lamp lights it.
+func _fall_met(p: Vector2i) -> bool:
+	for b in s.town.buildings:
+		var d := Vector2(b["pos"]).distance_to(Vector2(p))
+		if b["type"] == "scorcher" and d <= Data.SCORCH_REACH:
+			return true
+		if b["type"] == "arc_lamp" and d <= 5.0 and s.town.is_powered(b["pos"]):
+			return true
+	return false
+
+
+## A warned fall that will land near the net gets a Scorcher (or an Arc Lamp) on the net within reach of it, before it lands. While
+## the stores cannot pay for one the Skyreach is paused, as a player does, so its haulers stop carrying off the Wire and Steel.
+func _meet_landfalls() -> bool:
+	var warned: Array = s.skyreach.marked(s)
+	warned.sort_custom(func(a, b): return a["eta"] < b["eta"])
+	var open_mark := false
+	for m in warned:
+		var at: Vector2i = m["pos"]
+		if _net_dist(at) > NET_NEAR or _fall_met(at):
+			continue
+		open_mark = true
+		for type in ["scorcher", "arc_lamp"]:
+			var span: float = Data.SCORCH_REACH - 1.0 if type == "scorcher" else 4.0
+			var score := func(p):
+				var d := Vector2(p).distance_to(Vector2(at))
+				return -INF if d > span or not _on_net(p) else -d
+			if _place_best(type, score):
+				lines.append("%5.0f s    + %s for the landfall at %s (%.0f s)" % [clock, type, at, m["eta"]])
+				return true
+	_hold_tower(open_mark)
+	return false
+
+
+## Pause the Skyreach while a warned fall waits for its Scorcher (the haulers skip a paused building), and let it go after.
+func _hold_tower(hold: bool) -> void:
+	for i in s.town.buildings.size():
+		var b: Dictionary = s.town.buildings[i]
+		if b["type"] == Skyreach.TOWER and b["paused"] != hold:
+			s.set_paused(i, hold)
+			lines.append("%5.0f s    the Skyreach is %s" % [clock, "held for the Scorchers" if hold else "let go"])
+
+
 func _build_sky() -> bool:
 	_look_at_stone()
 	if _mend_wire_power():
+		return true
+	if _meet_landfalls():
 		return true
 	if s.skyreach.site.x >= 0 and _skyreach().is_empty() and _place_skyreach():
 		return true
@@ -212,7 +292,7 @@ func _place_signal() -> bool:
 	var weight := {}
 	for b in s.town.buildings:
 		var sector := Skyreach.sector_of(camp, b["pos"])
-		weight[sector] = weight.get(sector, 0) + 1
+		weight[sector] = weight.get(sector, 0) + (NET_WEIGHT if b["type"] in NET_PARTS else 1)  # the power net first
 	var surveyed := s.skyreach.survey(s)
 	var first := _count("signal_tower") == 0
 	for reach_out in [TOWER_FAR, TOWER_FAR * 2.0]:  # a crowded Hearth has no open ground in the near ring: look further out

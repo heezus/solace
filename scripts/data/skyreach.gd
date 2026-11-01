@@ -25,6 +25,9 @@ const SKYREACH := {
 	"site_max": 20,
 	"site_sight": 6,
 	"site_clear": 8,  # the site is picked as far from the Bloom as this many tiles allow
+	"floor": {"wire": 100, "steel": 30},  # the stores are topped up to this when the sky opens, wherever they are lower
+	"shared": "The Lumen share what they salvaged",
+	"scavenged": "Scavengers bring what they found",
 	"stage_cost":
 	[
 		{"steel": 30, "stone": 400},
