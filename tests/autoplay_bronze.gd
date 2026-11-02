@@ -17,6 +17,7 @@ const MINE_ORE := 120.0  # one more copper Mine for every this much Copper Ore s
 const COPPER_FIRST := 15  # Copper: Alloying costs 12, and a Crucible batch takes 3
 const STUCK_SECONDS := 90.0  # no road nearer the ore for this long: the greedy push east is stuck, and the bot plans the road
 const ROAD_STEPS := 3  # tiles of a planned road laid in one decision
+const TIN_WAIT := 300.0  # seconds after Alloying the first Tin may wait before the hand goes to it alone
 ## What a planned road costs to lay, a tile by tile (relative): a bridge is dear, a pass through rocks dearer than grass.
 const PLAN_COST := {"grass": 2, "tree": 3, "rock": 6, "river": 12}
 
@@ -28,6 +29,7 @@ var dawn_at := -1.0  # the clock when Bronze Dawn was won
 var bronze_at := -1.0  # the clock when the first Bronze was made
 var star_at := -1.0  # the clock when The Falling Star was researched
 var _gaps := {}  # ore tile id -> {"target", "gap", "at"}: how near a road has come to the ore, and when it last got nearer
+var _alloyed_at := -1.0  # the clock when Alloying was first seen researched
 var _planned := {}  # ore tile id -> true once its road is planned instead of pushed east tile by tile
 
 
@@ -134,6 +136,24 @@ func _decide() -> void:
 ## whether or not that step is one where the bot thinks.
 func _in_era_two() -> bool:
 	return s.won and dawn_at >= 0.0
+
+
+## What to gather by hand. The first Bronze waits on one Tin: once Alloying has been in for five minutes, that Tin comes before any
+## other good, however short the rest is (a map with few Clay tiles keeps the Kilns eating the Clay, and a hand held on Clay never
+## turns to the Tin).
+func _next_click() -> String:
+	if _in_era_two() and s.tech_tree.researched.has("alloying") and _alloyed_at < 0.0:
+		_alloyed_at = clock
+	if (
+		_alloyed_at >= 0.0
+		and clock - _alloyed_at > TIN_WAIT
+		and bronze_at < 0.0
+		and s.economy.inv.get("bronze", 0) == 0
+		and s.economy.inv.get("tin", 0) < 1
+		and _nearest_tile(RAW_TILE["tin"], s.world.camp_pos).x >= 0
+	):
+		return "tin"
+	return super._next_click()
 
 
 ## The first Bronze needs the smelting chain to have run: copper for Alloying and for the batch, and one tin.

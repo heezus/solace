@@ -73,6 +73,9 @@ func _init() -> void:
 				out = a.substr(4)
 			if a.begins_with("from="):
 				from = a.substr(5)
+		if "era=bronze" in args:
+			_bronze_alone(int(args[0]), minutes, out, from)
+			return
 		if "era=ironfall" in args:
 			_ironfall_alone(
 				int(args[0]), minutes, out, from if from != "" else "%s/ironfall_start_%d.json" % [out, int(args[0])]
@@ -365,6 +368,37 @@ func _stop_at(until: String, stage: String, out: String, m: int, game: Sim) -> b
 	print("map %d: %s begins at %.1f game minutes, kept in %s" % [m, stage, game.seasons.time / 60.0, out])
 	quit(0)
 	return true
+
+
+## Bronze Dawn and Starfall from a copy of the game as Bronze Dawn began (`from`, kept by a baseline run), played by the bots a baseline
+## run uses to the game as Ironfall begins: `out`/starfall_start_<map>.json and `out`/ironfall_start_<map>.json, a file already
+## there kept. It keeps no checkpoint, and no profile is touched, so a chain can play these eras again after a bot fix.
+func _bronze_alone(m: int, minutes: float, out: String, from: String) -> void:
+	var game := Sim.new()
+	var kept := FileAccess.get_file_as_string(from)
+	if kept == "" or not RunSave.restore(game, RunSave.from_json(kept)):
+		print("bronze: no Bronze Dawn start at %s" % from)
+		quit(1)
+		return
+	var bronze := AutoplayBronze.new()
+	var from_at := game.seasons.time
+	var limit := from_at + minutes * 60.0
+	bronze.play_from_dawn(game, from_at, limit)
+	while bronze.clock < limit and not bronze.fell():
+		bronze.step(true)
+	if not bronze.fell():
+		print("map %d bronze: the Falling Star not reached in %.0f min" % [m, minutes])
+		quit(1)
+		return
+	if _stop_at("", "starfall", out, m, game):
+		return
+	var starfall := AutoplayStarfall.new()
+	var r: Dictionary = starfall.play_starfall(game, game.seasons.time, 40.0 * 60.0)
+	if not r["won"]:
+		print("map %d starfall: not over in 40 min" % m)
+		quit(1)
+		return
+	_stop_at("ironfall", "ironfall", out, m, game)
 
 
 ## Ironfall alone, from a copy of the game as the era began (`from`, kept by a baseline run with `until=ironfall`), played to the
