@@ -995,6 +995,6 @@ func _paveable(p: Vector2i, ground: Array) -> bool:
 	if s.world.roads.has(p):
 		return true
 	var open: bool = s.world.in_bounds(p) and s.fog.is_revealed(p) and not s.town.building_at.has(p)
-	if s.world.tile_at(p) == "river":  # not in `reach` until it is bridged
-		return open and "river" in ground and s.town.unlocked("bridge")
+	if s.world.tile_at(p) == "river":  # not in `reach` until it is bridged; a building is bridged to from The Falling Star on
+		return open and "river" in ground and s.town.unlocked("bridge") and s.tech_tree.researched.has("falling_star")
 	return open and reach.has(p) and s.world.tile_at(p) in ground
