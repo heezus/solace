@@ -912,7 +912,7 @@ func _spare(item: String) -> int:
 
 ## True if a road on `p` fits in what we can spare.
 func _road_affordable(p: Vector2i) -> bool:
-	var cost: Dictionary = Rules.cost_at("road", s.world.tile_at(p))
+	var cost: Dictionary = Rules.cost_at("bridge" if s.world.tile_at(p) == "river" else "road", s.world.tile_at(p))
 	for id in cost:
 		if cost[id] > _spare(id):
 			return false
@@ -930,7 +930,7 @@ func _link_roads() -> bool:
 		for p in path:
 			if laid >= ROADS_PER_DECISION or not _road_affordable(p):
 				break
-			if s.place("road", p):
+			if s.place("bridge" if s.world.tile_at(p) == "river" else "road", p):
 				laid += 1
 		if laid > 0:
 			return true
@@ -940,9 +940,10 @@ func _link_roads() -> bool:
 ## The tiles to pave, nearest first, joining building p to a depot's road network: a search from p's
 ## sides to a road on a network that reaches a depot, or to a tile beside a depot, over open grass
 ## (or road already there), then through Forest too, then cutting passes through Rocks (3 Stone a
-## tile) only when there's no other way. [] when there's none.
+## tile) only when there's no other way, and last a Wooden Bridge over the river (a building that stands on
+## the far bank has no other road to the Hearth). [] when there's none.
 func _road_path(p: Vector2i) -> Array:
-	for ground in [["grass"], ["grass", "tree"], ["grass", "tree", "rock"]]:
+	for ground in [["grass"], ["grass", "tree"], ["grass", "tree", "rock"], ["grass", "tree", "rock", "river"]]:
 		var path := _road_search(p, ground)
 		if not path.is_empty():
 			return path
@@ -994,6 +995,8 @@ func _lane(p: Vector2i) -> bool:
 func _paveable(p: Vector2i, ground: Array) -> bool:
 	if s.world.roads.has(p):
 		return true
-	if not s.world.in_bounds(p) or not s.fog.is_revealed(p) or s.town.building_at.has(p) or not reach.has(p):
+	if not s.world.in_bounds(p) or not s.fog.is_revealed(p) or s.town.building_at.has(p):
 		return false
-	return s.world.tile_at(p) in ground
+	if s.world.tile_at(p) == "river":  # the Kith cannot walk it (not in `reach`) until it is bridged
+		return "river" in ground and s.town.unlocked("bridge")
+	return reach.has(p) and s.world.tile_at(p) in ground
