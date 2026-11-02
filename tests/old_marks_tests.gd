@@ -11,6 +11,7 @@ const ExpeditionTests = preload("res://tests/expedition_tests.gd")
 const GlyphPicker = preload("res://scripts/glyph_picker.gd")
 const Land = preload("res://scripts/land.gd")
 const OldShip = preload("res://scripts/old_ship.gd")
+const Profile = preload("res://scripts/profile.gd")
 const RunSave = preload("res://scripts/run_save.gd")
 const Sim = preload("res://scripts/sim.gd")
 const StarfallTests = preload("res://tests/starfall_tests.gd")
@@ -26,6 +27,7 @@ func run(runner) -> void:
 	_x._h = StarfallTests.new()
 	_x._h.t = runner
 	test_the_old_sets_open_by_run()
+	test_the_mixed_path_offers_set_9_in_run_4()
 	test_a_first_run_has_none_of_it()
 	test_the_first_ship_lies_where_a_party_can_go()
 	test_a_party_brings_the_old_marks_home()
@@ -78,6 +80,26 @@ func test_the_old_sets_open_by_run() -> void:
 	t.check(_ids(OldShip.sets(f)) == [7, 8], "a Cataclysm brings What Broke a run early")
 	t.check(OldShip.all_sets(f).size() == 8, "beside the six")
 	t.check(Data.GLYPH_SETS.size() == 6, "the six are untouched")
+
+
+## The Mixed path (Exodus, Cataclysm, Time loop) reaches The Way Out in its fourth run: the profile counts every ending as a telling,
+## not only the Exodus, and the run reads that count (Profile.carry, Carry.exodus).
+func test_the_mixed_path_offers_set_9_in_run_4() -> void:
+	var s := Sim.new()
+	s.generate(2)
+	var p := Profile.new()
+	var f := Sim.new().starfall
+	for ending in ["exodus", "cataclysm", "loop"]:
+		var before := p.carry()
+		f.carry.exodus = before.exodus
+		f.carry.ending = before.ending
+		t.check(9 not in OldShip.sets(f), "run %d of the Mixed path: The Way Out is not open yet" % (before.exodus + 1))
+		p.bank(s, ending)
+	var c := p.carry()
+	t.check(c.exodus == 3 and p.runs == 3 and p.exoduses == 1, "three endings, one of them an Exodus: %d runs" % p.runs)
+	f.carry.exodus = c.exodus
+	f.carry.ending = c.ending
+	t.check(_ids(OldShip.sets(f)) == [7, 8, 9], "run 4 after Exodus, Cataclysm and Time loop: The Way Out opens")
 
 
 func test_a_first_run_has_none_of_it() -> void:
