@@ -136,6 +136,21 @@ func _in_era_two() -> bool:
 	return s.won and dawn_at >= 0.0
 
 
+## What to gather by hand. The first Bronze waits on one Tin: once Alloying is in, that Tin comes before any other good, however
+## short the rest is (a map with few Clay tiles keeps the Kilns eating the Clay, and a hand held on Clay never turns to the Tin).
+func _next_click() -> String:
+	if (
+		_in_era_two()
+		and s.tech_tree.researched.has("alloying")
+		and bronze_at < 0.0
+		and s.economy.inv.get("bronze", 0) == 0
+		and s.economy.inv.get("tin", 0) < 1
+		and _nearest_tile(RAW_TILE["tin"], s.world.camp_pos).x >= 0
+	):
+		return "tin"
+	return super._next_click()
+
+
 ## The first Bronze needs the smelting chain to have run: copper for Alloying and for the batch, and one tin.
 func _goal_wants(want: Dictionary) -> void:
 	if not _in_era_two():
