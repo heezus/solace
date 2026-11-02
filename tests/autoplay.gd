@@ -940,8 +940,7 @@ func _link_roads() -> bool:
 ## The tiles to pave, nearest first, joining building p to a depot's road network: a search from p's
 ## sides to a road on a network that reaches a depot, or to a tile beside a depot, over open grass
 ## (or road already there), then through Forest too, then cutting passes through Rocks (3 Stone a
-## tile) only when there's no other way, and last a Wooden Bridge over the river (a building that stands on
-## the far bank has no other road to the Hearth). [] when there's none.
+## tile) only when there's no other way, last a Wooden Bridge over the river. [] when there's none.
 func _road_path(p: Vector2i) -> Array:
 	for ground in [["grass"], ["grass", "tree"], ["grass", "tree", "rock"], ["grass", "tree", "rock", "river"]]:
 		var path := _road_search(p, ground)
@@ -995,8 +994,7 @@ func _lane(p: Vector2i) -> bool:
 func _paveable(p: Vector2i, ground: Array) -> bool:
 	if s.world.roads.has(p):
 		return true
-	if not s.world.in_bounds(p) or not s.fog.is_revealed(p) or s.town.building_at.has(p):
-		return false
-	if s.world.tile_at(p) == "river":  # the Kith cannot walk it (not in `reach`) until it is bridged
-		return "river" in ground and s.town.unlocked("bridge")
-	return reach.has(p) and s.world.tile_at(p) in ground
+	var open: bool = s.world.in_bounds(p) and s.fog.is_revealed(p) and not s.town.building_at.has(p)
+	if s.world.tile_at(p) == "river":  # not in `reach` until it is bridged
+		return open and "river" in ground and s.town.unlocked("bridge")
+	return open and reach.has(p) and s.world.tile_at(p) in ground
