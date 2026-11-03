@@ -11,6 +11,7 @@ var log_file: FileAccess
 var started := false
 var elapsed := 0.0
 var frames := 0
+var set_up := false  # the window calls can run the main loop inside _initialize on macOS: _process waits until the setup is done
 var beat := 0.0
 var max_seconds := 240.0
 var first_frame_logged := false
@@ -26,24 +27,28 @@ func _initialize() -> void:
 		elif arg.begins_with("--max="):
 			max_seconds = float(arg.trim_prefix("--max="))
 	DirAccess.make_dir_recursive_absolute(out)
-	if "--offscreen" in OS.get_cmdline_user_args():  # project.godot says maximized: take the window off the screens, borderless, 1280x800
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true)
-		DisplayServer.window_set_size(Vector2i(1280, 800))
-		DisplayServer.window_set_position(Vector2i(20000, 20000))
 	log_file = FileAccess.open(out.path_join("driver.log"), FileAccess.WRITE)
 	for line in FileAccess.get_file_as_string(steps_file).split("\n"):
 		line = line.strip_edges()
 		if line != "" and not line.begins_with("#"):
 			steps.append(line)
+	_log("args ok, steps file '%s', out '%s'" % [steps_file, out])
+	if "--offscreen" in OS.get_cmdline_user_args():  # project.godot says maximized: take the window off the screens, borderless, 1280x800
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true)
+		DisplayServer.window_set_size(Vector2i(1280, 800))
+		DisplayServer.window_set_position(Vector2i(20000, 20000))
 	_log("init: %d steps, window %s at %s mode %d, renderer %s, display %s" % [steps.size(), DisplayServer.window_get_size(), DisplayServer.window_get_position(), DisplayServer.window_get_mode(), RenderingServer.get_video_adapter_name(), DisplayServer.get_name()])
 	change_scene_to_file("res://scenes/title.tscn")
+	set_up = true
 
 
 func _log(s: String) -> void:
+	print(s)
+	if log_file == null:
+		return
 	log_file.store_line("[%.1f] %s" % [elapsed, s])
 	log_file.flush()
-	print(s)
 
 
 func _walk(n: Node, acc: Array) -> void:
@@ -80,6 +85,8 @@ func _click_at(p: Vector2) -> void:
 
 
 func _process(delta: float) -> bool:
+	if not set_up or log_file == null:
+		return false
 	elapsed += delta
 	frames += 1
 	if not first_frame_logged:
