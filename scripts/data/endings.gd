@@ -81,7 +81,7 @@ const ENDINGS := {
 		"name": "Seal Solace",
 		"line": "Shut the door, and keep the world as it is.",
 		"end":
-		"The door is shut with everyone it carried standing at it. Solace stays as it is, and the Bloom stays outside.",
+		"The Skyreach blazes, and the door is shut with everyone it carried standing at it. Solace stays as it is, and the Bloom stays outside.",
 	},
 	"heal":
 	{
@@ -94,7 +94,7 @@ const ENDINGS := {
 		"name": "Heal the Bloom",
 		"line": "Mend what the first hands broke.",
 		"end":
-		"The Kin and the Lumen walk out to the green growth together. The Bloom answers, and the river it was remembers its name.",
+		"Warm light runs down the Skyreach and into the ground. A voice in the green answers, and the river it was remembers its name.",
 	},
 	"leave":
 	{
@@ -107,7 +107,10 @@ const ENDINGS := {
 		"name": "Leave together",
 		"line": "Go through the door, with everyone it has carried.",
 		"end":
-		"The door opens for everyone it has ever carried. The Kin and the Lumen go through it, and Solace is left to heal.",
+		(
+			"The old ship wakes beside the Skyreach, mended, and its door opens for everyone it has ever carried."
+			+ " The Kin and the Lumen go through it, and Solace is left to heal."
+		),
 	},
 	"next_choice": "The telling is whole. Begin another telling, or return to the title screen?",
 	"another": "Another telling",
