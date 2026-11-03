@@ -5,7 +5,9 @@ extends SceneTree
 ## second look. It fails the run on any wrong step, and the run must close cleanly (the Translation is taken out as the game closes).
 ## Run: godot --headless --fixed-fps 60 --path . -s tests/tools/kin_pass.gd
 
+const Chronicle = preload("res://scripts/chronicle.gd")
 const CutscenePlayer = preload("res://scripts/cutscene_player.gd")
+const Data = preload("res://scripts/data.gd")
 const KinName = preload("res://scripts/kin_name.gd")
 const NoticeCard = preload("res://scripts/notice_card.gd")
 const Profile = preload("res://scripts/profile.gd")
@@ -18,6 +20,8 @@ const LINE := "A Kith was born. We were never only Kith. We are Kin."
 var frame := 0
 var problems: Array = []
 var early: Label
+var numbers: Label  # the Chronicle's numbers line, built while the people are Kith
+var ask: Label  # the ending card's line
 var label: Label
 var button: Button
 var rich: RichTextLabel
@@ -55,6 +59,12 @@ func _process(_delta: float) -> bool:
 		button.text = "Kith: 3"
 		button.tooltip_text = "Where the Kith sleep"
 		rich.text = "The Kith's fire"
+		numbers = Label.new()
+		root.add_child(numbers)
+		numbers.text = Chronicle.numbers_line({"minutes": 62, "kin": 90, "buildings": 186, "lost": 14})
+		ask = Label.new()
+		root.add_child(ask)
+		ask.text = Data.ENDINGS["text"]
 		_expect(label.get_total_character_count() == LINE.length(), "a Label reads as written before")
 		_expect(rich.get_parsed_text() == "The Kith's fire", "and a RichTextLabel")
 	if frame == 4:
@@ -87,6 +97,14 @@ func _process(_delta: float) -> bool:
 		_expect(
 			button.tr(button.text) == "Kin: 3" and button.tr(button.tooltip_text) == "Where the Kin sleep",
 			"and a Button with its tooltip"
+		)
+		_expect(
+			numbers.text.contains("Kith") and numbers.get_total_character_count() == numbers.text.length() - 1,
+			"the Chronicle's numbers line says Kin on screen"
+		)
+		_expect(
+			ask.text.contains("Kith") and ask.get_total_character_count() == ask.text.length() - 1,
+			"so does the ending card's line"
 		)
 		var fresh := Label.new()
 		root.add_child(fresh)
