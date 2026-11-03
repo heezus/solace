@@ -221,7 +221,7 @@ const CUTSCENES := {
 			},
 		],
 	},
-	# After a true ending (Step 8B, placeholder words and no painted stills yet): three stills, the last the Hearthkeeper's fireside.
+	# After a true ending (Step 8B; the words are the director's polish, Jon's pick): three stills, the last the Hearthkeeper's fireside.
 	"seal_end":
 	{
 		"triggers": ["ending_seal"],
@@ -229,7 +229,8 @@ const CUTSCENES := {
 		[
 			{
 				"art": "seal_end_1",
-				"line": "The Kin and the Lumen stand at the door together.\nNo one is left outside it."
+				"line":
+				"The Skyreach blazes. The Kin and the Lumen stand at the door together,\nand no one is left outside it."
 			},
 			{
 				"art": "seal_end_2",
@@ -248,11 +249,8 @@ const CUTSCENES := {
 		"triggers": ["ending_heal"],
 		"stills":
 		[
-			{
-				"art": "heal_end_1",
-				"line": "The Kin and the Lumen walk out together\nto the green growth at the edge of the fog."
-			},
-			{"art": "heal_end_2", "line": 'A voice in it: "I was a river once."\nThe river runs again.'},
+			{"art": "heal_end_1", "line": "Warm light runs down the Skyreach and into the ground."},
+			{"art": "heal_end_2", "line": 'A voice in the green: "I was a river once."\nAnd the river runs again.'},
 			{
 				"art": "heal_end_3",
 				"portrait": "portrait_kin_elder",
@@ -266,7 +264,11 @@ const CUTSCENES := {
 		"triggers": ["ending_leave"],
 		"stills":
 		[
-			{"art": "leave_end_1", "line": "The door opens for everyone it has ever carried."},
+			{
+				"art": "leave_end_1",
+				"line":
+				"The old ship wakes beside the Skyreach, mended.\nIts door opens for everyone it has ever carried."
+			},
 			{"art": "leave_end_2", "line": "The Kin and the Lumen go through it together.\nSolace is left to heal."},
 			{
 				"art": "leave_end_3",
