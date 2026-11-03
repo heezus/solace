@@ -3,11 +3,474 @@ OpenGL API 4.1 Metal - 90.5 - Compatibility - Using Device: Apple - Apple M5 Pro
 
 WARNING: 2D MSAA is not yet supported for GLES3.
      at: render_target_set_msaa (drivers/gles3/storage/texture_storage.cpp:3210)
-SCRIPT ERROR: Cannot call method 'store_line' on a null value.
-          at: _log (res://launch_data8/shot_driver.gd:44)
-          GDScript backtrace (most recent call first):
-              [0] _log (res://launch_data8/shot_driver.gd:44)
-              [1] _process (res://launch_data8/shot_driver.gd:87)
-              [2] _initialize (res://launch_data8/shot_driver.gd:30)
+args ok, steps file 'launch_data8/steps.txt', out '/private/tmp/claude-502/-Users-jhowell-Documents-Claude-Workspace/ae2853a7-d670-42c1-8051-f891115774fd/scratchpad/solace-launch8/launch_data8/shots'
 init: 36 steps, window (1280, 800) at (20000, 20000) mode 0, renderer Apple M5 Pro, display macOS
+first frame, scene none yet
 step 1: wait:2
+step 2: shot:01_title
+shot 01_title -> 0
+step 3: click:Continue
+click 'Continue'
+step 4: wait:5
+heartbeat step 4 of 36, 632 frames, scene Main
+step 5: shot:02_loaded_era_card
+shot 02_loaded_era_card -> 0
+step 6: click:Begin
+click 'Begin'
+step 7: wait:2
+step 8: shot:03_map
+shot 03_map -> 0
+step 9: rerecord:skyreach_done
+rerecorded skyreach_done
+step 10: wait:6
+heartbeat step 10 of 36, 915 frames, scene Main
+heartbeat step 10 of 36, 1373 frames, scene Main
+step 11: shot:04_skyreach_stands
+shot 04_skyreach_stands -> 0
+step 12: click:Choose an ending
+click 'Choose an ending'
+step 13: wait:2
+step 14: shot:05_ending_card
+shot 05_ending_card -> 0
+step 15: dump
+DUMP
+  Label: Kith 90  ·  homes for 90
+  Label: Jobs 60 of 60
+  Label: Haulers 30, 13 needed
+  Label: No room: build a Dwelling
+  Label: Food 2389
+  Label: −1.03/s  ·  38 min left
+  Label: 1190
+  Label: 438
+  Label: 209
+  Label: 1404
+  Label: 704
+  Label: 1347
+  Label: 282
+  Label: 215
+  Label: 1374
+  Label: 511
+  Label: 98
+  Label: 0
+  Label: 276
+  Label: Tools 71/90 Kith
+  Label: 871
+  Label: 956
+  Label: 988
+  Label: 90
+  Label: 0
+  Label: 51
+  Label: 16
+  Label: 200
+  Label: 96
+  Label: 0
+  Label: 8
+  Label: 0
+  Label: 0
+  Label: 1
+  Label: 0
+  Button: Pause
+  Button: 1x
+  Button: 2x
+  Button: 3x
+  Button: Messages  (L)
+  Button: Sight (Alt)
+  Button: Tech tree · 9 ready · T
+  Button: Homes · H
+  Button: Gathering · A
+  Button: Workshops · W
+  Button: Metal · M
+  Button: Logistics · L
+  Button: Lore · E
+  Button: Craft · C
+  Button: Blueprints
+  Button: Demolish
+  Label: Goals 6/6
+  Button: Fold ▸
+  Label: All goals done.
+  Label:   The star is coming down. Keep building while you wait.
+  Label: The Wanderer: it has fallen
+  Label: Info
+  Label: Huts gather what's in reach. Click one to choose what it gathers.
+  Label: Tool Bench
+  Label: Ready
+  Label: 10
+  Label: 5
+  Label: Charcoal Pit
+  Label: Ready
+  Label: 8
+  Label: 8
+  Label: Twine Post
+  Label: Ready
+  Label: 13
+  Label: Kiln
+  Label: Ready
+  Label: 16
+  Label: 16
+  Label: Water Wheel
+  Label: Ready
+  Label: 30
+  Label: 10
+  Label: Boiler
+  Label: Need 12 Iron
+  Label: 35
+  Label: 57
+  Label: 12
+  Label: Shard Boiler
+  Label: Need 20 Iron
+  Label: 30
+  Label: 50
+  Label: 20
+  Label: 10
+  Label: Generator
+  Label: Need 23 Iron
+  Label: 52
+  Label: 78
+  Label: 23
+  Label: Shard Dynamo
+  Label: Need 18 Iron
+  Label: 60
+  Label: 18
+  Label: 6
+  Label: 20
+  Label: Scorcher
+  Label: Need 4 Steel
+  Label: 12
+  Label: 16
+  Label: 41
+  Label: Grindstone
+  Label: Ready
+  Label: 23
+  Label: 6
+  Label: Shardwright
+  Label: Ready
+  Label: 35
+  Label: 23
+  Label: 7
+  Label: The Skyreach stands
+  Label: The tower is lit from its foot to its crown, and the sky answers it. Whatever comes down now will find the Kith awake, and the telling has r
+  Label: The age of the sky is done. The game goes on.
+  Button: Keep building
+  Button: Choose an ending
+  Label: Telling 4 ends here
+  Label: Skyward stands, and the Bloom is coming. How the Kith treated the Lumen decides which endings are open.
+  Label: The telling can be made whole
+  Label: The marks of the Way Out are read, and the Lumen stand with the Kin. Each of these ends the telling for good.
+  Button: Seal Solace
+  Label: Shut the door, and keep the world as it is.
+  Label: Gives: The telling told whole
+  Button: Heal the Bloom
+  Label: Mend what the first hands broke.
+  Label: Gives: The telling told whole
+  Button: Leave together
+  Label: Go through the door, with everyone it has carried.
+  Label: Gives: The telling told whole
+  Button: Exodus
+  Label: Pack up and walk to a new land, carrying what you know.
+  Label: Gives: Blueprints, and everything the Kith know
+  Button (disabled): Cataclysm
+  Label: Magic overreach breaks the world. You wake in your own ruins.
+  Label: Gives: Relics from the ruins
+  Label: Needs the Lumen as enemies
+  Button: Time loop
+  Label: The planet rewinds. Only you remember.
+  Label: Gives: Memory: Sela and the Lumen remember you
+  Button: Keep building
+step 16: click:Heal the Bloom
+click 'Heal the Bloom'
+step 17: wait:1
+step 18: shot:06_confirm
+shot 06_confirm -> 0
+step 19: dump
+DUMP
+  Label: Kith 90  ·  homes for 90
+  Label: Jobs 60 of 60
+  Label: Haulers 30, 13 needed
+  Label: No room: build a Dwelling
+  Label: Food 2389
+  Label: −1.03/s  ·  38 min left
+  Label: 1190
+  Label: 438
+  Label: 209
+  Label: 1404
+  Label: 704
+  Label: 1347
+  Label: 282
+  Label: 215
+  Label: 1374
+  Label: 511
+  Label: 98
+  Label: 0
+  Label: 276
+  Label: Tools 71/90 Kith
+  Label: 871
+  Label: 956
+  Label: 988
+  Label: 90
+  Label: 0
+  Label: 51
+  Label: 16
+  Label: 200
+  Label: 96
+  Label: 0
+  Label: 8
+  Label: 0
+  Label: 0
+  Label: 1
+  Label: 0
+  Button: Pause
+  Button: 1x
+  Button: 2x
+  Button: 3x
+  Button: Messages  (L)
+  Button: Sight (Alt)
+  Button: Tech tree · 9 ready · T
+  Button: Homes · H
+  Button: Gathering · A
+  Button: Workshops · W
+  Button: Metal · M
+  Button: Logistics · L
+  Button: Lore · E
+  Button: Craft · C
+  Button: Blueprints
+  Button: Demolish
+  Label: Goals 6/6
+  Button: Fold ▸
+  Label: All goals done.
+  Label:   The star is coming down. Keep building while you wait.
+  Label: The Wanderer: it has fallen
+  Label: Info
+  Label: Huts gather what's in reach. Click one to choose what it gathers.
+  Label: Tool Bench
+  Label: Ready
+  Label: 10
+  Label: 5
+  Label: Charcoal Pit
+  Label: Ready
+  Label: 8
+  Label: 8
+  Label: Twine Post
+  Label: Ready
+  Label: 13
+  Label: Kiln
+  Label: Ready
+  Label: 16
+  Label: 16
+  Label: Water Wheel
+  Label: Ready
+  Label: 30
+  Label: 10
+  Label: Boiler
+  Label: Need 12 Iron
+  Label: 35
+  Label: 57
+  Label: 12
+  Label: Shard Boiler
+  Label: Need 20 Iron
+  Label: 30
+  Label: 50
+  Label: 20
+  Label: 10
+  Label: Generator
+  Label: Need 23 Iron
+  Label: 52
+  Label: 78
+  Label: 23
+  Label: Shard Dynamo
+  Label: Need 18 Iron
+  Label: 60
+  Label: 18
+  Label: 6
+  Label: 20
+  Label: Scorcher
+  Label: Need 4 Steel
+  Label: 12
+  Label: 16
+  Label: 41
+  Label: Grindstone
+  Label: Ready
+  Label: 23
+  Label: 6
+  Label: Shardwright
+  Label: Ready
+  Label: 35
+  Label: 23
+  Label: 7
+  Label: The Skyreach stands
+  Label: The tower is lit from its foot to its crown, and the sky answers it. Whatever comes down now will find the Kith awake, and the telling has r
+  Label: The age of the sky is done. The game goes on.
+  Button: Keep building
+  Button: Choose an ending
+  Label: Warm light runs down the Skyreach and into the ground. A voice in the green answers, and the river it was remembers its name.
+  Button: Make it whole
+  Button: Stay
+step 20: click:Make it whole
+click 'Make it whole'
+step 21: wait:1
+heartbeat step 21 of 36, 1776 frames, scene Main
+step 22: shot:07_heal_still1
+shot 07_heal_still1 -> 0
+step 23: wait:3
+step 24: shot:08_heal_still1b
+shot 08_heal_still1b -> 0
+step 25: wait:5
+heartbeat step 25 of 36, 2174 frames, scene Main
+step 26: shot:09_heal_still2
+shot 09_heal_still2 -> 0
+step 27: wait:6
+heartbeat step 27 of 36, 2575 frames, scene Main
+heartbeat step 27 of 36, 3019 frames, scene Main
+step 28: shot:10_heal_still3
+shot 10_heal_still3 -> 0
+step 29: wait:6
+heartbeat step 29 of 36, 3442 frames, scene Main
+step 30: shot:11_after
+shot 11_after -> 0
+step 31: dump
+DUMP
+  Label: Kith 90  ·  homes for 90
+  Label: Jobs 60 of 60
+  Label: Haulers 30, 13 needed
+  Label: No room: build a Dwelling
+  Label: Food 2389
+  Label: −1.03/s  ·  38 min left
+  Label: 1190
+  Label: 438
+  Label: 209
+  Label: 1404
+  Label: 704
+  Label: 1347
+  Label: 282
+  Label: 215
+  Label: 1374
+  Label: 511
+  Label: 98
+  Label: 0
+  Label: 276
+  Label: Tools 71/90 Kith
+  Label: 871
+  Label: 956
+  Label: 988
+  Label: 90
+  Label: 0
+  Label: 51
+  Label: 16
+  Label: 200
+  Label: 96
+  Label: 0
+  Label: 8
+  Label: 0
+  Label: 0
+  Label: 1
+  Label: 0
+  Button: Pause
+  Button: 1x
+  Button: 2x
+  Button: 3x
+  Button: Messages  (L)
+  Button: Sight (Alt)
+  Button: Tech tree · 9 ready · T
+  Button: Homes · H
+  Button: Gathering · A
+  Button: Workshops · W
+  Button: Metal · M
+  Button: Logistics · L
+  Button: Lore · E
+  Button: Craft · C
+  Button: Blueprints
+  Button: Demolish
+  Label: Goals 6/6
+  Button: Fold ▸
+  Label: All goals done.
+  Label:   The star is coming down. Keep building while you wait.
+  Label: The Wanderer: it has fallen
+  Label: Info
+  Label: Huts gather what's in reach. Click one to choose what it gathers.
+  Label: Tool Bench
+  Label: Ready
+  Label: 10
+  Label: 5
+  Label: Charcoal Pit
+  Label: Ready
+  Label: 8
+  Label: 8
+  Label: Twine Post
+  Label: Ready
+  Label: 13
+  Label: Kiln
+  Label: Ready
+  Label: 16
+  Label: 16
+  Label: Water Wheel
+  Label: Ready
+  Label: 30
+  Label: 10
+  Label: Boiler
+  Label: Need 12 Iron
+  Label: 35
+  Label: 57
+  Label: 12
+  Label: Shard Boiler
+  Label: Need 20 Iron
+  Label: 30
+  Label: 50
+  Label: 20
+  Label: 10
+  Label: Generator
+  Label: Need 23 Iron
+  Label: 52
+  Label: 78
+  Label: 23
+  Label: Shard Dynamo
+  Label: Need 18 Iron
+  Label: 60
+  Label: 18
+  Label: 6
+  Label: 20
+  Label: Scorcher
+  Label: Need 4 Steel
+  Label: 12
+  Label: 16
+  Label: 41
+  Label: Grindstone
+  Label: Ready
+  Label: 23
+  Label: 6
+  Label: Shardwright
+  Label: Ready
+  Label: 35
+  Label: 23
+  Label: 7
+  Label: The Skyreach stands
+  Label: The tower is lit from its foot to its crown, and the sky answers it. Whatever comes down now will find the Kith awake, and the telling has r
+  Label: The age of the sky is done. The game goes on.
+  Button: Keep building
+  Button: Choose an ending
+  Label: The Chronicle
+  Label: Every telling of Solace, and what you chose in each.
+  Button: Tellings
+  Button: Lore
+  Button: People
+  Button: Endings
+  Label: The Ending: Heal the Bloom
+  Label: The Hearthkeeper: "We walked out to the green growth together, and it remembered it had been a river."
+  Label: The Hearthkeeper: "I still dream of the town we left behind, lit and empty."
+  Label: The Hearthkeeper: "I wonder if the ruins would have been kinder, had we left them to rest."
+  Label: The Hearthkeeper: "A second chance for everyone. I wonder what it costs the ones who do not know."
+  Label: The Hearthkeeper: "A world kept whole is a world that does not change. I think of that sometimes."
+  Label: The Hearthkeeper: "Somewhere a world is healing without us. I hope it forgives the hands that broke it."
+  Label: The Bloom: "...a river... I was a river once..."
+  Label: 62 minutes · 90 Kith · 186 buildings · 14 taken by the Bloom
+  Label: Stone Age 11 · Bronze Dawn 9 · Starfall 12 · Ironfall 12 · Livewire 6 · Skyreach 12
+  Button: Watch the ending
+  Button: Watch the next land
+  Label: Embers lit: 4
+  Button: Begin the next telling
+step 32: wait:3
+step 33: shot:12_after_b
+shot 12_after_b -> 0
+step 34: wait:2
+heartbeat step 34 of 36, 3838 frames, scene Main
+step 35: shot:13_end
+shot 13_end -> 0
+step 36: quit
