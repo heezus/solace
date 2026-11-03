@@ -1,0 +1,13 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 90.5 - Compatibility - Using Device: Apple - Apple M5 Pro
+
+WARNING: 2D MSAA is not yet supported for GLES3.
+     at: render_target_set_msaa (drivers/gles3/storage/texture_storage.cpp:3210)
+SCRIPT ERROR: Cannot call method 'store_line' on a null value.
+          at: _log (res://launch_data8/shot_driver.gd:44)
+          GDScript backtrace (most recent call first):
+              [0] _log (res://launch_data8/shot_driver.gd:44)
+              [1] _process (res://launch_data8/shot_driver.gd:87)
+              [2] _initialize (res://launch_data8/shot_driver.gd:30)
+init: 36 steps, window (1280, 800) at (20000, 20000) mode 0, renderer Apple M5 Pro, display macOS
+step 1: wait:2
