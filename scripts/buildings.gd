@@ -16,6 +16,7 @@ extends RefCounted
 
 signal built(type: String, pos: Vector2i)
 signal demolished(type: String, pos: Vector2i)
+signal refused(type: String, pos: Vector2i)  # a placement the town said no to
 
 const Codec = preload("res://scripts/save_codec.gd")
 const Data = preload("res://scripts/data.gd")
@@ -250,6 +251,7 @@ func built_type(p: Vector2i) -> String:
 ## walking cell and tells the player.
 func place(type: String, p: Vector2i, focus := "") -> Dictionary:
 	if placement_error(type, p) != "":
+		refused.emit(type, p)
 		return {}
 	var tile := _world.tile_at(p)
 	_economy.pay(cost_here(type, p), "build")
