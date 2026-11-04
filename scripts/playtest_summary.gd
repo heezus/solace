@@ -10,6 +10,7 @@ const AUTOMATION_TICKS := 12  # 12 tick lines of 10 game seconds: the chain runs
 const CHORE_COUNT := 5
 const CHORE_SECONDS := 60.0
 const STUCK_SECONDS := 180.0
+const LONG_STUCK_MINUTES := 5.0  # a stuck spell longer than this misses M6 and is a near-quit for M10
 const END_WINDOW := 5.0  # the last game minutes of an era that the hand share is read over
 const NEAR_QUIT_PLACEMENTS := 3
 
@@ -74,7 +75,7 @@ static func _m1(r: _Run) -> Dictionary:
 	var start := -1.0
 	var found := -1.0
 	for t in r.ticks:
-		if t["made"] > 0.0 and t["touch"] == 0:
+		if t["made"] > 0.0 and t["hand"] == 0.0:
 			if streak == 0:
 				start = t["m"] - 1.0 / 6.0
 			streak += 1
@@ -94,8 +95,8 @@ static func _m1(r: _Run) -> Dictionary:
 		"8 or less in run 1",
 		verdict,
 		(
-			"the first 12 tick lines in a row (2 game minutes) with goods made by buildings and no build, demolish,"
-			+ " pause or resume; a hand harvest elsewhere does not touch the chain"
+			"the first 12 tick lines in a row (2 game minutes) with goods made by buildings and none made by hand;"
+			+ " building other things in that time is allowed"
 		)
 	)
 
@@ -196,26 +197,42 @@ static func _m5(r: _Run) -> Dictionary:
 		"PASS" if share >= 0.05 and share <= 0.20 else "MISS",
 		(
 			"tick lines where nothing had progressed for a minute (no goal, tech, new kind of building or era)"
-			+ " and nothing worth building was affordable"
+			+ " and nothing was affordable that moves the goal on show"
 		)
 	)
 
 
-static func _m6(r: _Run) -> Dictionary:
-	var counts := {}
-	var waited: Array = []
+## The stuck spells of a run: {era, m (when it passed 3 minutes), goal, minutes (how long it lasted, from the last progress)}.
+static func _spells(r: _Run) -> Array:
+	var out: Array = []
 	var inside := false
 	for t in r.ticks:
 		if t["since"] >= STUCK_SECONDS:
 			if not inside:
 				inside = true
-				var era := int(t["era"])
-				counts[era] = counts.get(era, 0) + 1
-				waited.append(
-					"%s %.0f min on %s" % [_name(era), t["m"], t["goal"] if t["goal"] != "" else "no goal left"]
-				)
+				out.append({"era": int(t["era"]), "m": t["m"], "goal": str(t["goal"]), "minutes": 0.0})
+			out.back()["minutes"] = maxf(out.back()["minutes"], float(t["since"]) / 60.0)
 		else:
 			inside = false
+	return out
+
+
+static func _m6(r: _Run) -> Dictionary:
+	var spells := _spells(r)
+	var counts := {}
+	var longest := 0.0
+	var total := 0.0
+	var waited: Array = []
+	for sp in spells:
+		counts[sp["era"]] = counts.get(sp["era"], 0) + 1
+		longest = maxf(longest, sp["minutes"])
+		total += sp["minutes"]
+		waited.append(
+			(
+				"%s %.0f min on %s, %.1f min"
+				% [_name(sp["era"]), sp["m"], sp["goal"] if sp["goal"] != "" else "no goal left", sp["minutes"]]
+			)
+		)
 	var worst := 0
 	var parts: Array = []
 	for e in r.eras:
@@ -223,15 +240,19 @@ static func _m6(r: _Run) -> Dictionary:
 		worst = maxi(worst, n)
 		parts.append("%s %d" % [_name(e["era"]), n])
 	var result := ", ".join(parts)
-	if not waited.is_empty():
+	if not spells.is_empty():
+		result += "; longest %.1f min, %.1f min stuck in all" % [longest, total]
 		result += " (%s)" % "; ".join(waited.slice(0, 3))
 	return _row(
 		6,
 		"Stuck spells",
 		result,
-		"0 to 1 per era",
-		"PASS" if worst <= 1 else "MISS",
-		"3 game minutes or more with no progress (a goal, a tech, a new kind of building, an era); the goal then showing is what was waited on"
+		"0 to 1 per era, none over 5 min",
+		"PASS" if worst <= 1 and longest <= LONG_STUCK_MINUTES else "MISS",
+		(
+			"3 game minutes or more with no progress (a goal, a tech, a new kind of building, an era); the goal then"
+			+ " showing is what was waited on; a spell over 5 minutes misses"
+		)
 	)
 
 
@@ -325,6 +346,9 @@ static func _m10(r: _Run) -> Dictionary:
 	for key in failed:
 		if failed[key] >= NEAR_QUIT_PLACEMENTS:
 			n += 1
+	for sp in _spells(r):
+		if sp["minutes"] > LONG_STUCK_MINUTES:
+			n += 1
 	var open_at := -1.0
 	var acted := false
 	for x in r.entries:
@@ -344,7 +368,10 @@ static func _m10(r: _Run) -> Dictionary:
 		"%d (%.1f an hour)" % [n, per_hour],
 		"0 to 1 per hour",
 		"PASS" if per_hour <= 1.0 else "MISS",
-		"2 real minutes with no click or key, the same placement failing 3 times, or the pause menu opened and shut with no act between"
+		(
+			"2 real minutes with no click or key, the same placement failing 3 times, the pause menu opened and shut with no act"
+			+ " between, or a stuck spell over 5 game minutes"
+		)
 	)
 
 

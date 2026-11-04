@@ -474,8 +474,20 @@ func _emit_snap(s, now: float) -> void:
 	)
 
 
-## True when something worth building could be paid for now (roads and bridges, always cheap, do not count).
+## True when the player could pay for a step that moves the goal on show: the research or building it names (or a tech that
+## is ready, on the way to it). A goal that names neither counts anything worth building (roads and bridges, always cheap, do not).
 func _affordable(s) -> bool:
+	var goals: Array = s.story.goal_list()
+	var at: int = s.story.current_goal()
+	if at < goals.size():
+		var g: Dictionary = goals[at]
+		var building: String = g.get("building", "grindstone" if g["id"] == "grind" else "")
+		if g.has("tech") or building != "":
+			if not s.tech_tree.ready_list().is_empty():
+				return true
+			if building != "":
+				return s.town.unlocked(building) and s.economy.can_afford(Data.BUILDINGS[building]["cost"])
+			return s.tech_tree.can_research(g["tech"])
 	for type in Data.BUILDINGS:
 		if Data.BUILDINGS[type]["kind"] in ["road", "bridge"] or not s.town.unlocked(type):
 			continue
