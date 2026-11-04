@@ -1,0 +1,140 @@
+{
+  "signal_tower": {
+    "dimensions": [
+      992,
+      1586
+    ],
+    "region": [
+      138,
+      65,
+      692,
+      1464
+    ],
+    "draw_size_at_48": [
+      26,
+      55
+    ],
+    "sha256": "3f8ba9d9b021e5309bc650adb995198c0e8b14a11c3a603ef2fd796705e94359",
+    "generated_source": "exec-dec283eb-9276-4cc5-bdbd-faeabc40946e.png",
+    "references": [
+      "art/rendered/shard_dynamo.png",
+      "art/rendered/wire_mill.png"
+    ],
+    "prompt": "Solace game asset, painted 3D Misty Highlands miniature like the Shard Dynamo reference: chunky readable materials, shallow top-down three-quarter map camera, daylight from upper left, cool shadows, isolated actual alpha transparency, no floor tile beyond the masonry foot, no labels, no words. One centered asset, strongly readable at a 46 pixel base width. A tall narrow square tower built of dark copper-brown brick and stone, iron-banded corners, a small run of copper wire, and at the top one unmistakable upward-tilted dark glass lens inside a bronze mirror-and-lens assembly. One tiny quiet cyan shard pilot light. Idle, no beam. Height about 1.6 times width. Full silhouette."
+  },
+  "skyreach_tower_0": {
+    "dimensions": [
+      1536,
+      1024
+    ],
+    "region": [
+      119,
+      153,
+      1290,
+      738
+    ],
+    "draw_size_at_48": [
+      46,
+      26
+    ],
+    "sha256": "f9fcca3e2702e253a3a7a0afc2eee86b05fe1c144f5cf2de409b32c5d3c0c059",
+    "generated_source": "exec-b138e3ca-9153-436a-b693-0800eef05c14.png",
+    "references": [
+      "art/rendered/cutscenes/way_out_2.png",
+      "art/rendered/shard_dynamo.png"
+    ],
+    "prompt": "Solace game asset, painted 3D Misty Highlands miniature like the Shard Dynamo reference: chunky readable materials, shallow top-down three-quarter map camera, daylight from upper left, cool shadows, isolated actual alpha transparency, no floor tile beyond the masonry foot, no labels, no words. One centered asset, strongly readable at a 46 pixel base width. Stage zero of the cathedral-like Skyreach tower shown in Way Out. Just the complete flat round stone ring foundation, low blue-grey weathered masonry with broad engraved geometric marks and narrow unlit brass and blue inlays, one prominent diamond motif, open stone center. Match ring design in Way Out. Three-quarter map camera makes it a low ellipse. Full silhouette."
+  },
+  "skyreach_tower_3": {
+    "dimensions": [
+      1024,
+      1536
+    ],
+    "region": [
+      68,
+      0,
+      883,
+      1509
+    ],
+    "draw_size_at_48": [
+      46,
+      79
+    ],
+    "sha256": "fbcb909e7ab2f81849a3161da0d9e19dbd47851978b32d813a8df4c378ec688b",
+    "generated_source": "exec-c130c091-7394-445b-b636-b203b547cbac.png",
+    "references": [
+      "art/rendered/cutscenes/way_out_1.png",
+      "art/rendered/cutscenes/way_out_2.png",
+      "art/rendered/shard_dynamo.png"
+    ],
+    "prompt": "Solace game asset, painted 3D Misty Highlands miniature like the Shard Dynamo reference: chunky readable materials, shallow top-down three-quarter map camera, daylight from upper left, cool shadows, isolated actual alpha transparency, no floor tile beyond the masonry foot, no labels, no words. One centered asset, strongly readable at a 46 pixel base width. Finished Skyreach as shown in Way Out, translated into a tall miniature: tapering cathedral-like blue-grey stone buttresses with open steel ribs and inset warm metal trim, a bright narrow cyan spine and a large cyan diamond in the shaft. At the base a round stone glyph ring of intertwined cyan and amber light. Tall narrow silhouette with a base about one third of its total height, portrait canvas. Upper thin shaft continues straight and is deliberately cropped at the top edge of the artwork. Keep side edges and bottom clear."
+  },
+  "signal_tower_lit": {
+    "dimensions": [
+      887,
+      1774
+    ],
+    "region": [
+      139,
+      312,
+      587,
+      1451
+    ],
+    "draw_size_at_48": [
+      26,
+      67
+    ],
+    "sha256": "1aa989e7da302c544f016bf1e1147fdac451c404e9d82542e5a88ff66e32ebb0",
+    "generated_source": "exec-e0d19fb4-962f-41bb-9d4d-43fa32964a35.png",
+    "references": [
+      "exec-dec283eb-9276-4cc5-bdbd-faeabc40946e.png"
+    ],
+    "prompt": "Precisely edit the first reference, Solace's idle Signal Tower sprite. Lock camera, proportions, and pixel position of all existing architecture including the entire bottom. Change the dark glass lens to a restrained bright cyan-white glowing lens and add a faint slim beam extending upward and slightly right in the direction of the lens; beam softly fades before crossing the canvas border. Keep actual alpha, keep the rest of the sprite visually identical. Provide extra transparent headroom above the original tower. No labels or backdrop."
+  },
+  "skyreach_tower_1": {
+    "dimensions": [
+      1536,
+      1024
+    ],
+    "region": [
+      176,
+      0,
+      1186,
+      1010
+    ],
+    "draw_size_at_48": [
+      46,
+      39
+    ],
+    "sha256": "9dddde8ea2231ead93ef2356cfddf7f26d526ac77e512824c8d4c117096d8168",
+    "generated_source": "exec-9da1a7e0-96db-45e9-81ce-f47872a8406b.png",
+    "references": [
+      "exec-b138e3ca-9153-436a-b693-0800eef05c14.png",
+      "art/rendered/cutscenes/way_out_1.png"
+    ],
+    "prompt": "Solace painted 3D Misty Highlands miniature, shallow top-down three-quarter map camera, daylight from upper left, cool shadows, isolated actual alpha transparency, no floor tile beyond the masonry foot, no labels, no words. Stage one of the cathedral-like Skyreach tower from Way Out, growing out of the very same round stone ring as the foundation reference. Preserve the broad ellipse silhouette and the diamond inlay at its front. Low masonry buttresses and short unfinished steel base. Above the foot is a visibly incomplete, open timber-and-steel scaffold with a few diagonal braces. No complete shaft and no active cyan glow. Full silhouette. Stage height about 1.2 times base width."
+  },
+  "skyreach_tower_2": {
+    "dimensions": [
+      1080,
+      1457
+    ],
+    "region": [
+      50,
+      3,
+      981,
+      1448
+    ],
+    "draw_size_at_48": [
+      44,
+      65
+    ],
+    "sha256": "3ab616c5b63614c011d25b52096f34b0cb9be25fdc40d8ba07fcd6b56c4829df",
+    "generated_source": "exec-2cea65ae-41a7-41b2-80d4-8616603f969c.png",
+    "references": [
+      "exec-b138e3ca-9153-436a-b693-0800eef05c14.png",
+      "exec-c130c091-7394-445b-b636-b203b547cbac.png"
+    ],
+    "prompt": "Solace painted 3D Misty Highlands game miniature, shallow top-down three-quarter map camera, upper-left daylight and cool shadows, genuine alpha transparency. The unfinished Skyreach at stage two of three. Same broad round stone ring with diamond inlay at its front as the foundation reference, and the same pointed stone ribs as the finished tower reference. Show only its lower half, about 1.35 times as tall as the foundation is wide. Distinct open, incomplete blunt upper end with projecting structural ribs and spars. Several thick warm copper wire turns wrap the narrow shaft above the stone ribs, with a few faceted cyan shards inset where the wires connect. No active beam, ground ring still unlit. Full silhouette including masonry foot, no floor tile or surroundings, no labels. Wire wraps and unfinished top remain clear at 46 pixel base width."
+  }
+}
