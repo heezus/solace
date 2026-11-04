@@ -7,8 +7,10 @@ extends RefCounted
 ## (`used`), and what a season takes is counted in `spent` and told in numbers when it ends (design-system/27-crises.md).
 
 const Data = preload("res://scripts/data.gd")
+const PlaytestLog = preload("res://scripts/playtest_log.gd")
 
 var time := 0.0  # game seconds since the run began
+var watcher = PlaytestLog.maybe()  # the playtest log, null unless asked for: it reads the game once a tick and never writes
 var next_at := Data.SEASON_FIRST  # when the next one arrives
 var phase := "idle"  # "idle", "pending" (the card waits for an answer) or "active"
 var kind := ""  # the season now pending or active
@@ -25,6 +27,8 @@ var _burn := 0.0  # seconds to the next unit of fuel burnt in a cold snap
 
 func tick(s, delta: float) -> void:
 	time += delta
+	if watcher != null:
+		watcher.tick(s, delta)
 	match phase:
 		"idle":
 			if time >= next_at and s.economy.food_total() >= Data.FOOD_SHORT_STOCK:  # never on a town already short of food

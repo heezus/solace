@@ -54,6 +54,7 @@ const HomeView = preload("res://scripts/home_view.gd")
 const GrowthArt = preload("res://scripts/growth_art.gd")
 const CutscenePlayer = preload("res://scripts/cutscene_player.gd")
 const PlayRecorder = preload("res://scripts/play_recorder.gd")
+const PlaytestRecorder = preload("res://scripts/playtest_recorder.gd")
 const Hotkeys = preload("res://scripts/hotkeys.gd")
 
 const TILE: float = Overlays.TILE
@@ -663,6 +664,7 @@ func _build_ui() -> void:
 	game_menu.paused_changed.connect(func(on: bool): paused = on)
 	PlayRecorder.attach(layer, self)  # the play log and its era-end questions (scripts/play_recorder.gd)
 	CutscenePlayer.attach(layer, state, self)  # last, so a sequence plays over every card
+	PlaytestRecorder.attach(layer, self)  # the playtest log's eyes on the screen; null with the log off (scripts/playtest_recorder.gd)
 
 
 func _refresh_ui() -> void:
