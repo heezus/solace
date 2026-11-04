@@ -1159,3 +1159,9 @@ An Arc Lamp keeps the Bloom 5 tiles from its light and a Scorcher reached 4, so 
 ## 2026-11-01: The Skyreach keeps room and its way holds (Step 8A follow-up)
 - **What was built.** The Skyreach site lies 3+ tiles in from the map's edge with two open sides; the way from a depot to the site and the ring round the tower are held against the Bloom from the moment the site is found. Page 32.
 - **Why.** In the chain-built run 3 (a Cataclysm after an Exodus) the tower on map 4 sat on the map's edge with its one road tile taken, and on map 2 all four of its sides were Bloom. Not done at 40 min on maps 1, 2 and 4 before the change. With the site rule alone: map 1 16.0, map 4 23.7 min. With the ring and the way too: map 2 20.6, map 4 22.5, and map 1 not done again at 40 min (the tower unlinked at Copper 117 of 120 with 3 in stock). The chain-built run 3 stays marginal on map 1; the cells that passed (run 2 maps 1 and 2, run 4 map 1) stand at 11.1, 12.9 and 11.9 min. Details in the Step 8 report.
+
+## 2026-11-04: Skyreach and true-ending art (PR #190)
+- Codex carried the Way Out tower's tapered stone ribs, cyan diamond and two-tone glyph ring into its construction stages. Both Skyreach and the lens-headed Signal Tower use one tile, with the taller sprites drawn upward from the base.
+- Landfall uses magenta-green with an open countdown center. Survey edges use low-contrast cyan, while the site's ring and the protected road edges use pale gold.
+- The true-ending paintings follow the existing tower, first-ship hull, Bloom and Sela references. The picture carries each ending beat above the lower caption area.
+- The Chronicle's gold ending star keeps the existing warm point of light and adds a soft four-point glint.
