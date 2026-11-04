@@ -1165,3 +1165,8 @@ An Arc Lamp keeps the Bloom 5 tiles from its light and a Scorcher reached 4, so 
 - Landfall uses magenta-green with an open countdown center. Survey edges use low-contrast cyan, while the site's ring and the protected road edges use pale gold.
 - The true-ending paintings follow the existing tower, first-ship hull, Bloom and Sela references. The picture carries each ending beat above the lower caption area.
 - The Chronicle's gold ending star keeps the existing warm point of light and adds a soft four-point glint.
+
+## 2026-11-04: The playtest log (measured metrics M1 to M15)
+- **What was built.** Claude added a local playtest log, off by default (`-- --playtest-log` or `user://playtest_log.cfg`), that writes raw events as JSON lines under `user://playtest_logs/`: no network, nothing in a save or the profile. A summarizer (`tests/tools/playtest_summary.gd`) turns one log into the fifteen rows of the fun rubric with each target and PASS, MISS or N/A. Page 25.
+- **Our calls.** The log is an observer held by the Seasons block and fed by the town's and the research board's signals, so the Sim gains no field and no line (the sim-surface convention test holds) and the state hash is the same with it on or off. The raw events are not scores, so a row's rule can change without playing again.
+- **Why.** The 1 to 5 scores are opinions; Jon wanted numbers beside them for the two fresh-eyes playtests.
