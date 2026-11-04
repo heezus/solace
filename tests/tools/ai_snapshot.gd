@@ -9,12 +9,14 @@ const Data = preload("res://scripts/data.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Fuel = preload("res://scripts/fuel.gd")
 const WaitWhy = preload("res://scripts/wait_why.gd")
+const Workers = preload("res://scripts/workers.gd")
 
 const ERAS := ["Stone age", "Bronze Dawn", "Starfall", "Ironfall", "Livewire"]
 const HELP := """MOVES: write moves_<n>.json, a list. Each move is one of
   {"do":"gather","x":3,"y":4}                      hand-gather the tile (a few harvests in a row: add "times":5)
   {"do":"build","type":"gatherers_hut","x":3,"y":4}  add "focus":"wood" for a hut's item; a road or field goes down one tile at a time
   {"do":"line","type":"road","from":[3,4],"to":[9,4]}   drag a line of roads (or rails, fields...): along x first, then along y
+  {"do":"click","x":3,"y":4}                       click a building, as a player does: a hut with no road sends out its trips, a workshop is loaded and emptied by hand, a busy one is rushed
   {"do":"pause","x":3,"y":4,"on":false}            pause or resume the building standing at that spot (use its listed position)
   {"do":"focus","x":3,"y":4,"item":"wood"}         point a gatherer's hut at another item in its reach
   {"do":"trade","x":3,"y":4,"gives":"copper_ore","gets":"coal"}   set what a market (Lumen Market, Trading Post) swaps
@@ -106,6 +108,11 @@ static func apply(s, moves: Array) -> Array:
 				ok = not s.demolish(at).is_empty()
 			"line":
 				ok = _drag(s, m)
+			"click":
+				var i := _index_at(s, at)
+				ok = i >= 0
+				if ok:
+					Workers.click(s, i, true)  # the click the map sends: a whole round of trips for a hut
 			"pause":
 				var i := _index_at(s, at)
 				ok = i >= 0
@@ -181,7 +188,7 @@ static func _why(s, m: Dictionary, at: Vector2i) -> String:
 			return "only a Bloomery or a Forge has a fuel button; the mode is auto, coal or charcoal"
 		"haulers":
 			return "no depot stands there (see DEPOTS)"
-		"pause", "focus":
+		"pause", "focus", "click":
 			if _index_at(s, at) < 0:
 				return "no building there"
 			return "only a gatherer's hut takes a focus, and only on what is in its reach" if kind == "focus" else ""
