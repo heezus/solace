@@ -4,6 +4,13 @@ Owner: the project owner (heezus). Two AI teams, one repo, coordinated by respon
 
 ## Active work
 
+
+### Codex — Skyreach and true-ending art
+- **Scope:** four art-only groups for Skyreach buildings, map marks, true-ending stills and the gold star/splash variants, in that order.
+- **Files:** new PNGs and generated imports in `art/rendered/` and `art/rendered/cutscenes/`, plus group briefs and native comparisons in `docs/art/skyreach/`. No shared engine files are reserved.
+- **Review:** use the existing Way Out, First Ship, Bloom portrait and Sela references. Keep 1×1 map footprints and caption-safe 1586×992 stills. Each group has a separate draft for visual review and CI.
+- **Next action:** Claude reviews and integrates each group. The group READMEs give regions, anchors and suggested presentation sizes.
+
 ### Codex — many tellings: first ending
 - **Task:** owner-requested art-only `skyward_end_1`, `skyward_end_2`, `skyward_end_3`, `fireside_1` on `codex/tellings-first-ending`, first of five separate groups.
 - **Reserved files:** those four PNG/import pairs in `art/rendered/cutscenes/`, `docs/art/tellings/first-ending/`, this entry and the art decision log. No `.gd`, tests, UI or overlays.

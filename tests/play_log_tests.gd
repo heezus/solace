@@ -9,6 +9,7 @@ const PlayAskCard = preload("res://scripts/play_ask_card.gd")
 const PlayLog = preload("res://scripts/play_log.gd")
 const PlayLogSettings = preload("res://scripts/play_log_settings.gd")
 const PlaySummary = preload("res://tests/tools/play_summary.gd")
+const PlaytestLogTests = preload("res://tests/playtest_log_tests.gd")
 const Sim = preload("res://scripts/sim.gd")
 
 const DIR := "user://test_playlogs/"
@@ -24,6 +25,7 @@ func run(runner) -> void:
 	test_the_question_card_gives_the_answers()
 	test_the_switch_is_on_until_turned_off()
 	test_the_summary_reads_a_log_back()
+	PlaytestLogTests.new().run(t)  # the playtest log is its own file (tests/playtest_log_tests.gd), run with this one
 
 
 ## A bot plays `seconds` of a map while the log watches: its lines, and the game's state hash after them.
