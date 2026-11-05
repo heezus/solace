@@ -17,6 +17,7 @@ const Endings = preload("res://scripts/endings.gd")
 const GlyphMark = preload("res://scripts/glyph_mark.gd")
 const MenuFonts = preload("res://scripts/menu_fonts.gd")
 const Sim = preload("res://scripts/sim.gd")
+const SkyArt = preload("res://scripts/sky_art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Words = preload("res://scripts/chronicle_words.gd")
 
@@ -598,6 +599,10 @@ class StarButton:
 		var radius: float = 3.0 if ember else [4.0, 5.5, 8.0][weight]
 		if lit:
 			draw_circle(at, radius + 10.0, Color(core, 0.3))
+		var painted: Texture2D = SkyArt.whole("chronicle_star_gold") if gold else null  # Codex's gold star, the true ending's
+		if painted != null:
+			draw_texture_rect(painted, Rect2(at - size / 2.0, size), false)
+			return
 		draw_circle(at, radius * 2.4, Color(core, 0.1 + 0.07 * weight))
 		draw_circle(at, radius * 1.5, Color(core, 0.18 + 0.1 * weight))
 		draw_circle(at, radius, core if weight < 2 or gold else Color.WHITE)
