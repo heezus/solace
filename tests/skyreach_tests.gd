@@ -9,9 +9,28 @@ const RunSave = preload("res://scripts/run_save.gd")
 const Skyreach = preload("res://scripts/skyreach.gd")
 const Haulers = preload("res://scripts/haulers.gd")
 const Buildings = preload("res://scripts/buildings.gd")
+const Art = preload("res://scripts/art.gd")
+const Overlays = preload("res://scripts/overlays.gd")
+const SkyArt = preload("res://scripts/sky_art.gd")
+const SkyMarks = preload("res://scripts/sky_marks.gd")
 
 var t  # the runner, tests/run_tests.gd
 var base  # the Livewire tests, for their helpers
+
+
+## A node that draws the sky's marks and every Skyreach building state in its own _draw, as the map does.
+class SkyCanvas:
+	extends Node2D
+	var sim
+
+	func _draw() -> void:
+		SkyMarks.draw(self, sim, 1.0)
+		var cell := Rect2(Vector2(200, 200), Vector2.ONE * Overlays.TILE)
+		for lit in [false, true]:
+			Art.map_building(self, "signal_tower", cell, lit, 0.0)
+		for stage in 4:
+			Art.map_building(self, "skyreach_tower", cell, false, 0.0, stage)
+		Overlays.placement_ghost(self, sim, "signal_tower", sim.world.camp_pos + Vector2i(3, 3), "")
 
 
 func run(runner, helpers) -> void:
@@ -33,6 +52,10 @@ func run(runner, helpers) -> void:
 	test_three_deliveries_raise_the_skyreach()
 	test_help_shortens_a_stage()
 	test_the_save_keeps_the_sky()
+	test_the_painted_art_is_all_there()
+	test_a_tower_is_lit_while_it_warns()
+	test_the_way_is_laid_with_the_right_piece()
+	test_the_sky_draws_with_its_art()
 
 
 # --- Helpers -------------------------------------------------------------------
@@ -370,3 +393,118 @@ func test_the_save_keeps_the_sky() -> void:
 	t.check(back.skyreach.site == s.skyreach.site, "the site is kept")
 	t.check(back.skyreach.falls.size() == s.skyreach.falls.size(), "the planned falls are kept")
 	t.check(back.skyreach.begun_at == s.skyreach.begun_at, "and when the era began")
+
+
+# --- The painted art (Step 8D, docs/art/skyreach) -----------------------------
+
+
+func test_the_painted_art_is_all_there() -> void:
+	for name in SkyArt.TALL:
+		var tex := SkyArt.tall(name)
+		t.check(tex != null, "%s is painted" % name)
+		var sheet := SkyArt.whole(name)
+		var region: Array = SkyArt.TALL[name][0]
+		t.check(
+			(
+				sheet != null
+				and region[0] + region[2] <= sheet.get_width()
+				and region[1] + region[3] <= sheet.get_height()
+			),
+			"%s: its painted region lies inside its sheet" % name
+		)
+		var drawn: Array = SkyArt.TALL[name][1]
+		t.check(
+			absf(float(region[2]) / region[3] - float(drawn[0]) / drawn[1]) < 0.05,
+			"%s: drawn at the shape it was painted" % name
+		)
+	for name in ["landfall_mark", "skyreach_site_ring", "sky_sector_edge", "skyreach_way", "skyreach_way_corner"]:
+		var tex := SkyArt.whole(name)
+		t.check(tex != null and tex.get_size() == Vector2(192, 192), "%s is a 192 px square" % name)
+	var atlas := SkyArt.whole("seed_fall")
+	t.check(atlas != null and atlas.get_size() == Vector2(576, 192), "the seed fall is three frames")
+	for i in 3:
+		t.check(SkyArt.frame(atlas, i).get_size() == Vector2(192, 192), "frame %d is one tile's picture" % i)
+	for name in ["seed_fall_splash_1", "seed_fall_splash_2", "chronicle_star_gold"]:
+		t.check(SkyArt.whole(name) != null, "%s is painted" % name)
+	for type in ["signal_tower", "skyreach_tower"]:
+		t.check(Art.building_sprite(type) != null, "%s has a card and build bar picture" % type)
+	t.check(not SkyArt.draws("watchtower") and SkyArt.icon("watchtower") == null, "no other building is taken over")
+
+
+func test_the_tall_pictures_stand_on_their_tile() -> void:
+	var cell := Rect2(Vector2(96, 144), Vector2.ONE * 48.0)
+	var tower := SkyArt.rect_of("signal_tower", cell)
+	t.check(tower.size == Vector2(26, 55), "the Signal Tower is drawn 26 by 55 on a 48 px tile")
+	t.check(is_equal_approx(tower.get_center().x, cell.get_center().x), "centred on its tile")
+	t.check(is_equal_approx(tower.end.y, cell.end.y - 2.0), "its base two pixels above the tile's bottom edge")
+	var big := SkyArt.rect_of("skyreach_tower_3", Rect2(Vector2.ZERO, Vector2.ONE * 96.0))
+	t.check(big.size == Vector2(92, 158) and is_equal_approx(big.end.y, 92.0), "and it grows with the tile")
+	var base_rects := {}
+	for stage in 4:
+		base_rects[SkyArt.rect_of(SkyArt.name_of("skyreach_tower", false, stage), cell).end.y] = true
+	t.check(base_rects.size() == 1, "the four stages of the Skyreach share one ground line")
+	t.check(
+		SkyArt.rect_of("signal_tower_lit", cell).end.y == tower.end.y,
+		"and the lit Signal Tower stands where the idle one does"
+	)
+	t.check(SkyArt.name_of("skyreach_tower", false, 9) == "skyreach_tower_3", "a stage is held to the picture it has")
+
+
+func test_a_tower_is_lit_while_it_warns() -> void:
+	test_the_tall_pictures_stand_on_their_tile()
+	var s := sky()
+	var tower := tower_in(s, 0)
+	var other := tower_in(s, 3)
+	t.check(not s.skyreach.warns(s, tower), "a tower with no landfall to warn of is not lit")
+	base.tick_for(s, Skyreach.wave_time(0) - Data.SKYREACH["warn"] + 5.0)
+	var sector0: int = Skyreach.sector_of(s.world.camp_pos, tower["pos"])
+	var sector3: int = Skyreach.sector_of(s.world.camp_pos, other["pos"])
+	var in_zero := false
+	var in_three := false
+	for f in s.skyreach.falls:
+		in_zero = in_zero or f["sector"] == sector0
+		in_three = in_three or f["sector"] == sector3
+	t.check(s.skyreach.warns(s, tower) == in_zero, "a tower is lit when a landfall is coming in its sector")
+	t.check(s.skyreach.warns(s, other) == in_three, "and not when it is only coming in another")
+	var site: Vector2i = s.skyreach.site_pos()
+	t.check(not s.skyreach.warns(s, {"type": "watchtower", "pos": site}), "and nothing but a Signal Tower is ever lit")
+
+
+func test_the_way_is_laid_with_the_right_piece() -> void:
+	var sides := [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]
+	for a in sides:
+		for b in sides:
+			if a == b:
+				continue
+			var piece: Array = SkyMarks.way_piece(a, b)
+			var turns: int = piece[1]
+			var base_sides := (
+				[Vector2(-1, 0), Vector2(1, 0)] if piece[0] == "skyreach_way" else [Vector2(-1, 0), Vector2(0, 1)]
+			)
+			var turned := []
+			for side in base_sides:
+				turned.append(Vector2i(side.rotated(turns * PI / 2.0).round()))  # clockwise on the screen
+			t.check(
+				turned.has(a) and turned.has(b) and (a + b == Vector2i.ZERO) == (piece[0] == "skyreach_way"),
+				"the way joining %s and %s is laid as %s turned %d" % [a, b, piece[0], turns]
+			)
+
+
+func test_the_sky_draws_with_its_art() -> void:
+	var s := sky()
+	for sector in Data.SKYREACH["sectors"]:
+		tower_in(s, sector)
+	s.fog.reveal_all()
+	base.tick_for(s, Skyreach.wave_time(0) - Data.SKYREACH["warn"] + 5.0)
+	var site: Vector2i = s.skyreach.site_pos()
+	t.check(site.x >= 0 and not s.skyreach.way.is_empty(), "the site and the way to it are found")
+	for p in s.skyreach.way:
+		s.world.roads[p] = true  # the way laid, so its glow draws
+	var canvas := SkyCanvas.new()
+	canvas.sim = s
+	t.root.add_child(canvas)
+	canvas.notification(CanvasItem.NOTIFICATION_DRAW)  # as the engine would on a redraw
+	base.tick_for(s, s.skyreach.falls[0]["at"] - s.skyreach.now(s) + 1.2)  # the first seed has just fallen
+	canvas.notification(CanvasItem.NOTIFICATION_DRAW)
+	canvas.free()
+	t.check(not s.skyreach.falls.is_empty() and s.skyreach.falls[0]["fell"], "a landfall fell while the sky was drawn")
