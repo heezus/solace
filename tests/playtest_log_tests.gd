@@ -22,6 +22,7 @@ func run(runner) -> void:
 	test_a_short_scripted_run_gives_a_log_and_fifteen_rows()
 	test_what_the_player_does_is_logged()
 	test_a_stopped_building_needs_ten_seconds()
+	test_a_long_stuck_spell_misses_and_building_is_not_hand_work()
 	test_the_rows_read_a_log_by_their_rules()
 	PlaytestLog.reset()
 
@@ -196,6 +197,40 @@ func test_a_stopped_building_needs_ten_seconds() -> void:
 	t.check(
 		early == 0 and later == 1 and flicker == 1 and again == 2,
 		"a stop is an alert up 10 s, once, until it has been gone 10 s (%d %d %d %d)" % [early, later, flicker, again]
+	)
+
+
+## Tick lines `count` long from game minute `from`, each 10 s apart, with the fields the rows read.
+func _ticks(from: float, count: int, fields: Dictionary) -> Array:
+	var out: Array = []
+	for i in count:
+		var line := {
+			"k": "tick", "m": from + i / 6.0, "era": 1, "dec": 0, "up": 0, "touch": 0, "hand": 0.0, "hauled": 0.0
+		}
+		line.merge({"made": 0.0, "goal": "grind", "since": 0.0, "afford": false, "kith": 3})
+		line.merge(fields, true)
+		out.append(line)
+	return out
+
+
+func test_a_long_stuck_spell_misses_and_building_is_not_hand_work() -> void:
+	var entries: Array = [{"k": "run", "m": 0.0, "telling": 1}, {"k": "era", "m": 0.0, "era": 1}]
+	entries.append_array(_ticks(1.0, 12, {"made": 5.0, "touch": 1}))  # building all the while, nothing made by hand
+	for i in 40:  # 6.7 minutes without progress
+		entries.append_array(_ticks(3.0 + i / 6.0, 1, {"since": 180.0 + i * 10.0}))
+	var by := {}
+	for r in PlaytestSummary.rows(entries):
+		by[r["id"]] = r
+	t.check(
+		by[1]["verdict"] == "PASS",
+		"M1: buildings making goods untouched by hand count while building (%s)" % by[1]["result"]
+	)
+	t.check(
+		by[6]["verdict"] == "MISS" and by[6]["result"].contains("longest 9.5 min"),
+		"M6: one spell over 5 minutes misses (%s)" % by[6]["result"]
+	)
+	t.check(
+		not by[10]["result"].begins_with("0 "), "M10: a spell over 5 minutes is a near-quit (%s)" % by[10]["result"]
 	)
 
 
