@@ -9,12 +9,43 @@ const Data = preload("res://scripts/data.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Fuel = preload("res://scripts/fuel.gd")
 const WaitWhy = preload("res://scripts/wait_why.gd")
+const Land = preload("res://scripts/land.gd")
+const Workers = preload("res://scripts/workers.gd")
+
+## One character for each kind of ground and each building, the same on every page of every run: the ground's own letters, then
+## the buildings in the order of the building list.
+const GROUND_CHARS := {
+	"flax": "f",
+	"tree": "t",
+	"rock": "r",
+	"gravel": "g",
+	"clay": "c",
+	"berry": "b",
+	"grain": "w",
+	"ruins": "u",
+	"river": "~",
+	"shard": "s",
+	"copper_hills": "C",
+	"tin_stream": "T",
+	"coal_seam": "K",
+	"iron_hills": "I",
+	"bloom_ground": "B",
+	"bloom_spore": "P",
+	"bloom_root": "R",
+	"bloom_sap": "S",
+	"bloom_tide": "Q",
+	"spent_seam": "x",
+	"road": "=",
+}
+const BUILDING_POOL := "ADEFGHJLMNOUVWXYZadehijklmnopqvyz0123456789!@#$%&*+<>_^{}[]|;:"
 
 const ERAS := ["Stone age", "Bronze Dawn", "Starfall", "Ironfall", "Livewire"]
 const HELP := """MOVES: write moves_<n>.json, a list. Each move is one of
   {"do":"gather","x":3,"y":4}                      hand-gather the tile (a few harvests in a row: add "times":5)
   {"do":"build","type":"gatherers_hut","x":3,"y":4}  add "focus":"wood" for a hut's item; a road or field goes down one tile at a time
   {"do":"line","type":"road","from":[3,4],"to":[9,4]}   drag a line of roads (or rails, fields...): along x first, then along y
+  {"do":"click","x":3,"y":4}                       click a building as a player does (a road-less hut sends its trips)
+  {"do":"look_east"}                               press the Look east button the page shows (its LOOK EAST line)
   {"do":"pause","x":3,"y":4,"on":false}            pause or resume the building standing at that spot (use its listed position)
   {"do":"focus","x":3,"y":4,"item":"wood"}         point a gatherer's hut at another item in its reach
   {"do":"trade","x":3,"y":4,"gives":"copper_ore","gets":"coal"}   set what a market (Lumen Market, Trading Post) swaps
@@ -72,6 +103,9 @@ static func text(s, n: int, told: Array, refused: Array) -> String:
 		)
 	)
 	out.append_array(_cards(s))
+	var look := _look_east(s)
+	if look != "":
+		out.append(look)
 	out.append("")
 	out.append_array(_town(s))
 	out.append("")
@@ -106,6 +140,13 @@ static func apply(s, moves: Array) -> Array:
 				ok = not s.demolish(at).is_empty()
 			"line":
 				ok = _drag(s, m)
+			"click":
+				var i := _index_at(s, at)
+				ok = i >= 0
+				if ok:
+					Workers.click(s, i, true)  # the click the map sends: a whole round of trips for a hut
+			"look_east":
+				ok = s.world.is_grown() and not Land.ore_target(s).is_empty()  # the page's LOOK EAST line already says where
 			"pause":
 				var i := _index_at(s, at)
 				ok = i >= 0
@@ -181,7 +222,9 @@ static func _why(s, m: Dictionary, at: Vector2i) -> String:
 			return "only a Bloomery or a Forge has a fuel button; the mode is auto, coal or charcoal"
 		"haulers":
 			return "no depot stands there (see DEPOTS)"
-		"pause", "focus":
+		"look_east":
+			return "the Look east button shows only after Bronze Dawn, while an ore lies out of sight"
+		"pause", "focus", "click":
 			if _index_at(s, at) < 0:
 				return "no building there"
 			return "only a gatherer's hut takes a focus, and only on what is in its reach" if kind == "focus" else ""
@@ -441,10 +484,30 @@ static func _town(s) -> Array:
 	return out
 
 
+## The Look east button, as the game words it, with the tile the view moves to when it is pressed; "" when the game shows none.
+static func _look_east(s) -> String:
+	if not s.world.is_grown() or Land.ore_target(s).is_empty():
+		return ""
+	var target: Dictionary = Land.ore_target(s)
+	var view := Land.look_east_at(s, target["tile"])
+	var ore: String = Data.LOOK_EAST_ORE[target["ore"]]
+	return (
+		"LOOK EAST: %s (the view moves to x %d, y %d; the %s is out of sight, east of your last road)"
+		% [Data.LOOK_EAST % ore, view.x, view.y, ore]
+	)
+
+
+## The map's character for `key` ("road", a ground, or "B:" and a building type).
+static func _char_for(key: String) -> String:
+	if key.begins_with("B:"):
+		var at := Data.BUILDINGS.keys().find(key.substr(2))
+		return BUILDING_POOL[at] if at >= 0 and at < BUILDING_POOL.length() else "?"
+	return GROUND_CHARS.get(key, "?")
+
+
 ## The seen part of the map, one character a tile; the legend comes after it.
 static func _map(s) -> String:
 	var legend := {}
-	var used := {".": true}
 	var rows: Array = []
 	var built := {}
 	for b in s.town.buildings:
@@ -462,15 +525,7 @@ static func _map(s) -> String:
 			if key == "grass" or key == "":
 				row += "."
 				continue
-			if not legend.has(key):
-				var base: String = key.substr(2).to_upper() if key.begins_with("B:") else key
-				var ch := ""
-				for c in base + "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ":
-					if not used.has(c) and c != " ":
-						ch = c
-						break
-				used[ch] = true
-				legend[key] = ch
+			legend[key] = _char_for(key)
 			row += legend[key]
 		rows.append(row)
 	var key_lines: Array = []

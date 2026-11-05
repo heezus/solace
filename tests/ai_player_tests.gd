@@ -17,6 +17,8 @@ func run(runner) -> void:
 	test_a_move_the_game_refuses_comes_back()
 	test_a_season_card_is_on_the_page_and_answered()
 	test_orders_are_written_from_the_boards_lists()
+	test_the_map_legend_is_the_same_on_every_page()
+	test_look_east_is_a_move_once_the_land_opens()
 
 
 func _game() -> Sim:
@@ -150,6 +152,30 @@ func test_orders_are_written_from_the_boards_lists() -> void:
 		"clearing an order that is not there is refused"
 	)
 	t.check(Snapshot.text(game, 1, [], []).contains("ORDERS ("), "the page lists the orders once there is a Board")
+
+
+func test_the_map_legend_is_the_same_on_every_page() -> void:
+	var seen := {}
+	var clash := false
+	for type in Data.BUILDINGS:
+		var ch: String = Snapshot._char_for("B:" + type)
+		clash = clash or seen.has(ch) or ch == "?" or ch == "."
+		seen[ch] = true
+	for key in Snapshot.GROUND_CHARS:
+		clash = clash or seen.has(Snapshot.GROUND_CHARS[key])
+		seen[Snapshot.GROUND_CHARS[key]] = true
+	t.check(not clash, "every ground and building has its own character, none a dot or a question mark")
+	for kind in Data.TILES:
+		t.check(kind == "grass" or Snapshot.GROUND_CHARS.has(kind), "the ground %s has a character" % kind)
+	var early := Snapshot.text(_game(), 1, [], [])
+	t.check(early.contains("g = gravel") or not early.contains("gravel"), "gravel is always g")
+	t.check(not early.contains("r = gravel"), "and r is never gravel")
+
+
+func test_look_east_is_a_move_once_the_land_opens() -> void:
+	var game := _game()
+	t.check(Snapshot.apply(game, [{"do": "look_east"}]).size() == 1, "no Look east before Bronze Dawn")
+	t.check(not Snapshot.text(game, 1, [], []).contains("LOOK EAST: "), "and no line on the page")
 
 
 func _tile(game: Sim, kind: String) -> Vector2i:
