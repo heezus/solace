@@ -12,6 +12,7 @@ const FieldText = preload("res://scripts/field_text.gd")
 const Clearing = preload("res://scripts/clearing.gd")
 const Relics = preload("res://scripts/relics.gd")
 const Rendered = preload("res://scripts/rendered_art.gd")
+const SkyArt = preload("res://scripts/sky_art.gd")
 
 const TILE := 48.0  # map px per tile at the default zoom
 const OUTLINE: Color = Art.OUTLINE
@@ -373,7 +374,8 @@ static func placement_ghost(ci: CanvasItem, s, type: String, p: Vector2i, note: 
 	var r := rect(p)
 	ci.draw_rect(r.grow(-2), Color(0.3, 1, 0.4, 0.4) if err == "" else Color(ALERT, 0.45))
 	var tex := Art.building_sprite(type)
-	if tex != null and Data.BUILDINGS[type]["kind"] not in ["road", "field"]:
+	var tall := SkyArt.draws(type) and SkyArt.draw(ci, type, r, false, 0, Color(1, 1, 1, 0.6))  # stands on its tile, not squeezed in
+	if not tall and tex != null and Data.BUILDINGS[type]["kind"] not in ["road", "field"]:
 		ci.draw_texture_rect(tex, r.grow(-3), false, Color(1, 1, 1, 0.6))
 	ci.draw_rect(r.grow(-2), OUTLINE if err == "" else ALERT, false, 2.0)
 	if err != "":

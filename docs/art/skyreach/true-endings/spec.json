@@ -1,0 +1,199 @@
+{
+  "seal_end_1": {
+    "dimensions": [
+      1586,
+      992
+    ],
+    "source_dimensions": [
+      1561,
+      1008
+    ],
+    "source_mode": "RGB",
+    "generated_source": "exec-54e68188-6c6d-4ef4-b456-029c9c441db7.png",
+    "source_sha256": "d94836585c9934a2e8e2159ad93d9843462652b0dad1950b52d36f14f3a13430",
+    "sha256": "ca59c2252f77c802b58113f6850896a652c68f744ec2a405914eef2834ebf183",
+    "tool": "Built-in ImageGen",
+    "production_prep": "Center cover fit to the requested 1586\u00d7992 RGB canvas using Lanczos.",
+    "references": [
+      "art/rendered/cutscenes/way_out_1.png",
+      "art/rendered/cutscenes/way_out_2.png",
+      "art/rendered/cutscenes/skyward_end_2.png"
+    ],
+    "prompt": "Wide 1586\u00d7992 landscape cutscene painting for Solace. Match the existing Misty Highlands story art: highly detailed handcrafted miniature diorama, tactile materials, soft volumetric light, and atmospheric depth. Main storytelling subjects fully inside the middle 80% of the image, high enough to remain clear of captions. Keep the entire bottom third a darker, calm foreground with few hard edges and no focal details. Render edge-to-edge, no letterbox, no words, no signs, no type, no interface. All people if present are fictional stylized Solace miniatures. Seal Solace, opening beat. Ground-level three-quarter long shot of the completed Way Out Skyreach at night. Match the reference tower's tapered grey stone and steel buttresses, tall pointed architecture, luminous cyan diamond and narrow central spine. The broad inlaid gold-and-cyan glyph ring on the stone plaza blazes at its foot, centered above the lower third. A few tiny paired Kin and Lumen witnesses stand just beyond the ring, their warm rust and pale gold cloaks recognizable. Indigo mountain air, dark quiet foreground, stone ring and diamond the two luminous focal points."
+  },
+  "seal_end_2": {
+    "dimensions": [
+      1586,
+      992
+    ],
+    "source_dimensions": [
+      1586,
+      992
+    ],
+    "source_mode": "RGB",
+    "generated_source": "exec-9ba26648-ef94-42f9-9d81-7f33121a1dc4.png",
+    "source_sha256": "f31a0e17f4a66b47da2736b5b3d9e844a569c272bb2a55018075cdebf3f49496",
+    "sha256": "f31a0e17f4a66b47da2736b5b3d9e844a569c272bb2a55018075cdebf3f49496",
+    "tool": "Built-in ImageGen",
+    "production_prep": "Copied at original size.",
+    "references": [
+      "exec-801fec7d-fc69-4650-9afa-2d63a79be4ac.png"
+    ],
+    "initial_prompt": "Wide 1586\u00d7992 landscape cutscene painting for Solace. Match the existing Misty Highlands story art: highly detailed handcrafted miniature diorama, tactile materials, soft volumetric light, and atmospheric depth. Main storytelling subjects fully inside the middle 80% of the image, high enough to remain clear of captions. Keep the entire bottom third a darker, calm foreground with few hard edges and no focal details. Render edge-to-edge, no letterbox, no words, no signs, no type, no interface. All people if present are fictional stylized Solace miniatures. Seal Solace, the moment the shelter closes. An elevated wide view of the same pine-ringed Solace valley with a small inhabited settlement and the recognizable tapering Skyreach on its ridge. A vast transparent dome of pale cyan light is closing over the whole valley, curved shell meeting in a subtle bright point above, with only one thin softly luminous leading edge and translucent mist, landscape clearly visible through it. At the far perimeter beyond the dome, small magenta-green Bloom glows dwindle into the distant night. Quiet dark foreground ridge in bottom third.",
+    "initial_references": [
+      "art/rendered/cutscenes/way_out_1.png",
+      "art/rendered/cutscenes/skyward_end_2.png"
+    ],
+    "prompt": "Reframe this Solace Seal Solace shot a little wider and higher. Exact same finished Skyreach with cyan diamond, blue night, lit miniature valley, fading magenta-green Bloom outside and a transparent pale cyan shelter dome. Move and scale down the dome and tower framing so the entire bright closing apex of the dome is at 18% of the frame height with ample dark starry sky above. Main inhabited valley lies in the middle, and lower third stays a quiet dark rocky foreground. Wide 1586\u00d7992 story diorama, no text. Preserve the subject, design and palette of the input. Leave this upper safety margin because the engine crops and zooms in."
+  },
+  "seal_end_3": {
+    "dimensions": [
+      1586,
+      992
+    ],
+    "source_dimensions": [
+      1585,
+      992
+    ],
+    "source_mode": "RGB",
+    "generated_source": "exec-1efad908-9df9-4293-9eeb-eac29f592b19.png",
+    "source_sha256": "82acdada96e00ce112a392a0716992b6632fb908aa8c57a19f3a78b95aad807f",
+    "sha256": "6616e12ebac13b5dd164b9a96759994234c87d3cc1325ac103d0040473e0063e",
+    "tool": "Built-in ImageGen",
+    "production_prep": "Center cover fit to the requested 1586\u00d7992 RGB canvas using Lanczos.",
+    "references": [
+      "art/rendered/cutscenes/kin_reveal_2.png",
+      "art/rendered/cutscenes/way_out_1.png"
+    ],
+    "prompt": "Wide 1586\u00d7992 landscape cutscene painting for Solace. Match the existing Misty Highlands story art: highly detailed handcrafted miniature diorama, tactile materials, soft volumetric light, and atmospheric depth. Main storytelling subjects fully inside the middle 80% of the image, high enough to remain clear of captions. Keep the entire bottom third a darker, calm foreground with few hard edges and no focal details. Render edge-to-edge, no letterbox, no words, no signs, no type, no interface. All people if present are fictional stylized Solace miniatures. Seal Solace, peaceful dawn after the shelter. Mid-wide view from a ridge, a small close-knit cluster of compact Kin in weathered rust/umber field clothes and Lumen in ivory, pale gold and restrained cyan trim. Their shoulders intermingle and they look out together from just above the lower third. Seen from behind or in soft profile, clear recognizable miniature anatomy. They share a still, clear morning sky above blue hills. A few warm dawn rays, quiet open air, no visible dome glow. Dark unbusy ridge foreground below their feet."
+  },
+  "heal_end_1": {
+    "dimensions": [
+      1586,
+      992
+    ],
+    "source_dimensions": [
+      1585,
+      992
+    ],
+    "source_mode": "RGB",
+    "generated_source": "exec-81aa5bc8-bf58-4f6c-b7c3-9a9311adde16.png",
+    "source_sha256": "6bd838c5cfe2657321f42e9ffbec466d42c549291a7df8a2c04fdd6dc5d22b81",
+    "sha256": "efb6a648b6080c7091044d9ac59244710ad22ab44c39a802bbf1844fef94f0d3",
+    "tool": "Built-in ImageGen",
+    "production_prep": "Center cover fit to the requested 1586\u00d7992 RGB canvas using Lanczos.",
+    "references": [
+      "art/rendered/cutscenes/way_out_1.png",
+      "art/rendered/cutscenes/way_out_2.png"
+    ],
+    "prompt": "Wide 1586\u00d7992 landscape cutscene painting for Solace. Match the existing Misty Highlands story art: highly detailed handcrafted miniature diorama, tactile materials, soft volumetric light, and atmospheric depth. Main storytelling subjects fully inside the middle 80% of the image, high enough to remain clear of captions. Keep the entire bottom third a darker, calm foreground with few hard edges and no focal details. Render edge-to-edge, no letterbox, no words, no signs, no type, no interface. All people if present are fictional stylized Solace miniatures. Heal the Bloom, the transfer of warmth. The same finished Skyreach from The Way Out, in a blue-grey evening valley. Frame lower and middle tower and the complete glyph ring on the terrace just above the lower third. One visible ribbon of warm amber light pours down inside the stone shaft through its recessed cyan spine, hits the foundation and flows inward into the seams of the ground like luminous roots. Original cyan diamond retained, amber flow dominates this beat. Dark matte quiet foreground stone and moss beneath the lit terrace."
+  },
+  "heal_end_2": {
+    "dimensions": [
+      1586,
+      992
+    ],
+    "source_dimensions": [
+      1585,
+      992
+    ],
+    "source_mode": "RGB",
+    "generated_source": "exec-6a708bfb-7ac3-4bf8-bfce-1b1d1eb05f3b.png",
+    "source_sha256": "00e073aebb27d2402b5c8c7b45241719a09bb791a4e705529fadddd4dd1f7a0c",
+    "sha256": "df452dc6f9e9f2fc95b4fcbb2a5320d74027d144e44b0ec026f091e73ff64fc1",
+    "tool": "Built-in ImageGen",
+    "production_prep": "Center cover fit to the requested 1586\u00d7992 RGB canvas using Lanczos.",
+    "references": [
+      "art/rendered/bloom_tide.png",
+      "art/rendered/portraits/portrait_bloom.png",
+      "art/rendered/cutscenes/way_out_1.png"
+    ],
+    "prompt": "Wide 1586\u00d7992 landscape cutscene painting for Solace. Match the existing Misty Highlands story art: highly detailed handcrafted miniature diorama, tactile materials, soft volumetric light, and atmospheric depth. Main storytelling subjects fully inside the middle 80% of the image, high enough to remain clear of captions. Keep the entire bottom third a darker, calm foreground with few hard edges and no focal details. Render edge-to-edge, no letterbox, no words, no signs, no type, no interface. All people if present are fictional stylized Solace miniatures. Heal the Bloom, the growth softens. A close miniature view beside the valley's narrow running stream, a bed of recognizable twisted thorny Bloom roots on one bank. In the same connected plant, a restrained remnant of magenta and sharp sickly-green at one end gives way visibly to soft fresh leaf-green vines, warm gold open buds and small blossoms at the other. Read the transition within the focal plants above the lower third. Soft light on fine leaf edges, dark moss and quiet out-of-focus ground low in the frame. No people."
+  },
+  "heal_end_3": {
+    "dimensions": [
+      1586,
+      992
+    ],
+    "source_dimensions": [
+      1585,
+      992
+    ],
+    "source_mode": "RGB",
+    "generated_source": "exec-631fd845-6ddc-4393-b66b-a3bdee581d82.png",
+    "source_sha256": "14c417bb1f1a1fc4b8d594870b90a956e859f83728fdb355adfa58d96debc1cc",
+    "sha256": "65c218a5600e061cc66928ac303fe0acd5bb5f5e15964b066d32dd856eb5bf1f",
+    "tool": "Built-in ImageGen",
+    "production_prep": "Center cover fit to the requested 1586\u00d7992 RGB canvas using Lanczos.",
+    "references": [
+      "art/rendered/portraits/portrait_bloom.png",
+      "docs/art/character-standard/sela-candidate.png",
+      "art/rendered/cutscenes/kin_reveal_2.png"
+    ],
+    "prompt": "Wide 1586\u00d7992 landscape cutscene painting for Solace. Match the existing Misty Highlands story art: highly detailed handcrafted miniature diorama, tactile materials, soft volumetric light, and atmospheric depth. Main storytelling subjects fully inside the middle 80% of the image, high enough to remain clear of captions. Keep the entire bottom third a darker, calm foreground with few hard edges and no focal details. Render edge-to-edge, no letterbox, no words, no signs, no type, no interface. All people if present are fictional stylized Solace miniatures. Heal the Bloom, an intimate moment of trust. On the left or center a living face grows out of the recognizable Bloom portrait's tangled woody root head, the same oval and braided roots, eyes softly closed and expression peaceful, soft leaf-green moss and warm little flowers caught in its roots, a trace of magenta deep within. Across from it Sela in clear side profile raises one open hand toward its face, fingers relaxed. Match approved Sela: compact stylized miniature with sculpted facial anatomy, long wavy honey-blonde hair, ivory and gold clothing, teal mantle, cyan clasp and wrist inlay. Face and lifted hand all in the upper middle, calm dark ground below. This is a quiet meeting at eye level, a living root-and-flower face."
+  },
+  "leave_end_1": {
+    "dimensions": [
+      1586,
+      992
+    ],
+    "source_dimensions": [
+      1561,
+      1008
+    ],
+    "source_mode": "RGB",
+    "generated_source": "exec-4310b00b-b8f2-471e-9170-bf171fcbd121.png",
+    "source_sha256": "390f40e8ef8e27223e0d58ea764387531a55bc87dd8f3c46ac387a853c83b874",
+    "sha256": "ca0aa70214212377307b78eaba3e49fa75a030d84b58426a5c4f1635e9bf12be",
+    "tool": "Built-in ImageGen",
+    "production_prep": "Center cover fit to the requested 1586\u00d7992 RGB canvas using Lanczos.",
+    "references": [
+      "art/rendered/cutscenes/kin_reveal_1.png",
+      "art/rendered/cutscenes/way_out_1.png",
+      "art/rendered/cutscenes/way_out_2.png"
+    ],
+    "prompt": "Wide 1586\u00d7992 landscape cutscene painting for Solace. Match the existing Misty Highlands story art: highly detailed handcrafted miniature diorama, tactile materials, soft volumetric light, and atmospheric depth. Main storytelling subjects fully inside the middle 80% of the image, high enough to remain clear of captions. Keep the entire bottom third a darker, calm foreground with few hard edges and no focal details. Render edge-to-edge, no letterbox, no words, no signs, no type, no interface. All people if present are fictional stylized Solace miniatures. Leave together, the old First Ship repaired. Show the exact ancient hull from the reference now lifted clear of its mossy hollow and mended beside the Skyreach. Preserve the old asymmetric rounded ship silhouette, curved upward prow, bronze rib arches, dark grey-green cladding and the round cyan porthole. New repair plates and rebuilt rib sections follow that hull. A seam of gentle cyan light returns. Hull rests on a small stone launching apron. The Way Out tower is clearly visible beside it, slender cyan-spined stone buttresses. Cool late-day valley, dark quiet grass foreground. No modern rocket design."
+  },
+  "leave_end_2": {
+    "dimensions": [
+      1586,
+      992
+    ],
+    "source_dimensions": [
+      1561,
+      1008
+    ],
+    "source_mode": "RGB",
+    "generated_source": "exec-da10ecce-7a54-459d-a3f8-c4fc942b77d8.png",
+    "source_sha256": "73666d1cf19518431fbea611b356191f2abf333d7b3e9e5deda31275cb873e90",
+    "sha256": "074910a321f2413bd4d77f58ab4cdf119eb606e83fad851515e029e1339c79db",
+    "tool": "Built-in ImageGen",
+    "production_prep": "Center cover fit to the requested 1586\u00d7992 RGB canvas using Lanczos.",
+    "references": [
+      "exec-4310b00b-b8f2-471e-9170-bf171fcbd121.png",
+      "art/rendered/cutscenes/kin_reveal_2.png"
+    ],
+    "prompt": "Wide 1586\u00d7992 landscape cutscene painting for Solace. Match the existing Misty Highlands story art: highly detailed handcrafted miniature diorama, tactile materials, soft volumetric light, and atmospheric depth. Main storytelling subjects fully inside the middle 80% of the image, high enough to remain clear of captions. Keep the entire bottom third a darker, calm foreground with few hard edges and no focal details. Render edge-to-edge, no letterbox, no words, no signs, no type, no interface. All people if present are fictional stylized Solace miniatures. Leave together, departure at violet dusk. A long single winding line of both Kin and Lumen walking up a ramp and through the large open hatch of the same repaired First Ship on its stone apron. Match the foreground reference vessel, dark grey-green and weathered bronze hull, horizontal rounded bow with round cyan porthole, multiple bronze ribs, long low body and visibly curled tail. Mix compact rust-and-brown Kin and ivory-gold-cloaked Lumen throughout the line. Show the entire key boarding action in the upper middle, with the queue winding laterally along a raised terrace. The nearest people are still above the lower third. Soft amber hatch light and restrained cyan along the ship seams, dark quiet grass and stones low in the frame."
+  },
+  "leave_end_3": {
+    "dimensions": [
+      1586,
+      992
+    ],
+    "source_dimensions": [
+      1585,
+      992
+    ],
+    "source_mode": "RGB",
+    "generated_source": "exec-3dbb3c2c-6542-4c16-804a-a71dd154a0c8.png",
+    "source_sha256": "322bbab26d0a7cc535220943896fffa7cc7da9b79ec97ae823e725dd10cdb269",
+    "sha256": "0ea5b6c56e7fe4b91f54d59dcafcea4759af31d8e6973853db92db10d048f2cf",
+    "tool": "Built-in ImageGen",
+    "production_prep": "Center cover fit to the requested 1586\u00d7992 RGB canvas using Lanczos.",
+    "references": [
+      "exec-4310b00b-b8f2-471e-9170-bf171fcbd121.png",
+      "art/rendered/cutscenes/kin_reveal_1.png"
+    ],
+    "prompt": "Wide 1586\u00d7992 landscape cutscene painting for Solace. Match the existing Misty Highlands story art: highly detailed handcrafted miniature diorama, tactile materials, soft volumetric light, and atmospheric depth. Main storytelling subjects fully inside the middle 80% of the image, high enough to remain clear of captions. Keep the entire bottom third a darker, calm foreground with few hard edges and no focal details. Render edge-to-edge, no letterbox, no words, no signs, no type, no interface. All people if present are fictional stylized Solace miniatures. Leave together, the final view as the vessel rises. A high, wide aerial view. The exact First Ship from the references, the ancient long dark grey-green bronze-ribbed vessel with rounded bow, cyan porthole, gently hooked upward tail and a thin cyan seam, climbs diagonally through a break in the clouds. Show the whole ship clearly in three-quarter side silhouette in the central upper half. Far below and small, through a separate lower cloud opening, the recognizable green Solace valley, tiny light at the Hearth, river and mountain ranges. Calm darker blue shadow cloud in the bottom third. Quiet lift, soft light, no rocket exhaust, no additions to the old ship's silhouette."
+  }
+}

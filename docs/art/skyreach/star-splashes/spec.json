@@ -1,0 +1,67 @@
+{
+  "chronicle_star_gold": {
+    "dimensions": [
+      64,
+      64
+    ],
+    "sha256": "f00a61eb86c3037ca8844ec035359d5f2d4057195ee2f5ee5a4d5dfd977faf2f",
+    "source": "Original analytic raster artwork derived from StarButton._draw and palette constants in scripts/chronicle_book.gd.",
+    "recipe": "A feathered #ffc83d gold core and glow, softly contoured four-point #ffd27a glint and small #eee7d6 center. Supersampled 4\u00d7 and reduced to 64\u00d764 with Lanczos.",
+    "reference_draw_size": [
+      40,
+      40
+    ]
+  },
+  "seed_fall_splash_1": {
+    "dimensions": [
+      192,
+      192
+    ],
+    "sha256": "8a61bb90619592dd7c4be09d41eece35df4bbf3a3745de6a116317acdde07395",
+    "source": "Built-in ImageGen. Transparent subject cropped and centered to match the seed_fall impact cell.",
+    "generated_source": "exec-35934d05-2af5-42c6-a827-eb92557182fc.png",
+    "source_crop": [
+      344,
+      322,
+      1027,
+      794
+    ],
+    "source_sha256": "d18832f5682bea47bc756b11dfb1c055aadba71c7bbf1a8d987d313c9c6855e2",
+    "references": [
+      "exec-2663d91b-3ed2-496e-855d-7f6b87a26c84.png"
+    ],
+    "prompt": "Alternate landing impact sprite for Solace's falling Bloom seed. Match the reference impact's bright magenta split pod and sickly green organic material. One small central subject, nearly overhead and flattened against the ground as a temporary effect, designed for a 48px tile. Transparent background with clean clear alpha, no opaque backdrop, pale haze, contact shadow, border, text or terrain plate. A short asymmetrical burst: two vivid magenta shell halves, four thin outward-curling green roots, two tiny bright particles, more spread to the right than left. Clear negative space between individual tendrils.",
+    "region": [
+      0,
+      0,
+      192,
+      192
+    ]
+  },
+  "seed_fall_splash_2": {
+    "dimensions": [
+      192,
+      192
+    ],
+    "sha256": "f6b2ec3721ca9dfbeeb9210636543d565b3cbb85965150af51e98c202f34ed6c",
+    "source": "Built-in ImageGen. Transparent subject cropped and centered to match the seed_fall impact cell.",
+    "generated_source": "exec-09c57d89-002b-47d6-8206-769be6f41dbd.png",
+    "source_crop": [
+      396,
+      315,
+      911,
+      806
+    ],
+    "source_sha256": "461afad1e2cca28a8c957c74188a09a08d411582fdbe1185eb9f8a283ea85712",
+    "references": [
+      "exec-2663d91b-3ed2-496e-855d-7f6b87a26c84.png"
+    ],
+    "prompt": "Alternate landing impact sprite for Solace's falling Bloom seed. Match the reference impact's bright magenta split pod and sickly green organic material. One small central subject, nearly overhead and flattened against the ground as a temporary effect, designed for a 48px tile. Transparent background with clean clear alpha, no opaque backdrop, pale haze, contact shadow, border, text or terrain plate. A compact near-round starburst: three ruptured magenta petals radiating from a green pin of light, five short chartreuse tendrils and a few tiny bright spores. Keep the shape sparse and clear.",
+    "region": [
+      0,
+      0,
+      192,
+      192
+    ]
+  }
+}

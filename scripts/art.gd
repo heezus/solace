@@ -5,6 +5,7 @@ extends RefCounted
 const Data = preload("res://scripts/data.gd")
 const KinName = preload("res://scripts/kin_name.gd")
 const Rendered = preload("res://scripts/rendered_art.gd")
+const SkyArt = preload("res://scripts/sky_art.gd")
 
 const OUTLINE := Color("1b1b1f")
 ## The pale-cyan light of the Strange Stone and its cairn.
@@ -41,6 +42,10 @@ static var _hatch: Texture2D = null
 
 
 static func building_sprite(type: String) -> Texture2D:
+	if SkyArt.draws(type):  # the Signal Tower and the Skyreach: tall paintings (scripts/sky_art.gd)
+		var sky := SkyArt.icon(type)
+		if sky != null:
+			return sky
 	if Rendered.BUILDINGS.has(type):
 		return Rendered.sprite("buildings", Rendered.BUILDINGS[type])
 	return sprite(SPRITE_OF.get(type, type))
@@ -327,8 +332,11 @@ static func cairn_glow_alpha(approach: float, time: float) -> float:
 
 
 ## A building drawn in `r` (a tile, or the Hearth's 2x2): its SVG sprite at native scale (the sprite brings its own
-## plate), or a plain plate in the building's color when it has none. `working` adds the charcoal pit's smoke.
-static func map_building(ci: CanvasItem, type: String, r: Rect2, working: bool, time: float) -> void:
+## plate), or a plain plate in the building's color when it has none. `working` adds the charcoal pit's smoke (and lights a Signal Tower
+## that is warning of a landfall); `stage` is the Skyreach's, 0 to 3.
+static func map_building(ci: CanvasItem, type: String, r: Rect2, working: bool, time: float, stage := 0) -> void:
+	if SkyArt.draws(type) and SkyArt.draw(ci, type, r, working, stage):
+		return
 	if Rendered.building(ci, "shard_lamp_lit" if type == "shard_lamp" and working else type, r):  # `working`: a lamp burning
 		if type == "charcoal_pit" and working:
 			var k := r.size.x / DESIGN

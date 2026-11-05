@@ -951,7 +951,7 @@ func _draw_building(b: Dictionary) -> void:
 	if Homes.is_home(b) and Homes.tier_of(b) > 0:
 		GrowthArt.draw_house(self, Homes.tier_of(b) + 1, r)  # a Homestead or a Longhouse has its own roof
 	else:
-		Art.map_building(self, b["type"], r, working, time)
+		Art.map_building(self, b["type"], r, working or state.skyreach.warns(state, b), time, int(b.get("stage", 0)))
 	if Homes.is_home(b):
 		HomeView.draw(self, b, r)  # any scaffold, over the house (scripts/home_look.gd)
 	if b["type"] == "shard_cairn":

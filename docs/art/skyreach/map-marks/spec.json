@@ -1,0 +1,119 @@
+{
+  "landfall_mark": {
+    "source": "Original analytic raster artwork",
+    "description": "Faint magenta-green ground ring with clear space for the live countdown.",
+    "method": "Modulated radial stroke with alternating Bloom colors and an empty central disc.",
+    "dimensions": [
+      192,
+      192
+    ],
+    "sha256": "8d002d2ad306964dffd6d781d3a35a1dcc6f294a41d21ae0a5c67b2d63e4a02f"
+  },
+  "skyreach_site_ring": {
+    "source": "Original analytic raster artwork",
+    "description": "Pale gold site ring with a brighter cardinal accent at each approach.",
+    "method": "Two softened radial strokes plus four cardinal ticks.",
+    "dimensions": [
+      192,
+      192
+    ],
+    "sha256": "50e631f53b78c056747d288b800d5eb52653242861ea71d166cf2da54a1848de"
+  },
+  "sky_sector_edge": {
+    "source": "Original analytic raster artwork",
+    "description": "Thin surveyed-sector edge, muted cyan.",
+    "method": "Horizontal Gaussian stroke with identical columns. Repeat along X and rotate to bearing.",
+    "dimensions": [
+      192,
+      192
+    ],
+    "sha256": "012ac6f5f96d01918f4dbfb050c19b674828f0483742d6c1e4d8dbdb406a4d99"
+  },
+  "skyreach_way": {
+    "source": "Original analytic raster artwork",
+    "description": "Paired gold edges over the existing road, left to right.",
+    "method": "Two parallel Gaussian shoulder strokes offset 0.31 tiles from center. Repeat along X.",
+    "dimensions": [
+      192,
+      192
+    ],
+    "sha256": "7994594e6f53312454d4c0ebbedbe44623d358b1918f1f3dd353f56ab6a98237"
+  },
+  "skyreach_way_corner": {
+    "source": "Original analytic raster artwork",
+    "description": "Matching gold road edges, left to bottom.",
+    "method": "Two concentric quarter arcs at 0.19 and 0.81 tile radius. Boundary profiles match the straight.",
+    "dimensions": [
+      192,
+      192
+    ],
+    "sha256": "1c93f3928306f0d5e3623925020474dae11793b89560c5f0839d73a746cbe443"
+  },
+  "seed_fall": {
+    "source": "Built-in ImageGen, three transparent source frames cropped and packed left to right.",
+    "dimensions": [
+      576,
+      192
+    ],
+    "frames": [
+      {
+        "region": [
+          0,
+          0,
+          192,
+          192
+        ],
+        "action": "Descent",
+        "generated_source": "exec-d969b27d-7b40-462f-82d9-7a6a7b943e19.png",
+        "source_sha256": "9b19b4aeae1760836a57caf270a057bcce5c752ab59cd73bcfcb7ae51041d4e5",
+        "source_crop": [
+          275,
+          233,
+          1212,
+          835
+        ],
+        "reference": "art/rendered/bloom_tide.png",
+        "prompt": "Isolated painted miniature game-effect sprite for Solace. A single subject on a truly transparent background. Surround it on all sides with clear empty alpha. No fog, pale backdrop, floor plate, contact shadow, UI or lettering. Strong silhouettes for a 48px map tile. Use the reference for the Bloom's sickly-green vines and vivid magenta heart, not for its framing or backdrop. A small hooked seed with a green thorny casing and luminous vivid magenta core, pointing down-right. A short, narrow partially transparent tapered magenta streak behind it reaches toward the upper left. Three-quarter game camera."
+      },
+      {
+        "region": [
+          192,
+          0,
+          192,
+          192
+        ],
+        "action": "Near impact",
+        "generated_source": "exec-496e5a0a-9642-45fa-9465-8f5ade52c76d.png",
+        "source_sha256": "dbb580151f33b28ae90d548c855219cb5e09ec39f053cd808244023bd0e83ee5",
+        "source_crop": [
+          318,
+          212,
+          1127,
+          800
+        ],
+        "reference": "art/rendered/bloom_tide.png",
+        "prompt": "Isolated painted miniature game-effect sprite for Solace. A single subject on a truly transparent background. Surround it on all sides with clear empty alpha. No fog, pale backdrop, floor plate, contact shadow, UI or lettering. Strong silhouettes for a 48px map tile. Use the reference for the Bloom's sickly-green vines and vivid magenta heart, not for its framing or backdrop. A small hooked seed with a green thorny casing and luminous vivid magenta core, pointing down-right. It is very close to impact. Two or three bright green-magenta tracer slivers trail just behind it toward the upper left. Three-quarter game camera."
+      },
+      {
+        "region": [
+          384,
+          0,
+          192,
+          192
+        ],
+        "action": "Landing splash",
+        "generated_source": "exec-2663d91b-3ed2-496e-855d-7f6b87a26c84.png",
+        "source_sha256": "a8b56ae7bf5f3f891d27091653084544c30b492d2b81c73e28c96e139d49c205",
+        "source_crop": [
+          234,
+          146,
+          1048,
+          948
+        ],
+        "reference": "art/rendered/bloom_tide.png",
+        "prompt": "Isolated painted miniature game-effect sprite for Solace. A single subject on a truly transparent background. Surround it on all sides with clear empty alpha. No fog, pale backdrop, floor plate, contact shadow, UI or lettering. Strong silhouettes for a 48px map tile. Use the reference for the Bloom's sickly-green vines and vivid magenta heart, not for its framing or backdrop. The tiny impact splash left by a falling Bloom seed. A tight central broken magenta pod and four to six short, tapering chartreuse and magenta tendrils splayed radially on the ground, with two small sparks. Nearly overhead, flattened ground FX silhouette. No fog."
+      }
+    ],
+    "sha256": "7dfa4360e60b743a5fcc0a8709ff5086838a4fbb68b03930f4bc0242b4313121"
+  }
+}

@@ -400,6 +400,17 @@ func marked(s) -> Array:
 	return out
 
 
+## True while the Signal Tower `b` is warning of a landfall in its sector (the map paints it lit).
+func warns(s, b: Dictionary) -> bool:
+	if b["type"] != SIGNAL or s.tide.is_overgrown(b):
+		return false
+	var sector := sector_of(s.world.camp_pos, b["pos"])
+	for f in falls:
+		if f["sector"] == sector and not f["fell"] and f["at"] - now(s) <= Data.SKYREACH["warn"]:
+			return true
+	return false
+
+
 # --- The Skyreach ------------------------------------------------------------------------------------------------------
 
 
