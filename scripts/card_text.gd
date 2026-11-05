@@ -3,8 +3,12 @@ extends RefCounted
 ## "Locked"), why a locked card is locked ("Discover Gatherer's Hut"), and which cards show at all.
 ## Static, and works on the Sim passed in. The wording is in Data (scripts/data/words.gd).
 
+const Chain = preload("res://scripts/chain.gd")
 const Data = preload("res://scripts/data.gd")
 
+const CARD_BLOCKED := "Blocked by %s"  # a tech's name: the first step on the way that is not just a price (scripts/chain.gd)
+const LINE_STOPPED := "Stopped at (%d, %d): %s"  # a tile, then why a dragged line would not go on it
+const LINE_STOPPED_MORE := " (and %d more tiles)"  # how many other tiles will not take it
 const FONT_SIZE := 14  # the state line's size on the card
 
 
@@ -16,11 +20,26 @@ static func shown(s, type: String) -> bool:
 	var def: Dictionary = Data.BUILDINGS[type]
 	if def["tech"] == "":
 		return s.town.unlocked(type)  # an `event` building waits for its story moment
-	if s.town.unlocked(type):
-		return true
+	if s.town.unlocked(type) or type == s.story.asked_building():
+		return true  # the building the current goal asks for always shows, locked and saying what it waits on
 	if not def.get("story", false):
 		return s.tech_tree.tech_visible(def["tech"])
 	return s.tech_tree.requirements_met(def["tech"])
+
+
+## What a dragged `line` of `type` will leave out, before it goes down: "" when every tile takes it (or already has it), else
+## "Stopped at (x, y): the reason" for the first tile that will not, with how many tiles that is. The tiles already laid are no reason.
+static func line_report(s, type: String, line: Array) -> String:
+	var first := ""
+	var n := 0
+	for p in line:
+		var err: String = s.town.placement_error(type, p)
+		if err == "" or err.begins_with("Already") or err.begins_with("A better"):
+			continue
+		n += 1
+		if first == "":
+			first = LINE_STOPPED % [p.x, p.y, refusal(s, type, err)]
+	return first if n == 0 else first + (LINE_STOPPED_MORE % (n - 1) if n > 1 else "")
 
 
 ## "4 Wood" for each item of `cost` the stockpile `inv` is short of, in cost order (empty when it is enough).
@@ -59,10 +78,14 @@ static func short_names(inv: Dictionary, cost: Dictionary) -> Array:
 
 ## Why a locked card is locked: the tech to discover. With `max_w` it is shortened to fit two lines of that width at
 ## FONT_SIZE (just the tech's name when "Discover ..." would need three); the card's tooltip has the whole sentence.
-static func locked_reason(type: String, max_w := 0.0) -> String:
+static func locked_reason(type: String, max_w := 0.0, s = null) -> String:
 	if Data.BUILDINGS[type]["tech"] == "":
 		return Data.CARD_WAIT  # an `event` building: no tech to name, and the card is hidden until then
 	var tech_name: String = Data.TECHS[Data.BUILDINGS[type]["tech"]]["name"]
+	if s != null:
+		var step := Chain.step(s, Data.BUILDINGS[type]["tech"])  # the tech is out of view or waits on one that is: say so
+		if not step.is_empty() and step["kind"] in ["unseen", "needs"]:
+			return CARD_BLOCKED % Data.TECHS[step["tech"]]["name"]
 	if repeats_name(type, tech_name):
 		return Data.CARD_DISCOVER_IT  # the title above already says which
 	var full: String = Data.CARD_DISCOVER % tech_name

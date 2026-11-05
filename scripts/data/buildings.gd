@@ -158,8 +158,10 @@ const BUILDINGS := {
 		"in": {"fiber": 2},
 		"out": {"rope": 1},
 		"time": 4.0,
+		"self_hauls": true,
 		"color": Color("bc8a5f"),
-		"desc": "Twists fiber into rope.",
+		"desc":
+		"Twists fiber into rope. Once a Kith works it, it loads fiber and puts the rope away by itself; a click only rushes it.",
 	},
 	"tool_bench":
 	{
@@ -210,7 +212,7 @@ const BUILDINGS := {
 		"gives": 2,
 		"needs_river": true,
 		"color": Color("2a9d8f"),
-		"desc": "Must touch the river. Powers machines within 3 tiles.",
+		"desc": "Needs: a river tile beside it. Powers machines within 3 tiles.",
 	},
 	"boiler":
 	{
@@ -309,7 +311,7 @@ const BUILDINGS := {
 		"time": 4.0,
 		"needs_power": true,
 		"color": Color("adb5bd"),
-		"desc": "Needs power. Grinds grain into flour.",
+		"desc": "Needs: power. Grinds grain into flour.",
 	},
 	"fishing_weir":
 	{
@@ -323,7 +325,7 @@ const BUILDINGS := {
 		"time": 6.0,
 		"needs_river": true,
 		"color": Color("0077b6"),
-		"desc": "Must touch the river. Its worker traps Fish, worth 2 food.",
+		"desc": "Needs: a river tile beside it. Its worker traps Fish, worth 2 food.",
 	},
 	"mine":
 	{
@@ -407,7 +409,7 @@ const BUILDINGS := {
 		"color": Color("a9bfd1"),
 		"desc":
 		(
-			"Needs power. A steady blast turns 2 Iron and 1 Coal into Steel (Charcoal at half speed when Coal runs short)."
+			"Needs: power. A steady blast turns 2 Iron and 1 Coal into Steel (Charcoal at half speed when Coal runs short)."
 			+ " Stand it within 5 tiles of a Boiler."
 		),
 	},
@@ -424,7 +426,7 @@ const BUILDINGS := {
 		"time": 6.0,
 		"needs_power": true,
 		"color": Color("d98a4a"),
-		"desc": "Needs power. Draws Copper into Wire, the good of the age of the wire.",
+		"desc": "Needs: power. Draws Copper into Wire, the good of the age of the wire.",
 	},
 	"factory_floor":
 	{
@@ -441,7 +443,7 @@ const BUILDINGS := {
 		"color": Color("c0c6cc"),
 		"desc":
 		(
-			"Needs power and two Kith. Runs one chosen recipe (Rope, Bricks, Iron, Steel or Wire) at three times a workshop's"
+			"Needs: power and two Kith. Runs one chosen recipe (Rope, Bricks, Iron, Steel or Wire) at three times a workshop's"
 			+ " speed, and eats its inputs three times as fast. Pick the recipe on its card."
 		),
 	},

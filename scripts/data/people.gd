@@ -59,7 +59,10 @@ const BRIDGE_HINT := "%s. %s and haulers cross the river here."  # bridge name, 
 const ROAD_HINT := "%s on %s. %s walk %s here."  # road name, tile name, many, how fast ("twice as fast")
 ## How fast each road tier is walked, as ROAD_HINT says it (Data.ROAD_SPEEDS times the road's twice the open ground).
 const ROAD_PACE := ["twice as fast", "2.5 times as fast", "three times as fast", "eight times as fast"]
-const FOOD_TIP := "Every %s eats food: Berries, then Fish, then any Flour that isn't in use."  # one
+const FOOD_TIP := (
+	"Every %s eats food: Berries, then Fish, then any Flour that isn't in use."
+	+ " The count is food, not items: a good counts for what it is worth."
+)  # one
 ## The Food readout while the warning is up, formatted with the time left ("45 s").
 const FOOD_LOW_TEXT := "Low: %s left. Gather berries!"
 ## The famine fallback (scripts/forage.gd): told once when idle people start foraging, what a waiting hut's card says while

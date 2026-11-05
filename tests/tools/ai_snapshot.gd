@@ -9,6 +9,8 @@ const Data = preload("res://scripts/data.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Fuel = preload("res://scripts/fuel.gd")
 const WaitWhy = preload("res://scripts/wait_why.gd")
+const Chain = preload("res://scripts/chain.gd")
+const GrowthNote = preload("res://scripts/growth_note.gd")
 const Land = preload("res://scripts/land.gd")
 const Workers = preload("res://scripts/workers.gd")
 
@@ -102,6 +104,10 @@ static func text(s, n: int, told: Array, refused: Array) -> String:
 			% [s.story.done_count(), goals.size(), goals[at]["text"] if at < goals.size() else "all met"]
 		)
 	)
+	if at < goals.size():
+		var gate: String = s.story.gate_note(s, goals[at])
+		if gate != "":
+			out.append("IN THE WAY: " + gate)
 	out.append_array(_cards(s))
 	var look := _look_east(s)
 	if look != "":
@@ -139,7 +145,12 @@ static func apply(s, moves: Array) -> Array:
 			"demolish":
 				ok = not s.demolish(at).is_empty()
 			"line":
-				ok = _drag(s, m)
+				var tiles := _line_tiles(m)
+				var report := CardText.line_report(s, str(m.get("type", "")), tiles) if not tiles.is_empty() else ""
+				ok = not tiles.is_empty() and s.place_line(str(m["type"]), tiles) > 0
+				if report != "":
+					refused.append("%s (%s%s)" % [JSON.stringify(m), "some tiles went down. " if ok else "", report])
+					continue
 			"click":
 				var i := _index_at(s, at)
 				ok = i >= 0
@@ -166,6 +177,9 @@ static func apply(s, moves: Array) -> Array:
 				ok = i >= 0 and s.town.set_focus(i, str(m.get("item", "")))
 			"research":
 				ok = str(m.get("tech", "")) in Data.TECHS and s.research(str(m["tech"]))
+				if not ok and str(m.get("tech", "")) in Data.TECHS:
+					refused.append("%s (%s)" % [JSON.stringify(m), Chain.refusal(s, str(m["tech"]))])
+					continue
 			"goal":
 				ok = str(m.get("tech", "")) in Data.TECHS
 				if ok:
@@ -239,8 +253,8 @@ static func _index_at(s, at: Vector2i) -> int:
 	return -1
 
 
-## A dragged line: along x from `from`, then along y to `to`, as the build bar's drag does. True when any tile went down.
-static func _drag(s, m: Dictionary) -> bool:
+## A dragged line's tiles: along x from `from`, then along y to `to`, as the build bar's drag does. Empty when the move is not a line.
+static func _line_tiles(m: Dictionary) -> Array:
 	var a = m.get("from", [])
 	var b = m.get("to", [])
 	if (
@@ -250,7 +264,7 @@ static func _drag(s, m: Dictionary) -> bool:
 		or a.size() < 2
 		or b.size() < 2
 	):
-		return false
+		return []
 	var from := Vector2i(int(a[0]), int(a[1]))
 	var to := Vector2i(int(b[0]), int(b[1]))
 	var line: Array = []
@@ -263,7 +277,7 @@ static func _drag(s, m: Dictionary) -> bool:
 		line.append(Vector2i(to.x, y))
 		y += signi(to.y - y)
 	line.append(to)
-	return s.place_line(str(m["type"]), line) > 0
+	return line
 
 
 ## An order, written as the Board's panel would: every part picked from the short lists the panel offers.
@@ -365,17 +379,51 @@ static func _cards(s) -> Array:
 	return out
 
 
-## "(21,9) Hearth 12 of 14": each depot's position and name, the haulers it has and the places it wants.
+## "(21,9) Hearth: 12 haulers, 14 places": each depot's position and name, the haulers it has and the places it wants.
 static func _depots(s) -> Array:
 	var out: Array = []
 	for depot in s.hauling.auto:
 		out.append(
 			(
-				"(%d,%d) %s %d of %d"
+				"(%d,%d) %s: %d haulers for %d places"
 				% [depot.x, depot.y, s.hauling.names.get(depot, ""), s.hauling.have(depot), s.hauling.wanted(depot)]
 			)
 		)
 	return out
+
+
+## What a building's card says under its name: its alert when it needs something (so the wait can be explained), else its own status
+## in full (the cause is in it), and nothing for a building with no status of its own (the card shows its blurb once, as its blurb).
+## "[needs: power]" for a building whose blurb starts with its Needs, "" for one that needs nothing special.
+static func _needs_of(type: String) -> String:
+	var desc: String = Data.BUILDINGS[type]["desc"]
+	return "[%s]" % desc.get_slice(". ", 0).to_lower().trim_suffix(".") if desc.begins_with("Needs: ") else ""
+
+
+static func _note_of(b: Dictionary) -> String:
+	var status := str(b.get("status", ""))
+	var alert := str(b.get("alert", ""))
+	if alert.begins_with("Needs "):
+		return alert
+	if status != "" and status != Data.BUILDINGS[b["type"]]["desc"]:
+		return status.left(100)
+	return alert
+
+
+## "Berries 2, Fish 2": what one of each food the Kith have had counts for in FOOD.
+static func _food_worth(s) -> String:
+	var parts: Array = []
+	for id in Data.FOOD_VALUE:
+		if s.economy.seen.has(id):
+			parts.append("%s %s" % [Data.ITEMS[id]["name"], str(s.economy.food_value(id))])
+	return ", ".join(parts)
+
+
+## The foraging flag in words: the game puts idle Kith out for berries when the food would run out soon, or when a Forage answer says so.
+static func _foraging(s) -> String:
+	if s.economy.forage_call:
+		return ", idle Kith forage (your Forage answer)"
+	return ", idle Kith forage (food is running short)" if s.economy.famine else ""
 
 
 ## Food, people, stock, buildings, and what can be done now.
@@ -394,11 +442,12 @@ static func _town(s) -> Array:
 				working += 1
 	out.append(
 		(
-			"FOOD: %d in store, lasts %s%s"
+			"FOOD: %d in store (a count of food, each good worth what it is: %s), lasts %s%s"
 			% [
 				roundi(s.economy.food_total()),
+				_food_worth(s),
 				_clock(minf(s.economy.seconds_of_food(), 3600.0)),
-				", FAMINE" if s.economy.famine else ""
+				_foraging(s)
 			]
 		)
 	)
@@ -408,6 +457,9 @@ static func _town(s) -> Array:
 			% [s.people.kith.size(), working, hauling, idle, s.town.housing()]
 		)
 	)
+	for note in [GrowthNote.bar_note(s), GrowthNote.progress_text(s)]:
+		if note != "":
+			out.append("  " + note)
 	var stock: Array = []
 	for id in s.economy.inv:
 		if s.economy.inv[id] > 0:
@@ -426,9 +478,7 @@ static func _town(s) -> Array:
 		var key: String = Data.BUILDINGS[b["type"]]["name"]
 		if b.get("focus", "") != "":
 			key += " for " + b["focus"]
-		var note: String = (
-			b["alert"] if b.get("alert", "") != "" else str(b.get("status", "")).get_slice(".", 0).left(40)
-		)
+		var note := _note_of(b)
 		if note.begins_with("Needs ") and not note.begins_with("Needs road"):
 			note += _wait_note(s, b)  # and why it still waits (scripts/wait_why.gd)
 		if note != "":
@@ -456,15 +506,25 @@ static func _town(s) -> Array:
 			var cost: Array = []
 			for id in s.town.price(type):
 				cost.append("%d %s" % [s.town.price(type)[id], id])
-			can.append("%s (%s)" % [type, ", ".join(cost)])
-	out.append("BUILDABLE (type ids): " + ", ".join(can))
+			can.append("%s %s (%s)" % [type, _needs_of(type), ", ".join(cost)])
+	out.append(
+		(
+			"BUILDABLE (type id, what it needs, build price; each extra production building costs 15% more): "
+			+ ", ".join(can)
+		)
+	)
 	var ready: Array = []
 	for t in s.tech_tree.ready_list():
 		var cost: Array = []
 		for id in s.tech_tree.cost_of(t):
 			cost.append("%d %s" % [s.tech_tree.cost_of(t)[id], id])
 		ready.append("%s = %s (%s)" % [t, Data.TECHS[t]["name"], ", ".join(cost)])
-	out.append("RESEARCHABLE NOW: " + (", ".join(ready) if not ready.is_empty() else "nothing you can pay for"))
+	out.append(
+		(
+			"RESEARCHABLE NOW (the study price of the tech, not the building's): "
+			+ (", ".join(ready) if not ready.is_empty() else "nothing you can pay for")
+		)
+	)
 	var later: Array = []
 	for tech in Data.TECH_ORDER:
 		if s.tech_tree.researched.has(tech) or not s.tech_tree.tech_visible(tech) or s.tech_tree.can_research(tech):

@@ -16,6 +16,7 @@ const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Hands = preload("res://scripts/hands.gd")
 const CardText = preload("res://scripts/card_text.gd")
+const Chain = preload("res://scripts/chain.gd")
 const FieldText = preload("res://scripts/field_text.gd")
 const HomesStrip = preload("res://scripts/homes_strip.gd")
 const Hotkeys = preload("res://scripts/hotkeys.gd")
@@ -359,7 +360,7 @@ func refresh(placing: String, ready_count: int) -> void:
 		var short := not CardText.shortfall(state.economy.inv, price).is_empty()
 		sub.add_theme_color_override("font_color", Ui.SHORT if short and placing != type else Ui.TEXT_DIM)
 		var why: Label = parts["why"]
-		why.text = CardText.locked_reason(type, why.size.x) if not unlocked else ""
+		why.text = CardText.locked_reason(type, why.size.x, state) if not unlocked else ""
 		why.add_theme_color_override("font_color", LOCKED_TEXT)
 		parts["pips"].visible = unlocked
 		Ui.update_pips(parts["pips"], price, state.economy.inv)
@@ -396,5 +397,9 @@ func _tooltip(type: String) -> String:
 	if def["tech"] == "":
 		s += "\nAlways available." if def.get("event", "") == "" else ""
 	elif not state.town.unlocked(type):
-		s += "\n%s to unlock it." % (Data.CARD_DISCOVER % Data.TECHS[def["tech"]]["name"])
+		var gate := Chain.note(state, def["tech"])
+		s += (
+			"\n%s to unlock it." % (Data.CARD_DISCOVER % Data.TECHS[def["tech"]]["name"])
+			+ ("\n" + gate if gate != "" else "")
+		)
 	return s
