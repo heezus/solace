@@ -42,6 +42,8 @@ const ISLAND_ENGINES := 2  # Generators the bot adds to a cut-off net it cannot 
 const REHOLD_WAIT := 20.0  # seconds between the south's lamps and Scorcher the gate is short of
 const POLES_FREED := 3  # Gatherer's Huts the bot takes down beside a boxed-in Pole, in all
 const POLE_STUCK := 12  # decisions without a new pole before the bot gives the southern net up
+const CHAIN_LAMPS := 6  # Arc Lamps the bot sets along the live Pole chain, in all (a lit lamp keeps the Bloom off its Poles)
+const CHAIN_COVER := 4.5  # a Pole within this many tiles of a lit Arc Lamp is held; one further out gets a lamp beside it
 const ORDER_PLAN := [
 	{"item": "brick", "compare": "above", "number": 500, "verb": "pause", "target": "kiln"},
 	{"item": "iron_ore", "compare": "above", "number": 600, "verb": "pause", "target": "mine"},
@@ -225,7 +227,7 @@ func _build_livewire() -> bool:
 		return true
 	if _place_wire_mill():
 		return true
-	if _place_core_lamp() or _guard_front():
+	if _place_core_lamp() or _guard_chain() or _guard_front():
 		return true
 	if _lay_south_poles() or _island_engine():
 		return true
@@ -480,6 +482,49 @@ func _place_core_lamp() -> bool:
 	if not s.economy.can_afford(s.town.price("arc_lamp")):
 		return false
 	return _tear_down_for("arc_lamp", beside) or _clear_hut(beside, "an Arc Lamp")
+
+
+## The Pole chain is what the south hangs on: the Bloom cuts it and the lamps and the Scorcher there go dark. So a player lights the
+## chain itself: an Arc Lamp beside each live Pole that no lit lamp holds, the Pole the Bloom is nearest first, CHAIN_LAMPS in all.
+func _guard_chain() -> bool:
+	if (
+		not answer_tide
+		or not s.town.unlocked("arc_lamp")
+		or not s.tide.begun
+		or _count("arc_lamp") >= CORE_LAMPS + CHAIN_LAMPS + 2
+	):
+		return false
+	var lit: Array = []
+	for b in s.town.buildings:
+		if b["type"] == "arc_lamp" and s.town.is_powered(b["pos"]) and not s.tide.hit.has(b["pos"]):
+			lit.append(b["pos"])
+	var pole := Vector2i(-1, -1)
+	var best := INF
+	for q in _poles_on(true):
+		if lit.any(func(l): return Vector2(l).distance_to(Vector2(q)) <= CHAIN_COVER):
+			continue
+		var d := _front_distance(q)
+		if d < best:
+			best = d
+			pole = q
+	if pole.x < 0:
+		return false
+	var beside := func(p):
+		return -_front_distance(p) if Vector2(p).distance_to(Vector2(pole)) <= Data.POLE_REACH and _on_net(p) else -INF
+	if _place_best("arc_lamp", beside):
+		lines.append("%5.0f s    guard: an Arc Lamp holds the Pole at %s" % [clock, pole])
+		return true
+	return false
+
+
+## Tiles from p to the nearest Bloom ground (a large number when there is none yet: then the south edge stands for it).
+func _front_distance(p: Vector2i) -> float:
+	var best := INF
+	for g in s.tide.grown:
+		best = minf(best, Vector2(g).distance_to(Vector2(p)))
+	if best == INF:
+		best = 100.0 - p.y  # nothing grown: the tide comes from the south, so a Pole further south is nearer it
+	return best
 
 
 ## Wire Mills on the net, as many as the Wire still short asks for.

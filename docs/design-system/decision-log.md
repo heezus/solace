@@ -1186,3 +1186,8 @@ An Arc Lamp keeps the Bloom 5 tiles from its light and a Scorcher reached 4, so 
 - **What was built.** Claude added `tests/tools/ai_story.gd`: the Glyph Wall's marks and a guess move, scenes to watch or skip, the ending card and an ending's details, `set_out` into the next telling, and the Chronicle, all through the game's own commands. Page 25.
 - **Our calls.** A mark's handle names its place, never its word. The table keeps its own profile, deleted at the start, so a replay plays the same tellings. No simulation change.
 - **Why.** Both fun-2 players stopped before the reset because the table could not read glyphs, open the ending card or begin a second telling; fun-3 needs them to play on.
+
+## 2026-11-06: The Twine Post runs itself, and the Livewire bot lights its Pole chain
+- **What was built.** The Twine Post (`self_hauls`) now loads its own fiber and puts its rope away once a Kith works it; a click only rushes it. The Livewire bot (`_guard_chain` in `tests/autoplay_livewire.gd`) sets an Arc Lamp beside each live Pole that no lit lamp holds (up to 6, the Pole nearest the Bloom first). The goldens for Bronze Dawn and the first Bronze moved once (Stone Age 17.5 / 14.9 / 13.5 min on maps 1 / 2 / 3).
+- **Our calls.** A lit lamp keeps the Bloom off its Poles, so the south's lamps and Scorcher keep their power; this is what a player does and not a bot-only rule. The earlier try of the self-hauling Post was backed out because the bot lost its mines to the Bloom; the cause was the south deed lost when the Bloom cut the Pole chain, not the Post.
+- **Why.** Both fresh players hand-fed the Twine Post for 170 Rope. Bot times with both changes (Livewire on maps 1, 2, 4 and the earned run): about 14 to 16 minutes each, every era inside its bar.

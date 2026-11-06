@@ -158,8 +158,10 @@ const BUILDINGS := {
 		"in": {"fiber": 2},
 		"out": {"rope": 1},
 		"time": 4.0,
+		"self_hauls": true,
 		"color": Color("bc8a5f"),
-		"desc": "Twists fiber into rope. Click it to load fiber and put the rope away, or lay a road so haulers do it.",
+		"desc":
+		"Twists fiber into rope. Once a Kith works it, it loads fiber and puts the rope away by itself; a click only rushes it.",
 	},
 	"tool_bench":
 	{
