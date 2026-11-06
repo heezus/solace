@@ -134,8 +134,11 @@ func test_wrong_terrain() -> void:
 	_world.set_tile(Vector2i(4, 3), "river")
 	_world.set_tile(Vector2i(5, 3), "berry")
 	for p in [Vector2i(3, 3), Vector2i(4, 3), Vector2i(5, 3)]:
-		t.check(b.placement_error("dwelling", p) == "Build on open grassland", "no Dwelling on %s" % _world.tile_at(p))
-		t.check(b.placement_error("charcoal_pit", p) == "Build on open grassland", "nor a Charcoal Pit on it")
+		t.check(
+			b.placement_error("dwelling", p).begins_with("Build on open grassland"),
+			"no Dwelling on %s" % _world.tile_at(p)
+		)
+		t.check(b.placement_error("charcoal_pit", p).begins_with("Build on open grassland"), "nor a Charcoal Pit on it")
 	t.check(b.placement_error("charcoal_pit", Vector2i(3, 5)) == "", "grass takes a Charcoal Pit")
 
 
@@ -156,7 +159,10 @@ func test_roads_bridges_and_fields() -> void:
 	_world.set_tile(Vector2i(6, 2), "tree")
 	_world.set_tile(Vector2i(7, 2), "rock")
 	t.check(b.placement_error("road", Vector2i(4, 2)).begins_with("Roads can't cross the river"), "no road on water")
-	t.check(b.placement_error("road", Vector2i(5, 2)).begins_with("Roads go on grassland"), "no road on flax")
+	t.check(
+		b.placement_error("road", Vector2i(5, 2)).begins_with("Roads can't go on Wild Flax"),
+		"no road on flax, and it names the ground"
+	)
 	t.check(b.placement_error("road", Vector2i(3, 2)) == "", "a road on grass")
 	t.check(b.placement_error("road", Vector2i(6, 2)) == "", "a road through Forest")
 	t.check(b.placement_error("road", Vector2i(7, 2)) == "", "a road cutting Rocks")

@@ -11,6 +11,8 @@ const Buildings = preload("res://scripts/buildings.gd")
 const Patch = preload("res://scripts/patch.gd")
 const Lessons = preload("res://scripts/lessons.gd")
 
+const BENCH_AT_BENCH := " %d of them still wait at the bench for a Kith to carry them."  # tools in its output
+
 
 ## Seconds for one work cycle at this building: its base time, shortened by the Speed group and, for a hut, by the
 ## Speed its patch gives (more tiles of its resource in reach: scripts/patch.gd).
@@ -185,6 +187,10 @@ static func choose_tool(s, b: Dictionary) -> void:
 static func bench_text(s, b: Dictionary) -> String:
 	var tool_name: String = Data.ITEMS[b["make"]]["name"].to_lower()
 	var stocked := tools_stocked(s, b)
+	var waiting := 0
+	for id in Data.TOOL_ITEMS:
+		waiting += b["out"].get(id, 0)
+	var at_bench: String = BENCH_AT_BENCH % waiting if waiting > 0 else ""  # the Stock list counts only what was carried in
 	if enough(s, b):
-		return Data.BENCH_ENOUGH % [tool_name, stocked]
-	return Data.BENCH_MAKING % [tool_name, stocked, tool_goal(s)]
+		return Data.BENCH_ENOUGH % [tool_name, stocked] + at_bench
+	return Data.BENCH_MAKING % [tool_name, stocked, tool_goal(s)] + at_bench

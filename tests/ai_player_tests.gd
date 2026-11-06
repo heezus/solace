@@ -5,6 +5,7 @@ extends RefCounted
 const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Snapshot = preload("res://tests/tools/ai_snapshot.gd")
+const ClarityTests = preload("res://tests/clarity_tests.gd")
 
 var t  # the runner, tests/run_tests.gd
 
@@ -19,6 +20,7 @@ func run(runner) -> void:
 	test_orders_are_written_from_the_boards_lists()
 	test_the_map_legend_is_the_same_on_every_page()
 	test_look_east_is_a_move_once_the_land_opens()
+	ClarityTests.new().run(t)
 
 
 func _game() -> Sim:

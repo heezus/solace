@@ -137,7 +137,7 @@ func _road_error(type: String, p: Vector2i, tile: String) -> String:
 	if tile == "river":
 		return "Roads can't cross the river: build a Wooden Bridge"
 	if tile not in ["grass", "rock", "tree", "ruins"]:
-		return "Roads go on grassland or through Forest, or cut a pass through Rocks"
+		return "Roads can't go on %s: go around it, over grassland, Forest or Rocks" % Data.TILES[tile]["name"]
 	return "" if _economy.can_afford(cost_here(type, p)) else "Not enough materials"
 
 
@@ -158,7 +158,7 @@ func _ground_error(def: Dictionary, tile: String) -> String:
 		return "" if tile in Data.POLE_TILES else Data.POLE_ONLY_LAND
 	if def.has("on_tiles"):
 		return _on_tiles_error(def, tile)
-	return "" if Data.TILES[tile]["buildable"] else "Build on open grassland"
+	return "" if Data.TILES[tile]["buildable"] else "Build on open grassland (this is %s)" % Data.TILES[tile]["name"]
 
 
 ## Why a building that stands only on certain tiles (a Mine) cannot go on `tile`: "" when it can.

@@ -274,6 +274,16 @@ static func rate_color(per_sec: float) -> Color:
 	return Ui.GOOD if per_sec > 0.0 else LOSS
 
 
+## "Worth now: Berries 2, Fish 2, Flour 3": what one of each food counts for in the Food readout.
+func food_worth() -> String:
+	var parts: Array = []
+	for id in Data.FOOD_VALUE:
+		if not state.economy.seen.has(id):
+			continue
+		parts.append("%s %s" % [Data.ITEMS[id]["name"], str(state.economy.food_value(id))])
+	return "Worth now: " + ", ".join(parts)
+
+
 ## Food value gained or lost per second, from every food's rate.
 func food_rate() -> float:
 	var total := 0.0
@@ -381,7 +391,9 @@ func _refresh_food() -> void:
 	var growth := GrowthNote.progress_text(state)
 	food_sub.text = sub + ("\n" + growth if growth != "" else "")
 	var more := GrowthNote.progress_tip(state)
-	food_box.tooltip_text = (Data.FOOD_TIP % Data.PEOPLE["one"] + ("\n\n" + more if more != "" else ""))
+	food_box.tooltip_text = (
+		Data.FOOD_TIP % Data.PEOPLE["one"] + "\n" + food_worth() + ("\n\n" + more if more != "" else "")
+	)
 	var alarm := eco.low or eco.starving
 	food_label.add_theme_color_override("font_color", ALARM_TEXT if alarm else Ui.TEXT)
 	food_sub.add_theme_color_override("font_color", ALARM_TEXT if alarm else rate_color(fr))

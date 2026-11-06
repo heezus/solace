@@ -18,6 +18,7 @@ const Data = preload("res://scripts/data.gd")
 const Land = preload("res://scripts/land.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Buildings = preload("res://scripts/buildings.gd")
+const Chain = preload("res://scripts/chain.gd")
 const Power = preload("res://scripts/power.gd")
 
 ## The story moments that open an era after the stone age, in order: Bronze Dawn, the Starfall (the star falls), Ironfall, Livewire.
@@ -181,6 +182,28 @@ func goal_text(g: Dictionary) -> String:
 	if g["id"] == "south_held" and south_note != "" and not goals_done.has("south_held"):
 		text = (Data.SOUTH_LINES["goal_lost"] if south_lost else Data.SOUTH_LINES["now"]) % [text, south_note]
 	return text
+
+
+## The building the current goal asks for ("" for none): the one it names, or the Grindstone for its "grind" goal.
+func asked_building() -> String:
+	var list := goal_list()
+	var at := current_goal()
+	if at >= list.size():
+		return ""
+	return list[at].get("building", "grindstone" if list[at]["id"] == "grind" else "")
+
+
+## What stands in the way of goal `g`, said plainly ("" when nothing but time): the goal's tech, or the tech of the building it asks
+## for, walked back through the tech tree to the first step that cannot just be paid for (scripts/chain.gd).
+func gate_note(s, g: Dictionary) -> String:
+	var tech := ""
+	if g.has("tech"):
+		tech = g["tech"]
+	elif g.has("building"):
+		tech = Data.BUILDINGS[g["building"]]["tech"]
+	elif g["id"] == "grind":
+		tech = Data.BUILDINGS["grindstone"]["tech"]
+	return Chain.note(s, tech) if tech != "" else ""
 
 
 ## A goal is met when its `tech` is researched or its `building` stands; the rest are checked by id.

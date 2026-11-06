@@ -422,8 +422,12 @@ func _lay_line() -> void:
 	if placing not in LINE_TYPES:
 		return
 	var err := state.town.placement_error(placing, line[0])
-	if state.place_line(placing, line) == 0 and err != "":
+	var report := CardText.line_report(state, placing, line)  # worked out before the line goes down
+	var laid := state.place_line(placing, line)
+	if laid == 0 and err != "":
 		_toast(CardText.refusal(state, placing, err), 2.0)
+	elif report != "":
+		_toast("Laid %d of %d. %s" % [laid, line.size(), report], 3.0)
 
 
 func _tile_under() -> Vector2i:

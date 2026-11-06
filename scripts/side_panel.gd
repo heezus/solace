@@ -122,6 +122,8 @@ func refresh_goals(s: Sim) -> void:
 		if not l.visible:
 			continue
 		l.text = ("> " if i == 0 else "  ") + s.story.goal_text(list[gi])
+		var gate: String = s.story.gate_note(s, list[gi]) if i == 0 else ""
+		l.text += "\n" + gate if gate != "" else ""
 		l.add_theme_color_override("font_color", GOAL_COLOR if i == 0 else Ui.TEXT_DIM)
 	if cur >= total:
 		goal_labels[0].visible = true
