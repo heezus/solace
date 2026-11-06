@@ -1181,3 +1181,8 @@ An Arc Lamp keeps the Bloom 5 tiles from its light and a Scorcher reached 4, so 
 - **What was built.** Claude added `scripts/chain.gd`, one walk back through the tech data that names the first step standing in the way of a tech: shown under the current goal, on the locked card of the building the goal asks for, and as the reason for a refused research. Dragged lines and ground refusals name the tile and the ground; requirements are `Needs:` lines. Page 25.
 - **Our calls.** Techs stay out of view until the goods they cost have been held (the pillar is kept); only the goal's own building is shown early, locked. `gravel_road` is a faster road tier, not a road for gravel ground, so the terrain rule stays and the refusal says to go around.
 - **Why.** Both fresh players lost over half an hour to a gate the page never named. No simulation change, so the goldens did not move. (A Twine Post that hauls by itself was tried and backed out: it shifted the Stone Age run and the earned Livewire bot then lost its mines to the Bloom. It needs a Livewire bot fix first.)
+
+## 2026-11-06: The AI player's table reaches the reset (fun playtest 2)
+- **What was built.** Claude added `tests/tools/ai_story.gd`: the Glyph Wall's marks and a guess move, scenes to watch or skip, the ending card and an ending's details, `set_out` into the next telling, and the Chronicle, all through the game's own commands. Page 25.
+- **Our calls.** A mark's handle names its place, never its word. The table keeps its own profile, deleted at the start, so a replay plays the same tellings. No simulation change.
+- **Why.** Both fun-2 players stopped before the reset because the table could not read glyphs, open the ending card or begin a second telling; fun-3 needs them to play on.

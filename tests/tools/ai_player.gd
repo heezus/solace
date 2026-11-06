@@ -17,6 +17,7 @@ const Data = preload("res://scripts/data.gd")
 const DevStarts = preload("res://scripts/dev_starts.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Snapshot = preload("res://tests/tools/ai_snapshot.gd")
+const AiStory = preload("res://tests/tools/ai_story.gd")
 
 const DT := 0.1
 const POLL_MS := 500
@@ -64,6 +65,7 @@ func _init() -> void:
 			"patience":
 				patience = float(kv[1])
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(dir))
+	AiStory.reset(dir + "profile.json")  # the table is one player's whole game: a first game, then a profile of its own
 	if replay == "" and not fresh and FileAccess.file_exists(dir + "moves_1.json"):
 		replay = dir  # a game stopped part way (a restart, a closed lid): play its saved moves back, then go on live
 		then_live = true
@@ -98,6 +100,7 @@ func _init() -> void:
 			break
 		told = []
 		refused = Snapshot.play(s, moves, every, func(seconds: float): _run(seconds, told))
+		_swap()
 		if stop_at_era != "" and Snapshot.era_name(s) == stop_at_era and era != stop_at_era:
 			print("AI player: reached %s" % stop_at_era)
 			break
@@ -108,6 +111,7 @@ func _init() -> void:
 
 ## Run the game for `seconds`, or until a card needs the player; what the game said goes into `told`.
 func _run(seconds: float, told: Array) -> void:
+	_swap()
 	var t := 0.0
 	var asked: bool = s.seasons.phase == "pending"
 	while t < seconds and s.starfall.pending == "":  # a story moment holds the game, as it does for a person
@@ -117,6 +121,13 @@ func _run(seconds: float, told: Array) -> void:
 		s.events.clear()
 		if s.seasons.phase == "pending" and not asked:
 			break  # a Season card has come up: the player is told at once
+
+
+## A telling ended by a set_out move: the table carries on in the new run.
+func _swap() -> void:
+	var next = AiStory.take_next()
+	if next != null:
+		s = next
 
 
 ## The moves the player wrote for page `n` in the replay folder.
