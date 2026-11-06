@@ -10,6 +10,7 @@ const Buildings = preload("res://scripts/buildings.gd")
 const Fuel = preload("res://scripts/fuel.gd")
 const WaitWhy = preload("res://scripts/wait_why.gd")
 const Chain = preload("res://scripts/chain.gd")
+const Chores = preload("res://scripts/chores.gd")
 const GrowthNote = preload("res://scripts/growth_note.gd")
 const Land = preload("res://scripts/land.gd")
 const Workers = preload("res://scripts/workers.gd")
@@ -39,6 +40,8 @@ const GROUND_CHARS := {
 	"spent_seam": "x",
 	"road": "=",
 }
+## What stands in a refusal's brackets when the game itself has no words for it. A refusal is never left blank (tests/clarity_tests.gd).
+const NO_REASON := "the game refused it and has no reason to give: report this one"
 const BUILDING_POOL := "ADEFGHJLMNOUVWXYZadehijklmnopqvyz0123456789!@#$%&*+<>_^{}[]|;:"
 
 const ERAS := ["Stone age", "Bronze Dawn", "Starfall", "Ironfall", "Livewire"]
@@ -108,6 +111,9 @@ static func text(s, n: int, told: Array, refused: Array) -> String:
 		var gate: String = s.story.gate_note(s, goals[at])
 		if gate != "":
 			out.append("IN THE WAY: " + gate)
+		var chore: String = Chores.note(s)
+		if chore != "":
+			out.append("A MACHINE FOR IT: " + chore)
 	out.append_array(_cards(s))
 	var look := _look_east(s)
 	if look != "":
@@ -212,7 +218,7 @@ static func apply(s, moves: Array) -> Array:
 				ok = false
 		if not ok:
 			var why := _why(s, m, at)
-			refused.append(JSON.stringify(m) + (" (%s)" % why if why != "" else ""))
+			refused.append(JSON.stringify(m) + " (%s)" % (why if why != "" else NO_REASON))
 	return refused
 
 
@@ -238,11 +244,45 @@ static func _why(s, m: Dictionary, at: Vector2i) -> String:
 			return "no depot stands there (see DEPOTS)"
 		"look_east":
 			return "the Look east button shows only after Bronze Dawn, while an ore lies out of sight"
+		"line":
+			return _line_why(s, m)
+		"research", "goal":
+			return (
+				"no such tech" if not str(m.get("tech", "")) in Data.TECHS else "that tech cannot be set as a goal now"
+			)
+		"moment":
+			return "no question is waiting, or that choice is not one of its answers"
+		"season":
+			return "no season is waiting to be chosen"
+		"order", "clear_order":
+			return "no such standing order, or the order is not one the Bench can write now"
+		"trade":
+			return "no building there that trades"
 		"pause", "focus", "click":
 			if _index_at(s, at) < 0:
 				return "no building there"
-			return "only a gatherer's hut takes a focus, and only on what is in its reach" if kind == "focus" else ""
-	return ""
+			return (
+				"only a gatherer's hut takes a focus, and only on what is in its reach"
+				if kind == "focus"
+				else "that building cannot do that now"
+			)
+	return "a move the table does not know: see MOVES"
+
+
+## Why a dragged line put nothing down: the first tile's own refusal, else the shape of the move.
+static func _line_why(s, m: Dictionary) -> String:
+	var type := str(m.get("type", ""))
+	if not type in Data.BUILDINGS:
+		return "no such building"
+	var tiles := _line_tiles(m)
+	if tiles.is_empty():
+		return "a line needs from and to, [x, y] each, and runs along x then along y"
+	var err: String = s.town.placement_error(type, tiles[0])
+	return (
+		CardText.refusal(s, type, err)
+		if err != ""
+		else "no tile of the line could take a %s" % Data.BUILDINGS[type]["name"]
+	)
 
 
 ## The building standing at `at`, as its index in the town, or -1.
@@ -344,6 +384,14 @@ static func wait_of(moves: Array, fallback: float) -> float:
 	return out if out > 0.0 else fallback
 
 
+## What the Food readout says under the count, from the same net rate: holding or growing, or falling with the time left.
+static func _food_trend(s) -> String:
+	var rate: float = s.economy.food_rate()
+	if rate >= -0.005:
+		return "holding or growing (%+.1f a second)" % rate
+	return "falling %.1f a second, %s left" % [-rate, _clock(minf(s.economy.food_total() / -rate, 5999.0))]
+
+
 static func _clock(seconds: float) -> String:
 	return "%d:%02d" % [floori(seconds / 60.0), int(seconds) % 60]
 
@@ -442,13 +490,8 @@ static func _town(s) -> Array:
 				working += 1
 	out.append(
 		(
-			"FOOD: %d in store (a count of food, each good worth what it is: %s), lasts %s%s"
-			% [
-				roundi(s.economy.food_total()),
-				_food_worth(s),
-				_clock(minf(s.economy.seconds_of_food(), 3600.0)),
-				_foraging(s)
-			]
+			"FOOD: %d in store (a count of food, each good worth what it is: %s), %s%s"
+			% [roundi(s.economy.food_total()), _food_worth(s), _food_trend(s), _foraging(s)]
 		)
 	)
 	out.append(
