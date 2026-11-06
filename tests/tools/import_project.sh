@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Import the project with Godot, retrying when Godot itself crashes. On the Mac runner the first import of a fresh checkout
-# sometimes dies with a segfault in a worker thread (exit 139, no error line, seen once at a font import); a second go on a clean
-# cache passes. A failure that prints errors or exits with a plain status is not retried.
+# sometimes dies with a segfault in a worker thread (exit 139, seen at a font import, with or without error lines printed first); a
+# second go on a clean cache passes. A failure that exits with a plain status is not retried.
 # Usage: tests/tools/import_project.sh [godot]
 godot="${1:-./godot}"
 cd "$(dirname "$0")/../.."
