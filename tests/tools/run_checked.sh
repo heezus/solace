@@ -11,6 +11,9 @@ allowed='Could not set V-Sync mode|2D MSAA is not yet supported for GLES3'
 if grep -E "ERROR|WARNING|Parse Error" "$log" | grep -vE "$allowed" | grep -q .; then
 	echo "::error::Godot printed errors or warnings:"
 	grep -nE "ERROR|WARNING|Parse Error" "$log" | grep -vE "$allowed"
+	# A crash (a signal: status 128 or more) keeps its status even when it printed errors first, so import_project.sh can tell a
+	# Godot segfault from a plain failure and retry it.
+	[ "$status" -ge 128 ] && exit "$status"
 	exit 1
 fi
 exit "$status"
