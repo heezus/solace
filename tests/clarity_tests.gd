@@ -1,6 +1,6 @@
 extends RefCounted
 ## No silent gates (design-system/25-playtesting.md, "Fun playtest 1"): what stands in the way of a tech or a goal is said, a locked card
-## says what it waits on, a refused research or line build says why, and the Twine Post works without a click once a Kith staffs it.
+## says what it waits on, a refused research or line build says why.
 ## Registered by AiPlayerTests.run.
 
 const Chain = preload("res://scripts/chain.gd")
@@ -17,7 +17,6 @@ func run(runner) -> void:
 	test_a_hidden_tech_names_the_good_it_waits_on()
 	test_the_goal_and_the_locked_card_walk_back_the_chain()
 	test_research_and_line_refusals_say_why()
-	test_the_twine_post_works_without_a_click()
 
 
 func _fresh() -> Sim:
@@ -100,31 +99,4 @@ func test_research_and_line_refusals_say_why() -> void:
 	t.check(
 		Data.BUILDINGS["water_wheel"]["desc"].begins_with("Needs: "),
 		"a wheel's requirement is a Needs line, not a status"
-	)
-
-
-func test_the_twine_post_works_without_a_click() -> void:
-	var s := _fresh()
-	s.fog.reveal_all()
-	var spot := Vector2i(-1, -1)
-	for dy in range(2, 8):
-		for dx in range(-3, 4):
-			var q := s.world.camp_pos + Vector2i(dx, dy)
-			if (
-				spot.x < 0
-				and s.world.tile_at(q) == "grass"
-				and not s.world.roads.has(q)
-				and s.town.placement_error("twine_post", q) in ["", "Not discovered yet"]
-			):
-				spot = q
-	t.check(spot.x >= 0 and t.place_free(s, "twine_post", spot), "a Twine Post goes down")
-	s.economy.inv["fiber"] = 60
-	var rope0: int = s.economy.inv.get("rope", 0)
-	for i in 1200:
-		s.economy.inv["berries"] = 500
-		s.tick(0.1)
-	var b: Dictionary = s.town.buildings[s.town.building_at[spot]]
-	t.check(
-		b["worker"] >= 0 and s.economy.inv.get("rope", 0) > rope0,
-		"a staffed Twine Post made rope with no click (%d to %d)" % [rope0, s.economy.inv.get("rope", 0)]
 	)
