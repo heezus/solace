@@ -13,6 +13,7 @@ const Chain = preload("res://scripts/chain.gd")
 const GrowthNote = preload("res://scripts/growth_note.gd")
 const Land = preload("res://scripts/land.gd")
 const Workers = preload("res://scripts/workers.gd")
+const AiStory = preload("res://tests/tools/ai_story.gd")
 
 ## One character for each kind of ground and each building, the same on every page of every run: the ground's own letters, then
 ## the buildings in the order of the building list.
@@ -62,6 +63,12 @@ const HELP := """MOVES: write moves_<n>.json, a list. Each move is one of
   {"do":"clear_order","index":0}                   tear an order up
   {"do":"fuel","x":3,"y":4,"mode":"charcoal"}       a Bloomery's or Forge's Fuel button: auto, coal or charcoal
   {"do":"haulers","x":3,"y":4,"change":1}           one more (or -1, one fewer) hauler place at the depot standing at that spot (see DEPOTS)
+  {"do":"guess","mark":"1.2","word":"Come"}        set the word on a Glyph Wall mark (the page lists the marks)
+  {"do":"scene","id":"opening","action":"watch"}   watch (or "skip") a cutscene the page says is waiting
+  {"do":"endings"}                                 open the ending card once Skyward stands (the page then lists the endings)
+  {"do":"ending_details","ending":"exodus"}        open an ending's details on the card
+  {"do":"set_out","ending":"exodus"}               end the telling on that ending: the Chronicle opens and the next telling begins
+  {"do":"chronicle"}                               open the Chronicle: every telling so far
   {"do":"wait","seconds":30}                       let the game run (15 s when you send none); the moves after it wait for it
 Also write diary_<n>.md: two or three lines on what you wanted, and how it felt (bored, pleased, stuck, surprised).
 Play to win the era you are in. You see only this page."""
@@ -109,6 +116,7 @@ static func text(s, n: int, told: Array, refused: Array) -> String:
 		if gate != "":
 			out.append("IN THE WAY: " + gate)
 	out.append_array(_cards(s))
+	out.append_array(AiStory.lines(s))
 	var look := _look_east(s)
 	if look != "":
 		out.append(look)
@@ -131,9 +139,17 @@ static func apply(s, moves: Array) -> Array:
 		if typeof(m) != TYPE_DICTIONARY:
 			refused.append("not a move: %s" % str(m))
 			continue
+		if AiStory.next_run != null:
+			refused.append("%s (the telling has ended: the next one begins on the next page)" % JSON.stringify(m))
+			continue
 		var at := Vector2i(int(m.get("x", -1)), int(m.get("y", -1)))
 		var ok := true
 		match str(m.get("do", "")):
+			"guess", "scene", "endings", "ending_details", "set_out", "chronicle":
+				var why := AiStory.move(s, m)
+				if why != "":
+					refused.append("%s (%s)" % [JSON.stringify(m), why])
+				continue
 			"gather":
 				for i in clampi(int(m.get("times", 1)), 1, 20):
 					ok = s.gather_by_hand(at) != "" and ok
