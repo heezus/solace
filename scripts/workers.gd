@@ -244,6 +244,8 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 			b, GrowthNote.waiting_for_kith(s, s.people.building_job(b)), "Idle: no free %s" % Data.PEOPLE["one"]
 		)
 		return
+	if def.get("self_hauls", false) and not Roads.automated(s, b):
+		s.town.haul(s.town.building_at[b["pos"]])  # its worker carries its fiber in and its rope out: no click chore
 	if not fed:
 		s.town.set_status(b, "Hungry: bring food (berries, fish or flour)", "Hungry: no food")
 		return
