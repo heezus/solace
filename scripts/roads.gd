@@ -21,6 +21,44 @@ const SIDES := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)
 ## The kinds of building a road can run through (see _passage).
 const PASSAGE_KINDS := ["gatherer", "processor", "house", "shed", "tower", "power"]
 
+## The ground a road can be laid on (Buildings._road_error), and a river, which takes a bridge.
+## The warning for a building no road can ever touch (boxed_in), with the names of what surrounds it.
+const BOXED_IN := "Boxed in by %s: no road can touch it, so nothing could ever carry for it. Move it beside open grass, forest or rock."
+const ROADABLE := ["grass", "rock", "tree", "ruins", "river"]
+
+
+## True when no road can ever touch a building at p: on every side the ground refuses one (flax, berries, grain, clay, ore) or
+## something else stands there that roads do not run through. Fun-2's trap: a Grindstone put in the middle of the flax.
+static func boxed_in(s, p: Vector2i) -> bool:
+	for n in SIDES:
+		var q: Vector2i = p + n
+		if not s.world.in_bounds(q) or s.world.roads.has(q) or depots(s).has(q) or _passage(s, q):
+			return false
+		if not s.town.building_at.has(q) and s.world.tile_at(q) in ROADABLE:
+			return false
+	return true
+
+
+## Say so in the log when a new building of a kind that needs hauling is boxed in (the hover said it too; the table has no hover).
+static func warn_boxed(s, type: String, p: Vector2i) -> void:
+	if Data.BUILDINGS[type]["kind"] in ["gatherer", "processor"] and boxed_in(s, p):
+		s.events.append(BOXED_IN % boxed_by(s, p))
+
+
+## What the ground on p's sides is, for the warning: "Flax" or "Flax and Clay".
+static func boxed_by(s, p: Vector2i) -> String:
+	var names: Array = []
+	for n in SIDES:
+		var q: Vector2i = p + n
+		var name: String = (
+			Data.TILES[s.world.tile_at(q)]["name"] if s.world.in_bounds(q) and s.world.tile_at(q) != "" else ""
+		)
+		if s.town.building_at.has(q):
+			name = Data.BUILDINGS[s.town.built_type(q)]["name"]
+		if name != "" and not name in names:
+			names.append(name)
+	return " and ".join(names)
+
 
 ## True once a road links building b to a depot.
 static func linked(s, b: Dictionary) -> bool:

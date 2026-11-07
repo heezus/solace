@@ -21,6 +21,7 @@ const IDS := [
 	"find_tin",
 	"crucible",
 	"first_bronze",
+	"falling_star",
 ]
 
 var t  # the runner, tests/run_tests.gd
@@ -33,6 +34,7 @@ func run(runner) -> void:
 	test_dawn_goals_count_in_any_order()
 	test_the_ore_goals_follow_the_fog_and_the_road()
 	test_the_first_bronze_stays_done()
+	test_every_era_ends_on_its_gate_goal()
 	test_the_panel_reads_dawn_goals()
 	test_the_dawn_banner_is_short()
 	test_the_dawn_goals_survive_a_save()
@@ -62,7 +64,7 @@ func _ore(s: Sim, tile: String) -> Array:
 func test_the_dawn_goals_are_plain_and_stable() -> void:
 	var ids: Array = Data.GOALS_ERA2.map(func(g): return g["id"])
 	t.check(ids == IDS, "the dawn goal ids and their order are stable: %s" % [ids])
-	t.check(Data.GOALS_ERA2.size() == 9, "nine of them")
+	t.check(Data.GOALS_ERA2.size() == 10, "ten of them")
 	for g in Data.GOALS_ERA2:
 		var text: String = g["text"]
 		t.check(text.length() <= 80, "%s: short enough to read at a glance (%d)" % [g["id"], text.length()])
@@ -75,7 +77,24 @@ func test_the_dawn_goals_are_plain_and_stable() -> void:
 			t.check(Data.TECHS.has(g["tech"]), g["id"] + ": its tech exists")
 		if g.has("building"):
 			t.check(Data.BUILDINGS.has(g["building"]), g["id"] + ": its building exists")
-	t.check(Data.GOALS_HEADER_ERA2 % [3, 9] == "Dawn goals 3/9", "the counter reads Dawn goals 3/9")
+	t.check(Data.GOALS_HEADER_ERA2 % [3, 10] == "Dawn goals 3/10", "the counter reads Dawn goals 3/10")
+
+
+## No dead air (fun-2): when every goal is met the next era must already have started, so the dawn's last goal names the
+## gate that opens the next one. The list once stopped short of it and said "All goals done." with the star still unmade.
+func test_every_era_ends_on_its_gate_goal() -> void:
+	var last: Dictionary = Data.GOALS_ERA2[Data.GOALS_ERA2.size() - 1]
+	t.check(last.get("tech", "") == "falling_star", "the dawn ends on the Falling Star: " + last["id"])
+	t.check("{cost}" in last["text"], "and names its price, so the player knows what it takes")
+	var s: Sim = _dawn()
+	for g in Data.GOALS_ERA2.slice(0, Data.GOALS_ERA2.size() - 1):
+		s.story.goals_done[g["id"]] = true
+	t.check(not s.story.goal_met(s, last), "every other goal met is not yet the last")
+	t.check(s.story.current_goal() == Data.GOALS_ERA2.size() - 1, "the pointer rests on the gate, not past the list")
+	t.check(s.story.goal_text(last).contains("Bronze"), "its words carry the real cost: " + s.story.goal_text(last))
+	t.check(s.story.gate_note(s, last) != "", "and name what stands in the way: " + s.story.gate_note(s, last))
+	s.tech_tree.researched["falling_star"] = true
+	t.check(s.story.goal_met(s, last), "researching it meets it")
 
 
 func test_the_dawn_goals_take_over_at_the_dawn() -> void:
@@ -165,7 +184,7 @@ func test_the_panel_reads_dawn_goals() -> void:
 	var panel := SidePanel.new()
 	panel.setup(d, 300.0)
 	panel.refresh_goals(d)
-	t.check(panel.goal_header.text == "Dawn goals 0/9", "the header counts the dawn goals: " + panel.goal_header.text)
+	t.check(panel.goal_header.text == "Dawn goals 0/10", "the header counts the dawn goals: " + panel.goal_header.text)
 	var shown: Array = panel.goal_labels.filter(func(l): return l.visible).map(func(l): return l.text)
 	t.check(
 		shown == ["> " + Data.GOALS_ERA2[0]["text"], "  " + Data.GOALS_ERA2[1]["text"]],
@@ -174,7 +193,7 @@ func test_the_panel_reads_dawn_goals() -> void:
 	for g in Data.GOALS_ERA2:
 		d.story.goals_done[g["id"]] = true
 	panel.refresh_goals(d)
-	t.check(panel.goal_header.text == "Dawn goals 9/9", "all nine: " + panel.goal_header.text)
+	t.check(panel.goal_header.text == "Dawn goals 10/10", "all ten: " + panel.goal_header.text)
 	t.check(
 		panel.goal_labels[0].visible and panel.goal_labels[0].text == Data.GOALS_ALL_DONE, "then it says it is done"
 	)

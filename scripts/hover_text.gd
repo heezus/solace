@@ -61,7 +61,9 @@ static func _placing_text(m) -> String:
 				t += "\nIt works the resource nearest it, unless you pick another."
 			if not HutFocus.pick_options(s, m.hover).is_empty():
 				t += " Click one in the picker by the hut, or press Tab or R."
-		if s.tech_tree.researched.has("haulers") and def["kind"] in ["gatherer", "processor"]:
+		if err == "" and def["kind"] in ["gatherer", "processor"] and Roads.boxed_in(s, m.hover):
+			t += "\n\n" + Roads.BOXED_IN % Roads.boxed_by(s, m.hover)
+		elif s.tech_tree.researched.has("haulers") and def["kind"] in ["gatherer", "processor"]:
 			t += "\n" + _road_preview(s, m.hover)
 	return t
 

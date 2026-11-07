@@ -286,10 +286,7 @@ func food_worth() -> String:
 
 ## Food value gained or lost per second, from every food's rate.
 func food_rate() -> float:
-	var total := 0.0
-	for id in Data.FOOD_VALUE:
-		total += state.economy.flows.rate(id) * state.economy.food_value(id)
-	return total
+	return state.economy.food_rate()
 
 
 func refresh(paused: bool, speed: int) -> void:
