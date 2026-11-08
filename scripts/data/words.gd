@@ -98,7 +98,12 @@ const TRADE_SAME := "It cannot swap a good for itself"
 const TRADE_NO_GOOD := "There is no good called %s"
 const TRADE_ONLY := "%s does not take %s; it deals only in %s"  # the building, the good, the goods it deals in
 const TRADE_NOT_TRADED := "%s does not trade %s"  # the building, the good
-const HOLD_BACK_STATUS := "Waiting for hands: haulers come first (Haulers %d of %d)"  # haulers in places, haulers wanted
+## The haulers' places are full, so nobody is free for a workshop. Names the two controls that fix it (fun-2): the - on the
+## Hearth's hauler row gives a place back to work, and a Dwelling brings more people. Haulers in places, wanted, the Hearth, many.
+const HOLD_BACK_STATUS := (
+	"Waiting for hands: haulers come first (%d of %d places filled). "
+	+ "Press - on the %s's Haulers row to free one, or build a Dwelling for more %s"
+)
 const HOLD_BACK_ALERT := "Waiting for hands"
 const STORE_FULL_STATUS := "Store full: resting"
 const STORE_FULL_ALERT := "Store full"

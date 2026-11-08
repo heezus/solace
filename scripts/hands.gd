@@ -5,6 +5,7 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
+const Chores = preload("res://scripts/chores.gd")
 const Ranks = preload("res://scripts/ranks.gd")
 
 
@@ -159,6 +160,7 @@ static func teach(s, item: String) -> void:
 	if Data.HAND_HOLD.has(item):
 		return  # ore isn't taught: a Mine digs it
 	s.hand_counts[item] = s.hand_counts.get(item, 0) + 1
+	Chores.record(s, item)  # five of a kind in a minute is a chore: the goal line names the machine for it
 	if s.people.knows(item) or s.hand_counts[item] < learn_needed(s):
 		return
 	var who: String = (

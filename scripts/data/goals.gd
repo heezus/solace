@@ -155,4 +155,5 @@ const GOALS_ERA2 := [
 		"building": "crucible"
 	},
 	{"id": "first_bronze", "text": "Make the first Bronze"},
+	{"id": "falling_star", "text": "Discover The Falling Star, the gate: {cost}", "tech": "falling_star"},
 ]

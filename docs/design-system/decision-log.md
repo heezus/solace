@@ -1182,6 +1182,11 @@ An Arc Lamp keeps the Bloom 5 tiles from its light and a Scorcher reached 4, so 
 - **Our calls.** Techs stay out of view until the goods they cost have been held (the pillar is kept); only the goal's own building is shown early, locked. `gravel_road` is a faster road tier, not a road for gravel ground, so the terrain rule stays and the refusal says to go around.
 - **Why.** Both fresh players lost over half an hour to a gate the page never named. No simulation change, so the goldens did not move. (A Twine Post that hauls by itself was tried and backed out: it shifted the Stone Age run and the earned Livewire bot then lost its mines to the Bloom. It needs a Livewire bot fix first.)
 
+## 2026-11-06: No dead air, and the page says the same as the stock (fun playtest 2)
+- **What was built.** Claude ended the dawn's goal list on the Falling Star gate; added `scripts/chores.gd` (a minute of hand work; five of one good names the machine that makes it, first two eras only); named the controls in the hauler wait; made "Needs X", "Food is short" and the food readout come from the same numbers as the stock; made refusals carry a reason; and warned when a building is boxed in where no road can reach.
+- **Our calls.** A warning, not a refusal, for a boxed-in building (it still works by clicks early on). The Falling Star goal is a goal like the other eras' gates, not a new timer: the era starts the moment it is discovered, so "all met" and "next era" are the same moment. No cost changed; if fun-3 still shows the Stone Age over 25 minutes, costs are next, on the director's numbers.
+- **Why.** Both fresh players hit the worst moment of the run after "all met", and read statuses that contradicted the stock (food short with 827 food, Needs Fiber with fiber in stock). No simulation change, so the goldens did not move.
+
 ## 2026-11-06: The AI player's table reaches the reset (fun playtest 2)
 - **What was built.** Claude added `tests/tools/ai_story.gd`: the Glyph Wall's marks and a guess move, scenes to watch or skip, the ending card and an ending's details, `set_out` into the next telling, and the Chronicle, all through the game's own commands. Page 25.
 - **Our calls.** A mark's handle names its place, never its word. The table keeps its own profile, deleted at the start, so a replay plays the same tellings. No simulation change.

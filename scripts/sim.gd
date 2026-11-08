@@ -237,14 +237,14 @@ func place(type: String, p: Vector2i, focus := "") -> bool:
 		return false
 	if Data.ENDINGS["road_clears"].has(done["cleared"]):
 		events.append(Data.ENDINGS["road_clears"][done["cleared"]])
-	var kind: String = done["kind"]
-	if kind in ["road", "bridge"]:
+	if done["kind"] in ["road", "bridge"]:
 		pathing.update_cell(p)
 		fog.reveal(p, _sight(Data.SIGHT_KITH))
-	elif kind == "field":
+	elif done["kind"] == "field":
 		pathing.update_cell(p)
 	else:
 		fog.reveal(p, _sight(Data.BUILDINGS[type].get("sight", Data.SIGHT_BUILDING)))  # a Watchtower sees far
+		Roads.warn_boxed(self, type, p)
 	return true
 
 

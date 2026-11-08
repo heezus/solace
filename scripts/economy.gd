@@ -24,6 +24,7 @@ var low := false
 ## The famine is on: the food would run out within Data.FOOD_FAMINE_SECONDS, so idle people forage (scripts/forage.gd).
 ## It comes down once the food would last Data.FOOD_FORAGE_END_SECONDS. Not saved, like `low`.
 var famine := false
+var chore_log: Array = []  # [game second, good] for each hand chore of the last minute (Chores); not saved
 var forage_told := false  # the player has been told about this famine's foraging; not saved
 var famine_card_shown := false  # the run's one famine card has been put up (saved: a loaded run does not see it twice)
 var steady_held := 0.0  # seconds the buildings' food has covered what everyone eats, without a break
@@ -266,6 +267,21 @@ func _watch_steady(delta: float) -> void:
 	)
 
 
+## Food value gained or lost per second, from every food's rate: the one number the Food readout and the AI player's page both
+## show, so "lasts" and "left" can never say different things about the same stock.
+func food_rate() -> float:
+	var total := 0.0
+	for id in Data.FOOD_VALUE:
+		total += flows.rate(id) * food_value(id)
+	return total
+
+
+## True when the food would run out within Data.FOOD_FAMINE_SECONDS on both counts (what the Kith eat against all of it, and
+## against what the buildings bring in): the one test that says "Food is short", for the famine and for the words about it.
+func food_is_short() -> bool:
+	return _runway(food_use) < Data.FOOD_FAMINE_SECONDS and seconds_of_food() < Data.FOOD_FAMINE_SECONDS
+
+
 ## How long the food lasts, in seconds: the stockpile plus the credit already taken from it, against what
 ## the Kith eat less what the buildings bring in. INF when the food is not going down.
 func seconds_of_food() -> float:
@@ -299,12 +315,7 @@ func _watch_food() -> void:
 	elif famine and (gross >= Data.FOOD_FORAGE_END_SECONDS or seconds_of_food() >= Data.FOOD_FORAGE_END_SECONDS):
 		famine = false
 		forage_told = false
-	elif (
-		not famine
-		and (low or flows.clock >= Data.FORAGE_OPENING_SECONDS)
-		and gross < Data.FOOD_FAMINE_SECONDS
-		and seconds_of_food() < Data.FOOD_FAMINE_SECONDS
-	):
+	elif not famine and (low or flows.clock >= Data.FORAGE_OPENING_SECONDS) and food_is_short():
 		famine = true
 
 
