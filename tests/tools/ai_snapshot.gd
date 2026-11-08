@@ -10,6 +10,7 @@ const Buildings = preload("res://scripts/buildings.gd")
 const Fuel = preload("res://scripts/fuel.gd")
 const WaitWhy = preload("res://scripts/wait_why.gd")
 const Chain = preload("res://scripts/chain.gd")
+const AiPost = preload("res://tests/tools/ai_post.gd")
 const Chores = preload("res://scripts/chores.gd")
 const GrowthNote = preload("res://scripts/growth_note.gd")
 const Land = preload("res://scripts/land.gd")
@@ -66,6 +67,11 @@ const HELP := """MOVES: write moves_<n>.json, a list. Each move is one of
   {"do":"clear_order","index":0}                   tear an order up
   {"do":"fuel","x":3,"y":4,"mode":"charcoal"}       a Bloomery's or Forge's Fuel button: auto, coal or charcoal
   {"do":"haulers","x":3,"y":4,"change":1}           one more (or -1, one fewer) hauler place at the depot standing at that spot (see DEPOTS)
+  {"do":"expedition","target":"wreck","pack":"standard","keep":true,"send":true}
+                                                   the Expedition Post's card; each field is optional, "send" is its Send a party button
+                                                   (the page's EXPEDITION POST lines list the targets and packs)
+  {"do":"bench","part":"lamp_core","carry":true}   the Teardown Bench's card: a part in the pack to the front; "carry" takes it to the Bench
+  {"do":"floor","x":3,"y":4}                       a Factory Floor's card: step to the next workshop it can copy
   {"do":"guess","mark":"1.2","word":"Come"}        set the word on a Glyph Wall mark (the page lists the marks)
   {"do":"scene","id":"opening","action":"watch"}   watch (or "skip") a cutscene the page says is waiting
   {"do":"endings"}                                 open the ending card once Skyward stands (the page then lists the endings)
@@ -111,7 +117,7 @@ static func text(s, n: int, told: Array, refused: Array) -> String:
 	out.append(
 		(
 			"GOAL (%d of %d done): %s"
-			% [s.story.done_count(), goals.size(), goals[at]["text"] if at < goals.size() else "all met"]
+			% [s.story.done_count(), goals.size(), s.story.goal_text(goals[at]) if at < goals.size() else "all met"]
 		)
 	)
 	if at < goals.size():
@@ -123,6 +129,7 @@ static func text(s, n: int, told: Array, refused: Array) -> String:
 			out.append("A MACHINE FOR IT: " + chore)
 	out.append_array(_cards(s))
 	out.append_array(AiStory.lines(s))
+	out.append_array(AiPost.lines(s))
 	var look := _look_east(s)
 	if look != "":
 		out.append(look)
@@ -151,6 +158,11 @@ static func apply(s, moves: Array) -> Array:
 		var at := Vector2i(int(m.get("x", -1)), int(m.get("y", -1)))
 		var ok := true
 		match str(m.get("do", "")):
+			"expedition", "bench", "floor":
+				var why := AiPost.move(s, m)
+				if why != "":
+					refused.append("%s (%s)" % [JSON.stringify(m), why])
+				continue
 			"guess", "scene", "endings", "ending_details", "set_out", "chronicle":
 				var why := AiStory.move(s, m)
 				if why != "":
@@ -176,6 +188,11 @@ static func apply(s, moves: Array) -> Array:
 			"click":
 				var i := _index_at(s, at)
 				ok = i >= 0
+				if ok and Data.BUILDINGS[s.town.buildings[i]["type"]]["kind"] in ["post", "bench"]:
+					refused.append(
+						'%s (this card has its own buttons: use the move "expedition" or "bench")' % JSON.stringify(m)
+					)
+					continue
 				if ok:
 					Workers.click(s, i, true)  # the click the map sends: a whole round of trips for a hut
 			"look_east":
@@ -470,7 +487,7 @@ static func _note_of(b: Dictionary) -> String:
 	if alert.begins_with("Needs "):
 		return alert
 	if status != "" and status != Data.BUILDINGS[b["type"]]["desc"]:
-		return status.left(100)
+		return status.left(240)  # whole sentences: a cut hint reads as advice that stops mid-way
 	return alert
 
 

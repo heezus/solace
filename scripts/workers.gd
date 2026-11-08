@@ -20,6 +20,9 @@ const StoreRest = preload("res://scripts/store_rest.gd")
 const Power = preload("res://scripts/power.gd")
 const WaitWhy = preload("res://scripts/wait_why.gd")
 
+## Added to a held-back workshop's status when haulers stand beyond the places wanted: cutting a place with none to spare stalls the town.
+const HOLD_BACK_SPARE := " Spare haulers stand: press - on the %s's Haulers row to free one."
+
 
 ## One step of a worker's day at their building.
 static func tick(s, k: Dictionary, delta: float) -> void:
@@ -248,9 +251,10 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 	if not Buildings.is_staffed(b):
 		if s.people.held_for_haulers():
 			var held: String = (
-				Data.HOLD_BACK_STATUS
-				% [s.hauling.total_have(), s.hauling.total_wanted(), Data.HEARTH_NAME, Data.PEOPLE["many"]]
+				Data.HOLD_BACK_STATUS % [s.hauling.total_have(), s.hauling.total_wanted(), Data.PEOPLE["many"]]
 			)
+			if s.hauling.total_have() > s.hauling.total_wanted():
+				held += HOLD_BACK_SPARE % Data.HEARTH_NAME
 			s.town.set_status(b, held, Data.HOLD_BACK_ALERT)
 			return
 		s.town.set_status(
