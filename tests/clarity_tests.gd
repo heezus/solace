@@ -4,9 +4,13 @@ extends RefCounted
 ## Registered by AiPlayerTests.run.
 
 const Chain = preload("res://scripts/chain.gd")
+const Chores = preload("res://scripts/chores.gd")
+const Forage = preload("res://scripts/forage.gd")
+const Roads = preload("res://scripts/roads.gd")
 const CardText = preload("res://scripts/card_text.gd")
 const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
+const Workers = preload("res://scripts/workers.gd")
 const Snapshot = preload("res://tests/tools/ai_snapshot.gd")
 
 var t  # the runner, tests/run_tests.gd
@@ -17,6 +21,10 @@ func run(runner) -> void:
 	test_a_hidden_tech_names_the_good_it_waits_on()
 	test_the_goal_and_the_locked_card_walk_back_the_chain()
 	test_research_and_line_refusals_say_why()
+	test_a_hand_chore_names_the_machine_that_ends_it()
+	test_a_status_cannot_contradict_the_stock()
+	test_every_refusal_has_a_reason()
+	test_a_building_no_road_can_reach_is_warned_about()
 
 
 func _fresh() -> Sim:
@@ -100,3 +108,142 @@ func test_research_and_line_refusals_say_why() -> void:
 		Data.BUILDINGS["water_wheel"]["desc"].begins_with("Needs: "),
 		"a wheel's requirement is a Needs line, not a status"
 	)
+
+
+## Fun-2: the same good by hand five times in a minute is a chore, and the goal line names the building that would take it over.
+func test_a_hand_chore_names_the_machine_that_ends_it() -> void:
+	var s := _fresh()
+	t.check(Chores.note(s) == "", "no chore, no line")
+	for i in Chores.CHORE_REPEATS - 1:
+		Chores.record(s, "clay")
+	t.check(Chores.note(s) == "", "four harvests are not yet a chore")
+	Chores.record(s, "clay")
+	var line := Chores.note(s)
+	t.check(
+		line.contains("Gatherer's Hut") and line.contains("road"),
+		"five clay in a minute names the hut and a road: " + line
+	)
+	t.check(line.begins_with("Discover"), "and says to discover it first when it is not known: " + line)
+	s.tech_tree.researched["gatherers_hut"] = true
+	t.check(not Chores.note(s).begins_with("Discover"), "known, it only names the hut: " + Chores.note(s))
+	var goal: Dictionary = s.story.goal_list()[0]
+	t.check(Snapshot.text(s, 1, [], []).contains("A MACHINE FOR IT:"), "the AI page carries it too (%s)" % goal["id"])
+	for i in Chores.CHORE_REPEATS:
+		Chores.record(s, "rope")
+	t.check(
+		Chores.repeated(s).has("rope") and Chores.repeated(s).has("clay"),
+		"two chores at once: %s" % [Chores.repeated(s)]
+	)
+	s.seasons.time += Chores.CHORE_WINDOW + 1.0
+	t.check(Chores.note(s) == "", "a minute on, the chore is forgotten")
+	for i in Chores.CHORE_REPEATS:
+		Chores.record(s, "rope")
+	t.check(
+		Chores.note(s).contains("Twine Post") and Chores.note(s).contains("staffed"),
+		"rope names the Twine Post: " + Chores.note(s)
+	)
+	s.story.events.append("star_falling")
+	t.check(Chores.note(s) == "", "later eras assume the player knows: no line")
+	for i in Chores.CHORE_REPEATS * 4:
+		Chores.record(s, "wood")
+	t.check(s.economy.chore_log.size() <= Chores.CHORE_CAP, "the log stays small: %d" % s.economy.chore_log.size())
+
+
+## Fun-2: "Needs Fiber" with fiber in stock, "Food is short" with a full store, "lasts 60:00" with food falling. One set of numbers.
+func test_a_status_cannot_contradict_the_stock() -> void:
+	var s := _fresh()
+	var p: Vector2i = s.world.camp_pos + Vector2i(3, 3)
+	s.town.add_building("twine_post", p)
+	var b: Dictionary = s.town.buildings[s.town.building_at[p]]
+	var def: Dictionary = Data.BUILDINGS["twine_post"]
+	s.economy.inv["fiber"] = 40
+	Workers.idle_reason(s, b, def)
+	t.check(not b["alert"].contains("Fiber"), "fiber in stock: the pill does not ask for it (%s)" % b["alert"])
+	t.check(
+		b["status"].contains("in stock") and b["status"].contains("click"),
+		"and the status says to click: " + b["status"]
+	)
+	s.economy.inv["fiber"] = 0
+	Workers.idle_reason(s, b, def)
+	t.check(b["alert"] == "Needs Fiber", "no fiber in stock: it does ask (%s)" % b["alert"])
+	t.check(b["status"].contains("none in stock"), "and says none is in stock: " + b["status"])
+	# food: a short store says so, a full one in a lean season says "lean season", and the page shows the readout's own rate
+	s.economy.famine = false
+	s.economy.forage_told = false
+	t.check(not s.economy.food_is_short(), "a fresh town's food is not short")
+	var line: String = Forage.LEAN_EVENT if not s.economy.food_is_short() else Data.FORAGE_EVENT
+	t.check(not line.begins_with("Food is short"), "so its foraging line does not claim it: " + line)
+	var page := Snapshot.text(s, 1, [], [])
+	t.check(not page.contains("lasts 60:00"), "the page never says lasts 60:00")
+	var rate: float = s.economy.food_rate()
+	t.check(
+		page.contains("holding or growing") if rate >= -0.005 else page.contains("falling"),
+		"the food line follows the readout's rate (%.3f)" % rate
+	)
+
+
+## Fun-2: every move the table refuses comes back with words, never an empty bracket.
+func test_every_refusal_has_a_reason() -> void:
+	var s := _fresh()
+	var moves: Array = [
+		{"do": "build", "type": "kiln", "x": 1, "y": 1},
+		{"do": "build", "type": "nothing", "x": 1, "y": 1},
+		{"do": "line", "type": "road", "from": [1, 1], "to": [1, 1]},
+		{"do": "line", "type": "road"},
+		{"do": "goal", "tech": "iron_dawn_not_real"},
+		{"do": "research", "tech": "falling_star"},
+		{"do": "research", "tech": "nope"},
+		{"do": "moment", "choice": 0},
+		{"do": "season", "choice": 0},
+		{"do": "order", "index": 3},
+		{"do": "clear_order", "index": 3},
+		{"do": "pause", "x": 1, "y": 1},
+		{"do": "click", "x": 1, "y": 1},
+		{"do": "focus", "x": 1, "y": 1, "item": "wood"},
+		{"do": "trade", "x": 1, "y": 1},
+		{"do": "fuel", "x": 1, "y": 1},
+		{"do": "haulers", "x": 1, "y": 1},
+		{"do": "demolish", "x": 1, "y": 1},
+		{"do": "gather", "x": 1, "y": 1},
+		{"do": "look_east"},
+		{"do": "something_else"},
+	]
+	for refusal in Snapshot.apply(s, moves):
+		var open: int = refusal.rfind(" (")
+		var reason: String = (
+			refusal.substr(open + 2, refusal.length() - open - 3) if open >= 0 and refusal.ends_with(")") else ""
+		)
+		t.check(reason.strip_edges() != "", "a refusal with words: " + refusal)
+		t.check(reason != Snapshot.NO_REASON, "and a real reason, not the fallback: " + refusal)
+
+
+## Fun-2: a Grindstone put in the middle of the flax could never get a road. The hover and the page's log say so at the build.
+func test_a_building_no_road_can_reach_is_warned_about() -> void:
+	var s := _fresh()
+	s.fog.reveal_all()
+	var p: Vector2i = s.world.camp_pos + Vector2i(-7, -7)
+	s.world.set_tile(p, "grass")
+	for n in Roads.SIDES:
+		s.world.set_tile(p + n, "flax")
+	t.check(Roads.boxed_in(s, p), "flax on all four sides: no road can touch it")
+	t.check(Roads.boxed_by(s, p) == "Wild Flax", "and it names the flax: " + Roads.boxed_by(s, p))
+	s.world.set_tile(p + Vector2i(1, 0), "grass")
+	t.check(not Roads.boxed_in(s, p), "one open side and a road can reach it")
+	s.world.set_tile(p + Vector2i(1, 0), "flax")
+	s.tech_tree.researched["pottery"] = true
+	for id in Data.ITEM_ORDER:
+		s.economy.seen[id] = true
+		s.economy.inv[id] = 300
+	var before: int = s.events.size()
+	t.check(s.place("kiln", p), "the Kiln goes down: it is a warning, not a refusal")
+	var said: Array = s.events.slice(before)
+	t.check(
+		said.any(func(e): return String(e).begins_with("Boxed in by Wild Flax")), "and the game says so: %s" % [said]
+	)
+	var q: Vector2i = s.world.camp_pos + Vector2i(-6, 4)
+	for n in [Vector2i.ZERO] + Roads.SIDES:
+		s.world.set_tile(q + n, "grass")
+	var again: int = s.events.size()
+	var err: String = s.town.placement_error("kiln", q)
+	t.check(s.place("kiln", q), "a second Kiln on open ground goes down (%s)" % err)
+	t.check(not s.events.slice(again).any(func(e): return String(e).begins_with("Boxed")), "open ground: no warning")

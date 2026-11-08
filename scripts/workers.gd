@@ -12,6 +12,7 @@ const Buildings = preload("res://scripts/buildings.gd")
 const Work = preload("res://scripts/work.gd")
 const Fuel = preload("res://scripts/fuel.gd")
 const Hands = preload("res://scripts/hands.gd")
+const Chores = preload("res://scripts/chores.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const GrowthNote = preload("res://scripts/growth_note.gd")
 const Steam = preload("res://scripts/steam.gd")
@@ -133,6 +134,8 @@ static func click(s, i: int, full := false) -> String:
 	if not Roads.automated(s, b):
 		var held: int = Buildings.buffered(b["out"])
 		s.town.haul(i)
+		for good in _chore_goods(b, kind):
+			Chores.record(s, good)  # a hand doing a building's work: Chores names the road that would take it over
 		if kind == "gatherer":
 			var note := dispatch(s, i, full)
 			return note if held == 0 else "+%d · %s" % [held, note]
@@ -141,6 +144,13 @@ static func click(s, i: int, full := false) -> String:
 	if b["rush_cd"] > 0.0:
 		return "Rush in %d s" % ceili(b["rush_cd"])
 	return ""
+
+
+## The goods one click on a hand-run building makes: a workshop's recipe, a hut's focus.
+static func _chore_goods(b: Dictionary, kind: String) -> Array:
+	if kind == "gatherer":
+		return [] if b["focus"] == "" else [b["focus"]]
+	return Buildings.recipe_out(b).keys() if kind == "processor" else []
 
 
 ## Queue one trip at hut i (up to Data.TRIP_QUEUE). With `full`, a hut with nothing waiting gets all of them, so one
@@ -237,7 +247,10 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 		return
 	if not Buildings.is_staffed(b):
 		if s.people.held_for_haulers():
-			var held: String = Data.HOLD_BACK_STATUS % [s.hauling.total_have(), s.hauling.total_wanted()]
+			var held: String = (
+				Data.HOLD_BACK_STATUS
+				% [s.hauling.total_have(), s.hauling.total_wanted(), Data.HEARTH_NAME, Data.PEOPLE["many"]]
+			)
 			s.town.set_status(b, held, Data.HOLD_BACK_ALERT)
 			return
 		s.town.set_status(
@@ -353,24 +366,36 @@ static func idle_reason(s, b: Dictionary, def: Dictionary) -> void:
 		s.town.set_status(b, Data.SEAM_SPENT_STATUS, Data.SEAM_SPENT_ALERT)
 		return
 	var missing: Array = []
+	var out: Array = []  # of those, the goods the stockpile has none of: only these are "needed"; the rest are in stock, just not here
 	var recipe := Buildings.recipe_in(b)
 	for id in recipe:
 		if b["inbuf"].get(id, 0) < recipe[id]:
 			missing.append(Data.ITEMS[id]["name"])
+			if s.economy.inv.get(id, 0) <= 0:
+				out.append(Data.ITEMS[id]["name"])
 	if missing.is_empty():
 		b["status"] = "Idle"
 		return
-	var how := "waiting for a hauler" if auto else "click to load" + road_note(s, b)
-	if auto:
-		how = WaitWhy.of(s, b, WaitWhy.missing(s, b, recipe))["text"]
 	var more := "" if auto else GrowthNote.hint(s)
 	var source: String = Data.INPUT_HINTS.get(b["type"], "")
 	more = source if more == "" else more if source == "" else source + ". " + more
-	s.town.set_status(
-		b,
-		"Needs %s (%s)" % [", ".join(missing), how] + (". " + more if more != "" else ""),
-		"Needs " + ", ".join(missing)
-	)
+	var tail := (". " + more) if more != "" else ""
+	if not auto and out.is_empty():  # everything it wants is in the stockpile: what is missing is a hand or a road, not the good
+		var carry := "click it to load %s from the stockpile" % ", ".join(missing)
+		s.town.set_status(
+			b, "%s is in stock: %s%s%s" % [", ".join(missing), carry, road_note(s, b), tail], _needs_hand(s)
+		)
+		return
+	var named: Array = missing if auto or out.is_empty() else out
+	var how := "waiting for a hauler" if auto else "none in stock" + road_note(s, b)
+	if auto:
+		how = WaitWhy.of(s, b, WaitWhy.missing(s, b, recipe))["text"]
+	s.town.set_status(b, "Needs %s (%s)%s" % [", ".join(named), how, tail], "Needs " + ", ".join(named))
+
+
+## The pill for a hand-run building whose inputs are all in stock: a road when haulers are known, else a click.
+static func _needs_hand(s) -> String:
+	return "Needs road" if s.tech_tree.researched.has("haulers") else "Needs a click"
 
 
 ## After Paths & Haulers, what a building with no road link needs: "" once it's linked (or before).

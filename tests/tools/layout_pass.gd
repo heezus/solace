@@ -277,13 +277,13 @@ func _hud_checks() -> void:
 	if frame == 9 or frame == SHRINK_AT + 4:  # at 1280 x 800, then at 1100 x 700
 		_report(HudChecks.food_readout(main, "at %dx%d" % [root.size.x, root.size.y]))
 	match frame:
-		7:
-			goals_height = _goals_height()
 		9:
 			_report(HudChecks.gathering_tab(main, "at 1280x800"))
 			main.bottom_bar.close_drawer()
 		8:
 			frozen = true
+			main.side_panel.refresh_goals(main.state)  # fresh: a chore note may have joined a goal
+			goals_height = _goals_height()
 			_show_hearth_panel()
 		10:
 			if _goals_height() != goals_height:
@@ -620,7 +620,7 @@ func _check_card_buttons(what: String) -> void:
 
 ## How tall the Goals list is: from the top of the side panel to the rule under the last goal line.
 func _goals_height() -> float:
-	var last: Label = main.side_panel.goal_labels[main.side_panel.goal_labels.size() - 1]
+	var last: Label = main.side_panel.goal_labels.back()
 	return last.get_global_rect().end.y - main.side_panel.goal_header.get_global_rect().position.y
 
 

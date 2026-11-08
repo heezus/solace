@@ -12,6 +12,9 @@ const Data = preload("res://scripts/data.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Roads = preload("res://scripts/roads.gd")
 
+## The line when idle hands go out with a store that is not short: a lean season calls them (Economy.forage_call).
+const LEAN_EVENT := "A lean season: idle %s are out picking berries to keep the store up. It keeps them fed, not growing"  # many
+
 
 ## One step for Kith `k`: returns true when they are foraging (so the caller leaves them alone this tick).
 static func tick(s, k: Dictionary, delta: float) -> bool:
@@ -68,7 +71,9 @@ static func _start(s, k: Dictionary) -> bool:
 	k["timer"] = 0.0
 	if not s.economy.forage_told:
 		s.economy.forage_told = true
-		s.events.append(Data.FORAGE_EVENT % Data.PEOPLE["many"])
+		# "Food is short" only when the numbers say so; a lean season sends them out with a full store too (Economy.food_is_short)
+		var line: String = Data.FORAGE_EVENT if s.economy.food_is_short() else LEAN_EVENT
+		s.events.append(line % Data.PEOPLE["many"])
 	return true
 
 
