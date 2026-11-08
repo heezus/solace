@@ -308,9 +308,13 @@ func test_a_held_back_workshop_says_why() -> void:
 	_run(s, 5.0)
 	var pit: Dictionary = s.town.buildings[s.town.building_at[spot]]
 	t.check(pit["status"].begins_with("Waiting for hands: haulers come first ("), "it says so: %s" % pit["status"])
+	t.check(pit["status"].contains("Build a Dwelling"), "and names the safe fix first: %s" % pit["status"])
 	t.check(
-		pit["status"].contains("Press - on the Hearth's Haulers row") and pit["status"].contains("build a Dwelling"),
-		"and names the two controls that fix it: %s" % pit["status"]
+		(
+			pit["status"].contains("press - on the Hearth's Haulers row")
+			== (s.hauling.total_have() > s.hauling.total_wanted())
+		),
+		"and the - only while spare haulers stand: %s" % pit["status"]
 	)
 	t.check(pit["alert"] == Data.HOLD_BACK_ALERT, "and the pill: %s" % pit["alert"])
 
