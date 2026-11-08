@@ -12,6 +12,7 @@ const Expedition = preload("res://scripts/expedition.gd")
 const ExpeditionPicker = preload("res://scripts/expedition_picker.gd")
 const GlyphPicker = preload("res://scripts/glyph_picker.gd")
 const StarfallTests = preload("res://tests/starfall_tests.gd")
+const Snapshot = preload("res://tests/tools/ai_snapshot.gd")
 
 var t  # the runner, tests/run_tests.gd
 var _h  # the stage 1 tests, for their town helpers
@@ -34,6 +35,7 @@ func run(runner) -> void:
 	test_the_gifts_work()
 	test_the_post_and_wall_panels_say_things()
 	test_the_expedition_saves()
+	test_the_table_drives_the_post_the_bench_and_the_floor()
 
 
 ## The east half of the map, grown as at Bronze Dawn, on a seed whose Wreck can be walked to (the river is crossable on it).
@@ -347,3 +349,48 @@ func test_the_expedition_saves() -> void:
 		RunSave.restore(s3, old) and s3.starfall.orders["target"] == "wreck" and s3.starfall.wreck.x < 0,
 		"an older save loads"
 	)
+
+
+## Fun-3: two players stalled on "Waiting for a party." because the table had no hand for the Post's card. Its moves are the card's buttons.
+func test_the_table_drives_the_post_the_bench_and_the_floor() -> void:
+	var s := _ready_town()
+	var page: String = Snapshot.text(s, 1, [], [])
+	t.check(
+		page.contains("EXPEDITION POST") and page.contains("wreck = "), "the page lists the Post's targets and packs"
+	)
+	t.check(page.contains("heavy = "), "and the packs")
+	var refused: Array = Snapshot.apply(
+		s, [{"do": "expedition", "target": "nowhere"}, {"do": "expedition", "pack": "huge"}]
+	)
+	t.check(refused.size() == 2, "a bad target or pack is refused, with words: %s" % str(refused))
+	refused = Snapshot.apply(s, [{"do": "expedition", "target": "fog", "pack": "light", "keep": true}])
+	t.check(refused.is_empty(), "choosing is taken: %s" % str(refused))
+	var o: Dictionary = s.starfall.orders
+	t.check(o["target"] == "fog" and o["pack"] == "light" and o["keep"], "and sets the card's three lines")
+	t.give(s, 200)
+	t.check(
+		Snapshot.apply(s, [{"do": "expedition", "target": "wreck", "pack": "standard", "send": true}]).is_empty(),
+		"Send"
+	)
+	t.check(Expedition.count(s) == Data.PARTY_SIZE, "a party is out, as the Send button's own call makes it")
+	var again: Array = Snapshot.apply(s, [{"do": "expedition", "send": true}])
+	t.check(again.size() == 1 and again[0].contains(Data.POST_OUT), "a second Send says why not: %s" % str(again))
+	t.check(
+		(
+			(
+				Snapshot
+				. apply(s, [{"do": "click", "x": s.town.buildings[-1]["pos"].x, "y": s.town.buildings[-1]["pos"].y}])
+				. size()
+			)
+			== 1
+		),
+		"a click on the card names the move to use"
+	)
+	# the Teardown Bench: a part in the pack moves to the front, and can be carried by hand
+	s.town.add_building("teardown_bench", _h._spot(s, "teardown_bench"))
+	s.teardown.add_part("heat_plate")
+	s.teardown.add_part("lamp_core")
+	t.check(Snapshot.text(s, 2, [], []).contains("in the pack: lamp_core"), "the page lists the pack")
+	t.check(Snapshot.apply(s, [{"do": "bench", "part": "lamp_core", "carry": true}]).is_empty(), "carry a part")
+	t.check(s.teardown.bench == ["lamp_core"] and s.teardown.pack == ["heat_plate"], "it stands on the Bench")
+	t.check(Snapshot.apply(s, [{"do": "bench", "part": "hull_gear"}]).size() == 1, "a part not in the pack is refused")

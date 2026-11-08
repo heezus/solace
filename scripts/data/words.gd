@@ -98,12 +98,10 @@ const TRADE_SAME := "It cannot swap a good for itself"
 const TRADE_NO_GOOD := "There is no good called %s"
 const TRADE_ONLY := "%s does not take %s; it deals only in %s"  # the building, the good, the goods it deals in
 const TRADE_NOT_TRADED := "%s does not trade %s"  # the building, the good
-## The haulers' places are full, so nobody is free for a workshop. Names the two controls that fix it (fun-2): the - on the
-## Hearth's hauler row gives a place back to work, and a Dwelling brings more people. Haulers in places, wanted, the Hearth, many.
-const HOLD_BACK_STATUS := (
-	"Waiting for hands: haulers come first (%d of %d places filled). "
-	+ "Press - on the %s's Haulers row to free one, or build a Dwelling for more %s"
-)
+## The haulers' places are full, so nobody is free for a workshop. The safe fix comes first: a Dwelling brings more people. The - on the
+## Hearth's hauler row only when haulers stand beyond the places wanted (fun-3: cutting a place with none to spare stalled a town).
+## Haulers in places, wanted, the many; then, when spares stand, the Hearth.
+const HOLD_BACK_STATUS := "Waiting for hands: haulers come first (%d of %d places filled). Build a Dwelling to bring more %s."
 const HOLD_BACK_ALERT := "Waiting for hands"
 const STORE_FULL_STATUS := "Store full: resting"
 const STORE_FULL_ALERT := "Store full"

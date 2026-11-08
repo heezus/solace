@@ -12,6 +12,8 @@ const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Workers = preload("res://scripts/workers.gd")
 const Snapshot = preload("res://tests/tools/ai_snapshot.gd")
+const AiPost = preload("res://tests/tools/ai_post.gd")
+const BuildingPanel = preload("res://scripts/building_panel.gd")
 
 var t  # the runner, tests/run_tests.gd
 
@@ -25,6 +27,11 @@ func run(runner) -> void:
 	test_a_status_cannot_contradict_the_stock()
 	test_every_refusal_has_a_reason()
 	test_a_building_no_road_can_reach_is_warned_about()
+	test_every_panel_part_with_buttons_has_a_table_move()
+	test_no_goal_text_shows_a_raw_placeholder()
+	test_every_still_has_words()
+	test_the_table_lists_what_the_build_menu_offers()
+	test_the_hauler_hint_gives_the_safe_fix_first()
 
 
 func _fresh() -> Sim:
@@ -247,3 +254,95 @@ func test_a_building_no_road_can_reach_is_warned_about() -> void:
 	var err: String = s.town.placement_error("kiln", q)
 	t.check(s.place("kiln", q), "a second Kiln on open ground goes down (%s)" % err)
 	t.check(not s.events.slice(again).any(func(e): return String(e).begins_with("Boxed")), "open ground: no warning")
+
+
+## Fun-3: the Expedition Post's card had no move on the table, so two players stalled for twenty minutes. Every part of a building's
+## card that has buttons (it has a `changed` signal) names the table move that presses them, and the page's MOVES help lists the move.
+func test_every_panel_part_with_buttons_has_a_table_move() -> void:
+	var s := _fresh()
+	var panel := BuildingPanel.new()
+	panel.setup(s)
+	var seen := 0
+	for key in panel.parts:
+		var part = panel.parts[key]
+		if not (part is Container and part.has_signal("changed")):  # a bar (Range) has its own changed
+			continue
+		seen += 1
+		t.check(
+			AiPost.PANEL_MOVES.has(key),
+			"the card part '%s' has buttons: name its table move in AiPost.PANEL_MOVES" % key
+		)
+		if AiPost.PANEL_MOVES.has(key):
+			var move: String = AiPost.PANEL_MOVES[key]
+			t.check(
+				Snapshot.HELP.contains('"do":"%s"' % move), "and the help lists the move '%s' for '%s'" % [move, key]
+			)
+	t.check(seen >= 8, "the test saw the card's parts (%d)" % seen)
+	panel.free()
+
+
+## Fun-3: "{cost}" showed on the Falling Star gate goal. No goal of any era, as the Goals list or the table's page says it, keeps a "{".
+func test_no_goal_text_shows_a_raw_placeholder() -> void:
+	var s := _fresh()
+	for list in [
+		Data.GOALS, Data.GOALS_ERA2, Data.GOALS_ERA3, Data.GOALS_ERA4, Data.GOALS_ERA5, Data.SKYREACH["goals"]
+	]:
+		for g in list:
+			t.check(not "{" in s.story.goal_text(g), "goal '%s' says: %s" % [g["id"], s.story.goal_text(g)])
+	for event in ["bronze_dawn", "star_falling"]:
+		s.story.record(event)
+	for g in s.story.goal_list():
+		s.story.goals_done[g["id"]] = true
+	s.story.goals_done.erase("falling_star")
+	var line := ""
+	for l in Snapshot.text(s, 1, [], []).split("\n"):
+		if l.begins_with("GOAL"):
+			line = l
+	t.check(line != "" and not "{" in line, "and the table's GOAL line: %s" % line)
+
+
+## Fun-3: a scene came up as an empty block. Every still of every cutscene, and each variant of it, has words.
+func test_every_still_has_words() -> void:
+	for id in Data.CUTSCENES:
+		for still in Data.CUTSCENES[id]["stills"]:
+			t.check(str(still.get("line", "")).strip_edges() != "", "scene '%s' has a still with no words" % id)
+			for v in still.get("variants", {}):
+				var variant: Dictionary = still["variants"][v]
+				t.check(
+					str(variant.get("line", still.get("line", ""))).strip_edges() != "",
+					"scene '%s' variant '%s' has no words" % [id, v]
+				)
+
+
+## Fun-3: the Glyph Wall, the Lumen Camp and the Expedition Post did not show in BUILDABLE. The page lists what the build menu offers.
+func test_the_table_lists_what_the_build_menu_offers() -> void:
+	var s := _fresh()
+	for e in ["lumen_arrived", "name_read"]:
+		s.story.record(e)
+	var buildable := ""
+	for l in Snapshot.text(s, 1, [], []).split("\n"):
+		if l.begins_with("BUILDABLE"):
+			buildable = l
+	for type in ["glyph_wall", "lumen_camp", "expedition_post"]:
+		t.check(s.town.unlocked(type), "%s is offered by the build menu once its event is told" % type)
+		t.check(
+			buildable.contains(" %s " % type) or buildable.contains(": %s " % type),
+			"and the table's BUILDABLE lists it"
+		)
+	for type in Data.BUILDINGS:
+		if type != "camp" and s.town.unlocked(type):
+			t.check(buildable.contains("%s " % type), "everything the menu unlocks is listed: %s" % type)
+
+
+## Fun-3: the held-back workshop's hint led a player to press - and stall the town. The Dwelling comes first; - only when spares stand.
+func test_the_hauler_hint_gives_the_safe_fix_first() -> void:
+	var text: String = Data.HOLD_BACK_STATUS % [3, 5, Data.PEOPLE["many"]]
+	t.check(
+		text.contains("Dwelling") and not text.contains("press -") and not text.contains("Press -"),
+		"no '-' without spares: " + text
+	)
+	t.check(text.ends_with("."), "and the sentence ends: " + text)
+	t.check(
+		Snapshot._note_of({"type": "gatherers_hut", "status": text + " " + text, "alert": ""}).length() > 100,
+		"the page keeps a whole hint"
+	)
