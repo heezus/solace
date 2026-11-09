@@ -206,15 +206,17 @@ func test_a_road_that_reaches_no_depot_says_so() -> void:
 	var s := _fresh()
 	s.tech_tree.researched["haulers"] = true
 	var p: Vector2i = s.world.camp_pos + Vector2i(9, 9)
+	var far := Vector2i(0, 5)
+	if not s.world.in_bounds(p + Vector2i(1, 6)):
+		p = s.world.camp_pos + Vector2i(9, -9)  # stay on the map: the road search sets points on its grid
+		far = Vector2i(0, -5)
 	s.world.roads[p + Vector2i(1, 0)] = "road"  # a road tile beside the spot that joins nothing
 	t.check(Roads.touched(s, p), "a road touches the spot")
 	t.check(
 		Workers.road_hint(s, p).contains("reaches no Hearth or Storehouse"),
 		"and the hint says it goes nowhere: " + Workers.road_hint(s, p)
 	)
-	t.check(
-		not Workers.road_hint(s, p + Vector2i(0, 5)).contains("reaches no"), "a spot with no road near says to lay one"
-	)
+	t.check(not Workers.road_hint(s, p + far).contains("reaches no"), "a spot with no road near says to lay one")
 
 
 func test_the_cards_show_what_each_choice_gives_and_costs() -> void:
