@@ -23,6 +23,11 @@ const PASSAGE_KINDS := ["gatherer", "processor", "house", "shed", "tower", "powe
 
 ## The ground a road can be laid on (Buildings._road_error), and a river, which takes a bridge.
 ## The warning for a building no road can ever touch (boxed_in), with the names of what surrounds it.
+## The road beside a building reaches no depot (fun-3: a Mine said "Needs road" next to a road). Filled with the tiles to a depot road.
+const ROAD_ISLAND := (
+	"the road beside it reaches no Hearth or Storehouse. "
+	+ "Join it to the Hearth's road (about %d tiles), or build a Storehouse beside it"
+)
 const BOXED_IN := "Boxed in by %s: no road can touch it, so nothing could ever carry for it. Move it beside open grass, forest or rock."
 const ROADABLE := ["grass", "rock", "tree", "ruins", "river"]
 
@@ -37,6 +42,14 @@ static func boxed_in(s, p: Vector2i) -> bool:
 		if not s.town.building_at.has(q) and s.world.tile_at(q) in ROADABLE:
 			return false
 	return true
+
+
+## True when a road tile touches the building at p, whether or not that road reaches a depot.
+static func touched(s, p: Vector2i) -> bool:
+	for n in SIDES:
+		if s.world.roads.has(p + n):
+			return true
+	return false
 
 
 ## Say so in the log when a new building of a kind that needs hauling is boxed in (the hover said it too; the table has no hover).

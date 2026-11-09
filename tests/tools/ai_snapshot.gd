@@ -485,7 +485,7 @@ static func _note_of(b: Dictionary) -> String:
 	var status := str(b.get("status", ""))
 	var alert := str(b.get("alert", ""))
 	if alert.begins_with("Needs "):
-		return alert
+		return status if status.begins_with(alert + ":") else alert  # "Needs shardlight: ..." says how; the rest add a reason
 	if status != "" and status != Data.BUILDINGS[b["type"]]["desc"]:
 		return status.left(240)  # whole sentences: a cut hint reads as advice that stops mid-way
 	return alert

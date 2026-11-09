@@ -6,6 +6,7 @@ extends RefCounted
 ## and the whole economy crawls (a retest played it with 16 haulers and iron came at a sixth of the pace).
 
 const Data = preload("res://scripts/data.gd")
+const Needs = preload("res://scripts/needs.gd")
 const Roads = preload("res://scripts/roads.gd")
 
 ## The share of the Kith kept free to haul once haulers are known.
@@ -25,7 +26,10 @@ static func tidy(s) -> void:
 	if not s.tech_tree.researched.has("haulers"):
 		return
 	var want := ceili(s.people.kith.size() * HAULER_SHARE)
-	var order := resumed.filter(func(i): return _stocked(s, s.town.buildings[i]) > 0)
+	var wanted := Needs.goal_goods(s)  # a start never idles a maker of what the goal in front of the player is made of
+	var order := resumed.filter(
+		func(i): return _stocked(s, s.town.buildings[i]) > 0 and not _makes(s.town.buildings[i], wanted)
+	)
 	order.sort_custom(func(a, b): return _stocked(s, s.town.buildings[a]) > _stocked(s, s.town.buildings[b]))
 	for i in order:
 		if hauling(s) >= want:
@@ -41,6 +45,17 @@ static func hauling(s) -> int:
 		if k["job"] == "haul":
 			n += 1
 	return n
+
+
+## True when building `b` makes (or gathers) one of the goods in `wanted`.
+static func _makes(b: Dictionary, wanted: Dictionary) -> bool:
+	var def: Dictionary = Data.BUILDINGS[b["type"]]
+	if def["kind"] == "gatherer":
+		return wanted.has(b["focus"])
+	for id in def.get("out", {}):
+		if wanted.has(id):
+			return true
+	return false
 
 
 ## What the stockpile holds of what building `b` makes (a hut's focus, a workshop's output), 0 for a building that makes no stock.

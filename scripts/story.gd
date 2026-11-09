@@ -19,6 +19,7 @@ const Land = preload("res://scripts/land.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Chain = preload("res://scripts/chain.gd")
+const Needs = preload("res://scripts/needs.gd")
 const Power = preload("res://scripts/power.gd")
 
 ## The story moments that open an era after the stone age, in order: Bronze Dawn, the Starfall (the star falls), Ironfall, Livewire.
@@ -203,7 +204,8 @@ func gate_note(s, g: Dictionary) -> String:
 		tech = Data.BUILDINGS[g["building"]]["tech"]
 	elif g["id"] == "grind":
 		tech = Data.BUILDINGS["grindstone"]["tech"]
-	return Chain.note(s, tech) if tech != "" else ""
+	var chain: String = Chain.note(s, tech) if tech != "" else ""
+	return chain if chain != "" else Needs.goal_note(s, g)  # a building goal on no tech: what shuts it or what its price waits on
 
 
 ## A goal is met when its `tech` is researched or its `building` stands; the rest are checked by id.
