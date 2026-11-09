@@ -19,6 +19,7 @@ const Steam = preload("res://scripts/steam.gd")
 const StoreRest = preload("res://scripts/store_rest.gd")
 const Power = preload("res://scripts/power.gd")
 const WaitWhy = preload("res://scripts/wait_why.gd")
+const Needs = preload("res://scripts/needs.gd")
 
 ## Added to a held-back workshop's status when haulers stand beyond the places wanted: cutting a place with none to spare stalls the town.
 const HOLD_BACK_SPARE := " Spare haulers stand: press - on the %s's Haulers row to free one."
@@ -242,11 +243,12 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 	if def.has("makes"):
 		Work.choose_tool(s, b)
 	if b["paused"]:
-		s.town.set_status(b, "Paused: its %s is free for other jobs" % s.people.building_job(b), "Paused")
+		var made := Needs.made_by(b)
+		var undo := ". Press Resume on its card%s" % ((" when you need " + made) if made != "" else "")
+		s.town.set_status(b, "Paused: its %s is free for other jobs%s" % [s.people.building_job(b), undo], "Paused")
 		return
 	if def.get("lit", false) and not Bonuses.lit(s, b["pos"]):  # a Grove or a Shardwright out of shardlight (Data.LUMEN)
-		var radius := int(Data.SHARDLIGHT_RADIUS)
-		s.town.set_status(b, Data.LUMEN["needs_light_status"] % [radius, radius], Data.LUMEN["needs_light"])
+		s.town.set_status(b, Needs.shardlight(s), Data.LUMEN["needs_light"])
 		return
 	if not Buildings.is_staffed(b):
 		if s.people.held_for_haulers():
@@ -373,17 +375,21 @@ static func idle_reason(s, b: Dictionary, def: Dictionary) -> void:
 		return
 	var missing: Array = []
 	var out: Array = []  # of those, the goods the stockpile has none of: only these are "needed"; the rest are in stock, just not here
+	var first_out := ""
 	var recipe := Buildings.recipe_in(b)
 	for id in recipe:
 		if b["inbuf"].get(id, 0) < recipe[id]:
 			missing.append(Data.ITEMS[id]["name"])
 			if s.economy.inv.get(id, 0) <= 0:
 				out.append(Data.ITEMS[id]["name"])
+				first_out = first_out if first_out != "" else id
 	if missing.is_empty():
 		b["status"] = "Idle"
 		return
 	var more := "" if auto else GrowthNote.hint(s)
 	var source: String = Data.INPUT_HINTS.get(b["type"], "")
+	if source == "" and first_out != "":
+		source = Needs.provider(first_out).trim_suffix(".")  # where the good the stockpile lacks comes from (fun-3)
 	more = source if more == "" else more if source == "" else source + ". " + more
 	var tail := (". " + more) if more != "" else ""
 	if not auto and out.is_empty():  # everything it wants is in the stockpile: what is missing is a hand or a road, not the good
@@ -416,6 +422,8 @@ static func road_hint(s, p: Vector2i) -> String:
 	var g := Roads.gap(s, p)
 	if g["to"].x < 0:
 		return "linked by road"
+	if Roads.touched(s, p):  # a road is there, but it is its own island: no depot on it (fun-3)
+		return Roads.ROAD_ISLAND % g["tiles"]
 	var what := "the road to the Hearth" if s.world.roads.has(g["to"]) else "the Hearth"
 	if s.town.building_at.has(g["to"]) and g["to"] != s.world.camp_pos:
 		what = "the Storehouse"

@@ -19,9 +19,11 @@ const TIDE_SLOW_LAMP := 2.0
 const TIDE_HEARTH_RING := 6.0
 ## A tile the tide may not enter yet (an Arc Lamp's light) is looked at again after this long.
 const TIDE_RETRY_SECONDS := 10.0
-## The ground the tide leaves as it is under it: ore and water and the Strange Stone, which only wear the Bloom's colour.
+## The ground the tide leaves as it is under it: ore, clay and water and the Strange Stone, which only wear the Bloom's colour. Clay
+## stays so a town that lost its Kilns and Bloomeries can always dig the clay to build them again (fun-3).
 const TIDE_KEEPS := [
 	"river",
+	"clay",
 	"shard",
 	"copper_hills",
 	"tin_stream",

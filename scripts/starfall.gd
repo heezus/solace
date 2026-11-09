@@ -23,6 +23,16 @@ const Carry = preload("res://scripts/carry.gd")
 const OldShip = preload("res://scripts/old_ship.gd")
 
 ## The story id a stage 4 building records the first time it stands (the Market has its own: market_open).
+## One line of what a choice gives and costs, built from the data (the cards show it under each button).
+const TAKE_LINE := " Costs: nothing. Reading it also gives trust +%d."
+const KEEP_LINE := " Trust %d, not the reading's rise. Costs: %s."
+const KEEP_UPKEEP := "%d %s a minute%s"
+const KEEP_ONCE := "%s, once"
+const OPTION_LINE := "Trust %+d. Costs: %s."
+const OPTION_FOOD := "about %d food worth from the stockpile"
+const OPTION_DIM := "the Cairn's shardlight lent away for %d s"
+const OPTION_DARK := "workshops at half speed for %d s"
+const OPTION_NOTHING := "nothing else"
 const STAND_STORY := {"shared_shrine": "shrine_raised", "guard_post": "guard_raised"}
 
 var stage := ""  # "" before the star falls, then "falling", "landed" and "arrived"
@@ -234,11 +244,53 @@ func pending_options() -> Array:
 		return [
 			{
 				"label": Data.ROAD_TAKE % Data.LUMEN_GIFTS[id]["name"],
-				"note": Data.ROAD_TAKE_NOTE % Data.LUMEN_GIFTS[id]["note"]
+				"note": Data.ROAD_TAKE_NOTE % Data.LUMEN_GIFTS[id]["note"] + TAKE_LINE % int(Data.TRUST_SET)
 			},
-			{"label": Data.ROAD_KEEP % Data.TWINS[id]["name"], "note": Data.ROAD_KEEP_NOTE % Data.TWINS[id]["note"]},
+			{
+				"label": Data.ROAD_KEEP % Data.TWINS[id]["name"],
+				"note": Data.ROAD_KEEP_NOTE % Data.TWINS[id]["note"] + _keep_line(id)
+			},
 		]
-	return Data.MOMENTS[pending]["options"] if pending != "" else []
+	var out: Array = []
+	for opt in Data.MOMENTS[pending]["options"] if pending != "" else []:
+		var shown: Dictionary = opt.duplicate()
+		shown["note"] = opt["note"] + " " + option_line(opt)
+		out.append(shown)
+	return out
+
+
+## One line of what a moment's choice gives and costs, from its numbers: "Trust +14. Costs: about 40 food worth, ...".
+static func option_line(opt: Dictionary) -> String:
+	var costs: Array = []
+	if opt.has("food"):
+		costs.append(OPTION_FOOD % int(opt["food"]))
+	if opt.get("dim", 0.0) > 0.0:
+		costs.append(OPTION_DIM % int(opt["dim"]))
+	if opt.get("dark", 0.0) > 0.0:
+		costs.append(OPTION_DARK % int(opt["dark"]))
+	return OPTION_LINE % [int(opt["trust"]), ", ".join(costs) if not costs.is_empty() else OPTION_NOTHING]
+
+
+## What keeping to the Kith way costs: the trust it loses against the reading, and the twin's price (its upkeep or its one payment).
+func _keep_line(id: String) -> String:
+	var kept: Dictionary = Data.TWINS[id]
+	var price := ""
+	if kept.has("feed"):
+		var feed: Dictionary = kept["feed"]
+		price = (
+			KEEP_UPKEEP
+			% [
+				feed["n"],
+				Data.ITEMS[feed["good"]]["name"],
+				(" per " + Data.BUILDINGS[feed["per"]]["name"]) if feed["per"] != "" else ""
+			]
+		)
+	elif kept.has("once"):
+		var parts: Array = []
+		for good in kept["once"]:
+			parts.append("%d %s" % [kept["once"][good], Data.ITEMS[good]["name"]])
+		price = KEEP_ONCE % ", ".join(parts)
+	return KEEP_LINE % [int(Data.TRUST_REFUSE), price if price != "" else OPTION_NOTHING]
 
 
 ## What the card for the waiting question says: {"title", "text", "says", "note"} (the ending adds a line for the roads taken).

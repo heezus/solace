@@ -20,7 +20,7 @@ func run(runner) -> void:
 	_h = StarfallTests.new()
 	_h.t = runner
 	test_each_card_opens_only_on_its_set()
-	test_refusing_a_gift_leaves_its_card_shut_except_growth_and_craft()
+	test_refusing_a_gift_leaves_its_card_shut_except_light_growth_and_craft()
 	test_the_lantern_lights_gatherers_and_the_cairn_keeps_its_own_light()
 	test_a_grove_and_a_shardwright_work_only_in_shardlight()
 	test_starfruit_is_a_food_and_shardwork_a_good()
@@ -125,12 +125,16 @@ func test_each_card_opens_only_on_its_set() -> void:
 	t.check(s.town.placement_error("starfruit_grove", spot) == "", "an open card can be placed")
 
 
-func test_refusing_a_gift_leaves_its_card_shut_except_growth_and_craft() -> void:
+func test_refusing_a_gift_leaves_its_card_shut_except_light_growth_and_craft() -> void:
 	var s := _town()
 	for id in Data.ROAD_ORDER:
 		_refuse(s, id)
 	t.check(s.starfall.refusals() == 4, "every gift refused")
-	t.check(not s.town.unlocked("shard_lantern") and not s.town.unlocked("healing_house"), "Light and Body stay shut")
+	t.check(not s.town.unlocked("healing_house"), "Body stays shut")
+	t.check(
+		s.town.unlocked("shard_lantern"),
+		"Light opens anyway: the Grove and the Shardwright work only in shardlight (fun-3)"
+	)
 	t.check(s.town.unlocked("starfruit_grove"), "the Kith's own orchard still opens the Grove")
 	t.check(s.town.unlocked("shardwright"), "and their own way to bind shard opens the Shardwright")
 	t.check(s.starfall.opens("growth") and s.starfall.opens("craft"), "the cards say so")

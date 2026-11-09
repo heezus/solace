@@ -16,6 +16,8 @@ const LUMEN := {
 	"none_standing": "None standing yet",
 	"own_way":
 	{
+		"light":
+		"The Kith keep a fire of their own beside the Cairn and hang its light in lanterns, so the Lantern is open anyway.",
 		"growth": "The Kith planted their own way to grow it, so the Grove is open anyway.",
 		"craft": "The Kith found their own way to bind shard, so the Shardwright is open anyway.",
 	},
@@ -57,6 +59,8 @@ const LUMEN := {
 	"needs_light": "Needs shardlight",
 	"needs_light_status":
 	"Needs shardlight: build a Shard Lantern within %d tiles, or stand within %d tiles of the Cairn",
+	"needs_light_cairn":
+	"Needs shardlight: stand within %d tiles of the Cairn, or read the %s marks on the Glyph Wall to open a Shard Lantern",
 	"mending": "Mending: homes within %d tiles have births sooner and their tools last longer",
 	"mender_radius": 6.0,
 	# The Lumen Ward (Lore tab, opens with the Craft set): the strangers will not speak the Warning until one stands.
