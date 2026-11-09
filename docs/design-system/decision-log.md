@@ -1197,7 +1197,7 @@ An Arc Lamp keeps the Bloom 5 tiles from its light and a Scorcher reached 4, so 
 - **Our calls.** A lit lamp keeps the Bloom off its Poles, so the south's lamps and Scorcher keep their power; this is what a player does and not a bot-only rule. The earlier try of the self-hauling Post was backed out because the bot lost its mines to the Bloom; the cause was the south deed lost when the Bloom cut the Pole chain, not the Post.
 - **Why.** Both fresh players hand-fed the Twine Post for 170 Rope. Bot times with both changes (Livewire on maps 1, 2, 4 and the earned run): about 14 to 16 minutes each, every era inside its bar.
 
-### Fun playtest 3 fixes: needs name their source; clay survives the Bloom; Cairnfire still opens the Lantern
+## 2026-11-09: Fun playtest 3 fixes: needs name their source; clay survives the Bloom; Cairnfire still opens the Lantern
 - **Decision:** (1) A "Needs X" status and a building goal's IN THE WAY line are built from the data (`scripts/needs.gd`), so a need cannot ship without naming its maker. (2) Refusing the Light gift opens the Shard Lantern anyway, like Growth and Craft. (3) The tide keeps clay banks (`TIDE_KEEPS`), so the recovery path after the Bloom takes every Kiln, Bloomery and clay hut is to dig clay by hand and, with a Trading Post, swap 3 of any other good for 1. (4) A start does not idle the makers of the current goal's goods; a pause says how to resume. (5) The cards show trust and cost from the same numbers as the rules.
 - **Why:** Two players stalled on "Needs shardlight" (7 and 14 minutes), the journalist on a Bloom that ate every producer of Clay (no iron, no reset).
 - **Not changed:** costs and rates. The brick and clay supply-and-use table is a report, and the director decides tuning from it.
