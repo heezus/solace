@@ -306,10 +306,6 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 	if StoreRest.rests(s, b):
 		b["status"] = Data.STORE_FULL_STATUS  # nothing it makes would fit: it rests until the store has room
 		return
-	var plenty := plenty_of(s, b)
-	if plenty != "" and not Roads.automated(s, b):  # not a stall: the stockpile already holds all it can use
-		s.town.set_status(b, "Idle: plenty of %s" % plenty, "Idle")
-		return
 	if not s.town.wants_to_work(b):
 		idle_reason(s, b, def)
 		return
@@ -379,6 +375,10 @@ static func plenty_of(s, b: Dictionary) -> String:
 
 static func idle_reason(s, b: Dictionary, def: Dictionary) -> void:
 	var auto := Roads.automated(s, b)
+	var plenty := plenty_of(s, b)
+	if plenty != "" and not auto:  # not a stall: the stockpile already holds all it can use
+		s.town.set_status(b, "Idle: plenty of %s" % plenty, "Idle")
+		return
 	if Buildings.buffered(b["out"]) >= Data.BUFFER_CAP:
 		if auto and Roads.depot_far(s, b):
 			s.town.set_status(b, Data.FAR_DEPOT_STATUS, Data.FAR_DEPOT_ALERT)
