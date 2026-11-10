@@ -364,6 +364,7 @@ func test_profile_is_tolerant() -> void:
 				"tellings",
 				"last",
 				"blueprints",
+				"founding",
 				"embers",
 				"kin_known",
 				"kin_told"
@@ -421,6 +422,7 @@ func test_run_save_and_profile_stay_apart() -> void:
 		"tellings",
 		"last",
 		"blueprints",
+		"founding",
 		"embers",
 		"kin_known",
 		"kin_told"

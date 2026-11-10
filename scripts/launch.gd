@@ -3,6 +3,7 @@ extends RefCounted
 ## slot, or a stage start (a run dump built by DevStarts). Read once by the game (`start_into`), so a reloaded scene starts
 ## fresh unless it is asked again.
 
+const Founding = preload("res://scripts/founding.gd")
 const RunSave = preload("res://scripts/run_save.gd")
 const SaveSlots = preload("res://scripts/save_slots.gd")
 const Profile = preload("res://scripts/profile.gd")
@@ -59,4 +60,5 @@ static func begin_new(s, seed_value := -1, profile_path := Profile.PATH) -> void
 	s.carry.from_dict(carry.to_dict())  # before the map, which reads it
 	s.generate(seed_used)
 	s.carry.apply_start(s)  # the cycle's lean stores (Step 8C)
+	Founding.apply(s)  # ten founders who know the jobs, after an ending that finished an era (Step 9B)
 	Ruins.lay(s, Rect2i(0, 0, s.world.width, s.world.height))

@@ -50,6 +50,8 @@ var runs := 0  # how many runs have ended in an ending (the Exodus, the Cataclys
 var tellings: Array = []  # one record per ended run (Endings.telling), in order
 var last: Dictionary = {}  # the latest ending's handoff to the next run (Endings.handoff), {} before any
 var blueprints: Array = []  # the blueprints banked by an Exodus (scripts/blueprints.gd)
+# the town the latest telling had when the Falling Star came, for the next run's founding plan (scripts/founding.gd)
+var founding: Dictionary = {}
 var embers: Array = []  # the Embers found in any telling (Chronicle.embers_of), in the order they were first lit
 var kin_known := false  # the people are Kin: set 7 was read in a run (Profile.note_kin)
 var kin_told := false  # the card "Your people are now called Kin." has been shown
@@ -103,6 +105,8 @@ func bank(s, ending := "exodus") -> void:
 		blueprints = s.carry.blueprints.duplicate(true)  # the run's book: the ones it began with and the ones it saved
 		for bp in blueprints:
 			bp["banked"] = true  # from now on they are carried knowledge
+	if not s.carry.founding.is_empty():
+		founding = s.carry.founding.duplicate(true)  # every ending keeps it: the next land is laid from the latest town
 	var record := Endings.telling(s, ending)
 	var shown: Array = record["embers"]
 	record["embers"] = shown.filter(func(id): return not id in embers)  # the telling that first lit an Ember keeps it
@@ -124,6 +128,11 @@ func carry() -> Carry:
 	c.blueprints = blueprints.duplicate(true)
 	for bp in c.blueprints:
 		bp["banked"] = true
+	c.jobs = knowledge.duplicate()
+	c.founding = founding.duplicate(true)
+	if not tellings.is_empty():
+		for m in tellings[-1].get("eras", []):
+			c.last_eras.append(float(m))
 	if c.ending == "" and c.exodus > 0:
 		c.ending = "exodus"  # a version 2 profile: its runs all set out
 	return c
@@ -210,6 +219,7 @@ func to_dict() -> Dictionary:
 		"tellings": tellings.duplicate(true),
 		"last": last.duplicate(true),
 		"blueprints": blueprints.duplicate(true),
+		"founding": founding.duplicate(true),
 		"embers": embers.duplicate(),
 		"kin_known": kin_known,
 		"kin_told": kin_told,
@@ -230,6 +240,7 @@ func from_dict(d) -> void:
 	tellings = []
 	last = {}
 	blueprints = []
+	founding = {}
 	embers = []
 	kin_known = false
 	kin_told = false
@@ -249,6 +260,8 @@ func from_dict(d) -> void:
 	if typeof(d.get("last")) == TYPE_DICTIONARY:
 		last = d["last"].duplicate(true)
 	blueprints = Carry._dicts(d.get("blueprints", []))
+	if typeof(d.get("founding")) == TYPE_DICTIONARY:
+		founding = d["founding"].duplicate(true)
 	if typeof(d.get("embers")) == TYPE_ARRAY:
 		_add_all(embers, d["embers"])
 	kin_known = kin_known or d.get("kin_known") == true

@@ -33,7 +33,7 @@ func run(runner) -> void:
 	test_set_out_waits_for_skyward_and_the_confirm_can_be_cancelled()
 	test_forget_asks_first()
 	test_the_skyward_card_offers_an_ending()
-	test_a_known_tech_costs_its_share_rounded_up()
+	test_a_known_tech_costs_nothing_and_a_gate_its_full_price()
 	test_echo_cards_open_from_minute_zero_and_only_for_read_sets()
 	test_read_marks_show_their_words_and_the_wall_still_copies()
 	test_the_new_land_card_opens_once()
@@ -255,35 +255,23 @@ func test_the_skyward_card_offers_an_ending() -> void:
 	card.free()
 
 
-func test_a_known_tech_costs_its_share_rounded_up() -> void:
+func test_a_known_tech_costs_nothing_and_a_gate_its_full_price() -> void:
 	var s := Sim.new()
 	s.generate(5)
 	var tech := "cordage"
 	var base: Dictionary = Data.TECHS[tech]["cost"]
 	t.check(s.tech_tree.cost_of(tech) == base, "a first run pays the price in the data")
 	s.carry.techs.append(tech)
-	var known: Dictionary = s.tech_tree.cost_of(tech)
-	var odd := false
-	for id in base:
-		t.check(
-			known[id] == ceili(base[id] * Data.EXODUS["known_share"]),
-			"%s costs its share, rounded up (%d of %d)" % [id, known[id], base[id]]
-		)
-		odd = odd or fmod(base[id] * Data.EXODUS["known_share"], 1.0) > 0.0
-	t.check(odd, "(a price does not divide evenly, so the rounding is tried)")
+	t.check(s.tech_tree.cost_of(tech).is_empty(), "a tech the Kin learned before costs nothing")
 	t.check(s.tech_tree.cost_of("fire") == Data.TECHS["fire"]["cost"], "a tech not learned before costs what it says")
 	s.tech_tree.researched["tally_sticks"] = true
-	var tally: Dictionary = s.tech_tree.cost_of(tech)
-	for id in known:
+	t.check(s.tech_tree.cost_of(tech).is_empty(), "and Tally Sticks leaves it free, never a coin more")
+	for gate in ["bronze_dawn", "falling_star", "livewire", "skyward"]:
+		s.carry.techs.append(gate)
 		t.check(
-			tally[id] == maxi(roundi(known[id] * Data.TALLY_DISCOUNT), 1),
-			"Tally Sticks takes its tenth off the known price"
+			s.tech_tree.cost_of(gate).size() == Data.TECHS[gate]["cost"].size(),
+			"%s keeps its price though known" % gate
 		)
-	var one := Sim.new()
-	one.generate(5)
-	one.carry.techs.append("knapping")
-	for id in one.tech_tree.cost_of("knapping"):
-		t.check(one.tech_tree.cost_of("knapping")[id] >= 1, "never less than one")
 
 
 func test_echo_cards_open_from_minute_zero_and_only_for_read_sets() -> void:

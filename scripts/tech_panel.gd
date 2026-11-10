@@ -7,6 +7,7 @@ extends PanelContainer
 ## are queued and discovered as soon as each is affordable. The panel keeps the era and view the player picks.
 
 const Data = preload("res://scripts/data.gd")
+const Founding = preload("res://scripts/founding.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
@@ -504,7 +505,7 @@ func _show_tech(tech: String) -> void:
 	if not researched and not unbuilt and Ui.then_builds_text(tech) != "":
 		strip["cost"].text += "     " + Ui.then_builds_text(tech)
 	if not researched and not unbuilt and state.carry.knows_tech(tech):
-		strip["cost"].text += "     " + Data.EXODUS["known_line"]  # learned in an earlier run: a share of the study
+		strip["cost"].text += "     " + Founding.mark(state, tech)  # learned in an earlier run: free, but a gate keeps its price
 	var warn := (
 		""
 		if researched or not state.tech_tree.can_research(tech)
