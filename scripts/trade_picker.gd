@@ -9,6 +9,7 @@ const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Buildings = preload("res://scripts/buildings.gd")
+const TradeFloor = preload("res://scripts/trade_floor.gd")
 
 var state: Sim
 var index := -1  # the Trading Post's place in the building list, -1 for none
@@ -19,7 +20,7 @@ func setup(game: Sim) -> void:
 	state = game
 	visible = false
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	for which in ["give", "get"]:
+	for which in ["give", "get", "keep"]:
 		var b := Button.new()
 		b.flat = false
 		b.add_theme_stylebox_override("normal", Ui.panel_style(Ui.CARD, 6))
@@ -32,7 +33,7 @@ func setup(game: Sim) -> void:
 		b.add_theme_font_size_override("font_size", Ui.MIN_TEXT)
 		b.add_theme_color_override("font_color", Ui.TEXT)
 		b.add_theme_color_override("font_hover_color", Ui.HIGHLIGHT)
-		b.tooltip_text = Data.TRADE_TIP
+		b.tooltip_text = TradeFloor.KEEPS_TIP if which == "keep" else Data.TRADE_TIP
 		b.pressed.connect(cycle.bind(which))
 		add_child(b)
 		_lines[which] = b
@@ -47,6 +48,7 @@ func show_for(b: Dictionary) -> void:
 	index = state.town.building_at[b["pos"]]
 	_lines["give"].text = label_text(Data.TRADE_GIVES, b["give"])
 	_lines["get"].text = label_text(Data.TRADE_GETS, b["get"])
+	_lines["keep"].text = TradeFloor.KEEPS % int(b["keep"])
 
 
 ## Move the line `which` ("give" or "get") on to the next good, and say so.
@@ -54,6 +56,10 @@ func cycle(which: String) -> void:
 	if index < 0:
 		return
 	var b: Dictionary = state.town.buildings[index]
+	if which == "keep":
+		if TradeFloor.set_keep(state.town, index, TradeFloor.next_keep(int(b["keep"]))):
+			changed.emit()
+		return
 	var other: String = b["get" if which == "give" else "give"]
 	var next := next_good(state.economy.seen, b[which], other, b["type"])
 	if next == "":

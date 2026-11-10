@@ -8,6 +8,7 @@ extends RefCounted
 
 const Bonuses = preload("res://scripts/bonuses.gd")
 const Data = preload("res://scripts/data.gd")
+const Power = preload("res://scripts/power.gd")
 
 
 ## "Brick is made at a Kiln.", "Clay is gathered from Clay Bank tiles, by hand or at a Gatherer's Hut." "" for a good nothing provides.
@@ -72,6 +73,22 @@ static func _down(id: String, out: Dictionary) -> void:
 	for type in makers_of(id):
 		for input in Data.BUILDINGS[type].get("in", {}):
 			_down(input, out)
+
+
+## How many of `item` the goal in front of the player still asks for in its price (0 when it asks for none, or the goal is done).
+static func goal_need(s, item: String) -> int:
+	if item == "":
+		return 0
+	var list: Array = s.story.goal_list()
+	var at: int = s.story.current_goal()
+	if at >= list.size():
+		return 0
+	var g: Dictionary = list[at]
+	if g.has("tech"):
+		return int(s.tech_tree.cost_of(g["tech"]).get(item, 0))
+	if g.has("building") and Data.BUILDINGS.has(g["building"]):
+		return int(Data.BUILDINGS[g["building"]]["cost"].get(item, 0))
+	return 0
 
 
 ## True when good `item` can still be had by a town that has lost every building: a tile that yields it is left to gather by hand, or a
@@ -166,6 +183,8 @@ static func _waiting(s, b: Dictionary, name: String) -> String:
 ## The IN THE WAY line of a goal that asks for a building which is shut or whose price is not in the stockpile ("" when none, or the
 ## goal waits on a tech: Chain names that).
 static func goal_note(s, g: Dictionary) -> String:
+	if g.get("id", "") == "net_machine":
+		return Power.reach_note(s)  # the distance to the nearest pole, so "within 2 tiles" is a number the player can see
 	var type: String = g.get("building", "")
 	if type == "" or not Data.BUILDINGS.has(type) or _stands(s, type):
 		return ""
