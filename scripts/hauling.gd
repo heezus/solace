@@ -9,6 +9,7 @@ extends RefCounted
 ## Sim owns one, reached as `sim.hauling`. Static helpers work on the Sim passed in; this block keeps no reference to a block.
 
 const Data = preload("res://scripts/data.gd")
+const HAULER_WAIT_FIX := ". Add a place: + on the Haulers row of the %s card"  # the depot (fun-3: a wait that names its fix)
 const Buildings = preload("res://scripts/buildings.gd")
 const Haulers = preload("res://scripts/haulers.gd")
 const Homes = preload("res://scripts/homes.gd")
@@ -171,7 +172,8 @@ func waiting_note(s, b: Dictionary) -> String:
 	var depot: Vector2i = Roads.depot_of(s, b)
 	if not auto.has(depot):
 		return ""
-	return Data.HAULER_WAIT % [names.get(depot, "the depot"), have(depot), wanted(depot)]
+	var depot_name: String = names.get(depot, "the depot")
+	return Data.HAULER_WAIT % [depot_name, have(depot), wanted(depot)] + HAULER_WAIT_FIX % depot_name
 
 
 ## The one line a short depot's card adds: the cheapest lever, "" while the depot has 75% of its haulers or more.

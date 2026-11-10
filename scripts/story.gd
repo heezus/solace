@@ -171,12 +171,13 @@ func goal_list() -> Array:
 	return Data.GOALS_ERA2 if "bronze_dawn" in events else Data.GOALS
 
 
-## A goal's words. "{cost}" in them is the goal tech's real cost (Data.TECHS), so a gate's numbers can't drift from the tech's.
-func goal_text(g: Dictionary) -> String:
+## A goal's words. "{cost}" in them is the goal tech's real cost (Data.TECHS), or with the game (`sim`) what it costs now: a tech
+## learned in an earlier telling costs its share, so the goal says the price the player will pay.
+func goal_text(g: Dictionary, sim = null) -> String:
 	var text: String = g["text"]
 	if g.has("tech") and "{cost}" in text:
 		var parts: Array = []
-		var cost: Dictionary = Data.TECHS[g["tech"]]["cost"]
+		var cost: Dictionary = Data.TECHS[g["tech"]]["cost"] if sim == null else sim.tech_tree.cost_of(g["tech"])
 		for id in cost:
 			parts.append("%d %s" % [cost[id], Data.ITEMS[id]["name"]])
 		text = text.replace("{cost}", ", ".join(parts))

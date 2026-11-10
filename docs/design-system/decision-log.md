@@ -1202,6 +1202,11 @@ An Arc Lamp keeps the Bloom 5 tiles from its light and a Scorcher reached 4, so 
 - **Why:** Two players stalled on "Needs shardlight" (7 and 14 minutes), the journalist on a Bloom that ate every producer of Clay (no iron, no reset).
 - **Not changed:** costs and rates. The brick and clay supply-and-use table is a report, and the director decides tuning from it.
 
+## 2026-11-10: A swap keeps a floor; distances and fixes are named (fun playtest 3, part C)
+- **What was built.** A Trading Post or Market never swaps the stockpile below its floor: what the player set ("Keeps at least"), or what the goal in front of them still wants of that good. The pole goal and a dark machine say how far the nearest pole is; a hauler wait names the fix (+ on the depot's Haulers row); a gate goal shows the price after the known-tech discount; the table logs the endings card, details and Chronicle.
+- **Our calls.** The floor defaults to 0 for the player and follows the goal on its own, so the bots' swaps only change where a goal needs the good. The Stone Age techs already got the known-tech discount; the report that run 2 prices them in full was the gate goal's words, now fixed.
+- **Why.** A standing swap drained Steel from 159 to 25; "within 2 tiles" gave no number; the table's reset runs left M11 and M13 empty. No cost or rate changed.
+
 ## 2026-11-10: Step 9A, the early machine (huts run themselves)
 - **Decision:** (1) A gatherer's hut whose Kith have learned the job by doing it runs on its own with no road, at half speed (`Roads.self_runs`, `Workers.SELF_RUN_SLOW`); a road still makes it full speed. There is no click-to-send any more: the hut card, the food warning and the goals say so. Hold-to-gather stays as the opening minutes. (2) The Stone Age goal list is 13 bigger goals (was 22); each building or tech goal keeps its IN THE WAY line. The first goal says to hold on trees, berries, stone and flint until a Kith learns each. (3) The Kiln goal begins "put a Clay Hut on a road" so clay is never the silent gate. (4) A Twine Post at a full Rope store says "Idle: plenty of Rope" (`Workers.plenty_of`) instead of reading as a stall.
 - **Why:** Fun playtest 3: the click chore and the long tutorial were the lowest-scoring items ("knowing is progress" 2 of 5). Fresh players spent the Stone Age sending trips by hand.

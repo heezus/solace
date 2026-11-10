@@ -4,7 +4,13 @@ extends RefCounted
 ## a road message says how to undo it. Registered by AiPlayerTests.run.
 
 const Data = preload("res://scripts/data.gd")
+const AiStory = preload("res://tests/tools/ai_story.gd")
+const Hauling = preload("res://scripts/hauling.gd")
+const Haulers = preload("res://scripts/haulers.gd")
 const Needs = preload("res://scripts/needs.gd")
+const PlaytestLog = preload("res://scripts/playtest_log.gd")
+const Power = preload("res://scripts/power.gd")
+const TradeFloor = preload("res://scripts/trade_floor.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Sim = preload("res://scripts/sim.gd")
 const StartTidy = preload("res://scripts/start_tidy.gd")
@@ -25,6 +31,11 @@ func run(runner) -> void:
 	test_a_pause_says_how_to_undo_it_and_a_start_keeps_the_goals_makers_working()
 	test_a_road_that_reaches_no_depot_says_so()
 	test_the_cards_show_what_each_choice_gives_and_costs()
+	test_a_swap_keeps_its_floor_and_the_goals_need()
+	test_the_pole_goal_and_the_dark_say_how_far_the_pole_is()
+	test_a_hauler_wait_names_its_fix()
+	test_a_second_telling_prices_stone_age_techs_at_the_known_share()
+	test_the_table_writes_the_endings_and_chronicle_to_the_playtest_log()
 	test_a_workshop_with_plenty_of_its_good_says_so_not_stalled()
 
 
@@ -251,3 +262,95 @@ func test_the_cards_show_what_each_choice_gives_and_costs() -> void:
 		t.check(
 			opts[1]["note"].contains("Trust -4"), "and keeping to the Kith way says it loses trust: " + opts[1]["note"]
 		)
+
+
+func test_a_swap_keeps_its_floor_and_the_goals_need() -> void:
+	var s := _fresh()
+	s.tech_tree.researched["markets"] = true
+	s.town.add_building("trading_post", s.world.camp_pos + Vector2i(3, 3))
+	var i: int = s.town.buildings.size() - 1
+	t.check(s.town.set_trade(i, "stone", "wood"), "a Trading Post swaps stone for wood")
+	var b: Dictionary = s.town.buildings[i]
+	s.economy.inv["stone"] = 100
+	t.check(TradeFloor.set_keep(s.town, i, 98) and b["keep"] == 98, "the player sets a floor")
+	s.town.haul(i)
+	t.check(b["inbuf"].get("stone", 0) == 2, "a click loads only what is above it (2 of 100)")
+	t.check(s.economy.inv["stone"] == 98, "and the stockpile stays at the floor")
+	b["inbuf"].clear()
+	t.check(Haulers.stock_wanted(s, b).is_empty(), "haulers bring nothing while the stockpile is at the floor")
+	b["keep"] = 0
+	b["hold"] = 100  # the goal in front of the player wants 100 of it
+	t.check(Haulers.stock_wanted(s, b).is_empty(), "nor below what the goal in front of the player wants")
+	b["hold"] = 0
+	t.check(not Haulers.stock_wanted(s, b).is_empty(), "with no floor they bring it")
+	t.check(not TradeFloor.set_keep(s.town, s.town.building_at[s.world.camp_pos], 5), "only a market has a floor")
+	# the goal's own need is the floor: the Ward wants 30 Shardwork
+	for e in ["bronze_dawn", "star_falling", "lumen_arrived", "name_read"]:
+		s.story.record(e)
+	for g in s.story.goal_list():
+		if g["id"] == "lumen_ward":
+			break
+		s.story.goals_done[g["id"]] = true
+	t.check(
+		Needs.goal_need(s, "shardwork") == 30,
+		"the goal in front says what it needs of a good (%d)" % Needs.goal_need(s, "shardwork")
+	)
+	t.check(Needs.goal_need(s, "wood") == 0, "and 0 of one it does not ask for")
+	var copy := Sim.new()
+	copy.generate(3)
+	copy.town.from_dict(s.town.to_dict())
+	t.check(copy.town.buildings[i]["keep"] == 0 and TradeFloor.set_keep(copy.town, i, 50), "a save carries the floor")
+	copy.town.from_dict(copy.town.to_dict())
+	t.check(copy.town.buildings[i]["keep"] == 50, "round trip")
+
+
+func test_the_pole_goal_and_the_dark_say_how_far_the_pole_is() -> void:
+	var s := _fresh()
+	t.check(
+		Power.reach_note(s).contains("No Power Pole"), "with no pole the goal says to lay one: " + Power.reach_note(s)
+	)
+	var at: Vector2i = s.world.camp_pos + Vector2i(5, 5)
+	s.livewire.nets = [{"poles": [at], "engines": [], "machines": [], "given": 0, "asks": 0}]
+	var far: Vector2i = at + Vector2i(3, 1)  # 3.2 tiles away
+	t.check(is_equal_approx(Power.nearest_pole(s, far), Vector2(3, 1).length()), "the distance to the nearest pole")
+	t.check(Power.nearest_pole(Sim.new(), far) < 0.0, "-1 when no pole stands")
+	var text: String = Power.DARK_NO_POLE_FAR % [Power.nearest_pole(s, far), int(Data.POLE_REACH)]
+	t.check(text.contains("3.2 tiles") and text.contains("within 2"), text)
+
+
+func test_a_hauler_wait_names_its_fix() -> void:
+	var line: String = Data.HAULER_WAIT % ["Hearth", 10, 5] + Hauling.HAULER_WAIT_FIX % "Hearth"
+	t.check(line.contains("10 of 5") and line.contains("+ on the Haulers row of the Hearth card"), line)
+
+
+func test_a_second_telling_prices_stone_age_techs_at_the_known_share() -> void:
+	var s := Sim.new()
+	s.generate(5)
+	for id in ["knapping", "fire"]:
+		t.check(s.tech_tree.cost_of(id) == Data.TECHS[id]["cost"], "a first telling pays %s in full" % id)
+		s.carry.techs.append(id)
+		var known: Dictionary = s.tech_tree.cost_of(id)
+		for good in known:
+			t.check(
+				known[good] == ceili(Data.TECHS[id]["cost"][good] * Data.EXODUS["known_share"]),
+				"the second telling pays the share of %s %s" % [id, good]
+			)
+	var gate := {"id": "falling_star", "text": "Discover the gate: {cost}", "tech": "falling_star"}
+	var before: String = s.story.goal_text(gate, s)
+	s.carry.techs.append("falling_star")
+	t.check(s.story.goal_text(gate, s) != before, "a gate learned before shows its cheaper price in the goal's words")
+
+
+func test_the_table_writes_the_endings_and_chronicle_to_the_playtest_log() -> void:
+	var s := _fresh()
+	var journal := PlaytestLog.new()
+	journal.keep = true
+	s.seasons.watcher = journal
+	s.story.record(Data.SKYWARD_EVENT)
+	AiStory.profile_path = "user://solace_test_need_profile.json"
+	t.check(AiStory.move(s, {"do": "endings"}) == "", "the table opens the ending card")
+	t.check(AiStory.move(s, {"do": "ending_details", "ending": "exodus"}) == "", "and reads one ending's details")
+	t.check(AiStory.move(s, {"do": "chronicle"}) == "", "and opens the Chronicle")
+	var kinds: Array = journal.lines.map(func(l): return JSON.parse_string(l)["k"] if l is String else l.get("k", ""))
+	t.check("endings" in kinds and "detail" in kinds and "chronicle" in kinds, "the log has them: " + str(kinds))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(AiStory.profile_path))
