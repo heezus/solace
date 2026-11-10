@@ -24,6 +24,7 @@ static var _scenes := {}  # sequence id -> "waiting", "watched" or "skipped"
 static var _told: Array = []  # lines the next page opens with (a scene just watched, the Chronicle just opened)
 static var _card_open := false  # the ending card has been opened
 static var _details: Array = []  # endings whose details were opened
+static var _card_at := 0.0  # the game second the ending card was opened (what the playtest log reads as its time at the card)
 
 
 ## Start the table over: a first game, no profile, nothing offered.
@@ -67,6 +68,9 @@ static func move(s, m: Dictionary) -> String:
 		"endings":
 			if not set_out_open(s):
 				return "Skyward does not stand yet, so no ending can be chosen"
+			if not _card_open:
+				_card_at = s.seasons.time
+				_log(s, "endings", {"open": true})
 			_card_open = true
 			return ""
 		"ending_details":
@@ -76,6 +80,7 @@ static func move(s, m: Dictionary) -> String:
 		"chronicle":
 			var profile := Profile.new()
 			profile.load_file(profile_path)
+			_log(s, "chronicle", {"page": "tellings"})
 			_told.append_array(_book(profile, profile.tellings.size() - 1, false))
 			return ""
 	return "not a story move"
@@ -263,6 +268,12 @@ static func _scene(s, id: String, action: String) -> String:
 	return ""
 
 
+## One line for the playtest log, as the game's own recorder writes it for a person at the same card (M11, M13).
+static func _log(s, kind: String, data: Dictionary) -> void:
+	if s.seasons.watcher != null:
+		s.seasons.watcher.event(s, kind, data)
+
+
 static func _note(s, id: String, skipped: bool) -> void:
 	if s.seasons.watcher != null:
 		s.seasons.watcher.event(s, "cutscene", {"id": id, "skipped": skipped, "secs": 0.0})
@@ -315,13 +326,14 @@ static func _why_shut(s, id: String) -> String:
 	return Endings.why_locked(id, s.starfall.lean)
 
 
-static func _open_details(_s, id: String) -> String:
+static func _open_details(s, id: String) -> String:
 	if not _card_open:
 		return "the ending card is not open (use the endings move)"
 	if not Data.ENDINGS.has(id) or not Data.ENDINGS[id] is Dictionary or not Data.ENDINGS[id].has("end"):
 		return "no such ending"
 	if not _details.has(id):
 		_details.append(id)
+		_log(s, "detail", {"ending": id})
 	return ""
 
 
@@ -335,6 +347,8 @@ static func _set_out(s, ending: String, skip_scenes: bool) -> String:
 	if why != "":
 		return "that ending is shut: %s" % why
 	var told: Array = []
+	if _card_open:
+		_log(s, "endings", {"open": false, "secs": snappedf(s.seasons.time - _card_at, 0.1)})
 	s.story.record(Data.ENDINGS[ending]["id"])
 	for id in Data.CUTSCENES:  # the scenes the ending's story moment brings, told before the next telling begins
 		if Data.CUTSCENES[id]["triggers"].has(Data.ENDINGS[ending]["id"]):
@@ -353,6 +367,7 @@ static func _set_out(s, ending: String, skip_scenes: bool) -> String:
 	Launch.begin_new(fresh, seed_used, profile_path)
 	next_run = fresh
 	_told = told
+	_log(s, "chronicle", {"page": "tellings"})
 	_told.append_array(_book(profile, profile.tellings.size() - 1, true))
 	_told.append(
 		"A NEW TELLING BEGINS (run %d, after the %s)." % [fresh.carry.exodus + 1, Data.ENDINGS[ending]["name"]]

@@ -114,7 +114,7 @@ func refresh_goals(s: Sim) -> void:
 	var done: Array = []
 	for g in list:
 		if s.story.goals_done.has(g["id"]):
-			done.append("Done: " + s.story.goal_text(g))
+			done.append("Done: " + s.story.goal_text(g, s))
 	goal_header.tooltip_text = "\n".join(done)
 	for i in goal_labels.size():
 		var gi := cur + i
@@ -122,7 +122,7 @@ func refresh_goals(s: Sim) -> void:
 		l.visible = gi < total
 		if not l.visible:
 			continue
-		l.text = ("> " if i == 0 else "  ") + s.story.goal_text(list[gi])
+		l.text = ("> " if i == 0 else "  ") + s.story.goal_text(list[gi], s)
 		var gate: String = s.story.gate_note(s, list[gi]) if i == 0 else ""
 		l.text += "\n" + gate if gate != "" else ""
 		var chore: String = Chores.note(s) if i == 0 else ""

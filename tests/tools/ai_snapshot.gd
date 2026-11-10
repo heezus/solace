@@ -9,6 +9,7 @@ const Data = preload("res://scripts/data.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Fuel = preload("res://scripts/fuel.gd")
 const WaitWhy = preload("res://scripts/wait_why.gd")
+const TradeFloor = preload("res://scripts/trade_floor.gd")
 const Chain = preload("res://scripts/chain.gd")
 const AiPost = preload("res://tests/tools/ai_post.gd")
 const Chores = preload("res://scripts/chores.gd")
@@ -55,7 +56,7 @@ const HELP := """MOVES: write moves_<n>.json, a list. Each move is one of
   {"do":"look_east"}                               press the Look east button the page shows (its LOOK EAST line)
   {"do":"pause","x":3,"y":4,"on":false}            pause or resume the building standing at that spot (use its listed position)
   {"do":"focus","x":3,"y":4,"item":"wood"}         point a gatherer's hut at another item in its reach
-  {"do":"trade","x":3,"y":4,"gives":"copper_ore","gets":"coal"}   set what a market (Lumen Market, Trading Post) swaps
+  {"do":"trade","x":3,"y":4,"gives":"copper_ore","gets":"coal","keep":50}   set what a market swaps; "keep" is the least it leaves
   {"do":"demolish","x":3,"y":4}
   {"do":"research","tech":"knapping"}
   {"do":"goal","tech":"bronze_dawn"}               set the research goal; the queue buys the techs on the way
@@ -204,8 +205,11 @@ static func apply(s, moves: Array) -> Array:
 					s.set_paused(i, bool(m.get("on", true)))
 			"trade":
 				var i := _index_at(s, at)
-				ok = i >= 0 and s.town.set_trade(i, str(m.get("gives", "")), str(m.get("gets", "")))
-				if not ok and i >= 0:
+				var swaps: bool = m.has("gives") or m.has("gets") or not m.has("keep")
+				ok = i >= 0 and (not swaps or s.town.set_trade(i, str(m.get("gives", "")), str(m.get("gets", ""))))
+				if ok and m.has("keep"):
+					ok = TradeFloor.set_keep(s.town, i, int(m["keep"]))  # the "Keeps at least" line
+				if not ok and i >= 0 and swaps:
 					var why: String = s.town.trade_refusal(
 						s.town.buildings[i]["type"], str(m.get("gives", "")), str(m.get("gets", ""))
 					)

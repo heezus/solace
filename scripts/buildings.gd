@@ -18,6 +18,7 @@ signal built(type: String, pos: Vector2i)
 signal demolished(type: String, pos: Vector2i)
 signal refused(type: String, pos: Vector2i)  # a placement the town said no to
 
+const TradeFloor = preload("res://scripts/trade_floor.gd")
 const Codec = preload("res://scripts/save_codec.gd")
 const Data = preload("res://scripts/data.gd")
 const Economy = preload("res://scripts/economy.gd")
@@ -302,6 +303,8 @@ func add_building(type: String, p: Vector2i) -> void:
 		"ore": "",  # what a Mine digs: the item its tile yields, "" for any other building
 		"give": "",  # what a Trading Post gives up (Data.TRADE_GIVE of it), "" for none yet
 		"get": "",  # ...and what it gets for it (Data.TRADE_GET of it)
+		"hold": 0,  # ...and the amount of it the goal in front of the player still wants (set each tick, not saved)
+		"keep": 0,  # a floor under the good a Trading Post or Market gives: it never swaps the stockpile below this (fun-3)
 		"make": "",  # the tool a Tool Bench is making now (a Data.RECIPES id), or the workshop a Factory Floor copies, "" for any other
 		"claimed": false,  # a hauler is on its way to empty it
 		"incoming": {},  # inputs haulers are carrying here
@@ -692,7 +695,10 @@ func haul(index: int) -> void:
 		var recipe := recipe_in(b)
 		for id in recipe:
 			var want: int = recipe[id] * 2 - b["inbuf"].get(id, 0)
-			var take: int = mini(want, _economy.inv.get(id, 0))
+			var spare: int = _economy.inv.get(id, 0)
+			if def.get("trade", false):
+				spare -= TradeFloor.of(b)  # a swap never takes the stockpile below its floor
+			var take: int = mini(want, maxi(spare, 0))
 			if take > 0:
 				_economy.pay({id: take})
 				b["inbuf"][id] = b["inbuf"].get(id, 0) + take
@@ -800,6 +806,8 @@ static func _building_from_dict(d: Dictionary) -> Dictionary:
 	b["ore"] = String(d.get("ore", ""))
 	b["give"] = String(d.get("give", ""))
 	b["get"] = String(d.get("get", ""))
+	b["keep"] = maxi(int(d.get("keep", 0)), 0)  # a save from before the floor has none
+	b["hold"] = maxi(int(d.get("hold", 0)), 0)
 	if (
 		Data.BUILDINGS[b["type"]].get("trade", false)
 		and not (trade_allows(b["type"], b["give"]) and trade_allows(b["type"], b["get"]))

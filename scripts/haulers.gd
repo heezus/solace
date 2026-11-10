@@ -14,6 +14,7 @@ const Relics = preload("res://scripts/relics.gd")
 const Teardown = preload("res://scripts/teardown.gd")
 const Steam = preload("res://scripts/steam.gd")
 const Skyreach = preload("res://scripts/skyreach.gd")
+const TradeFloor = preload("res://scripts/trade_floor.gd")
 
 const URGENT := 45.0  # game seconds a building may stand stopped for a hauler before it goes ahead of every nearer one
 const STOCK_SECONDS := 40.0  # a workshop is brought what it works through in this long (never over a load, never under two rounds)
@@ -163,6 +164,12 @@ static func stock_wanted(s, cand: Dictionary) -> Dictionary:
 	var rounds := ceili(STOCK_SECONDS / cycle) if cycle > 0.0 else 2
 	for id in recipe:
 		out[id] = stock if stock > 0 else maxi(recipe[id] * 2, mini(recipe[id] * rounds, carry_cap(s)))
+	if Buildings.is_trading(cand):  # a swap's floor: haulers bring only what the stockpile has above it (fun-3)
+		var give: String = cand["give"]
+		var spare: int = s.economy.inv.get(give, 0) - TradeFloor.of(cand)
+		if spare < recipe[give]:
+			return {}
+		out[give] = mini(out[give], cand["inbuf"].get(give, 0) + spare)
 	if s.teardown.knows("hull_gear") and Data.BUILDINGS[cand["type"]]["kind"] == "processor" and not recipe.is_empty():
 		out[Data.GEARS_ITEM] = 1  # one Iron Gear fitted to a workshop speeds it up for good
 	return out

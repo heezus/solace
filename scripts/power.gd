@@ -10,6 +10,13 @@ extends RefCounted
 const Data = preload("res://scripts/data.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 
+const DARK_NO_POLE_FAR := (
+	"No power: the nearest Power Pole is %.1f tiles from it, and a pole must be within %d. "
+	+ "Lay one beside it and join it to a net that has an engine"
+)  # distance, reach
+const REACH_NOTE := "%s is %.1f tiles from the nearest pole, and needs to be within %d"  # a machine or engine's name, distance, reach
+const REACH_NO_POLE := "No Power Pole stands yet. Lay one (Logistics tab) within %d tiles of a machine and an engine"  # reach
+
 
 ## One tick: rebuild the nets if the buildings changed, then count what each gives and is asked.
 static func update(s) -> void:
@@ -202,11 +209,42 @@ static func note(s, b: Dictionary) -> String:
 static func dark(s, b: Dictionary) -> Dictionary:
 	var n: Dictionary = s.livewire.net_at(b["pos"])
 	if n.is_empty():
-		return {"text": Data.DARK_NO_POLE, "alert": Data.DARK_NO_POLE_ALERT}
+		var far := nearest_pole(s, b["pos"])
+		var text: String = DARK_NO_POLE_FAR % [far, int(Data.POLE_REACH)] if far >= 0.0 else Data.DARK_NO_POLE
+		return {"text": text, "alert": Data.DARK_NO_POLE_ALERT}
 	if n["engines"].is_empty():
 		return {"text": Data.DARK_NO_ENGINE, "alert": Data.DARK_NO_ENGINE_ALERT}
 	var engine: Dictionary = s.town.buildings[s.town.building_at[n["engines"][0]]]
 	return {"text": Data.DARK_COLD % Data.BUILDINGS[engine["type"]]["name"], "alert": Data.DARK_COLD_ALERT}
+
+
+## Tiles from `pos` to the nearest Power Pole of any net, -1 when none stands.
+static func nearest_pole(s, pos: Vector2i) -> float:
+	var best := -1.0
+	for n in s.livewire.nets:
+		for p in n["poles"]:
+			var d := Vector2(p).distance_to(Vector2(pos))
+			if best < 0.0 or d < best:
+				best = d
+	return best
+
+
+## The IN THE WAY line of the goal "a machine and an engine on one net": the machine or engine nearest a pole but out of its reach,
+## with the distance ("Forge is 2.2 tiles from the nearest pole, and needs to be within 2"); "" when each is on a net.
+static func reach_note(s) -> String:
+	var best_d := -1.0
+	var best_name := ""
+	for b in s.town.buildings:
+		var def: Dictionary = Data.BUILDINGS[b["type"]]
+		if not (def["kind"] == "power" or is_machine(s, def)) or s.livewire.net_of.has(b["pos"]):
+			continue
+		var d := nearest_pole(s, b["pos"])
+		if d >= 0.0 and (best_d < 0.0 or d < best_d):
+			best_d = d
+			best_name = def["name"]
+	if best_d >= 0.0:
+		return REACH_NOTE % [best_name, best_d, int(Data.POLE_REACH)]
+	return REACH_NO_POLE % int(Data.POLE_REACH) if s.livewire.nets.is_empty() else ""
 
 
 static func _short_note(n: Dictionary) -> String:

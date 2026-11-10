@@ -20,6 +20,7 @@ const StoreRest = preload("res://scripts/store_rest.gd")
 const Power = preload("res://scripts/power.gd")
 const WaitWhy = preload("res://scripts/wait_why.gd")
 const Needs = preload("res://scripts/needs.gd")
+const TradeFloor = preload("res://scripts/trade_floor.gd")
 
 ## Added to a held-back workshop's status when haulers stand beyond the places wanted: cutting a place with none to spare stalls the town.
 const HOLD_BACK_SPARE := " Spare haulers stand: press - on the %s's Haulers row to free one."
@@ -230,6 +231,8 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 		return
 	if Fuel.burns(b):
 		Fuel.update(s, b)  # which fuel it burns now: haulers bring that one (scripts/fuel.gd)
+	if def.get("trade", false):
+		b["hold"] = Needs.goal_need(s, b["give"])  # a swap never takes the goal in front of you out from under it (fun-3)
 	if not Buildings.needs_worker(b):
 		if def.get("fed", false):
 			Steam.tick_fed(s, b, delta)  # a Boiler, a Lamp or a Pen has no worker: it burns what haulers bring it
@@ -355,6 +358,14 @@ static func _boiler_on_call(s, b: Dictionary) -> bool:
 	return false
 
 
+## True when a swap has nothing to give because the stockpile is at its floor.
+static func _at_floor(s, b: Dictionary) -> bool:
+	var need: int = Buildings.recipe_in(b).get(b["give"], 0)
+	return (
+		need > 0 and b["inbuf"].get(b["give"], 0) < need and s.economy.inv.get(b["give"], 0) - TradeFloor.of(b) < need
+	)
+
+
 ## Why a staffed building is standing still: full, or short of an input.
 static func idle_reason(s, b: Dictionary, def: Dictionary) -> void:
 	var auto := Roads.automated(s, b)
@@ -372,6 +383,11 @@ static func idle_reason(s, b: Dictionary, def: Dictionary) -> void:
 		return
 	if def.has("dig") and s.world.seam_spent(b["pos"]):
 		s.town.set_status(b, Data.SEAM_SPENT_STATUS, Data.SEAM_SPENT_ALERT)
+		return
+	if def.get("trade", false) and _at_floor(s, b):
+		var why: String = TradeFloor.GOAL_REASON if int(b["hold"]) > int(b["keep"]) else ""
+		var line: String = TradeFloor.AT_FLOOR % [TradeFloor.of(b), Data.ITEMS[b["give"]]["name"], why]
+		s.town.set_status(b, line, "Keeping a floor")
 		return
 	var missing: Array = []
 	var out: Array = []  # of those, the goods the stockpile has none of: only these are "needed"; the rest are in stock, just not here
