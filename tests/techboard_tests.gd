@@ -197,7 +197,7 @@ func test_the_suggested_tech_follows_its_rule() -> void:
 	)
 	pick = TechNext.suggested(s, roots)
 	t.check(pick["tech"] == "knapping" and pick["why"] == Data.NEXT_WHY_LIST, "so Knapping is suggested: %s" % [pick])
-	s.story.goals_done["knapping"] = true
+	s.story.goals_done["tools"] = true
 	s.tech_tree.researched["knapping"] = true
 	roots = TechNext.ready_now(s, 1)
 	t.check(TechNext.goals_tech(s) == "gatherers_hut", "then Gatherer's Hut")

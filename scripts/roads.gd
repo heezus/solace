@@ -100,6 +100,12 @@ static func automated(s, b: Dictionary) -> bool:
 	return s.tech_tree.researched.has("haulers") and linked(s, b)
 
 
+## True for a hut with no road that works on its own because its Kith already know the job (Step 9A): it goes out, gathers and carries
+## to the Hearth with no click, at half speed. A road and haulers make it full speed, so roads are an upgrade and not a gate.
+static func self_runs(s, b: Dictionary) -> bool:
+	return Data.BUILDINGS[b["type"]]["kind"] == "gatherer" and not automated(s, b) and s.people.knows_focus(b)
+
+
 ## The depot a road links b to (the nearest one on its network), or (-1, -1).
 static func depot_of(s, b: Dictionary) -> Vector2i:
 	var l: Array = _cache(s)["link"].get(b["pos"], [])

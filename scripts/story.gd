@@ -198,15 +198,25 @@ func asked_building() -> String:
 ## What stands in the way of goal `g`, said plainly ("" when nothing but time): the goal's tech, or the tech of the building it asks
 ## for, walked back through the tech tree to the first step that cannot just be paid for (scripts/chain.gd).
 func gate_note(s, g: Dictionary) -> String:
-	var tech := ""
-	if g.has("tech"):
-		tech = g["tech"]
-	elif g.has("building"):
-		tech = Data.BUILDINGS[g["building"]]["tech"]
-	elif g["id"] == "grind":
-		tech = Data.BUILDINGS["grindstone"]["tech"]
+	var tech := goal_tech(g)
 	var chain: String = Chain.note(s, tech) if tech != "" else ""
 	return chain if chain != "" else Needs.goal_note(s, g)  # a building goal on no tech: what shuts it or what its price waits on
+
+
+## The tech a goal waits on: its own, its building's, or for the goals worded by id the tech their craft or road waits on ("" for none).
+static func goal_tech(g: Dictionary) -> String:
+	if g.has("tech"):
+		return g["tech"]
+	if g.has("building"):
+		return Data.BUILDINGS[g["building"]]["tech"]
+	match g["id"]:
+		"grind":
+			return Data.BUILDINGS["grindstone"]["tech"]
+		"tools":
+			return "knapping"  # the goal is to craft, and the craft waits on Knapping
+		"road":
+			return "haulers"
+	return ""
 
 
 ## A goal is met when its `tech` is researched or its `building` stands; the rest are checked by id.
@@ -216,24 +226,12 @@ func goal_met(s, g: Dictionary) -> bool:
 	if g.has("building"):
 		return _has_building(s, g["building"])
 	match g["id"]:
-		"learn_wood":
-			return s.people.knows("wood")
-		"learn_berries":
-			return s.people.knows("berries")
-		"learn_stone":
-			return s.people.knows("stone") and s.people.knows("flint")
+		"gather":
+			return ["wood", "berries", "stone", "flint"].all(func(id): return s.people.knows(id))
 		"flax":
 			return s.hand_counts.get("fiber", 0) > 0 or s.people.knows("fiber")
-		"trip":
-			return "first_trip" in events or s.tech_tree.researched.has("haulers")
-		"rush":
-			return s.rushes > 0
 		"tools":
 			return s.hand_tools
-		"berries":
-			for b in s.town.buildings:
-				if b["focus"] == "berries":
-					return true
 		"road":
 			# a road tile that really links a building (Paths & Haulers unlocks roads); standing beside the
 			# Hearth is not a road

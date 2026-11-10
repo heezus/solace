@@ -58,8 +58,8 @@ static func suggested(s, techs: Array) -> Dictionary:
 static func goals_tech(s) -> String:
 	var list: Array = s.story.goal_list()
 	for i in range(s.story.current_goal(), list.size()):
-		if not s.story.goals_done.has(list[i]["id"]) and list[i].has("tech"):
-			return list[i]["tech"]
+		if not s.story.goals_done.has(list[i]["id"]) and s.story.goal_tech(list[i]) != "":
+			return s.story.goal_tech(list[i])
 	return ""
 
 

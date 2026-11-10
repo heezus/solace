@@ -41,6 +41,7 @@ static func waiting(s, b: Dictionary) -> bool:
 		and not b["paused"]
 		and b["trips"] <= 0
 		and not Roads.automated(s, b)
+		and not Roads.self_runs(s, b)
 	)
 
 

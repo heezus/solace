@@ -142,12 +142,12 @@ func test_goals_count_out_of_order() -> void:
 	t.check(t.place_free(s, "gatherers_hut", camp + Vector2i(1, 0)), "a hut, with the berries goals skipped")
 	t.check(t.place_free(s, "dwelling", camp + Vector2i(-1, 0)), "and a Dwelling")
 	s.story.update(s)
-	t.check(not s.story.goals_done.has("learn_berries"), "the berry lesson was never learned")
+	t.check(not s.story.goals_done.has("gather"), "the hand lessons were never learned")
 	t.check(s.story.goals_done.has("hut") and s.story.goals_done.has("dwelling"), "later goals still count")
 	t.check(s.story.done_count() == s.story.goals_done.size(), "the header counts every done goal")
-	t.check(s.story.done_count() >= 2, "so it reads at least 2 of 22, not 0")
+	t.check(s.story.done_count() >= 2, "so it reads at least 2 goals, not 0")
 	t.check(s.story.current_goal() == 0, "the pointer is the first goal not done")
-	s.story.goals_done["learn_wood"] = true
+	s.story.goals_done["gather"] = true
 	t.check(s.story.current_goal() == 1, "and skips the done ones before it")
 	t.check(s.story.done_count() == s.story.goals_done.size(), "the count follows")
 
@@ -171,14 +171,14 @@ func test_current_goal_follows_goals_done() -> void:
 func test_goals_stay_done() -> void:
 	var s: Sim = t.fresh()
 	s.story.update(s)
-	t.check(not s.story.goals_done.has("knapping"), "Knapping is not done at the start")
-	s.tech_tree.researched["knapping"] = true
+	t.check(not s.story.goals_done.has("calendar"), "Calendar is not done at the start")
+	s.tech_tree.researched["calendar"] = true
 	s.story.update(s)
-	t.check(s.story.goals_done.has("knapping"), "researching Knapping meets its goal")
-	s.tech_tree.researched.erase("knapping")
+	t.check(s.story.goals_done.has("calendar"), "researching Calendar meets its goal")
+	s.tech_tree.researched.erase("calendar")
 	s.story.update(s)
-	t.check(s.story.goals_done.has("knapping"), "and it stays done")
-	t.check(not s.story.goal_met(s, {"id": "knapping", "tech": "knapping"}), "even though it is no longer met")
+	t.check(s.story.goals_done.has("calendar"), "and it stays done")
+	t.check(not s.story.goal_met(s, {"id": "calendar", "tech": "calendar"}), "even though it is no longer met")
 	var before: int = s.story.goals_done.size()
 	s.story.update(s)
 	t.check(s.story.goals_done.size() == before, "updating again adds nothing")
@@ -189,7 +189,7 @@ func test_to_dict_and_from_dict() -> void:
 	var a := Story.new()
 	a.record("shard_found")
 	a.record("first_lesson")
-	a.goals_done["learn_wood"] = true
+	a.goals_done["gather"] = true
 	a.goals_done["road"] = true
 	var d := a.to_dict()
 	var b := Story.new()
@@ -387,14 +387,13 @@ func test_the_road_goal_needs_a_road() -> void:
 
 func test_the_goal_order_researches_before_it_lays() -> void:
 	var ids: Array = Data.GOALS.map(func(g): return g["id"])
-	t.check(ids.find("haulers") >= 0 and ids.find("haulers") < ids.find("road"), "research Haulers, then lay a road")
+	t.check(ids.find("road") >= 0, "the road goal asks for Haulers and then a road")
 	var s: Sim = t.fresh()
 	s.story.update(s)
 	var done_early := false
-	for id in ["haulers", "road"]:
+	for id in ["road"]:
 		done_early = done_early or s.story.goals_done.has(id)
 	t.check(not done_early, "neither is done at the start")
-	var stable := ["learn_wood", "learn_berries", "learn_stone", "flax", "knapping", "tools", "hut_tech", "hut"]
-	stable += ["trip", "berries", "dwelling", "twine", "haulers", "road", "rush", "charcoal", "kiln", "wheel"]
+	var stable := ["gather", "flax", "tools", "hut", "dwelling", "twine", "road", "charcoal", "kiln"]
 	stable += ["grind", "storehouse", "calendar", "bronze"]
 	t.check(ids == stable, "the goal ids and their order are the stable ones a save keeps")

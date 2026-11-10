@@ -22,6 +22,9 @@ const WaitWhy = preload("res://scripts/wait_why.gd")
 const Needs = preload("res://scripts/needs.gd")
 const TradeFloor = preload("res://scripts/trade_floor.gd")
 
+## A hut that runs itself with no road (Step 9A) takes this many times as long to harvest: the Kith carries each bundle to the Hearth.
+const SELF_RUN_SLOW := 2.0
+
 ## Added to a held-back workshop's status when haulers stand beyond the places wanted: cutting a place with none to spare stalls the town.
 const HOLD_BACK_SPARE := " Spare haulers stand: press - on the %s's Haulers row to free one."
 
@@ -42,7 +45,7 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 		"home":
 			if def["kind"] != "gatherer" or Buildings.buffered(b["out"]) >= Data.BUFFER_CAP or b.get("resting", false):
 				return
-			if not Roads.automated(s, b) and b["trips"] <= 0:
+			if not Roads.automated(s, b) and b["trips"] <= 0 and not Roads.self_runs(s, b):
 				return  # waits for a click
 			var target := next_gather_tile(s, k, b)
 			if target.x < 0:
@@ -59,7 +62,8 @@ static func tick(s, k: Dictionary, delta: float) -> void:
 		"harvest":
 			var tile: Vector2i = k["task"].get("tile", b["pos"])
 			k["timer"] += delta
-			if k["timer"] >= Work.harvest_time(s, b, tile):
+			var slow: float = SELF_RUN_SLOW if b["trips"] <= 0 and not Roads.automated(s, b) else 1.0  # no click, no road: half speed
+			if k["timer"] >= Work.harvest_time(s, b, tile) * slow:
 				_finish_harvest(s, k, b, tile)
 		"to_home":
 			if s.people.step(k, delta):
@@ -324,7 +328,7 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 			"home":
 				if not s.people.knows_focus(b):
 					b["status"] = "Can't work it yet: " + teach_note(s, b)
-				elif not Roads.automated(s, b) and b["trips"] <= 0:
+				elif not Roads.automated(s, b) and b["trips"] <= 0 and not Roads.self_runs(s, b):
 					b["status"] = "Waiting: click to send a trip" + road_note(s, b)
 				else:
 					b["status"] = "Working"
@@ -367,8 +371,25 @@ static func _at_floor(s, b: Dictionary) -> bool:
 
 
 ## Why a staffed building is standing still: full, or short of an input.
+## The name of the one good workshop `b` makes when the stockpile holds nearly all it can (Data.STORAGE_FULL_SHARE of its cap), else "".
+static func plenty_of(s, b: Dictionary) -> String:
+	if Data.BUILDINGS[b["type"]]["kind"] != "processor":
+		return ""
+	var goods := StoreRest.outputs(b)
+	if goods.size() != 1:
+		return ""
+	var cap: int = s.economy.caps.get(goods[0], 0)
+	if cap <= 0 or float(s.economy.inv.get(goods[0], 0)) / cap < Data.STORAGE_FULL_SHARE:
+		return ""
+	return Data.ITEMS[goods[0]]["name"]
+
+
 static func idle_reason(s, b: Dictionary, def: Dictionary) -> void:
 	var auto := Roads.automated(s, b)
+	var plenty := plenty_of(s, b)
+	if plenty != "" and not auto:  # not a stall: the stockpile already holds all it can use
+		s.town.set_status(b, "Idle: plenty of %s" % plenty, "Idle")
+		return
 	if Buildings.buffered(b["out"]) >= Data.BUFFER_CAP:
 		if auto and Roads.depot_far(s, b):
 			s.town.set_status(b, Data.FAR_DEPOT_STATUS, Data.FAR_DEPOT_ALERT)

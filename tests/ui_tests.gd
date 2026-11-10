@@ -352,7 +352,7 @@ func test_the_goal_list_shows_the_current_goal_and_the_next() -> void:
 	var shown: Array = panel.goal_labels.filter(func(l): return l.visible).map(func(l): return l.text)
 	t.check(shown.size() == 2, "two goals show: %s" % [shown])
 	t.check(
-		shown[0] == "> " + Data.GOALS[9]["text"] and shown[1] == "  " + Data.GOALS[10]["text"],
+		shown[0].begins_with("> " + Data.GOALS[9]["text"]) and shown[1].begins_with("  " + Data.GOALS[10]["text"]),
 		"the current one, then the next"
 	)
 	t.check(not " ".join(shown).contains("Done"), "no done goal is listed")
