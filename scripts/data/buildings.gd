@@ -187,7 +187,7 @@ const BUILDINGS := {
 		"time": 3.0,
 		"color": Color("f4a261"),
 		"desc":
-		"Works one resource within 2 tiles, the one it stands next to. Until a road links it, it works only when you click it.",
+		"Works the resource beside it. Once its Kith know the job it works on its own, at half speed until a road links it.",
 	},
 	"kiln":
 	{

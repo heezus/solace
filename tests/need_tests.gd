@@ -25,6 +25,20 @@ func run(runner) -> void:
 	test_a_pause_says_how_to_undo_it_and_a_start_keeps_the_goals_makers_working()
 	test_a_road_that_reaches_no_depot_says_so()
 	test_the_cards_show_what_each_choice_gives_and_costs()
+	test_a_workshop_with_plenty_of_its_good_says_so_not_stalled()
+
+
+## Step 9A: a Twine Post that rests because the stockpile holds plenty of Rope reads as idle by choice, not as a stall.
+func test_a_workshop_with_plenty_of_its_good_says_so_not_stalled() -> void:
+	var s := _fresh()
+	s.town.add_building("twine_post", s.world.camp_pos + Vector2i(5, 5))
+	var b: Dictionary = s.town.buildings[-1]
+	t.check(Workers.plenty_of(s, b) == "", "with an empty store it is not plenty")
+	s.economy.caps["rope"] = 100
+	s.economy.inv["rope"] = int(100 * Data.STORAGE_FULL_SHARE) + 1
+	t.check(
+		Workers.plenty_of(s, b) == "Rope", "with the Rope store near its cap it says Rope: " + Workers.plenty_of(s, b)
+	)
 
 
 func _fresh() -> Sim:

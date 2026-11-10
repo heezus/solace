@@ -29,13 +29,13 @@ func run(runner) -> void:
 ## Food comes early in the Goals: the first Berry Bushes goal is among the first three, before any research.
 func test_the_goals_start_with_food() -> void:
 	var ids: Array = Data.GOALS.map(func(g): return g["id"])
+	t.check(ids.find("gather") == 0, "hand-gathering, berries among it, is the first goal")
+	var text: String = Data.GOALS[ids.find("gather")]["text"]
+	t.check(text.contains("Berry") and text.contains("eat"), "and it says that the %s eat them" % Data.PEOPLE["many"])
 	t.check(
-		ids.find("learn_berries") >= 0 and ids.find("learn_berries") <= 2, "hand-gathering berries is an early goal"
+		Data.GOALS[ids.find("hut")]["text"].contains("Berry Bushes"),
+		"the hut goal says to put the first hut by the berries"
 	)
-	t.check(ids.find("learn_berries") < ids.find("knapping"), "it comes before the first research")
-	t.check(ids.find("berries") > ids.find("hut"), "a hut by the Berry Bushes follows the first hut")
-	var text: String = Data.GOALS[ids.find("learn_berries")]["text"]
-	t.check(text.contains("eat"), "and it says that the %s eat them" % Data.PEOPLE["many"])
 
 
 ## The newcomer follows the goals for ten minutes: nobody leaves, and if the food ever ran low the warning came.
@@ -43,8 +43,8 @@ func test_a_newcomer_following_the_goals_stays_fed() -> void:
 	for map_seed in [1, 4, 8]:
 		var bot := _play("literal", map_seed)
 		var goals: int = bot.s.story.current_goal()
-		t.check(goals >= 10, "map %d: the newcomer got through the opening goals (%d done)" % [map_seed, goals])
-		t.check(bot.s.story.goals_done.has("berries"), "map %d: and placed a hut by the Berry Bushes" % map_seed)
+		t.check(goals >= 6, "map %d: the newcomer got through the opening goals (%d done)" % [map_seed, goals])
+		t.check(_first_berry_hut(bot).x >= 0, "map %d: and placed a hut by the Berry Bushes" % map_seed)
 		_check_the_food_hut(bot, map_seed, _last_berry_hut(bot))
 
 
@@ -135,7 +135,6 @@ func test_a_newcomer_who_clicks_each_hut_once_is_carried_by_the_famine_fallback(
 		t.check(bot.min_kith >= 3, "once, map %d: at least three Kith stay (least %d)" % [map_seed, bot.min_kith])
 		t.check(bot.zeros == 0, "once, map %d: the food never ran out (%d times)" % [map_seed, bot.zeros])
 		t.check(bot.min_food >= 10.0, "once, map %d: and never fell below 10 (%.1f)" % [map_seed, bot.min_food])
-		t.check(bot.foraging_steps > 0, "once, map %d: idle Kith went foraging" % map_seed)
 		t.check(not bot.s.economy.low, "once, map %d: and it ends with no warning up" % map_seed)
 
 

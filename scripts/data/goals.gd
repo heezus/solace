@@ -80,37 +80,29 @@ const GOALS_HEADER_ERA2 := "Dawn goals %d/%d"
 
 const GOALS := [
 	{
-		"id": "learn_wood",
-		"text": "Hold the mouse on trees to gather Wood, until a Kith learns it (6 harvests, 10 for later lessons)"
+		"id": "gather",
+		"text":
+		(
+			"Hold the mouse on trees, Berry Bushes, Stone and Flint to gather them until a Kith learns each."
+			+ " The Kith eat berries: keep a good stock"
+		)
 	},
-	{
-		"id": "learn_berries",
-		"text": "Hold the mouse on the red Berry Bushes near the Hearth. The Kith eat berries: keep a good stock"
-	},
-	{"id": "learn_stone", "text": "Gather Stone and Flint by hand until they're learned too"},
 	{
 		"id": "flax",
 		"text": "Find Wild Flax (tall stalks with tiny blue-violet flowers) and gather it: all Fiber comes from flax"
 	},
-	{"id": "knapping", "text": "Press T and discover Knapping", "tech": "knapping"},
-	{"id": "tools", "text": "Craft Flint Tools: each harvest takes 0.6s instead of 0.8s"},
-	{"id": "hut_tech", "text": "Discover Gatherer's Hut", "tech": "gatherers_hut"},
+	{
+		"id": "tools",
+		"text": "Press T, discover Knapping and craft Flint Tools: each harvest takes 0.6s instead of 0.8s"
+	},
 	{
 		"id": "hut",
-		"text": "Place a Gatherer's Hut next to trees or rocks. A hut works one resource, and only when you click it",
-		"building": "gatherers_hut"
-	},
-	{
-		"id": "trip",
-		"text": "Click your hut to send a trip: its Kith brings back a bundle (3 harvests' worth). No click, no trip"
-	},
-	{
-		"id": "berries",
 		"text":
 		(
-			"Place a hut right beside Berry Bushes (or click a hut to switch it to Berries), then click it to send"
-			+ " a trip for berries. A hut only works when you click it"
-		)
+			"Discover Gatherer's Hut and place one right beside Berry Bushes (food first), or by trees or rocks."
+			+ " Once its Kith know the job it works on its own"
+		),
+		"building": "gatherers_hut"
 	},
 	{
 		"id": "dwelling",
@@ -118,17 +110,21 @@ const GOALS := [
 		"building": "dwelling"
 	},
 	{"id": "twine", "text": "Discover Cordage, then build a Twine Post", "building": "twine_post"},
-	{"id": "haulers", "text": "Discover Paths & Haulers: it unlocks Roads and lets idle Kith haul", "tech": "haulers"},
-	{"id": "road", "text": "Lay a Road from a hut to the Hearth: road-linked buildings run on their own"},
-	{"id": "rush", "text": "Click a working building to rush it: it finishes its cycle at once"},
-	{"id": "charcoal", "text": "Discover Fire, then build a Charcoal Pit", "building": "charcoal_pit"},
-	{"id": "kiln", "text": "Discover Pottery, then build a Kiln", "building": "kiln"},
 	{
-		"id": "wheel",
-		"text": "Discover Water Wheel (Stone Axe, Masonry) and build one on the river",
-		"building": "water_wheel"
+		"id": "road",
+		"text": "Discover Paths & Haulers and lay a Road from a hut to the Hearth: a hut on a road runs at full speed"
 	},
-	{"id": "grind", "text": "Build a Grindstone within 3 tiles of the wheel"},
+	{"id": "charcoal", "text": "Discover Fire, then build a Charcoal Pit", "building": "charcoal_pit"},
+	{
+		"id": "kiln",
+		"text": "Discover Pottery, put a Clay Hut on a road (clay is the Kiln's first need), then build a Kiln",
+		"building": "kiln"
+	},
+	{
+		"id": "grind",
+		"text":
+		"Discover Water Wheel (Stone Axe, Masonry), build one on the river, then a Grindstone within 3 tiles of it"
+	},
 	{"id": "storehouse", "text": "Discover Storehouse and build one by far workshops", "building": "storehouse"},
 	{"id": "calendar", "text": "Discover Calendar: Farming, plus Storytelling or Megaliths", "tech": "calendar"},
 	{"id": "bronze", "text": "Discover Bronze Dawn", "tech": "bronze_dawn"},

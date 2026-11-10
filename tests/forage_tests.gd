@@ -19,7 +19,7 @@ func run(runner) -> void:
 	test_the_famine_comes_before_the_warning_and_goes_well_after_it()
 	test_foraged_food_is_not_income()
 	test_idle_kith_forage_and_the_food_recovers_without_growth()
-	test_a_waiting_hut_worker_forages_and_a_click_calls_them_back()
+	test_a_hut_worker_with_no_job_forages_and_goes_to_work_once_it_is_learned()
 	test_no_bush_in_reach_means_no_foraging()
 	test_a_forager_survives_a_save()
 	test_a_forager_can_be_given_a_job()
@@ -106,13 +106,12 @@ func _hut_camp() -> Array:
 			s.world.set_tile(spot + Vector2i(dx, dy), "grass")
 	s.world.set_tile(spot + Vector2i(1, 0), "tree")
 	s.tech_set["gatherers_hut"] = true
-	s.people.learned_by["wood"] = "Aro"
-	t.place_free(s, "gatherers_hut", spot)
+	t.place_free(s, "gatherers_hut", spot)  # its Kith know no job yet: the hut cannot work and its worker is free
 	s.economy.inv["berries"] = 0
 	return [s, spot]
 
 
-func test_a_waiting_hut_worker_forages_and_a_click_calls_them_back() -> void:
+func test_a_hut_worker_with_no_job_forages_and_goes_to_work_once_it_is_learned() -> void:
 	var a := _hut_camp()
 	var s: Sim = a[0]
 	var spot: Vector2i = a[1]
@@ -126,7 +125,7 @@ func test_a_waiting_hut_worker_forages_and_a_click_calls_them_back() -> void:
 	for _n in 600:
 		s.tick(0.1)
 		out = out or String(s.people.kith[w]["phase"]).begins_with("forage")
-	t.check(out, "a worker whose hut waits for a click goes foraging in a famine")
+	t.check(out, "a worker whose hut cannot work yet goes foraging in a famine")
 	t.check(String(s.town.buildings[i]["status"]) != "" and s.town.buildings[i]["trips"] == 0, "the hut still waits")
 	for _n in 600:
 		if String(s.people.kith[w]["phase"]).begins_with("forage"):
@@ -135,12 +134,16 @@ func test_a_waiting_hut_worker_forages_and_a_click_calls_them_back() -> void:
 		s.tick(0.1)
 	t.check(String(s.people.kith[w]["phase"]).begins_with("forage"), "out again")
 	t.check(s.town.buildings[i]["status"] == Data.FORAGE_STATUS, "and the hut's card says so")
-	Workers.click(s, i)
-	s.tick(0.1)
+	s.people.learned_by["wood"] = "Aro"  # the job is learned: the hut runs itself and calls the worker back
+	for _n in 100:
+		s.economy.inv["berries"] = mini(s.economy.inv["berries"], 4)
+		s.tick(0.1)
+		if not String(s.people.kith[w]["phase"]).begins_with("forage"):
+			break
 	t.check(
-		not String(s.people.kith[w]["phase"]).begins_with("forage"), "a click on the hut calls the worker back to it"
+		not String(s.people.kith[w]["phase"]).begins_with("forage"),
+		"once its job is learned the worker goes back to the hut"
 	)
-	t.check(s.people.kith[w]["phase"] == "to_site" or s.people.kith[w]["task"].has("tile"), "to work the trip")
 
 
 func test_no_bush_in_reach_means_no_foraging() -> void:

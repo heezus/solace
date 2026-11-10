@@ -25,7 +25,7 @@ func run(runner) -> void:
 	test_learning_after_a_few_clicks()
 	test_huts_gather_only_what_is_learned()
 	test_dispatch_trips_and_queue_cap()
-	test_no_loop_before_haulers_loop_after()
+	test_a_hut_runs_itself_at_half_speed_and_a_road_makes_it_full()
 	test_rush_and_its_cooldown()
 	test_click_yield_math()
 	test_hold_to_harvest()
@@ -109,7 +109,9 @@ func test_dispatch_trips_and_queue_cap() -> void:
 	var b: Dictionary = s.town.buildings[i]
 	s.people.learned_by["wood"] = "Aro"
 	run_for(s, 3.0)
-	t.check(b["status"].begins_with("Waiting: click"), "a hut waits for a click: " + b["status"])
+	t.check(
+		not b["status"].begins_with("Waiting: click"), "a hut whose Kith know the job needs no click: " + b["status"]
+	)
 	var wood: int = s.economy.inv["wood"]
 	for n in Data.TRIP_QUEUE:
 		t.check(Workers.click(s, i) == "Trip %d/%d" % [n + 1, Data.TRIP_QUEUE], "click %d queues a trip" % (n + 1))
@@ -122,10 +124,10 @@ func test_dispatch_trips_and_queue_cap() -> void:
 	t.check(b["trips"] == 0, "all three trips done")
 	var bundle: int = Data.BUNDLE * Hands.harvest_yield(s, "wood")
 	t.check(bundle == 3, "a bundle is 3 harvests")
-	t.check(s.economy.inv["wood"] == wood + bundle * Data.TRIP_QUEUE, "each trip brings a bundle to the stockpile")
+	t.check(s.economy.inv["wood"] >= wood + bundle * Data.TRIP_QUEUE, "each trip brings a bundle to the stockpile")
 	t.check(Buildings.buffered(b["out"]) == 0, "straight to the stockpile, not the hut")
-	run_for(s, 20.0)
-	t.check(s.economy.inv["wood"] == wood + bundle * Data.TRIP_QUEUE, "then the hut waits for the next click")
+	run_for(s, 40.0)
+	t.check(s.economy.inv["wood"] > wood + bundle * Data.TRIP_QUEUE, "and the hut goes on by itself with no click")
 
 
 func test_player_click_sends_a_round() -> void:
@@ -144,26 +146,26 @@ func test_player_click_sends_a_round() -> void:
 	t.check(Workers.click(s, i, true) == "Trip 2/%d" % Data.TRIP_QUEUE, "a hut with a trip waiting takes one more")
 
 
-func test_no_loop_before_haulers_loop_after() -> void:
+func test_a_hut_runs_itself_at_half_speed_and_a_road_makes_it_full() -> void:
 	var r := hut_camp()
 	var s: Sim = r[0]
 	var b: Dictionary = s.town.buildings[r[1]]
-	s.people.learned_by["wood"] = "Aro"
 	var wood: int = s.economy.inv["wood"]
 	run_for(s, 60.0)
+	t.check(s.economy.inv["wood"] == wood, "a hut whose Kith know no job does nothing")
+	s.people.learned_by["wood"] = "Aro"
+	run_for(s, 120.0)
+	var alone: int = s.economy.inv["wood"] - wood
 	t.check(
-		s.economy.inv["wood"] == wood and Buildings.buffered(b["out"]) == 0, "before Paths & Haulers a hut doesn't loop"
+		alone > 0 and Buildings.buffered(b["out"]) == 0,
+		"once they know it the hut runs itself, to the stockpile (%d)" % alone
 	)
 	s.tech_tree.researched["haulers"] = true
-	run_for(s, 30.0)
-	t.check(
-		s.economy.inv["wood"] == wood and Buildings.buffered(b["out"]) == 0, "researching it alone doesn't: no road yet"
-	)
-	t.check(b["alert"] == "Needs road", "the hut shows Needs road: " + b["alert"])
 	t.road_link(s, b["pos"])
-	run_for(s, 60.0)
-	t.check(s.economy.inv["wood"] + Buildings.buffered(b["out"]) > wood, "after it, the hut gathers on its own")
-	t.check(s.economy.inv["wood"] > wood, "and haulers carry the Wood to the stockpile")
+	var mid: int = s.economy.inv["wood"] + Buildings.buffered(b["out"])
+	run_for(s, 120.0)
+	var roaded: int = s.economy.inv["wood"] + Buildings.buffered(b["out"]) - mid
+	t.check(roaded > alone, "a road and haulers make it faster than it ran alone (%d against %d)" % [roaded, alone])
 
 
 func test_rush_and_its_cooldown() -> void:

@@ -5,6 +5,7 @@ extends RefCounted
 ## tests/run_tests.gd, which owns check() and the helpers.
 
 const Data = preload("res://scripts/data.gd")
+const Roads = preload("res://scripts/roads.gd")
 const Sim = preload("res://scripts/sim.gd")
 const RunSave = preload("res://scripts/run_save.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
@@ -22,12 +23,10 @@ func run(runner) -> void:
 	test_a_hut_with_nothing_near_has_no_focus()
 	test_cycling_and_setting_the_focus()
 	test_a_hut_gathers_only_its_focus()
-	test_the_berries_goal_needs_a_hut_on_berries()
+	test_the_hut_goal_says_to_put_a_hut_by_the_berries_and_that_it_runs_itself()
 	test_job_and_bundle_follow_the_focus()
 	test_the_panel_line_and_the_range_text()
-	test_an_unlinked_hut_waiting_for_a_click_says_so()
-	test_the_click_bubble_stops_nagging_while_the_food_is_comfortable()
-	test_a_food_hut_with_a_foraging_worker_shows_no_bubble()
+	test_a_hut_whose_kith_know_the_job_never_asks_for_a_click()
 	test_the_focus_survives_a_save()
 	test_a_hut_goes_down_working_the_resource_picked()
 	test_a_pick_at_placement_is_for_that_hut_only()
@@ -212,23 +211,14 @@ func test_a_hut_gathers_only_its_focus() -> void:
 	t.check(Workers.dispatch(s, i).begins_with("Nothing learned"), "and a click on it says so")
 
 
-func test_the_berries_goal_needs_a_hut_on_berries() -> void:
-	var a := _arena()
-	var s: Sim = a[0]
-	var p: Vector2i = a[1]
-	_put(s, p + Vector2i(1, 0), "tree")
-	_put(s, p + Vector2i(0, 2), "berry")
+func test_the_hut_goal_says_to_put_a_hut_by_the_berries_and_that_it_runs_itself() -> void:
 	var goal: Dictionary = {}
 	for g in Data.GOALS:
-		if g["id"] == "berries":
+		if g["id"] == "hut":
 			goal = g
-	t.check(s.place("gatherers_hut", p), "a hut with a tree beside it and berries two away")
-	t.check(not s.story.goal_met(s, goal), "set on the tree it does not meet the berries goal")
-	s.town.set_focus(s.town.building_at[p], "berries")
-	t.check(s.story.goal_met(s, goal), "set on the berries it does")
 	t.check(
-		String(goal["text"]).contains("Berry Bushes") and String(goal["text"]).contains("only works when you click it"),
-		"and the goal says a hut works only when you click it"
+		String(goal["text"]).contains("Berry Bushes") and String(goal["text"]).contains("works on its own"),
+		"the hut goal says to put a hut by the berries and that it works on its own: " + String(goal["text"])
 	)
 
 
@@ -311,9 +301,8 @@ func test_the_panel_line_and_the_range_text() -> void:
 	)
 
 
-## Found by playtest 3: a newcomer clicked hut 1 and never hut 2, because nothing said an unlinked hut only works
-## when clicked. A hut that waits for a click shows a badge, and the goals, hut card and food warning say so.
-func test_an_unlinked_hut_waiting_for_a_click_says_so() -> void:
+## Step 9A: a hut whose Kith know the job runs itself, so it never asks for a click; the card and the goals say it works on its own.
+func test_a_hut_whose_kith_know_the_job_never_asks_for_a_click() -> void:
 	var a := _arena()
 	var s: Sim = a[0]
 	var p: Vector2i = a[1]
@@ -324,110 +313,17 @@ func test_an_unlinked_hut_waiting_for_a_click_says_so() -> void:
 	var i: int = s.town.building_at[p]
 	var b: Dictionary = s.town.buildings[i]
 	t.check(b["worker"] >= 0 and b["trips"] == 0, "a new hut has its Kith and no trip waiting")
-	t.check(HutFocus.wants_click(s, b), "so it asks for a click")
-	t.check(not HutFocus.wants_click(s, s.town.buildings[0]), "and the Hearth does not")
-	b["trips"] = 2
-	t.check(not HutFocus.wants_click(s, b), "a hut with trips queued does not")
-	b["trips"] = 0
-	b["paused"] = true
-	t.check(not HutFocus.wants_click(s, b), "nor does a paused hut")
-	b["paused"] = false
-	b["out"] = {"berries": Data.BUFFER_CAP}
-	t.check(not HutFocus.wants_click(s, b), "nor a hut whose output is full")
-	b["out"] = {}
+	t.check(not HutFocus.wants_click(s, b), "and it does not ask for a click")
+	t.check(Roads.self_runs(s, b), "it runs itself")
+	t.check(Data.TRIPS_HINT.contains("works on its own"), "the hut card says so")
+	t.check(Data.BUILDINGS["gatherers_hut"]["desc"].contains("works on its own"), "as does its description")
+	t.check(not Data.FOOD_LOW_EVENT.contains("Click"), "the food warning does not ask for a click")
+	s.economy.famine = true
+	t.check(not HutFocus.wants_click(s, b), "not even in a famine")
 	s.people.learned_by.erase("berries")
-	t.check(not HutFocus.wants_click(s, b), "nor one whose focus its Kith have not learned")
-	var goal_text := ""
-	for g in Data.GOALS:
-		if g["id"] in ["hut", "trip", "berries"]:
-			t.check(String(g["text"]).to_lower().contains("click"), "the %s goal says to click the hut" % g["id"])
-			goal_text += String(g["text"])
-	t.check(not goal_text.contains("keeps coming"), "and none of them promises it keeps working")
-	t.check(Data.FOOD_LOW_EVENT.contains("Click your berry hut to send a trip"), "the food warning names the click")
-	t.check(Data.TRIPS_HINT.contains("only when you click it"), "the hut card says it works only when clicked")
-	t.check(Data.BUILDINGS["gatherers_hut"]["desc"].contains("only when you click it"), "as does its description")
-
-
-## Playtest 5: the yellow "click" bubbles stayed on after the Kith began foraging by themselves, looking like a to-do the
-## game handles. A food hut shows it before the first trip, and once the food is short (warning or famine); while the
-## food is comfortable it hides, and the card says clicking is optional. A wood hut always asks: only a click brings wood.
-func test_the_click_bubble_stops_nagging_while_the_food_is_comfortable() -> void:
-	var a := _arena()
-	var s: Sim = a[0]
-	var p: Vector2i = a[1]
-	_put(s, p + Vector2i(0, 1), "berry")
-	_put(s, p + Vector2i(-2, 0), "tree")
-	s.people.learned_by["berries"] = "Aro"
-	s.people.learned_by["wood"] = "Aro"
-	s.place("gatherers_hut", p)
-	s.tick(0.1)
-	var b: Dictionary = s.town.buildings[s.town.building_at[p]]
-	s.economy.inv["berries"] = 200
-	t.check(b["focus"] == "berries" and HutFocus.wants_click(s, b), "before any trip was sent, the food hut asks")
-	s.story.record("first_trip")
-	t.check(not HutFocus.wants_click(s, b), "after a first trip, with comfortable food, it does not")
-	t.check(HutFocus.click_can_wait(s, b), "its click can wait")
-	var card := BuildingPanel.click_text(s, b)
-	t.check(card.begins_with("Your Kith are fed; click to send more anyway."), "the card says so: " + card)
-	s.economy.low = true
 	t.check(
-		HutFocus.wants_click(s, b) and not BuildingPanel.click_text(s, b).contains("are fed"),
-		"with the warning up it asks again"
+		not Roads.self_runs(s, b) and not HutFocus.wants_click(s, b), "a hut that knows no job asks for nothing either"
 	)
-	s.economy.low = false
-	s.economy.famine = true
-	t.check(HutFocus.wants_click(s, b), "and in a famine, while nobody is out foraging")
-	var worker: Dictionary = s.people.kith[b["worker"]]
-	worker["phase"] = "forage_pick"
-	t.check(not HutFocus.wants_click(s, b), "but not while its worker is foraging for the Hearth on their own")
-	worker["phase"] = "forage_back"
-	t.check(not HutFocus.wants_click(s, b), "on the way back with the berries either")
-	worker["phase"] = "home"
-	t.check(HutFocus.wants_click(s, b), "and it asks again once they stop")
-	s.economy.famine = false
-	b["trips"] = 2
-	t.check(not HutFocus.wants_click(s, b), "never with trips waiting")
-	b["trips"] = 0
-	s.town.set_focus(s.town.building_at[p], "wood")
-	t.check(HutFocus.wants_click(s, b), "a wood hut always asks, whatever the food")
-	s.economy.famine = true
-	worker["phase"] = "forage_out"
-	t.check(HutFocus.wants_click(s, b), "even in a famine with its worker foraging: its wood only comes by click")
-	s.economy.famine = false
-	worker["phase"] = "home"
-	t.check(not BuildingPanel.click_text(s, b).contains("are fed"), "and its card does not say the Kith are fed")
-
-
-## Playtest 6: a berry hut still showed "click" at 5:40 while its Kith was out foraging for the Hearth on their own.
-func test_a_food_hut_with_a_foraging_worker_shows_no_bubble() -> void:
-	var s: Sim = t.fresh()
-	s.tech_set["gatherers_hut"] = true
-	t.give(s, 100)
-	var camp := s.world.camp_pos
-	for dx in range(-1, 5):
-		for dy in range(-2, 3):
-			s.world.set_tile(camp + Vector2i(dx, dy), "grass")  # a short walk from the Hearth
-	var p := camp + Vector2i(3, 0)
-	_put(s, p + Vector2i(0, 1), "berry")
-	s.people.learned_by["berries"] = "Aro"
-	t.check(s.place("gatherers_hut", p), "the hut goes down")
-	s.story.record("first_trip")
-	var b: Dictionary = s.town.buildings[s.town.building_at[p]]
-	for food in Data.FOOD_VALUE:
-		s.economy.inv[food] = 0
-	s.economy.inv["berries"] = 8  # a couple of minutes for three Kith: the famine fallback starts soon
-	var seen_forager := false
-	var asked_while_foraging := false
-	for i in 1500:
-		s.tick(0.1)
-		if b["worker"] < 0:
-			continue
-		var phase := String(s.people.kith[b["worker"]]["phase"])
-		if s.economy.famine and phase.begins_with("forage"):
-			seen_forager = true
-			asked_while_foraging = asked_while_foraging or HutFocus.wants_click(s, b)
-	t.check(seen_forager, "set up: the hut's worker went foraging in the famine")
-	t.check(not asked_while_foraging, "and the hut never asked for a click while they did")
 
 
 func test_the_focus_survives_a_save() -> void:

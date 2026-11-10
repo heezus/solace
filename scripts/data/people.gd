@@ -26,7 +26,7 @@ const GROW_RULE := (
 const GROW_HINT := "Kith grow once the food is steady: %s"
 const NO_WORKER_STATUS := "No %s yet: more %s needed (they grow with food and Dwellings)"
 ## The early warning, sent once when food is about to run out (formatted with PEOPLE["many"]).
-const FOOD_LOW_EVENT := "Food is running low. Click your berry hut to send a trip, or hold the mouse on Berry Bushes, and the %s stay fed"
+const FOOD_LOW_EVENT := "Food is running low. Put a hut on Berry Bushes, or hold the mouse on them, and the %s stay fed"
 ## Short earthy names, given in turn to each Kith as they're born (a second round adds " II").
 const PEOPLE_NAMES := ["Aro", "Tam", "Esk", "Bru", "Olla", "Fen", "Rook", "Moss", "Sef", "Tarn", "Wren", "Hask"]
 

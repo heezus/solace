@@ -179,7 +179,7 @@ func _decide() -> void:
 		_build("gatherers_hut", "berry")  # a second hut on the bushes, which it then never clicks
 		return
 	if g.has("building"):
-		_build(g["building"], "berry" if mode == "one_hut" and g["id"] == "hut" else "")
+		_build(g["building"], "berry" if g["id"] == "hut" else "")  # the hut goal says to put it beside the Berry Bushes
 	elif g.has("tech"):
 		_research(g["tech"])
 	else:
@@ -197,20 +197,18 @@ func _read(what: String) -> void:
 ## The goals that name neither a tech nor a building.
 func _goal(id: String) -> void:
 	match id:
-		"learn_wood":
-			_hold_on("wood")
-		"learn_berries":
-			_hold_on("berries")
-		"learn_stone":
-			_hold_on("stone" if not s.people.knows("stone") else "flint")
+		"gather":  # Wood, Berries, Stone and Flint by hand, in the order the old lessons came
+			for item in ["wood", "berries", "stone", "flint"]:
+				if not s.people.knows(item):
+					_hold_on(item)
+					return
 		"flax":
 			_hold_on("fiber")
 		"tools":
-			_craft_tools()
-		"trip":
-			_send_trip()
-		"berries":
-			_build("gatherers_hut", "berry")
+			if s.tech_tree.researched.has("knapping"):
+				_craft_tools()
+			else:
+				_research("knapping")
 		_:
 			_stop()  # a goal this newcomer never gets to
 

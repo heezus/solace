@@ -208,6 +208,5 @@ func test_the_early_numbers_stay_quick() -> void:
 		cost <= 60 and haulers["cost"].get("rope", 0) <= 20, "and costs at most 60 goods, 20 of them Rope (%d)" % cost
 	)
 	var ids: Array = Data.GOALS.map(func(g): return g["id"])
-	t.check(ids.find("twine") < ids.find("haulers"), "the Goals ask for Rope before Haulers")
-	t.check(ids.find("road") == ids.find("haulers") + 1, "and the road goal follows Haulers at once")
-	t.check(ids.find("haulers") < ids.find("charcoal"), "Roads come before the Charcoal Pit, which no road waits for")
+	t.check(ids.find("twine") < ids.find("road"), "the Goals ask for Rope before the road goal, which asks for Haulers")
+	t.check(ids.find("road") < ids.find("charcoal"), "Roads come before the Charcoal Pit, which no road waits for")

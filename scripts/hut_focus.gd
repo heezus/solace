@@ -152,6 +152,7 @@ static func wants_click(s: Sim, b: Dictionary) -> bool:
 		return false
 	return (
 		not Roads.automated(s, b)
+		and not Roads.self_runs(s, b)
 		and b["trips"] == 0
 		and Buildings.buffered(b["out"]) < Data.BUFFER_CAP
 		and s.people.knows_focus(b)

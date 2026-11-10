@@ -557,35 +557,21 @@ func test_flour_is_kept_for_research() -> void:
 
 func test_goals_advance_in_order() -> void:
 	var s := fresh()
-	check(s.story.current_goal() == 0, "first goal is learning Wood by hand")
-	for i in Data.LEARN_CLICKS:
-		s.gather_by_hand(find_tile(s, "tree"))
-	s.tick(0.1)
-	check(s.story.current_goal() == 1, "Wood learned, next the Berry Bushes: the Kith eat")
-	for i in Data.LEARN_CLICKS:
-		s.gather_by_hand(find_tile(s, "berry"))
-	s.tick(0.1)
-	check(s.story.current_goal() == 2, "Berries learned, next Stone and Flint")
-	for tile in ["rock", "gravel"]:
+	check(s.story.current_goal() == 0, "first goal is gathering by hand")
+	for tile in ["tree", "berry", "rock", "gravel"]:
 		for i in Data.LEARN_CLICKS:
 			s.gather_by_hand(find_tile(s, tile))
-	s.tick(0.1)
-	check(s.story.current_goal() == 3, "then find the flax")
+		s.tick(0.1)
+		if tile != "gravel":
+			check(s.story.current_goal() == 0, "one lesson is not the goal: Wood, Berries, Stone and Flint all count")
+	check(s.story.current_goal() == 1, "all four learned, next find the flax")
 	s.gather_by_hand(find_tile(s, "flax"))
 	s.tick(0.1)
-	check(s.story.current_goal() == 4, "then Knapping")
-	s.economy.inv["flint"] = 5
-	s.economy.inv["stone"] = 10
-	s.research("knapping")
-	s.tick(0.1)
-	check(s.story.current_goal() == 5, "knapping done, next is flint tools")
-	check(s.story.goals_done.has("learn_wood"), "earlier goals stay done")
+	check(s.story.current_goal() == 2, "then Knapping and the Flint Tools")
+	check(s.story.goals_done.has("gather"), "earlier goals stay done")
 	var ids: Array = Data.GOALS.map(func(g): return g["id"])
-	check(
-		ids.find("trip") > ids.find("hut") and ids.find("trip") < ids.find("haulers"),
-		"a trip comes between hut and Haulers"
-	)
-	check(ids.find("rush") > ids.find("haulers"), "and rushing after Haulers")
+	check(ids.size() <= 13 and not ids.has("trip") and not ids.has("rush"), "the Stone Age asks only for new verbs")
+	check(ids.find("hut") < ids.find("road"), "a hut comes before the road that speeds it up")
 
 
 func test_hut_gather_preview_matches_placement() -> void:
