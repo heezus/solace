@@ -736,7 +736,7 @@ func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
 			_rest_at_cap() and s.economy.inv.get(made, 0) >= later.get(made, 0) + 10 and not short.has(made) and room
 		)
 		for id in def["in"]:
-			if saving.has(id) and births.may_save(self, room, saved, idle_est):
+			if saving.has(id) and (births.no_hut(self, id) or births.may_save(self, room, saved, idle_est)):
 				surplus = true
 				saved += 1
 		if needs_hand and Buildings.is_staffed(b):
