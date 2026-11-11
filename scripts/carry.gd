@@ -101,10 +101,15 @@ func strain_lines() -> Array:
 
 
 ## True when the Kin finished era `i` (0 the stone age, 1 Bronze Dawn, 2 Starfall, 3 Ironfall, 4 Livewire) in the last
-## telling: it went on to the next one. A remembered era has no tutorial goals, its known techs cost nothing, and the Kin start knowing
-## its jobs (Step 9B).
+## telling: it went on to the next one, or ended on its gate (a tech the Kin know). A remembered era has no tutorial goals, its known
+## techs cost nothing, and the Kin start knowing its jobs (Step 9B).
 func remembers_era(i: int) -> bool:
-	return exodus > 0 and i >= 0 and i < last_eras.size() - 1
+	if exodus <= 0 or i < 0 or i >= last_eras.size():
+		return false
+	if i < last_eras.size() - 1:
+		return true
+	var gate: String = Founding.GATE_TECHS[i] if i < Founding.GATE_TECHS.size() else ""
+	return gate != "" and knows_tech(gate)  # the last era, its gate reached
 
 
 ## True for a first run, which carries nothing.

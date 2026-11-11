@@ -27,6 +27,7 @@ func run(runner) -> void:
 	test_a_remembered_era_has_one_goal_with_a_clock()
 	test_the_town_at_the_falling_star_is_laid_on_the_new_land()
 	test_the_new_land_card_says_what_the_kin_remember_and_offers_the_plan()
+	test_the_plan_buys_huts_first_then_roads_then_the_earliest_buildings()
 	_clean()
 
 
@@ -223,3 +224,28 @@ func test_the_new_land_card_says_what_the_kin_remember_and_offers_the_plan() -> 
 	t.check(s.carry.plans.size() == 1, "pressing it lays the old town (%d parts)" % s.carry.plans.size())
 	card.free()
 	_clean()
+
+
+func test_the_plan_buys_huts_first_then_roads_then_the_earliest_buildings() -> void:
+	var s := Sim.new()
+	s.generate(5)
+	s.carry.founding = {
+		"name": "The founding",
+		"w": 6,
+		"h": 1,
+		"banked": true,
+		"items":
+		[
+			{"t": "kiln", "x": 0, "y": 0},
+			{"t": "twine_post", "x": 1, "y": 0},
+			{"t": "road", "x": 2, "y": 0},
+			{"t": "gatherers_hut", "x": 3, "y": 0},
+			{"t": "dwelling", "x": 4, "y": 0},
+		],
+		"ax": 3,
+		"ay": 3
+	}
+	Founding.lay(s)
+	var order: Array = s.carry.plans.map(func(q): return q["t"])
+	t.check(order[0] == "gatherers_hut" and order[1] == "road", "huts, then roads: %s" % [order])
+	t.check(order.find("twine_post") < order.find("kiln"), "then the buildings of the earlier tech: %s" % [order])

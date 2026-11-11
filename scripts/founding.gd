@@ -14,6 +14,7 @@ const START_KITH := 10
 const GATES := ["bronze_dawn", "falling_star", "livewire", "skyward"]  # known from before, but they keep their price
 # the last goal of each era's list, the stone age first
 const GATE_GOALS := ["bronze", "falling_star", "warning_read", "livewire", "skyward"]
+const GATE_TECHS := ["bronze_dawn", "falling_star", "", "livewire", "skyward"]  # the gate of each era that is a tech
 const ERA_NAMES := ["the Stone Age", "Bronze Dawn", "the Starfall", "Ironfall", "Livewire"]
 const FIRST_TICK := 1.0  # seconds between looks for a tech that can be learned for free
 const PLAN_NAME := "The founding"
@@ -126,6 +127,23 @@ static func snapshot(s) -> void:
 	s.carry.founding = plan
 
 
+## The parts in the order they are bought: the gatherers' huts first (they bring in what the rest costs), then roads and fields, then the
+## other buildings of the earliest tech first. The plan pays for each part in turn, so an early era's needs come before a later era's town.
+## Ties keep their order.
+static func _in_era_order(items: Array) -> Array:
+	var keyed := []
+	for i in items.size():
+		var def: Dictionary = Data.BUILDINGS[items[i]["t"]]
+		var rank := 0  # the gatherers first: they bring in what everything after them costs
+		if def["kind"] in ["road", "bridge", "field"]:
+			rank = 1
+		elif def["kind"] != "gatherer":
+			rank = maxi(Data.TECH_ORDER.find(def.get("tech", "")), 0) + 2
+		keyed.append([rank, i, items[i]])
+	keyed.sort_custom(func(a, b): return a[0] < b[0] or (a[0] == b[0] and a[1] < b[1]))
+	return keyed.map(func(k): return k[2])
+
+
 ## True when there is a founding plan to offer.
 static func has_plan(s) -> bool:
 	return not s.carry.founding.is_empty() and not s.carry.founding.get("items", []).is_empty()
@@ -137,8 +155,9 @@ static func lay(s) -> int:
 		return 0
 	var plan: Dictionary = s.carry.founding
 	var at: Vector2i = s.world.camp_pos + Vector2i(int(plan.get("ax", 0)), int(plan.get("ay", 0)))
-	var n := Blueprints.lay_plan(s, plan, at)
-	return n
+	var ordered := plan.duplicate()
+	ordered["items"] = _in_era_order(plan["items"])
+	return Blueprints.lay_plan(s, ordered, at)
 
 
 ## The lines of the new-land card: the founders, what is free, how long each remembered era took.
