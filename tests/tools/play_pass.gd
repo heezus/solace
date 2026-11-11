@@ -264,7 +264,9 @@ func _flow_checks() -> void:
 	if layer == null:
 		return
 	_then(func(): _key(KEY_F))
-	_wait_for(func(): return layer.panel.visible and layer.box.get_child_count() > 1, "F did not open the flow view", 4000)
+	_wait_for(
+		func(): return layer.panel.visible and layer.box.get_child_count() > 1, "F did not open the flow view", 4000
+	)
 	_then(func(): _expect(not layer.panel.get_global_rect().is_equal_approx(Rect2()), "the flow view has no size"))
 	_then(func(): _key(KEY_F))
 	_then(func(): _expect(not layer.panel.visible, "F did not shut the flow view"), 3)
