@@ -22,6 +22,7 @@ const LIST := [
 	["B", "Open or close the build drawer"],
 	["H A W M L E C", "Open a build tab: Homes, Gathering, Workshops, Metal, Logistics, Lore, Craft"],
 	["T", "Tech tree"],
+	["F", "Flow view: what each good makes and uses, and what holds the goal up"],
 	["X", "Demolish tool"],
 	["G", "Fold or unfold the side panel"],
 	["Tab or R", "Next gatherer hut"],

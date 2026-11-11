@@ -8,6 +8,7 @@ extends PanelContainer
 
 signal speed_picked(value: int)  # 0 toggles pause
 signal log_pressed  # the Messages button
+signal flow_pressed  # the Flow button (key F): the flow view opens and shuts
 signal sight_toggled(on: bool)  # the Sight button, latched (holding Alt works without it)
 
 const Data = preload("res://scripts/data.gd")
@@ -23,6 +24,8 @@ const RAW := [
 ]
 ## Where each row of goods starts in ITEM_ORDER: raw, made, Bronze Dawn's five with Livewire's Wire and Starfall's Shardwork,
 ## Ironfall's seven with Starfall's Shard and Starfruit.
+const FLOW_BUTTON := "Flow (F)"
+const FLOW_TIP := "Open the flow view: what each good makes and uses a minute, and what holds up the goal's goods."
 const ROWS := [0, 7, 13, 20, 28]
 const LOSS := Ui.SHORT  # `alert`, lifted to read on cocoa
 ## The Food readout's text while the warning is up: light enough to read on the bar (over 4.5 to 1) at every moment.
@@ -178,6 +181,12 @@ func setup(game: Sim) -> void:
 	sight_button.tooltip_text = Data.SIGHT_TIP
 	sight_button.toggled.connect(func(on): sight_toggled.emit(on))
 	lower.add_child(sight_button)
+	var flow_button := Ui.button(FLOW_BUTTON)
+	Ui.key_hint(flow_button, "(F)")
+	flow_button.custom_minimum_size = Vector2(0, 28)
+	flow_button.tooltip_text = FLOW_TIP
+	flow_button.pressed.connect(func(): flow_pressed.emit())
+	lower.add_child(flow_button)
 
 	flow_panel = PanelContainer.new()
 	flow_panel.top_level = true
