@@ -612,6 +612,7 @@ func _build_ui() -> void:
 	top_bar.speed_picked.connect(_set_speed)
 	top_bar.log_pressed.connect(func(): msg_log.toggle())
 	SightLayer.attach(self, layer, top_bar, state)
+	(load("res://scripts/flow_layer.gd") as GDScript).attach(self, layer, top_bar, state)
 
 	# Bottom bar: tabs of fixed-size build buttons, Demolish and Craft.
 	bottom_bar = BuildBar.new()

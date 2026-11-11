@@ -253,6 +253,23 @@ func _grass_by(near: Vector2i) -> Vector2i:
 # --- The script --------------------------------------------------------------
 
 
+## The flow view (Step 9C-1): F opens it with a row for the goal's goods and the stock, the Flow button shuts it, and it holds no light
+## on the map once it is shut.
+func _flow_checks() -> void:
+	var layer: Node = null
+	for n in main.get_children():
+		if n.get_script() != null and String(n.get_script().resource_path).ends_with("flow_layer.gd"):
+			layer = n
+	_expect(layer != null, "the flow view's layer is not on the map")
+	if layer == null:
+		return
+	_then(func(): _key(KEY_F))
+	_wait_for(func(): return layer.panel.visible and layer.box.get_child_count() > 1, "F did not open the flow view", 4000)
+	_then(func(): _expect(not layer.panel.get_global_rect().is_equal_approx(Rect2()), "the flow view has no size"))
+	_then(func(): _key(KEY_F))
+	_then(func(): _expect(not layer.panel.visible, "F did not shut the flow view"), 3)
+
+
 func _script() -> void:
 	var s = main.state
 	_cutscene_checks()
@@ -306,6 +323,7 @@ func _script() -> void:
 	_then(func(): _click_building("gatherers_hut", Data.TRIP_QUEUE + 1), 5)
 	for key in ["pause", "pause", "collect"]:
 		_then(func(): _click_panel(key), 2)
+	_flow_checks()
 	# Right after a harvest, the first click on the build bar and the building panel responds at once.
 	_then(func(): _key(KEY_ESCAPE))
 	_then(

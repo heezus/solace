@@ -33,6 +33,7 @@ const OPTION_FOOD := "about %d food worth from the stockpile"
 const OPTION_DIM := "the Cairn's shardlight lent away for %d s"
 const OPTION_DARK := "workshops at half speed for %d s"
 const OPTION_NOTHING := "nothing else"
+const STORY_PACE := 2.5  # in a telling that has finished the Starfall before, its story clocks run at 40% of their length (Step 9C)
 const STAND_STORY := {"shared_shrine": "shrine_raised", "guard_post": "guard_raised"}
 
 var stage := ""  # "" before the star falls, then "falling", "landed" and "arrived"
@@ -124,14 +125,14 @@ func trust_word() -> String:
 func tick(delta: float) -> void:
 	match stage:
 		"falling":
-			clock += delta
+			clock += delta * story_pace()
 			if clock >= Data.LANDING_DELAY:
 				stage = "landed"
 				clock = 0.0
 				said.emit(Data.LANDED_LINE)
 				moment.emit("star_landed")
 		"landed":
-			clock += delta
+			clock += delta * story_pace()
 			if clock >= Data.ARRIVAL_DELAY:
 				stage = "arrived"
 				clock = 0.0
@@ -140,6 +141,12 @@ func tick(delta: float) -> void:
 				moment.emit("lumen_arrived")
 		"arrived":
 			_tick_arrived(delta)
+
+
+## How many story seconds pass for each second played: the Falling Star's clocks (the landing, the arrival, the Wall's copying, the
+## guesses talked over, the wait for a moment) run 2.5 times as fast in a telling that has finished the Starfall before.
+func story_pace() -> float:
+	return STORY_PACE if carry.remembers_era(2) else 1.0
 
 
 ## What the strangers remember of the telling before, said once as they arrive: Sela greets the Kith by name after a Time loop
@@ -157,16 +164,18 @@ func _tick_arrived(delta: float) -> void:
 	dim_left = maxf(dim_left - delta, 0.0)
 	dark_left = maxf(dark_left - delta, 0.0)
 	_tick_roads(delta)
-	_tick_moments(delta)
+	var story := delta * story_pace()
+	_tick_moments(story)
 	if has_building("glyph_wall"):
-		copy_clock += delta
+		copy_clock += story
 		if copy_clock >= Data.COPY_SECONDS:
 			copy_clock -= Data.COPY_SECONDS
 			var next := _next_to_copy()
 			if next != "":
 				_copy(next)
 				said.emit(Data.COPIED_LINE)
-	check_clock += delta
+		_copy_known()
+	check_clock += story
 	if check_clock >= Data.CHECK_SECONDS:
 		check_clock -= Data.CHECK_SECONDS
 		check()
@@ -424,6 +433,21 @@ func _copy(glyph: String) -> void:
 	copied.append(glyph)
 	if carry.knows_mark(glyph):
 		guesses[glyph] = Data.GLYPHS[glyph]["word"]
+
+
+## A telling that has finished the Starfall: the marks the Kin read before go onto the Wall at once, with their words, and are talked over
+## at the next look, so the sets they read stay read (Step 9C). A mark not read before waits for the Wall's own copying.
+func _copy_known() -> void:
+	if not carry.remembers_era(2):
+		return
+	var got := false
+	var next := _next_to_copy()
+	while next != "" and carry.knows_mark(next):
+		_copy(next)
+		got = true
+		next = _next_to_copy()
+	if got:
+		check_clock = Data.CHECK_SECONDS
 
 
 ## The first glyph of the first unread set that is not on the Wall yet, "" when every mark is copied. Only the sets the

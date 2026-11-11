@@ -10,6 +10,7 @@ const Sim = preload("res://scripts/sim.gd")
 const Ui = preload("res://scripts/ui.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
 const Chores = preload("res://scripts/chores.gd")
+const GoalSums = preload("res://scripts/goal_sums.gd")
 const SkyView = preload("res://scripts/sky_view.gd")
 
 const GOAL_COLOR: Color = Ui.HIGHLIGHT
@@ -125,6 +126,8 @@ func refresh_goals(s: Sim) -> void:
 		l.text = ("> " if i == 0 else "  ") + s.story.goal_text(list[gi], s)
 		var gate: String = s.story.gate_note(s, list[gi]) if i == 0 else ""
 		l.text += "\n" + gate if gate != "" else ""
+		var sum: String = GoalSums.line(s, list[gi]) if i == 0 else ""
+		l.text += "\n" + sum if sum != "" else ""
 		var chore: String = Chores.note(s) if i == 0 else ""
 		l.text += "\n" + chore if chore != "" else ""
 		l.add_theme_color_override("font_color", GOAL_COLOR if i == 0 else Ui.TEXT_DIM)
