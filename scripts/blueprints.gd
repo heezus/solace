@@ -43,24 +43,25 @@ static func parts_in(s, box: Rect2i, skip := []) -> Array:
 	return roads + fields + buildings
 
 
+## The blueprint of the part of the town in `box`, named `label`: {} when there is nothing in it to keep. It is not put in the book.
+static func make(s, box: Rect2i, label: String, skip := []) -> Dictionary:
+	var parts := parts_in(s, box, skip)
+	if parts.is_empty():
+		return {}
+	# banked false: saved this run, full price; an Exodus banks it, and a later run lays it at Data.EXODUS["bp_share"]
+	return {"name": label, "w": box.size.x, "h": box.size.y, "items": parts, "banked": false}
+
+
 ## Keep the part of the town in `box` as a new blueprint. Returns "" when it was saved, otherwise the reason it was not.
 static func save(s, box: Rect2i, label := "", skip := []) -> String:
 	if s.carry.blueprints.size() >= int(Data.EXODUS["bp_max"]):
 		return Data.EXODUS["bp_full"]
-	var parts := parts_in(s, box, skip)
-	if parts.is_empty():
-		return Data.EXODUS["bp_nothing"]
 	var n: int = s.carry.blueprints.size() + 1
-	s.carry.blueprints.append(
-		{
-			"name": label if label != "" else Data.EXODUS["bp_name"] % n,
-			"w": box.size.x,
-			"h": box.size.y,
-			"items": parts,
-			"banked": false  # saved this run: full price; an Exodus banks it, and a later run lays it at Data.EXODUS["bp_share"]
-		}
-	)
-	s.events.append(Data.EXODUS["bp_saved"] % [s.carry.blueprints[n - 1]["name"], parts.size()])
+	var bp := make(s, box, label if label != "" else Data.EXODUS["bp_name"] % n, skip)
+	if bp.is_empty():
+		return Data.EXODUS["bp_nothing"]
+	s.carry.blueprints.append(bp)
+	s.events.append(Data.EXODUS["bp_saved"] % [s.carry.blueprints[n - 1]["name"], bp["items"].size()])
 	return ""
 
 
@@ -77,7 +78,11 @@ static func drop(s, i: int) -> bool:
 static func lay(s, i: int, at: Vector2i) -> int:
 	if i < 0 or i >= s.carry.blueprints.size():
 		return 0
-	var bp: Dictionary = s.carry.blueprints[i]
+	return lay_plan(s, s.carry.blueprints[i], at)
+
+
+## Queue a plan for every part of blueprint `bp` (one of the book's, or the founding plan) with its top left corner at `at`.
+static func lay_plan(s, bp: Dictionary, at: Vector2i) -> int:
 	var n := 0
 	for part in bp["items"]:
 		var p := at + Vector2i(int(part["x"]), int(part["y"]))
@@ -102,7 +107,7 @@ static func tick(s) -> void:
 	if s.carry.plans.is_empty():
 		return
 	var keep := []
-	var dropped := 0
+	var dropped := []  # the kinds of the parts that never can go
 	var held := false  # a part waits on materials: the ones behind it wait their turn
 	for q in s.carry.plans:
 		var p := Vector2i(int(q["x"]), int(q["y"]))
@@ -116,9 +121,14 @@ static func tick(s) -> void:
 			keep.append(q)
 			held = held or err == WAITS[0]
 		else:
-			dropped += 1
-	if dropped > 0:
-		s.events.append(Data.EXODUS["bp_dropped"] % dropped)
+			dropped.append(q["t"])
+	if not dropped.is_empty():
+		var kinds := []
+		for type in dropped:
+			var name: String = Data.BUILDINGS[type]["name"]
+			if not name in kinds:
+				kinds.append(name)
+		s.events.append(Data.EXODUS["bp_dropped"] % [dropped.size(), ", ".join(kinds)])
 	if keep.is_empty() and not s.carry.plans.is_empty():
 		s.events.append(Data.EXODUS["bp_done"])
 	s.carry.plans = keep

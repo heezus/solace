@@ -34,7 +34,7 @@ func run(runner) -> void:
 	test_a_swap_keeps_its_floor_and_the_goals_need()
 	test_the_pole_goal_and_the_dark_say_how_far_the_pole_is()
 	test_a_hauler_wait_names_its_fix()
-	test_a_second_telling_prices_stone_age_techs_at_the_known_share()
+	test_a_second_telling_learns_stone_age_techs_free_and_keeps_the_gate_price()
 	test_the_table_writes_the_endings_and_chronicle_to_the_playtest_log()
 	test_a_workshop_with_plenty_of_its_good_says_so_not_stalled()
 
@@ -323,22 +323,19 @@ func test_a_hauler_wait_names_its_fix() -> void:
 	t.check(line.contains("10 of 5") and line.contains("+ on the Haulers row of the Hearth card"), line)
 
 
-func test_a_second_telling_prices_stone_age_techs_at_the_known_share() -> void:
+func test_a_second_telling_learns_stone_age_techs_free_and_keeps_the_gate_price() -> void:
 	var s := Sim.new()
 	s.generate(5)
 	for id in ["knapping", "fire"]:
 		t.check(s.tech_tree.cost_of(id) == Data.TECHS[id]["cost"], "a first telling pays %s in full" % id)
 		s.carry.techs.append(id)
-		var known: Dictionary = s.tech_tree.cost_of(id)
-		for good in known:
-			t.check(
-				known[good] == ceili(Data.TECHS[id]["cost"][good] * Data.EXODUS["known_share"]),
-				"the second telling pays the share of %s %s" % [id, good]
-			)
+		t.check(s.tech_tree.cost_of(id).is_empty(), "the second telling learns %s for nothing" % id)
 	var gate := {"id": "falling_star", "text": "Discover the gate: {cost}", "tech": "falling_star"}
 	var before: String = s.story.goal_text(gate, s)
 	s.carry.techs.append("falling_star")
-	t.check(s.story.goal_text(gate, s) != before, "a gate learned before shows its cheaper price in the goal's words")
+	t.check(
+		s.story.goal_text(gate, s) == before, "a gate learned before still shows its full price in the goal's words"
+	)
 
 
 func test_the_table_writes_the_endings_and_chronicle_to_the_playtest_log() -> void:

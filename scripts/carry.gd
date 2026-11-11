@@ -7,6 +7,7 @@ extends RefCounted
 
 const Blueprints = preload("res://scripts/blueprints.gd")
 const Data = preload("res://scripts/data.gd")
+const Founding = preload("res://scripts/founding.gd")
 
 var techs: Array = []  # tech ids learned in an earlier run: they cost a share of the study
 var marks: Array = []  # glyph ids read in an earlier run: they show their word
@@ -22,11 +23,25 @@ var told := false  # the card that opens a run after an ending has been shown (s
 var blueprints: Array = []  # the run's blueprint book (scripts/blueprints.gd): begins as the profile's, the run adds to it
 var dug: Array = []  # the relic ids dug out of the ruins this run (scripts/relics.gd): used up with the run, never carried on
 var plans: Array = []  # the parts of laid blueprints still waiting to be built, [{"t": type, "x": column, "y": row}]
+var jobs: Array = []  # the item ids the people had learned to gather before this run: the founders know every job (Step 9B)
+var last_eras: Array = []  # the minutes the last telling spent in each era it reached, the stone age first (Endings.telling "eras")
+var free_clock := 0.0  # seconds since the Kin last looked for a tech to learn for free (Founding.tick); not saved
+# the last telling's town as it stood when the Falling Star came: a blueprint and where it sat from the Hearth
+var founding: Dictionary = {}
+
+
+## Tell the run's blocks what the Kin remember: the Research block which techs are known, the Story which eras are finished.
+func wire(s) -> void:
+	s.tech_tree.known_before = knows_tech
+	s.story.remembers = remembers_era
 
 
 ## Build what the laid blueprints allow (scripts/blueprints.gd): the Sim calls this every tick.
-func build_plans(s) -> void:
+func build_plans(s, delta: float) -> void:
 	Blueprints.tick(s)
+	Founding.tick(s, delta)
+	if founding.get("run", -1) != exodus and s.story.has_event("star_falling"):
+		Founding.snapshot(s)  # the Falling Star has come: the town as it stands is the next telling's founding plan
 
 
 ## True when an earlier telling ended in `ending`.
@@ -83,6 +98,18 @@ func strain_lines() -> Array:
 		if strain_count(kind) > 0:
 			out.append(Data.ENDINGS["strain_words"][kind])
 	return out
+
+
+## True when the Kin finished era `i` (0 the stone age, 1 Bronze Dawn, 2 Starfall, 3 Ironfall, 4 Livewire) in the last
+## telling: it went on to the next one, or ended on its gate (a tech the Kin know). A remembered era has no tutorial goals, its known
+## techs cost nothing, and the Kin start knowing its jobs (Step 9B).
+func remembers_era(i: int) -> bool:
+	if exodus <= 0 or i < 0 or i >= last_eras.size():
+		return false
+	if i < last_eras.size() - 1:
+		return true
+	var gate: String = Founding.GATE_TECHS[i] if i < Founding.GATE_TECHS.size() else ""
+	return gate != "" and knows_tech(gate)  # the last era, its gate reached
 
 
 ## True for a first run, which carries nothing.
@@ -166,6 +193,9 @@ func to_dict() -> Dictionary:
 		"blueprints": blueprints.duplicate(true),
 		"plans": plans.duplicate(true),
 		"dug": dug.duplicate(),
+		"jobs": jobs.duplicate(),
+		"last_eras": last_eras.duplicate(),
+		"founding": founding.duplicate(true),
 	}
 
 
@@ -191,6 +221,12 @@ func from_dict(d: Dictionary) -> void:
 	blueprints = _dicts(d.get("blueprints", []))
 	plans = _dicts(d.get("plans", []))
 	dug = _strings(d.get("dug", []))
+	jobs = _strings(d.get("jobs", []))
+	last_eras = []
+	if typeof(d.get("last_eras")) == TYPE_ARRAY:
+		for m in d["last_eras"]:
+			last_eras.append(float(m))
+	founding = d["founding"].duplicate(true) if typeof(d.get("founding")) == TYPE_DICTIONARY else {}
 
 
 static func _dicts(list) -> Array:

@@ -13,6 +13,7 @@ signal tech_researched(id: String)
 const Codec = preload("res://scripts/save_codec.gd")
 const Data = preload("res://scripts/data.gd")
 const Economy = preload("res://scripts/economy.gd")
+const Founding = preload("res://scripts/founding.gd")
 const Rules = preload("res://scripts/rules.gd")
 
 var researched: Dictionary  # tech id -> true (the Economy reads the same set as a view, and never writes it)
@@ -174,16 +175,13 @@ static func enabled(tech: String) -> bool:
 	return Rules.tech_enabled(tech)
 
 
-## What `tech` costs now: a tech learned in an earlier run costs Data.EXODUS["known_share"] of its study first (each item
-## rounded up). Then Tally Sticks makes every tech a tenth cheaper, and whatever the town reports as an extra discount
+## What `tech` costs now: a tech learned in an earlier run costs nothing (Step 9B), except the four gates, which keep their price.
+## Then Tally Sticks makes every tech a tenth cheaper, and whatever the town reports as an extra discount
 ## (a Shard Cairn) takes a little more off. Those multiply and the item is rounded once, never to less than 1.
 func cost_of(tech: String) -> Dictionary:
 	var cost: Dictionary = Data.TECHS[tech]["cost"]
-	if known_before.call(tech):
-		var half := {}
-		for id in cost:
-			half[id] = ceili(cost[id] * Data.EXODUS["known_share"])
-		cost = half
+	if known_before.call(tech) and not tech in Founding.GATES:
+		return {}  # the Kin learned it before (Step 9B): it costs nothing, and the gates keep their full price
 	var share := 1.0
 	if comes_later(tech):
 		share *= Data.FORK_LATER_COST

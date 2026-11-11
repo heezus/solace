@@ -48,6 +48,8 @@ func update(s, delta: float) -> void:
 	if not HintSettings.on() or messages.active.any(func(m): return m["kind"] == Data.HINT_KIND):
 		return
 	_sight_clock -= delta
+	if s.carry.remembers_era(s.story.era_index()):
+		return  # the Kin have been here before: no teaching in an era they finished (Step 9B)
 	for id in Data.HINT_ORDER:
 		if id in _seen:
 			continue

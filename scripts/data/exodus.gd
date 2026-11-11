@@ -6,11 +6,10 @@ extends RefCounted
 const EXODUS := {
 	# What the carry does. A tech learned in an earlier run costs this share of its study (each item rounded up).
 	"known_share": 0.3,
-	"known_line": "Known from before: 30% of the study",
 	# The card that opens a run that begins with a carry.
 	"land_title": "A NEW LAND",
 	"land_text": "The town stays behind. The Kith walk into a land they have not seen, carrying what they know.",
-	"land_techs": "%d things they learned before, each at 30%% of the study",
+	"land_techs": "%d things they learned before cost nothing to learn again. Each gate asks its full price",
 	"land_marks": "%d marks of the strangers' writing, already read",
 	"land_echoes": "The echo of %s: %s",  # the set, the building it opens
 	"land_button": "Begin",
@@ -38,7 +37,7 @@ const EXODUS := {
 	"bp_saved": "Saved %s: %d parts",  # the name, the parts
 	"bp_laid": "Plans laid for %d parts of %s",  # the parts, the name
 	"bp_done": "The laid plans are all built",
-	"bp_dropped": "%d plans could not be laid and were dropped",
+	"bp_dropped": "%d plans could not go on this land and were dropped: %s. Place them where the ground allows",
 	"bp_name": "Blueprint %d",
 	"bp_carried": "%d blueprints carried from before",  # the new-land card line
 }

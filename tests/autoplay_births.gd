@@ -47,6 +47,11 @@ func may_save(bot, births_go: bool, saved: int, idle_est: int) -> bool:
 	return saved < SAVING_PAUSES and (bot.s.people.kith.size() >= SMALL_TOWN or idle_est == 0)
 
 
+## A later run's laid town may have no hut for a raw good a Dwelling eats: the workshops that eat it rest until the hand has made the hut.
+func no_hut(bot, id: String) -> bool:
+	return bot.s.carry.exodus > 0 and bot.RAW_TILE.has(id) and bot._huts_for(id) < 0.5
+
+
 ## Called once a decision, before the pauses. `bot` is the pacing bot (tests/autoplay.gd).
 func watch(bot) -> void:
 	if not waiting(bot):

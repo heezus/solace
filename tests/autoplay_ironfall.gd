@@ -27,6 +27,7 @@ const BOILERS := 3  # the most Boilers: more only when the Forges find no ground
 const STEAM_SHEDS := 1  # the start already has a Shed; more only cost the iron the gate wants
 const COAL_SPARE := 150  # coal the stockpile keeps beyond the gate's needs before the Coal Mines rest
 const WAIT_FOR_ROOM := 90.0  # seconds a building may stay affordable and unplaced before the plan goes on without it
+const BRICK_ENOUGH := 200  # Brick in stock beyond which a Kiln lets the Clay go to a building that is short of it
 const WORKSHOPS_BIG := 8  # the most of one kind of workshop the bot builds in the era (the stone age's cap is 4)
 const POSTS := 2  # Expedition Posts: a second sends the second party for the Bloom samples
 ## The techs the metal works stand on, taken before any other: the road to Bloom Sampling passes through none of them.
@@ -517,6 +518,28 @@ func _next_price() -> Dictionary:
 func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
 	super._pause_surplus(short, later)
 	_manage_works()
+	_spare_the_clay(short)
+
+
+## Clay a building the plan wants is short of is gathered by hand before the metal: a Bloomery waited on 30 Clay for good in a run after an
+## ending, where every hut is staffed and the ore was always the shortest good.
+func _next_click() -> String:
+	if _short().get("clay", 0) > 0 and _nearest_tile(RAW_TILE["clay"], s.world.camp_pos).x >= 0:
+		return "clay"
+	return super._next_click()
+
+
+## A Kiln does not eat the Clay a building the plan wants is short of while the Brick it makes is already in stock (a run after an
+## ending has plenty of Brick from the first minute and its Clay is made by hand: a Bloomery waited on 30 Clay for good).
+func _spare_the_clay(short: Dictionary) -> void:
+	var spare: bool = short.get("clay", 0) > 0 and _inv("brick") >= BRICK_ENOUGH
+	for i in s.town.buildings.size():
+		if (
+			s.town.buildings[i]["type"] == "kiln"
+			and spare != s.town.buildings[i]["paused"]
+			and (spare or _inv("brick") >= BRICK_ENOUGH)
+		):
+			s.set_paused(i, spare)
 
 
 ## The Expedition Post: parts from the Wreck while it has any, then the Bloom samples once the Kith may take them.

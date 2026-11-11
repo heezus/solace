@@ -38,6 +38,7 @@ const AutoplaySkyreach = preload("res://tests/autoplay_skyreach.gd")
 const AutoplayStarfall = preload("res://tests/autoplay_starfall.gd")
 const DevStarts = preload("res://scripts/dev_starts.gd")
 const EraProbe = preload("res://tests/tools/era_probe.gd")
+const Founding = preload("res://scripts/founding.gd")
 const Endings = preload("res://scripts/endings.gd")
 const Launch = preload("res://scripts/launch.gd")
 const Profile = preload("res://scripts/profile.gd")
@@ -351,6 +352,8 @@ func _begin_run(game: Sim, m: int) -> bool:
 		AutoplayBlueprints.save_all(end)
 	Profile.set_out(end, path, ending)
 	Launch.begin_new(game, m, path)
+	if Founding.has_plan(game):  # the new-land card's "Lay the founding plan", as a player would press it (Step 9B)
+		print("founding plan: %d parts laid" % Founding.lay(game))
 	if with_blueprints:
 		print("blueprints: %d kept to lay when they can be paid for" % AutoplayBlueprints.hold_all(game))
 	return true

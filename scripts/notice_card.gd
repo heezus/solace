@@ -11,6 +11,7 @@ signal closed(look: bool)
 
 const CutscenePlayer = preload("res://scripts/cutscene_player.gd")
 const Data = preload("res://scripts/data.gd")
+const Founding = preload("res://scripts/founding.gd")
 const KinName = preload("res://scripts/kin_name.gd")
 const Profile = preload("res://scripts/profile.gd")
 const TopBar = preload("res://scripts/top_bar.gd")
@@ -23,6 +24,7 @@ var _box: VBoxContainer
 var _state  # the Sim, kept while a season's card is up so the answer can reach its Seasons block
 var _season := false  # the card now up is a season's
 var _kin := false  # the card now up is the one that names the Kin
+var _land := false  # the card now up is the new land's, which may offer the founding plan
 
 
 func setup() -> void:
@@ -56,6 +58,7 @@ func poll(s, blocked: bool) -> bool:
 	if blocked or visible:
 		return false
 	_kin = false
+	_land = false
 	if _kin_due(s):
 		_season = false
 		_kin = true
@@ -67,7 +70,14 @@ func poll(s, blocked: bool) -> bool:
 		s.carry.told = true
 		_season = false
 		var ending: Dictionary = Data.ENDINGS[s.carry.ending] if Data.ENDINGS.has(s.carry.ending) else {}
-		open(ending.get("next_title", Data.EXODUS["land_title"]), _land_text(s), [Data.EXODUS["land_button"]])
+		var labels: Array = [Data.EXODUS["land_button"]]
+		var notes: Array = []
+		if Founding.active(s) and Founding.has_plan(s):
+			labels.append(Founding.PLAN_BUTTON)
+			notes = [Founding.BEGIN_NOTE, Founding.PLAN_NOTE]
+		_state = s
+		_land = true
+		open(ending.get("next_title", Data.EXODUS["land_title"]), _land_text(s), labels, notes)
 		return true
 	if s.seasons.phase == "pending":
 		var def: Dictionary = Data.SEASONS[s.seasons.kind]
@@ -113,7 +123,16 @@ func _land_text(s) -> String:
 		if s.carry.has_echo(id):
 			var card: Dictionary = Data.LUMEN["cards"][id]
 			lines.append(Data.EXODUS["land_echoes"] % [card["set"], Data.BUILDINGS[card["building"]]["name"]])
+	lines.append_array(_remembered(s))
 	return "\n".join(lines)
+
+
+## What the Kin remember (Founding.card_lines), set apart by a blank line.
+func _remembered(s) -> Array:
+	var lines: Array = Founding.card_lines(s)
+	if lines.is_empty():
+		return []
+	return [""] + lines
 
 
 ## Put the card up with `title`, `text` and a button for each of `labels`, each with its `notes` line under it when given.
@@ -149,4 +168,6 @@ func _pick(index: int) -> void:
 	visible = false
 	if _season:
 		_state.seasons.choose(_state, index)
-	closed.emit(not _season and not _kin and index == 0)
+	if _land and index == 1:
+		Founding.lay(_state)  # "Lay the founding plan"
+	closed.emit(not _season and not _kin and index <= 1)

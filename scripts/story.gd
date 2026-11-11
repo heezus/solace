@@ -19,12 +19,14 @@ const Land = preload("res://scripts/land.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Chain = preload("res://scripts/chain.gd")
+const Founding = preload("res://scripts/founding.gd")
 const Needs = preload("res://scripts/needs.gd")
 const Power = preload("res://scripts/power.gd")
 
 ## The story moments that open an era after the stone age, in order: Bronze Dawn, the Starfall (the star falls), Ironfall, Livewire.
 const ERA_OPENINGS := ["bronze_dawn", "star_falling", Data.IRONFALL_EVENT, Data.LIVEWIRE_BEGUN, "skyreach_begun"]
 
+var remembers: Callable = func(_era): return false  # (int) -> bool: the Kin finished that era in the last telling (Carry.remembers_era)
 var events: Array = []  # story ids, in the order they happened
 ## The first cairn went up before the Falling Star fell: a run flag, saved, that a future first contact will read.
 var cairn_before_landing := false
@@ -35,6 +37,13 @@ var south_note := ""  # why the south is not held now (Gate.note), for the goal'
 var south_lost := false  # the south was held and is not now
 ## True while an era card is up (the owner sets it, never saved): the era after it begins the tick after it is put away.
 var card_up := false
+var _reach_lists: Array = [
+	[Founding.reach_goal(0)],
+	[Founding.reach_goal(1)],
+	[Founding.reach_goal(2)],
+	[Founding.reach_goal(3)],
+	[Founding.reach_goal(4)],
+]
 var _ore_tiles: Dictionary = {}  # tile id -> its positions in the grown land (see _ore)
 var _ore_width := 0
 var _south_was := false  # the south was held at the last update
@@ -160,15 +169,28 @@ func _chart_seam(s) -> void:
 
 ## The checklist in force: the stone age's, and the second era's once Bronze Dawn is discovered.
 func goal_list() -> Array:
+	var era := era_index()
+	if era < 5 and remembers.call(era):
+		return _reach_lists[era]  # an era the Kin finished: its gate is the one goal (Step 9B)
+	return era_list(era)
+
+
+## The era the run is in: 0 the stone age, 1 Bronze Dawn, 2 the Starfall, 3 Ironfall, 4 Livewire, 5 Skyreach.
+func era_index() -> int:
 	if "skyreach_begun" in events:
-		return Data.SKYREACH["goals"]
+		return 5
 	if Data.LIVEWIRE_BEGUN in events:
-		return Data.GOALS_ERA5
+		return 4
 	if Data.IRONFALL_EVENT in events:
-		return Data.GOALS_ERA4
+		return 3
 	if "star_falling" in events:
-		return Data.GOALS_ERA3
-	return Data.GOALS_ERA2 if "bronze_dawn" in events else Data.GOALS
+		return 2
+	return 1 if "bronze_dawn" in events else 0
+
+
+## The full checklist of era `era`, before any is remembered.
+func era_list(era: int) -> Array:
+	return [Data.GOALS, Data.GOALS_ERA2, Data.GOALS_ERA3, Data.GOALS_ERA4, Data.GOALS_ERA5, Data.SKYREACH["goals"]][era]
 
 
 ## A goal's words. "{cost}" in them is the goal tech's real cost (Data.TECHS), or with the game (`sim`) what it costs now: a tech
@@ -181,6 +203,8 @@ func goal_text(g: Dictionary, sim = null) -> String:
 		for id in cost:
 			parts.append("%d %s" % [cost[id], Data.ITEMS[id]["name"]])
 		text = text.replace("{cost}", ", ".join(parts))
+	if g.has("reach") and sim != null and not goals_done.has(g["id"]):
+		text += ". " + Founding.clock_line(sim, int(g["reach"]))
 	if g["id"] == "south_held" and south_note != "" and not goals_done.has("south_held"):
 		text = (Data.SOUTH_LINES["goal_lost"] if south_lost else Data.SOUTH_LINES["now"]) % [text, south_note]
 	return text
