@@ -124,8 +124,9 @@ func placement_error(type: String, p: Vector2i) -> String:
 		return "Must touch the river"
 	if def.get("needs_shard", false) and not _world.touches(p, "shard"):
 		return "Must go next to the Strange Stone"
-	if def.get("near_hearth", false) and not near_hearth(p):
-		return "Must be within %d tiles of the Hearth" % int(Data.HEARTH_RADIUS)
+	var home: bool = def["kind"] == "house"  # a Dwelling may also stand by any Storehouse, so the room grows with the town (fun-4)
+	if def.get("near_hearth", false) and not near_hearth(p, home):
+		return "Must be within %d tiles of the Hearth%s" % [int(Data.HEARTH_RADIUS), " or a Storehouse" if home else ""]
 	if not _economy.can_afford(price(type)):
 		return "Not enough materials"
 	return ""
@@ -227,8 +228,14 @@ func upgrade_error(type: String, p: Vector2i) -> String:
 	return "Something is already there"
 
 
-func near_hearth(p: Vector2i) -> bool:
-	return Vector2(p).distance_to(Vector2(_world.camp_pos)) <= Data.HEARTH_RADIUS
+func near_hearth(p: Vector2i, or_storehouse := false) -> bool:
+	if Vector2(p).distance_to(Vector2(_world.camp_pos)) <= Data.HEARTH_RADIUS:
+		return true
+	if or_storehouse:
+		for b in buildings:
+			if b["type"] == "storehouse" and Vector2(p).distance_to(Vector2(b["pos"])) <= Data.HEARTH_RADIUS:
+				return true
+	return false
 
 
 ## The type of whatever the player built at p (a building, road, bridge or field), or "".

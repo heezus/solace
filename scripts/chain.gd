@@ -8,16 +8,39 @@ extends RefCounted
 const Data = preload("res://scripts/data.gd")
 const Rules = preload("res://scripts/rules.gd")
 
+## How many unfinished techs on the way the line names before it says "and N more".
+const ROUTE_SHOWN := 4
+
 
 ## The sentence for what stands in the way of `tech` ("" when nothing does but time: every step is paid for or can be at once).
 ## "Grindstone needs Farming. Farming isn't in view yet: gather Grain by hand once to see it."
 static func note(s, tech: String) -> String:
 	var found := step(s, tech)
+	var route := route_line(s, tech)
 	if found.is_empty():
-		return ""
+		return route
 	var named: String = Data.TECHS[tech]["name"]
 	var at: String = Data.TECHS[found["tech"]]["name"]
+	if route != "":
+		return "%s %s" % [route, found["line"]]  # every parent still to discover, then the first one that is stuck and why
 	return ("%s needs %s. " % [named, at] if found["tech"] != tech else "") + found["line"]
+
+
+## "Falling Star needs Star Charts and Granaries first." The techs on the way to `tech` that are not discovered yet, parents before
+## children, however cheap: a prerequisite the stockpile can pay for is still one the player has to ask for. "" when none stand before it.
+static func route_line(s, tech: String) -> String:
+	if s.tech_tree.researched.has(tech):
+		return ""
+	var names: Array = []
+	for t in Rules.route_to(tech, s.tech_tree.researched, s.tech_tree.visible_set()):
+		if t != tech:
+			names.append(Data.TECHS[t]["name"])
+	if names.is_empty():
+		return ""
+	var shown: Array = names.slice(0, ROUTE_SHOWN)
+	if names.size() > ROUTE_SHOWN:
+		shown.append("%d more" % (names.size() - ROUTE_SHOWN))
+	return "%s needs %s first." % [Data.TECHS[tech]["name"], _list(shown)]
 
 
 ## The first step on the way to `tech` that cannot just be paid for now: {"tech", "kind", "line"}, {} when none stands in the way.

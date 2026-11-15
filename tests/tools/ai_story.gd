@@ -13,7 +13,10 @@ const OldShip = preload("res://scripts/old_ship.gd")
 const Profile = preload("res://scripts/profile.gd")
 const SimScript = preload("res://scripts/sim.gd")
 
-const MOVES := ["guess", "scene", "endings", "ending_details", "set_out", "chronicle"]
+const MOVES := ["guess", "scene", "endings", "ending_details", "set_out", "chronicle", "lay_plan"]
+const NoticeCard = preload("res://scripts/notice_card.gd")
+const Founding = preload("res://scripts/founding.gd")
+const LAND_CARD_SECONDS := 300.0  # the new land's card stays on the page this long, or until the plan is laid
 const MARK_ROWS := 5  # a mark is drawn on a grid this many rows and ...
 const MARK_COLS := 9  # ... this many columns, as the Wall draws its strokes
 
@@ -24,6 +27,7 @@ static var _scenes := {}  # sequence id -> "waiting", "watched" or "skipped"
 static var _told: Array = []  # lines the next page opens with (a scene just watched, the Chronicle just opened)
 static var _card_open := false  # the ending card has been opened
 static var _details: Array = []  # endings whose details were opened
+static var _laid_run := -1  # the telling whose founding plan the table laid
 static var _card_at := 0.0  # the game second the ending card was opened (what the playtest log reads as its time at the card)
 
 
@@ -37,6 +41,7 @@ static func reset(path := "user://ai_profile.json") -> void:
 	_told = []
 	_card_open = false
 	_details = []
+	_laid_run = -1
 
 
 ## The Sim the last set_out began, once; null when none (the table swaps its game for it).
@@ -51,6 +56,7 @@ static func lines(s) -> Array:
 	_follow(s)
 	var out: Array = _told.duplicate()
 	_told = []
+	out.append_array(_land(s))
 	out.append_array(_wall(s))
 	out.append_array(_waiting(s))
 	out.append_array(_card(s))
@@ -77,6 +83,8 @@ static func move(s, m: Dictionary) -> String:
 			return _open_details(s, str(m.get("ending", "")))
 		"set_out":
 			return _set_out(s, str(m.get("ending", "")), str(m.get("scenes", "watch")) == "skip")
+		"lay_plan":
+			return _lay_plan(s)
 		"chronicle":
 			var profile := Profile.new()
 			profile.load_file(profile_path)
@@ -109,6 +117,44 @@ static func _follow(s) -> void:
 			_scenes[id] = "skipped"  # played before the table began: not offered again
 	if young and s.carry.exodus > 0 and Data.CUTSCENES.has("next_telling"):
 		_scenes["next_telling"] = "waiting"
+
+
+# --- The new land's card ------------------------------------------------------------------------------------------
+
+
+## The card a person sees on landing in a later telling: what the Kin carry and remember, and the offer to lay the founding plan.
+## The page prints it at the start of the telling, until the plan is laid or LAND_CARD_SECONDS pass.
+static func _land(s) -> Array:
+	if s.carry.exodus <= 0 or s.seasons.time > LAND_CARD_SECONDS or _laid_run == s.carry.exodus:
+		return []
+	var card = NoticeCard.new()
+	var ending: Dictionary = Data.ENDINGS[s.carry.ending] if Data.ENDINGS.has(s.carry.ending) else {}
+	var out: Array = ["THE NEW LAND (card): %s" % ending.get("next_title", Data.EXODUS["land_title"])]
+	for line in str(card._land_text(s)).split("\n"):
+		out.append("  " + line if line != "" else "")
+	card.free()
+	if Founding.active(s) and Founding.has_plan(s):
+		(
+			out
+			. append(
+				(
+					'  FOUNDING PLAN: %d parts. %s. Move {"do":"lay_plan"} lays it, or leave it and place each building yourself.'
+					% [s.carry.founding.get("items", []).size(), Founding.PLAN_NOTE]
+				)
+			)
+		)
+	return out
+
+
+static func _lay_plan(s) -> String:
+	if not Founding.has_plan(s):
+		return "there is no founding plan to lay"
+	var n := Founding.lay(s)
+	_laid_run = s.carry.exodus
+	if n == 0:
+		return "no part of the founding plan fits this land"
+	_told.append("The founding plan is laid: %d parts are queued, each paid as it is built." % n)
+	return ""
 
 
 # --- The Glyph Wall -----------------------------------------------------------------------------------------------

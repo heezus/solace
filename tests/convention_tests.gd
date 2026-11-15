@@ -198,7 +198,7 @@ func test_dwellings_stay_near_the_hearth() -> void:
 	s.economy.inv["fiber"] = 100
 	t.check(Data.BUILDINGS["camp"]["name"] == "Hearth", "the Camp is the Hearth")
 	t.check(
-		s.town.placement_error("dwelling", far) == "Must be within 6 tiles of the Hearth",
+		s.town.placement_error("dwelling", far) == "Must be within 6 tiles of the Hearth or a Storehouse",
 		"no Dwelling far from the Hearth"
 	)
 	t.check(
@@ -206,8 +206,17 @@ func test_dwellings_stay_near_the_hearth() -> void:
 		"the ghost's pill says the Dwelling is too far"
 	)
 	t.check(s.place("dwelling", near), "a Dwelling near the Hearth")
+	s.town.add_building("storehouse", far)
+	var by_store := far + Vector2i(1, 0)
 	t.check(
-		s.town.placement_error("storehouse", far) != "Must be within 6 tiles of the Hearth",
+		not s.town.placement_error("dwelling", by_store).begins_with("Must be within"),
+		(
+			"but one by a Storehouse is in range: the room grows with the town (%s)"
+			% s.town.placement_error("dwelling", by_store)
+		)
+	)
+	t.check(
+		s.town.placement_error("storehouse", far) != "Must be within 6 tiles of the Hearth or a Storehouse",
 		"other buildings go anywhere"
 	)
 

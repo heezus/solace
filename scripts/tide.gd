@@ -357,7 +357,7 @@ func tick_scorcher(s, b: Dictionary, _def: Dictionary, delta: float) -> void:
 		b["burn"] = Fuel.burn_seconds(b)
 	b["burn"] = maxf(b["burn"] - delta * speed, 0.0)
 	b["progress"] += delta * speed
-	b["status"] = Data.SCORCHER_BURNING % [lost_tiles(b), b["inbuf"].get(id, 0), Data.ITEMS[id]["name"]]
+	b["status"] = (Data.SCORCHER_BURNING % [lost_tiles(b), b["inbuf"].get(id, 0), Data.ITEMS[id]["name"]])
 	if b["progress"] >= Data.SCORCH_SECONDS:
 		b["progress"] = 0.0
 		var p := scorch_target(b)
@@ -490,10 +490,17 @@ static func _pop(heap: Array) -> Array:
 	return top
 
 
-## "4 min", "50 s": a duration in words.
+## "7 min", "2 min 45 s", "50 s": a duration in words. Under five minutes it counts in steps of five seconds, so a warning that
+## says "about 3 min" is seen to tick down and not to sit on one number for a minute and a half.
 static func duration(seconds: float) -> String:
 	var n := maxi(roundi(seconds), 1)
-	return "%d min" % ceili(float(n) / 60.0) if n >= 90 else "%d s" % n
+	if n < 90:
+		return "%d s" % n
+	if n >= 300:
+		return "%d min" % ceili(float(n) / 60.0)
+	n = roundi(float(n) / 5.0) * 5
+	var minutes := floori(n / 60.0)
+	return "%d min" % minutes if n % 60 == 0 else "%d min %d s" % [minutes, n % 60]
 
 
 ## What a building's card says about the tide: overgrown, or (with Tide Watch) when the Bloom reaches it. "" when it has nothing to say.

@@ -66,7 +66,7 @@ func show_for(b: Dictionary) -> void:
 		if off == 0
 		else Data.HAULER_ROW_SET % [h.have(_depot), now, places[_depot]]
 	)
-	lever.text = h.lever_note(_depot)
+	lever.text = " · ".join([h.take_note(state, _depot), h.lever_note(_depot)].filter(func(t): return t != ""))
 	lever.visible = lever.text != ""
 	minus.disabled = now <= 0
 	auto.disabled = off == 0

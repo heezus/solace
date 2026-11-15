@@ -10,6 +10,7 @@ const Hands = preload("res://scripts/hands.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Patch = preload("res://scripts/patch.gd")
 const Lessons = preload("res://scripts/lessons.gd")
+const Rules = preload("res://scripts/rules.gd")
 
 const BENCH_AT_BENCH := " %d of them still wait at the bench for a Kith to carry them."  # tools in its output
 
@@ -52,7 +53,7 @@ static func harvest_amount(s, b: Dictionary, tile: Vector2i, item: String) -> in
 	if s.world.fields.has(tile):
 		more += Data.CALENDAR_FIELD_BONUS if s.tech_tree.researched.has("calendar") else 0.0
 		more += Data.PLOUGH_FIELD_BONUS if s.tech_tree.researched.has("plough") else 0.0
-		more += Data.PLOUGHSHARE_FIELD_BONUS if s.tech_tree.researched.has("bronze_ploughshare") else 0.0
+		more += (Data.PLOUGHSHARE_FIELD_BONUS if s.tech_tree.researched.has("bronze_ploughshare") else 0.0)
 		more += Data.IRON_PLOUGH_FIELD_BONUS if s.tech_tree.researched.has("iron_plough") else 0.0
 		more += Lessons.rain_share(s, tile)
 		more += s.tide.ash_share(s, tile)  # Living Ground: a Field on burnt ground
@@ -110,7 +111,7 @@ static func text(s, b: Dictionary) -> String:
 		return line
 	var item: String = b["focus"]
 	if item != "" and s.people.knows(item):
-		line += "\nBundle: %d %s (%d x a click)" % [bundle_size(s, b, item), Data.ITEMS[item]["name"], Data.BUNDLE]
+		line += ("\nBundle: %d %s (%d x a click)" % [bundle_size(s, b, item), Data.ITEMS[item]["name"], Data.BUNDLE])
 	var tiles: int = s.town.focus_tiles(b).size()
 	if tiles > 1:
 		line += "\n" + Data.PATCH_EXACT % [tiles, str(snappedf(Patch.speed(s, b), 0.01))]
@@ -143,8 +144,9 @@ static func enough(s, b: Dictionary) -> bool:
 	return Data.BUILDINGS[b["type"]].has("makes") and tools_stocked(s, b) >= tool_goal(s)
 
 
-## True while Livewire runs and Forge `b` would start a batch with more steel than iron in the stockpile: steel waits behind
-## iron, so the techs that need iron are not starved by a forge that turns every bar into steel.
+## True while Livewire runs and Forge `b` would start a batch with more steel than iron in the stockpile, Iron is coming in, and the
+## batch would leave less Iron than the cheapest open tech that needs it: steel waits behind iron, so the techs are not starved by a
+## forge that turns every bar into steel. With no Iron coming in, or Iron to spare, the forge works (fun-4).
 static func steel_waits(s, b: Dictionary) -> bool:
 	if Data.LIVEWIRE_BEGUN not in s.story.events:
 		return false
@@ -154,7 +156,32 @@ static func steel_waits(s, b: Dictionary) -> bool:
 		out = Data.BUILDINGS.get(b.get("make", ""), {}).get("out", {})
 	if not out.has("steel"):
 		return false
-	return s.economy.inv.get("steel", 0) > s.economy.inv.get("iron", 0)
+	var iron: int = s.economy.inv.get("iron", 0)
+	if s.economy.inv.get("steel", 0) <= iron or not _iron_comes_in(s):
+		return false  # with no iron coming in, holding it back saves nothing: forge what there is
+	var cheapest := _cheapest_iron_tech(s)
+	return cheapest > 0 and iron - int(Buildings.recipe_in(b).get("iron", 0)) < cheapest
+
+
+## True while some building is making Iron (the flows, over the top bar's window).
+static func _iron_comes_in(s) -> bool:
+	var parts: Dictionary = s.economy.flows.parts("iron")
+	for source in parts:
+		if parts[source] > 0.0 and source != "craft":
+			return true
+	return false
+
+
+## The Iron the cheapest open tech that asks for any costs now, 0 when no open tech does.
+static func _cheapest_iron_tech(s) -> int:
+	var best := 0
+	for tech in Data.TECHS:
+		if s.tech_tree.researched.has(tech) or not Rules.tech_enabled(tech) or not s.tech_tree.requirements_met(tech):
+			continue
+		var need: int = int(s.tech_tree.cost_of(tech).get("iron", 0))
+		if need > 0 and (best == 0 or need < best):
+			best = need
+	return best
 
 
 ## Bronze that the research queue is still waiting for. A Tool Bench leaves it alone, so tools never take the Bronze a

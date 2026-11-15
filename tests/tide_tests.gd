@@ -439,7 +439,9 @@ func test_a_scorcher_burns_it_clear() -> void:
 	t.check(
 		(
 			s.tide.scorch_target(scorcher).x < 0
-			and scorcher["status"] == Data.SCORCHER_NOTHING % ceili(Vector2(far).distance_to(Vector2(scorcher["pos"])))
+			and (
+				scorcher["status"] == Data.SCORCHER_NOTHING % ceili(Vector2(far).distance_to(Vector2(scorcher["pos"])))
+			)
 		),
 		"and then nothing in reach, and says how far the front is: %s" % scorcher["status"]
 	)
@@ -575,9 +577,16 @@ func test_tide_watch_says_when() -> void:
 	var times := s.events.filter(func(e): return str(e).begins_with("The Bloom reaches the Forge")).size()
 	tick_for(s, 20.0)
 	t.check(
-		s.events.filter(func(e): return str(e).begins_with("The Bloom reaches the Forge")).size() == times, "only once"
+		(s.events.filter(func(e): return str(e).begins_with("The Bloom reaches the Forge")).size()) == times,
+		"only once"
 	)
 	t.check(Tide.duration(45.0) == "45 s" and Tide.duration(240.0) == "4 min", "durations read in words")
+	t.check(
+		Tide.duration(165.0) == "2 min 45 s" and Tide.duration(150.0) == "2 min 30 s",
+		"under five minutes it counts in fives"
+	)
+	t.check(Tide.duration(172.0) != Tide.duration(118.0), "so a warning at 3 min is not still 3 min a minute later")
+	t.check(Tide.duration(310.0) == "6 min", "and from five minutes up it is whole minutes")
 
 
 func test_living_ground_and_powered_mines() -> void:
