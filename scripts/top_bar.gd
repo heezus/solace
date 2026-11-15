@@ -40,6 +40,7 @@ const CHIP_W := 74.0
 const ICON := 24.0  # a good's sprite, with nothing behind it
 ## A row of chips keeps this height whether or not its goods have appeared yet. Four rows fill the bar's goods area.
 const ROW_H := 30.0
+const FLOW_W := 70.0
 const CHIP_GAP := 3  # between the chips of a row, the same in every row
 const CHIP_VPAD := 1  # a chip keeps this much above and below, so four rows fit the bar
 const EDGE_PAD := 6.0  # the goods keep this much clear of the bar's top and bottom edge (the bottom rule is on top of it)
@@ -139,6 +140,8 @@ func setup(game: Sim) -> void:
 		row.custom_minimum_size = Vector2(0, ROW_H)
 		for id in group:
 			row.add_child(_chip(id, CHIP_W))
+		if r == 0:
+			row.add_child(_flow_button())  # at the end of the raw goods' row, which has the room (the right column does not)
 		if r == 1:
 			tools_label = Ui.label("", Ui.MIN_TEXT)
 			tools_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -181,12 +184,6 @@ func setup(game: Sim) -> void:
 	sight_button.tooltip_text = Data.SIGHT_TIP
 	sight_button.toggled.connect(func(on): sight_toggled.emit(on))
 	lower.add_child(sight_button)
-	var flow_button := Ui.button(FLOW_BUTTON)
-	Ui.key_hint(flow_button, "(F)")
-	flow_button.custom_minimum_size = Vector2(0, 28)
-	flow_button.tooltip_text = FLOW_TIP
-	flow_button.pressed.connect(func(): flow_pressed.emit())
-	lower.add_child(flow_button)
 
 	flow_panel = PanelContainer.new()
 	flow_panel.top_level = true
@@ -241,6 +238,26 @@ static func _outline(color: Color, vpad := 2) -> StyleBoxFlat:
 	s.content_margin_top = vpad
 	s.content_margin_bottom = vpad
 	return s
+
+
+## The Flow button (key F), at the right end of the first row of goods.
+func _flow_button() -> Control:
+	var holder := HBoxContainer.new()
+	holder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var gap := Control.new()
+	gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	holder.add_child(gap)
+	# The button sits inside a box exactly a chip tall, so it can't make this row taller than the other two.
+	var box := Control.new()
+	box.custom_minimum_size = Vector2(FLOW_W, ROW_H)
+	var flow_button := Ui.button(FLOW_BUTTON)
+	Ui.key_hint(flow_button, "(F)")
+	flow_button.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	flow_button.tooltip_text = FLOW_TIP
+	flow_button.pressed.connect(func(): flow_pressed.emit())
+	box.add_child(flow_button)
+	holder.add_child(box)
+	return holder
 
 
 ## Keep `c` at a fixed width whatever its labels say (they clip with an ellipsis), so the bar's goods
