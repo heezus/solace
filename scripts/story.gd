@@ -32,6 +32,7 @@ var events: Array = []  # story ids, in the order they happened
 var cairn_before_landing := false
 ## Era-opening story id -> the game minute it was first seen (Story.update), saved, for the Chronicle's minutes per era.
 var stamps: Dictionary = {}
+var last_goal_at := 0.0  # the game second the last goal was met (not saved: a loaded game starts the count again)
 var goals_done: Dictionary = {}  # goal id -> true; goals stay done once met, even after the items are spent
 var south_note := ""  # why the south is not held now (Gate.note), for the goal's words
 var south_lost := false  # the south was held and is not now
@@ -46,6 +47,7 @@ var _reach_lists: Array = [
 ]
 var _ore_tiles: Dictionary = {}  # tile id -> its positions in the grown land (see _ore)
 var _ore_width := 0
+var _goals_seen := 0  # how many goals were done at the last update (last_goal_at moves when it changes)
 var _south_was := false  # the south was held at the last update
 
 
@@ -109,6 +111,9 @@ func update(s) -> void:
 		for g in list:
 			if not goals_done.has(g["id"]) and goal_met(s, g):
 				goals_done[g["id"]] = true
+	if goals_done.size() != _goals_seen:
+		_goals_seen = goals_done.size()
+		last_goal_at = s.seasons.time
 	if goal_list() == Data.GOALS_ERA5 and not s.tech_tree.researched.has("skyward"):
 		_hold_south(s)
 	# After the goals, so the era's last one (the Warning read) is ticked while its list is still in force.

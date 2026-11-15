@@ -19,6 +19,7 @@ const SlotScreen = preload("res://scripts/slot_screen.gd")
 const SaveSlots = preload("res://scripts/save_slots.gd")
 const Launch = preload("res://scripts/launch.gd")
 const ConfirmCard = preload("res://scripts/confirm_card.gd")
+const EarlyOut = preload("res://scripts/early_out.gd")
 const EndingCard = preload("res://scripts/ending_card.gd")
 const Endings = preload("res://scripts/endings.gd")
 const Profile = preload("res://scripts/profile.gd")
@@ -87,8 +88,8 @@ func is_open() -> bool:
 ## Put the menu up and pause the game behind it. Set out is open once Skyward stands.
 func open() -> void:
 	menu.open()
-	menu.set_out_button.disabled = not set_out_open()
-	menu.set_out_button.tooltip_text = Data.ENDINGS["choose_tip"]
+	menu.set_out_button.disabled = not (set_out_open() or EarlyOut.open(state))
+	menu.set_out_button.tooltip_text = Data.ENDINGS["choose_tip"] + (" " + EarlyOut.TIP if EarlyOut.open(state) else "")
 	paused_changed.emit(true)
 
 
@@ -152,6 +153,8 @@ func set_out_open() -> bool:
 func ask_set_out() -> void:
 	if set_out_open():
 		endings.open(state.carry.exodus + 1, state.starfall.lean, _true_why())
+	elif EarlyOut.open(state):
+		endings.open_early()
 
 
 ## The true endings the card shows (Step 8B): {ending: why it is shut, "" when open}, empty until the Way Out is read.
@@ -165,9 +168,16 @@ func _true_why() -> Dictionary:
 
 ## The row `ending` was chosen: ask "Leave this land?" in the words of how that ending ends. A yes sets out, a no changes nothing.
 func ask_confirm(ending: String) -> void:
-	if set_out_open() and _may_end(ending):
+	if _early_only(ending):
+		confirm.ask(EarlyOut.CONFIRM, Data.ENDINGS["confirm_yes"], Data.ENDINGS["confirm_no"], set_out.bind(ending))
+	elif set_out_open() and _may_end(ending):
 		var yes: String = Data.ENDINGS["true_confirm_yes"] if Endings.is_true(ending) else Data.ENDINGS["confirm_yes"]
 		confirm.ask(Data.ENDINGS[ending]["end"], yes, Data.ENDINGS["confirm_no"], set_out.bind(ending))
+
+
+## True when `ending` can be chosen only as an early set out: Skyward does not stand, but no goal has moved for a long while.
+func _early_only(ending: String) -> bool:
+	return not set_out_open() and ending == EarlyOut.ENDING and EarlyOut.open(state)
 
 
 ## True when the lean (or, for a true ending, the Way Out and the earlier endings) opens `ending`.
@@ -180,10 +190,11 @@ func _may_end(ending: String) -> bool:
 ## the Kith stay, when Skyward does not stand yet, the Lumen lean shuts that ending or the profile could not be written (the
 ## carry would be lost).
 func set_out(ending := "exodus") -> bool:
-	if not set_out_open() or not _may_end(ending):
+	var early := _early_only(ending)
+	if not early and (not set_out_open() or not _may_end(ending)):
 		return false
 	state.story.record(Data.ENDINGS[ending]["id"])
-	if not Profile.set_out(state, profile_path, ending).saved:
+	if not Profile.set_out(state, profile_path, ending, early).saved:
 		menu.say(Data.ENDINGS["unsaved"], false)
 		return false
 	if is_inside_tree():

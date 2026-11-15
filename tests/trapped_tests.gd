@@ -5,6 +5,10 @@ extends RefCounted
 
 const Buildings = preload("res://scripts/buildings.gd")
 const Chain = preload("res://scripts/chain.gd")
+const EarlyOut = preload("res://scripts/early_out.gd")
+const EndingCard = preload("res://scripts/ending_card.gd")
+const Carry = preload("res://scripts/carry.gd")
+const Profile = preload("res://scripts/profile.gd")
 const Data = preload("res://scripts/data.gd")
 const Needs = preload("res://scripts/needs.gd")
 const Sim = preload("res://scripts/sim.gd")
@@ -24,6 +28,7 @@ func run(runner) -> void:
 	test_ore_seams_stay_minable_under_the_bloom()
 	test_the_defences_are_free_to_start_with_and_burn_four_tiles_a_minute()
 	test_the_first_push_leaves_the_diggers_alone()
+	test_a_stuck_telling_can_set_out_early_with_half_the_carry()
 
 
 func test_the_goal_line_names_the_techs_on_the_way() -> void:
@@ -196,3 +201,58 @@ func test_the_first_push_leaves_the_diggers_alone() -> void:
 	t.check(s.tide._state(s, seam + Vector2i(8, 0)) == 0, "and takes open ground as it does")
 	s.tide.time = 400.0
 	t.check(s.tide._state(s, seam + Vector2i(2, 0)) == 0, "later pushes are as they were")
+
+
+func test_a_stuck_telling_can_set_out_early_with_half_the_carry() -> void:
+	var s := Sim.new()
+	s.generate(5)
+	s.seasons.time = 900.0
+	t.check(not EarlyOut.open(s), "before Ironfall there is no early way out")
+	s.story.record(Data.IRONFALL_EVENT)
+	s.story.goals_done["gather"] = true
+	s.story.update(s)  # a goal moved at second 900: the count starts there
+	t.check(not EarlyOut.open(s) and s.story.last_goal_at == 900.0, "a goal that has just moved keeps it shut")
+	s.seasons.time = 900.0 + EarlyOut.STALL_SECONDS - 1.0
+	s.story.update(s)
+	t.check(not EarlyOut.open(s), "nine minutes and fifty-nine seconds is not ten")
+	s.seasons.time = 900.0 + EarlyOut.STALL_SECONDS
+	t.check(EarlyOut.open(s), "ten minutes with no goal moved opens it")
+	s.story.record(Data.SKYWARD_EVENT)
+	t.check(not EarlyOut.open(s), "and once Skyward stands the full card is the way out")
+	# half the carry
+	var s2 := Sim.new()
+	s2.generate(5)
+	for tech in ["knapping", "foraging", "gatherers_hut", "fire"]:
+		s2.tech_tree.researched[tech] = true
+	var all := Carry.earned(s2)
+	var half := Carry.earned(s2, true)
+	t.check(
+		all["techs"].size() == 4 and half["techs"].size() == 2,
+		"half the techs, rounded up (%d of %d)" % [half["techs"].size(), all["techs"].size()]
+	)
+	var profile := Profile.new()
+	profile.bank(s2, "exodus", true)
+	t.check(
+		profile.techs.size() == 2 and profile.tellings[-1].get("early", false),
+		"the profile banks half and marks the telling early"
+	)
+	# the card
+	var card := EndingCard.new()
+	card.setup()
+	card.open_early()
+	t.check(card.button_of("exodus").get_parent().get_parent().visible, "the early card shows the Exodus row")
+	t.check(not card.button_of("cataclysm").get_parent().get_parent().visible, "and not the other two")
+	card.open(1, "")
+	t.check(card.button_of("cataclysm").get_parent().get_parent().visible, "the full card shows all three again")
+	card.free()
+	# the table
+	AiStory.reset("user://trapped_early.json")
+	var s3 := Sim.new()
+	s3.generate(5)
+	s3.story.record(Data.IRONFALL_EVENT)
+	s3.seasons.time = 2000.0
+	var page := Snapshot.text(s3, 1, [], [])
+	t.check(page.contains("SET OUT EARLY is open"), "the table's page offers it")
+	var refused := Snapshot.apply(s3, [{"do": "set_out", "ending": "exodus"}])
+	t.check(refused.is_empty() and AiStory.next_run != null, "and the move sets out (%s)" % [refused])
+	AiStory.reset()

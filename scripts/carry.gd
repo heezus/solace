@@ -158,7 +158,8 @@ func has_echo(set_id: String) -> bool:
 
 ## What the run in `s` (a Sim) would carry on: {"techs", "marks", "echoes"}, each in a fixed order. The techs are the ones
 ## researched, the marks are those of every set read, and an echo is a read set that has a Lumen building (Data.ROAD_ORDER).
-static func earned(s) -> Dictionary:
+## `half` (a telling set out early, scripts/early_out.gd) keeps the first half of the techs and of the sets read, rounded up.
+static func earned(s, half := false) -> Dictionary:
 	var techs_out := []
 	for tech in Data.TECHS:
 		if s.tech_tree.researched.has(tech):
@@ -167,10 +168,14 @@ static func earned(s) -> Dictionary:
 	var echoes_out := []
 	var every: Dictionary = Data.GLYPH_SETS.duplicate()
 	every.merge(Data.ENDINGS["old"]["sets"])  # the old marks read are carried too
+	var read: Array = []
 	for n in every:
-		var gset: Dictionary = every[n]
-		if not s.starfall.locked.has(gset["id"]):
-			continue
+		if s.starfall.locked.has(every[n]["id"]):
+			read.append(every[n])
+	if half:
+		techs_out = techs_out.slice(0, ceili(techs_out.size() / 2.0))
+		read = read.slice(0, ceili(read.size() / 2.0))
+	for gset in read:
 		marks_out.append_array(gset["glyphs"])
 		if gset["id"] in Data.ROAD_ORDER:
 			echoes_out.append(gset["id"])

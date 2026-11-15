@@ -7,6 +7,7 @@ extends RefCounted
 
 const Chronicle = preload("res://scripts/chronicle.gd")
 const Data = preload("res://scripts/data.gd")
+const EarlyOut = preload("res://scripts/early_out.gd")
 const Endings = preload("res://scripts/endings.gd")
 const Launch = preload("res://scripts/launch.gd")
 const OldShip = preload("res://scripts/old_ship.gd")
@@ -57,6 +58,8 @@ static func lines(s) -> Array:
 	var out: Array = _told.duplicate()
 	_told = []
 	out.append_array(_land(s))
+	if not set_out_open(s) and EarlyOut.open(s):
+		out.append(EarlyOut.OFFER % floori(EarlyOut.stalled_for(s) / 60.0))
 	out.append_array(_wall(s))
 	out.append_array(_waiting(s))
 	out.append_array(_card(s))
@@ -385,11 +388,12 @@ static func _open_details(s, id: String) -> String:
 
 ## End the telling on `ending`: the run folds into the profile, and a new run begins from its carry (the new Sim is `next_run`).
 static func _set_out(s, ending: String, skip_scenes: bool) -> String:
-	if not set_out_open(s):
+	var early := not set_out_open(s) and EarlyOut.open(s) and ending == EarlyOut.ENDING
+	if not set_out_open(s) and not early:
 		return "Skyward does not stand yet, so no ending can be chosen"
 	if not Data.ENDINGS.has(ending) or not Data.ENDINGS[ending] is Dictionary or not Data.ENDINGS[ending].has("lean"):
 		return "no such ending"
-	var why := _why_shut(s, ending)
+	var why := "" if early else _why_shut(s, ending)
 	if why != "":
 		return "that ending is shut: %s" % why
 	var told: Array = []
@@ -403,7 +407,7 @@ static func _set_out(s, ending: String, skip_scenes: bool) -> String:
 				told.append("SCENE %s:" % id)
 				for still in Data.CUTSCENES[id]["stills"]:
 					told.append("  " + still["line"])
-	var profile = Profile.set_out(s, profile_path, ending)
+	var profile = Profile.set_out(s, profile_path, ending, early)
 	if not profile.saved:
 		return Data.ENDINGS["unsaved"]
 	var seed_used: int = (

@@ -94,8 +94,8 @@ func merge(story_ids: Array, item_ids: Array) -> void:
 ## Bank what the run in `s` taught into the carry: its techs, the marks it read and the echoes of the sets it read, and count
 ## one more ending, `ending` ("exodus", "cataclysm" or "loop"): its telling and what the next run is made from are kept.
 ## Ids already held keep their place. Only set_out calls this.
-func bank(s, ending := "exodus") -> void:
-	var earned := Carry.earned(s)
+func bank(s, ending := "exodus", early := false) -> void:
+	var earned := Carry.earned(s, early)
 	_add_all(techs, earned["techs"])
 	_add_all(marks, earned["marks"])
 	_add_all(echoes, earned["echoes"])
@@ -103,11 +103,15 @@ func bank(s, ending := "exodus") -> void:
 	if ending == "exodus":
 		exoduses += 1
 		blueprints = s.carry.blueprints.duplicate(true)  # the run's book: the ones it began with and the ones it saved
+		if early:
+			blueprints = blueprints.slice(0, ceili(blueprints.size() / 2.0))
 		for bp in blueprints:
 			bp["banked"] = true  # from now on they are carried knowledge
 	if not s.carry.founding.is_empty():
 		founding = s.carry.founding.duplicate(true)  # every ending keeps it: the next land is laid from the latest town
 	var record := Endings.telling(s, ending)
+	if early:
+		record["early"] = true  # set out before Skyward stood: half the carry (scripts/early_out.gd)
 	var shown: Array = record["embers"]
 	record["embers"] = shown.filter(func(id): return not id in embers)  # the telling that first lit an Ember keeps it
 	_add_all(embers, shown)
@@ -189,11 +193,11 @@ static func note_run(s, path: String = PATH) -> bool:
 ## The player ends the run with `ending`: fold the run in `s` into the profile saved at `path` (note_run's work), bank its carry
 ## and write it back. Returns the profile as banked; `saved` says whether the file was written (the carry holds for the next
 ## run either way).
-static func set_out(s, path: String = PATH, ending := "exodus"):
+static func set_out(s, path: String = PATH, ending := "exodus", early := false):
 	var profile := new()
 	profile.load_file(path)
 	profile.absorb(s)
-	profile.bank(s, ending)
+	profile.bank(s, ending, early)
 	profile.saved = profile.save(path)
 	return profile
 
