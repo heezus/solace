@@ -100,7 +100,7 @@ func _init() -> void:
 	teardown.moment.connect(story.record)
 	town.on_net = livewire.powered_at
 	town.overgrown = tide.is_overgrown_at
-	town.on_bloom = tide.bloom_at
+	tide.wire(town, tech_tree)  # what the town asks the tide: Bloom ground, and the free Arc Lamp and Scorcher once it wakes
 	var weak: WeakRef = weakref(self)  # a lambda that held the Sim itself would keep it alive for ever
 	town.rubble_at = func(p): return Ruins.rubble(weak.get_ref(), p)
 	town.lesson_has = teardown.knows

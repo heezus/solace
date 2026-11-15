@@ -3,6 +3,7 @@ extends RefCounted
 ## not asked for again, a Teardown part says where it comes from, raised hauler places say what they take, the Tide Watch warning counts
 ## down in steps a player can see, and the table's page shows the new land's card and can lay the founding plan. Run from run_tests.gd.
 
+const Buildings = preload("res://scripts/buildings.gd")
 const Chain = preload("res://scripts/chain.gd")
 const Data = preload("res://scripts/data.gd")
 const Needs = preload("res://scripts/needs.gd")
@@ -20,6 +21,9 @@ func run(runner) -> void:
 	test_raised_hauler_places_say_what_they_take()
 	test_the_table_page_shows_the_new_land_card_and_lays_the_plan()
 	test_the_table_page_says_free_homes()
+	test_ore_seams_stay_minable_under_the_bloom()
+	test_the_defences_are_free_to_start_with_and_burn_four_tiles_a_minute()
+	test_the_first_push_leaves_the_diggers_alone()
 
 
 func test_the_goal_line_names_the_techs_on_the_way() -> void:
@@ -113,3 +117,82 @@ func test_the_table_page_says_free_homes() -> void:
 		"the Kith line says homes and how many are free, not a bare 'room for'"
 	)
 	t.check(not page.contains("room for"), "so 'No room' and 'room for 7' cannot read as a contradiction")
+
+
+func test_ore_seams_stay_minable_under_the_bloom() -> void:
+	var s := Sim.new()
+	s.generate(5)
+	s.fog.reveal_all()
+	s.tech_tree.researched["mining"] = true
+	for id in Data.ITEM_ORDER:
+		s.economy.inv[id] = 500
+	var seam: Vector2i = s.world.camp_pos + Vector2i(8, 0)
+	var bare: Vector2i = s.world.camp_pos + Vector2i(8, 3)
+	for p in [seam, bare]:
+		s.world.set_tile(p, "copper_hills" if p == seam else "grass")
+	s.tide._grow(s, seam)
+	s.tide._grow(s, bare)
+	t.check(s.tide.bloom_at(seam) and s.tide.bloom_at(bare), "the Bloom has grown over both")
+	t.check(
+		s.town.placement_error("mine", seam) == "",
+		"a Mine can still go on the ore: %s" % s.town.placement_error("mine", seam)
+	)
+	t.check(s.town.placement_error("dwelling", bare).contains("Bloom"), "but bare ground under the Bloom is refused")
+	t.check(s.place("mine", seam), "the Mine is placed")
+	s.tide._grow(s, seam)
+	t.check(not s.tide.hit.has(seam), "a building on the ore is never overgrown")
+	for i in 40:
+		s.tick(10.0)
+	t.check(s.town.building_at.has(seam), "and it is still standing after the tide has had its time")
+	t.check(
+		Buildings.trade_allows("lumen_market", "iron") and Buildings.trade_allows("lumen_market", "clay"),
+		"the Lumen Market trades Iron and Clay"
+	)
+	t.check(Buildings.trade_allows("lumen_market", "coal"), "and Coal")
+
+
+func test_the_defences_are_free_to_start_with_and_burn_four_tiles_a_minute() -> void:
+	var s := Sim.new()
+	s.generate(5)
+	var research_cost: Dictionary = s.tech_tree.cost_of("scorcher")
+	t.check(not research_cost.is_empty(), "before the Bloom wakes the Scorcher tech has its price")
+	s.tide.begun = true
+	t.check(
+		s.tech_tree.cost_of("scorcher").is_empty() and s.tech_tree.cost_of("arc_lamps").is_empty(),
+		"once it wakes the two techs are free"
+	)
+	t.check(
+		s.town.price("scorcher").is_empty() and s.town.price("arc_lamp").is_empty(),
+		"so is the first Scorcher and the first Arc Lamp"
+	)
+	s.tech_tree.researched["scorcher"] = true
+	s.fog.reveal_all()
+	var at: Vector2i = s.world.camp_pos + Vector2i(8, 0)
+	t.check(s.place("scorcher", at), "the free Scorcher goes down for nothing")
+	t.check(not s.town.price("scorcher").is_empty(), "the second one has its price")
+	t.check(
+		60.0 / Data.SCORCH_SECONDS >= 4.0,
+		"a Scorcher clears at least four tiles a minute (%.0f s a tile)" % Data.SCORCH_SECONDS
+	)
+	t.check(
+		float(Data.BUILDINGS["scorcher"]["burn"]) / Data.SCORCH_SECONDS >= 4.0, "and one Coal still does four tiles"
+	)
+
+
+func test_the_first_push_leaves_the_diggers_alone() -> void:
+	var s := Sim.new()
+	s.generate(5)
+	s.fog.reveal_all()
+	s.tech_tree.researched["mining"] = true
+	for id in Data.ITEM_ORDER:
+		s.economy.inv[id] = 500
+	var seam: Vector2i = s.world.camp_pos + Vector2i(9, 0)
+	s.world.set_tile(seam, "copper_hills")
+	s.place("mine", seam)
+	s.tide.begun = true
+	s.tide.time = 10.0
+	s.tide.refresh_lights(s)
+	t.check(s.tide._state(s, seam + Vector2i(2, 0)) == 1, "in the first minutes the tide waits outside a Mine's ring")
+	t.check(s.tide._state(s, seam + Vector2i(8, 0)) == 0, "and takes open ground as it does")
+	s.tide.time = 400.0
+	t.check(s.tide._state(s, seam + Vector2i(2, 0)) == 0, "later pushes are as they were")

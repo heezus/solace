@@ -3,6 +3,11 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 
+## The ore and clay ground a town can always build on, Bloom or not (fun-4: a Coal Mine or a Kiln lost to the tide could not be
+## raised again, the Scorcher that would clear the way cost what the Bloom had eaten, and the telling was trapped). A building on
+## it is never overgrown, and the Bloom's "burn it clear first" does not stop it.
+const SEAM_GROUND := ["clay", "copper_hills", "tin_stream", "coal_seam", "iron_hills"]
+
 
 ## The tiles a drag from a to b covers: along the row first, then down the column.
 static func line_tiles(a: Vector2i, b: Vector2i) -> Array:

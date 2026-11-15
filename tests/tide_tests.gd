@@ -425,11 +425,11 @@ func test_a_scorcher_burns_it_clear() -> void:
 	var far := c + Vector2i(1, 7)
 	s.tide.grown[far] = true
 	t.check(s.tide.scorch_target(scorcher) == q and s.tide.draws(scorcher), "it picks the nearest tile in reach")
-	tick_for(s, 20.0)
+	tick_for(s, 8.0)
 	t.check(
-		q in s.tide.grown and scorcher["status"].begins_with("Burning"), "a tile takes 30 s: %s" % scorcher["status"]
+		q in s.tide.grown and scorcher["status"].begins_with("Burning"), "a tile takes 15 s: %s" % scorcher["status"]
 	)
-	tick_for(s, 12.0)
+	tick_for(s, 10.0)
 	t.check(s.tide.burnt.has(q) and not s.tide.grown.has(q), "then it is burnt ground")
 	t.check(
 		s.world.tile_at(q) == "grass" and s.town.placement_error("forge", q) != Data.TIDE_BUILD_ERROR, "built on again"

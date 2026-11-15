@@ -23,6 +23,7 @@ var story_has: Callable = func(_id): return false  # (String) -> bool: has that 
 var gift_has: Callable = func(_id): return true  # (String) -> bool: is that Lumen gift (a glyph set) read? Set by the owner
 var lesson_has: Callable = func(_id): return true  # (String) -> bool: is that Lesson learned? Set by the owner
 var known_before: Callable = func(_id): return false  # (String) -> bool: learned in an earlier run (the Exodus)? Set by the owner
+var free_tech: Callable = func(_id): return false  # (String) -> bool: a tech the town is given (the Bloom wakes: Arc Lamps, Scorcher)
 var deed_has: Callable = func(_id): return true  # (String) -> bool: is that gate deed done (scripts/gate.gd)? Set by the owner
 var deed_note: Callable = func(_id): return ""  # (String) -> String: why a deed is not done, in a few words ("" for none)
 var _economy: Economy
@@ -180,6 +181,8 @@ static func enabled(tech: String) -> bool:
 ## (a Shard Cairn) takes a little more off. Those multiply and the item is rounded once, never to less than 1.
 func cost_of(tech: String) -> Dictionary:
 	var cost: Dictionary = Data.TECHS[tech]["cost"]
+	if free_tech.call(tech):
+		return {}  # the town is given it when the Bloom wakes (Tide.free_tech)
 	if known_before.call(tech) and not tech in Founding.GATES:
 		return {}  # the Kin learned it before (Step 9B): it costs nothing, and the gates keep their full price
 	var share := 1.0
