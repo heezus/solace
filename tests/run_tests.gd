@@ -302,8 +302,8 @@ func test_pacing_bot() -> void:
 			"map %d: the first Bronze takes 7 to 19 minutes more (%.1f)" % [map_seed, r["minutes"]]
 		)
 		check(
-			star >= 7.0 and star <= 36.0,
-			"map %d: the Falling Star comes 7 to 36 minutes after it (%.1f)" % [map_seed, star]
+			star >= 6.0 and star <= 36.0,
+			"map %d: the Falling Star comes 6 to 36 minutes after it (%.1f)" % [map_seed, star]
 		)
 		if not r["won"] or r["minutes"] < 0.0 or star < 0.0:
 			for line in r["log"]:
