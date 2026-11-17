@@ -21,6 +21,7 @@ const Power = preload("res://scripts/power.gd")
 const WaitWhy = preload("res://scripts/wait_why.gd")
 const Needs = preload("res://scripts/needs.gd")
 const TradeFloor = preload("res://scripts/trade_floor.gd")
+const SoundCues = preload("res://scripts/sound_cues.gd")
 
 ## A hut that runs itself with no road (Step 9A) takes this many times as long to harvest: the Kith carries each bundle to the Hearth.
 const SELF_RUN_SLOW := 2.0
@@ -86,6 +87,7 @@ static func _finish_harvest(s, k: Dictionary, b: Dictionary, tile: Vector2i) -> 
 		k["phase"] = "to_home"
 		return
 	k["carry"] = {item: Work.harvest_amount(s, b, tile, item)}
+	SoundCues.gather(item, tile)
 	s.people.wear(b)
 	k["task"] = {}
 	if k["trip"] and s.people.walk_to(k, s.people.nearest_depot(b["pos"])):

@@ -66,3 +66,7 @@ All files are 44.1 kHz Ogg Vorbis. Effects are mono and target −18 LUFS. Cues 
 | `goal_done.ogg` | Original procedural synthesis | Codex | CC0 1.0 | Two soft plucks rising a perfect fifth. |
 | `era_bell.ogg` | Original procedural synthesis | Codex | CC0 1.0 | One deep distant bell with dark beating overtones. |
 | `born.ogg` | Original procedural synthesis | Codex | CC0 1.0 | A rounded, gently opening single tone. |
+
+## How the game plays them
+
+Claude owns playback. The table of which file plays for which moment, the voice limits, the distance falloff and the loops is `scripts/sound_mix.gd`; `tests/sound_tests.gd` fails when a file here is not played or a played file is missing, so add a row there with any new file. Volume and mute are in the pause menu and are kept in `user://sound.cfg`, apart from the save.

@@ -22,6 +22,7 @@ const Chain = preload("res://scripts/chain.gd")
 const Founding = preload("res://scripts/founding.gd")
 const Needs = preload("res://scripts/needs.gd")
 const Power = preload("res://scripts/power.gd")
+const SoundCues = preload("res://scripts/sound_cues.gd")
 
 ## The story moments that open an era after the stone age, in order: Bronze Dawn, the Starfall (the star falls), Ironfall, Livewire.
 const ERA_OPENINGS := ["bronze_dawn", "star_falling", Data.IRONFALL_EVENT, Data.LIVEWIRE_BEGUN, "skyreach_begun"]
@@ -109,6 +110,7 @@ func update(s) -> void:
 		for g in list:
 			if not goals_done.has(g["id"]) and goal_met(s, g):
 				goals_done[g["id"]] = true
+				SoundCues.add("goal_done")
 	if goal_list() == Data.GOALS_ERA5 and not s.tech_tree.researched.has("skyward"):
 		_hold_south(s)
 	# After the goals, so the era's last one (the Warning read) is ticked while its list is still in force.

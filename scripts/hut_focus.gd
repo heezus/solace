@@ -308,3 +308,13 @@ static func draw_picker(ci: CanvasItem, s: Sim, p: Vector2i, pick: String, bound
 		ci.draw_string(
 			font, text_at, Data.ITEMS[item]["name"], HORIZONTAL_ALIGNMENT_LEFT, -1, px, Ui.ACTION if on else Ui.TEXT
 		)
+
+
+## The hut ghost's marker (what it will work) and picker (when there is a choice), drawn on `ci` over a spot it can stand on.
+## `ghost` is [what is being placed, the tile under the pointer, the choice made]; `rect` is that tile; `view` the visible map.
+static func draw_ghost(ci: CanvasItem, s: Sim, ghost: Array, rect: Rect2, view: Rect2) -> void:
+	var at: Vector2i = ghost[1]
+	if ghost[0] != "gatherers_hut" or not s.world.in_bounds(at) or s.town.placement_error(ghost[0], at) != "":
+		return
+	draw_marker(ci, rect.grow(-2.0 * Overlays.TILE / Art.DESIGN), pick_chosen(s, at, ghost[2]))
+	draw_picker(ci, s, at, ghost[2], view)

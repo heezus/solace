@@ -19,6 +19,7 @@ const Data = preload("res://scripts/data.gd")
 const Codec = preload("res://scripts/save_codec.gd")
 const Fuel = preload("res://scripts/fuel.gd")
 const Ruins = preload("res://scripts/ruins.gd")
+const SoundCues = preload("res://scripts/sound_cues.gd")
 
 const SIDES := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 const IMMUNE := ["camp", "firebreak", "skyreach_tower"]  # the Bloom never overgrows these (the Skyreach is held by the sky's own light)
@@ -73,6 +74,7 @@ func tick(s, delta: float) -> void:
 		match _state(s, p):
 			0:
 				_grow(s, p)
+				SoundCues.add("bloom_spread", p)
 			1:
 				front[p] = time + Data.TIDE_RETRY_SECONDS
 	_overgrown(s, delta)
@@ -87,6 +89,7 @@ func land(s, p: Vector2i, radius: int) -> int:
 	if not begun:
 		begin(s)
 	var taken := 0
+	SoundCues.add("seed_fall", p)
 	refresh_lights(s)
 	for dy in range(-radius, radius + 1):
 		for dx in range(-radius, radius + 1):
@@ -212,6 +215,16 @@ func refresh_lights(s) -> void:
 			_fires.append(b["pos"])
 
 
+## The tiles of the burning Scorchers, for the sound of them.
+func fire_tiles() -> Array:
+	return _fires
+
+
+## The tiles of the lit Arc Lamps, for the sound of them.
+func lamp_tiles() -> Array:
+	return _lamps.map(func(l): return l["pos"])
+
+
 ## The Arc Lamps that give light now: standing, not overgrown, on ground a net that gives power reaches.
 func _lit_lamps(s) -> Array:
 	var out: Array = []
@@ -304,6 +317,7 @@ func _lose(s, p: Vector2i) -> void:
 	if Buildings.needs_worker(taken):
 		lost_jobs += Buildings.crew_size(taken)
 	s.lose_building(s.town.building_at[p])
+	SoundCues.add("bloom_take", p)
 	hit.erase(p)
 	lost += 1
 	rev += 1
