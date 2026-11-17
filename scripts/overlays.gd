@@ -345,7 +345,7 @@ static func wires(ci: CanvasItem, s, hover: Vector2i, placing: String, sel: Dict
 ## What the placement ghost's pill says when the spot won't do.
 static func ghost_text(type: String, err: String) -> String:
 	if type == "dwelling" and err.begins_with("Must be within"):
-		return "Too far from the Hearth · dwellings go inside the ring"
+		return "Too far from the Hearth or a Storehouse · dwellings go inside the rings"
 	return err
 
 

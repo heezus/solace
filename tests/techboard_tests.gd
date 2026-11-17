@@ -191,16 +191,19 @@ func test_the_suggested_tech_follows_its_rule() -> void:
 		pick["tech"] == "fire" and pick["why"] == Data.NEXT_WHY_QUEUED, "a queued tech that can be discovered is itself"
 	)
 	s.tech_tree.clear()
-	# 2. With nothing queued, the Goals list: its first tech goal is Knapping, then Gatherer's Hut.
+	# 2. With nothing queued, the Goals list: its first tech goal is Gatherer's Hut, and its route starts with Knapping.
 	t.check(
-		TechNext.goals_tech(s) == "knapping", "the Goals list first asks for Knapping (%s)" % TechNext.goals_tech(s)
+		TechNext.goals_tech(s) == "gatherers_hut",
+		"the Goals list first asks for the Gatherer's Hut (%s)" % TechNext.goals_tech(s)
 	)
 	pick = TechNext.suggested(s, roots)
-	t.check(pick["tech"] == "knapping" and pick["why"] == Data.NEXT_WHY_LIST, "so Knapping is suggested: %s" % [pick])
-	s.story.goals_done["tools"] = true
+	t.check(
+		pick["tech"] == "knapping" and pick["why"] == Data.NEXT_WHY_LIST_ROUTE % "Gatherer's Hut",
+		"so Knapping is suggested, on the way to it: %s" % [pick]
+	)
 	s.tech_tree.researched["knapping"] = true
 	roots = TechNext.ready_now(s, 1)
-	t.check(TechNext.goals_tech(s) == "gatherers_hut", "then Gatherer's Hut")
+	t.check(TechNext.goals_tech(s) == "gatherers_hut", "with Knapping known it is still the Gatherer's Hut")
 	pick = TechNext.suggested(s, roots)
 	t.check(pick["tech"] == "foraging", "which needs Knapping (known) and Foraging: Foraging is next (%s)" % [pick])
 	t.check(

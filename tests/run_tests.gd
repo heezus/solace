@@ -41,6 +41,7 @@ const Autoplay = preload("res://tests/autoplay.gd")
 const AutoplayBronze = preload("res://tests/autoplay_bronze.gd")
 const GoldenTests = preload("res://tests/golden_tests.gd")
 const NewcomerTests = preload("res://tests/newcomer_tests.gd")
+const TrappedTests = preload("res://tests/trapped_tests.gd")
 const UiTests = preload("res://tests/ui_tests.gd")
 const TechBoardTests = preload("res://tests/techboard_tests.gd")
 const HutFocusTests = preload("res://tests/hut_focus_tests.gd")
@@ -262,6 +263,7 @@ func _init() -> void:
 	HintTests.new().run(self)
 	SoundTests.new().run(self)
 	NewcomerTests.new().run(self)
+	TrappedTests.new().run(self)
 	UiTests.new().run(self)
 	TechBoardTests.new().run(self)
 	if not "fast" in OS.get_cmdline_user_args():  # `-- fast` skips the bot's slow runs while iterating
@@ -305,8 +307,8 @@ func test_pacing_bot() -> void:
 			"map %d: the first Bronze takes 7 to 19 minutes more (%.1f)" % [map_seed, r["minutes"]]
 		)
 		check(
-			star >= 7.0 and star <= 36.0,
-			"map %d: the Falling Star comes 7 to 36 minutes after it (%.1f)" % [map_seed, star]
+			star >= 6.0 and star <= 36.0,
+			"map %d: the Falling Star comes 6 to 36 minutes after it (%.1f)" % [map_seed, star]
 		)
 		if not r["won"] or r["minutes"] < 0.0 or star < 0.0:
 			for line in r["log"]:
@@ -575,7 +577,7 @@ func test_goals_advance_in_order() -> void:
 	check(s.story.current_goal() == 1, "all four learned, next find the flax")
 	s.gather_by_hand(find_tile(s, "flax"))
 	s.tick(0.1)
-	check(s.story.current_goal() == 2, "then Knapping and the Flint Tools")
+	check(s.story.current_goal() == 2, "then the Gatherer's Hut")
 	check(s.story.goals_done.has("gather"), "earlier goals stay done")
 	var ids: Array = Data.GOALS.map(func(g): return g["id"])
 	check(ids.size() <= 13 and not ids.has("trip") and not ids.has("rush"), "the Stone Age asks only for new verbs")

@@ -16,10 +16,21 @@ signal said(message: String)
 
 const Buildings = preload("res://scripts/buildings.gd")
 const Data = preload("res://scripts/data.gd")
+
 const Codec = preload("res://scripts/save_codec.gd")
 const Fuel = preload("res://scripts/fuel.gd")
+const Rules = preload("res://scripts/rules.gd")
 const Ruins = preload("res://scripts/ruins.gd")
 const SoundCues = preload("res://scripts/sound_cues.gd")
+
+## The first push: for this long after the tide starts it keeps out of the ring round a Mine, a Coal Mine or a Kiln (fun-4).
+const FIRST_PUSH_SECONDS := 300.0
+const FIRST_PUSH_RING := 3.0
+const FIRST_PUSH_SAVES := ["mine", "coal_mine", "kiln"]
+## The two defences the town is given when the Bloom wakes: the Arc Lamps and Scorcher techs cost nothing, and so does the first
+## Arc Lamp and the first Scorcher (fun-4: the answers must not cost the goods the Bloom is destroying).
+const GIFT_TECHS := ["arc_lamps", "scorcher"]
+const GIFT_BUILDINGS := ["arc_lamp", "scorcher"]
 
 const SIDES := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 const IMMUNE := ["camp", "firebreak", "skyreach_tower"]  # the Bloom never overgrows these (the Skyreach is held by the sky's own light)
@@ -45,6 +56,7 @@ var _eta_rev := -1
 var _lamps: Array = []  # the lit Arc Lamps' tiles and light, this tick
 var _burning: Array = []  # the burning Shard Lamps' tiles and light, this tick
 var _fires: Array = []  # the burning Scorchers' tiles, this tick
+var _diggers: Array = []  # the tiles of the buildings the first push leaves alone, this tick
 
 # --- Each tick -----------------------------------------------------------------------------------------------------
 
@@ -123,6 +135,21 @@ func begin(s) -> void:
 	said.emit(Data.TIDE_BEGAN_LINE)
 
 
+## Connect the town and the tech tree to the tide: the town asks where the Bloom stands, and both ask whether it has woken (the gifts).
+func wire(town, tech_tree) -> void:
+	town.on_bloom = bloom_at
+	town.free_first = free_first
+	tech_tree.free_tech = free_tech
+
+
+func free_tech(tech: String) -> bool:
+	return begun and tech in GIFT_TECHS
+
+
+func free_first(type: String, copies: int) -> bool:
+	return begun and copies == 0 and type in GIFT_BUILDINGS
+
+
 ## The power units the machines draw now, summed over every net: what a net gives when it gives less than it is asked.
 func units_drawn(s) -> int:
 	var sum := 0
@@ -180,7 +207,7 @@ func is_burnt(p: Vector2i) -> bool:
 func _state(s, p: Vector2i) -> int:
 	if grown.has(p) or burnt.has(p) or s.world.tile_at(p) in PATCH_TILES or _in_ring(s, p) or s.skyreach.holds(s, p):
 		return 2
-	return 1 if _lit_by_arc(p) else 0
+	return 1 if _lit_by_arc(p) or _sheltered(p) else 0
 
 
 func _in_ring(s, p: Vector2i) -> bool:
@@ -191,6 +218,17 @@ func _in_ring(s, p: Vector2i) -> bool:
 func scorched(p: Vector2i) -> bool:
 	for f in _fires:
 		if Vector2(f).distance_to(Vector2(p)) <= Data.SCORCH_REACH:
+			return true
+	return false
+
+
+## True while the first push is on (FIRST_PUSH_SECONDS from the tide's start) and p lies within FIRST_PUSH_RING tiles of a Mine, a
+## Coal Mine or a Kiln: the first thing the Bloom does is cross open ground, never take the town's iron, coal or clay (fun-4).
+func _sheltered(p: Vector2i) -> bool:
+	if time >= FIRST_PUSH_SECONDS:
+		return false
+	for d in _diggers:
+		if Vector2(d).distance_to(Vector2(p)) <= FIRST_PUSH_RING:
 			return true
 	return false
 
@@ -207,8 +245,11 @@ func refresh_lights(s) -> void:
 	_lamps = _lit_lamps(s)
 	_burning = []
 	_fires = []
+	_diggers = []
 	for b in s.town.buildings:
 		var def: Dictionary = Data.BUILDINGS[b["type"]]
+		if b["type"] in FIRST_PUSH_SAVES:
+			_diggers.append(b["pos"])
 		if def["kind"] == "lamp" and b["burn"] > 0.0:
 			_burning.append({"pos": b["pos"], "light": float(def["light"])})
 		elif def["kind"] == "scorcher" and b["burn"] > 0.0 and s.town.is_powered(b["pos"]):
@@ -262,7 +303,7 @@ func _grow(s, p: Vector2i) -> void:
 	grown[p] = true
 	rev += 1
 	_convert(s, p)
-	if s.town.building_at.has(p) and s.town.built_type(p) not in IMMUNE:
+	if s.town.building_at.has(p) and s.town.built_type(p) not in IMMUNE and s.world.tile_at(p) not in Rules.SEAM_GROUND:
 		hit[p] = 0.0
 		s.town.road_rev += 1  # the nets are counted again without it
 	_spread_from(s, p)
@@ -371,7 +412,7 @@ func tick_scorcher(s, b: Dictionary, _def: Dictionary, delta: float) -> void:
 		b["burn"] = Fuel.burn_seconds(b)
 	b["burn"] = maxf(b["burn"] - delta * speed, 0.0)
 	b["progress"] += delta * speed
-	b["status"] = Data.SCORCHER_BURNING % [lost_tiles(b), b["inbuf"].get(id, 0), Data.ITEMS[id]["name"]]
+	b["status"] = (Data.SCORCHER_BURNING % [lost_tiles(b), b["inbuf"].get(id, 0), Data.ITEMS[id]["name"]])
 	if b["progress"] >= Data.SCORCH_SECONDS:
 		b["progress"] = 0.0
 		var p := scorch_target(b)
@@ -504,10 +545,17 @@ static func _pop(heap: Array) -> Array:
 	return top
 
 
-## "4 min", "50 s": a duration in words.
+## "7 min", "2 min 45 s", "50 s": a duration in words. Under five minutes it counts in steps of five seconds, so a warning that
+## says "about 3 min" is seen to tick down and not to sit on one number for a minute and a half.
 static func duration(seconds: float) -> String:
 	var n := maxi(roundi(seconds), 1)
-	return "%d min" % ceili(float(n) / 60.0) if n >= 90 else "%d s" % n
+	if n < 90:
+		return "%d s" % n
+	if n >= 300:
+		return "%d min" % ceili(float(n) / 60.0)
+	n = roundi(float(n) / 5.0) * 5
+	var minutes := floori(n / 60.0)
+	return "%d min" % minutes if n % 60 == 0 else "%d min %d s" % [minutes, n % 60]
 
 
 ## What a building's card says about the tide: overgrown, or (with Tide Watch) when the Bloom reaches it. "" when it has nothing to say.

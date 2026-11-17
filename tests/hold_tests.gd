@@ -62,7 +62,7 @@ func _wait(s: Sim, seconds: float) -> void:
 func test_the_numbers_are_forgiving_but_still_a_hold() -> void:
 	t.check(Data.HOLD_KEEP >= 0.3 and Data.HOLD_KEEP <= Data.HOLD_TIME, "a slip is forgiven for a moment, not for long")
 	t.check(
-		Data.LEARN_FIRST < Data.LEARN_CLICKS and Data.LEARN_FIRST >= 3, "the first lesson is quicker but still a lesson"
+		Data.LEARN_FIRST < Data.LEARN_CLICKS and Data.LEARN_FIRST >= 2, "the first lesson is quicker but still a lesson"
 	)
 
 

@@ -53,6 +53,8 @@ var on_net: Callable = func(_p): return false
 var overgrown: Callable = func(_p): return false
 ## (Vector2i) -> bool: is this tile Bloom ground the tide took? Nothing is built on it.
 var on_bloom: Callable = func(_p): return false
+## (String, int) -> bool: is the first building of this type free (an Arc Lamp, a Scorcher once the Bloom wakes)? Set by the Sim.
+var free_first: Callable = func(_t, _n): return false
 ## (Vector2i) -> {"relic": a relic lies under the rubble at this tile (a road does not clear it: it is dug out first), "stone": the Stone
 ## a road clearing it gives}. Sim connects it to Ruins.
 var site_at: Callable = func(): return Vector2i(-1, -1)  # where the Skyreach goes (scripts/skyreach.gd)
@@ -124,8 +126,9 @@ func placement_error(type: String, p: Vector2i) -> String:
 		return "Must touch the river"
 	if def.get("needs_shard", false) and not _world.touches(p, "shard"):
 		return "Must go next to the Strange Stone"
-	if def.get("near_hearth", false) and not near_hearth(p):
-		return "Must be within %d tiles of the Hearth" % int(Data.HEARTH_RADIUS)
+	var home: bool = def["kind"] == "house"  # a Dwelling may also stand by any Storehouse, so the room grows with the town (fun-4)
+	if def.get("near_hearth", false) and not near_hearth(p, home):
+		return "Must be within %d tiles of the Hearth%s" % [int(Data.HEARTH_RADIUS), " or a Storehouse" if home else ""]
 	if not _economy.can_afford(price(type)):
 		return "Not enough materials"
 	return ""
@@ -144,7 +147,7 @@ func _road_error(type: String, p: Vector2i, tile: String) -> String:
 
 ## Why `type` can't go at p for want of room: something stands there, or it is a one-of-a-kind building (`unique`) that stands already.
 func _taken_error(type: String, p: Vector2i) -> String:
-	if on_bloom.call(p):
+	if on_bloom.call(p) and not _world.tile_at(p) in Rules.SEAM_GROUND:
 		return Data.TIDE_BUILD_ERROR
 	if building_at.has(p):
 		return "Something is already there"
@@ -191,6 +194,8 @@ func copies(type: String) -> int:
 ## What the next building of `type` costs: its listed price, with 15% more for each production copy already standing
 ## (never past 4 times, see Rules.price). Homes, roads, bridges and the rest stay flat.
 func price(type: String) -> Dictionary:
+	if free_first.call(type, copies(type)):
+		return {}
 	return _planned(Rules.price(type, copies(type)))
 
 
@@ -227,8 +232,14 @@ func upgrade_error(type: String, p: Vector2i) -> String:
 	return "Something is already there"
 
 
-func near_hearth(p: Vector2i) -> bool:
-	return Vector2(p).distance_to(Vector2(_world.camp_pos)) <= Data.HEARTH_RADIUS
+func near_hearth(p: Vector2i, or_storehouse := false) -> bool:
+	if Vector2(p).distance_to(Vector2(_world.camp_pos)) <= Data.HEARTH_RADIUS:
+		return true
+	if or_storehouse:
+		for b in buildings:
+			if b["type"] == "storehouse" and Vector2(p).distance_to(Vector2(b["pos"])) <= Data.HEARTH_RADIUS:
+				return true
+	return false
 
 
 ## The type of whatever the player built at p (a building, road, bridge or field), or "".

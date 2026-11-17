@@ -92,17 +92,18 @@ const GOALS := [
 		"text": "Find Wild Flax (tall stalks with tiny blue-violet flowers) and gather it: all Fiber comes from flax"
 	},
 	{
-		"id": "tools",
-		"text": "Press T, discover Knapping and craft Flint Tools: each harvest takes 0.6s instead of 0.8s"
-	},
-	{
 		"id": "hut",
 		"text":
 		(
-			"Discover Gatherer's Hut and place one right beside Berry Bushes (food first), or by trees or rocks."
+			"Press T, discover Gatherer's Hut (Knapping and Foraging come first)"
+			+ " and place one right beside Berry Bushes (food first), or by trees or rocks."
 			+ " Once its Kith know the job it works on its own"
 		),
 		"building": "gatherers_hut"
+	},
+	{
+		"id": "tools",
+		"text": "Press T, discover Knapping and craft Flint Tools: each harvest takes 0.6s instead of 0.8s"
 	},
 	{
 		"id": "dwelling",

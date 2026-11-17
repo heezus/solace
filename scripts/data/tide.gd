@@ -47,7 +47,7 @@ const TIDE_ETA_HORIZON := 1200.0
 
 # --- Holding it ---
 const SCORCH_REACH := 6.0  # tiles round a Scorcher it clears Bloom ground in (past the 5 an Arc Lamp keeps the Bloom off)
-const SCORCH_SECONDS := 30.0  # one tile of Bloom ground burnt clear in this long
+const SCORCH_SECONDS := 15.0  # one tile of Bloom ground burnt clear in this long: four a minute (fun-4)
 const ASH_FIELD_BONUS := 0.5  # a Field on burnt ground yields this much more once Living Ground is learned
 const POWERED_MINE_SPEED := 2.0  # a Mine on a net that gives power digs this many times as fast (Powered Mines)
 
@@ -74,7 +74,7 @@ const SCORCHER_NOTHING_YET := "Nothing in reach yet: no Bloom ground on the map"
 const SCORCHER_BURNING := "Burning Bloom ground clear: %d tiles done, %d %s in store"  # tiles done, stored, the fuel's name
 const SCORCHER_COLD := "Out of %s: haulers bring it more"  # the fuel's name
 const SCORCHER_ROW := (
-	"Burns the Bloom ground within %d tiles, one every %d seconds: 1 Coal clears 4 tiles, 1 Charcoal 2."
+	"Burns the Bloom ground within %d tiles, one every %d seconds: 1 Coal clears 4 tiles, 1 Charcoal 2. The first one is free."
 	+ " It waits until the Bloom is in reach, and a Firebreak slows the front."
 )  # reach, seconds
 const ARC_LIT := "Lit: the Bloom does not enter its light, %d tiles round"  # tiles

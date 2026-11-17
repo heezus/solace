@@ -138,8 +138,13 @@ static func shut(s, type: String) -> String:
 	var def: Dictionary = Data.BUILDINGS[type]
 	if s.town.unlocked(type):
 		return ""
-	if def.has("lesson"):
-		return "The %s is taught by a part from the Teardown Bench." % def["name"]
+	# a Lesson learned in an earlier telling stays learned: then only the tech stands in the way, and Chain says so
+	if def.has("lesson") and not s.teardown.knows(def["lesson"]):
+		var part: Dictionary = Data.PARTS[def["lesson"]]
+		return (
+			"The %s is taught by a %s from the Teardown Bench. The %s comes from %s."
+			% [def["name"], part["name"], part["name"], part["from"]]
+		)
 	if def.has("lumen"):
 		return (
 			"Read the %s marks on the Glyph Wall to open the %s."

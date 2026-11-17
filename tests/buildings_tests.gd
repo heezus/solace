@@ -148,7 +148,8 @@ func test_cost_is_checked_last() -> void:
 	_eco.inv["fiber"] = 6
 	t.check(b.placement_error("dwelling", Vector2i(3, 4)) == "", "the exact cost is enough")
 	t.check(
-		b.placement_error("dwelling", Vector2i(9, 4)) == "Must be within 6 tiles of the Hearth", "but range comes first"
+		b.placement_error("dwelling", Vector2i(9, 4)) == "Must be within 6 tiles of the Hearth or a Storehouse",
+		"but range comes first"
 	)
 
 
@@ -204,7 +205,10 @@ func test_near_hearth_edge() -> void:
 	t.check(b.near_hearth(Vector2i(7, 4)), "exactly 6 tiles out is near")
 	t.check(not b.near_hearth(Vector2i(8, 4)), "7 tiles is not")
 	t.check(b.placement_error("dwelling", Vector2i(7, 4)) == "", "a Dwelling at the edge")
-	t.check(b.placement_error("dwelling", Vector2i(8, 4)) == "Must be within 6 tiles of the Hearth", "and just past it")
+	t.check(
+		b.placement_error("dwelling", Vector2i(8, 4)) == "Must be within 6 tiles of the Hearth or a Storehouse",
+		"and just past it"
+	)
 	t.check(b.placement_error("storehouse", Vector2i(8, 4)) == "Not discovered yet", "other buildings aren't limited")
 	_techs["storehouse"] = true
 	t.check(b.placement_error("storehouse", Vector2i(10, 4)) == "", "a Storehouse can go far away")

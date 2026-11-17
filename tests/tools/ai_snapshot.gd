@@ -79,6 +79,7 @@ const HELP := """MOVES: write moves_<n>.json, a list. Each move is one of
   {"do":"ending_details","ending":"exodus"}        open an ending's details on the card
   {"do":"set_out","ending":"exodus"}               end the telling on that ending: the Chronicle opens and the next telling begins
   {"do":"chronicle"}                               open the Chronicle: every telling so far
+  {"do":"lay_plan"}                                a later telling's new-land card: lay the founding plan (the page shows the card)
   {"do":"wait","seconds":30}                       let the game run (15 s when you send none); the moves after it wait for it
 Also write diary_<n>.md: two or three lines on what you wanted, and how it felt (bored, pleased, stuck, surprised).
 Play to win the era you are in. You see only this page."""
@@ -164,7 +165,7 @@ static func apply(s, moves: Array) -> Array:
 				if why != "":
 					refused.append("%s (%s)" % [JSON.stringify(m), why])
 				continue
-			"guess", "scene", "endings", "ending_details", "set_out", "chronicle":
+			"guess", "scene", "endings", "ending_details", "set_out", "chronicle", "lay_plan":
 				var why := AiStory.move(s, m)
 				if why != "":
 					refused.append("%s (%s)" % [JSON.stringify(m), why])
@@ -173,7 +174,7 @@ static func apply(s, moves: Array) -> Array:
 				for i in clampi(int(m.get("times", 1)), 1, 20):
 					ok = s.gather_by_hand(at) != "" and ok
 			"build":
-				ok = str(m.get("type", "")) in Data.BUILDINGS and s.place(str(m["type"]), at, str(m.get("focus", "")))
+				ok = (str(m.get("type", "")) in Data.BUILDINGS and s.place(str(m["type"]), at, str(m.get("focus", ""))))
 				if ok and str(m.get("focus", "")) != "" and _index_at(s, at) >= 0:
 					if s.town.buildings[_index_at(s, at)]["focus"] != str(m["focus"]):
 						refused.append("%s (built, but it cannot take that focus here)" % JSON.stringify(m))
@@ -206,7 +207,7 @@ static func apply(s, moves: Array) -> Array:
 			"trade":
 				var i := _index_at(s, at)
 				var swaps: bool = m.has("gives") or m.has("gets") or not m.has("keep")
-				ok = i >= 0 and (not swaps or s.town.set_trade(i, str(m.get("gives", "")), str(m.get("gets", ""))))
+				ok = (i >= 0 and (not swaps or s.town.set_trade(i, str(m.get("gives", "")), str(m.get("gets", "")))))
 				if ok and m.has("keep"):
 					ok = TradeFloor.set_keep(s.town, i, int(m["keep"]))  # the "Keeps at least" line
 				if not ok and i >= 0 and swaps:
@@ -235,7 +236,7 @@ static func apply(s, moves: Array) -> Array:
 				ok = s.starfall.choose(int(m.get("choice", 0)))
 			"fuel":
 				var i := _index_at(s, at)
-				ok = i >= 0 and Fuel.burns(s.town.buildings[i]) and str(m.get("mode", "")) in Data.FUEL_MODES
+				ok = (i >= 0 and Fuel.burns(s.town.buildings[i]) and str(m.get("mode", "")) in Data.FUEL_MODES)
 				if ok:
 					Fuel.set_mode(s.economy, s.town.buildings[i], str(m["mode"]))
 			"haulers":
@@ -246,7 +247,7 @@ static func apply(s, moves: Array) -> Array:
 			"order":
 				ok = _write_order(s, m)
 			"clear_order":
-				ok = int(m.get("index", -1)) >= 0 and int(m.get("index", -1)) < s.livewire.orders.size()
+				ok = (int(m.get("index", -1)) >= 0 and int(m.get("index", -1)) < s.livewire.orders.size())
 				if ok:
 					s.livewire.clear(int(m["index"]))
 			"wait":
@@ -533,8 +534,15 @@ static func _town(s) -> Array:
 	)
 	out.append(
 		(
-			"KITH: %d (%d at work, %d hauling, %d idle), room for %d"
-			% [s.people.kith.size(), working, hauling, idle, s.town.housing()]
+			"KITH: %d (%d at work, %d hauling, %d idle), homes for %d, %d free"
+			% [
+				s.people.kith.size(),
+				working,
+				hauling,
+				idle,
+				s.town.housing(),
+				maxi(s.town.housing() - s.people.kith.size(), 0)
+			]
 		)
 	)
 	for note in [GrowthNote.bar_note(s), GrowthNote.progress_text(s)]:

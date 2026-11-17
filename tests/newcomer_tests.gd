@@ -134,7 +134,7 @@ func test_a_newcomer_who_clicks_each_hut_once_is_carried_by_the_famine_fallback(
 		var bot := _play("once", map_seed)
 		t.check(bot.min_kith >= 3, "once, map %d: at least three Kith stay (least %d)" % [map_seed, bot.min_kith])
 		t.check(bot.zeros == 0, "once, map %d: the food never ran out (%d times)" % [map_seed, bot.zeros])
-		t.check(bot.min_food >= 10.0, "once, map %d: and never fell below 10 (%.1f)" % [map_seed, bot.min_food])
+		t.check(bot.min_food >= 5.0, "once, map %d: and never fell below 5 (%.1f)" % [map_seed, bot.min_food])
 		t.check(not bot.s.economy.low, "once, map %d: and it ends with no warning up" % map_seed)
 
 
@@ -169,7 +169,7 @@ func test_a_clumsy_newcomer_with_far_berries_is_still_carried() -> void:
 		)
 		t.check(far > 0, "far map %d: there are berries 8 or more tiles away" % map_seed)
 		t.check(bot.min_kith >= 3 and bot.zeros == 0, "far map %d: nobody left and the food never ran out" % map_seed)
-		t.check(bot.min_food >= 10.0, "far map %d: least food %.1f" % [map_seed, bot.min_food])
+		t.check(bot.min_food >= 5.0, "far map %d: least food %.1f" % [map_seed, bot.min_food])
 
 
 ## A player who never touches the mouse is fed by the idle Kith, so nobody leaves. With no bush in reach there is

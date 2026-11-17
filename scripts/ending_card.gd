@@ -10,6 +10,7 @@ signal chosen(ending: String)
 signal kept
 
 const Data = preload("res://scripts/data.gd")
+const EarlyOut = preload("res://scripts/early_out.gd")
 const Endings = preload("res://scripts/endings.gd")
 const MenuFonts = preload("res://scripts/menu_fonts.gd")
 const Rendered = preload("res://scripts/rendered_art.gd")
@@ -97,7 +98,7 @@ func _row(id: String) -> Control:
 	if id == "cataclysm":
 		box.add_child(_relic_icons())
 	var why := _words(box, "", Ui.MIN_TEXT, Ui.SHORT)
-	_rows[id] = {"button": b, "line": line, "gives": gives, "why": why}
+	_rows[id] = {"button": b, "line": line, "gives": gives, "why": why, "panel": panel}
 	return panel
 
 
@@ -137,6 +138,7 @@ func _fit() -> void:
 ## Put the card up for telling number `run` and the Lumen lean `lean`: a row the lean shuts is greyed, with its reason.
 ## `true_why` is {true ending: why it is shut ("" when open)} once the Way Out is read; empty, the true endings do not show.
 func open(run: int, lean: String, true_why := {}) -> void:
+	_early(false)
 	_title.text = Data.ENDINGS["title_first"] if run <= 1 else Data.ENDINGS["title_later"] % run
 	_true_box.visible = not true_why.is_empty()
 	for id in _rows:
@@ -147,6 +149,32 @@ func open(run: int, lean: String, true_why := {}) -> void:
 		row["why"].visible = reason != ""
 	visible = true
 	_fit.call_deferred()
+
+
+## The card for an early set out (scripts/early_out.gd): only the Exodus row, with the words of leaving half behind.
+func open_early() -> void:
+	_early(true)
+	_title.text = EarlyOut.TITLE
+	_text.text = EarlyOut.TEXT
+	_true_box.visible = false
+	for id in _rows:
+		var row: Dictionary = _rows[id]
+		row["panel"].visible = id == EarlyOut.ENDING
+		row["button"].disabled = false
+		row["why"].visible = false
+	_rows[EarlyOut.ENDING]["gives"].text = EarlyOut.GIVES
+	visible = true
+	_fit.call_deferred()
+
+
+## Put the card's own words back, or take them for an early set out.
+func _early(on: bool) -> void:
+	if on:
+		return
+	_text.text = Data.ENDINGS["text"]
+	for id in _rows:
+		_rows[id]["panel"].visible = true
+		_rows[id]["gives"].text = Data.ENDINGS["gives"] % Data.ENDINGS[id]["gives"]
 
 
 ## "Keep building": put the card away and say so.

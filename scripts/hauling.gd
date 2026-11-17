@@ -27,6 +27,8 @@ const GATHER_WALK := 6.0  # seconds a hut's worker walks out and back around one
 const STUCK_FOR := 30.0  # game seconds before a hauler no depot can be walked to looks again
 const FAR_TRIP := 14.0  # tiles: a depot whose average one-way trip is longer wants a Storehouse nearer its workshops
 const HOME_TRIPS := 0.25  # trips a minute a home or a Teardown Bench takes
+const TAKES := "Takes %d Kith from work"  # Kith taken from huts and workshops to stand in the places
+const USES_IDLE := "Uses %d idle Kith"
 const FED_TRIPS := 0.5  # trips a minute a Boiler, a Lamp or a Pen takes
 
 ## Per depot: the haulers its load needs, from the last reading. A depot is a key while roads reach buildings it serves.
@@ -186,6 +188,19 @@ func lever_note(depot: Vector2i) -> String:
 	return Data.HAULER_LEVER_FAR if trip_tiles.get(depot, 0.0) > FAR_TRIP else Data.HAULER_LEVER_KITH
 
 
+## What raising the places costs: "Takes 5 Kith from work" when `depot` wants more haulers than stand in its places and fewer idle
+## Kith are free than that, "Uses 2 idle Kith" when the idle ones cover it, "" when its places are full. Haulers come before the huts and
+## workshops for hands, so the Kith it takes are the ones that work now.
+func take_note(s, depot: Vector2i) -> String:
+	var more := wanted(depot) - have(depot)
+	if more <= 0:
+		return ""
+	var free := idle_kith(s)
+	if more > free:
+		return TAKES % (more - free)
+	return USES_IDLE % more
+
+
 ## The player sets `depot`'s wanted count one above (dir 1) or one below (dir -1) what it is now.
 func nudge(depot: Vector2i, dir: int) -> void:
 	if not auto.has(depot):
@@ -220,13 +235,13 @@ func refresh(s) -> void:
 		var depot := Roads.depot_of(s, b)
 		load_of[depot] = load_of.get(depot, 0.0) + rate * round_trip(b, depot) / 60.0
 		rate_of[depot] = rate_of.get(depot, 0.0) + rate
-		tiles_of[depot] = tiles_of.get(depot, 0.0) + rate * (absi(depot.x - b["pos"].x) + absi(depot.y - b["pos"].y))
+		tiles_of[depot] = (tiles_of.get(depot, 0.0) + rate * (absi(depot.x - b["pos"].x) + absi(depot.y - b["pos"].y)))
 	auto = {}
 	need = {}
 	names = {}
 	trip_tiles = {}
 	for depot in Roads.posts(s):
-		trip_tiles[depot] = tiles_of.get(depot, 0.0) / rate_of[depot] if rate_of.get(depot, 0.0) > 0.0 else 0.0
+		trip_tiles[depot] = (tiles_of.get(depot, 0.0) / rate_of[depot] if rate_of.get(depot, 0.0) > 0.0 else 0.0)
 		auto[depot] = maxi(ceili(load_of.get(depot, 0.0) / USE - 0.0001), 1)
 		need[depot] = maxi(ceili(load_of.get(depot, 0.0) - 0.0001), 1)
 		names[depot] = _name_of(s, depot)

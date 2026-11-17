@@ -394,6 +394,6 @@ func test_the_goal_order_researches_before_it_lays() -> void:
 	for id in ["road"]:
 		done_early = done_early or s.story.goals_done.has(id)
 	t.check(not done_early, "neither is done at the start")
-	var stable := ["gather", "flax", "tools", "hut", "dwelling", "twine", "road", "charcoal", "kiln"]
+	var stable := ["gather", "flax", "hut", "tools", "dwelling", "twine", "road", "charcoal", "kiln"]
 	stable += ["grind", "storehouse", "calendar", "bronze"]
 	t.check(ids == stable, "the goal ids and their order are the stable ones a save keeps")

@@ -1,6 +1,6 @@
 extends RefCounted
 ## Working by hand (design-system/14-hands-to-haulers.md): what a hold-to-harvest gives and how long it
-## takes, teach by doing (a Kith who watches you harvest a resource Data.LEARN_CLICKS times, 6 for the first, learns to
+## takes, teach by doing (a Kith who watches you harvest a resource Data.LEARN_CLICKS times, 2 for the first, learns to
 ## gather it), and crafting. Static, and works on the Sim passed in.
 
 const Data = preload("res://scripts/data.gd")

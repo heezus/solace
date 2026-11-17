@@ -3,9 +3,9 @@ extends RefCounted
 ## Read through the `Data` facade (scripts/data.gd).
 
 ## Harvest a resource by hand this many times and a watching Kith learns it: huts may then gather it.
-const LEARN_CLICKS := 10
+const LEARN_CLICKS := 3
 ## ...but the very first resource the Kith learn takes only this many, so the first lesson comes quickly.
-const LEARN_FIRST := 6
+const LEARN_FIRST := 2
 ## A hut trip brings back a bundle: this many times your harvest yield for that resource.
 const BUNDLE := 3
 ## Trips a hut can have queued before Paths & Haulers (the one under way counts).

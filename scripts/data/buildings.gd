@@ -23,7 +23,7 @@ const BUILDINGS := {
 		"housing": 3,
 		"near_hearth": true,
 		"color": Color("e9c46a"),
-		"desc": "Room for 3 more Kith. Must be within 6 tiles of the Hearth. They grow while food keeps coming in.",
+		"desc": "Room for 3 Kith, within 6 tiles of the Hearth or a Storehouse. They grow while food keeps coming in.",
 	},
 	"road":
 	{
@@ -620,12 +620,12 @@ const BUILDINGS := {
 		"out": {},
 		"trade": true,
 		"trade_give": 2,
-		"trade_only": ["shard", "coal", "wire", "steel"],
+		"trade_only": ["shard", "coal", "wire", "steel", "iron", "clay"],
 		"time": 8.0,
 		"color": Color("9fd8e8"),
 		"desc":
 		(
-			"Swaps 2 of one good for 1 of another, but only the strangers' own goods: Shards, Coal, Wire and Steel. "
+			"Swaps 2 of one good for 1 of another, but only the strangers' goods: Shards, Coal, Wire, Steel, Iron and Clay. "
 			+ "Choose what it gives and what it gets."
 		),
 	},
@@ -768,12 +768,12 @@ const BUILDINGS := {
 		"fuel": true,
 		"in": {"coal": 1},
 		"stock": 6,
-		"burn": 120.0,
+		"burn": 60.0,
 		"reach": 4,
 		"color": Color("e0642b"),
 		"desc":
 		(
-			"A jet of flame on a pump. It burns the Bloom ground nearest it clear, a tile every 30 seconds within 6 tiles,"
+			"A jet of flame on a pump. It burns the Bloom ground nearest it clear, a tile every 15 seconds within 6 tiles,"
 			+ " and 1 Coal does 4 tiles (1 Charcoal does 2). Burnt ground is never taken again. Stand it within 2 tiles"
 			+ " of a Power Pole; haulers bring the fuel."
 		),

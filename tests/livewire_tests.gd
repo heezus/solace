@@ -230,8 +230,25 @@ func test_the_coal_fix() -> void:
 	tall.economy.inv["iron"] = 5
 	t.check(not Work.steel_waits(tall, forge), "a forge works as before until Livewire begins")
 	tall.story.record(Data.LIVEWIRE_BEGUN)
-	t.check(Work.steel_waits(tall, forge), "it waits while steel is ahead of iron")
-	tall.economy.inv["iron"] = 10
+	t.check(not Work.steel_waits(tall, forge), "it goes on while no Iron is coming in (fun-4: nothing to save)")
+	for i in Data.RATE_WINDOW:  # a Bloomery making Iron
+		tall.economy.flows.add("iron", 0.2, "bloomery")
+		tall.economy.flows.advance(1.0)
+	t.check(not Work.steel_waits(tall, forge), "and while no open tech asks for Iron")
+	var asks := _open_tech_asking_iron(tall)
+	t.check(asks != "", "(a tech that asks for Iron: %s)" % asks)
+	var price: int = Work._cheapest_iron_tech(tall)  # the cheapest open tech that asks for Iron
+	tall.economy.inv["steel"] = price + 20
+	tall.economy.inv["iron"] = price
+	t.check(
+		Work.steel_waits(tall, forge),
+		"it waits while steel is ahead of iron and a batch would drop Iron under the tech's price"
+	)
+	tall.economy.inv["iron"] = price + 40
+	tall.economy.inv["steel"] = price + 60
+	t.check(not Work.steel_waits(tall, forge), "but not while there is Iron to spare after the batch")
+	tall.economy.inv["iron"] = price + 4
+	tall.economy.inv["steel"] = price
 	t.check(not Work.steel_waits(tall, forge), "and goes on once iron is level")
 	var bloomery: Dictionary = {"type": "bloomery"}
 	tall.economy.inv["iron"] = 0
@@ -244,6 +261,25 @@ func test_the_coal_fix() -> void:
 	t.check(waiting == ["forge"], "only a forge waits, got %s" % [waiting])
 	var floor_copy: Dictionary = {"type": "factory_floor", "make": "forge"}
 	t.check(Work.steel_waits(tall, floor_copy), "and a Floor copying a forge waits like one")
+
+
+## The id of a tech that asks for Iron, with everything it needs learned so it is open ("" when none does).
+func _open_tech_asking_iron(s: Sim) -> String:
+	for item in Data.ITEM_ORDER:
+		s.economy.seen[item] = true
+	for id in Data.TECHS:
+		if Data.TECHS[id]["cost"].has("iron"):
+			if Data.TECHS[id].has("after"):
+				s.story.record(Data.TECHS[id]["after"])
+			var todo: Array = Data.TECHS[id].get("requires", []).duplicate()
+			while not todo.is_empty():
+				var r: String = todo.pop_back()
+				if not s.tech_tree.researched.has(r):
+					s.tech_tree.researched[r] = true
+					todo.append_array(Data.TECHS[r].get("requires", []))
+			if s.tech_tree.requirements_met(id):
+				return id
+	return ""
 
 
 func _coal_in_ground(s: Sim) -> int:

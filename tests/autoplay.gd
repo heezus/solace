@@ -269,11 +269,11 @@ func _want(want: Dictionary, cost: Dictionary, times: int) -> void:
 		want[id] = want.get(id, 0) + cost[id] * times
 
 
-## What to gather by hand: the first queued tech that's missing something we can reach decides it
-## (the most-missing raw good behind it), so the next tech comes as soon as it can.
+## What to gather by hand: the first queued tech (or hut, or Dwelling) missing something we can reach decides it.
 func _next_click() -> String:
 	var costs: Array = []
-	if s.town.unlocked("gatherers_hut") and (_workers() + _haulers_wanted() < s.people.kith.size() or _no_food_hut()):
+	var hut := _workers() + _haulers_wanted() < s.people.kith.size() or _no_food_hut() or _house_lacks() != ""
+	if hut and s.town.unlocked("gatherers_hut"):
 		costs.append(Data.BUILDINGS["gatherers_hut"]["cost"])
 	if _house_wanted():
 		costs.append(Data.BUILDINGS["dwelling"]["cost"])
