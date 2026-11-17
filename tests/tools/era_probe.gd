@@ -42,6 +42,7 @@ var _spill_seen := 0  # Economy.spilled at the last reading (it is not saved, so
 var _depots_at := 0.0  # era seconds of the last depot reading
 var _town_at := 0.0  # era seconds of the last reading of the jobs
 var _zero_at := -1000.0  # era seconds of the last note on why the power stood at zero
+var _goals_timed := {}  # goal id -> true once its minute is in the row's "goal_minutes"
 
 
 ## Open era `name` on `s`: the start snapshot (people, places, stock, coal in the ground).
@@ -58,6 +59,7 @@ func begin(name: String, s) -> void:
 	_spill_seen = s.economy.spilled
 	_spill_of_seen = s.economy.spilled_of.duplicate()
 	_depots_at = 0.0
+	_goals_timed.clear()
 	_town_at = 0.0
 	_zero_at = -1000.0
 	ledger.begin(name, s)
@@ -115,6 +117,7 @@ func begin(name: String, s) -> void:
 		"research_wait_by": {},  # the same head seconds, by tech
 		"depots_every_5_min": [],
 		"town_every_5_min": [],
+		"goal_minutes": [],  # [goal id, era minute it was met], in the order they were met
 	}
 	if name == "ironfall" or name == "livewire":
 		_row["queue_empty_s"] = 0.0  # seconds the research queue stood empty with the era's gate still to learn
@@ -138,6 +141,8 @@ func begin(name: String, s) -> void:
 		_row["engine_watch"] = {}  # engine tile "x,y" -> what the last reading while it was overgrown saw
 		_row["firebreak_tiles"] = 0
 		_row["pace_every_min"] = []
+		_row["scorcher_seconds"] = [0.0, 0.0]  # Scorcher-seconds standing, and burning (and powered)
+		_row["lamp_seconds"] = [0.0, 0.0]  # Arc Lamp-seconds standing, and lit (powered, not overgrown)
 		_row["power_zero_with_wood_s"] = 0.0  # seconds a net asked for power and none was given, with Wood in the stores
 		_row["power_zero_with_wood_longest_s"] = 0.0
 		_row["fuel_burned"] = {}  # building type -> {fuel: units}
@@ -156,9 +161,18 @@ func observe(s) -> void:
 		return
 	_acc -= SAMPLE
 	_sample(s)
+	_goal_times(s)
 	ledger.sample(s)
 	if era == "livewire":
 		_tide(s)
+
+
+## Note the era minute of each goal the Kin have met since the last reading.
+func _goal_times(s) -> void:
+	for g in _goals(era):
+		if s.story.goals_done.has(g["id"]) and not _goals_timed.has(g["id"]):
+			_goals_timed[g["id"]] = true
+			_row["goal_minutes"].append([g["id"], snappedf((s.seasons.time - _at) / 60.0, 0.1)])
 
 
 ## Close the era: its length and goals done, and the row.
@@ -444,6 +458,13 @@ func _tide(s) -> void:
 				_row["lost_before_first_scorcher"] = s.tide.lost
 				break
 	_row["firebreak_tiles"] = maxi(_row["firebreak_tiles"], _count(s, "firebreak"))
+	for b in s.town.buildings:
+		if b["type"] == "scorcher":
+			_row["scorcher_seconds"][0] += SAMPLE
+			_row["scorcher_seconds"][1] += SAMPLE if b["burn"] > 0.0 and s.town.is_powered(b["pos"]) else 0.0
+		elif b["type"] == "arc_lamp":
+			_row["lamp_seconds"][0] += SAMPLE
+			_row["lamp_seconds"][1] += SAMPLE if not s.tide.hit.has(b["pos"]) and s.town.is_powered(b["pos"]) else 0.0
 	_power(s)
 	if s.tide.begun and t >= _row["pace_every_min"].size() * PACE_EVERY:
 		(
