@@ -27,6 +27,7 @@ var _loop_clock := 0.0
 var _bloom_clock := 0.0
 var _bloom_nearest := -1.0
 var _night := 0.0  # 0 the valley by day, 1 by night
+var _silent := DisplayServer.get_name() == "headless"  # no sound device: load and play nothing (the tests and CI run so)
 
 
 func _ready() -> void:
@@ -65,7 +66,7 @@ func update(delta: float, s, view_tile: Vector2, zoom_k: float) -> void:
 
 ## Play the cue `id` from tile `at` (-1, -1 for no place) if the mix allows. Returns true when it started.
 func play(id: String, at := Vector2i(-1, -1)) -> bool:
-	if not Mix.CUES.has(id):
+	if _silent or not Mix.CUES.has(id):
 		return false
 	var tiles := -1.0 if at.x < 0 else listener.distance_to(Vector2(at) + Vector2(0.5, 0.5))
 	var first: AudioStream = _stream("sfx", Mix.CUES[id]["files"][0])
@@ -107,6 +108,8 @@ func _stream(dir: String, file: String) -> AudioStream:
 
 ## Fade the loops: the valley (day, then night once the star has fallen), the Bloom near the view, and the sources that hum.
 func _loops_tick(s, dt: float) -> void:
+	if _silent:
+		return
 	var target := 1.0 if s.starfall.stage != "" else 0.0
 	_night = move_toward(_night, target, dt / NIGHT_FADE)
 	_set_loop("valley_day", SILENT if _night >= 0.999 else Mix.LOOPS["valley_day"]["db"] + linear_to_db(1.0 - _night))
