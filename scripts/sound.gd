@@ -44,6 +44,9 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	Cues.listening = false
 	Cues.clear()
+	for p in _pool + _loops.values():  # a sound still playing holds its stream open, which Godot reports as a leak at exit
+		p.stop()
+		p.stream = null
 
 
 ## One frame of sound. `s` is the run (a Sim), `view_tile` the map tile the view is centred on, `zoom_k` the view's zoom relative to
