@@ -13,6 +13,7 @@ signal said(message: String)
 
 const Data = preload("res://scripts/data.gd")
 const Roads = preload("res://scripts/roads.gd")
+const SoundCues = preload("res://scripts/sound_cues.gd")
 
 const TOWER := "skyreach_tower"
 const SIGNAL := "signal_tower"
@@ -355,6 +356,7 @@ func _wave(s) -> void:
 	while wave_time(waves_planned) - Data.SKYREACH["warn"] <= t:
 		_plan(s, waves_planned)
 		waves_planned += 1
+		SoundCues.add("landfall_warn")
 	for f in falls:
 		if not f["fell"] and f["at"] <= t:
 			f["fell"] = true

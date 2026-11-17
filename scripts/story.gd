@@ -22,6 +22,7 @@ const Chain = preload("res://scripts/chain.gd")
 const Founding = preload("res://scripts/founding.gd")
 const Needs = preload("res://scripts/needs.gd")
 const Power = preload("res://scripts/power.gd")
+const SoundCues = preload("res://scripts/sound_cues.gd")
 
 ## The story moments that open an era after the stone age, in order: Bronze Dawn, the Starfall (the star falls), Ironfall, Livewire.
 const ERA_OPENINGS := ["bronze_dawn", "star_falling", Data.IRONFALL_EVENT, Data.LIVEWIRE_BEGUN, "skyreach_begun"]
@@ -111,6 +112,7 @@ func update(s) -> void:
 		for g in list:
 			if not goals_done.has(g["id"]) and goal_met(s, g):
 				goals_done[g["id"]] = true
+				SoundCues.add("goal_done")
 	if goals_done.size() != _goals_seen:
 		_goals_seen = goals_done.size()
 		last_goal_at = s.seasons.time

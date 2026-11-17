@@ -56,6 +56,8 @@ const CutscenePlayer = preload("res://scripts/cutscene_player.gd")
 const PlayRecorder = preload("res://scripts/play_recorder.gd")
 const PlaytestRecorder = preload("res://scripts/playtest_recorder.gd")
 const Hotkeys = preload("res://scripts/hotkeys.gd")
+const Sound = preload("res://scripts/sound.gd")
+const SoundCues = preload("res://scripts/sound_cues.gd")
 
 const TILE: float = Overlays.TILE
 const MAP_ORIGIN := Vector2.ZERO  # the node's transform pans and zooms the map
@@ -85,6 +87,7 @@ var panning := false  # the middle button is down: dragging pans
 var zoom_wait := 0.0  # seconds before a pinch may step the zoom again
 var scroll_zoom := 0.0  # two-finger scroll gathered towards the next zoom step
 var frame: Panel
+var sound: Sound  # plays what the blocks note on the cue bus, and the ambience (scripts/sound.gd)
 var state: Sim
 var placing := ""  # building type being placed, "" when not placing
 var pick_focus := ""  # what the Gatherer's Hut being placed will work, once the player picked (see HutFocus.pick_*)
@@ -99,7 +102,7 @@ var messages := Messages.new()
 var toasts: ToastStack
 var east_pointer: EastPointer  # the lasting pointer to the new land (after Bronze Dawn)
 var msg_log: MessageLog
-var told := {}  # warm lines already said (see _watch_flavor)
+var told := {}  # warm lines already said (see _process)
 var was_starving := false
 var top_bar: TopBar
 var bottom_bar: BuildBar
@@ -126,6 +129,8 @@ var nudge := {}
 
 func _ready() -> void:
 	Ui.apply_theme()
+	sound = Sound.new()
+	add_child(sound)  # first, so every button the UI builds gets its click
 	state = Sim.new()
 	if not Launch.start_into(state):
 		state = Sim.new()
@@ -142,6 +147,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	time += delta
+	sound.update(delta, state, cam / TILE, ZOOM_PX[zoom_step] / ZOOM_PX[DEFAULT_ZOOM])
 	state.story.card_up = era_card.visible  # the next era waits for the card to be put away (Story.update)
 	if not paused:
 		for i in speed:
@@ -150,6 +156,7 @@ func _process(delta: float) -> void:
 	if state.starfall.pending != "" and not moment_card.visible:
 		paused = true  # the strangers are asking something: the game waits behind the card
 		moment_card.open(state.starfall)
+		SoundCues.add("ending" if state.starfall.pending == "ending" else "card")
 	for e in state.events:
 		if e == Data.BORN_EVENT % Data.PEOPLE["one"]:
 			var at := Overlays.center(state.world.camp_pos) - Vector2(0, 12)
@@ -157,6 +164,7 @@ func _process(delta: float) -> void:
 				{"pos": at, "text": Data.BORN_POPUP % Data.PEOPLE["one"], "t": 0.0, "col": KITH.lightened(0.3)}
 			)
 			_toast(Data.BORN_TOAST % Data.PEOPLE["many"], 3.0)
+			SoundCues.add("born", state.world.camp_pos)
 		elif e == Data.LAND_GREW_EVENT or e == Data.DISCOVERED_EVENT % Data.TECHS["bronze_dawn"]["name"]:
 			continue  # the dawn says all of this once, in its banner
 		else:
@@ -179,7 +187,8 @@ func _process(delta: float) -> void:
 		r["t"] += delta
 	rubble = rubble.filter(func(r): return r["t"] < Overlays.RUBBLE_TIME)
 	_watch_food()
-	_watch_flavor()
+	for line in Flavor.due(state, told):  # each warm line once, when its first moment comes (Data.FLAVOR_STORY)
+		_toast(line, 5.0)
 	messages.advance(delta)
 	zoom_wait -= delta
 	if not tech_panel.visible:  # the research board takes the arrows and WASD while it is open
@@ -426,8 +435,11 @@ func _lay_line() -> void:
 	var laid := state.place_line(placing, line)
 	if laid == 0 and err != "":
 		_toast(CardText.refusal(state, placing, err), 2.0)
+		SoundCues.add("refuse")
 	elif report != "":
 		_toast("Laid %d of %d. %s" % [laid, line.size(), report], 3.0)
+	if laid > 0:
+		SoundCues.add("road", line[0])
 
 
 func _tile_under() -> Vector2i:
@@ -451,6 +463,7 @@ func _click_tile(p: Vector2i) -> void:
 				placing = ""
 		else:
 			_toast(CardText.refusal(state, placing, err), 2.0)
+			SoundCues.add("refuse")
 		return
 	if state.town.building_at.has(p):
 		var note := Workers.click(state, state.town.building_at[p], true)
@@ -479,7 +492,8 @@ func _click_tile(p: Vector2i) -> void:
 ## A hut goes down working what the player picked (else its default); a hut with a choice left unmade says so once.
 func _place_at(p: Vector2i) -> void:
 	var hut := placing == "gatherers_hut"
-	state.place(placing, p, pick_focus if hut else "")
+	if state.place(placing, p, pick_focus if hut else ""):
+		SoundCues.add("road" if placing in LINE_TYPES else "place", p)
 	if hut:
 		var note := HutFocus.pick_note(state, p, pick_focus)
 		if note != "":
@@ -518,20 +532,6 @@ func _click_picker() -> bool:
 	return true
 
 
-## The hut ghost's marker (what it will work) and picker (when there is a choice), over a spot it can stand on.
-func _draw_hut_picker() -> void:
-	if (
-		placing != "gatherers_hut"
-		or not state.world.in_bounds(hover)
-		or state.town.placement_error(placing, hover) != ""
-	):
-		return
-	HutFocus.draw_marker(
-		self, _tile_rect(hover).grow(-2.0 * TILE / Art.DESIGN), HutFocus.pick_chosen(state, hover, pick_focus)
-	)
-	HutFocus.draw_picker(self, state, hover, pick_focus, _view_local())
-
-
 ## Hold to harvest, each frame the button is down: over a Control (a bar, a panel) it doesn't count.
 func _hold(delta: float) -> void:
 	if not holding:
@@ -545,6 +545,7 @@ func _hold(delta: float) -> void:
 	var msg := state.hold_harvest(hover, delta)
 	if msg != "":
 		press_harvested = true
+		SoundCues.gather(Hands.item_at(state, hover), hover)
 		popups.append({"pos": _tile_center(hover), "text": msg, "t": 0.0})
 
 
@@ -566,6 +567,7 @@ func _clear_land(p: Vector2i) -> void:
 			_toast(why + ".", 2.0)
 		return
 	rubble.append({"pos": p, "t": 0.0})
+	SoundCues.add("demolish", p)
 	popups.append({"pos": _tile_center(p), "text": "Cleared", "t": 0.0})
 
 
@@ -579,6 +581,7 @@ func _demolish(p: Vector2i) -> void:
 		_toast("The Hearth stays: it's the heart of the settlement.", 2.0)
 		return
 	var refund := state.demolish(p)
+	SoundCues.add("demolish", p)
 	rubble.append({"pos": p, "t": 0.0})
 	if building_panel.pos == p:
 		building_panel.select(Vector2i(-1, -1))
@@ -612,6 +615,7 @@ func _build_ui() -> void:
 	top_bar.speed_picked.connect(_set_speed)
 	top_bar.log_pressed.connect(func(): msg_log.toggle())
 	SightLayer.attach(self, layer, top_bar, state)
+	(load("res://scripts/flow_layer.gd") as GDScript).attach(self, layer, top_bar, state)
 
 	# Bottom bar: tabs of fixed-size build buttons, Demolish and Craft.
 	bottom_bar = BuildBar.new()
@@ -705,17 +709,12 @@ func _watch_food() -> void:
 		messages.resolve("food")
 
 
-## Say each warm line once, when its first moment comes (the story ids it waits for are in Data.FLAVOR_STORY).
-func _watch_flavor() -> void:
-	for line in Flavor.due(state, told):
-		_toast(line, 5.0)
-
-
 ## The story moments that do something on screen: the Falling Star, Livewire and Skyward end an era with a card (the game waits
 ## behind it) and go into the profile, the save that outlives a run.
 func _on_story(id: String) -> void:
 	if id in ["star_falling", Data.LIVEWIRE_EVENT, Data.SKYWARD_EVENT, Data.SKYREACH["done"]]:
 		paused = true
+		SoundCues.add("era_bell")
 		state.story.card_up = true  # now: the rest of this frame's ticks must not begin the next era
 		era_card.open(id, not state.carry.is_first())
 		if not Profile.note_run(state):
@@ -740,6 +739,7 @@ func _on_notice_closed(look: bool) -> void:
 
 ## A discovery that unlocks buildings: their cards and tab glow, and a toast says where to find them.
 func _on_tech_researched(tech: String) -> void:
+	SoundCues.add("research_done")
 	var types := Rules.buildings_of(tech)
 	if types.is_empty():
 		return
@@ -900,7 +900,7 @@ func _draw() -> void:
 	elif state.world.in_bounds(hover):
 		draw_rect(_tile_rect(hover).grow(-1), Color(1, 1, 1, 0.8), false, 2.0)  # the Info panel says what it is
 
-	_draw_hut_picker()
+	HutFocus.draw_ghost(self, state, [placing, hover, pick_focus], _tile_rect(hover), _view_local())
 	HoldRings.draw(self)
 	if paused:
 		var top_mid := (Vector2(view.get_center().x, view.position.y + 12.0) - position) / scale.x

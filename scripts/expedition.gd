@@ -16,6 +16,7 @@ const Scouting = preload("res://scripts/scouting.gd")
 const Finds = preload("res://scripts/teardown_finds.gd")
 const Steam = preload("res://scripts/steam.gd")
 const OldShip = preload("res://scripts/old_ship.gd")
+const SoundCues = preload("res://scripts/sound_cues.gd")
 
 const AUTO_SECONDS := 5.0  # how often a standing order looks for a chance to send
 
@@ -155,6 +156,7 @@ static func send(s) -> String:
 		names.append(k["name"])
 	var cost: Dictionary = Data.PACKS[o["pack"]]["cost"]
 	s.economy.pay(cost, "expedition")
+	SoundCues.add("expedition", s.world.camp_pos)
 	return (
 		Data.POST_SENT
 		% [names[0], names[1], Data.TARGETS[o["target"]].to_lower(), Data.PACKS[o["pack"]]["name"].to_lower()]

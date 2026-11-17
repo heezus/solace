@@ -16,6 +16,7 @@ const Homes = preload("res://scripts/homes.gd")
 const Kith = preload("res://scripts/kith.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Work = preload("res://scripts/work.gd")
+const SoundCues = preload("res://scripts/sound_cues.gd")
 
 const LOG_WINDOW := 60.0  # game seconds a delivery stays in `trip_log`
 const REFRESH := 30.0  # game seconds between readings of each depot's load
@@ -62,6 +63,7 @@ func tick(s, delta: float) -> void:
 
 ## Note one delivery of `amount` of `item` from one tile to another (a depot to a building, or a building to a depot).
 func log_trip(s, from: Vector2i, to: Vector2i, item: String, amount: int) -> void:
+	SoundCues.add("delivery", to)
 	var now: float = s.seasons.time
 	trip_log.append({"at": now, "from": from, "to": to, "item": item, "amount": amount})
 	while not trip_log.is_empty() and trip_log[0]["at"] < now - LOG_WINDOW:

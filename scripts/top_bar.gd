@@ -8,6 +8,7 @@ extends PanelContainer
 
 signal speed_picked(value: int)  # 0 toggles pause
 signal log_pressed  # the Messages button
+signal flow_pressed  # the Flow button (key F): the flow view opens and shuts
 signal sight_toggled(on: bool)  # the Sight button, latched (holding Alt works without it)
 
 const Data = preload("res://scripts/data.gd")
@@ -23,6 +24,8 @@ const RAW := [
 ]
 ## Where each row of goods starts in ITEM_ORDER: raw, made, Bronze Dawn's five with Livewire's Wire and Starfall's Shardwork,
 ## Ironfall's seven with Starfall's Shard and Starfruit.
+const FLOW_BUTTON := "Flow (F)"
+const FLOW_TIP := "Open the flow view: what each good makes and uses a minute, and what holds up the goal's goods."
 const ROWS := [0, 7, 13, 20, 28]
 const LOSS := Ui.SHORT  # `alert`, lifted to read on cocoa
 ## The Food readout's text while the warning is up: light enough to read on the bar (over 4.5 to 1) at every moment.
@@ -37,6 +40,7 @@ const CHIP_W := 74.0
 const ICON := 24.0  # a good's sprite, with nothing behind it
 ## A row of chips keeps this height whether or not its goods have appeared yet. Four rows fill the bar's goods area.
 const ROW_H := 30.0
+const FLOW_W := 70.0
 const CHIP_GAP := 3  # between the chips of a row, the same in every row
 const CHIP_VPAD := 1  # a chip keeps this much above and below, so four rows fit the bar
 const EDGE_PAD := 6.0  # the goods keep this much clear of the bar's top and bottom edge (the bottom rule is on top of it)
@@ -136,6 +140,8 @@ func setup(game: Sim) -> void:
 		row.custom_minimum_size = Vector2(0, ROW_H)
 		for id in group:
 			row.add_child(_chip(id, CHIP_W))
+		if r == 0:
+			row.add_child(_flow_button())  # at the end of the raw goods' row, which has the room (the right column does not)
 		if r == 1:
 			tools_label = Ui.label("", Ui.MIN_TEXT)
 			tools_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -232,6 +238,26 @@ static func _outline(color: Color, vpad := 2) -> StyleBoxFlat:
 	s.content_margin_top = vpad
 	s.content_margin_bottom = vpad
 	return s
+
+
+## The Flow button (key F), at the right end of the first row of goods.
+func _flow_button() -> Control:
+	var holder := HBoxContainer.new()
+	holder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var gap := Control.new()
+	gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	holder.add_child(gap)
+	# The button sits inside a box exactly a chip tall, so it can't make this row taller than the other two.
+	var box := Control.new()
+	box.custom_minimum_size = Vector2(FLOW_W, ROW_H)
+	var flow_button := Ui.button(FLOW_BUTTON)
+	Ui.key_hint(flow_button, "(F)")
+	flow_button.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	flow_button.tooltip_text = FLOW_TIP
+	flow_button.pressed.connect(func(): flow_pressed.emit())
+	box.add_child(flow_button)
+	holder.add_child(box)
+	return holder
 
 
 ## Keep `c` at a fixed width whatever its labels say (they clip with an ellipsis), so the bar's goods
