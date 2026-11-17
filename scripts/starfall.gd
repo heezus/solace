@@ -21,6 +21,7 @@ const Buildings = preload("res://scripts/buildings.gd")
 const Economy = preload("res://scripts/economy.gd")
 const Carry = preload("res://scripts/carry.gd")
 const OldShip = preload("res://scripts/old_ship.gd")
+const SoundCues = preload("res://scripts/sound_cues.gd")
 
 ## The story id a stage 4 building records the first time it stands (the Market has its own: market_open).
 ## One line of what a choice gives and costs, built from the data (the cards show it under each button).
@@ -431,6 +432,7 @@ func _scramble(k: int) -> int:
 ## its set is read at the next check once all three marks are copied: the Wall still copies it and the story still happens.
 func _copy(glyph: String) -> void:
 	copied.append(glyph)
+	SoundCues.add("glyph")
 	if carry.knows_mark(glyph):
 		guesses[glyph] = Data.GLYPHS[glyph]["word"]
 

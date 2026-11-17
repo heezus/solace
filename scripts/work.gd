@@ -10,6 +10,7 @@ const Hands = preload("res://scripts/hands.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Patch = preload("res://scripts/patch.gd")
 const Lessons = preload("res://scripts/lessons.gd")
+const SoundCues = preload("res://scripts/sound_cues.gd")
 
 const BENCH_AT_BENCH := " %d of them still wait at the bench for a Kith to carry them."  # tools in its output
 
@@ -77,6 +78,7 @@ static func progress_frac(s, b: Dictionary) -> float:
 
 ## A workshop's cycle is done: it uses its inputs and makes its goods.
 static func finish_cycle(s, b: Dictionary) -> void:
+	SoundCues.add("craft", b["pos"])
 	b["progress"] = 0.0
 	s.people.wear(b)
 	var used := Buildings.recipe_in(b)

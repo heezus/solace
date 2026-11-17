@@ -24,6 +24,7 @@ const DebugKeys = preload("res://scripts/debug_keys.gd")
 const CutsceneSettings = preload("res://scripts/cutscene_settings.gd")
 const HintSettings = preload("res://scripts/hint_settings.gd")
 const PlayLogSettings = preload("res://scripts/play_log_settings.gd")
+const SoundSettings = preload("res://scripts/sound_settings.gd")
 
 const WIDTH := 300.0
 const ROOM_MARGIN := 18.0  # space kept free above and below the card
@@ -34,6 +35,8 @@ var debug_toggle: CheckButton
 var cutscene_toggle: CheckButton
 var hints_toggle: CheckButton
 var playlog_toggle: CheckButton
+var mute_toggle: CheckButton
+var volume_sliders: Dictionary = {}  # "master", "sfx" or "ambience" -> its HSlider
 var status: Label
 var scroll: ScrollContainer  # holds the column of buttons; as tall as the column, or as tall as the window allows
 var v: VBoxContainer
@@ -82,6 +85,11 @@ func setup() -> void:
 	v.add_child(hints_toggle)
 	playlog_toggle = _switch(Data.PLAYLOG_LABEL, Data.PLAYLOG_HELP, PlayLogSettings.set_on)
 	v.add_child(playlog_toggle)
+	mute_toggle = _switch(SoundSettings.MUTE_LABEL, SoundSettings.MUTE_HELP, SoundSettings.set_muted)
+	v.add_child(mute_toggle)
+	_volume("master", SoundSettings.MASTER_LABEL, SoundSettings.set_master)
+	_volume("sfx", SoundSettings.SFX_LABEL, SoundSettings.set_sfx)
+	_volume("ambience", SoundSettings.AMBIENCE_LABEL, SoundSettings.set_ambience)
 	debug_toggle = _switch(Data.DEBUG_KEYS_LABEL, Data.DEBUG_HELP, DebugKeys.set_on)
 	v.add_child(debug_toggle)
 	var keys := Ui.label("\n".join(Hotkeys.LIST.map(func(row): return "%s: %s" % row)), Ui.MIN_TEXT)
@@ -105,6 +113,21 @@ func setup() -> void:
 	var build := BuildInfo.label(Ui.MIN_TEXT)
 	build.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(build)
+
+
+## A volume row: the name over a slider from silent to full; `on_change` is told each new level (0 to 1).
+func _volume(key: String, text: String, on_change: Callable) -> void:
+	var caption := Ui.label(text, Ui.MIN_TEXT)
+	MenuFonts.style_caption(caption)
+	v.add_child(caption)
+	var slider := HSlider.new()
+	slider.min_value = 0.0
+	slider.max_value = 1.0
+	slider.step = 0.05
+	slider.custom_minimum_size = Vector2(0, 20)
+	slider.value_changed.connect(func(x): on_change.call(x))
+	volume_sliders[key] = slider
+	v.add_child(slider)
 
 
 ## The Keys button: show or hide the list of hotkeys (and refit the card around it).
@@ -168,6 +191,10 @@ func open() -> void:
 	cutscene_toggle.set_pressed_no_signal(CutsceneSettings.on())
 	hints_toggle.set_pressed_no_signal(HintSettings.on())
 	playlog_toggle.set_pressed_no_signal(PlayLogSettings.on())
+	mute_toggle.set_pressed_no_signal(SoundSettings.muted())
+	volume_sliders["master"].set_value_no_signal(SoundSettings.master())
+	volume_sliders["sfx"].set_value_no_signal(SoundSettings.sfx())
+	volume_sliders["ambience"].set_value_no_signal(SoundSettings.ambience())
 	visible = true
 
 
