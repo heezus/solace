@@ -495,6 +495,7 @@ func test_gatherer_fills_until_hauled() -> void:
 
 func test_haulers_automate_a_chain() -> void:
 	var s := fresh()
+	s.goal_first = false  # the pit would hold for the goal first; this test is about the haulers
 	give(s, 50)
 	s.tech_tree.researched["fire"] = true
 	s.tech_tree.researched["haulers"] = true

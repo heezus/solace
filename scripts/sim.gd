@@ -76,7 +76,6 @@ var goal_first := true  # Goal first (scripts/goal_first.gd): workshops whose go
 var seasons := SeasonsBlock.new()  # Seasons of Strain: a pressure every few minutes and the answer to it
 var skyreach := SkyreachBlock.new()  # Step 8, Skyreach (run 2 on): the sky's sectors, landfalls and the tower
 var carry := CarryBlock.new()  # Step 7, the Exodus: what the Kith carry from earlier runs (read only; empty in a first run)
-var _goal_clock := 0.0
 
 
 ## Wire the blocks together. Every signal connection in the game is here, so it is all in one place.
@@ -327,9 +326,7 @@ func tick(delta: float) -> void:
 	livewire.tick(self, delta)
 	tide.tick(self, delta)
 	skyreach.tick(self, delta)
-	_goal_clock += delta
-	if _goal_clock >= GoalFirst.EVERY:
-		_goal_clock = 0.0
+	if fmod(seasons.time, GoalFirst.EVERY) < delta:  # once a game second, off the saved clock so a loaded game looks on the same ticks
 		GoalFirst.update(self)
 	seasons.tick(self, delta)
 	sky.tick(delta)
