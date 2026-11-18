@@ -68,7 +68,6 @@ const TIDE_REACHES_NOTE := "Tide Watch: the Bloom reaches this in about %s"  # a
 const TIDE_FRONT_NOTE := "Tide Watch: the Bloom's front lies %d tiles from the Hearth"  # tiles
 const TIDE_PACE_NOTE := "The Bloom moves faster while the town draws power: %d units now, a tile every %d s"  # units, seconds
 const TIDE_PACE_IDLE := "The Bloom moves slowly while the town draws no power: a tile every %d s"  # seconds
-const SCORCHER_NO_POWER := "No power: stand it within 4 tiles of a Power Pole whose net gives power"
 const SCORCHER_NOTHING := "Ready: no Bloom in reach (the front is %d tiles away)"  # tiles to the nearest Bloom ground
 const SCORCHER_NOTHING_YET := "Ready: no Bloom in reach"
 const SCORCHER_BURNING := "Burning Bloom ground clear: %d tiles done, %d %s in store"  # tiles done, stored, the fuel's name

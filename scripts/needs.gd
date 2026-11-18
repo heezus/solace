@@ -76,6 +76,26 @@ static func _down(id: String, out: Dictionary) -> void:
 			_down(input, out)
 
 
+## The goods of the goal's own price that the stores are short of now: {item: still needed} (fun playtest 6: HELD UP lines were
+## written for every good down the recipes, with a thousand of them in stock; the goods the goal lists are the ones it waits on).
+static func goal_short(s) -> Dictionary:
+	var out := {}
+	var list: Array = s.story.goal_list()
+	var at: int = s.story.current_goal()
+	if at >= list.size():
+		return out
+	var g: Dictionary = list[at]
+	var cost := {}
+	if g.has("tech"):
+		cost = s.tech_tree.cost_of(g["tech"])
+	elif g.has("building") and Data.BUILDINGS.has(g["building"]):
+		cost = Data.BUILDINGS[g["building"]]["cost"]
+	for id in cost:
+		if int(s.economy.inv.get(id, 0)) < int(cost[id]):
+			out[id] = int(cost[id]) - int(s.economy.inv.get(id, 0))
+	return out
+
+
 ## How many of `item` the goal in front of the player still asks for in its price (0 when it asks for none, or the goal is done).
 static func goal_need(s, item: String) -> int:
 	if item == "":

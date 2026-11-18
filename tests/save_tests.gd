@@ -503,8 +503,10 @@ func test_a_loaded_game_carries_on_the_same() -> void:
 			loaded.step(true)
 		var h1 := golden.state_hash(original.s)
 		var h2 := golden.state_hash(loaded.s)
-		var dump_a := text(RunSave.dump(original.s))
-		var dump_b := text(RunSave.dump(loaded.s))
+		# Both go through the JSON reader once more: it reads 1.4000000000000001 as 1.4, so a float the loaded copy got from the
+		# text would differ from the original's in the last digit while the games are the same.
+		var dump_a := text(via_json(RunSave.dump(original.s)))
+		var dump_b := text(via_json(RunSave.dump(loaded.s)))
 		if h1 != h2 or dump_a != dump_b:
 			same = false
 			var at := 0

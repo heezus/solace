@@ -24,9 +24,7 @@ static func lines(s) -> Array:
 		var sum := GoalSums.line(s, goals[at])
 		if sum != "":
 			out.append("AT THIS RATE: " + sum)
-	for id in goal:
-		if int(s.economy.inv.get(id, 0)) >= Needs.goal_need(s, id) and Needs.goal_need(s, id) > 0:
-			continue
+	for id in Needs.goal_short(s):
 		var held := FlowView.bottleneck(s, id)
 		var line: String = held["line"]
 		if held["pos"] != FlowView.NONE:
@@ -70,7 +68,7 @@ static func move(s, m: Dictionary) -> String:
 	if not bool(m.get("pause_them", false)):
 		_all_open = true
 		return ""
-	for id in Needs.goal_goods(s):
+	for id in Needs.goal_short(s):
 		var held := FlowView.bottleneck(s, id)
 		if held.has("pause"):
 			for p in held["pause"]:

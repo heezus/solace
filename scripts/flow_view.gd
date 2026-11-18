@@ -99,7 +99,7 @@ static func makers(s, item: String) -> Array:
 			order.append(type)
 		var g: Dictionary = by_type[type]
 		g["count"] += 1
-		var code := wait_code(b)
+		var code: String = cause(s, b)["code"]
 		if code == "working":
 			g["working"] += 1
 		else:
@@ -160,6 +160,32 @@ static func wait_code(b: Dictionary) -> String:
 	return "other"
 
 
+## What building `b` really waits on: {code (wait_code's, but "input" only when the stores are short of what its next cycle needs, else the
+## delivery that is missing: "road" or "haulers"), input (the good, for "input"), text (the delivery's own reason, WaitWhy's)}. The pill
+## says "Needs Copper Ore" whenever the building's own buffer is empty, with a thousand in the stores and no hauler to bring it.
+static func cause(s, b: Dictionary) -> Dictionary:
+	var code := wait_code(b)
+	if code != "input":
+		return {"code": code, "input": "", "text": ""}
+	var recipe: Dictionary = Buildings.recipe_in(b)
+	var input := WaitWhy.missing(s, b, recipe)
+	if input == "":
+		return {"code": code, "input": "", "text": ""}
+	if stock_of(s, input) < int(recipe.get(input, 1)):
+		return {"code": "input", "input": input, "text": ""}
+	var why: Dictionary = WaitWhy.of(s, b, input)
+	var is_road: bool = why["code"] == "no_road" or why["code"] == "cut"
+	return {"code": "road" if is_road else "haulers", "input": input, "text": why["text"]}
+
+
+## How many of `item` the stores hold; a fuel counts with the other (a Bloomery burns Charcoal when it has no Coal).
+static func stock_of(s, item: String) -> int:
+	var n := int(s.economy.inv.get(item, 0))
+	if item == "coal" or item == "charcoal":
+		n = int(s.economy.inv.get("coal", 0)) + int(s.economy.inv.get("charcoal", 0))
+	return n
+
+
 ## The line a group of makers reads as: "2 Clay huts, both working", "1 of 2 Kilns waiting (short of an input)".
 static func group_line(g: Dictionary) -> String:
 	var n: int = g["count"]
@@ -186,14 +212,14 @@ static func bottleneck(s, item: String) -> Dictionary:
 		if g["spots"].is_empty():
 			continue
 		var b: Dictionary = s.town.buildings[s.town.building_at[g["spots"][0]]]
-		var code := wait_code(b)
+		var why := cause(s, b)
+		var code: String = why["code"]
 		if code == "input":
-			var input := WaitWhy.missing(s, b, Buildings.recipe_in(b))
-			if input != "":
-				return _input_held(s, item, input, b)
-		return {
-			"line": HELD % [name, WAIT_WORDS[code], group_line(g), WAIT_FIX.get(code, "open its card")], "pos": b["pos"]
-		}
+			return _input_held(s, item, why["input"], b)
+		var line: String = HELD % [name, WAIT_WORDS[code], group_line(g), WAIT_FIX.get(code, "open its card")]
+		if why["text"] != "":
+			line += " (%s: %s)" % [Data.ITEMS[why["input"]]["name"], why["text"]]
+		return {"line": line, "pos": b["pos"]}
 	var first: Dictionary = groups[0]
 	var at: Vector2i = built_makers(s, item)[0]["pos"]
 	var piled := maker_short(s, item, first)
@@ -260,10 +286,14 @@ static func _input_held(s, item: String, input: String, b: Dictionary) -> Dictio
 		}
 	var groups := makers(s, input)
 	if groups.is_empty():
-		return {"line": "%s is held by %s: %s" % [name, in_name, Needs.why_short(s, input)], "pos": b["pos"]}
+		var why := Needs.why_short(s, input, int(Buildings.recipe_in(b).get(input, 1)))
+		return {
+			"line": "%s is held by %s: %s" % [name, in_name, why if why != "" else Needs.provider(input)],
+			"pos": b["pos"]
+		}
 	for g in groups:
 		if not g["spots"].is_empty():
-			var code := wait_code(s.town.buildings[s.town.building_at[g["spots"][0]]])
+			var code: String = cause(s, s.town.buildings[s.town.building_at[g["spots"][0]]])["code"]
 			return {
 				"line": HELD % [name, in_name, group_line(g), WAIT_FIX.get(code, "fix what it waits on")],
 				"pos": g["spots"][0]

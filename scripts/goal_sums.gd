@@ -8,6 +8,13 @@ const Data = preload("res://scripts/data.gd")
 const FlowView = preload("res://scripts/flow_view.gd")
 const Needs = preload("res://scripts/needs.gd")
 
+const WAIT_PHRASE := {
+	"hands": "the %ss have no free Kith",
+	"haulers": "the %ss wait for a hauler",
+	"road": "the %ss have no road",
+	"power": "the %ss have no power",
+	"light": "the %ss stand in the dark",
+}
 const MIN_RATE := 0.05  # goods a minute below which a good is not rising
 const KEEPS_UP := 0.5  # the share of a new maker's inputs that must be coming in for it to count
 
@@ -69,12 +76,31 @@ static func _more(s, item: String, net: float, lacks: int) -> String:
 	var added := FlowView.added_rate(s, type, item)
 	if added <= 0.0:
 		return ""
+	var waiting := _waiting(s, item, type)
+	if waiting != "":
+		return " One more %s won't help: %s." % [name, waiting]
 	if def["kind"] == "processor":
 		var short_of := _input_short(s, def, item, added)
 		if short_of != "":
 			return " One more %s won't help: %s is short." % [name, Data.ITEMS[short_of]["name"]]
 	var total := maxf(net, 0.0) + added
 	return " One more %s: %s." % [name, minutes(float(lacks) / total)]
+
+
+## What the makers of `item` of `type` that stand wait on, read from their real wait state ("Clay is short", "the Kilns have no road",
+## "the Kilns wait for a hauler"), "" when none waits (a maker that waits does not need another of itself).
+static func _waiting(s, item: String, type: String) -> String:
+	for b in FlowView.built_makers(s, item):
+		if b["type"] != type:
+			continue
+		var why := FlowView.cause(s, b)
+		var code: String = why["code"]
+		if code == "working" or code == "resting" or code == "paused":
+			continue
+		if code == "input":
+			return "%s is short" % Data.ITEMS[why["input"]]["name"]
+		return WAIT_PHRASE.get(code, "the %ss are waiting") % Data.BUILDINGS[type]["name"]
+	return ""
 
 
 ## The first maker type of `item` that can be built now (open), "" when none can.
@@ -103,6 +129,8 @@ static func _input_short(s, def: Dictionary, item: String, added: float) -> Stri
 	for id in def.get("in", {}):
 		var ratio: float = float(def["in"][id]) / float(def["out"][item])
 		var needed := added * ratio
+		if float(FlowView.stock_of(s, id)) >= needed:
+			continue  # the stores hold a minute of it and more: it is not what is short
 		var coming := maxf(_net(s, id), 0.0)
 		var cover := coming / needed if needed > 0.0 else 1.0
 		if cover < KEEPS_UP and cover < worst_cover:

@@ -19,6 +19,18 @@ const Land = preload("res://scripts/land.gd")
 const Workers = preload("res://scripts/workers.gd")
 const AiStory = preload("res://tests/tools/ai_story.gd")
 
+## The building id a move's "type" means: the id itself, or a name the page and a player's words use ("market" is the Lumen Market,
+## "bridge" and "wooden bridge" the Wooden Bridge): fun playtest 6, where the table refused them as "no such building".
+const TYPE_ALIASES := {
+	"market": "lumen_market",
+	"lumen market": "lumen_market",
+	"bridge": "bridge",
+	"wooden bridge": "bridge",
+	"wooden_bridge": "bridge",
+	"stone bridge": "stone_bridge",
+	"trading post": "trading_post",
+}
+
 ## One character for each kind of ground and each building, the same on every page of every run: the ground's own letters, then
 ## the buildings in the order of the building list.
 const GROUND_CHARS := {
@@ -163,6 +175,8 @@ static func apply(s, moves: Array) -> Array:
 			continue
 		var at := Vector2i(int(m.get("x", -1)), int(m.get("y", -1)))
 		var ok := true
+		if m.has("type"):
+			m["type"] = canon_type(str(m["type"]))
 		match str(m.get("do", "")):
 			"expedition", "bench", "floor":
 				var why := AiPost.move(s, m)
@@ -338,6 +352,16 @@ static func _index_at(s, at: Vector2i) -> int:
 		if s.town.buildings[i]["pos"] == at:
 			return i
 	return -1
+
+
+static func canon_type(type: String) -> String:
+	var key := type.strip_edges().to_lower()
+	if key in Data.BUILDINGS:
+		return key
+	if TYPE_ALIASES.has(key):
+		return TYPE_ALIASES[key]
+	var snake := key.replace(" ", "_")
+	return snake if snake in Data.BUILDINGS else type
 
 
 ## A dragged line's tiles: along x from `from`, then along y to `to`, as the build bar's drag does. Empty when the move is not a line.

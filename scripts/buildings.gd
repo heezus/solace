@@ -328,6 +328,8 @@ func add_building(type: String, p: Vector2i) -> void:
 		"unreachable": 0.0,  # seconds left to show "can't reach"
 		"field_extra": 0.0,  # Calendar's part-item bonus from Fields, paid out once it reaches 1
 		"paused": false,
+		"goal_hold": "",  # why Goal first holds it (scripts/goal_first.gd), "" when it does not
+		"goal_free": false,  # the player resumed it while held: Goal first leaves it alone
 		"alert": "",  # a short warning for the pill under the building, "" when all is well
 		"trips": 0,  # hut trips queued by clicking it, before Paths & Haulers (the one under way counts)
 		"rush_cd": 0.0,  # seconds until it can be rushed again

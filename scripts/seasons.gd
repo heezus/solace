@@ -9,6 +9,8 @@ extends RefCounted
 const Data = preload("res://scripts/data.gd")
 const PlaytestLog = preload("res://scripts/playtest_log.gd")
 
+const RECHECK := 60.0  # seconds before an era with no kind left to come looks again
+
 var time := 0.0  # game seconds since the run began
 var watcher = PlaytestLog.maybe()  # the playtest log, null unless asked for: it reads the game once a tick and never writes
 var next_at := Data.SEASON_FIRST  # when the next one arrives
@@ -21,6 +23,7 @@ var last := ""  # the kind before this one, so one never comes twice running
 var used: Array = []  # the kinds that have come since the pool last ran out
 var spent := {}  # item -> units this season has cost so far (paid, burnt or taken)
 var pops: Array = []  # short texts the map floats over the Hearth ("-1 Charcoal"); main takes them every frame
+var kept_era := 0  # the era the kinds in `used` came in: a new era starts the list over
 var _waited := 0.0  # seconds a card has waited unanswered
 var _burn := 0.0  # seconds to the next unit of fuel burnt in a cold snap
 
@@ -32,7 +35,10 @@ func tick(s, delta: float) -> void:
 	match phase:
 		"idle":
 			if time >= next_at and s.economy.food_total() >= Data.FOOD_SHORT_STOCK:  # never on a town already short of food
-				_arrive(s)
+				if eligible(s).is_empty():
+					next_at = time + RECHECK  # every kind of this era has come: none repeats within an era
+				else:
+					_arrive(s)
 		"pending":
 			_waited += delta
 			if _waited >= Data.SEASON_AUTO:
@@ -67,15 +73,14 @@ func pool(s) -> Array:
 	return out
 
 
-## The kinds that could come now: the pool minus the ones that came since it last ran out (and minus the last one, so a kind never
-## comes twice running when another could). When every kind has come, the round starts over.
+## The kinds that could come now: the pool minus the ones that came in this era. A kind never comes twice in an era (fun playtest 6:
+## the same card came again and again); when every kind of the era has come, none does until the next era begins.
 func eligible(s) -> Array:
-	var all := pool(s)
-	var fresh: Array = all.filter(func(k): return not used.has(k))
-	if fresh.is_empty():
+	var e := era(s)
+	if e != kept_era:
+		kept_era = e
 		used = []
-		fresh = all.filter(func(k): return k != last or all.size() == 1)
-	return fresh
+	return pool(s).filter(func(k): return not used.has(k))
 
 
 func _arrive(s) -> void:
@@ -294,6 +299,7 @@ func to_dict() -> Dictionary:
 		"count": count,
 		"last": last,
 		"used": used,
+		"kept_era": kept_era,
 		"spent": spent,
 		"waited": _waited,
 		"burn": _burn,
@@ -310,6 +316,7 @@ func from_dict(d: Dictionary) -> void:
 	count = int(d.get("count", 0))
 	last = String(d.get("last", ""))
 	used = d.get("used", [])
+	kept_era = int(d.get("kept_era", 0))
 	spent = {}
 	for id in d.get("spent", {}):
 		spent[String(id)] = int(d["spent"][id])

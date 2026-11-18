@@ -33,7 +33,7 @@ static func tick_fed(s, b: Dictionary, delta: float) -> void:
 ## A Scorcher no road reaches is fed by hand: its crew walks in with a load from the stores, two at a time, so the Bloom answer never
 ## waits on a road (a road, and haulers, fill it to its stock).
 static func _hand_feed(s, b: Dictionary) -> void:
-	if Roads.linked(s, b) or not s.town.is_powered(b["pos"]):
+	if Roads.linked(s, b):
 		return
 	var id: String = b["fuel_now"]
 	if b["inbuf"].get(id, 0) < HAND_LOAD and s.economy.inv.get(id, 0) > 0:

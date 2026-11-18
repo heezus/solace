@@ -228,7 +228,10 @@ func _on_collect() -> void:
 func _on_pause() -> void:
 	if state.town.building_at.has(pos):
 		var i: int = state.town.building_at[pos]
-		state.set_paused(i, not state.town.buildings[i]["paused"])
+		var now: bool = not state.town.buildings[i]["paused"]
+		state.set_paused(i, now)
+		state.town.buildings[i]["goal_hold"] = ""
+		state.town.buildings[i]["goal_free"] = not now  # a hand that resumed it is not overruled by Goal first
 		refresh()
 
 

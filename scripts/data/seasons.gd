@@ -4,7 +4,7 @@ extends RefCounted
 
 ## The first season comes this long into a run; the next ones SEASON_EVERY seconds after the one before (give or take SEASON_JITTER).
 const SEASON_FIRST := 360.0
-const SEASON_EVERY := 270.0
+const SEASON_EVERY := 630.0  # fun playtest 6: at most one in 10 game minutes (630 give or take 30 is never under 600)
 const SEASON_JITTER := 30
 ## A season lasts this long once it is answered, and a card nobody answers answers itself (option 0) after SEASON_AUTO seconds of
 ## game time, so a bot or an idle window is never stuck.
