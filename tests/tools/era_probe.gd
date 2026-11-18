@@ -25,6 +25,16 @@ const WAKE_WINDOW := 20.0 * 60.0  # Livewire: buildings lost within this many se
 ## The era names in order, and the goal list each one is counted from (the checklist the player sees in it).
 const ERAS := ["stone_age", "bronze_dawn", "starfall", "ironfall", "livewire"]
 
+## The goods each era's gate asks for (the rate gates of Step 9C-2), read every RATES_EVERY seconds as made and used a minute.
+const GATE_GOODS := {
+	"stone_age": ["brick", "flour", "rope", "stone", "charcoal", "wood"],
+	"bronze_dawn": ["bronze", "brick", "flour", "rope"],
+	"starfall": ["shardwork", "starfruit", "brick"],
+	"ironfall": ["steel", "iron", "brick", "rope"],
+	"livewire": ["steel", "iron", "wire", "brick"],
+}
+const RATES_EVERY := 10.0  # game seconds between those readings
+
 var rows: Array = []
 var era := ""
 var ledger := Ledger.new()  # the supply and use ledger of the era under way (ledger.gd), in each row as "ledger"
@@ -43,6 +53,7 @@ var _depots_at := 0.0  # era seconds of the last depot reading
 var _town_at := 0.0  # era seconds of the last reading of the jobs
 var _zero_at := -1000.0  # era seconds of the last note on why the power stood at zero
 var _goals_at := -60.0  # era seconds of the last minute reading of the stores
+var _rates_at := -10.0  # era seconds of the last reading of the gate goods' rates
 var _goals_timed := {}  # goal id -> true once its minute is in the row's "goal_minutes"
 
 
@@ -62,6 +73,7 @@ func begin(name: String, s) -> void:
 	_depots_at = 0.0
 	_goals_timed.clear()
 	_goals_at = -60.0
+	_rates_at = -RATES_EVERY
 	_town_at = 0.0
 	_zero_at = -1000.0
 	ledger.begin(name, s)
@@ -120,6 +132,7 @@ func begin(name: String, s) -> void:
 		"research_wait_by": {},  # the same head seconds, by tech
 		"depots_every_5_min": [],
 		"town_every_5_min": [],
+		"rates_every_10s": [],  # every 10 s: [era minute, {gate good: [made a min by buildings, made a min by hand, used a min]}]
 		"stores_every_min": [],  # each minute: the metal goods in the stores, and the Crucibles and Wire Mills [standing, paused]
 		"goal_minutes": [],  # [goal id, era minute it was met], in the order they were met
 	}
@@ -285,12 +298,35 @@ func _sample(s) -> void:
 	if t - _goals_at >= 60.0:
 		_goals_at = t
 		_row["stores_every_min"].append(_stores(s, t))
+	if t - _rates_at >= RATES_EVERY:
+		_rates_at = t
+		_row["rates_every_10s"].append([snappedf(t / 60.0, 0.01), _gate_rates(s)])
 	if t - _depots_at >= DEPOTS_EVERY:
 		_depots_at = t
 		_row["depots_every_5_min"].append({"minute": snappedf(t / 60.0, 0.1), "depots": _depots(s)})
 	if t - _town_at >= DEPOTS_EVERY:
 		_town_at = t
 		_row["town_every_5_min"].append(_town(s, t))
+
+
+## The gate goods' rates over the flow window (the flow view's own figures): made by buildings, made by hand, used, all a minute.
+func _gate_rates(s) -> Dictionary:
+	var out := {}
+	for id in GATE_GOODS.get(era, []):
+		var made := 0.0
+		var hand := 0.0
+		var used := 0.0
+		var by: Dictionary = s.economy.flows.parts_over(id, float(Data.RATE_WINDOW))
+		for source in by:
+			var v: float = by[source] * 60.0
+			if v < 0.0:
+				used -= v
+			elif source == "hand":
+				hand += v
+			else:
+				made += v
+		out[id] = [snappedf(made, 0.1), snappedf(hand, 0.1), snappedf(used, 0.1)]
+	return out
 
 
 ## The minute's reading of the metal goods, and how many Crucibles and Wire Mills stand and how many of those are paused.
@@ -711,5 +747,8 @@ func from_dict(d: Dictionary) -> void:
 	_spill_seen = 0  # a reloaded run starts Economy.spilled again from 0
 	_spill_of_seen = {}
 	_depots_at = _row["depots_every_5_min"].size() * DEPOTS_EVERY if _row.has("depots_every_5_min") else 0.0
+	_rates_at = (
+		_row["rates_every_10s"].size() * RATES_EVERY - RATES_EVERY if _row.has("rates_every_10s") else -RATES_EVERY
+	)
 	_town_at = _row["town_every_5_min"].size() * DEPOTS_EVERY if _row.has("town_every_5_min") else 0.0
 	_zero_at = -1000.0
