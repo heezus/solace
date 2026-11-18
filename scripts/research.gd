@@ -14,6 +14,7 @@ const Codec = preload("res://scripts/save_codec.gd")
 const Data = preload("res://scripts/data.gd")
 const Economy = preload("res://scripts/economy.gd")
 const Founding = preload("res://scripts/founding.gd")
+const RateData = preload("res://scripts/rate_data.gd")
 const Rules = preload("res://scripts/rules.gd")
 
 var researched: Dictionary  # tech id -> true (the Economy reads the same set as a view, and never writes it)
@@ -26,6 +27,8 @@ var known_before: Callable = func(_id): return false  # (String) -> bool: learne
 var free_tech: Callable = func(_id): return false  # (String) -> bool: a tech the town is given (the Bloom wakes: Arc Lamps, Scorcher)
 var deed_has: Callable = func(_id): return true  # (String) -> bool: is that gate deed done (scripts/gate.gd)? Set by the owner
 var deed_note: Callable = func(_id): return ""  # (String) -> String: why a deed is not done, in a few words ("" for none)
+var rate_lines: Callable = func(_id): return []  # (String) -> Array: a gate's rates still to hold, as lines. Set by the owner
+var rate_held: Dictionary = {}  # "tech|good" -> seconds the gate's rate has been held (scripts/rate_gate.gd update)
 var _economy: Economy
 var _hidden_shown: Callable  # () -> bool: true once hidden techs are on show (the Strange Stone was clicked)
 var _extra_discount: Callable  # () -> float: a share (0 to 1) off every tech, from what stands in the town; may be unset
@@ -119,6 +122,8 @@ func open_needs(tech: String) -> Array:
 		if not deed_has.call(id):
 			var why: String = deed_note.call(id)
 			out.append(Data.SOUTH_LINES["now"] % [Data.DEED_NAMES[id], why] if why != "" else Data.DEED_NAMES[id])
+	if RateData.is_gate(tech) and not researched.has(tech):
+		out.append_array(rate_lines.call(tech))
 	return out
 
 
@@ -180,7 +185,7 @@ static func enabled(tech: String) -> bool:
 ## Then Tally Sticks makes every tech a tenth cheaper, and whatever the town reports as an extra discount
 ## (a Shard Cairn) takes a little more off. Those multiply and the item is rounded once, never to less than 1.
 func cost_of(tech: String) -> Dictionary:
-	var cost: Dictionary = Data.TECHS[tech]["cost"]
+	var cost: Dictionary = RateData.pile(tech, Data.TECHS[tech]["cost"])  # a gate asks a rate, and a small pile
 	if free_tech.call(tech):
 		return {}  # the town is given it when the Bloom wakes (Tide.free_tech)
 	if known_before.call(tech) and not tech in Founding.GATES:
@@ -198,6 +203,13 @@ func cost_of(tech: String) -> Dictionary:
 	for id in cost:
 		out[id] = maxi(roundi(cost[id] * share), 1)
 	return out
+
+
+## Marks every rate of every gate as held for a full minute. For a test that buys a gate by hand; the game never calls it.
+func hold_all_rates() -> void:
+	for tech in RateData.GATES:
+		for good in RateData.GATES[tech]:
+			rate_held["%s|%s" % [tech, good]] = RateData.HOLD
 
 
 func can_research(tech: String) -> bool:
@@ -269,7 +281,12 @@ func ready_list() -> Array:
 
 ## The researched techs (in the order they were researched), the goal and the queue, as JSON-safe values.
 func to_dict() -> Dictionary:
-	return {"researched": Codec.keys(researched), "goal": goal, "queue": queue.duplicate()}
+	return {
+		"researched": Codec.keys(researched),
+		"goal": goal,
+		"queue": queue.duplicate(),
+		"rate_held": rate_held.duplicate()
+	}
 
 
 ## Restore what to_dict wrote. The researched set is refilled in place, since the Economy reads the same one.
@@ -279,3 +296,4 @@ func from_dict(d: Dictionary) -> void:
 	researched.merge(Codec.to_set(d.get("researched", [])))
 	goal = String(d.get("goal", ""))
 	queue = Codec.strings(d.get("queue", []))
+	rate_held = d.get("rate_held", {}).duplicate()

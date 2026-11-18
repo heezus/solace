@@ -22,6 +22,7 @@ const PANEL_MOVES := {
 	"bench": "bench",
 	"floor": "floor",
 	"fuel": "fuel",
+	"fire": "fire",
 	"places": "haulers",
 	"orders": "order",
 }

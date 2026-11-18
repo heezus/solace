@@ -7,6 +7,8 @@ extends RefCounted
 const Data = preload("res://scripts/data.gd")
 const FlowView = preload("res://scripts/flow_view.gd")
 const Needs = preload("res://scripts/needs.gd")
+const RateData = preload("res://scripts/rate_data.gd")
+const RateGate = preload("res://scripts/rate_gate.gd")
 
 const WAIT_PHRASE := {
 	"hands": "the %ss have no free Kith",
@@ -36,6 +38,15 @@ static func short(s, g: Dictionary) -> Dictionary:
 
 ## The sum line for goal `g`, "" when it needs no goods or every one is in the stockpile.
 static func line(s, g: Dictionary) -> String:
+	var rate: String = RateGate.line(s, g["tech"]) if g.has("tech") and RateData.is_gate(g["tech"]) else ""  # a gate asks a rate first
+	if rate != "":
+		var pile := _pile_line(s, g)
+		return rate if pile == "" else rate + " " + pile
+	return _pile_line(s, g)
+
+
+## The pile part of the sum line ("" when every good is in the stockpile).
+static func _pile_line(s, g: Dictionary) -> String:
 	var lacking := short(s, g)
 	if lacking.is_empty():
 		return ""

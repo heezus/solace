@@ -81,6 +81,7 @@ const HELP := """MOVES: write moves_<n>.json, a list. Each move is one of
                                                    write a standing order on the Order Board (needs one built; compare is below or above;
                                                    verb is pause or bring; number one of 5 10 20 30 40 60 80 100 150 200 300 500)
   {"do":"clear_order","index":0}                   tear an order up
+  {"do":"fire","on":false}                         the Hearth's "Feed it what would spill" switch (on by default)
   {"do":"fuel","x":3,"y":4,"mode":"charcoal"}       a Bloomery's or Forge's Fuel button: auto, coal or charcoal
   {"do":"haulers","x":3,"y":4,"change":1}           one more (or -1, one fewer) hauler place at the depot standing at that spot (see DEPOTS)
   {"do":"expedition","target":"wreck","pack":"standard","keep":true,"send":true}
@@ -257,6 +258,10 @@ static func apply(s, moves: Array) -> Array:
 					s.seasons.choose(s, int(m.get("choice", 0)))
 			"moment":
 				ok = s.starfall.choose(int(m.get("choice", 0)))
+			"fire":
+				ok = m.has("on")
+				if ok:
+					s.economy.fire["auto"] = bool(m["on"])
 			"fuel":
 				var i := _index_at(s, at)
 				ok = (i >= 0 and Fuel.burns(s.town.buildings[i]) and str(m.get("mode", "")) in Data.FUEL_MODES)
@@ -297,6 +302,8 @@ static func _why(s, m: Dictionary, at: Vector2i) -> String:
 			return "nothing of yours stands there"
 		"gather":
 			return "nothing to gather there, or it is out of reach of your hand"
+		"fire":
+			return 'say whether the switch is on: {"do":"fire","on":true}'
 		"fuel":
 			if _index_at(s, at) < 0:
 				return "no building there"

@@ -297,11 +297,10 @@ func test_pacing_bot() -> void:
 		var r: Dictionary = bot.play_to_star(map_seed, 70 * 60.0)
 		var minutes: float = r["seconds"] / 60.0
 		var star: float = bot.star_minutes()
+		var what := "Bronze Dawn" if r["won"] else "no win"
 		print(
-			(
-				"Pacing bot, map %d: %s at %.1f simulated minutes, first Bronze %.1f minutes later, the Falling Star %.1f"
-				% [map_seed, "Bronze Dawn" if r["won"] else "no win", minutes, r["minutes"], star]
-			)
+			"Pacing bot, map %d: %s at %.1f simulated minutes, " % [map_seed, what, minutes],
+			"first Bronze %.1f minutes later, the Falling Star %.1f" % [r["minutes"], star]
 		)
 		check(r["won"], "the bot reaches Bronze Dawn on map %d" % map_seed)
 		check(minutes >= 8.0 and minutes <= 25.0, "map %d takes 8 to 25 minutes (%.1f)" % [map_seed, minutes])
@@ -332,9 +331,10 @@ func fresh() -> Sim:
 	return s
 
 
-## Stock the stockpile with `amount` of every good, except Bronze Tools: a worker who takes one works twice as fast, so a
-## test that wants them sets them itself.
+## Stock the stockpile with `amount` of every good (not the tools: they speed work up), hold every gate's rates, fire off.
 func give(s: Sim, amount: int) -> void:
+	s.tech_tree.hold_all_rates()
+	s.economy.fire["auto"] = false  # a stocked store would be burnt to the fire the moment the town ticks
 	for id in Data.ITEM_ORDER:
 		s.economy.inv[id] = 0 if id in ["bronze_tools", "iron_tools", "steel_tools"] else amount
 

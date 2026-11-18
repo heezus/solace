@@ -700,11 +700,16 @@ func test_livewire_ends_the_age() -> void:
 	t.check(not s.research("livewire"), "the gate does not open without the Bloom Lessons")
 	t.check(not s.story.has_event(Data.LIVEWIRE_EVENT), "and the age goes on")
 	s.teardown.lessons.append_array(["spore", "root", "sap"])
+	s.tech_tree.hold_all_rates()
+	var paid: Dictionary = s.tech_tree.cost_of("livewire")  # a quarter of the pile, the rates are held
 	var told := []
 	s.story.recorded.connect(func(id): told.append(id))
 	t.check(s.research("livewire"), "with them, and the stores, it does")
 	t.check(Data.LIVEWIRE_EVENT in told and s.story.has_event(Data.LIVEWIRE_EVENT), "the end of the age is recorded")
-	t.check(s.economy.inv["steel"] == 0 and s.economy.inv["iron"] == 0, "and the stores are spent")
+	t.check(
+		s.economy.inv["steel"] == 50 - paid["steel"] and s.economy.inv["iron"] == 70 - paid["iron"],
+		"and the pile is paid"
+	)
 	s.story.update(s)
 	t.check(s.story.goals_done.has("livewire"), "the last goal is done")
 	var card := EraCard.new()

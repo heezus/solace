@@ -30,6 +30,7 @@ var famine_card_shown := false  # the run's one famine card has been put up (sav
 var steady_held := 0.0  # seconds the buildings' food has covered what everyone eats, without a break
 var food_use := 0.0  # food eaten per second right now
 var flows := Flows.new()  # what made and used each item lately
+var fire := {"worth": 0.0, "auto": true}  # the Hearthfire (scripts/hearthfire.gd): worth given this telling, and whether it feeds itself
 ## The most of each good the stockpile holds (scripts/storage.gd; Sim sets it every tick). Empty means no limit, as in a bare
 ## Economy. A good over its cap is never taken down: a stage start or a test may put more in than a delivery could.
 var caps: Dictionary = {}
@@ -400,6 +401,7 @@ func to_dict() -> Dictionary:
 		"steady_held": steady_held,
 		"famine_card_shown": famine_card_shown,
 		"flows": flows.to_dict(),
+		"fire": fire.duplicate(),
 	}
 
 
@@ -423,3 +425,5 @@ func from_dict(d: Dictionary) -> void:
 	famine_card_shown = bool(d.get("famine_card_shown", false))
 	_steady_second = -1
 	flows.from_dict(d.get("flows", {}))
+	var kept: Dictionary = d.get("fire", {})
+	fire = {"worth": float(kept.get("worth", 0.0)), "auto": bool(kept.get("auto", true))}

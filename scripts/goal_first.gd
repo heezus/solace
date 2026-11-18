@@ -8,11 +8,14 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 const Needs = preload("res://scripts/needs.gd")
+const Hearthfire = preload("res://scripts/hearthfire.gd")
+const RateData = preload("res://scripts/rate_data.gd")
 
 const FLOOR := 40  # of a basic good the stores keep for the goal, away from a workshop whose goods nothing needs
 const DEEP := 40  # of a good down the recipes (a Kiln's Clay) the stores hold before it counts as no longer short
 const MARGIN := 10  # a held workshop runs again once its own good is this far below what holds it
 const RESERVE := 20  # of its own good the stores hold before a workshop that makes what nothing needs rests
+const RATED := 1000000  # what is asked of a good the next gate wants a rate of: no maker of it ever holds
 const EVERY := 1.0  # game seconds between looks
 const BASIC := ["wood", "stone", "fiber", "clay"]
 const HOLDING := "Holding: %s goes to the goal first. It runs again by itself."
@@ -40,6 +43,9 @@ static func asked(s) -> Dictionary:
 		for id in cost:
 			out[id] = maxi(int(out.get(id, 0)), int(cost[id]))
 			todo.append(id)
+	for id in RateData.asked(s.tech_tree.researched):
+		out[id] = RATED
+		todo.append(id)
 	var seen := {}
 	while not todo.is_empty():
 		var id: String = todo.pop_back()
@@ -74,17 +80,26 @@ static func reason(s, b: Dictionary, asked_goods: Dictionary) -> String:
 	if int(inv.get(own, 0)) < RESERVE - slack:
 		return ""
 	for id in def.get("in", {}):
-		if asked_goods.has(id) and int(inv.get(id, 0)) < int(asked_goods[id]):
+		if asked_goods.has(id) and int(inv.get(id, 0)) < _pile(s, id, int(asked_goods[id])):
 			return HOLDING % Data.ITEMS[id]["name"]
 		if id in BASIC and int(inv.get(id, 0)) < FLOOR:
 			return HOLDING_FLOOR % [Data.ITEMS[id]["name"], FLOOR]
 	return ""
 
 
+## What a workshop that uses `id` leaves in the stores for the goal: the ask, or for a good the next gate wants a rate of, only the
+## small pile that gate is paid with (its makers never hold, but its users need not wait for a rate that is made, not kept).
+static func _pile(s, id: String, ask: int) -> int:
+	if ask < RATED:
+		return ask
+	return int(s.tech_tree.cost_of(RateData.next_gate(s.tech_tree.researched)).get(id, 0))
+
+
 ## Look at every workshop: hold the ones that should, run again the ones whose reason has passed. A workshop the player paused by
 ## hand is left as it is. Call once a game second.
 static func update(s) -> void:
-	var asked_goods := asked(s) if s.goal_first else {}
+	var every_ask := asked(s)
+	var asked_goods := every_ask if s.goal_first else {}
 	for i in s.town.buildings.size():
 		var b: Dictionary = s.town.buildings[i]
 		var held: bool = String(b.get("goal_hold", "")) != ""
@@ -103,3 +118,4 @@ static func update(s) -> void:
 			s.set_paused(i, false)
 		elif why != "":
 			b["goal_hold"] = why
+	Hearthfire.feed(s, every_ask)  # the fire holds back exactly when this does, even with Goal first off

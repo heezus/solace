@@ -30,6 +30,7 @@ const Power = preload("res://scripts/power.gd")
 const OrdersPanel = preload("res://scripts/orders_panel.gd")
 const FloorPicker = preload("res://scripts/floor_picker.gd")
 const FuelPicker = preload("res://scripts/fuel_picker.gd")
+const FireRow = preload("res://scripts/fire_row.gd")
 const HaulerRow = preload("res://scripts/hauler_row.gd")
 
 const INSET := Ui.BAR
@@ -136,6 +137,12 @@ func setup(game: Sim) -> void:
 	v.add_child(places)
 	v.move_child(places, parts["recipe"].get_index())
 	parts["places"] = places
+	var fire := FireRow.new()  # the Hearth's fire: its tier and the switch that feeds it (scripts/fire_row.gd)
+	fire.setup(game)
+	fire.changed.connect(refresh)
+	v.add_child(fire)
+	v.move_child(fire, parts["recipe"].get_index())
+	parts["fire"] = fire
 	var orders := OrdersPanel.new()  # the Order Board: the standing orders, written with buttons (scripts/orders_panel.gd)
 	orders.setup(game)
 	orders.changed.connect(refresh)
@@ -266,6 +273,7 @@ func refresh() -> void:
 	parts["floor"].show_for(b)
 	parts["fuel"].show_for(b)
 	parts["places"].show_for(b)
+	parts["fire"].show_for(b)
 	parts["net"].text = "\n".join(
 		[Power.note(state, b), state.tide.note(state, b), state.tide.pace_note(state, b), state.skyreach.card_note(state, b)].filter(
 			func(l): return l != ""
