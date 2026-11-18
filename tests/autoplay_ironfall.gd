@@ -212,6 +212,7 @@ func _inv(id: String) -> int:
 
 ## The gate and the buildings the bot wants: the metal for the gate, and the price of the next of each building.
 func _goal_wants(want: Dictionary) -> void:
+	super._goal_wants(want)  # the rates the Livewire gate asks
 	var steel_left := _steel_left()
 	if steel_left > 0:
 		want["steel"] = want.get("steel", 0) + _steel_cost()
@@ -474,6 +475,8 @@ func _short_goods() -> Dictionary:
 	for id in ids:
 		if _gate_short(id) > 0:
 			out[id] = true
+	for id in AutoplayRates.unheld(s, gate):  # a rate the gate asks, not yet held: nothing rests the works that make it
+		out[id] = true
 	return out
 
 

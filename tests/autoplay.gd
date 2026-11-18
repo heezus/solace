@@ -6,6 +6,7 @@ extends RefCounted
 ## Farming is in, and roads to far buildings once Paths & Haulers is in.
 ## play() returns {"won", "seconds", "log"}; run_tests.gd checks the time and prints it.
 
+const AutoplayRates = preload("res://tests/autoplay_rates.gd")
 const Data = preload("res://scripts/data.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Rules = preload("res://scripts/rules.gd")
@@ -41,11 +42,10 @@ const RAW_TILE := {
 ## A hut is paused while everything it gathers is past this and not needed.
 const HUT_SURPLUS := 150
 const HUT_WAIT := 60.0  # seconds a food hut may stand unstaffed, with every Kith in a workshop, before one lets go
-## Road tiles laid toward an unlinked building per decision.
 const LANE_ARM := 10  # how far the kept-open arms run out from the Hearth
 const HOUSE_HUTS := 3.0  # huts a full town sets up for a good its next Dwelling lacks
 const HAULER_PER := 3.0  # buildings per hauler the bot keeps free
-const ROADS_PER_DECISION := 4
+const ROADS_PER_DECISION := 4  # road tiles laid toward an unlinked building per decision
 ## One more workshop of a kind for every WORKSHOP_PER of its good still wanted, up to WORKSHOPS_MAX.
 const WORKSHOP_PER := 40.0
 const WORKSHOPS_MAX := 4
@@ -237,8 +237,8 @@ func _fish() -> bool:
 
 
 ## More goods the bot wants than the techs and buildings above say (a later era's bot adds its own).
-func _goal_wants(_list: Dictionary) -> void:
-	pass
+func _goal_wants(list: Dictionary) -> void:
+	AutoplayRates.wants(s, list, MAKER)  # the rates the next gate asks of its made goods
 
 
 ## Made goods the whole route to Bronze Dawn still costs: they take a workshop and time, so the
