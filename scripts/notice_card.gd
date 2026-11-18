@@ -18,6 +18,7 @@ const TopBar = preload("res://scripts/top_bar.gd")
 const Ui = preload("res://scripts/ui.gd")
 
 const WIDTH := 460.0
+const AUTO_LINE := "If nobody answers (after %d seconds of play), the answer taken is: %s."
 
 var profile_path := Profile.PATH
 var _box: VBoxContainer
@@ -88,7 +89,9 @@ func poll(s, blocked: bool) -> bool:
 			notes.append(o["note"])
 		_state = s
 		_season = true
-		open(def["title"], def["text"] % [Data.SEASON_LENGTH, Data.PEOPLE["many"]], labels, notes)
+		var auto_label: String = def["options"][s.seasons.cheapest(s)]["label"]
+		var words: String = def["text"] % [Data.SEASON_LENGTH, Data.PEOPLE["many"]]
+		open(def["title"], words + "\n\n" + AUTO_LINE % [int(Data.SEASON_AUTO), auto_label], labels, notes)
 		return true
 	if s.economy.take_famine_card():
 		_season = false

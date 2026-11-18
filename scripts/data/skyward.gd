@@ -31,7 +31,6 @@ const SOUTH_LINES := {
 	"now": "%s (now: %s)",
 	"lamps": "%d of %d Arc Lamps lit",
 	"no_scorcher": "no Scorcher",
-	"unpowered": "Scorcher unpowered",
 	"cold": "Scorcher not burning",
 	"ready": "Scorcher ready, no Bloom in reach to burn",
 }

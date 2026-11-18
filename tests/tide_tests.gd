@@ -31,7 +31,7 @@ func run(runner, helpers) -> void:
 	test_the_ground_changes_under_the_bloom()
 	test_buildings_are_overgrown_then_lost()
 	test_an_arc_lamp_holds_it_off()
-	test_a_scorcher_stands_four_tiles_from_a_pole_and_needs_no_road()
+	test_a_scorcher_stands_anywhere_and_needs_no_power_and_no_road()
 	test_a_scorcher_burns_it_clear()
 	test_a_scorcher_reaches_past_a_lamps_light()
 	test_engines_and_scorchers_take_coal_or_charcoal()
@@ -412,23 +412,14 @@ func test_a_scorcher_reaches_past_a_lamps_light() -> void:
 	t.check(s.tide.scorch_target(scorcher).x < 0, "and ground past the reach is not")
 
 
-## Fun playtest 5: a Scorcher needed a free tile within 2 of a pole and a road, and the tide took the tile first. It stands up to 4 tiles
-## from a pole, and with no road its crew carries the coal in.
-func test_a_scorcher_stands_four_tiles_from_a_pole_and_needs_no_road() -> void:
+## Fun playtest 6: a Scorcher needs no pole, no power and no road. It stands on any free tile, and its crew carries the Coal in.
+func test_a_scorcher_stands_anywhere_and_needs_no_power_and_no_road() -> void:
 	var s := quiet()
 	var c: Vector2i = base.meadow(s)
-	powered(s, c)
-	var scorcher := put(s, "scorcher", c + Vector2i(4, 0))
+	var scorcher := put(s, "scorcher", c + Vector2i(5, 3))  # no pole anywhere
 	scorcher["fuel"] = "coal"
 	scorcher["fuel_now"] = "coal"
-	s.livewire.tick(s, 0.0)
-	t.check(s.town.is_powered(scorcher["pos"]), "four tiles from the pole is on its net")
-	var far := put(s, "scorcher", c + Vector2i(5, 3))
-	s.livewire.tick(s, 0.0)
-	t.check(
-		not s.town.is_powered(far["pos"]),
-		"past four it is not (%s tiles)" % Vector2(far["pos"]).distance_to(Vector2(c))
-	)
+	t.check(not Data.BUILDINGS["scorcher"].get("needs_power", false), "the Scorcher does not ask for power")
 	s.economy.inv["coal"] = 20
 	var q := c + Vector2i(6, 1)
 	s.tide.grown[q] = true
@@ -436,9 +427,14 @@ func test_a_scorcher_stands_four_tiles_from_a_pole_and_needs_no_road() -> void:
 	s.tide.rev += 1
 	tick_for(s, 3.0)
 	t.check(
-		scorcher["burn"] > 0.0 or scorcher["inbuf"].get("coal", 0) > 0, "no road, and its crew still carried Coal in"
+		scorcher["burn"] > 0.0 or scorcher["inbuf"].get("coal", 0) > 0,
+		"no pole, no road, and its crew still carried Coal in"
 	)
-	t.check(scorcher["alert"] != "Needs road", "and it does not say it needs a road: %s" % scorcher["alert"])
+	for word in ["power", "road", "pole"]:
+		t.check(
+			not word in (str(scorcher["alert"]) + " " + str(scorcher["status"])).to_lower(),
+			"its text never says %s: %s / %s" % [word, scorcher["alert"], scorcher["status"]]
+		)
 	t.check(s.economy.inv["coal"] < 20, "the Coal came from the stores")
 
 
@@ -480,17 +476,19 @@ func test_a_scorcher_burns_it_clear() -> void:
 	s.tide.front[q] = s.tide.time
 	s.tick(0.5)
 	t.check(not s.tide.grown.has(q), "burnt ground is never taken again")
-	# no power, nothing
+	# no power, no pole: it burns all the same (fun playtest 6: the text must say only what the rule is)
 	var dark := quiet()
 	var dc: Vector2i = base.meadow(dark)
-	put(dark, "power_pole", dc)
 	var cold := put(dark, "scorcher", dc + Vector2i(1, 0))
 	cold["inbuf"] = {"coal": 3}
 	dark.tide.grown[dc + Vector2i(3, 0)] = true
 	tick_for(dark, 40.0)
 	t.check(
-		dark.tide.burnt.is_empty() and cold["status"].begins_with(Data.SCORCHER_NO_POWER),
-		"with no power it burns nothing: %s" % cold["status"]
+		not dark.tide.burnt.is_empty(), "with no pole and no power it still burns the ground clear: %s" % cold["status"]
+	)
+	t.check(
+		not "power" in cold["alert"].to_lower() and not "road" in cold["alert"].to_lower(),
+		"and its pill never says power or road"
 	)
 	# a building on burnt ground works again
 	var mill := put(s, "grindstone", c + Vector2i(-1, -1))
@@ -756,16 +754,16 @@ func test_what_the_pr_review_found() -> void:
 	var rev: int = s.town.road_rev
 	s.lose_building(s.town.building_at[home["pos"]])
 	t.check(s.town.road_rev > rev, "losing a building makes the roads and nets look again")
-	# a Scorcher that has lost its power holds nothing, however much burn it has left
+	# a Scorcher that has burnt out holds nothing (it needs no power, so a burning one holds with or without a pole)
 	var d := quiet()
 	var dc: Vector2i = base.meadow(d)
 	var cold := put(d, "scorcher", dc)
-	cold["burn"] = 50.0
+	cold["burn"] = 0.0
 	var mill := put(d, "grindstone", dc + Vector2i(2, 0))
 	d.tide.grown[mill["pos"]] = true
 	d.tide.hit[mill["pos"]] = 10.0
 	d.tide.refresh_lights(d)
-	t.check(not d.tide.is_held_at(d, mill["pos"]), "an unpowered Scorcher holds no building")
+	t.check(not d.tide.is_held_at(d, mill["pos"]), "a Scorcher that is out holds no building")
 	# Tide Watch does not warn of a building a lit Arc Lamp keeps the front out of
 	var w := quiet()
 	var wc: Vector2i = base.meadow(w)

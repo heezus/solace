@@ -49,23 +49,22 @@ func south_held() -> bool:
 		if not in_south(b["pos"]):
 			continue
 		var kind: String = Data.BUILDINGS[b["type"]]["kind"]
-		if kind == "scorcher" and b["burn"] > 0.0 and _town.is_powered(b["pos"]):
+		if kind == "scorcher" and b["burn"] > 0.0:
 			scorching = true
 		elif kind == "arc_lamp" and _town.is_powered(b["pos"]) and not _tide.is_overgrown_at(b["pos"]):
 			lamps += 1
 	return scorching and lamps >= Data.DEED_LAMPS
 
 
-## Why the deed `id` is not done, in a few words ("1 of 2 Arc Lamps lit, Scorcher unpowered"); "" when it is done or has no reason
+## Why the deed `id` is not done, in a few words ("1 of 2 Arc Lamps lit, no Scorcher"); "" when it is done or has no reason
 ## to give.
 func note(id: String) -> String:
 	if id != "south_held" or deed(id):
 		return ""
 	var lamps := 0
 	var scorchers := 0
-	var powered := 0
 	var scorching := false
-	var waiting := false  # a powered Scorcher with no Bloom ground in reach: ready, not failing
+	var waiting := false  # a Scorcher with no Bloom ground in reach: ready, not failing
 	for b in _town.buildings:
 		if not in_south(b["pos"]):
 			continue
@@ -74,16 +73,13 @@ func note(id: String) -> String:
 			lamps += 1
 		elif kind == "scorcher":
 			scorchers += 1
-			powered += 1 if _town.is_powered(b["pos"]) else 0
-			scorching = scorching or (_town.is_powered(b["pos"]) and b["burn"] > 0.0)
-			waiting = waiting or (_town.is_powered(b["pos"]) and b["burn"] <= 0.0 and _tide.scorch_target(b).x < 0)
+			scorching = scorching or b["burn"] > 0.0
+			waiting = waiting or (b["burn"] <= 0.0 and _tide.scorch_target(b).x < 0)
 	var parts: Array = [Data.SOUTH_LINES["lamps"] % [mini(lamps, Data.DEED_LAMPS), Data.DEED_LAMPS]]
 	if scorching:
 		return ", ".join(parts)
 	if scorchers == 0:
 		parts.append(Data.SOUTH_LINES["no_scorcher"])
-	elif powered == 0:
-		parts.append(Data.SOUTH_LINES["unpowered"])
 	elif waiting:
 		parts.append(Data.SOUTH_LINES["ready"])
 	else:

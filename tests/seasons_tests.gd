@@ -20,7 +20,8 @@ func run(runner) -> void:
 	test_a_bloom_surge_runs_the_tide_or_costs_coal()
 	test_a_fever_costs_food_or_pace()
 	test_a_blight_a_bad_vein_and_a_storm_cost_stores_or_pace()
-	test_every_kind_comes_once_before_any_comes_again()
+	test_no_kind_comes_twice_in_an_era_and_none_comes_inside_ten_minutes_of_another()
+	test_a_new_era_lets_the_kinds_come_again_and_the_card_shows_its_auto_answer()
 	test_each_era_adds_kinds_and_no_kind_comes_before_its_era()
 	test_what_a_season_takes_is_counted_told_and_floated()
 	test_a_season_is_remembered_by_a_save()
@@ -63,7 +64,7 @@ func _kinds(seed_value: int, seasons: int) -> Array:
 	s.generate(seed_value)
 	_everything(s)
 	var out: Array = []
-	while out.size() < seasons:
+	while out.size() < seasons and s.seasons.time < 200000.0:
 		s.seasons.tick(s, 1.0)
 		if s.seasons.phase == "pending":
 			out.append(s.seasons.kind + "@" + str(int(s.seasons.time)))
@@ -261,14 +262,39 @@ func test_a_blight_a_bad_vein_and_a_storm_cost_stores_or_pace() -> void:
 	)
 
 
-func test_every_kind_comes_once_before_any_comes_again() -> void:
-	var kinds: Array = _kinds(42, 8).map(func(x): return x.split("@")[0])
-	var first: Array = kinds.slice(0, 4)
-	var second: Array = kinds.slice(4, 8)
-	first.sort()
-	second.sort()
-	t.check(first == ["cold", "fever", "lean", "surge"], "the first four are all four kinds: %s" % [kinds])
-	t.check(second == first, "and the next four are each of them again: %s" % [kinds])
+func test_no_kind_comes_twice_in_an_era_and_none_comes_inside_ten_minutes_of_another() -> void:
+	var s := Sim.new()
+	s.generate(42)
+	_everything(s)
+	var pool_size: int = s.seasons.pool(s).size()
+	var kinds: Array = _kinds(42, pool_size + 3)
+	t.check(
+		kinds.size() == pool_size,
+		"the era's kinds come once each and then no card follows: %d of %d" % [kinds.size(), pool_size]
+	)
+	var names: Array = kinds.map(func(x): return x.split("@")[0])
+	var seen := {}
+	for n in names:
+		seen[n] = true
+	t.check(seen.size() == names.size(), "no kind comes twice in an era: %s" % [names])
+	for i in range(1, kinds.size()):
+		var gap: int = int(kinds[i].split("@")[1]) - int(kinds[i - 1].split("@")[1])
+		t.check(gap >= 600, "at most one in 10 game minutes: %d s between seasons %d and %d" % [gap, i - 1, i])
+
+
+func test_a_new_era_lets_the_kinds_come_again_and_the_card_shows_its_auto_answer() -> void:
+	var s: Sim = t.fresh()
+	s.seasons.used = ["lean", "fever"]
+	s.seasons.kept_era = 1
+	t.check(s.seasons.eligible(s).is_empty(), "the stone age has used both its kinds")
+	s.story.record("bronze_dawn")
+	t.check(not s.seasons.eligible(s).is_empty() and s.seasons.used.is_empty(), "Bronze Dawn starts the list over")
+	var def: Dictionary = Data.SEASONS["lean"]
+	s.seasons.kind = "lean"
+	var pick: int = s.seasons.cheapest(s)
+	t.check(
+		pick in [0, 1] and def["options"][pick]["label"] != "", "the answer a card takes by itself has a label to show"
+	)
 
 
 func test_each_era_adds_kinds_and_no_kind_comes_before_its_era() -> void:

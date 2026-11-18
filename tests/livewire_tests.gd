@@ -76,6 +76,7 @@ func town(map_seed := 2) -> Sim:
 	s.story.record(Data.IRONFALL_EVENT)
 	s.story.record(Data.LIVEWIRE_EVENT)
 	s.story.update(s)
+	s.goal_first = false  # these tests are about the Orders and the nets, not the goal's claim on Coal (tests/goal_first_tests.gd)
 	return s
 
 

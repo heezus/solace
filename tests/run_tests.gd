@@ -65,6 +65,7 @@ const LumenTests = preload("res://tests/lumen_tests.gd")
 const ExodusTests = preload("res://tests/exodus_tests.gd")
 const FoundingTests = preload("res://tests/founding_tests.gd")
 const FlowTests = preload("res://tests/flow_tests.gd")
+const GoalFirstTests = preload("res://tests/goal_first_tests.gd")
 const TellingTests = preload("res://tests/telling_tests.gd")
 const EndingTests = preload("res://tests/ending_tests.gd")
 const TradeTests = preload("res://tests/trade_tests.gd")
@@ -116,6 +117,7 @@ func _init() -> void:
 		ExodusTests.new().run(self)
 		FoundingTests.new().run(self)
 		FlowTests.new().run(self)
+		GoalFirstTests.new().run(self)
 		print("FAILED: %d" % failures if failures > 0 else "STARFALL TESTS PASSED")
 		quit(1 if failures > 0 else 0)
 		return
@@ -246,6 +248,7 @@ func _init() -> void:
 	ExodusTests.new().run(self)
 	FoundingTests.new().run(self)
 	FlowTests.new().run(self)
+	GoalFirstTests.new().run(self)
 	TellingTests.new().run(self)
 	TitleTests.new().run(self)
 	DevTests.new().run(self)
@@ -492,6 +495,7 @@ func test_gatherer_fills_until_hauled() -> void:
 
 func test_haulers_automate_a_chain() -> void:
 	var s := fresh()
+	s.goal_first = false  # the pit would hold for the goal first; this test is about the haulers
 	give(s, 50)
 	s.tech_tree.researched["fire"] = true
 	s.tech_tree.researched["haulers"] = true
