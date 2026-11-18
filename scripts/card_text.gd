@@ -5,6 +5,7 @@ extends RefCounted
 
 const Chain = preload("res://scripts/chain.gd")
 const Data = preload("res://scripts/data.gd")
+const RoadRoute = preload("res://scripts/road_route.gd")
 
 const CARD_BLOCKED := "Blocked by %s"  # a tech's name: the first step on the way that is not just a price (scripts/chain.gd)
 const LINE_STOPPED := "Stopped at (%d, %d): %s"  # a tile, then why a dragged line would not go on it
@@ -27,9 +28,15 @@ static func shown(s, type: String) -> bool:
 	return s.tech_tree.requirements_met(def["tech"])
 
 
+## The tiles a drag from `a` to `b` covers: a road goes round the ground it can't take (scripts/road_route.gd), anything else runs straight.
+static func drag_line(s, type: String, a: Vector2i, b: Vector2i) -> Array:
+	return RoadRoute.line(s, type, a, b)
+
+
 ## What a dragged `line` of `type` will leave out, before it goes down: "" when every tile takes it (or already has it), else
 ## "Stopped at (x, y): the reason" for the first tile that will not, with how many tiles that is. The tiles already laid are no reason.
 static func line_report(s, type: String, line: Array) -> String:
+	var around := RoadRoute.note(s, type, line)
 	var first := ""
 	var n := 0
 	for p in line:
@@ -39,7 +46,8 @@ static func line_report(s, type: String, line: Array) -> String:
 		n += 1
 		if first == "":
 			first = LINE_STOPPED % [p.x, p.y, refusal(s, type, err)]
-	return first if n == 0 else first + (LINE_STOPPED_MORE % (n - 1) if n > 1 else "")
+	var stopped := first if n == 0 else first + (LINE_STOPPED_MORE % (n - 1) if n > 1 else "")
+	return (around + ". " + stopped if stopped != "" else around) if around != "" else stopped
 
 
 ## "4 Wood" for each item of `cost` the stockpile `inv` is short of, in cost order (empty when it is enough).

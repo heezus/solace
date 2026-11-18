@@ -61,7 +61,7 @@ static func goal_goods(s) -> Dictionary:
 	if g.has("tech"):
 		cost = s.tech_tree.cost_of(g["tech"])
 	elif g.has("building") and Data.BUILDINGS.has(g["building"]):
-		cost = Data.BUILDINGS[g["building"]]["cost"]
+		cost = s.town.price(g["building"])
 	for id in cost:
 		_down(id, out)
 	return out
@@ -108,7 +108,7 @@ static func goal_need(s, item: String) -> int:
 	if g.has("tech"):
 		return int(s.tech_tree.cost_of(g["tech"]).get(item, 0))
 	if g.has("building") and Data.BUILDINGS.has(g["building"]):
-		return int(Data.BUILDINGS[g["building"]]["cost"].get(item, 0))
+		return int(s.town.price(g["building"]).get(item, 0))
 	return 0
 
 
@@ -237,7 +237,7 @@ static func fog_note(s, g: Dictionary) -> String:
 	if g.has("tech"):
 		cost = s.tech_tree.cost_of(g["tech"])
 	elif g.has("building") and Data.BUILDINGS.has(g["building"]):
-		cost = Data.BUILDINGS[g["building"]]["cost"]
+		cost = s.town.price(g["building"])
 	var wanted := {}
 	for id in cost:
 		if int(s.economy.inv.get(id, 0)) < int(cost[id]):
@@ -256,6 +256,8 @@ static func _fog_line(s, item: String) -> String:
 	for t in Data.TILES:
 		if Data.TILES[t]["yields"] == item:
 			kinds.append(t)
+	if item == Data.SHARD_ITEM:
+		kinds.append("shard")  # the Strange Stone yields nothing to a hut, but a Shard is chipped from it (fun playtest 6: Skyreach)
 	if kinds.is_empty():
 		return ""
 	var best := Vector2i(-1, -1)
@@ -271,7 +273,7 @@ static func _fog_line(s, item: String) -> String:
 			if d < best_d:
 				best = p
 				best_d = d
-	var name: String = Data.ITEMS[item]["name"]
+	var name: String = Data.TILES["shard"]["name"] if item == Data.SHARD_ITEM else Data.ITEMS[item]["name"]
 	if best.x < 0:
 		return ""  # no such ground on the land the Kin have: the Look east button says where more lies
 	return (

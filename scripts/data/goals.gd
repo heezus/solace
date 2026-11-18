@@ -97,7 +97,7 @@ const GOALS := [
 		(
 			"Press T, discover Gatherer's Hut (Knapping and Foraging come first)"
 			+ " and place one right beside Berry Bushes (food first), or by trees or rocks."
-			+ " Once its Kith know the job it works on its own"
+			+ " The first one is free. Once its Kith know the job it works on its own"
 		),
 		"building": "gatherers_hut"
 	},

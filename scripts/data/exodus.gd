@@ -37,6 +37,7 @@ const EXODUS := {
 	"bp_saved": "Saved %s: %d parts",  # the name, the parts
 	"bp_laid": "Plans laid for %d parts of %s",  # the parts, the name
 	"bp_done": "The laid plans are all built",
+	"bp_moved": "%d plans moved to the nearest ground that fits: %s",  # the parts, their names
 	"bp_dropped": "%d plans could not go on this land and were dropped: %s. Place them where the ground allows",
 	"bp_name": "Blueprint %d",
 	"bp_carried": "%d blueprints carried from before",  # the new-land card line

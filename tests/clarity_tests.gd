@@ -101,13 +101,13 @@ func test_research_and_line_refusals_say_why() -> void:
 	var gravel := Vector2i(-1, -1)
 	for y in s.world.height:
 		for x in s.world.width:
-			if gravel.x < 0 and s.world.tile_at(Vector2i(x, y)) == "gravel":
+			if gravel.x < 0 and s.world.tile_at(Vector2i(x, y)) == "flax":
 				gravel = Vector2i(x, y)
-	t.check(gravel.x >= 0, "the map has gravel")
+	t.check(gravel.x >= 0, "the map has flax")
 	var report := CardText.line_report(s, "road", [gravel + Vector2i(0, 0)])
 	t.check(
-		report.contains("Stopped at") and report.contains("Riverbed Gravel"),
-		"a line over gravel names the tile and the ground: " + report
+		report.contains("Stopped at") and report.contains("Wild Flax"),
+		"a line over flax names the tile and the ground: " + report
 	)
 	var err := s.town.placement_error("road", gravel)
 	t.check(err.contains("go around"), "and a road refusal says to go around: " + err)

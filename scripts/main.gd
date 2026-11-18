@@ -422,7 +422,7 @@ func _set_speed(v: int) -> void:
 ## The tiles the current drag covers, ending under the mouse (kept on the map).
 func _drag_line() -> Array:
 	var end := _tile_under().clamp(Vector2i.ZERO, Vector2i(state.world.width - 1, state.world.height - 1))
-	return Rules.line_tiles(drag_from, end)
+	return CardText.drag_line(state, placing, drag_from, end)
 
 
 ## Release: lay the dragged road, bridge or fields on every tile that takes it.

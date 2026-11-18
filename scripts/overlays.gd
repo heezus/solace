@@ -8,6 +8,7 @@ const Buildings = preload("res://scripts/buildings.gd")
 const Art = preload("res://scripts/art.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Rules = preload("res://scripts/rules.gd")
+const RoadRoute = preload("res://scripts/road_route.gd")
 const FieldText = preload("res://scripts/field_text.gd")
 const Clearing = preload("res://scripts/clearing.gd")
 const Relics = preload("res://scripts/relics.gd")
@@ -403,6 +404,9 @@ static func line_text(s, type: String, tiles: Array) -> String:
 	)
 	if Data.BUILDINGS[type]["kind"] == "field":
 		text += " · " + FieldText.drag_note(s, type, tiles)
+	var around := RoadRoute.note(s, type, tiles)
+	if around != "":
+		text += " · " + around.to_lower().substr(0, 1) + around.substr(1)
 	if not s.economy.can_afford(total):
 		return text + " · you have enough for part of it"
 	return text + " · release to lay"

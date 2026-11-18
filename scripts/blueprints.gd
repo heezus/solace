@@ -15,6 +15,8 @@ const Data = preload("res://scripts/data.gd")
 
 const WAITS := ["Not enough materials", "Not discovered yet"]  # the reasons a plan stays queued; anything else drops it
 const UNEXPLORED := "Unexplored"
+const MOVE_RANGE := 6  # a building whose ground is wrong moves to the nearest tile that fits within this many tiles (fun playtest 6)
+const NOT_BUILDINGS := ["road", "bridge", "field"]  # parts that never move: a moved road would join nothing
 
 
 ## The parts of the town inside `box` (tile corners inclusive), in the order they should go down: roads and bridges, then fields, then
@@ -96,6 +98,51 @@ static func lay_plan(s, bp: Dictionary, at: Vector2i) -> int:
 	return n
 
 
+## True for what a plan's placement says when the part can go, or only waits (for materials, a tech, or the fog lifting).
+static func fits(err: String) -> bool:
+	return err == "" or err in WAITS or err.begins_with(UNEXPLORED)
+
+
+## The nearest tile within MOVE_RANGE of `p` where a `type` fits and no plan in `used` ({tile: true}) stands: (-1, -1) when none.
+static func nearest_fit(s, type: String, p: Vector2i, used: Dictionary) -> Vector2i:
+	var best := Vector2i(-1, -1)
+	var best_d := 1 << 20
+	for dy in range(-MOVE_RANGE, MOVE_RANGE + 1):
+		for dx in range(-MOVE_RANGE, MOVE_RANGE + 1):
+			var q := p + Vector2i(dx, dy)
+			var d := dx * dx + dy * dy
+			if d == 0 or d >= best_d or used.has(q) or not s.world.in_bounds(q):
+				continue
+			if fits(s.town.placement_error(type, q)):
+				best = q
+				best_d = d
+	return best
+
+
+## What laying `items` (parts {"t", "x", "y"}) with the corner at `at` would do on this land now, without queueing anything:
+## {"moved": the names of buildings that move to the nearest tile that fits, "left": the names of parts that fit nowhere within reach}.
+static func preview(s, items: Array, at: Vector2i) -> Dictionary:
+	var used := {}
+	for part in items:
+		used[at + Vector2i(int(part["x"]), int(part["y"]))] = true
+	var moved: Array = []
+	var left: Array = []
+	for part in items:
+		var p := at + Vector2i(int(part["x"]), int(part["y"]))
+		if not s.world.in_bounds(p) or fits(s.town.placement_error(part["t"], p)):
+			continue
+		var name: String = Data.BUILDINGS[part["t"]]["name"]
+		var to := Vector2i(-1, -1)
+		if not Data.BUILDINGS[part["t"]]["kind"] in NOT_BUILDINGS:
+			to = nearest_fit(s, part["t"], p, used)
+		if to.x >= 0:
+			used[to] = true
+			moved.append(name)
+		else:
+			left.append(name)
+	return {"moved": moved, "left": left}
+
+
 ## The queued plans in order, as tile positions.
 static func plan_tiles(s) -> Array:
 	return s.carry.plans.map(func(q): return Vector2i(int(q["x"]), int(q["y"])))
@@ -108,6 +155,10 @@ static func tick(s) -> void:
 		return
 	var keep := []
 	var dropped := []  # the kinds of the parts that never can go
+	var moved := []  # the kinds of the buildings moved to the nearest tile that fits
+	var used := {}
+	for q in s.carry.plans:
+		used[Vector2i(int(q["x"]), int(q["y"]))] = true
 	var held := false  # a part waits on materials: the ones behind it wait their turn
 	for q in s.carry.plans:
 		var p := Vector2i(int(q["x"]), int(q["y"]))
@@ -121,14 +172,31 @@ static func tick(s) -> void:
 			keep.append(q)
 			held = held or err == WAITS[0]
 		else:
-			dropped.append(q["t"])
+			var to := Vector2i(-1, -1)
+			if not Data.BUILDINGS[q["t"]]["kind"] in NOT_BUILDINGS:
+				to = nearest_fit(s, q["t"], p, used)
+			if to.x >= 0:  # the ground is wrong here: it goes to the nearest tile that fits, and is tried again
+				used[to] = true
+				q["x"] = to.x
+				q["y"] = to.y
+				moved.append(q["t"])
+				keep.append(q)
+			else:
+				dropped.append(q["t"])
+	if not moved.is_empty():
+		s.events.append(Data.EXODUS["bp_moved"] % [moved.size(), ", ".join(_names(moved))])
 	if not dropped.is_empty():
-		var kinds := []
-		for type in dropped:
-			var name: String = Data.BUILDINGS[type]["name"]
-			if not name in kinds:
-				kinds.append(name)
-		s.events.append(Data.EXODUS["bp_dropped"] % [dropped.size(), ", ".join(kinds)])
+		s.events.append(Data.EXODUS["bp_dropped"] % [dropped.size(), ", ".join(_names(dropped))])
 	if keep.is_empty() and not s.carry.plans.is_empty():
 		s.events.append(Data.EXODUS["bp_done"])
 	s.carry.plans = keep
+
+
+## The names of the building types in `types`, each once, in order.
+static func _names(types: Array) -> Array:
+	var out := []
+	for type in types:
+		var name: String = Data.BUILDINGS[type]["name"]
+		if not name in out:
+			out.append(name)
+	return out

@@ -28,6 +28,8 @@ const Research = preload("res://scripts/research.gd")
 const Rules = preload("res://scripts/rules.gd")
 const World = preload("res://scripts/world.gd")
 
+const FREE_FIRST := "gatherers_hut"  # the building type whose first copy costs nothing (fun playtest 6)
+
 const _POINTS := ["pos"]  # the building entries that are tile positions (saved as [x, y])
 ## The entries of a building that hold the people at work in it, as indexes into the Kith list: the first, and for a
 ## building with a `crew` of 2 (a Mine) the second. -1 for nobody.
@@ -134,14 +136,18 @@ func placement_error(type: String, p: Vector2i) -> String:
 	return ""
 
 
-## Why a road can't go on `tile` at p: "" when it can (grassland, Forest it fells, Rocks it cuts through, rubble it clears).
+## Why a road can't go on `tile` at p: "" when it can (grassland, Forest it fells, Rocks it cuts through, rubble it clears, Riverbed Gravel
+## and a Clay Bank, which stay where they are: the road runs over them and the bank is still dug beside it).
 func _road_error(type: String, p: Vector2i, tile: String) -> String:
 	if tile == "ruins" and rubble_at.call(p)["relic"]:
 		return Data.ENDINGS["relic_ruin_kept"]
 	if tile == "river":
 		return "Roads can't cross the river: build a Wooden Bridge"
-	if tile not in ["grass", "rock", "tree", "ruins"]:
-		return "Roads can't go on %s: go around it, over grassland, Forest or Rocks" % Data.TILES[tile]["name"]
+	if tile not in ["grass", "rock", "tree", "ruins", "gravel", "clay"]:
+		return (
+			"Roads can't go on %s: go around it, over grassland, Forest, Rocks, Gravel or Clay"
+			% Data.TILES[tile]["name"]
+		)
 	return "" if _economy.can_afford(cost_here(type, p)) else "Not enough materials"
 
 
@@ -194,8 +200,8 @@ func copies(type: String) -> int:
 ## What the next building of `type` costs: its listed price, with 15% more for each production copy already standing
 ## (never past 4 times, see Rules.price). Homes, roads, bridges and the rest stay flat.
 func price(type: String) -> Dictionary:
-	if free_first.call(type, copies(type)):
-		return {}
+	if free_first.call(type, copies(type)) or (type == FREE_FIRST and copies(type) == 0):
+		return {}  # the first Gatherer's Hut is free (fun playtest 6): hand gathering is the slow part of the opening
 	return _planned(Rules.price(type, copies(type)))
 
 

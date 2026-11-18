@@ -8,6 +8,7 @@ extends RefCounted
 const Data = preload("res://scripts/data.gd")
 const Kith = preload("res://scripts/kith.gd")
 const Roads = preload("res://scripts/roads.gd")
+const RoadRoute = preload("res://scripts/road_route.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Work = preload("res://scripts/work.gd")
 const Fuel = preload("res://scripts/fuel.gd")
@@ -480,14 +481,18 @@ static func road_note(s, b: Dictionary) -> String:
 	return ". Needs road: " + road_hint(s, b["pos"])
 
 
-## "lay Road from here to the Hearth (4 tiles), then haulers carry for it".
+## "Lay 4 road: (12,5) to (15,5) to reach the Hearth so haulers carry for it": the tiles to lay, routed round what a road can't take
+## (scripts/road_route.gd), or the straight-line guess when no way is found.
 static func road_hint(s, p: Vector2i) -> String:
 	var g := Roads.gap(s, p)
 	if g["to"].x < 0:
 		return "linked by road"
+	var lay := RoadRoute.lay_text(RoadRoute.to_lay(s, p)["tiles"])
 	if Roads.touched(s, p):  # a road is there, but it is its own island: no depot on it (fun-3)
-		return Roads.ROAD_ISLAND % g["tiles"]
+		return Roads.ROAD_ISLAND % g["tiles"] + (". " + lay if lay != "" else "")
 	var what := "the road to the Hearth" if s.world.roads.has(g["to"]) else "the Hearth"
 	if s.town.building_at.has(g["to"]) and g["to"] != s.world.camp_pos:
 		what = "the Storehouse"
+	if lay != "":
+		return "%s to reach %s so haulers carry for it" % [lay, what]
 	return "lay Road from here to %s (about %d tiles) so haulers carry for it" % [what, g["tiles"]]
