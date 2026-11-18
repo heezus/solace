@@ -16,6 +16,7 @@ const TITLE := "Flow"
 const HEAD := ["Good", "Made / min", "Used / min", "Net / min", "In stock", "Made by"]
 const NO_GOAL := "The goal in front of you needs no goods."
 const HAND := "by hand %.1f"
+const PAUSE_THEM := "Pause them"
 
 var state
 var panel: PanelContainer
@@ -107,6 +108,10 @@ func _rebuild() -> void:
 		box.add_child(l)
 		if held["pos"] != FlowView.NONE:
 			lights.append([held["pos"], id])
+		if held.has("pause"):
+			var pause := Ui.button(PAUSE_THEM)
+			pause.pressed.connect(_pause.bind(held["pause"]))
+			box.add_child(pause)
 	var grid := GridContainer.new()
 	grid.columns = HEAD.size()
 	grid.add_theme_constant_override("h_separation", 12)
@@ -118,6 +123,14 @@ func _rebuild() -> void:
 	for r in FlowView.rows(state):
 		_add_row(grid, r)
 	box.add_child(grid)
+
+
+## The one click: press Pause on each of these buildings (the ones the line names), then read the panel again.
+func _pause(spots: Array) -> void:
+	for p in spots:
+		if state.town.building_at.has(p):
+			state.set_paused(state.town.building_at[p], true)
+	_rebuild()
 
 
 func _add_row(grid: GridContainer, r: Dictionary) -> void:

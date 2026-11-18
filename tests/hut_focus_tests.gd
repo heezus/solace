@@ -27,6 +27,7 @@ func run(runner) -> void:
 	test_job_and_bundle_follow_the_focus()
 	test_the_panel_line_and_the_range_text()
 	test_a_hut_whose_kith_know_the_job_never_asks_for_a_click()
+	test_a_roadless_hut_keeps_working_after_paths_and_haulers()
 	test_the_focus_survives_a_save()
 	test_a_hut_goes_down_working_the_resource_picked()
 	test_a_pick_at_placement_is_for_that_hut_only()
@@ -323,6 +324,41 @@ func test_a_hut_whose_kith_know_the_job_never_asks_for_a_click() -> void:
 	s.people.learned_by.erase("berries")
 	t.check(
 		not Roads.self_runs(s, b) and not HutFocus.wants_click(s, b), "a hut that knows no job asks for nothing either"
+	)
+
+
+## Fun playtest 5: after Paths & Haulers every hut flipped to "Needs road". A roadless hut whose Kith know the job keeps running, at half
+## speed, and says so: a road is an upgrade, not a gate.
+func test_a_roadless_hut_keeps_working_after_paths_and_haulers() -> void:
+	var s: Sim = t.fresh()
+	s.tech_set["gatherers_hut"] = true
+	t.give(s, 100)
+	var p: Vector2i = s.world.camp_pos + Vector2i(4, 3)  # beside the Hearth, no water between
+	for dy in range(-3, 4):
+		for dx in range(-3, 4):
+			s.world.set_tile(p + Vector2i(dx, dy), "grass")
+	_put(s, p + Vector2i(0, 1), "berry")
+	s.people.learned_by["berries"] = "Aro"
+	s.tech_tree.researched["haulers"] = true
+	s.place("gatherers_hut", p)
+	var i: int = s.town.building_at[p]
+	var b: Dictionary = s.town.buildings[i]
+	var before: float = s.economy.inv.get("berries", 0)
+	for n in 600:
+		s.tick(0.2)
+	t.check(not Roads.linked(s, b) and Roads.self_runs(s, b), "a hut with no road still runs itself")
+	t.check(b["alert"] == Workers.SLOW_NO_ROAD, "its pill says slow, not blocked: %s" % b["alert"])
+	t.check(not b["status"].contains("Needs road"), "and its status is not a block: %s" % b["status"])
+	t.check(
+		s.economy.inv.get("berries", 0) > before,
+		"it brought berries in (%s to %s)" % [before, s.economy.inv.get("berries", 0)]
+	)
+	var other := p + Vector2i(-3, -1)  # on the same cleared ground
+	s.town.add_building("kiln", other)
+	s.tick(0.2)
+	t.check(
+		s.town.buildings[s.town.building_at[other]]["alert"] == "Needs road",
+		"a Kiln with no road still needs one: %s" % s.town.buildings[s.town.building_at[other]]["alert"]
 	)
 
 

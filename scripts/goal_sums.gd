@@ -66,7 +66,7 @@ static func _more(s, item: String, net: float, lacks: int) -> String:
 		return ""
 	var def: Dictionary = Data.BUILDINGS[type]
 	var name: String = "hut" if def["kind"] == "gatherer" else String(def["name"])
-	var added := _added_rate(s, type, item)
+	var added := FlowView.added_rate(s, type, item)
 	if added <= 0.0:
 		return ""
 	if def["kind"] == "processor":
@@ -94,21 +94,6 @@ static func _gathered(item: String) -> bool:
 		if Data.TILES[t]["yields"] == item:
 			return true
 	return false
-
-
-## What one more of `type` would make of `item` a minute: what the ones standing make now, each, else the workshop's own rate.
-static func _added_rate(s, type: String, item: String) -> float:
-	var parts: Dictionary = s.economy.flows.parts(item)
-	var standing := 0
-	for b in s.town.buildings:
-		if b["type"] == type and (Data.BUILDINGS[type]["kind"] != "gatherer" or b["focus"] == item):
-			standing += 1
-	if standing > 0 and parts.get(type, 0.0) > 0.0:
-		return float(parts[type]) * 60.0 / standing
-	var def: Dictionary = Data.BUILDINGS[type]
-	if def.get("out", {}).has(item) and float(def.get("time", 0.0)) > 0.0:
-		return float(def["out"][item]) * 60.0 / float(def["time"])
-	return 0.0
 
 
 ## The input of a processor that could not keep up with one more of it making `added` a minute: its id, "" when they all can.

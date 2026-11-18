@@ -31,7 +31,14 @@ const WAIT_FIX := {
 	"other": "open its card",
 }
 const HELD := "%s is held by %s: %s; %s"
+## A rival maker that eats the short input to make what nothing open needs: the line, and the one click that sets it right.
+const RIVAL := "%s is held by %s. %ss take %d%% of it to make %s, which nothing open needs. Pause them?"
+const RIVAL_SHARE := 0.4  # of the input's use, the least a rival must take to be named
+const RIVAL_RESERVE := 20  # of its goods the stores hold before it counts as made for nothing
 const MAKING := "%s is made by %s, all working; add one"
+## A maker running flat out while the good it eats piles up: the line, and the one more that would clear it.
+const SHORT := "%s is held by %ss: %s, %s piling up. One more %s: +%s a min."
+const PILE := 20  # of an input the stores hold before a maker that eats it is said to be the one thing short
 const NONE_BUILT := "%s is made at a %s. Build one."
 
 
@@ -189,13 +196,68 @@ static func bottleneck(s, item: String) -> Dictionary:
 		}
 	var first: Dictionary = groups[0]
 	var at: Vector2i = built_makers(s, item)[0]["pos"]
+	var piled := maker_short(s, item, first)
+	if piled != "":
+		return {"line": piled, "pos": at}
 	return {"line": MAKING % [name, _plural(int(first["count"]), first["name"])], "pos": at}
+
+
+## When the makers of `item` (group `g`) all work and an input of theirs piles up in the stores, the line that says one more maker
+## would turn it to `item`: "Copper is held by Smelters: 1 Smelter, ore piling up. One more Smelter: +6.0 a min." "" when not so.
+static func maker_short(s, item: String, g: Dictionary) -> String:
+	var type: String = g["type"]
+	var def: Dictionary = Data.BUILDINGS[type]
+	if def["kind"] != "processor" or not s.town.unlocked(type) or g["working"] < g["count"]:
+		return ""
+	var piled := ""
+	for id in def.get("in", {}):
+		if int(s.economy.inv.get(id, 0)) >= PILE and float(s.economy.flows.rate(id)) >= 0.0:
+			if piled == "" or s.economy.inv[id] > s.economy.inv[piled]:
+				piled = id
+	if piled == "":
+		return ""
+	var added := added_rate(s, type, item)
+	if added <= 0.0:
+		return ""
+	return (
+		SHORT
+		% [
+			Data.ITEMS[item]["name"],
+			def["name"],
+			_plural(int(g["count"]), def["name"]),
+			String(Data.ITEMS[piled]["name"]).to_lower(),
+			def["name"],
+			"%.1f" % added,
+		]
+	)
+
+
+## What one more of `type` would make of `item` a minute: what the ones standing make now, each, else the workshop's own rate.
+static func added_rate(s, type: String, item: String) -> float:
+	var parts: Dictionary = s.economy.flows.parts(item)
+	var standing := 0
+	for b in s.town.buildings:
+		if b["type"] == type and (Data.BUILDINGS[type]["kind"] != "gatherer" or b["focus"] == item):
+			standing += 1
+	if standing > 0 and parts.get(type, 0.0) > 0.0:
+		return float(parts[type]) * 60.0 / standing
+	var def: Dictionary = Data.BUILDINGS[type]
+	if def.get("out", {}).has(item) and float(def.get("time", 0.0)) > 0.0:
+		return float(def["out"][item]) * 60.0 / float(def["time"])
+	return 0.0
 
 
 ## `item` waits on `input`, which its maker `b` lacks: say how the input's own makers are doing.
 static func _input_held(s, item: String, input: String, b: Dictionary) -> Dictionary:
 	var name: String = Data.ITEMS[item]["name"]
 	var in_name: String = Data.ITEMS[input]["name"]
+	var rival := rival_use(s, input, b["type"])
+	if not rival.is_empty():
+		return {
+			"line": RIVAL % [name, in_name, rival["name"], rival["share"], rival["makes"]],
+			"pos": rival["spots"][0],
+			"pause": rival["spots"],
+		}
 	var groups := makers(s, input)
 	if groups.is_empty():
 		return {"line": "%s is held by %s: %s" % [name, in_name, Needs.why_short(s, input)], "pos": b["pos"]}
@@ -209,3 +271,45 @@ static func _input_held(s, item: String, input: String, b: Dictionary) -> Dictio
 	var type: String = groups[0]["type"]
 	var add := "add a hut" if Data.BUILDINGS[type]["kind"] == "gatherer" else "add a %s" % Data.BUILDINGS[type]["name"]
 	return {"line": HELD % [name, in_name, group_line(groups[0]), add], "pos": b["pos"]}
+
+
+## The biggest other maker of `input`'s use, when it makes a good no open goal, queued tech or goal price asks for and the stores
+## already hold more than a reserve of: {name, share (percent of the use), makes, spots (its working buildings)}, or {} for none.
+static func rival_use(s, input: String, own_type: String) -> Dictionary:
+	var parts: Dictionary = s.economy.flows.parts(input)
+	var total := 0.0
+	for source in parts:
+		total -= minf(parts[source], 0.0)
+	if total <= 0.0:
+		return {}
+	var asked: Dictionary = Needs.goal_goods(s)
+	for tech in s.tech_tree.queue:
+		for id in s.tech_tree.cost_of(tech):
+			asked[id] = true
+	var best := ""
+	for source in parts:
+		if parts[source] >= 0.0 or source == own_type or not Data.BUILDINGS.has(source):
+			continue
+		var def: Dictionary = Data.BUILDINGS[source]
+		if not def.get("in", {}).has(input) or def.get("out", {}).is_empty():
+			continue
+		var made: String = def["out"].keys()[0]
+		if asked.has(made) or s.economy.inv.get(made, 0) < RIVAL_RESERVE:
+			continue
+		if best == "" or parts[source] < parts[best]:
+			best = source
+	if best == "" or -parts[best] / total < RIVAL_SHARE:
+		return {}
+	var spots: Array = []
+	for b in s.town.buildings:
+		if b["type"] == best and not b["paused"]:
+			spots.append(b["pos"])
+	if spots.is_empty():
+		return {}
+	var made_name: String = Data.ITEMS[Data.BUILDINGS[best]["out"].keys()[0]]["name"]
+	return {
+		"name": Data.BUILDINGS[best]["name"],
+		"share": int(round(-parts[best] / total * 100.0)),
+		"makes": made_name,
+		"spots": spots,
+	}

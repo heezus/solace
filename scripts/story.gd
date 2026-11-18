@@ -36,7 +36,6 @@ var stamps: Dictionary = {}
 var last_goal_at := 0.0  # the game second the last goal was met (not saved: a loaded game starts the count again)
 var goals_done: Dictionary = {}  # goal id -> true; goals stay done once met, even after the items are spent
 var south_note := ""  # why the south is not held now (Gate.note), for the goal's words
-var south_lost := false  # the south was held and is not now
 ## True while an era card is up (the owner sets it, never saved): the era after it begins the tick after it is put away.
 var card_up := false
 var _reach_lists: Array = [
@@ -49,7 +48,6 @@ var _reach_lists: Array = [
 var _ore_tiles: Dictionary = {}  # tile id -> its positions in the grown land (see _ore)
 var _ore_width := 0
 var _goals_seen := 0  # how many goals were done at the last update (last_goal_at moves when it changes)
-var _south_was := false  # the south was held at the last update
 
 
 ## True once the story moment `id` has happened.
@@ -147,21 +145,15 @@ func era_minutes(total: float) -> Array:
 	return out
 
 
-## The south goal is not a latch: Skyward asks for the south held at the moment it is bought (Gate.south_held), so the goal
-## un-ticks when the Bloom or the fuel takes that away, and the log says why.
+## The south goal latches like every deed (Gate.deed): once the south has been held it stays held, whatever the Bloom does after. Until
+## then `south_note` says what is missing now, for the goal's words and the Skyward card.
 func _hold_south(s) -> void:
-	var held: bool = s.gate.south_held()
-	south_note = "" if held else s.gate.note("south_held")
-	if held:
-		if south_lost:
-			s.events.append(Data.SOUTH_LINES["held"])
-		south_lost = false
-	else:
-		goals_done.erase("south_held")
-		if _south_was:
-			south_lost = true
-			s.events.append(Data.SOUTH_LINES["lost"] % south_note)
-	_south_was = held
+	south_note = "" if goals_done.has("south_held") or s.gate.south_held() else s.gate.note("south_held")
+
+
+## True when the goal that names deed `id` has ticked: the deed is met for good (Gate.latched).
+func deed_met(id: String) -> bool:
+	return goals_done.has(id)
 
 
 ## The charts lift the fog off the nearest seam nobody has seen, and the log says which way it lies.
@@ -213,7 +205,7 @@ func goal_text(g: Dictionary, sim = null) -> String:
 	if g.has("reach") and sim != null and not goals_done.has(g["id"]):
 		text += ". " + Founding.clock_line(sim, int(g["reach"]))
 	if g["id"] == "south_held" and south_note != "" and not goals_done.has("south_held"):
-		text = (Data.SOUTH_LINES["goal_lost"] if south_lost else Data.SOUTH_LINES["now"]) % [text, south_note]
+		text = Data.SOUTH_LINES["now"] % [text, south_note]
 	return text
 
 

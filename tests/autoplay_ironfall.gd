@@ -10,12 +10,14 @@ extends "res://tests/autoplay_bronze.gd"
 
 const Expedition = preload("res://scripts/expedition.gd")
 const Finds = preload("res://scripts/teardown_finds.gd")
+const Needs = preload("res://scripts/needs.gd")
 
 const GATE := "livewire"
 ## What the hold digs by hand in the new land, on top of the stone age's goods (the generic bot's RAW_TILE).
 const RAW_NEW := {"coal": "coal_seam", "iron_ore": "iron_hills"}
 const COAL_MINES := 3  # the most Coal Mines (a seam holds about 500, so three seams are three mines at most)
 const IRON_MINES := 5
+const RIVAL_RESERVE := 20  # of a good the stores hold before a maker of it counts as making it for nothing
 const FUEL_CHARCOAL_CAP := 200  # the most Charcoal the bot asks for in place of the Coal it lacks
 const BLOOMERIES := 4
 const FORGES := 4
@@ -519,6 +521,40 @@ func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
 	super._pause_surplus(short, later)
 	_manage_works()
 	_spare_the_clay(short)
+	_rest_rivals(short)
+
+
+## A maker that eats a good something open asks for, to make a good nothing open asks for and the stores already hold more than a
+## reserve of, rests: a Crucible poured the Copper the Wire Mills wait for into Bronze nothing in the era uses, and a seam is finite.
+## It runs again as soon as its good is asked for or the stores fall below the reserve (the general bot's pauses stand otherwise).
+func _rest_rivals(short: Dictionary) -> void:
+	var asked := _asked_goods(short)
+	for i in s.town.buildings.size():
+		var b: Dictionary = s.town.buildings[i]
+		var def: Dictionary = Data.BUILDINGS[b["type"]]
+		if def["kind"] != "processor" or def["out"].is_empty() or b["paused"]:
+			continue
+		var made: String = def["out"].keys()[0]
+		if asked.has(made) or _inv(made) < RIVAL_RESERVE:
+			continue
+		if def["in"].keys().any(func(id): return asked.has(id) and not RAW_TILE.has(id)):
+			s.set_paused(i, true)
+
+
+## The goods an open goal, a queued tech, a building the plan wants or the road to the gate asks for, down the recipes.
+func _asked_goods(short: Dictionary) -> Dictionary:
+	var out := {}
+	var todo: Array = Needs.goal_goods(s).keys() + short.keys() + _own.keys() + _next_price().keys()
+	for tech in s.tech_tree.queue:
+		todo.append_array(s.tech_tree.cost_of(tech).keys())
+	while not todo.is_empty():
+		var id: String = todo.pop_back()
+		if out.has(id):
+			continue
+		out[id] = true
+		for type in Needs.makers_of(id):
+			todo.append_array(Data.BUILDINGS[type].get("in", {}).keys())
+	return out
 
 
 ## Clay a building the plan wants is short of is gathered by hand before the metal: a Bloomery waited on 30 Clay for good in a run after an

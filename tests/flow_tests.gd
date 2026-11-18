@@ -9,6 +9,7 @@ const Founding = preload("res://scripts/founding.gd")
 const FlowView = preload("res://scripts/flow_view.gd")
 const GoalSums = preload("res://scripts/goal_sums.gd")
 const Ledger = preload("res://tests/tools/ledger.gd")
+const Snapshot = preload("res://tests/tools/ai_snapshot.gd")
 const Sim = preload("res://scripts/sim.gd")
 
 var t  # the runner, tests/run_tests.gd
@@ -21,6 +22,9 @@ func run(runner) -> void:
 	test_one_more_maker_that_cannot_be_fed_says_what_is_short()
 	test_every_gate_goal_shows_a_sum()
 	test_the_bottleneck_walks_one_step_back_to_the_input()
+	test_a_short_input_names_the_rival_maker_that_eats_it()
+	test_a_maker_running_flat_out_with_its_ore_piling_up_says_one_more_is_short()
+	test_the_table_page_prints_the_flow_and_the_flow_move_works()
 	test_a_remembered_starfall_runs_its_story_clocks_at_forty_percent()
 	test_a_remembered_starfall_puts_the_marks_it_read_onto_the_wall()
 
@@ -149,6 +153,95 @@ func test_the_bottleneck_walks_one_step_back_to_the_input() -> void:
 	t.check(
 		row["makers"].size() == 1 and row["makers"][0]["waits"].get("hands", 0) == 1, "and the row counts it waiting"
 	)
+
+
+## Fun playtest 5: one smelter chokes the line while ore piles up, and nothing said "build a second smelter".
+func test_a_maker_running_flat_out_with_its_ore_piling_up_says_one_more_is_short() -> void:
+	var s := Sim.new()
+	s.generate(5)
+	s.tech_tree.researched["smelting"] = true
+	var at := s.world.camp_pos + Vector2i(3, 2)
+	s.town.add_building("smelter", at)
+	t.check(s.town.unlocked("smelter"), "the Smelter is open")
+	s.economy.inv["copper_ore"] = 80
+	s.economy.inv["charcoal"] = 80
+	_flow(s, {"copper": [6.0, "smelter"], "copper_ore": [4.0, "gatherers_hut"]})
+	var held := FlowView.bottleneck(s, "copper")
+	var line: String = held["line"]
+	t.check(
+		line.begins_with("Copper is held by Smelters: 1 Smelter, copper ore piling up. One more Smelter: +6.0 a min."),
+		"the line names the shortage and what one more adds: " + line
+	)
+	t.check(held["pos"] == at, "and lights the Smelter")
+	s.economy.inv["copper_ore"] = 5
+	s.economy.inv["charcoal"] = 5
+	line = FlowView.bottleneck(s, "copper")["line"]
+	t.check(line.contains("all working; add one"), "with no ore piling up it says what it did before: " + line)
+
+
+## Fun playtest 5: the table's page never printed the flow view, so the journalist never saw "at this rate" or what held a goal up.
+func test_the_table_page_prints_the_flow_and_the_flow_move_works() -> void:
+	var s := Sim.new()
+	s.generate(5)
+	s.tech_tree.researched["pottery"] = true
+	for g in s.story.goal_list():
+		if g["id"] != "calendar":
+			s.story.goals_done[g["id"]] = true  # the goal in front of the player: the Calendar (Brick 30, Grain, Stone, Wood, Rope)
+	for id in ["grain", "stone", "wood", "rope"]:
+		s.economy.inv[id] = 500
+	s.economy.inv["brick"] = 10
+	_flow(s, {"brick": [6.0, "kiln"], "clay": [30.0, "gatherers_hut"], "charcoal": [30.0, "charcoal_pit"]})
+	var page := Snapshot.text(s, 1, [], [])
+	t.check(
+		page.contains("AT THIS RATE: Brick 10/30. At this rate: 3.5 min."),
+		"the page carries the goal's at-this-rate line"
+	)
+	t.check(page.contains("FLOW (the goal's goods, a minute): "), "and the goal's goods with made and used")
+	t.check(page.contains("Brick 10 in stock, made 6.0, used 0.0, net +6.0"), "with the numbers of the flow view")
+	t.check(Snapshot.HELP.contains('"do":"flow"'), "and the help lists the flow move")
+	t.check(Snapshot.apply(s, [{"do": "flow"}]).is_empty(), "the flow move is taken")
+	page = Snapshot.text(s, 2, [], [])
+	t.check(page.contains("FLOW VIEW (every good"), "and the next page lists every good")
+	t.check(not Snapshot.text(s, 3, [], []).contains("FLOW VIEW (every good"), "for that page only")
+	# a rival line carries the Pause them button; the move presses it
+	var mill := s.world.camp_pos + Vector2i(3, 2)
+	var pot := s.world.camp_pos + Vector2i(6, 2)
+	s.town.add_building("wire_mill", mill)
+	s.town.add_building("crucible", pot)
+	s.town.buildings[s.town.building_at[mill]]["alert"] = "Needs Copper"
+	t.check(
+		Snapshot.apply(s, [{"do": "flow", "pause_them": true}]).size() == 1,
+		"with no rival named, Pause them is refused"
+	)
+
+
+## Players fall into the Livewire trap too: the Crucibles eat the Copper the Wire Mills wait for, to make Bronze nothing open asks for.
+func test_a_short_input_names_the_rival_maker_that_eats_it() -> void:
+	var s := Sim.new()
+	s.generate(5)
+	var mill := s.world.camp_pos + Vector2i(3, 2)
+	var pot := s.world.camp_pos + Vector2i(6, 2)
+	s.town.add_building("wire_mill", mill)
+	s.town.add_building("crucible", pot)
+	s.town.buildings[s.town.building_at[mill]]["alert"] = "Needs Copper"
+	s.economy.inv["copper"] = 0
+	s.economy.inv["bronze"] = 100
+	_flow(s, {"copper": [-27.0, "crucible"]})
+	var held := FlowView.bottleneck(s, "wire")
+	var line: String = held["line"]
+	t.check(line.contains("Wire is held by Copper"), "the line names the short input: " + line)
+	t.check(
+		line.contains("Crucibles take 100% of it to make Bronze, which nothing open needs. Pause them?"),
+		"and the rival, its share and what it makes: " + line
+	)
+	t.check(held["pos"] == pot and held["pause"] == [pot], "the light and the pause are on the Crucible: %s" % [held])
+	s.economy.inv["bronze"] = 5
+	line = FlowView.bottleneck(s, "wire")["line"]
+	t.check(not line.contains("Pause them"), "with little Bronze in the stores there is no rival line: " + line)
+	s.economy.inv["bronze"] = 100
+	s.set_paused(s.town.building_at[pot], true)
+	line = FlowView.bottleneck(s, "wire")["line"]
+	t.check(not line.contains("Pause them"), "a paused rival is not named again: " + line)
 
 
 func _remembering(s: Sim) -> void:

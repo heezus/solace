@@ -538,7 +538,7 @@ func test_the_scorcher_card_explains_itself() -> void:
 	s.tide.grown[c + Vector2i(1, 9)] = true
 	tick_for(s, 1.0)
 	t.check(
-		sc["status"] == "Nothing in reach yet: the front is 9 tiles away",
+		sc["status"] == "Ready: no Bloom in reach (the front is 9 tiles away)",
 		"it says how far the front is: %s" % sc["status"]
 	)
 	var row := BuildingPanel.recipe_text(s, sc)

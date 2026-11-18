@@ -25,6 +25,7 @@ const SoundCues = preload("res://scripts/sound_cues.gd")
 
 ## A hut that runs itself with no road (Step 9A) takes this many times as long to harvest: the Kith carries each bundle to the Hearth.
 const SELF_RUN_SLOW := 2.0
+const SLOW_NO_ROAD := "Slow: no road (a road doubles it)"
 
 ## Added to a held-back workshop's status when haulers stand beyond the places wanted: cutting a place with none to spare stalls the town.
 const HOLD_BACK_SPARE := " Spare haulers stand: press - on the %s's Haulers row to free one."
@@ -332,6 +333,8 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 					b["status"] = "Can't work it yet: " + teach_note(s, b)
 				elif not Roads.automated(s, b) and b["trips"] <= 0 and not Roads.self_runs(s, b):
 					b["status"] = "Waiting: click to send a trip" + road_note(s, b)
+				elif not Roads.automated(s, b) and b["trips"] <= 0:
+					b["status"] = SLOW_NO_ROAD
 				else:
 					b["status"] = "Working"
 			_:
@@ -447,6 +450,19 @@ static func idle_reason(s, b: Dictionary, def: Dictionary) -> void:
 ## The pill for a hand-run building whose inputs are all in stock: a road when haulers are known, else a click.
 static func _needs_hand(s) -> String:
 	return "Needs road" if s.tech_tree.researched.has("haulers") else "Needs a click"
+
+
+## What a building with no road link says about it once Paths & Haulers is in: a hut that works on its own (its Kith know the job) runs
+## at half speed with no road, so it says so and is not blocked ("Slow: no road (a road doubles it)"); anything else that a hauler would
+## serve says "Needs road". A road is an upgrade for a hut, never a gate (Step 9A).
+static func road_alert(s, b: Dictionary) -> void:
+	if not s.tech_tree.researched.has("haulers") or b["paused"] or Roads.linked(s, b):
+		return
+	if not (Buildings.needs_worker(b) or Data.BUILDINGS[b["type"]].get("fed", false)):
+		return
+	var a: String = b["alert"]
+	if a == "" or a.begins_with("Full") or a.begins_with("Needs") or a.begins_with(SLOW_NO_ROAD):
+		b["alert"] = SLOW_NO_ROAD if Roads.self_runs(s, b) else "Needs road"  # it still works by clicks, but no hauler serves it
 
 
 ## After Paths & Haulers, what a building with no road link needs: "" once it's linked (or before).
