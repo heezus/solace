@@ -17,6 +17,8 @@ const HEAD := ["Good", "Made / min", "Used / min", "Net / min", "In stock", "Mad
 const NO_GOAL := "The goal in front of you needs no goods."
 const HAND := "by hand %.1f"
 const PAUSE_THEM := "Pause them"
+const GOAL_FIRST := "Goal first"
+const GOAL_FIRST_TIP := "On: a workshop whose goods nothing needs holds while the goal is short of what it eats."
 
 var state
 var panel: PanelContainer
@@ -94,14 +96,18 @@ func _rebuild() -> void:
 	var title := Ui.label("%s   (F to close)" % TITLE, Ui.LABEL_TEXT)
 	title.add_theme_color_override("font_color", Ui.ACTION)
 	box.add_child(title)
+	var goal_first := CheckButton.new()
+	goal_first.text = GOAL_FIRST
+	goal_first.tooltip_text = GOAL_FIRST_TIP
+	goal_first.button_pressed = state.goal_first
+	goal_first.toggled.connect(func(on: bool) -> void: state.goal_first = on)
+	box.add_child(goal_first)
 	lights = []
 	var goal: Dictionary = Needs.goal_goods(state)
 	if goal.is_empty():
 		box.add_child(_dim(NO_GOAL))
-	for id in goal:
+	for id in Needs.goal_short(state):
 		var held := FlowView.bottleneck(state, id)
-		if state.economy.inv.get(id, 0) >= Needs.goal_need(state, id) and Needs.goal_need(state, id) > 0:
-			continue
 		var l := _dim(held["line"])
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		l.custom_minimum_size.x = PANEL_W

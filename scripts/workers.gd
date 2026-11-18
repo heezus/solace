@@ -15,6 +15,7 @@ const Hands = preload("res://scripts/hands.gd")
 const Chores = preload("res://scripts/chores.gd")
 const Bonuses = preload("res://scripts/bonuses.gd")
 const GrowthNote = preload("res://scripts/growth_note.gd")
+const GoalFirst = preload("res://scripts/goal_first.gd")
 const Steam = preload("res://scripts/steam.gd")
 const StoreRest = preload("res://scripts/store_rest.gd")
 const Power = preload("res://scripts/power.gd")
@@ -252,6 +253,9 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 		return
 	if def.has("makes"):
 		Work.choose_tool(s, b)
+	if b["paused"] and String(b.get("goal_hold", "")) != "":
+		s.town.set_status(b, b["goal_hold"], GoalFirst.PILL)
+		return
 	if b["paused"]:
 		var made := Needs.made_by(b)
 		var undo := ". Press Resume on its card%s" % ((" when you need " + made) if made != "" else "")
@@ -471,6 +475,8 @@ static func road_alert(s, b: Dictionary) -> void:
 static func road_note(s, b: Dictionary) -> String:
 	if not s.tech_tree.researched.has("haulers") or Roads.linked(s, b):
 		return ""
+	if Data.BUILDINGS[b["type"]]["kind"] == "scorcher":
+		return ""  # its crew carries the fuel in: a road is an upgrade, never a need
 	return ". Needs road: " + road_hint(s, b["pos"])
 
 

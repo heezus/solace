@@ -289,7 +289,7 @@ func test_the_deeds() -> void:
 	gen["inbuf"] = {"coal": 30}
 	gen["burn"] = 50.0
 	s.livewire.tick(s, 0.0)
-	t.check(s.town.is_powered(scorch["pos"]) and s.town.is_powered(lamp1["pos"]), "(a net reaches them)")
+	t.check(s.town.is_powered(lamp1["pos"]), "(a net reaches the lamps; the Scorcher needs none)")
 	t.check(s.gate.south_held(), "a burning Scorcher and two lit lamps in the south hold it")
 	scorch["burn"] = 0.0
 	t.check(not s.gate.south_held(), "a Scorcher that is out does not")

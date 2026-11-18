@@ -10,6 +10,7 @@ const FlowView = preload("res://scripts/flow_view.gd")
 const GoalSums = preload("res://scripts/goal_sums.gd")
 const Ledger = preload("res://tests/tools/ledger.gd")
 const Snapshot = preload("res://tests/tools/ai_snapshot.gd")
+const Needs = preload("res://scripts/needs.gd")
 const Sim = preload("res://scripts/sim.gd")
 
 var t  # the runner, tests/run_tests.gd
@@ -23,6 +24,9 @@ func run(runner) -> void:
 	test_every_gate_goal_shows_a_sum()
 	test_the_bottleneck_walks_one_step_back_to_the_input()
 	test_a_short_input_names_the_rival_maker_that_eats_it()
+	test_every_wait_reason_gives_its_own_line_not_a_guess_from_stock()
+	test_a_goal_sum_reads_the_makers_wait_state_before_the_stock()
+	test_held_up_lines_are_for_the_goals_own_goods()
 	test_a_maker_running_flat_out_with_its_ore_piling_up_says_one_more_is_short()
 	test_the_table_page_prints_the_flow_and_the_flow_move_works()
 	test_a_remembered_starfall_runs_its_story_clocks_at_forty_percent()
@@ -93,14 +97,18 @@ func test_one_more_maker_that_cannot_be_fed_says_what_is_short() -> void:
 	var s := Sim.new()
 	s.generate(5)
 	s.tech_tree.researched["pottery"] = true
-	var g := {"id": "t", "tech": "tally_sticks"}
-	for id in ["wood", "rope", "charcoal"]:
+	var g := {"id": "t", "tech": "star_charts"}
+	for id in ["bronze", "rope", "charcoal"]:
 		s.economy.inv[id] = 500
-	s.economy.inv["clay"] = 500
+	s.economy.inv["clay"] = 0
 	s.economy.inv["brick"] = 10
 	_flow(s, {"brick": [6.0, "kiln"]})
 	var line := GoalSums.line(s, g)
-	t.check(line.contains("One more Kiln won't help: "), "no Clay or Charcoal comes in to feed it: " + line)
+	t.check(line.contains("One more Kiln won't help: Clay is short"), "no Clay in the stores or on its way: " + line)
+	s.economy.inv["clay"] = 500
+	line = GoalSums.line(s, g)
+	t.check(not line.contains("is short"), "with 500 Clay in the stores it is not what is short: " + line)
+	t.check(line.contains("One more Kiln: "), "and one more Kiln helps: " + line)
 	_flow(s, {"brick": [0.0, "kiln"]})
 	line = GoalSums.line(s, g)
 	t.check(line.contains("not rising"), "a good that is not rising says so: " + line)
@@ -177,6 +185,118 @@ func test_a_maker_running_flat_out_with_its_ore_piling_up_says_one_more_is_short
 	s.economy.inv["charcoal"] = 5
 	line = FlowView.bottleneck(s, "copper")["line"]
 	t.check(line.contains("all working; add one"), "with no ore piling up it says what it did before: " + line)
+
+
+## A workshop with its buffer empty always reads "Needs Wood"; the line must come from why it still lacks it (fun playtest 6: "Copper is
+## short" with a thousand Copper in the stores, "Grain is short" when the cause was no road, and a blank name).
+func _pit_waiting(s: Sim, at: Vector2i, alert := "Needs Wood") -> Dictionary:
+	for dy in range(-1, 2):
+		for dx in range(-1, 2):
+			s.world.set_tile(at + Vector2i(dx, dy), "grass")
+	s.pathing.build()
+	s.tech_tree.researched["fire"] = true
+	s.tech_tree.researched["haulers"] = true  # a road that links a building to a depot is then what makes it run on its own
+	t.give(s, 200)
+	s.place("charcoal_pit", at)
+	s.economy.inv["wood"] = 0
+	var b: Dictionary = s.town.buildings[s.town.building_at[at]]
+	b["alert"] = alert
+	b["inbuf"] = {}
+	b["incoming"] = {}
+	return b
+
+
+func test_every_wait_reason_gives_its_own_line_not_a_guess_from_stock() -> void:
+	var s: Sim = t.fresh()
+	var camp := s.world.camp_pos
+	# a real input shortage: the stores have no Wood and none is on its way
+	var b := _pit_waiting(s, camp + Vector2i(1, 0))
+	var line: String = FlowView.bottleneck(s, "charcoal")["line"]
+	t.check(
+		line.contains("Charcoal is held by Wood: ") and not line.ends_with(": "),
+		"no Wood: names it, not blank: " + line
+	)
+	# plenty of Wood in the stores, a depot beside it, no hauler: the line is about haulers
+	s.economy.inv["wood"] = 1000
+	line = FlowView.bottleneck(s, "charcoal")["line"]
+	t.check(
+		not line.contains("held by Wood") and not line.contains("is short"),
+		"1000 Wood in stock is not the cause: " + line
+	)
+	t.check(
+		line.contains("waiting for a hauler") and line.contains("no hauler has a place"), "no hauler place: " + line
+	)
+	t.check(FlowView.cause(s, b)["code"] == "haulers", "the cause is haulers")
+	# a hauler is bringing it
+	b["incoming"] = {"wood": 4}
+	line = FlowView.bottleneck(s, "charcoal")["line"]
+	t.check(line.contains("a hauler is bringing 4 Wood"), "on the way: " + line)
+	b["incoming"] = {}
+	# a Pit with no road to a depot at all
+	var far := _pit_waiting(s, camp + Vector2i(7, 0) if camp.x < 14 else camp + Vector2i(-7, 0))
+	s.economy.inv["wood"] = 1000
+	b["alert"] = ""
+	line = FlowView.bottleneck(s, "charcoal")["line"]
+	t.check(FlowView.cause(s, far)["code"] == "road", "no road: the cause is the road")
+	t.check(line.contains("no road") and not line.contains("is short"), "no road: " + line)
+	# the pill's own words: power, hands, light, a full store
+	far["alert"] = ""
+	b["alert"] = ""
+	for case in [
+		["No power: lay a pole", "no power", "power it"],
+		["Idle: no free Kith", "no free Kith", "free a hand"],
+		[Data.LUMEN["needs_light"], "no shardlight", "light it"],
+		["Full: waiting for a hauler", "waiting for a hauler", "more hauler places"],
+	]:
+		far["alert"] = case[0]
+		line = FlowView.bottleneck(s, "charcoal")["line"]
+		t.check(line.contains(case[1]) and line.contains(case[2]), "%s: %s" % [case[0], line])
+		t.check(not line.contains("is short"), "and no guess about stock: " + line)
+
+
+## One more maker is not offered as the cure, and the input is not "short", when the maker that stands waits for something else.
+func test_a_goal_sum_reads_the_makers_wait_state_before_the_stock() -> void:
+	var s: Sim = t.fresh()
+	s.tech_tree.researched["pottery"] = true
+	var g := {"id": "t", "tech": "tally_sticks"}
+	for id in ["wood", "rope", "charcoal", "clay"]:
+		s.economy.inv[id] = 800
+	s.economy.inv["brick"] = 10
+	var at := s.world.camp_pos + Vector2i(3, 2)
+	s.town.add_building("kiln", at)
+	var k: Dictionary = s.town.buildings[s.town.building_at[at]]
+	k["alert"] = "Needs road: lay one"
+	_flow(s, {"brick": [3.0, "kiln"]})
+	var line := GoalSums.line(s, g)
+	t.check(line.contains("One more Kiln won't help: the Kilns have no road"), "a Kiln with no road: " + line)
+	t.check(not line.contains("is short"), "with 800 Clay in stock, nothing is called short: " + line)
+	k["alert"] = "Needs Clay"
+	k["inbuf"] = {}
+	s.economy.inv["clay"] = 0
+	for id in ["bronze", "rope"]:
+		s.economy.inv[id] = 500
+	line = GoalSums.line(s, {"id": "t", "tech": "star_charts"})
+	t.check(line.contains("won't help: Clay is short"), "with no Clay it is short: " + line)
+
+
+func test_held_up_lines_are_for_the_goals_own_goods() -> void:
+	var s: Sim = t.fresh()
+	s.tech_tree.researched["pottery"] = true
+	var list: Array = s.story.goal_list()
+	var at: int = s.story.current_goal()
+	t.check(at < list.size(), "a goal stands")
+	var cost := {}
+	var g: Dictionary = list[at]
+	if g.has("tech"):
+		cost = s.tech_tree.cost_of(g["tech"])
+	elif g.has("building"):
+		cost = Data.BUILDINGS[g["building"]]["cost"]
+	for id in Needs.goal_short(s):
+		t.check(cost.has(id), "%s is in the goal's own price" % id)
+		t.check(int(s.economy.inv.get(id, 0)) < int(cost[id]), "and the stores are short of it")
+	for id in cost:
+		s.economy.inv[id] = int(cost[id]) + 5
+	t.check(Needs.goal_short(s).is_empty(), "a goal whose goods are all in hand has no HELD UP line")
 
 
 ## Fun playtest 5: the table's page never printed the flow view, so the journalist never saw "at this rate" or what held a goal up.

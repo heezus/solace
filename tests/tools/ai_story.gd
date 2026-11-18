@@ -170,6 +170,11 @@ static func _wall(s) -> Array:
 		return []
 	var how := "GLYPH WALL: each mark is a drawing. Say what it means with a guess move; the Kith talk the guesses over every %d s"
 	how += " and read a set only when all of its marks hold the right word. A wrong guess costs only time. Words: %s"
+	var all_read := true
+	for n in _sets(s):
+		all_read = all_read and f.locked.has(OldShip.set_def(n)["id"])
+	if all_read:
+		return ["GLYPH WALL: every mark is read (%d sets). Nothing is left to do here." % _sets(s).size()]
 	var out: Array = [how % [int(Data.CHECK_SECONDS), ", ".join(Data.GLYPH_WORDS)]]
 	for n in _sets(s):
 		var gset: Dictionary = OldShip.set_def(n)

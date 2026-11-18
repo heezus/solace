@@ -17,6 +17,7 @@ var t  # the runner, tests/run_tests.gd
 func run(runner) -> void:
 	t = runner
 	test_the_wall_is_on_the_page_and_a_guess_reads_a_set()
+	test_a_finished_wall_is_one_line_and_the_table_knows_market_and_bridge()
 	test_a_scene_is_watched_or_skipped()
 	test_the_ending_card_opens_and_setting_out_begins_the_next_telling()
 
@@ -26,6 +27,28 @@ func _game() -> Sim:
 	var game := Sim.new()
 	game.generate(3)
 	return game
+
+
+## Fun playtest 6: a finished Wall still printed every mark on every page, and the table refused "market" and "bridge".
+func test_a_finished_wall_is_one_line_and_the_table_knows_market_and_bridge() -> void:
+	var s := _game()
+	var f = s.starfall
+	for n in f.set_order():
+		for g in f.glyph_order(n):
+			f.copied.append(g)
+		f.locked[Data.GLYPH_SETS[n]["id"]] = true
+	var page := Snapshot.text(s, 1, [], [])
+	var lines: Array = Array(page.split("\n")).filter(func(l): return l.contains("GLYPH WALL"))
+	t.check(lines.size() == 1 and "mark 1.1:" not in page, "a Wall with every set read is one line: %s" % [lines])
+	t.check(Snapshot.canon_type("market") == "lumen_market", "market means the Lumen Market")
+	t.check(
+		Snapshot.canon_type("bridge") == "bridge" and Snapshot.canon_type("Wooden Bridge") == "bridge",
+		"and bridge the bridge"
+	)
+	t.check(
+		Snapshot.canon_type("kiln") == "kiln" and Snapshot.canon_type("nonsense") == "nonsense",
+		"real ids and unknown names stand"
+	)
 
 
 func test_the_wall_is_on_the_page_and_a_guess_reads_a_set() -> void:

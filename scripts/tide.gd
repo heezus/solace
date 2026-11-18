@@ -252,7 +252,7 @@ func refresh_lights(s) -> void:
 			_diggers.append(b["pos"])
 		if def["kind"] == "lamp" and b["burn"] > 0.0:
 			_burning.append({"pos": b["pos"], "light": float(def["light"])})
-		elif def["kind"] == "scorcher" and b["burn"] > 0.0 and s.town.is_powered(b["pos"]):
+		elif def["kind"] == "scorcher" and b["burn"] > 0.0:
 			_fires.append(b["pos"])
 
 
@@ -391,10 +391,6 @@ func scorch_target(b: Dictionary) -> Vector2i:
 func tick_scorcher(s, b: Dictionary, _def: Dictionary, delta: float) -> void:
 	var id: String = b["fuel_now"]
 	var fuel: int = b["inbuf"].get(id, 0)
-	if not s.town.is_powered(b["pos"]):
-		b["status"] = Data.SCORCHER_NO_POWER
-		b["alert"] = "No power"
-		return
 	if scorch_target(b).x < 0:
 		b["status"] = nothing_in_reach(b)
 		b["progress"] = 0.0

@@ -352,7 +352,7 @@ const BUILDINGS := {
 		"job": "Miner",
 		"tech": "coal_seams",
 		"story": true,
-		"cost": {"wood": 60, "stone": 40, "brick": 40, "charcoal": 30},
+		"cost": {"wood": 60, "stone": 40, "brick": 40},
 		"in": {},
 		"out": {},
 		"dig": 2,
@@ -762,8 +762,6 @@ const BUILDINGS := {
 		"tech": "scorcher",
 		"story": true,
 		"cost": {"steel": 6, "wire": 8, "brick": 20},
-		"needs_power": true,
-		"draws": true,
 		"fed": true,
 		"fuel": true,
 		"in": {"coal": 1},
@@ -774,8 +772,8 @@ const BUILDINGS := {
 		"desc":
 		(
 			"A jet of flame on a pump. It burns the Bloom ground nearest it clear, a tile every 15 seconds within 6 tiles,"
-			+ " and 1 Coal does 4 tiles (1 Charcoal does 2). Burnt ground is never taken again. Stand it within 4 tiles"
-			+ " of a Power Pole; haulers bring the fuel, or its crew carries it in when no road reaches."
+			+ " and 1 Coal does 4 tiles (1 Charcoal does 2). Burnt ground is never taken again. It needs no power and no"
+			+ " road: stand it on any free tile, and its crew carries Coal or Charcoal in from the nearest store."
 		),
 	},
 	"firebreak":

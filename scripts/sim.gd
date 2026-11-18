@@ -23,6 +23,7 @@ const Story = preload("res://scripts/story.gd")
 const Research = preload("res://scripts/research.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Workers = preload("res://scripts/workers.gd")
+const GoalFirst = preload("res://scripts/goal_first.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Scouting = preload("res://scripts/scouting.gd")
 const Expedition = preload("res://scripts/expedition.gd")
@@ -71,9 +72,11 @@ var hauling := HaulingBlock.new()  # Hauler places: how many haulers each depot 
 var livewire := LivewireBlock.new()  # Livewire: the Power Pole nets and the Order Board's standing orders
 var tide := TideBlock.new()  # Livewire stage 2: the Bloom's creep out of the south, and what holds it back
 var gate := Gate.new(livewire, town, world, tide)  # Livewire stage 3: the Skyward gate's two deeds
+var goal_first := true  # Goal first (scripts/goal_first.gd): workshops whose goods nothing needs hold while the goal lacks their input
 var seasons := SeasonsBlock.new()  # Seasons of Strain: a pressure every few minutes and the answer to it
 var skyreach := SkyreachBlock.new()  # Step 8, Skyreach (run 2 on): the sky's sectors, landfalls and the tower
 var carry := CarryBlock.new()  # Step 7, the Exodus: what the Kith carry from earlier runs (read only; empty in a first run)
+var _goal_clock := 0.0
 
 
 ## Wire the blocks together. Every signal connection in the game is here, so it is all in one place.
@@ -324,6 +327,10 @@ func tick(delta: float) -> void:
 	livewire.tick(self, delta)
 	tide.tick(self, delta)
 	skyreach.tick(self, delta)
+	_goal_clock += delta
+	if _goal_clock >= GoalFirst.EVERY:
+		_goal_clock = 0.0
+		GoalFirst.update(self)
 	seasons.tick(self, delta)
 	sky.tick(delta)
 	starfall.tick(delta)

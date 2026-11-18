@@ -140,6 +140,7 @@ static func _game_to_dict(s) -> Dictionary:
 		"tide": s.tide.to_dict(),
 		"skyreach": s.skyreach.to_dict(),
 		"seasons": s.seasons.to_dict(),
+		"goal_first": s.goal_first,
 		"carry": s.carry.to_dict(),
 	}
 
@@ -163,5 +164,6 @@ static func _game_from_dict(s, d: Dictionary) -> void:
 	s.tide.from_dict(d.get("tide", {}))
 	s.skyreach.from_dict(d.get("skyreach", {}))
 	s.seasons.from_dict(d.get("seasons", {}))
+	s.goal_first = bool(d.get("goal_first", true))
 	s.carry.from_dict(d.get("carry", {}))  # a save from before the Exodus carries nothing
 	s.seasons.push_to_economy(s)  # the Economy eats by the season before the first tick
