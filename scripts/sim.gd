@@ -113,7 +113,7 @@ func _init() -> void:
 	carry.wire(self)  # the Exodus: what an earlier run taught costs nothing, and the eras it finished have one goal each (Step 9B)
 	starfall.carry = carry  # and its read marks show their word, its echoes open the Lumen cards
 	gate.latched = story.deed_met  # a deed met stays met
-	tech_tree.rate_lines = func(tech: String) -> Array: return RateGate.open_lines(self, tech)  # a gate's rates, as open needs
+	tech_tree.rate_lines = func(tech: String) -> Array: return RateGate.open_lines(weak.get_ref(), tech)  # a gate's rates, as open needs
 	tech_tree.set_deeds(gate.deed, gate.note)  # the Skyward gate's deeds and why one is not done (Livewire)
 
 
