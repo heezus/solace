@@ -29,7 +29,7 @@ const ROAD_ISLAND := (
 	+ "Join it to the Hearth's road (about %d tiles), or build a Storehouse beside it"
 )
 const BOXED_IN := "Boxed in by %s: no road can touch it, so nothing could ever carry for it. Move it beside open grass, forest or rock."
-const ROADABLE := ["grass", "rock", "tree", "ruins", "river"]
+const ROADABLE := ["grass", "rock", "tree", "ruins", "river", "gravel", "clay"]
 
 
 ## True when no road can ever touch a building at p: on every side the ground refuses one (flax, berries, grain, clay, ore) or

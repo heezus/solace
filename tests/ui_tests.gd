@@ -82,6 +82,7 @@ func test_card_says_what_is_missing() -> void:
 		"and another names the tech: " + CardText.locked_reason("field")
 	)
 	s.tech_tree.researched["gatherers_hut"] = true
+	s.town.add_building("gatherers_hut", s.world.camp_pos + Vector2i(1, 1))  # the first hut is free; this is the second
 	s.economy.inv.clear()
 	s.economy.inv["wood"] = 6
 	s.economy.inv["stone"] = 5
@@ -110,8 +111,8 @@ func test_card_line_always_fits() -> void:
 	var s = t.fresh()
 	s.economy.inv.clear()
 	for type in Data.BUILDINGS:
-		if Data.BUILDINGS[type]["cost"].is_empty():
-			continue
+		if Data.BUILDINGS[type]["cost"].is_empty() or s.town.price(type).is_empty():
+			continue  # nothing to pay (the first Gatherer's Hut is free)
 		s.tech_tree.researched[Data.BUILDINGS[type]["tech"]] = true
 		if Data.BUILDINGS[type].has("event"):
 			s.story.record(Data.BUILDINGS[type]["event"])  # the era after the star opens with its story

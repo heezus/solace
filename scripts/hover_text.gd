@@ -8,6 +8,7 @@ const Rules = preload("res://scripts/rules.gd")
 const Ui = preload("res://scripts/ui.gd")
 const Overlays = preload("res://scripts/overlays.gd")
 const Roads = preload("res://scripts/roads.gd")
+const RoadRoute = preload("res://scripts/road_route.gd")
 const Workers = preload("res://scripts/workers.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Hands = preload("res://scripts/hands.gd")
@@ -73,6 +74,9 @@ static func _road_preview(s, p: Vector2i) -> String:
 	var g := Roads.gap(s, p)
 	if g["to"].x < 0:
 		return "Road: linked here, haulers will carry for it."
+	var lay := RoadRoute.lay_text(RoadRoute.to_lay(s, p)["tiles"])
+	if lay != "":
+		return "Needs road: no road touches here. %s to link it." % lay
 	return "Needs road: no road touches here. Lay about %d tiles of Road to link it." % g["tiles"]
 
 

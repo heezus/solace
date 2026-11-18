@@ -18,7 +18,7 @@ static func short(s, g: Dictionary) -> Dictionary:
 	if g.has("tech"):
 		cost = s.tech_tree.cost_of(g["tech"])
 	elif g.has("building") and Data.BUILDINGS.has(g["building"]):
-		cost = Data.BUILDINGS[g["building"]]["cost"]
+		cost = s.town.price(g["building"])
 	var out := {}
 	for id in cost:
 		var lacks: int = int(cost[id]) - int(s.economy.inv.get(id, 0))

@@ -9,6 +9,8 @@ extends RefCounted
 
 const Blueprints = preload("res://scripts/blueprints.gd")
 const Data = preload("res://scripts/data.gd")
+const RoadRoute = preload("res://scripts/road_route.gd")
+const Roads = preload("res://scripts/roads.gd")
 
 const START_KITH := 10
 const GATES := ["bronze_dawn", "falling_star", "livewire", "skyward"]  # known from before, but they keep their price
@@ -28,6 +30,9 @@ const PLAN_BUTTON := "Lay the founding plan"
 const BEGIN_NOTE := "Begin, and place each building yourself"
 const PLAN_NOTE := "Every part of the old town that fits this land, each paid as it is built"
 const REMEMBERED_MARK := "Remembered: free to learn"
+const JOIN_RANGE := 30  # tiles from the Hearth the search for a way to join the plan's roads to it goes
+const MOVED_LINE := "%d parts move to the nearest ground that fits: %s"
+const LEFT_LINE := "Still to place yourself (no ground that fits within %d tiles): %s"
 const GATE_MARK := "Remembered, but a gate asks its full price"
 
 
@@ -157,7 +162,74 @@ static func lay(s) -> int:
 	var at: Vector2i = s.world.camp_pos + Vector2i(int(plan.get("ax", 0)), int(plan.get("ay", 0)))
 	var ordered := plan.duplicate()
 	ordered["items"] = _in_era_order(plan["items"])
+	var joins := join_items(s, ordered["items"], at)
+	var first := 0  # the joining roads go after the gatherers, with the other roads
+	while first < ordered["items"].size() and Data.BUILDINGS[ordered["items"][first]["t"]]["kind"] == "gatherer":
+		first += 1
+	for i in joins.size():
+		ordered["items"].insert(first + i, joins[i])
 	return Blueprints.lay_plan(s, ordered, at)
+
+
+## The road tiles that join every road of the plan (laid with its corner at `at`) to the Hearth, as plan parts: the plan's roads came from
+## a town whose roads met the Hearth where it stood, and on this land they may not (fun playtest 6: workshops sat at "Needs road" for
+## 4 minutes). A breadth-first look out from the Hearth's doorstep over the tiles a road takes (the plan's own roads cost nothing): the
+## first time it reaches a planned road not yet joined, the tiles on the way back that are not planned roads are added.
+static func join_items(s, items: Array, at: Vector2i) -> Array:
+	var roads := {}
+	var blocked := {}  # the tiles the plan puts a building or a field on
+	for part in items:
+		var p := at + Vector2i(int(part["x"]), int(part["y"]))
+		if Data.BUILDINGS[part["t"]]["kind"] in ["road", "bridge"]:
+			roads[p] = true
+		else:
+			blocked[p] = true
+	var out: Array = []
+	if roads.is_empty():
+		return out
+	var camp: Vector2i = s.world.camp_pos
+	var parent := {}
+	var todo: Array = []
+	for n in Roads.SIDES:
+		var q: Vector2i = camp + n
+		if roads.has(q) or (not blocked.has(q) and RoadRoute.takes(s, "road", q)):
+			parent[q] = camp
+			todo.append(q)
+	var joined := {}
+	var head := 0
+	while head < todo.size():
+		var p: Vector2i = todo[head]
+		head += 1
+		if roads.has(p) and not joined.has(p):
+			var t: Vector2i = p
+			while t != camp:  # the way back to the Hearth: every planned road on it is joined, every other tile is laid
+				if roads.has(t):
+					_join(roads, joined, t)
+				elif not joined.has(t):
+					joined[t] = true
+					out.append({"t": "road", "x": t.x - at.x, "y": t.y - at.y})
+				t = parent[t]
+		for n in Roads.SIDES:
+			var q: Vector2i = p + n
+			if parent.has(q) or maxi(absi(q.x - camp.x), absi(q.y - camp.y)) > JOIN_RANGE:
+				continue
+			if roads.has(q) or (not blocked.has(q) and RoadRoute.takes(s, "road", q)):
+				parent[q] = p
+				todo.append(q)
+	return out
+
+
+## Mark every planned road touching `from` (side by side, through other planned roads) as joined.
+static func _join(roads: Dictionary, joined: Dictionary, from: Vector2i) -> void:
+	var todo: Array = [from]
+	joined[from] = true
+	while not todo.is_empty():
+		var p: Vector2i = todo.pop_back()
+		for n in Roads.SIDES:
+			var q: Vector2i = p + n
+			if roads.has(q) and not joined.has(q):
+				joined[q] = true
+				todo.append(q)
 
 
 ## The lines of the new-land card: the founders, what is free, how long each remembered era took.
@@ -170,4 +242,29 @@ static func card_lines(s) -> Array:
 	for i in 5:
 		if s.carry.remembers_era(i):
 			lines.append(REMEMBER_ERAS % [ERA_NAMES[i].capitalize(), roundi(float(s.carry.last_eras[i]))])
+	lines.append_array(fit_lines(s))
 	return lines
+
+
+## What laying the founding plan on this land would do (scripts/blueprints.gd preview): the parts that move to the nearest ground that
+## fits, and a short to-place list of the ones that fit nowhere within reach. [] when there is no plan, or everything fits as it was.
+static func fit_lines(s) -> Array:
+	var lines := []
+	if not has_plan(s):
+		return lines
+	var plan: Dictionary = s.carry.founding
+	var at: Vector2i = s.world.camp_pos + Vector2i(int(plan.get("ax", 0)), int(plan.get("ay", 0)))
+	var seen: Dictionary = Blueprints.preview(s, plan["items"], at)
+	if not seen["moved"].is_empty():
+		lines.append(MOVED_LINE % [seen["moved"].size(), ", ".join(_once(seen["moved"]))])
+	if not seen["left"].is_empty():
+		lines.append(LEFT_LINE % [Blueprints.MOVE_RANGE, ", ".join(_once(seen["left"]))])
+	return lines
+
+
+static func _once(names: Array) -> Array:
+	var out := []
+	for name in names:
+		if not name in out:
+			out.append(name)
+	return out

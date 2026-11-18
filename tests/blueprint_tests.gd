@@ -21,7 +21,7 @@ func run(runner) -> void:
 	test_laying_queues_every_part_on_the_map_once()
 	test_plans_wait_for_tech_and_materials_in_order()
 	test_a_banked_blueprint_costs_a_share_and_a_fresh_one_costs_full_price()
-	test_a_part_that_can_never_go_is_dropped()
+	test_a_part_on_wrong_ground_moves_to_the_nearest_fit_and_one_with_none_is_dropped()
 	test_an_exodus_banks_the_book_and_other_endings_keep_the_old_one()
 	test_the_book_and_the_plans_survive_a_save_and_a_profile_file()
 
@@ -31,6 +31,8 @@ func _sim() -> Sim:
 	var s := Sim.new()
 	s.generate(SEED)
 	s.fog.reveal(s.world.camp_pos, 200)
+	var far := _clearing(s, 1, 1, 9)
+	s.town.add_building("gatherers_hut", far)  # the first Gatherer's Hut is free: one already stands, so a plan's hut costs its price
 	return s
 
 
@@ -194,10 +196,11 @@ func test_a_banked_blueprint_costs_a_share_and_a_fresh_one_costs_full_price() ->
 	t.check(100 - int(fresh.economy.inv["wood"]) == full_wood, "a blueprint saved this run costs full price")
 
 
-func test_a_part_that_can_never_go_is_dropped() -> void:
+func test_a_part_on_wrong_ground_moves_to_the_nearest_fit_and_one_with_none_is_dropped() -> void:
 	var s := _sim()
 	s.tech_tree.researched["haulers"] = true
 	s.economy.inv["wood"] = 20
+	s.economy.inv["stone"] = 20
 	var at := _clearing(s, 3, 2)
 	s.world.add_road(at + Vector2i(1, 0), 0)  # a road already stands in the middle
 	s.carry.blueprints = [
@@ -210,12 +213,28 @@ func test_a_part_that_can_never_go_is_dropped() -> void:
 	]
 	Blueprints.lay(s, 0, at)
 	s.tick(0.1)
-	t.check(
-		s.carry.plans.size() == 1, "the part that fits goes down and the one on a road is dropped or waits for its tech"
-	)
+	t.check(s.carry.plans.size() == 1, "the part that fits goes down and the one on a road waits for its tech")
 	s.tech_tree.researched["gatherers_hut"] = true
-	s.tick(0.1)
-	t.check(s.carry.plans.is_empty(), "a hut on a road can never go and is dropped")
+	s.tick(0.1)  # the hut's tile is a road: it moves to the nearest tile that fits
+	s.tick(0.1)  # and goes down
+	var spot := Vector2i(-1, -1)
+	for b in s.town.buildings:
+		if b["type"] == "gatherers_hut":
+			spot = b["pos"]
+	t.check(s.carry.plans.is_empty() and spot.x >= 0, "a hut on a road moves to a tile that fits and goes down")
+	t.check(
+		spot != at + Vector2i(1, 0) and maxi(absi(spot.x - at.x - 1), absi(spot.y - at.y)) <= Blueprints.MOVE_RANGE,
+		"within 6 tiles"
+	)
+	t.check(s.events.any(func(e): return str(e).begins_with("1 plans moved")), "and the log says it moved")
+	# ground that is nowhere within reach: a Coal Mine on a land with no coal seam is dropped
+	var d := _sim()
+	d.tech_tree.researched["coal_seams"] = true
+	d.carry.blueprints = [{"name": "Mine", "w": 1, "h": 1, "items": [{"t": "coal_mine", "x": 0, "y": 0}]}]
+	Blueprints.lay(d, 0, _clearing(d, 3, 2))
+	d.tick(0.1)
+	t.check(d.carry.plans.is_empty(), "a part that fits nowhere within reach is dropped")
+	t.check(d.events.any(func(e): return str(e).contains("could not go on this land")), "and the log says so")
 
 
 func test_an_exodus_banks_the_book_and_other_endings_keep_the_old_one() -> void:
