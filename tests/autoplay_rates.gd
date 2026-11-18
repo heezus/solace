@@ -29,3 +29,13 @@ static func unheld(s, gate: String) -> Array:
 		if RateGate.held(s, gate, good) < RateData.HOLD:
 			out.append(good)
 	return out
+
+
+## Once the five standing orders are written (the goal remembers it), an order that pauses a maker of a good the next gate asks a
+## rate of is left without its building: a player takes it off the Board, or the rate is never made.
+static func idle(s, order: Dictionary) -> bool:
+	return (
+		s.story.goals_done.has("orders_written")
+		and order["verb"] == "pause"
+		and RateData.asked(s.tech_tree.researched).has(order["item"])
+	)

@@ -853,6 +853,11 @@ func _write_orders() -> void:
 	var i := 0
 	while i < ORDER_PLAN.size():
 		var plan: Dictionary = ORDER_PLAN[i]
+		if AutoplayRates.idle(s, plan):  # the gate asks a rate of what this order would pause
+			if s.livewire.orders.size() > i:
+				s.livewire.orders[i]["target"] = ""
+			i += 1
+			continue
 		if s.livewire.orders.size() <= i:
 			if not s.livewire.add(s):
 				return
