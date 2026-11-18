@@ -157,6 +157,7 @@ func _process(delta: float) -> void:
 		paused = true  # the strangers are asking something: the game waits behind the card
 		moment_card.open(state.starfall)
 		SoundCues.add("ending" if state.starfall.pending == "ending" else "card")
+	messages.card_waiting(moment_card.visible or notice_card.visible or era_card.visible)  # a stopped clock says why
 	for e in state.events:
 		if e == Data.BORN_EVENT % Data.PEOPLE["one"]:
 			var at := Overlays.center(state.world.camp_pos) - Vector2(0, 12)

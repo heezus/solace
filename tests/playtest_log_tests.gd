@@ -22,6 +22,7 @@ func run(runner) -> void:
 	test_a_short_scripted_run_gives_a_log_and_fifteen_rows()
 	test_what_the_player_does_is_logged()
 	test_a_stopped_building_needs_ten_seconds()
+	test_a_hut_that_runs_counts_as_automation_while_the_player_still_gathers()
 	test_a_long_stuck_spell_misses_and_building_is_not_hand_work()
 	test_the_rows_read_a_log_by_their_rules()
 	PlaytestLog.reset()
@@ -211,6 +212,19 @@ func _ticks(from: float, count: int, fields: Dictionary) -> Array:
 		line.merge(fields, true)
 		out.append(line)
 	return out
+
+
+## Fun playtest 5: a hut ran at 2:03 and M1 read 21.6 because the player kept gathering by hand. Buildings making goods is automation.
+func test_a_hut_that_runs_counts_as_automation_while_the_player_still_gathers() -> void:
+	var entries: Array = [{"k": "run", "m": 0.0, "telling": 1}, {"k": "era", "m": 0.0, "era": 1}]
+	entries.append_array(_ticks(2.0, 14, {"made": 3.0, "hand": 2.0}))
+	var by := {}
+	for r in PlaytestSummary.rows(entries):
+		by[r["id"]] = r
+	t.check(
+		by[1]["verdict"] == "PASS" and by[1]["result"].begins_with("1.8 min"),
+		"M1 reads the 2 minutes the hut ran (%s)" % by[1]["result"]
+	)
 
 
 func test_a_long_stuck_spell_misses_and_building_is_not_hand_work() -> void:

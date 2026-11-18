@@ -31,6 +31,7 @@ func run(runner, helpers) -> void:
 	test_the_ground_changes_under_the_bloom()
 	test_buildings_are_overgrown_then_lost()
 	test_an_arc_lamp_holds_it_off()
+	test_a_scorcher_stands_four_tiles_from_a_pole_and_needs_no_road()
 	test_a_scorcher_burns_it_clear()
 	test_a_scorcher_reaches_past_a_lamps_light()
 	test_engines_and_scorchers_take_coal_or_charcoal()
@@ -411,6 +412,36 @@ func test_a_scorcher_reaches_past_a_lamps_light() -> void:
 	t.check(s.tide.scorch_target(scorcher).x < 0, "and ground past the reach is not")
 
 
+## Fun playtest 5: a Scorcher needed a free tile within 2 of a pole and a road, and the tide took the tile first. It stands up to 4 tiles
+## from a pole, and with no road its crew carries the coal in.
+func test_a_scorcher_stands_four_tiles_from_a_pole_and_needs_no_road() -> void:
+	var s := quiet()
+	var c: Vector2i = base.meadow(s)
+	powered(s, c)
+	var scorcher := put(s, "scorcher", c + Vector2i(4, 0))
+	scorcher["fuel"] = "coal"
+	scorcher["fuel_now"] = "coal"
+	s.livewire.tick(s, 0.0)
+	t.check(s.town.is_powered(scorcher["pos"]), "four tiles from the pole is on its net")
+	var far := put(s, "scorcher", c + Vector2i(5, 3))
+	s.livewire.tick(s, 0.0)
+	t.check(
+		not s.town.is_powered(far["pos"]),
+		"past four it is not (%s tiles)" % Vector2(far["pos"]).distance_to(Vector2(c))
+	)
+	s.economy.inv["coal"] = 20
+	var q := c + Vector2i(6, 1)
+	s.tide.grown[q] = true
+	s.world.set_tile(q, Data.TILE_BLOOM_TIDE)
+	s.tide.rev += 1
+	tick_for(s, 3.0)
+	t.check(
+		scorcher["burn"] > 0.0 or scorcher["inbuf"].get("coal", 0) > 0, "no road, and its crew still carried Coal in"
+	)
+	t.check(scorcher["alert"] != "Needs road", "and it does not say it needs a road: %s" % scorcher["alert"])
+	t.check(s.economy.inv["coal"] < 20, "the Coal came from the stores")
+
+
 func test_a_scorcher_burns_it_clear() -> void:
 	var s := quiet()
 	var c: Vector2i = base.meadow(s)
@@ -512,6 +543,8 @@ func test_engines_and_scorchers_take_coal_or_charcoal() -> void:
 		sc["fuel"] = fuel
 		sc["fuel_now"] = fuel
 		sc["inbuf"] = {fuel: 1}
+		f.economy.inv["coal"] = 0  # the stores hold none: no crew carries more in
+		f.economy.inv["charcoal"] = 0
 		for i in 6:
 			var q := fc + Vector2i(2 + i % 3, 2 + floori(i / 3.0))
 			f.tide.grown[q] = true

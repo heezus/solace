@@ -460,6 +460,8 @@ static func road_alert(s, b: Dictionary) -> void:
 		return
 	if not (Buildings.needs_worker(b) or Data.BUILDINGS[b["type"]].get("fed", false)):
 		return
+	if Data.BUILDINGS[b["type"]]["kind"] == "scorcher":
+		return  # its crew carries the fuel in by hand: a road is an upgrade (Steam._hand_feed)
 	var a: String = b["alert"]
 	if a == "" or a.begins_with("Full") or a.begins_with("Needs") or a.begins_with(SLOW_NO_ROAD):
 		b["alert"] = SLOW_NO_ROAD if Roads.self_runs(s, b) else "Needs road"  # it still works by clicks, but no hauler serves it

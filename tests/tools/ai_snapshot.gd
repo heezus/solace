@@ -117,6 +117,7 @@ static func era_name(s) -> String:
 static func text(s, n: int, told: Array, refused: Array) -> String:
 	var out: Array = []
 	out.append("DECISION %d · game time %s · %s" % [n, _clock(s.seasons.time), era_name(s)])
+	out.append_array(_cards(s))  # a card that waits is the first thing on the page: the clock is stopped for it
 	var goals: Array = s.story.goal_list()
 	var at: int = s.story.current_goal()
 	out.append(
@@ -133,7 +134,6 @@ static func text(s, n: int, told: Array, refused: Array) -> String:
 		if chore != "":
 			out.append("A MACHINE FOR IT: " + chore)
 	out.append_array(AiFlow.lines(s))
-	out.append_array(_cards(s))
 	out.append_array(AiStory.lines(s))
 	out.append_array(AiPost.lines(s))
 	var look := _look_east(s)
@@ -452,21 +452,30 @@ static func _cards(s) -> Array:
 		for i in options.size():
 			labels.append("%d = %s" % [i, options[i]["label"]])
 		var title: String = s.starfall.pending_card()["title"] if s.starfall.pending != "ending" else "The end"
-		out.append("CARD WAITING (moment): %s. Answer with a moment move: %s" % [title, ", ".join(labels)])
+		out.append(
+			(
+				"CARD WAITING (moment, the game is paused until you answer): %s. Answer with a moment move: %s"
+				% [title, ", ".join(labels)]
+			)
+		)
 	if s.seasons.phase == "pending":
 		var def: Dictionary = Data.SEASONS[s.seasons.kind]
 		var labels: Array = []
 		for i in def["options"].size():
 			labels.append("%d = %s (%s)" % [i, def["options"][i]["label"], def["options"][i]["note"]])
-		out.append(
-			(
-				"CARD WAITING (season, answers itself with 0 after %d s): %s. %s Options: %s"
-				% [
-					int(Data.SEASON_AUTO),
-					def["title"],
-					def["text"] % [Data.SEASON_LENGTH, Data.PEOPLE["many"]],
-					"; ".join(labels)
-				]
+		(
+			out
+			. append(
+				(
+					"CARD WAITING (season, the game is paused for it; left unanswered it takes option %d after %d s): %s. %s Options: %s"
+					% [
+						s.seasons.cheapest(s),
+						int(Data.SEASON_AUTO),
+						def["title"],
+						def["text"] % [Data.SEASON_LENGTH, Data.PEOPLE["many"]],
+						"; ".join(labels)
+					]
+				)
 			)
 		)
 	elif s.seasons.phase == "active":

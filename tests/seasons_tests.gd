@@ -24,6 +24,7 @@ func run(runner) -> void:
 	test_each_era_adds_kinds_and_no_kind_comes_before_its_era()
 	test_what_a_season_takes_is_counted_told_and_floated()
 	test_a_season_is_remembered_by_a_save()
+	test_a_card_nobody_answers_takes_the_answer_that_costs_the_fewest_goods()
 
 
 func _run(s: Sim, seconds: float) -> void:
@@ -153,6 +154,20 @@ func test_a_cold_snap_burns_fuel_or_slows_the_workshops() -> void:
 	t.place_free(s2, "charcoal_pit", kiln)
 	var b: Dictionary = s2.town.buildings[s2.town.building_at[kiln]]
 	t.check(s2.seasons.speed_factor(s2, b) == Data.HUDDLE_PACE, "but a workshop works at four fifths")
+
+
+## Fun playtest 5: a Surge card that answered itself with "let it come" cost about 200 goods; the cheaper answer cost 20 Coal.
+func test_a_card_nobody_answers_takes_the_answer_that_costs_the_fewest_goods() -> void:
+	var s: Sim = t.fresh()
+	for id in ["wood", "grain", "fiber", "stone", "clay", "berries"]:
+		s.economy.inv[id] = 200
+	s.economy.inv["coal"] = 30
+	s.seasons.kind = "surge"
+	s.seasons.phase = "pending"
+	t.check(s.seasons.cheapest(s) == 1, "holding it back (20 Coal) beats losing a fifth of 1200 raw goods")
+	s.seasons.tick(s, Data.SEASON_AUTO + 1.0)
+	t.check(s.seasons.phase == "active" and s.seasons.answer == 1, "and the unanswered card takes it")
+	t.check(s.economy.inv["coal"] == 10 and s.economy.inv["wood"] == 200, "the Coal is paid, the Wood kept")
 
 
 func test_a_bloom_surge_runs_the_tide_or_costs_coal() -> void:

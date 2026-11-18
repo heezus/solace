@@ -7,6 +7,7 @@ extends RefCounted
 ## Pure functions of the game state.
 
 const Bonuses = preload("res://scripts/bonuses.gd")
+const CardText = preload("res://scripts/card_text.gd")
 const Data = preload("res://scripts/data.gd")
 const Power = preload("res://scripts/power.gd")
 
@@ -205,6 +206,85 @@ static func goal_note(s, g: Dictionary) -> String:
 				"The %s needs %d %s. %s"
 				% [Data.BUILDINGS[type]["name"], Data.BUILDINGS[type]["cost"][id], Data.ITEMS[id]["name"], line]
 			)
+	return ""
+
+
+## When goal `g` lacks a raw good whose ground the Kin have not found ("No Clay found yet. The nearest fog that hides it lies east
+## (12 tiles); an expedition or a road reveals it."), "" when every good it lacks has its ground in sight or is made by a workshop
+## (fun playtest 5: clay hid in fog and the goal never said so).
+static func fog_note(s, g: Dictionary) -> String:
+	var cost := {}
+	if g.has("tech"):
+		cost = s.tech_tree.cost_of(g["tech"])
+	elif g.has("building") and Data.BUILDINGS.has(g["building"]):
+		cost = Data.BUILDINGS[g["building"]]["cost"]
+	var wanted := {}
+	for id in cost:
+		if int(s.economy.inv.get(id, 0)) < int(cost[id]):
+			_down(id, wanted)
+	for id in wanted:
+		if not makers_of(id).is_empty() or int(s.economy.inv.get(id, 0)) > 0:
+			continue
+		var line := _fog_line(s, id)
+		if line != "":
+			return line
+	return ""
+
+
+static func _fog_line(s, item: String) -> String:
+	var kinds: Array = []
+	for t in Data.TILES:
+		if Data.TILES[t]["yields"] == item:
+			kinds.append(t)
+	if kinds.is_empty():
+		return ""
+	var best := Vector2i(-1, -1)
+	var best_d := INF
+	for y in s.world.height:
+		for x in s.world.width:
+			var p := Vector2i(x, y)
+			if not s.world.tile_at(p) in kinds:
+				continue
+			if s.fog.is_revealed(p):
+				return ""  # its ground is in sight: the hint is not needed
+			var d := Vector2(p).distance_to(Vector2(s.world.camp_pos))
+			if d < best_d:
+				best = p
+				best_d = d
+	var name: String = Data.ITEMS[item]["name"]
+	if best.x < 0:
+		return ""  # no such ground on the land the Kin have: the Look east button says where more lies
+	return (
+		"No %s found yet. The nearest fog that hides it lies %s (%d tiles); an expedition or a road reveals it."
+		% [name, CardText.compass(Vector2(best - s.world.camp_pos)), roundi(best_d)]
+	)
+
+
+## What stands between the Kin and the Warning (the Starfall's gate, "Reach the Warning"), first step first: the Glyph Wall it is read
+## on, the Lumen Ward the strangers wait for, their questions, and the marks set right. "" once all are done (fun playtest 5: this goal
+## named no building, and 13 minutes went on a Glyph Wall that was never built).
+static func warning_note(s) -> String:
+	var sf = s.starfall
+	if sf.ended:
+		return ""
+	if not sf.has_building("glyph_wall"):
+		var why := goal_note(s, {"building": "glyph_wall"})
+		return (
+			"The Warning is read on the Glyph Wall: build one. " + why
+			if why != ""
+			else "The Warning is read on the Glyph Wall: build one (Workshops tab)."
+		)
+	if not sf.ward_stands():
+		var why := goal_note(s, {"building": "lumen_ward"})
+		return (
+			"The strangers will not speak the Warning before a Lumen Ward stands: build one. " + why
+			if why != ""
+			else "The strangers will not speak the Warning before a Lumen Ward stands: build one."
+		)
+	if sf.questions_left() > 0:
+		return "The strangers still have %d questions: answer their cards." % sf.questions_left()
+	if not sf.warning_right():
+		return "Set the Warning's marks on the Glyph Wall: each mark's word is guessed there."
 	return ""
 
 
