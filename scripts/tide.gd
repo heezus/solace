@@ -421,7 +421,7 @@ func tick_scorcher(s, b: Dictionary, _def: Dictionary, delta: float) -> void:
 			b["trips"] = b["trips"] + 1  # the tiles it has cleared: shown on its card
 
 
-## "Nothing in reach yet: the front is N tiles away": how far the nearest Bloom ground lies from Scorcher `b`.
+## "Ready: no Bloom in reach (the front is N tiles away)": how far the nearest Bloom ground lies from Scorcher `b`.
 func nothing_in_reach(b: Dictionary) -> String:
 	var best := -1
 	for p in grown:

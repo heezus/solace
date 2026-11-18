@@ -42,6 +42,7 @@ var _spill_seen := 0  # Economy.spilled at the last reading (it is not saved, so
 var _depots_at := 0.0  # era seconds of the last depot reading
 var _town_at := 0.0  # era seconds of the last reading of the jobs
 var _zero_at := -1000.0  # era seconds of the last note on why the power stood at zero
+var _goals_at := -60.0  # era seconds of the last minute reading of the stores
 var _goals_timed := {}  # goal id -> true once its minute is in the row's "goal_minutes"
 
 
@@ -60,6 +61,7 @@ func begin(name: String, s) -> void:
 	_spill_of_seen = s.economy.spilled_of.duplicate()
 	_depots_at = 0.0
 	_goals_timed.clear()
+	_goals_at = -60.0
 	_town_at = 0.0
 	_zero_at = -1000.0
 	ledger.begin(name, s)
@@ -114,9 +116,11 @@ func begin(name: String, s) -> void:
 		"wood_short_s": 0.0,
 		"research_wait_head_s": 0.0,  # seconds the head of the research queue had its requirements and not its materials
 		"research_wait_all_s": 0.0,  # seconds the queue was not empty and nothing in it could be paid for yet
+		"research_blocked_by": {},  # seconds the head of the queue stood with a requirement open, by "tech: what is open"
 		"research_wait_by": {},  # the same head seconds, by tech
 		"depots_every_5_min": [],
 		"town_every_5_min": [],
+		"stores_every_min": [],  # each minute: the metal goods in the stores, and the Crucibles and Wire Mills [standing, paused]
 		"goal_minutes": [],  # [goal id, era minute it was met], in the order they were met
 	}
 	if name == "ironfall" or name == "livewire":
@@ -278,12 +282,31 @@ func _sample(s) -> void:
 			_row["spilled_by_good"][id] = _row["spilled_by_good"].get(id, 0) + more
 	_spill_of_seen = s.economy.spilled_of.duplicate()
 	var t: float = s.seasons.time - _at
+	if t - _goals_at >= 60.0:
+		_goals_at = t
+		_row["stores_every_min"].append(_stores(s, t))
 	if t - _depots_at >= DEPOTS_EVERY:
 		_depots_at = t
 		_row["depots_every_5_min"].append({"minute": snappedf(t / 60.0, 0.1), "depots": _depots(s)})
 	if t - _town_at >= DEPOTS_EVERY:
 		_town_at = t
 		_row["town_every_5_min"].append(_town(s, t))
+
+
+## The minute's reading of the metal goods, and how many Crucibles and Wire Mills stand and how many of those are paused.
+func _stores(s, t: float) -> Dictionary:
+	var row := {"minute": snappedf(t / 60.0, 0.1)}
+	for id in ["copper_ore", "copper", "tin", "bronze", "wire", "iron", "steel"]:
+		row[id] = int(s.economy.inv.get(id, 0))
+	for type in ["crucible", "wire_mill"]:
+		var n := 0
+		var paused := 0
+		for b in s.town.buildings:
+			if b["type"] == type:
+				n += 1
+				paused += 1 if b["paused"] else 0
+		row[type] = [n, paused]
+	return row
 
 
 ## Where the jobs stand: the Kith by what they do, the work places and the ones filled, the buildings that need a worker by type as
@@ -321,6 +344,12 @@ func _research_wait(s) -> void:
 		return
 	var head: String = tt.queue[0]
 	var head_waits: bool = tt.requirements_met(head) and not s.economy.can_afford(tt.cost_of(head))
+	if not head_waits and not tt.requirements_met(head):
+		var why := ", ".join(
+			tt.open_needs(head) + Data.TECHS[head]["requires"].filter(func(r): return not tt.researched.has(r))
+		)
+		var key := "%s: %s" % [head, why]
+		_row["research_blocked_by"][key] = _row["research_blocked_by"].get(key, 0.0) + SAMPLE
 	if head_waits:
 		_row["research_wait_head_s"] += SAMPLE
 		_row["research_wait_by"][head] = _row["research_wait_by"].get(head, 0.0) + SAMPLE

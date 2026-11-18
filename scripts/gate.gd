@@ -5,6 +5,7 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 
+var latched: Callable = func(_id): return false  # (String) -> bool: has that deed been met before? Set by the owner (Story.deed_met)
 var _livewire  # the Order Board's orders
 var _town  # the buildings and what is powered
 var _world  # where the Hearth is
@@ -18,8 +19,15 @@ func _init(livewire, town, world, tide) -> void:
 	_tide = tide
 
 
-## True when the deed `id` (Data.DEED_NAMES) is done now.
+## True when the deed `id` (Data.DEED_NAMES) is done: it latches. Once the goal that names it has ticked (the Story ticks it the moment
+## the deed is met) it stays done, so a Scorcher with no Bloom in reach, or a lamp the Bloom takes later, never costs the player a deed
+## they have met (fun playtest 5: Livewire waited 29 min on a Scorcher that had nothing to burn).
 func deed(id: String) -> bool:
+	return latched.call(id) or live(id)
+
+
+## True when the deed `id` is met at this moment (the latch aside).
+func live(id: String) -> bool:
 	match id:
 		"orders_written":
 			return orders_written() >= Data.DEED_ORDERS
@@ -51,12 +59,13 @@ func south_held() -> bool:
 ## Why the deed `id` is not done, in a few words ("1 of 2 Arc Lamps lit, Scorcher unpowered"); "" when it is done or has no reason
 ## to give.
 func note(id: String) -> String:
-	if id != "south_held" or south_held():
+	if id != "south_held" or deed(id):
 		return ""
 	var lamps := 0
 	var scorchers := 0
 	var powered := 0
 	var scorching := false
+	var waiting := false  # a powered Scorcher with no Bloom ground in reach: ready, not failing
 	for b in _town.buildings:
 		if not in_south(b["pos"]):
 			continue
@@ -67,6 +76,7 @@ func note(id: String) -> String:
 			scorchers += 1
 			powered += 1 if _town.is_powered(b["pos"]) else 0
 			scorching = scorching or (_town.is_powered(b["pos"]) and b["burn"] > 0.0)
+			waiting = waiting or (_town.is_powered(b["pos"]) and b["burn"] <= 0.0 and _tide.scorch_target(b).x < 0)
 	var parts: Array = [Data.SOUTH_LINES["lamps"] % [mini(lamps, Data.DEED_LAMPS), Data.DEED_LAMPS]]
 	if scorching:
 		return ", ".join(parts)
@@ -74,6 +84,8 @@ func note(id: String) -> String:
 		parts.append(Data.SOUTH_LINES["no_scorcher"])
 	elif powered == 0:
 		parts.append(Data.SOUTH_LINES["unpowered"])
+	elif waiting:
+		parts.append(Data.SOUTH_LINES["ready"])
 	else:
 		parts.append(Data.SOUTH_LINES["cold"])
 	return ", ".join(parts)

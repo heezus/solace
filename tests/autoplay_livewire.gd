@@ -320,7 +320,7 @@ func _chain_goal(target: Vector2i) -> Vector2i:
 
 ## True when Skyward is the only thing left and the south, which the gate asks to be held when it is bought, is not.
 func _rehold_due() -> bool:
-	if not _livewire_open() or s.tech_tree.researched.has(SKYWARD) or s.gate.south_held():
+	if not _livewire_open() or s.tech_tree.researched.has(SKYWARD) or s.gate.deed("south_held"):
 		return false
 	for tech in Data.TECHS[SKYWARD]["requires"]:
 		if not s.tech_tree.researched.has(tech):

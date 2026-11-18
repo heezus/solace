@@ -109,6 +109,7 @@ func _init() -> void:
 	tech_tree.lesson_has = teardown.knows
 	carry.wire(self)  # the Exodus: what an earlier run taught costs nothing, and the eras it finished have one goal each (Step 9B)
 	starfall.carry = carry  # and its read marks show their word, its echoes open the Lumen cards
+	gate.latched = story.deed_met  # a deed met stays met
 	tech_tree.set_deeds(gate.deed, gate.note)  # the Skyward gate's deeds and why one is not done (Livewire)
 
 
@@ -353,12 +354,4 @@ func tick(delta: float) -> void:
 		town.tick_timers(b, delta)
 		Homes.tick(self, b, delta)
 		Workers.tick_building(self, b, delta, fed)
-		if (
-			tech_tree.researched.has("haulers")
-			and (Buildings.needs_worker(b) or Data.BUILDINGS[b["type"]].get("fed", false))
-			and not b["paused"]
-			and not Roads.linked(self, b)
-		):
-			var a: String = b["alert"]
-			if a == "" or a.begins_with("Full") or a.begins_with("Needs"):
-				b["alert"] = "Needs road"  # it still works by clicks, but no hauler serves it
+		Workers.road_alert(self, b)

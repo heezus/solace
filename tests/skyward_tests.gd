@@ -28,7 +28,8 @@ func run(runner, helpers) -> void:
 	test_chain_orders_save_and_tear_up()
 	test_the_deeds()
 	test_the_gate_ends_the_age()
-	test_the_south_goal_is_live()
+	test_the_south_goal_latches_once_held()
+	test_no_gate_deed_flips_from_met_to_unmet()
 	test_the_goals()
 	test_the_panels()
 
@@ -309,7 +310,7 @@ func test_the_deeds() -> void:
 	t.check(s.tech_tree.can_research("skyward") == s.gate.deed("south_held"), "Skyward waits on the deeds")
 
 
-func test_the_south_goal_is_live() -> void:
+func test_the_south_goal_latches_once_held() -> void:
 	var s := town()
 	base.meadow(s, 8)
 	var south: Vector2i = s.world.camp_pos + Vector2i(0, Data.SOUTH_ROWS_BELOW_HEARTH + 2)
@@ -326,25 +327,35 @@ func test_the_south_goal_is_live() -> void:
 	for g in Data.GOALS_ERA5:
 		if g["id"] == "south_held":
 			goal = g
-	s.story.update(s)
+	t.check(s.story.goal_text(goal) == goal["text"], "its words are plain while nothing is said")
+	scorch["burn"] = 0.0
 	t.check(
-		s.story.goals_done.has("south_held") and not s.events.has(Data.SOUTH_LINES["lost"]),
-		"held, the goal ticks and nothing is said"
+		s.gate.note("south_held").ends_with("Scorcher ready, no Bloom in reach to burn"),
+		"an idle Scorcher is ready: " + s.gate.note("south_held")
 	)
-	t.check(s.story.goal_text(goal) == goal["text"], "and its words are plain")
+	scorch["burn"] = 5.0
 	s.tide.hit[lamp1["pos"]] = 5.0
 	s.story.update(s)
-	t.check(not s.story.goals_done.has("south_held"), "a lamp the Bloom darkens un-ticks the goal")
-	var lost: String = Data.SOUTH_LINES["lost"] % "1 of 2 Arc Lamps lit"
-	t.check(s.events.has(lost), "and the log says why: %s" % [s.events])
-	t.check(Messages.style_of(lost)["key"] == "south", "in a toast of its own")
+	t.check(not s.story.goals_done.has("south_held"), "a lamp the Bloom has darkened: not held, not ticked")
 	t.check(
-		s.story.goal_text(goal).ends_with("(lost: 1 of 2 Arc Lamps lit)"),
-		"the goal says it: %s" % s.story.goal_text(goal)
+		s.story.goal_text(goal).ends_with("(now: 1 of 2 Arc Lamps lit)"),
+		"the goal says why: %s" % s.story.goal_text(goal)
 	)
-	s.events.clear()
+	s.tide.hit.erase(lamp1["pos"])
 	s.story.update(s)
-	t.check(s.events.is_empty(), "the toast comes once")
+	t.check(
+		s.story.goals_done.has("south_held") and s.gate.deed("south_held"), "lit, the goal ticks and the deed is done"
+	)
+	# beating the Bloom early costs nothing: the Scorcher goes out, a lamp is taken, the deed stays
+	scorch["burn"] = 0.0
+	s.tide.hit[lamp1["pos"]] = 5.0
+	s.story.update(s)
+	t.check(not s.gate.south_held(), "the south is not held at this moment")
+	t.check(s.gate.deed("south_held") and s.story.goals_done.has("south_held"), "but the deed and the goal stay met")
+	t.check(s.gate.note("south_held") == "", "and nothing is said against it")
+	s.town.remove_at(s.town.building_at[scorch["pos"]])
+	s.story.update(s)
+	t.check(s.gate.deed("south_held"), "even with the Scorcher gone")
 	for id in ["factory_floor", "scorcher", "chain_orders", "shard_dynamo"]:
 		s.tech_tree.researched[id] = true
 	for id in ["steel", "iron", "wire", "brick"]:
@@ -354,27 +365,57 @@ func test_the_south_goal_is_live() -> void:
 	for i in 5:
 		s.livewire.add(s)
 		s.livewire.orders[i]["target"] = "forge"
-	t.check(not s.tech_tree.can_research("skyward"), "the gate refuses while the south is not held")
-	var needs: String = " ".join(s.tech_tree.open_needs("skyward"))
-	t.check(needs.contains("1 of 2 Arc Lamps lit"), "the gate's card names it: %s" % needs)
-	scorch["burn"] = 0.0
-	var cold: String = s.gate.note("south_held")
-	t.check(cold == "1 of 2 Arc Lamps lit, Scorcher not burning", "a cold Scorcher is named: " + cold)
-	scorch["burn"] = 5.0
-	s.tide.hit.erase(lamp1["pos"])
-	s.story.update(s)
-	t.check(
-		s.story.goals_done.has("south_held") and s.events.has(Data.SOUTH_LINES["held"]),
-		"lit again, it ticks and says so"
-	)
-	t.check(s.gate.note("south_held") == "", "with nothing to give")
 	t.check(s.tech_tree.can_research("skyward"), "and the gate opens")
-	s.town.remove_at(s.town.building_at[scorch["pos"]])
-	s.story.update(s)
-	t.check(s.gate.note("south_held").ends_with("no Scorcher"), "no Scorcher is named: " + s.gate.note("south_held"))
 	s.tech_tree.researched["skyward"] = true
 	s.story.update(s)
-	t.check(s.story.goals_done.has("south_held") == false, "once the gate is bought the goal is left alone")
+	t.check(s.story.goals_done.has("south_held"), "once the gate is bought the goal is left alone")
+
+
+## Fun playtest 5: no gate deed flips from met to unmet. Every deed any tech asks for is met, then broken, and is still met.
+func test_no_gate_deed_flips_from_met_to_unmet() -> void:
+	var asked := {}
+	for id in Data.TECHS:
+		for d in Data.TECHS[id].get("deeds", []):
+			asked[d] = true
+	t.check(
+		asked.size() == 2 and asked.has("orders_written") and asked.has("south_held"),
+		"the deeds asked: " + str(asked.keys())
+	)
+	var s := town()
+	s.tech_tree.researched["chain_orders"] = true
+	base.meadow(s, 8)
+	var south: Vector2i = s.world.camp_pos + Vector2i(0, Data.SOUTH_ROWS_BELOW_HEARTH + 2)
+	var scorch: Dictionary = base.put(s, "scorcher", south)
+	base.put(s, "arc_lamp", south + Vector2i(1, 0))
+	base.put(s, "arc_lamp", south + Vector2i(-1, 0))
+	scorch["burn"] = 5.0
+	base.put(s, "power_pole", south + Vector2i(0, 1))
+	var gen: Dictionary = base.put(s, "generator", south + Vector2i(0, 3))
+	gen["inbuf"] = {"coal": 30}
+	gen["burn"] = 50.0
+	base.put(s, "order_board", s.world.camp_pos + Vector2i(0, 2))
+	for i in 5:
+		s.livewire.add(s)
+		s.livewire.orders[i]["target"] = "forge"
+	s.livewire.tick(s, 0.0)
+	s.story.update(s)
+	for d in asked:
+		t.check(s.gate.deed(d), "%s is met" % d)
+	# break everything each one reads
+	scorch["burn"] = 0.0
+	s.town.remove_at(s.town.building_at[scorch["pos"]])
+	for o in s.livewire.orders:
+		o["target"] = ""
+	s.livewire.tick(s, 0.0)
+	s.story.update(s)
+	for d in asked:
+		t.check(not s.gate.live(d), "%s is broken at this moment" % d)
+		t.check(s.gate.deed(d), "%s is still met" % d)
+	# no goal of any era un-ticks either
+	for g in s.story.goal_list():
+		if s.story.goals_done.has(g["id"]):
+			s.story.update(s)
+			t.check(s.story.goals_done.has(g["id"]), "goal %s stays ticked" % g["id"])
 
 
 func test_the_gate_ends_the_age() -> void:

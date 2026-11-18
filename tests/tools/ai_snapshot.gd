@@ -11,6 +11,7 @@ const Fuel = preload("res://scripts/fuel.gd")
 const WaitWhy = preload("res://scripts/wait_why.gd")
 const TradeFloor = preload("res://scripts/trade_floor.gd")
 const Chain = preload("res://scripts/chain.gd")
+const AiFlow = preload("res://tests/tools/ai_flow.gd")
 const AiPost = preload("res://tests/tools/ai_post.gd")
 const Chores = preload("res://scripts/chores.gd")
 const GrowthNote = preload("res://scripts/growth_note.gd")
@@ -53,6 +54,8 @@ const HELP := """MOVES: write moves_<n>.json, a list. Each move is one of
   {"do":"build","type":"gatherers_hut","x":3,"y":4}  add "focus":"wood" for a hut's item; a road or field goes down one tile at a time
   {"do":"line","type":"road","from":[3,4],"to":[9,4]}   drag a line of roads (or rails, fields...): along x first, then along y
   {"do":"click","x":3,"y":4}                       click a building as a player does (a road-less hut sends its trips)
+  {"do":"flow"}                                    list every good's made and used a minute on the next page (the Flow view)
+                                                   add "pause_them":true to press the "Pause them" button a HELD UP line offers
   {"do":"look_east"}                               press the Look east button the page shows (its LOOK EAST line)
   {"do":"pause","x":3,"y":4,"on":false}            pause or resume the building standing at that spot (use its listed position)
   {"do":"focus","x":3,"y":4,"item":"wood"}         point a gatherer's hut at another item in its reach
@@ -129,6 +132,7 @@ static func text(s, n: int, told: Array, refused: Array) -> String:
 		var chore: String = Chores.note(s)
 		if chore != "":
 			out.append("A MACHINE FOR IT: " + chore)
+	out.append_array(AiFlow.lines(s))
 	out.append_array(_cards(s))
 	out.append_array(AiStory.lines(s))
 	out.append_array(AiPost.lines(s))
@@ -162,6 +166,11 @@ static func apply(s, moves: Array) -> Array:
 		match str(m.get("do", "")):
 			"expedition", "bench", "floor":
 				var why := AiPost.move(s, m)
+				if why != "":
+					refused.append("%s (%s)" % [JSON.stringify(m), why])
+				continue
+			"flow":
+				var why := AiFlow.move(s, m)
 				if why != "":
 					refused.append("%s (%s)" % [JSON.stringify(m), why])
 				continue
