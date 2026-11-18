@@ -672,10 +672,9 @@ func _reserved(_id: String) -> bool:
 
 
 ## Pause workshops whose goods pile up unneeded (and so stop eating their inputs), or that eat what
-## the next Dwelling needs; resume them after.
+## the next Dwelling or tech needs (a Crucible eats the Copper a tech pays in, so that goes to the tech); resume them after.
 func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
 	var saving := {}
-	# Raw and made goods the next tech pays in directly go to it, not into a workshop (a Crucible eats the Copper a tech needs).
 	var next: String = s.tech_tree.queue[0] if not s.tech_tree.queue.is_empty() else ""
 	if next != "":
 		var cost: Dictionary = Data.TECHS[next]["cost"]
@@ -735,8 +734,9 @@ func _pause_surplus(short: Dictionary, later: Dictionary) -> void:
 		var surplus: bool = (
 			_rest_at_cap() and s.economy.inv.get(made, 0) >= later.get(made, 0) + 10 and not short.has(made) and room
 		)
+		var piled: bool = made == "bronze" and s.economy.inv[made] >= later.get(made, 0) + 10 and not short.has(made)
 		for id in def["in"]:
-			if saving.has(id) and (births.no_hut(self, id) or births.may_save(self, room, saved, idle_est)):
+			if saving.has(id) and (piled or births.no_hut(self, id) or births.may_save(self, room, saved, idle_est)):
 				surplus = true
 				saved += 1
 		if needs_hand and Buildings.is_staffed(b):
