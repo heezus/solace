@@ -281,7 +281,7 @@ func _init() -> void:
 
 ## A headless player (tests/autoplay_bronze.gd) plays the stone age on a few maps. It should reach Bronze Dawn
 ## in 8 to 25 simulated minutes; data.gd is tuned so it takes about 12 to 16. The game at that moment must match
-## tests/golden.json. It then plays on to its first Bronze, which should come 4 to 19 minutes later (the bot builds the Bronze Dawn rates early, so the chain is already running) (the target is about
+## tests/golden.json. It then plays on to its first Bronze, which should come 4 to 19 minutes later (the rates are built early) (the target is about
 ## 10 to 14; chained neighbours run by haulers add a couple of minutes, see the decision log), and the game at that
 ## moment must match tests/golden_bronze.json. The Falling Star follows 7 to 36 minutes after
 ## that: homes ask for more as they grow (page 17), so a whole run is about 45 to 60 minutes by bot.
