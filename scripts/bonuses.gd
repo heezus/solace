@@ -6,6 +6,7 @@ extends RefCounted
 ## Static, and works on the Sim passed in.
 
 const Data = preload("res://scripts/data.gd")
+const FireTiers = preload("res://scripts/fire_tiers.gd")
 const Fuel = preload("res://scripts/fuel.gd")
 const Ranks = preload("res://scripts/ranks.gd")
 const Buildings = preload("res://scripts/buildings.gd")
@@ -41,6 +42,10 @@ static func active(s, b: Dictionary, item: String) -> Array:
 		if not _applies(s, b, id):
 			continue
 		var add: float = bonus["add"]
+		if bonus.get("fire", false):  # the Hearthfire: +3% a tier lit (scripts/hearthfire.gd)
+			add = FireTiers.bonus_of(float(s.economy.fire["worth"]))
+			if add <= 0.0:
+				continue
 		var name: String = bonus["name"]
 		if bonus.has("rank_of"):
 			var extra: int = Ranks.rank(s, bonus["rank_of"]) - 1

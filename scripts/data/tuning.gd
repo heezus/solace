@@ -136,6 +136,9 @@ const BONUSES := {
 	"tools":
 	{"name": "Flint Tools", "group": "speed", "add": 0.5, "kinds": ["gatherer", "processor"], "tool": "flint_tools"},
 	"standing_stone": {"name": "Standing Stone", "group": "speed", "add": 1.0, "kinds": ["gatherer", "processor"]},
+	# The Hearthfire (Step 9C-3, scripts/hearthfire.gd): +3% a tier lit, five tiers; `fire` means Bonuses works `add` out from the worth given.
+	"hearthfire":
+	{"name": "Hearthfire", "group": "speed", "add": 0.0, "kinds": ["gatherer", "processor"], "fire": true},
 	"foraging": {"name": "Foraging", "group": "yield", "add": 1.0, "tech": "foraging", "item": "berries"},
 	"ochre": {"name": "Ochre", "group": "yield", "add": 1.0, "tech": "ochre", "item": "clay", "kinds": ["gatherer"]},
 	# Ranks II and III on workshop techs: +25% Speed each, at that workshop only (`rank_of`, `types`).

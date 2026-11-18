@@ -24,6 +24,7 @@ const Research = preload("res://scripts/research.gd")
 const Hands = preload("res://scripts/hands.gd")
 const Workers = preload("res://scripts/workers.gd")
 const GoalFirst = preload("res://scripts/goal_first.gd")
+const RateGate = preload("res://scripts/rate_gate.gd")
 const Roads = preload("res://scripts/roads.gd")
 const Scouting = preload("res://scripts/scouting.gd")
 const Expedition = preload("res://scripts/expedition.gd")
@@ -112,6 +113,7 @@ func _init() -> void:
 	carry.wire(self)  # the Exodus: what an earlier run taught costs nothing, and the eras it finished have one goal each (Step 9B)
 	starfall.carry = carry  # and its read marks show their word, its echoes open the Lumen cards
 	gate.latched = story.deed_met  # a deed met stays met
+	tech_tree.rate_lines = func(tech: String) -> Array: return RateGate.open_lines(weak.get_ref(), tech)  # a gate's rates, as open needs
 	tech_tree.set_deeds(gate.deed, gate.note)  # the Skyward gate's deeds and why one is not done (Livewire)
 
 
@@ -328,6 +330,7 @@ func tick(delta: float) -> void:
 	skyreach.tick(self, delta)
 	if fmod(seasons.time, GoalFirst.EVERY) < delta:  # once a game second, off the saved clock so a loaded game looks on the same ticks
 		GoalFirst.update(self)
+		RateGate.update(self, maxf(delta, GoalFirst.EVERY))
 	seasons.tick(self, delta)
 	sky.tick(delta)
 	starfall.tick(delta)

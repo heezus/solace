@@ -158,6 +158,7 @@ func _next_click() -> String:
 
 ## The first Bronze needs the smelting chain to have run: copper for Alloying and for the batch, and one tin.
 func _goal_wants(want: Dictionary) -> void:
+	super._goal_wants(want)
 	if not _in_era_two():
 		return
 	if s.economy.inv.get("copper", 0) < COPPER_FIRST and not s.tech_tree.researched.has("alloying"):

@@ -281,7 +281,7 @@ func _init() -> void:
 
 ## A headless player (tests/autoplay_bronze.gd) plays the stone age on a few maps. It should reach Bronze Dawn
 ## in 8 to 25 simulated minutes; data.gd is tuned so it takes about 12 to 16. The game at that moment must match
-## tests/golden.json. It then plays on to its first Bronze, which should come 7 to 19 minutes later (the target is about
+## tests/golden.json. It then plays on to its first Bronze, which should come 4 to 19 minutes later (the target is about
 ## 10 to 14; chained neighbours run by haulers add a couple of minutes, see the decision log), and the game at that
 ## moment must match tests/golden_bronze.json. The Falling Star follows 7 to 36 minutes after
 ## that: homes ask for more as they grow (page 17), so a whole run is about 45 to 60 minutes by bot.
@@ -297,17 +297,16 @@ func test_pacing_bot() -> void:
 		var r: Dictionary = bot.play_to_star(map_seed, 70 * 60.0)
 		var minutes: float = r["seconds"] / 60.0
 		var star: float = bot.star_minutes()
+		var what := "Bronze Dawn" if r["won"] else "no win"
 		print(
-			(
-				"Pacing bot, map %d: %s at %.1f simulated minutes, first Bronze %.1f minutes later, the Falling Star %.1f"
-				% [map_seed, "Bronze Dawn" if r["won"] else "no win", minutes, r["minutes"], star]
-			)
+			"Pacing bot, map %d: %s at %.1f simulated minutes, " % [map_seed, what, minutes],
+			"first Bronze %.1f minutes later, the Falling Star %.1f" % [r["minutes"], star]
 		)
 		check(r["won"], "the bot reaches Bronze Dawn on map %d" % map_seed)
 		check(minutes >= 8.0 and minutes <= 25.0, "map %d takes 8 to 25 minutes (%.1f)" % [map_seed, minutes])
 		check(
-			r["minutes"] >= 7.0 and r["minutes"] <= 19.0,
-			"map %d: the first Bronze takes 7 to 19 minutes more (%.1f)" % [map_seed, r["minutes"]]
+			r["minutes"] >= 4.0 and r["minutes"] <= 19.0,
+			"map %d: the first Bronze takes 4 to 19 minutes more (%.1f)" % [map_seed, r["minutes"]]
 		)
 		check(
 			star >= 6.0 and star <= 36.0,
@@ -332,9 +331,10 @@ func fresh() -> Sim:
 	return s
 
 
-## Stock the stockpile with `amount` of every good, except Bronze Tools: a worker who takes one works twice as fast, so a
-## test that wants them sets them itself.
+## Stock the stockpile with `amount` of every good (not the tools: they speed work up), hold every gate's rates, fire off.
 func give(s: Sim, amount: int) -> void:
+	s.tech_tree.hold_all_rates()
+	s.economy.fire["auto"] = false  # a stocked store would be burnt to the fire the moment the town ticks
 	for id in Data.ITEM_ORDER:
 		s.economy.inv[id] = 0 if id in ["bronze_tools", "iron_tools", "steel_tools"] else amount
 

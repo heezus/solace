@@ -9,6 +9,7 @@ extends RefCounted
 const Bonuses = preload("res://scripts/bonuses.gd")
 const CardText = preload("res://scripts/card_text.gd")
 const Data = preload("res://scripts/data.gd")
+const RateData = preload("res://scripts/rate_data.gd")
 const Power = preload("res://scripts/power.gd")
 
 
@@ -54,15 +55,16 @@ static func goal_goods(s) -> Dictionary:
 	var list: Array = s.story.goal_list()
 	var at: int = s.story.current_goal()
 	var out := {}
-	if at >= list.size():
-		return out
-	var g: Dictionary = list[at]
 	var cost := {}
-	if g.has("tech"):
-		cost = s.tech_tree.cost_of(g["tech"])
-	elif g.has("building") and Data.BUILDINGS.has(g["building"]):
-		cost = s.town.price(g["building"])
+	if at < list.size():
+		var g: Dictionary = list[at]
+		if g.has("tech"):
+			cost = s.tech_tree.cost_of(g["tech"])
+		elif g.has("building") and Data.BUILDINGS.has(g["building"]):
+			cost = s.town.price(g["building"])
 	for id in cost:
+		_down(id, out)
+	for id in RateData.asked(s.tech_tree.researched):  # the goods the next gate asks a rate of are what the machine is built for
 		_down(id, out)
 	return out
 
