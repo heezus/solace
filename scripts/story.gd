@@ -222,8 +222,13 @@ func asked_building() -> String:
 ## for, walked back through the tech tree to the first step that cannot just be paid for (scripts/chain.gd).
 func gate_note(s, g: Dictionary) -> String:
 	var tech := goal_tech(g)
-	var chain: String = Chain.note(s, tech) if tech != "" else ""
-	return chain if chain != "" else Needs.goal_note(s, g)  # a building goal on no tech: what shuts it or what its price waits on
+	var note: String = Chain.note(s, tech) if tech != "" else ""
+	if note == "" and g["id"] == "warning_read":
+		note = Needs.warning_note(s)  # the Starfall's gate is a story, not a tech or a building: walk its steps
+	if note == "":
+		note = Needs.goal_note(s, g)  # a building goal on no tech: what shuts it or what its price waits on
+	var fog: String = Needs.fog_note(s, g)  # ground the Kin have not found says where the fog lies
+	return note + (" " if note != "" and fog != "" else "") + fog
 
 
 ## The tech a goal waits on: its own, its building's, or for the goals worded by id the tech their craft or road waits on ("" for none).

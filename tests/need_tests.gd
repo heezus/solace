@@ -5,6 +5,7 @@ extends RefCounted
 
 const Data = preload("res://scripts/data.gd")
 const AiStory = preload("res://tests/tools/ai_story.gd")
+const Founding = preload("res://scripts/founding.gd")
 const Hauling = preload("res://scripts/hauling.gd")
 const Haulers = preload("res://scripts/haulers.gd")
 const Needs = preload("res://scripts/needs.gd")
@@ -25,6 +26,8 @@ func run(runner) -> void:
 	test_shardlight_names_its_source_by_what_is_open()
 	test_a_building_goal_names_what_shuts_it_or_what_it_waits_on()
 	test_every_goal_can_name_its_next_step()
+	test_every_remembered_reach_goal_names_what_stands_in_its_way()
+	test_a_goal_that_needs_ground_in_the_fog_says_where_the_fog_lies()
 	test_no_gift_choice_shuts_a_goal()
 	test_the_bloom_cannot_take_every_way_back_to_clay()
 	test_every_good_has_a_way_back_in_a_market_town()
@@ -145,6 +148,57 @@ func test_every_goal_can_name_its_next_step() -> void:
 				t.check(
 					s.story.gate_note(s, g) != "", "goal '%s' names what stands in its way in an empty town" % g["id"]
 				)
+
+
+## Fun playtest 5: a remembered "Reach" goal named no building and no chain. Each era's reach goal, in a run 2 town with nothing built,
+## says what stands in its way; the Starfall's walks the Glyph Wall, the Ward and the questions.
+func test_every_remembered_reach_goal_names_what_stands_in_its_way() -> void:
+	for i in 5:
+		var run2 := _fresh()
+		run2.carry.exodus = 1
+		var goal: Dictionary = Founding.reach_goal(i)
+		t.check(
+			run2.story.gate_note(run2, goal) != "",
+			"era %d's reach goal ('%s') names its way: %s" % [i, goal["id"], goal["text"]]
+		)
+	var s := _fresh()
+	var warning: Dictionary = Founding.reach_goal(2)
+	t.check(
+		s.story.gate_note(s, warning).contains("Glyph Wall"),
+		"the Warning starts at the Glyph Wall: " + s.story.gate_note(s, warning)
+	)
+	s.town.add_building("glyph_wall", s.world.camp_pos + Vector2i(3, 2))
+	t.check(s.story.gate_note(s, warning).contains("Lumen Ward"), "then the Ward: " + s.story.gate_note(s, warning))
+	s.town.add_building("lumen_ward", s.world.camp_pos + Vector2i(-3, 2))
+	t.check(s.story.gate_note(s, warning).contains("questions"), "then the questions: " + s.story.gate_note(s, warning))
+
+
+## Fun playtest 5: clay hid in fog and no goal line said so.
+func test_a_goal_that_needs_ground_in_the_fog_says_where_the_fog_lies() -> void:
+	var s := Sim.new()
+	s.generate(5)
+	var clay := Vector2i(-1, -1)
+	for y in s.world.height:
+		for x in s.world.width:
+			if s.world.tile_at(Vector2i(x, y)) == "clay":
+				clay = Vector2i(x, y)
+	t.check(clay.x >= 0, "the map has clay")
+	for y in s.world.height:
+		for x in s.world.width:
+			if s.world.tile_at(Vector2i(x, y)) == "clay":
+				s.fog.cells[y * s.fog.width + x] = 0
+	var goal := {"id": "kiln", "text": "Build a Kiln", "building": "kiln"}
+	for id in ["wood", "stone", "rope", "charcoal"]:
+		s.economy.inv[id] = 500
+	s.economy.inv["clay"] = 0
+	var line := Needs.fog_note(s, goal)
+	t.check(line != "", "clay hidden by fog is named")
+	if line == "":
+		return
+	t.check(line.begins_with("No Clay found yet. The nearest fog that hides it lies "), "the fog hint: " + line)
+	t.check(line.contains("tiles); an expedition or a road reveals it."), "with a distance and the way out: " + line)
+	s.fog.reveal_all()
+	t.check(Needs.fog_note(s, goal) == "", "no hint once the ground is in sight")
 
 
 ## A gift refused for the Kith's twin must not shut a goal: every building a goal asks for that a Lumen set opens, opens either way.

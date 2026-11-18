@@ -75,7 +75,7 @@ static func _m1(r: _Run) -> Dictionary:
 	var start := -1.0
 	var found := -1.0
 	for t in r.ticks:
-		if t["made"] > 0.0 and t["hand"] == 0.0:
+		if t["made"] > 0.0:  # a building makes goods; the player's own hands on other goods do not break it (fun-5: M1 read 21.6)
 			if streak == 0:
 				start = t["m"] - 1.0 / 6.0
 			streak += 1
@@ -95,8 +95,8 @@ static func _m1(r: _Run) -> Dictionary:
 		"8 or less in run 1",
 		verdict,
 		(
-			"the first 12 tick lines in a row (2 game minutes) with goods made by buildings and none made by hand;"
-			+ " building other things in that time is allowed"
+			"the first 12 tick lines in a row (2 game minutes) with goods made by buildings; hand harvests and building other things"
+			+ " in that time are allowed (the hand share is M2)"
 		)
 	)
 

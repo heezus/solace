@@ -36,7 +36,7 @@ func tick(s, delta: float) -> void:
 		"pending":
 			_waited += delta
 			if _waited >= Data.SEASON_AUTO:
-				choose(s, 0)
+				choose(s, cheapest(s))
 		"active":
 			left -= delta
 			_burn_fuel(s, delta)
@@ -111,6 +111,41 @@ func choose(s, index: int) -> void:
 	if o.has("takes"):
 		_take(s, float(o["takes"]))
 	s.events.append(Data.SEASONS[kind]["told"] + ("" if spent.is_empty() else " It cost " + spent_text() + "."))
+
+
+## The answer of the pending season that costs the fewest goods now (a card nobody answers takes it; a tie takes the first): the
+## alternative the stores can pay is counted, as `_pay` takes it, and the share the Bloom takes of the raw goods. Fun playtest 5:
+## the first answer cost about 200 goods.
+func cheapest(s) -> int:
+	if kind == "":
+		return 0
+	var best := 0
+	var best_cost := INF
+	var options: Array = Data.SEASONS[kind]["options"]
+	for i in options.size():
+		var c := _goods_cost(s, options[i])
+		if c < best_cost:
+			best = i
+			best_cost = c
+	return best
+
+
+## The goods answer `o` would take from the stores now.
+func _goods_cost(s, o: Dictionary) -> float:
+	var total := 0.0
+	var alternatives: Array = o.get("cost", [])
+	if not alternatives.is_empty():
+		var chosen: Dictionary = alternatives[alternatives.size() - 1]
+		for alt in alternatives:
+			if alt.keys().all(func(id): return s.economy.inv.get(id, 0) >= alt[id]):
+				chosen = alt
+				break
+		for id in chosen:
+			total += mini(int(chosen[id]), int(s.economy.inv.get(id, 0)))
+	if o.has("takes"):
+		for id in Data.SURGE_GOODS:
+			total += floorf(float(s.economy.inv.get(id, 0)) * float(o["takes"]))
+	return total
 
 
 ## The answer in force: the picked option of the pending or active season, {} when none.

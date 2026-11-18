@@ -9,6 +9,7 @@ signal changed  # a toast came, went or was dismissed, or the log grew
 
 const Data = preload("res://scripts/data.gd")
 
+const CARD_WAIT_TEXT := "Paused: a card is waiting"  # a sticky toast while a card holds the clock
 const MAX_SHOWN := 3  # toasts on screen at once; the oldest makes room for a new one (it stays in the log)
 const LOG_MAX := 60
 const MIN_SECONDS := 3.0
@@ -19,6 +20,7 @@ var history: Array = []  # {"text", "at" (seconds of play), "sticky"}, oldest fi
 var clock := 0.0
 var keep_counts := false  # Tally Sticks: a message repeated back to back is one log line with a count
 var _next_id := 1
+var _card_toast := false  # the "Paused: a card is waiting" toast is up
 
 
 ## Say something. `seconds` is how long the toast stays (0 = by the length of the text); a sticky message stays until
@@ -79,6 +81,16 @@ func dismiss(id: int) -> void:
 
 
 ## The trouble a message with this key was about is over: take it down.
+## While a card waits the clock is stopped, and a stopped clock says so, in words that stay until the card is answered (fun playtest 5:
+## three cards froze the game with nothing on screen saying why).
+func card_waiting(up: bool) -> void:
+	if up and not _card_toast:
+		push(CARD_WAIT_TEXT, 0.0, true, "card")
+	elif not up and _card_toast:
+		resolve("card")
+	_card_toast = up
+
+
 func resolve(key: String) -> void:
 	var kept := active.filter(func(m): return m["key"] != key)
 	if kept.size() != active.size():

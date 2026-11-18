@@ -8,6 +8,9 @@ const Data = preload("res://scripts/data.gd")
 const Buildings = preload("res://scripts/buildings.gd")
 const Fuel = preload("res://scripts/fuel.gd")
 const Power = preload("res://scripts/power.gd")
+const Roads = preload("res://scripts/roads.gd")
+
+const HAND_LOAD := 2  # the fuel a crew carries to a Scorcher no road reaches
 
 # --- The fed buildings ---------------------------------------------------------------------------------------------
 
@@ -23,7 +26,19 @@ static func tick_fed(s, b: Dictionary, delta: float) -> void:
 		"pen":
 			_tick_pen(s, b, def, delta)
 		"scorcher":
+			_hand_feed(s, b)
 			s.tide.tick_scorcher(s, b, def, delta)
+
+
+## A Scorcher no road reaches is fed by hand: its crew walks in with a load from the stores, two at a time, so the Bloom answer never
+## waits on a road (a road, and haulers, fill it to its stock).
+static func _hand_feed(s, b: Dictionary) -> void:
+	if Roads.linked(s, b) or not s.town.is_powered(b["pos"]):
+		return
+	var id: String = b["fuel_now"]
+	if b["inbuf"].get(id, 0) < HAND_LOAD and s.economy.inv.get(id, 0) > 0:
+		s.economy.pay({id: 1})
+		b["inbuf"][id] = b["inbuf"].get(id, 0) + 1
 
 
 ## The item a fed building burns (the one in its `in`).

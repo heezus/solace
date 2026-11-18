@@ -6,8 +6,9 @@ extends SceneTree
 ## Run: godot --headless --path . -s tests/tools/ai_player.gd -- --dir=/some/folder [--seed=3] [--every=15] [--decisions=60]
 ##      [--stop-at-era=Bronze Dawn] [--patience=900] [--start=earned_livewire] [--replay=/folder/with/moves]
 ## With --then-live=1 the page after the last replayed one is played by a live player (the replay carries on as a game).
-## A folder that already holds moves_<n>.json is picked up that way on its own (a restart or a closed lid costs the replay, minutes);
-## --fresh=1 starts it over instead.
+## The table saves the game at the start of every era (era_save.json and its profile in the folder). A folder that holds one is resumed
+## from it, not replayed: replays diverge across sessions (fun playtest 5). A folder that holds moves_<n>.json and no era save is picked
+## up by replaying them (a restart or a closed lid costs the replay, minutes); --fresh=1 starts it over instead.
 ## With --replay the moves come from that folder's moves_<n>.json instead of a player (same --seed and --start, the same cached
 ## start in user://ai_starts/): the game is deterministic, so every page comes out as it did, with whatever the page shows now.
 ## With --start an earned checkpoint plays on map --seed (built by the bots, kept in user://ai_starts/); any other start is on map 1.
@@ -15,6 +16,7 @@ extends SceneTree
 
 const Data = preload("res://scripts/data.gd")
 const DevStarts = preload("res://scripts/dev_starts.gd")
+const RunSave = preload("res://scripts/run_save.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Snapshot = preload("res://tests/tools/ai_snapshot.gd")
 const AiStory = preload("res://tests/tools/ai_story.gd")
@@ -32,6 +34,7 @@ var timed_out := false
 var replay := ""  # a folder of moves_<n>.json to play back instead of waiting for a player
 var then_live := false  # after the last replayed page, carry on with a live player
 var fresh := false  # start over even when the folder already holds moves
+var resume_at := 0  # the page number a resumed game carries on from, 0 for none
 var start := ""  # a stage start or earned checkpoint to begin from (scripts/dev_starts.gd), "" for a fresh map
 
 
@@ -66,10 +69,14 @@ func _init() -> void:
 				patience = float(kv[1])
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(dir))
 	AiStory.reset(dir + "profile.json")  # the table is one player's whole game: a first game, then a profile of its own
-	if replay == "" and not fresh and FileAccess.file_exists(dir + "moves_1.json"):
+	if not fresh and replay == "" and _resume():
+		pass  # the game is back as the last era began; the pages from there on are new
+	elif replay == "" and not fresh and FileAccess.file_exists(dir + "moves_1.json"):
 		replay = dir  # a game stopped part way (a restart, a closed lid): play its saved moves back, then go on live
 		then_live = true
-	if start in DevStarts.EARNED and seed_given:
+	if s != null:
+		pass  # resumed from an era save
+	elif start in DevStarts.EARNED and seed_given:
 		s = DevStarts.earned_on_map(map_seed, start, "user://ai_starts/")  # an earned checkpoint on that map, played by the bots
 	elif start != "":
 		s = DevStarts.build(start)  # the starts are on map 1 whatever `seed` says
@@ -85,7 +92,9 @@ func _init() -> void:
 	var refused: Array = []
 	var told: Array = []
 	var era := Snapshot.era_name(s)
-	for n in range(1, decisions + 1):
+	for n in range(maxi(resume_at, 1), decisions + 1):
+		if n == maxi(resume_at, 1) or Snapshot.era_name(s) != era:
+			_save_era(n)  # the game as this era begins: a restart resumes here, not from a replay
 		var page := Snapshot.text(s, n, told, refused)
 		if n == 1 and start != "":
 			page = Snapshot.KNOWN + "\n" + page  # the player of a later era has played the earlier ones
@@ -114,13 +123,67 @@ func _run(seconds: float, told: Array) -> void:
 	_swap()
 	var t := 0.0
 	var asked: bool = s.seasons.phase == "pending"
-	while t < seconds and s.starfall.pending == "":  # a story moment holds the game, as it does for a person
+	if asked:  # a Season card holds the game as it does for a person: no time passes, and the card never answers itself unseen
+		told.append("The game is paused: a season card is waiting for an answer (CARD WAITING at the top of the page)")
+	while t < seconds and s.starfall.pending == "" and not asked:  # a story moment holds the game, as it does for a person
 		s.tick(DT)
 		t += DT
-		told.append_array(s.events)
+		for e in s.events:
+			tell(told, e)
 		s.events.clear()
 		if s.seasons.phase == "pending" and not asked:
 			break  # a Season card has come up: the player is told at once
+
+
+## The game as the era begins, kept in the folder with the page number and the profile (the table's own Chronicle).
+func _save_era(n: int) -> void:
+	var file := FileAccess.open(dir + "era_save.json", FileAccess.WRITE)
+	if file == null:
+		return
+	file.store_string(JSON.stringify({"n": n, "era": Snapshot.era_name(s), "run": RunSave.to_json(RunSave.dump(s))}))
+	file.close()
+	if FileAccess.file_exists(AiStory.profile_path):
+		DirAccess.copy_absolute(
+			ProjectSettings.globalize_path(AiStory.profile_path),
+			ProjectSettings.globalize_path(dir + "era_save_profile.json")
+		)
+
+
+## Bring the game back from the folder's era save: true when there was one and it loaded.
+func _resume() -> bool:
+	var kept = JSON.parse_string(FileAccess.get_file_as_string(dir + "era_save.json"))
+	if typeof(kept) != TYPE_DICTIONARY or not kept.has("run"):
+		return false
+	var game := Sim.new()
+	if not RunSave.restore(game, RunSave.from_json(kept["run"])):
+		return false
+	s = game
+	resume_at = int(kept.get("n", 1))
+	if FileAccess.file_exists(dir + "era_save_profile.json"):
+		DirAccess.copy_absolute(
+			ProjectSettings.globalize_path(dir + "era_save_profile.json"),
+			ProjectSettings.globalize_path(AiStory.profile_path)
+		)
+	for n in range(resume_at, resume_at + 400):  # the moves written for pages from here on belong to a game that no longer stands
+		var path := ProjectSettings.globalize_path(dir + "moves_%d.json" % n)
+		if not FileAccess.file_exists(dir + "moves_%d.json" % n):
+			break
+		DirAccess.remove_absolute(path)
+	print("AI player: resumed from the %s save at page %d" % [kept.get("era", "?"), resume_at])
+	return true
+
+
+## Add what the game said to `told`. "The Bloom reaches the Kiln in about 3 min" says one thing a building at a time, so a later one
+## replaces the one before it, in its place (fun playtest 5: the page repeated stale times).
+static func tell(told: Array, line: String) -> void:
+	var cut := line.find(" in about ")
+	if line.begins_with(Data.TIDE_REACHES_LINE.split("%s")[0]) and cut > 0:
+		var key := line.substr(0, cut + 10)
+		for i in told.size():
+			if String(told[i]).begins_with(key):
+				told[i] = line
+				return
+	told.append(line)
 
 
 ## A telling ended by a set_out move: the table carries on in the new run.

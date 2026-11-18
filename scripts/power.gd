@@ -14,6 +14,8 @@ const DARK_NO_POLE_FAR := (
 	"No power: the nearest Power Pole is %.1f tiles from it, and a pole must be within %d. "
 	+ "Lay one beside it and join it to a net that has an engine"
 )  # distance, reach
+## A Scorcher stands this far from a pole and still draws from its net (fun playtest 5: the tide took the one tile within 2 of a pole).
+const SCORCHER_REACH := 4.0
 const REACH_NOTE := "%s is %.1f tiles from the nearest pole, and needs to be within %d"  # a machine or engine's name, distance, reach
 const REACH_NO_POLE := "No Power Pole stands yet. Lay one (Logistics tab) within %d tiles of a machine and an engine"  # reach
 
@@ -127,7 +129,7 @@ static func _rebuild(s) -> void:
 		if not engine and not is_machine(s, def):
 			continue
 		var best := -1
-		var best_d := Data.POLE_REACH + 0.001
+		var best_d := (SCORCHER_REACH if def["kind"] == "scorcher" else Data.POLE_REACH) + 0.001
 		for i in poles.size():
 			var d := Vector2(poles[i]).distance_to(Vector2(b["pos"]))
 			if d < best_d:

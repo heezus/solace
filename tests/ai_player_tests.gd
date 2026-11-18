@@ -114,6 +114,11 @@ func test_a_season_card_is_on_the_page_and_answered() -> void:
 	game.seasons.kind = "lean"
 	var page := Snapshot.text(game, 2, [], [])
 	t.check(page.contains("CARD WAITING (season") and page.contains("Ration"), "a waiting season shows on the page")
+	var lines := page.split("\n")
+	t.check(
+		lines[1].begins_with("CARD WAITING"), "as the first thing after the decision line: %s" % lines[1].substr(0, 40)
+	)
+	t.check(lines[1].contains("the game is paused"), "and says the clock is stopped")
 	var refused := Snapshot.apply(game, [{"do": "season", "choice": 1}])
 	t.check(refused.is_empty() and game.seasons.phase == "active" and game.seasons.answer == 1, "and an answer takes")
 
