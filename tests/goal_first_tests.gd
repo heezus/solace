@@ -4,6 +4,7 @@ extends RefCounted
 ## Run from run_tests.gd.
 
 const Data = preload("res://scripts/data.gd")
+const Fun6bTests = preload("res://tests/fun6b_tests.gd")
 const GoalFirst = preload("res://scripts/goal_first.gd")
 const Sim = preload("res://scripts/sim.gd")
 
@@ -12,6 +13,7 @@ var t  # the runner, tests/run_tests.gd
 
 func run(runner) -> void:
 	t = runner
+	Fun6bTests.new().run(runner)  # the fun-6 fixes B tests ride with this group (run_tests.gd is at its line cap)
 	test_a_crucible_holds_while_the_wire_mill_waits_for_copper_and_resumes_by_itself()
 	test_a_pit_leaves_wood_above_the_floor_when_charcoal_is_not_wanted()
 	test_a_hands_pause_and_a_hands_resume_are_left_alone()
