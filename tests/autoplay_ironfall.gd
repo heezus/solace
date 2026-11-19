@@ -218,8 +218,8 @@ func _goal_wants(want: Dictionary) -> void:
 		want["steel"] = want.get("steel", 0) + _steel_cost()
 		want["iron"] = want.get("iron", 0) + steel_left * 2
 		want["coal"] = want.get("coal", 0) + steel_left
-		if _inv("coal") < Data.FUEL_RESERVE * 2:  # Coal short: the works burn Charcoal at half speed, so the bot makes some, as a player would
-			want["charcoal"] = want.get("charcoal", 0) + mini(steel_left * 2, FUEL_CHARCOAL_CAP)
+		if _inv("coal") < Data.FUEL_RESERVE * 2:  # Coal short: the works burn two Charcoal a batch, so the bot makes some, as a player would
+			want["charcoal"] = want.get("charcoal", 0) + mini(steel_left * 6, FUEL_CHARCOAL_CAP)
 	for type in _building_wants():
 		_want(want, s.town.price(type), 1)
 

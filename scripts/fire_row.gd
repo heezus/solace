@@ -1,5 +1,5 @@
 extends VBoxContainer
-## The Hearth card's fire (scripts/hearthfire.gd): "Hearthfire: tier 2 of 5, +6% work speed. 1,200 worth to the next." and a switch for
+## The Hearth card's fire (scripts/hearthfire.gd): "Hearthfire: tier 2 of 5, +6% work, 340 of 900 to the next." and a switch for
 ## feeding it what the stores would spill. On by default: nobody has to click to light it. Plain widgets, like the other rows.
 
 signal changed

@@ -161,7 +161,8 @@ const GOALS_ERA5 := (
 )
 
 # --- Fuel for the metal works (scripts/fuel.gd) ---
-## A Bloomery or Forge burns one Coal or one Charcoal a batch. On Charcoal a batch takes this many times as long.
+## A Coal is worth this many Charcoal where it is used: a Bloomery or Forge takes this many Charcoal a batch where it took one Coal (at
+## the same speed), and a Boiler, Generator or Scorcher burns a Charcoal this many times as fast.
 const CHARCOAL_SLOW := 2.0
 ## Auto fuel burns Coal while the stockpile holds more than this much, so Boilers, Generators and Scorchers keep a little.
 const FUEL_RESERVE := 40
@@ -173,9 +174,9 @@ const FUEL_TIP := "Click to change what this burns: Auto (Coal while the stores 
 const FUEL_LINE_AUTO := "Burns %s now. Auto keeps the last %d Coal for the Boilers."
 const FUEL_LINE_AUTO_FED := "Burns %s now. Auto burns Coal while the stores hold more than %d, else Charcoal."
 const FUEL_LINE_SET := "Burns %s, as set."
-## "Smelting on Charcoal: half speed (Coal is low)": the job word, then why when Auto chose it.
-const FUEL_STATUS_AUTO := "%s on Charcoal: half speed (Coal is low)"
-const FUEL_STATUS_SET := "%s on Charcoal: half speed"
+## "Smelting on Charcoal: 2 a batch (Coal is low)": the job word, then why when Auto chose it.
+const FUEL_STATUS_AUTO := "%s on Charcoal: 2 a batch (Coal is low)"
+const FUEL_STATUS_SET := "%s on Charcoal: 2 a batch"
 ## A Boiler, Generator or Scorcher on Charcoal: "Burning Charcoal: twice the fuel (Coal is low)".
 const FUEL_STATUS_FED_AUTO := "Burning Charcoal: twice the fuel (Coal is low)"
 const FUEL_STATUS_FED_SET := "Burning Charcoal: twice the fuel"

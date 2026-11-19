@@ -114,11 +114,17 @@ func grow_south() -> bool:
 
 ## The tile of a live coal seam, nearest `from`, that `fog` still hides (-1, -1 when every live seam is in view).
 func unseen_seam_tile(from: Vector2i, fog) -> Vector2i:
+	return next_seam_tile(from, fog)
+
+
+## The nearest tile (to `from`) of a seam that still holds coal, (-1, -1) when every seam is spent. `fog` (when given) limits it to
+## the tiles nobody has seen.
+func next_seam_tile(from: Vector2i, fog = null) -> Vector2i:
 	var best := Vector2i(-1, -1)
 	var best_d := INF
 	for p in seam_of:
 		var d := Vector2(p - from).length()
-		if seam_left[seam_of[p]] > 0 and d < best_d and not fog.is_revealed(p):
+		if seam_left[seam_of[p]] > 0 and d < best_d and (fog == null or not fog.is_revealed(p)):
 			best = p
 			best_d = d
 	return best

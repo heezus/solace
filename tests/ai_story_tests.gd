@@ -4,6 +4,7 @@ extends RefCounted
 ## Registered by AiPlayerTests.run.
 
 const AiStory = preload("res://tests/tools/ai_story.gd")
+const EraSaves = preload("res://tests/tools/era_saves.gd")
 const Data = preload("res://scripts/data.gd")
 const Profile = preload("res://scripts/profile.gd")
 const Sim = preload("res://scripts/sim.gd")
@@ -20,6 +21,7 @@ func run(runner) -> void:
 	test_a_finished_wall_is_one_line_and_the_table_knows_market_and_bridge()
 	test_a_scene_is_watched_or_skipped()
 	test_the_ending_card_opens_and_setting_out_begins_the_next_telling()
+	test_the_era_save_is_kept_at_every_era_through_livewire()
 
 
 func _game() -> Sim:
@@ -136,3 +138,25 @@ func test_the_ending_card_opens_and_setting_out_begins_the_next_telling() -> voi
 		"the Chronicle can be opened again"
 	)
 	Profile.forget(PROFILE)
+
+
+## Fun playtest 7: era_save.json stayed at the Stone Age. The table saves on its first page and on the first page of each new era.
+func test_the_era_save_is_kept_at_every_era_through_livewire() -> void:
+	var game := _game()
+	var saves := EraSaves.new()
+	var kept: Array = []
+	var starts := {3: "bronze_dawn", 5: "star_falling", 8: Data.IRONFALL_EVENT, 10: Data.LIVEWIRE_BEGUN}
+	for n in range(1, 13):
+		if starts.has(n):
+			game.story.events.append(starts[n])
+		if saves.due(n, 1, Snapshot.era_name(game)):
+			kept.append([n, Snapshot.era_name(game)])
+	t.check(
+		kept == [[1, "Stone age"], [3, "Bronze Dawn"], [5, "Starfall"], [8, "Ironfall"], [10, "Livewire"]],
+		"the era save is kept at the first page and at each new era (%s)" % str(kept)
+	)
+	var resumed := EraSaves.new()
+	t.check(
+		resumed.due(7, 7, "Ironfall") and not resumed.due(8, 7, "Ironfall"),
+		"a resumed table saves its first page once, then waits for the next era"
+	)

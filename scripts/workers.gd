@@ -347,7 +347,7 @@ static func tick_building(s, b: Dictionary, delta: float, fed: bool) -> void:
 		return
 	var speed: float = s.livewire.speed_of(b)  # 1.0 unless it is on a Power Pole net that is short
 	b["status"] = "Working" if speed >= 1.0 else Data.NET_SLOW % roundi(speed * 100.0)
-	if Fuel.slow(b) > 1.0 and speed >= 1.0:
+	if Fuel.on_charcoal(b) and speed >= 1.0:
 		b["status"] = Fuel.status(b)
 	b["progress"] += delta * speed
 	if b["progress"] < Work.time(s, b):

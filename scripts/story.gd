@@ -166,6 +166,18 @@ func _chart_seam(s) -> void:
 	s.events.append(Data.LIVEWIRE_CHART_LINE % [CardText.compass(d), roundi(d.length())])
 
 
+## A mine has dug its seam out: the log says which way the nearest seam with coal left lies from it, and the fog lifts off that seam if
+## nobody has seen it. Nothing when every seam is spent.
+func point_to_seam(s, from: Vector2i) -> void:
+	var p: Vector2i = s.world.next_seam_tile(from)
+	if p.x < 0:
+		return
+	if not s.fog.is_revealed(p):
+		s.fog.reveal(p, Data.LIVEWIRE_CHART_RADIUS)
+	var d := Vector2(p - from)
+	s.events.append(Data.SEAM_NEXT_LINE % [CardText.compass(d), roundi(d.length())])
+
+
 ## The checklist in force: the stone age's, and the second era's once Bronze Dawn is discovered.
 func goal_list() -> Array:
 	var era := era_index()

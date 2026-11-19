@@ -1,8 +1,8 @@
 extends RefCounted
 ## Fuel for the metal works and the engines (design-system/31-fuel.md): a Bloomery or a Forge (or a Factory Floor copying one)
-## burns one Coal or one Charcoal a batch. Coal runs the batch at its normal time; Charcoal takes Data.CHARCOAL_SLOW times as long,
-## so running out of Coal slows the metal and never stops it. A Boiler, a Generator or a Scorcher (a fed building) takes either
-## too: one unit a burn, and a Charcoal burns Data.CHARCOAL_SLOW times as fast, so it lasts half as long. Each has a fuel
+## burns one Coal or Data.CHARCOAL_SLOW (2) Charcoal a batch, at the same speed either way: a Coal is worth two Charcoal where it is
+## used, so running out of Coal never slows the metal and never stops it (Charcoal Pits make 30 a minute each). A Boiler, a Generator
+## or a Scorcher (a fed building) takes either too: one unit a burn, and a Charcoal burns twice as fast, so it lasts half as long. Each has a fuel
 ## setting, "auto" (the default), "coal" or "charcoal"; `fuel_now` is the fuel it burns at this moment (kept by `update` once a tick,
 ## so the hauler's pick and the work cycle agree). Static, like Work.
 
@@ -70,24 +70,31 @@ static func update(s, b: Dictionary) -> void:
 	b["fuel_now"] = choose(s.economy, b)
 
 
-## The inputs of a cycle with the fuel swapped in: `recipe` with its Coal taken as the fuel the building burns now.
+## The inputs of a cycle with the fuel swapped in: `recipe` with its Coal taken as the fuel the building burns now, twice the count
+## in Charcoal (a Coal is worth two; a fed building takes one unit a burn either way, and its Charcoal burn is shorter).
 static func swap(b: Dictionary, recipe: Dictionary) -> Dictionary:
 	if b.get("fuel_now", "coal") == "coal" or not recipe.has("coal"):
 		return recipe
 	var out := recipe.duplicate()
-	out["charcoal"] = out["coal"]
+	out["charcoal"] = out["coal"] if is_fed(b) else roundi(float(out["coal"]) * Data.CHARCOAL_SLOW)
 	out.erase("coal")
 	return out
 
 
-## How many times as long a cycle takes at `b`: 1 on Coal, Data.CHARCOAL_SLOW on Charcoal.
+## True while `b` burns Charcoal.
+static func on_charcoal(b: Dictionary) -> bool:
+	return b.get("fuel_now", "coal") == "charcoal" and burns(b)
+
+
+## How many times as long a burn lasts at `b`'s fuel use, as a rate: a fed building burns Charcoal Data.CHARCOAL_SLOW times as fast
+## (its burn lasts that much less), so its cycle counts 2x; the metal works run as fast on Charcoal as on Coal (1).
 static func slow(b: Dictionary) -> float:
-	return Data.CHARCOAL_SLOW if b.get("fuel_now", "coal") == "charcoal" and burns(b) else 1.0
+	return Data.CHARCOAL_SLOW if on_charcoal(b) and is_fed(b) else 1.0
 
 
-## "Smelting on Charcoal: half speed (Coal is low)" while `b` burns Charcoal, "" on Coal.
+## "Smelting on Charcoal: 2 a batch (Coal is low)" while `b` burns Charcoal, "" on Coal.
 static func status(b: Dictionary) -> String:
-	if slow(b) == 1.0:
+	if not on_charcoal(b):
 		return ""
 	if is_fed(b):
 		return Data.FUEL_STATUS_FED_AUTO if b.get("fuel", "auto") == "auto" else Data.FUEL_STATUS_FED_SET

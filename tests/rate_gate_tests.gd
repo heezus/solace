@@ -6,6 +6,7 @@ extends RefCounted
 const Bonuses = preload("res://scripts/bonuses.gd")
 const Data = preload("res://scripts/data.gd")
 const FireTiers = preload("res://scripts/fire_tiers.gd")
+const FlowView = preload("res://scripts/flow_view.gd")
 const GoalFirst = preload("res://scripts/goal_first.gd")
 const Hearthfire = preload("res://scripts/hearthfire.gd")
 const RateData = preload("res://scripts/rate_data.gd")
@@ -19,7 +20,12 @@ var t  # the runner, tests/run_tests.gd
 func run(runner) -> void:
 	t = runner
 	test_a_gate_asks_a_quarter_of_the_pile_for_its_rated_goods_only()
-	test_a_rate_is_held_for_a_minute_and_a_dip_starts_it_again()
+	test_a_rate_is_held_for_a_minute_and_a_dip_loses_ground_but_not_all()
+	test_a_dip_costs_ground_a_little_at_a_time_and_a_burst_makes_it_up()
+	test_a_full_store_counts_as_made_at_full_speed()
+	test_makers_paused_by_a_standing_order_count_and_the_line_names_it()
+	test_the_pace_of_one_more_maker_is_the_real_one()
+	test_one_more_maker_is_not_promised_when_no_kith_is_free()
 	test_hand_work_never_counts_toward_a_rate()
 	test_a_gate_needs_its_rates_held_before_it_can_be_learned()
 	test_every_rate_gate_shows_its_line_and_the_sum_of_one_more()
@@ -71,14 +77,15 @@ func test_a_gate_asks_a_quarter_of_the_pile_for_its_rated_goods_only() -> void:
 	)
 
 
-func test_a_rate_is_held_for_a_minute_and_a_dip_starts_it_again() -> void:
+func test_a_rate_is_held_for_a_minute_and_a_dip_loses_ground_but_not_all() -> void:
 	var s := _town()
 	_warm(s, ["brick"], 50.0, 30)
 	_make(s, "brick", 50.0, "kiln", 59)
 	t.check(RateGate.held(s, "bronze_dawn", "brick") == 59.0, "brick at 50 a minute has been held 59 s")
 	t.check(not RateGate.met(s, "bronze_dawn"), "and the gate is not met: its other goods are not made")
 	_make(s, "brick", 10.0, "kiln", 40)  # the 30-second window takes a while to fall under 40
-	t.check(RateGate.held(s, "bronze_dawn", "brick") < 59.0, "a dip below R starts the count again")
+	var after := RateGate.held(s, "bronze_dawn", "brick")
+	t.check(after < 59.0 and after > 0.0, "a dip below R loses ground and not all of it (%.0f s left)" % after)
 	_warm(s, ["brick"], 50.0, 30)
 	_make(s, "brick", 50.0, "kiln", 120)
 	t.check(RateGate.held(s, "bronze_dawn", "brick") == RateData.HOLD, "held for a minute it stays at a minute")
@@ -256,6 +263,136 @@ func test_the_fire_adds_work_speed_and_the_switch_and_the_state_are_saved() -> v
 		again.tech_tree.rate_held.get("bronze_dawn|brick", 0.0) == 35.0, "and so do the seconds a rate has been held"
 	)
 	t.check(
-		Hearthfire.text(s).begins_with("Hearthfire: tier 2 of 5, +6% work speed."),
+		Hearthfire.text(s).begins_with("Hearthfire: tier 2 of 5, +6% work, 0 of 1500 to the next."),
 		"the Hearth card says %s" % Hearthfire.text(s)
 	)
+
+
+## Fun playtest 7: a dip below R reset the minute to nothing, and a player stood 35 minutes at a gate. The gate is met when the last
+## minute's average is at or above R: a dip loses ground a little at a time, and a burst after it makes it up.
+func test_a_dip_costs_ground_a_little_at_a_time_and_a_burst_makes_it_up() -> void:
+	var s := _town()
+	_warm(s, ["brick"], 50.0, 30)
+	_make(s, "brick", 50.0, "kiln", 60)
+	t.check(RateGate.held(s, "bronze_dawn", "brick") == RateData.HOLD, "a minute at 50 holds R = 40")
+	_make(s, "brick", 0.0, "kiln", 5)
+	var dip := RateGate.held(s, "bronze_dawn", "brick")
+	t.check(dip == RateData.HOLD, "five slow seconds do not pull the minute's average under R (%.0f)" % dip)
+	_make(s, "brick", 0.0, "kiln", 40)
+	var low := RateGate.held(s, "bronze_dawn", "brick")
+	t.check(low < RateData.HOLD and low > 0.0, "a longer dip loses ground, not all of it (%.0f s left)" % low)
+	_make(s, "brick", 80.0, "kiln", 70)
+	t.check(RateGate.held(s, "bronze_dawn", "brick") == RateData.HOLD, "and a burst over R makes it up")
+	t.check(
+		RateGate.held_of([], 40.0) == 0.0 and RateGate.held_of([40.0, 40.0], 40.0) == 2.0,
+		"a short run counts the seconds it has"
+	)
+	var back := Sim.new()
+	RunSave.restore(back, RunSave.from_json(RunSave.to_json(RunSave.dump(s))))
+	t.check(
+		back.tech_tree.rate_ring.get("bronze_dawn|brick", []).size() == 60,
+		"the minute's samples are saved with the run"
+	)
+
+
+## A Kiln resting at its Brick cap made nothing in the window, and the gate read Brick 0. A maker held up only by a full store counts
+## at its full speed, and the line says so.
+func test_a_full_store_counts_as_made_at_full_speed() -> void:
+	var s := _town()
+	for id in Data.BUILDINGS:
+		if Data.BUILDINGS[id]["tech"] != "":
+			s.tech_tree.researched[Data.BUILDINGS[id]["tech"]] = true
+	var kilns: Array = []
+	for i in 3:
+		var at: Vector2i = s.world.camp_pos + Vector2i(3 + i, 2)
+		s.town.add_building("kiln", at)
+		kilns.append(s.town.buildings[s.town.building_at[at]])
+	t.check(RateGate.made(s, "brick") == 0.0, "three idle Kilns made nothing in the window")
+	for b in kilns:
+		b["status"] = "Store full: Brick"
+	t.check(
+		FlowView.store_full(kilns[0]) and RateGate.full_makers(s, "brick").size() == 3, "all three rest on a full store"
+	)
+	var each := FlowView.full_rate(s, kilns[0], "brick")
+	t.check(is_equal_approx(each, 24.0), "a Kiln makes 24 Brick a minute at full speed (%.1f)" % each)
+	t.check(
+		RateGate.made(s, "brick") >= 72.0 - 0.01,
+		"three of them count as 72 a minute (%.1f)" % RateGate.made(s, "brick")
+	)
+	RateGate.update(s, 1.0)
+	t.check(RateGate.held(s, "bronze_dawn", "brick") == 1.0, "so Brick is held, a second at a time")
+	var line := RateGate.good_line(s, "bronze_dawn", "brick")
+	t.check(line.begins_with("Brick: stores full, counts as made"), "the line says so: %s" % line)
+	kilns[2]["status"] = "Working"
+	t.check(not FlowView.store_full(kilns[2]), "a Kiln that is working is not resting on a full store")
+	kilns[2]["paused"] = true
+	kilns[0]["paused"] = true
+	kilns[1]["paused"] = true
+	t.check(RateGate.made(s, "brick") == 0.0, "a paused Kiln is not a Kiln on a full store")
+
+
+## "One more Kiln: +N" is the pace of a Kiln as this player has it: a Kiln that has the Flint Tool's worker is quicker than one without.
+func test_the_pace_of_one_more_maker_is_the_real_one() -> void:
+	var s := _town()
+	s.tech_tree.researched["pottery"] = true
+	var bare := FlowView.added_rate(s, "kiln", "brick")
+	t.check(is_equal_approx(bare, 24.0), "with none standing, a new Kiln adds its own 24 a minute (%.1f)" % bare)
+	var at: Vector2i = s.world.camp_pos + Vector2i(3, 2)
+	s.town.add_building("kiln", at)
+	var b: Dictionary = s.town.buildings[s.town.building_at[at]]
+	s.tech_tree.researched["kilns_ii"] = true
+	var quicker := FlowView.added_rate(s, "kiln", "brick")
+	t.check(
+		quicker >= bare, "a standing Kiln's own bonuses are in what one more adds (%.1f against %.1f)" % [quicker, bare]
+	)
+	t.check(is_equal_approx(quicker, FlowView.full_rate(s, b, "brick")), "and it is that Kiln's full pace")
+
+
+## Fun playtest 7: "Brick above 500 pause Kilns" held the Kilns and the gate read Brick 0. A held Kiln counts at its full speed, and the
+## line names the order.
+func test_makers_paused_by_a_standing_order_count_and_the_line_names_it() -> void:
+	var s := _town()
+	for id in Data.BUILDINGS:
+		if Data.BUILDINGS[id]["tech"] != "":
+			s.tech_tree.researched[Data.BUILDINGS[id]["tech"]] = true
+	for i in 2:
+		var at: Vector2i = s.world.camp_pos + Vector2i(3 + i, 2)
+		s.town.add_building("kiln", at)
+		var b: Dictionary = s.town.buildings[s.town.building_at[at]]
+		b["alert"] = Data.ORDER_PAUSED_ALERT
+		b["status"] = Data.ORDER_PAUSED_STATUS
+	s.livewire._held = {"kiln": true}
+	s.livewire.add(s)
+	var order: Dictionary = s.livewire.orders[0]
+	order["item"] = "brick"
+	order["compare"] = "above"
+	order["number"] = 500
+	order["verb"] = "pause"
+	order["target"] = "kiln"
+	order["holding"] = true
+	t.check(
+		RateGate.made(s, "brick") >= 48.0 - 0.01,
+		"two held Kilns count as 48 a minute (%.1f)" % RateGate.made(s, "brick")
+	)
+	RateGate.update(s, 1.0)
+	var line := RateGate.good_line(s, "bronze_dawn", "brick")
+	t.check(
+		"Your order 'When Brick is above 500" in line and "pauses 2 Kilns" in line,
+		"the line names the order: %s" % line
+	)
+
+
+## Fun playtest 7: "One more Kiln: +32" when the Kilns lacked Kith. With no free Kith the line says the one more will not be worked.
+func test_one_more_maker_is_not_promised_when_no_kith_is_free() -> void:
+	var s := _town()
+	for id in Data.BUILDINGS:
+		if Data.BUILDINGS[id]["tech"] != "":
+			s.tech_tree.researched[Data.BUILDINGS[id]["tech"]] = true
+	for other in RateData.rates("bronze_dawn"):
+		s.tech_tree.rate_held["bronze_dawn|" + other] = RateData.HOLD if other != "brick" else 20.0
+	s.people.idle_now = 0
+	var line := RateGate.line(s, "bronze_dawn")
+	t.check("won't help: no free Kith to work it" in line, "no free hand: %s" % line)
+	s.people.idle_now = 2
+	line = RateGate.line(s, "bronze_dawn")
+	t.check("One more Kiln: +" in line, "a free hand: %s" % line)

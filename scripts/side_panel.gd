@@ -11,6 +11,7 @@ const Ui = preload("res://scripts/ui.gd")
 const BuildingPanel = preload("res://scripts/building_panel.gd")
 const Chores = preload("res://scripts/chores.gd")
 const GoalSums = preload("res://scripts/goal_sums.gd")
+const Hearthfire = preload("res://scripts/hearthfire.gd")
 const SkyView = preload("res://scripts/sky_view.gd")
 
 const GOAL_COLOR: Color = Ui.HIGHLIGHT
@@ -18,6 +19,7 @@ const GOALS_SHOWN := 2
 
 var goal_header: Label
 var goal_labels: Array = []
+var fire_label: Label  # the Hearthfire's tier, one dim line under the goals
 var info_scroll: ScrollContainer
 var info_label: Label
 var building_panel: BuildingPanel
@@ -69,6 +71,13 @@ func setup(game: Sim, width: float) -> void:
 		else:
 			v.add_child(g)
 		goal_labels.append(g)
+	fire_label = Ui.label("", 13)
+	fire_label.add_theme_color_override("font_color", Ui.TEXT_DIM)
+	fire_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	fire_label.custom_minimum_size = Vector2(wrap_width, 0)
+	fire_label.tooltip_text = "The Hearth burns what the stores would spill over their cap. Each tier is +3% work speed."
+	fire_label.mouse_filter = Control.MOUSE_FILTER_STOP
+	v.add_child(fire_label)
 	sky_view = SkyView.new()
 	v.add_child(sky_view)
 	sky_view.setup(game, wrap_width)
@@ -117,6 +126,7 @@ func refresh_goals(s: Sim) -> void:
 		if s.story.goals_done.has(g["id"]):
 			done.append("Done: " + s.story.goal_text(g, s))
 	goal_header.tooltip_text = "\n".join(done)
+	fire_label.text = Hearthfire.text(s)
 	for i in goal_labels.size():
 		var gi := cur + i
 		var l: Label = goal_labels[i]

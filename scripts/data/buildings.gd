@@ -361,7 +361,7 @@ const BUILDINGS := {
 		"time": 5.0,
 		"color": Color("3b3b46"),
 		"desc":
-		"Stands on a Coal Seam. Two Kith dig coal without walking. A seam holds about 500, and then it is spent.",
+		"Stands on a Coal Seam. Two Kith dig coal without walking. A seam holds about 1000, and then it is spent.",
 	},
 	"smelter":
 	{
@@ -391,7 +391,7 @@ const BUILDINGS := {
 		"time": 9.0,
 		"color": Color("a65f45"),
 		"desc":
-		"A clay stack fired with coal. Melts 2 Iron Ore and 1 Coal into Iron, slowly. Burns Charcoal at half speed when Coal runs short.",
+		"A clay stack fired with coal. Melts 2 Iron Ore and 1 Coal into Iron, slowly. Burns 2 Charcoal a batch, as fast, when Coal runs short.",
 	},
 	"forge":
 	{
@@ -409,7 +409,7 @@ const BUILDINGS := {
 		"color": Color("a9bfd1"),
 		"desc":
 		(
-			"Needs: power. A steady blast turns 2 Iron and 1 Coal into Steel (Charcoal at half speed when Coal runs short)."
+			"Needs: power. A steady blast turns 2 Iron and 1 Coal into Steel (2 Charcoal a batch when Coal runs short)."
 			+ " Stand it within 5 tiles of a Boiler."
 		),
 	},

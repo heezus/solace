@@ -116,10 +116,12 @@ static func feed(s, asked_goods: Dictionary) -> void:
 		give(s, good, have - roundi(KEEP_AT * float(cap)), asked_goods)
 
 
-## "Hearthfire: tier 2 of 5, +6% work speed. 1,200 worth to the next." for the Hearth's card.
+## "Hearthfire: tier 2 of 5, +6% work, 340 of 900 to the next." for the Hearth's card, the goals panel and the AI player's page: the
+## worth given since this tier lit, of what the next tier takes. The last tier says "Hearthfire: tier 5 of 5, +15% work."
 static func text(s) -> String:
 	var n := tier(s)
-	var out := "Hearthfire: tier %d of %d, +%d%% work speed." % [n, FireTiers.TIERS.size(), roundi(bonus(s) * 100.0)]
-	if n < FireTiers.TIERS.size():
-		out += " %d worth to the next." % roundi(to_next(s))
-	return out
+	var out := "Hearthfire: tier %d of %d, +%d%% work" % [n, FireTiers.TIERS.size(), roundi(bonus(s) * 100.0)]
+	if n >= FireTiers.TIERS.size():
+		return out + "."
+	var start := 0.0 if n == 0 else float(FireTiers.TIERS[n - 1])
+	return out + ", %d of %d to the next." % [roundi(given(s) - start), roundi(float(FireTiers.TIERS[n]) - start)]
