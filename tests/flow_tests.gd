@@ -97,6 +97,7 @@ func test_a_goal_sum_says_how_long_at_this_rate_and_with_one_more_maker() -> voi
 func test_one_more_maker_that_cannot_be_fed_says_what_is_short() -> void:
 	var s := Sim.new()
 	s.generate(5)
+	s.people.idle_now = 3  # a free Kith to work the one more
 	s.tech_tree.researched["pottery"] = true
 	var g := {"id": "t", "tech": "star_charts"}
 	for id in ["bronze", "rope", "charcoal"]:
