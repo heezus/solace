@@ -90,6 +90,8 @@ static func _more(s, item: String, net: float, lacks: int) -> String:
 	var waiting := _waiting(s, item, type)
 	if waiting != "":
 		return " One more %s won't help: %s." % [name, waiting]
+	if s.people.idle_now < 1:
+		return " One more %s won't help: no free Kith to work it." % name
 	if def["kind"] == "processor":
 		var short_of := _input_short(s, def, item, added)
 		if short_of != "":

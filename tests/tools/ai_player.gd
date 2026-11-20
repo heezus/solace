@@ -20,6 +20,7 @@ const RunSave = preload("res://scripts/run_save.gd")
 const Sim = preload("res://scripts/sim.gd")
 const Snapshot = preload("res://tests/tools/ai_snapshot.gd")
 const AiStory = preload("res://tests/tools/ai_story.gd")
+const EraSaves = preload("res://tests/tools/era_saves.gd")
 
 const DT := 0.1
 const POLL_MS := 500
@@ -91,9 +92,10 @@ func _init() -> void:
 	)
 	var refused: Array = []
 	var told: Array = []
-	var era := Snapshot.era_name(s)
+	var saves := EraSaves.new()
 	for n in range(maxi(resume_at, 1), decisions + 1):
-		if n == maxi(resume_at, 1) or Snapshot.era_name(s) != era:
+		var era := Snapshot.era_name(s)
+		if saves.due(n, maxi(resume_at, 1), era):
 			_save_era(n)  # the game as this era begins: a restart resumes here, not from a replay
 		var page := Snapshot.text(s, n, told, refused)
 		if n == 1 and start != "":
@@ -113,7 +115,6 @@ func _init() -> void:
 		if stop_at_era != "" and Snapshot.era_name(s) == stop_at_era and era != stop_at_era:
 			print("AI player: reached %s" % stop_at_era)
 			break
-		era = Snapshot.era_name(s)
 	print("AI player: done at game time %d s, era %s" % [int(s.seasons.time), Snapshot.era_name(s)])
 	quit(0)
 

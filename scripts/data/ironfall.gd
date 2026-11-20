@@ -14,11 +14,12 @@ const SOUTH_TECHS := ["coal_seams", "ironstone"]
 const SOUTH_ROWS := 22
 const LAND_GREW_SOUTH_EVENT := "The land opens to the south. Dark ridges of coal and red hills of iron lie there, under the fog"
 ## What a coal seam holds: the tiles of a seam share the pile, and the seam is spent when it is gone. Three seams in all.
-const COAL_PER_SEAM := 500
+const COAL_PER_SEAM := 1000
 
 const SEAM_LEFT := "%d of %d left in this seam"  # what is in the ground, what the seam held
 const SEAM_SPENT_STATUS := "The seam is spent. Tear this down and put its Kith to work elsewhere"
 const SEAM_SPENT_ALERT := "Seam spent"
+const SEAM_NEXT_LINE := "The next coal seam lies %s of this mine, about %d tiles off. It is on your map now."
 const SEAM_SPENT_EVENT := "A coal seam is spent. The coal that is left is in the stockpile"
 
 const ERA_TAB_LOCKED_IRONFALL := "Opens when the Starfall is over"

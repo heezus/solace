@@ -81,7 +81,7 @@ static func _tick_boiler(s, b: Dictionary, def: Dictionary, delta: float) -> voi
 	var stored: int = b["inbuf"].get(id, 0)
 	if b["burn"] > 0.0:
 		b["status"] = Data.BOILER_LIT % [ceili(b["burn"]), stored]
-		if Fuel.slow(b) > 1.0:
+		if Fuel.on_charcoal(b):
 			b["status"] += " · " + Fuel.status(b)
 	elif wanted:
 		b["status"] = Data.BOILER_COLD % fuel

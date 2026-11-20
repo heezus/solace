@@ -8,6 +8,7 @@ extends RefCounted
 const Data = preload("res://scripts/data.gd")
 const FlowView = preload("res://scripts/flow_view.gd")
 const GoalSums = preload("res://scripts/goal_sums.gd")
+const Hearthfire = preload("res://scripts/hearthfire.gd")
 const Needs = preload("res://scripts/needs.gd")
 
 const MOVES := ["flow"]
@@ -20,6 +21,13 @@ static func lines(s) -> Array:
 	var goal: Dictionary = Needs.goal_goods(s)
 	var goals: Array = s.story.goal_list()
 	var at: int = s.story.current_goal()
+	var feeding: bool = s.economy.fire["auto"]
+	out.append(
+		(
+			'HEARTHFIRE: %s It takes what the stores would spill: %s ({"do":"fire","on":%s} turns that %s).'
+			% [Hearthfire.text(s), "on" if feeding else "off", str(not feeding).to_lower(), "off" if feeding else "on"]
+		)
+	)
 	if at < goals.size():
 		var sum := GoalSums.line(s, goals[at])
 		if sum != "":

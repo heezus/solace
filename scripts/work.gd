@@ -92,6 +92,7 @@ static func finish_cycle(s, b: Dictionary) -> void:
 			made[id] = s.world.seam_draw(b["pos"], made[id])
 			if made[id] > 0 and s.world.seam_spent(b["pos"]):
 				s.events.append(Data.SEAM_SPENT_EVENT)
+				s.story.point_to_seam(s, b["pos"])
 	if made.has("flint_tools"):
 		s.hand_tools = true  # the first Flint Tool made by anyone doubles hand gathering, as a hand-crafted one does
 	var more := Bonuses.output(s, b)

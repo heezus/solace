@@ -29,6 +29,7 @@ var deed_has: Callable = func(_id): return true  # (String) -> bool: is that gat
 var deed_note: Callable = func(_id): return ""  # (String) -> String: why a deed is not done, in a few words ("" for none)
 var rate_lines: Callable = func(_id): return []  # (String) -> Array: a gate's rates still to hold, as lines. Set by the owner
 var rate_held: Dictionary = {}  # "tech|good" -> seconds the gate's rate has been held (scripts/rate_gate.gd update)
+var rate_ring: Dictionary = {}  # "tech|good" -> what was made a minute, once a second, the last RateData.HOLD seconds (saved)
 var _economy: Economy
 var _hidden_shown: Callable  # () -> bool: true once hidden techs are on show (the Strange Stone was clicked)
 var _extra_discount: Callable  # () -> float: a share (0 to 1) off every tech, from what stands in the town; may be unset
@@ -285,7 +286,8 @@ func to_dict() -> Dictionary:
 		"researched": Codec.keys(researched),
 		"goal": goal,
 		"queue": queue.duplicate(),
-		"rate_held": rate_held.duplicate()
+		"rate_held": rate_held.duplicate(),
+		"rate_ring": rate_ring.duplicate(true)
 	}
 
 
@@ -297,3 +299,4 @@ func from_dict(d: Dictionary) -> void:
 	goal = String(d.get("goal", ""))
 	queue = Codec.strings(d.get("queue", []))
 	rate_held = d.get("rate_held", {}).duplicate()
+	rate_ring = d.get("rate_ring", {}).duplicate(true)

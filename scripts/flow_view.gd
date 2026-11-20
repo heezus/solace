@@ -7,6 +7,8 @@ const Buildings = preload("res://scripts/buildings.gd")
 const Data = preload("res://scripts/data.gd")
 const Needs = preload("res://scripts/needs.gd")
 const WaitWhy = preload("res://scripts/wait_why.gd")
+const Work = preload("res://scripts/work.gd")
+const Bonuses = preload("res://scripts/bonuses.gd")
 
 const NONE := Vector2i(-1, -1)
 ## What a waiting building is waiting on, in a few words, and the one step that sets it right.
@@ -243,8 +245,8 @@ static func maker_short(s, item: String, g: Dictionary) -> String:
 	if piled == "":
 		return ""
 	var added := added_rate(s, type, item)
-	if added <= 0.0:
-		return ""
+	if added <= 0.0 or s.people.idle_now < 1:
+		return ""  # nothing to add, or nobody free to work the one more
 	return (
 		SHORT
 		% [
@@ -258,19 +260,38 @@ static func maker_short(s, item: String, g: Dictionary) -> String:
 	)
 
 
-## What one more of `type` would make of `item` a minute: what the ones standing make now, each, else the workshop's own rate.
+## What building `b` would make of `item` a minute if nothing held it up: its own cycle (tools, fuel, bonuses) and its output.
+## 0 for a building that is not a workshop of `item`.
+static func full_rate(s, b: Dictionary, item: String) -> float:
+	var out: Dictionary = Buildings.recipe_out(b)
+	if Data.BUILDINGS[b["type"]]["kind"] != "processor" or not out.has(item):
+		return 0.0
+	var time := Work.time(s, b)
+	return float(out[item]) * Bonuses.output(s, b) * 60.0 / time if time > 0.0 else 0.0
+
+
+## True when `b` sits idle only because the stores of its output are full (its pill says "Store full").
+static func store_full(b: Dictionary) -> bool:
+	return wait_code(b) == "resting" and String(b["status"]).begins_with("Store full")
+
+
+## What one more of `type` would make of `item` a minute: what the ones standing make now, each, else the standing one's own pace
+## (its tools, fuel and bonuses), else a new workshop's pace with no tool in hand.
 static func added_rate(s, type: String, item: String) -> float:
 	var parts: Dictionary = s.economy.flows.parts(item)
-	var standing := 0
+	var standing: Array = []
 	for b in s.town.buildings:
 		if b["type"] == type and (Data.BUILDINGS[type]["kind"] != "gatherer" or b["focus"] == item):
-			standing += 1
-	if standing > 0 and parts.get(type, 0.0) > 0.0:
-		return float(parts[type]) * 60.0 / standing
+			standing.append(b)
+	if not standing.is_empty() and parts.get(type, 0.0) > 0.0:
+		return float(parts[type]) * 60.0 / standing.size()
 	var def: Dictionary = Data.BUILDINGS[type]
-	if def.get("out", {}).has(item) and float(def.get("time", 0.0)) > 0.0:
-		return float(def["out"][item]) * 60.0 / float(def["time"])
-	return 0.0
+	if not def.get("out", {}).has(item) or float(def.get("time", 0.0)) <= 0.0:
+		return 0.0
+	if not standing.is_empty():
+		return full_rate(s, standing[0], item)
+	var pseudo := {"type": type, "pos": NONE, "worker": -1, "inbuf": {}, "make": "", "ore": "", "fuel": "auto"}
+	return full_rate(s, pseudo, item)
 
 
 ## `item` waits on `input`, which its maker `b` lacks: say how the input's own makers are doing.

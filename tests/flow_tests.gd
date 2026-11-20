@@ -79,6 +79,7 @@ func test_the_views_made_per_minute_match_the_ledger_over_five_minutes() -> void
 func test_a_goal_sum_says_how_long_at_this_rate_and_with_one_more_maker() -> void:
 	var s := Sim.new()
 	s.generate(5)
+	s.people.idle_now = 3  # a free Kith to work the one more
 	s.tech_tree.researched["pottery"] = true
 	var g := {"id": "t", "tech": "tally_sticks"}  # wood 60, rope 110, clay 60, charcoal 110, brick 25
 	for id in ["wood", "rope", "clay", "charcoal"]:
@@ -96,6 +97,7 @@ func test_a_goal_sum_says_how_long_at_this_rate_and_with_one_more_maker() -> voi
 func test_one_more_maker_that_cannot_be_fed_says_what_is_short() -> void:
 	var s := Sim.new()
 	s.generate(5)
+	s.people.idle_now = 3  # a free Kith to work the one more
 	s.tech_tree.researched["pottery"] = true
 	var g := {"id": "t", "tech": "star_charts"}
 	for id in ["bronze", "rope", "charcoal"]:
@@ -167,6 +169,7 @@ func test_the_bottleneck_walks_one_step_back_to_the_input() -> void:
 func test_a_maker_running_flat_out_with_its_ore_piling_up_says_one_more_is_short() -> void:
 	var s := Sim.new()
 	s.generate(5)
+	s.people.idle_now = 3  # a free Kith to work the one more
 	s.tech_tree.researched["smelting"] = true
 	var at := s.world.camp_pos + Vector2i(3, 2)
 	s.town.add_building("smelter", at)

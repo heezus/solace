@@ -39,7 +39,7 @@ func run(runner) -> void:
 	test_iron_hills_need_ironstone()
 	test_the_bloomery_makes_iron()
 	test_auto_fuel_burns_coal_while_it_is_plenty()
-	test_a_bloomery_burns_charcoal_at_half_speed()
+	test_a_bloomery_burns_two_charcoal_at_full_speed()
 	test_the_fuel_button_and_a_save()
 	test_the_ai_player_sets_the_fuel()
 	test_iron_tools()
@@ -110,7 +110,7 @@ func test_ironfall_data_is_whole() -> void:
 		t.check(Data.TECHS[Data.BUILDINGS[type]["tech"]]["era"] == 4, "%s comes with an era-4 tech" % type)
 		t.check(type in Data.BUILD_TABS["Metal"], "%s is on the Metal tab" % type)
 	t.check(
-		Data.COAL_PER_SEAM == 500 and Data.IRON_TOOL_JOBS == 300, "a seam holds 500 and an Iron Tool lasts 300 jobs"
+		Data.COAL_PER_SEAM == 1000 and Data.IRON_TOOL_JOBS == 300, "a seam holds 1000 and an Iron Tool lasts 300 jobs"
 	)
 
 
@@ -285,7 +285,7 @@ func test_coal_is_finite() -> void:
 	var total := 0
 	for other in w.seam_left:
 		total += w.seam_left[other]
-	t.check(total == 2 * Data.COAL_PER_SEAM, "the other two still hold their 500 (%d)" % total)
+	t.check(total == 2 * Data.COAL_PER_SEAM, "the other two still hold their 1000 (%d)" % total)
 
 
 func test_a_coal_mine_digs_a_seam_dry() -> void:
@@ -300,16 +300,23 @@ func test_a_coal_mine_digs_a_seam_dry() -> void:
 	t.check(b["ore"] == "coal", "it digs coal")
 	s.world.seam_left[s.world.seam_of[p]] = 7
 	var said := false
+	var pointed := ""
+	var next: Vector2i = s.world.next_seam_tile(p)
 	for i in 4000:
 		s.economy.inv["berries"] = 999
 		s.tick(0.1)
 		if Data.SEAM_SPENT_EVENT in s.events:
 			said = true
+		for line in s.events:
+			if "The next coal seam lies" in line:
+				pointed = line
 		s.events.clear()
 	var dug: int = b["out"].get("coal", 0) + s.economy.inv.get("coal", 0)
 	t.check(dug == 7, "the Mine digs exactly what the seam held (%d)" % dug)
 	t.check(s.world.seam_spent(p) and s.world.tile_at(p) == "spent_seam", "and the seam is spent")
 	t.check(said, "the Kith say so")
+	t.check(pointed != "" and next.x >= 0, "and the log points to the next seam: %s" % pointed)
+	t.check(s.fog.is_revealed(next), "whose ground is on the map now")
 	t.check(b["status"] == Data.SEAM_SPENT_STATUS, "the Mine's card says it has nothing left (%s)" % b["status"])
 
 
@@ -399,8 +406,8 @@ func test_auto_fuel_burns_coal_while_it_is_plenty() -> void:
 	t.check(Fuel.choose(s.economy, b) == "coal", "set to Coal it waits for Coal")
 
 
-## On Charcoal a batch takes CHARCOAL_SLOW times as long, the card says so, and haulers bring Charcoal (not Coal).
-func test_a_bloomery_burns_charcoal_at_half_speed() -> void:
+## On Charcoal a batch takes as long as on Coal and two Charcoal go where one Coal did, the card says so, and haulers bring Charcoal.
+func test_a_bloomery_burns_two_charcoal_at_full_speed() -> void:
 	var s := south(42, "ironstone")
 	s.tech_tree.researched["coal_seams"] = true
 	var at: Vector2i = s.world.camp_pos + Vector2i(-3, 2)
@@ -409,12 +416,10 @@ func test_a_bloomery_burns_charcoal_at_half_speed() -> void:
 	b["fuel_now"] = "coal"
 	var fast := Work.time(s, b)
 	b["fuel_now"] = "charcoal"
+	t.check(is_equal_approx(Work.time(s, b), fast), "a batch takes as long on Charcoal as on Coal")
 	t.check(
-		is_equal_approx(Work.time(s, b), fast * Data.CHARCOAL_SLOW), "a batch takes %.0fx as long" % Data.CHARCOAL_SLOW
-	)
-	t.check(
-		Buildings.recipe_in(b) == {"iron_ore": 2, "charcoal": 1},
-		"it uses one Charcoal where Coal went: %s" % Buildings.recipe_in(b)
+		Buildings.recipe_in(b) == {"iron_ore": 2, "charcoal": 2},
+		"it uses two Charcoal where one Coal went: %s" % Buildings.recipe_in(b)
 	)
 	s.economy.inv["iron_ore"] = 50
 	s.economy.inv["charcoal"] = 20
@@ -423,7 +428,11 @@ func test_a_bloomery_burns_charcoal_at_half_speed() -> void:
 		"haulers bring Charcoal"
 	)
 	b["inbuf"]["iron_ore"] = 2
-	b["inbuf"]["charcoal"] = 1
+	b["inbuf"]["charcoal"] = 2
+	_batch_seconds(s, b)  # the first batch waits for a worker to come over: time the next
+	b["out"].clear()
+	b["inbuf"]["iron_ore"] = 2
+	b["inbuf"]["charcoal"] = 2
 	var seconds := _batch_seconds(s, b)
 	t.check(b["out"].get("iron", 0) == 1, "it makes the Iron on Charcoal")
 	b["out"].clear()
@@ -434,27 +443,30 @@ func test_a_bloomery_burns_charcoal_at_half_speed() -> void:
 	b["inbuf"]["coal"] = 1
 	var on_coal := _batch_seconds(s, b)
 	t.check(
-		absf(seconds / on_coal - Data.CHARCOAL_SLOW) < 0.3,
-		"a batch takes %.1fx as long on Charcoal (%.1f s against %.1f s)" % [seconds / on_coal, seconds, on_coal]
+		absf(seconds / on_coal - 1.0) < 0.15,
+		"a batch takes as long on Charcoal (%.1f s against %.1f s on Coal)" % [seconds, on_coal]
 	)
 	b["fuel"] = "auto"
 	b["fuel_now"] = "charcoal"
 	b["out"].clear()
 	t.check(b["inbuf"].get("charcoal", 0) == 0, "and burns the Charcoal")
-	t.check(s.economy.made_on["charcoal"].get("iron", 0) == 1, "the baseline counts the Iron made on Charcoal")
+	t.check(s.economy.made_on["charcoal"].get("iron", 0) >= 1, "the baseline counts the Iron made on Charcoal")
 	b["inbuf"]["iron_ore"] = 2
-	b["inbuf"]["charcoal"] = 1
+	b["inbuf"]["charcoal"] = 2
 	for i in 20:
 		s.tick(0.1)
-	t.check(b["status"].begins_with("Smelting on Charcoal: half speed"), "the status says so: %s" % b["status"])
+	t.check(b["status"].begins_with("Smelting on Charcoal: 2 a batch"), "the status says so: %s" % b["status"])
 	t.check("Coal is low" in b["status"], "and why, on Auto: %s" % b["status"])
 	# A Factory Floor copying a Bloomery follows the same rule.
 	var floor_b := {
 		"type": "factory_floor", "make": "bloomery", "inbuf": {}, "incoming": {}, "fuel": "auto", "fuel_now": "charcoal"
 	}
-	t.check(Fuel.slow(floor_b) == Data.CHARCOAL_SLOW, "a Floor copying a Bloomery burns Charcoal as slowly")
+	t.check(
+		Fuel.slow(floor_b) == 1.0 and Fuel.on_charcoal(floor_b),
+		"a Floor copying a Bloomery burns Charcoal as fast as Coal"
+	)
 	floor_b["make"] = "kiln"
-	t.check(Fuel.slow(floor_b) == 1.0 and not Fuel.burns(floor_b), "and copying a Kiln burns no fuel of this kind")
+	t.check(not Fuel.on_charcoal(floor_b) and not Fuel.burns(floor_b), "and copying a Kiln burns no fuel of this kind")
 
 
 ## The AI player's fuel move steps a Bloomery's setting, and refuses a mode there is not or a building with no fuel button.
