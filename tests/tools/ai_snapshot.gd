@@ -110,7 +110,7 @@ const KNOWN := """WHAT YOUR KITH ALREADY KNOW (you have played the eras before t
   - Storehouses: a depot nearer a far workshop shortens the haul; build one beside it.
   - Roads and carts: haulers serve buildings a road reaches; a building with no road says "Needs road".
   - Trade: a Trading Post or Lumen Market swaps one good for another (move "trade").
-  - Fuel: a Bloomery or Forge burns Coal, or two Charcoal a batch at the same speed (move "fuel"); Auto burns Coal while the stores have plenty.
+  - Fuel: a Bloomery or Forge burns Coal, or two Charcoal a batch at the same speed (move "fuel"); Auto burns Coal while plenty.
 """
 
 

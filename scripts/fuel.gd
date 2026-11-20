@@ -2,9 +2,9 @@ extends RefCounted
 ## Fuel for the metal works and the engines (design-system/31-fuel.md): a Bloomery or a Forge (or a Factory Floor copying one)
 ## burns one Coal or Data.CHARCOAL_SLOW (2) Charcoal a batch, at the same speed either way: a Coal is worth two Charcoal where it is
 ## used, so running out of Coal never slows the metal and never stops it (Charcoal Pits make 30 a minute each). A Boiler, a Generator
-## or a Scorcher (a fed building) takes either too: one unit a burn, and a Charcoal burns twice as fast, so it lasts half as long. Each has a fuel
-## setting, "auto" (the default), "coal" or "charcoal"; `fuel_now` is the fuel it burns at this moment (kept by `update` once a tick,
-## so the hauler's pick and the work cycle agree). Static, like Work.
+## or a Scorcher (a fed building) takes either too: one unit a burn, and a Charcoal burns twice as fast, so it lasts half as long.
+## Each has a fuel setting, "auto" (the default), "coal" or "charcoal"; `fuel_now` is the fuel it burns at this moment (kept by
+## `update` once a tick, so the hauler's pick and the work cycle agree). Static, like Work.
 
 const Data = preload("res://scripts/data.gd")
 
